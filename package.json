@@ -1,8 +1,26 @@
 {
+  "name": "cribbage-trainer",
+  "description": "Two-player cribbage discard and play improvement tool.",
+  "version": "0.1.0",
   "scripts": {
     "dev": "parcel src/index.html"
   },
   "devDependencies": {
     "parcel": "^2.7.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markafitzgerald1/cribbage-trainer.git"
+  },
+  "keywords": [
+    "cribbage",
+    "trainer",
+    "analysis"
+  ],
+  "author": "Mark A. Fitzgerald <mark.a.fitzgerald1@gmail.com>",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/markafitzgerald1/cribbage-trainer/issues"
+  },
+  "homepage": "https://github.com/markafitzgerald1/cribbage-trainer#readme"
 }
