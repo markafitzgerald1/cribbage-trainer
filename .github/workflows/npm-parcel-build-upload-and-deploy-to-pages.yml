@@ -3,9 +3,6 @@ on: [push]
 jobs:
   npm-parcel-build-and-upload-artifact:
     runs-on: ubuntu-latest
-    # permissions:
-    #   id-token: write
-    #   pages: write
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -16,7 +13,21 @@ jobs:
         uses: actions/upload-pages-artifact@v1.0.3
         with:
           path: dist/
+
   deploy-artifact-to-github-pages:
+    needs: npm-parcel-build-and-upload-artifact
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
     steps:
       - name: Deploy GitHub Pages site
         uses: actions/deploy-pages@v1.0.9
