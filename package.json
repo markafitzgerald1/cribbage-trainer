@@ -2,8 +2,10 @@
   "name": "cribbage-trainer",
   "description": "Two-player cribbage discard and play improvement tool.",
   "version": "0.1.0",
+  "source": "src/index.html",
   "scripts": {
-    "dev": "parcel src/index.html"
+    "start": "parcel",
+    "build": "parcel build"
   },
   "devDependencies": {
     "parcel": "^2.7.0"
