@@ -1,0 +1,22 @@
+name: npm-parcel-build-upload-and-deploy-to-pages-2
+on: [push]
+jobs:
+  npm-parcel-build-upload-and-deploy-to-pages:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      pages: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - run: npm run build
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v1.0.3
+        with:
+          path: dist/
+      - name: Deploy GitHub Pages site
+        uses: actions/deploy-pages@v1.0.9
+        with:
+          token: ${{ github.token }}
