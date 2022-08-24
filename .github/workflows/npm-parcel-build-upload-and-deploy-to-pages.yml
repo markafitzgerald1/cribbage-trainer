@@ -15,19 +15,19 @@ jobs:
           # Path of the directory containing the static assets.
           path: dist/ # default is _site/
           # Duration after which artifact will expire in days.
-          retention-days: # optional, default is 1
+          # retention-days: # optional, default is 1
       - name: Deploy GitHub Pages site
         uses: actions/deploy-pages@v1.0.9
-        with:
-          # Should this action only emit build telemetry instead of deploying the build artifact?
-          emit_telemetry: true # optional, default is false
-          # GitHub token
-          token: # default is ${{ github.token }}
-          # Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes)
-          timeout: # optional, default is 600000
-          # Maximum number of status report errors before cancelling a deployment (default: 10)
-          error_count: # optional, default is 10
-          # Time in milliseconds between two deployment status report (default: 5 seconds)
-          reporting_interval: # optional, default is 5000
-          # Name of the artifact to deploy
-          artifact_name: # optional, default is github-pages
+        # with:
+        #   # Should this action only emit build telemetry instead of deploying the build artifact?
+        #   emit_telemetry: true # optional, default is false
+        #   # GitHub token
+        #   token: # default is ${{ github.token }}
+        #   # Time in milliseconds after which to timeout and cancel the deployment (default: 10 minutes)
+        #   timeout: # optional, default is 600000
+        #   # Maximum number of status report errors before cancelling a deployment (default: 10)
+        #   error_count: # optional, default is 10
+        #   # Time in milliseconds between two deployment status report (default: 5 seconds)
+        #   reporting_interval: # optional, default is 5000
+        #   # Name of the artifact to deploy
+        #   artifact_name: # optional, default is github-pages
