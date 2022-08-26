@@ -8,7 +8,9 @@
     "build": "parcel build --public-url /cribbage-trainer"
   },
   "devDependencies": {
-    "parcel": "^2.7.0"
+    "@types/react": "^18.0.17",
+    "@types/react-dom": "^18.0.6",
+    "process": "^0.11.10"
   },
   "repository": {
     "type": "git",
@@ -24,5 +26,10 @@
   "bugs": {
     "url": "https://github.com/markafitzgerald1/cribbage-trainer/issues"
   },
-  "homepage": "https://github.com/markafitzgerald1/cribbage-trainer#readme"
+  "homepage": "https://github.com/markafitzgerald1/cribbage-trainer#readme",
+  "dependencies": {
+    "parcel": "^2.7.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
 }
