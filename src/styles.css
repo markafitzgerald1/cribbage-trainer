@@ -3,7 +3,12 @@ h1 {
     font-family: cursive;
 }
 
+.hand {
+    padding: 0;
+}
+
 .card {
+    display: inline;
     border: solid;
     border-color: lightgray;
     padding: 0.14em 0.16em;
@@ -11,4 +16,7 @@ h1 {
     border-radius: 0.12em;
     border-width: 0.025em;
     cursor: pointer;
+    margin-right: 0.2em;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
 }
