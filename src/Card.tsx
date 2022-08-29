@@ -1,8 +1,15 @@
 import React from 'react';
 import ReactDOMClient from 'react-dom/client';
 
-function Card(props: { rank: string }) {
-    return <span className="card">{props.rank}</span>;
+class Card extends React.Component<{}, { rank: string }> {
+    constructor(props: {}) {
+        super(props);
+        this.state = { rank: "A23456789TJQK"[Math.floor(Math.random() * 13)] };
+    }
+
+    render() {
+        return <span className="card">{this.state.rank}</span>;
+    }
 }
 
-ReactDOMClient.createRoot(document.querySelector('#card')!).render(<Card rank="Q" />);
+ReactDOMClient.createRoot(document.querySelector('#card')!).render(<Card />);

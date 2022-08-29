@@ -6,10 +6,9 @@ h1 {
 .card {
     border: solid;
     border-color: lightgray;
-    padding-bottom: 0.14em;
-    padding-left: 0.16em;
-    padding-right: 0.16em;
+    padding: 0.14em 0.16em;
     background-color: white;
     border-radius: 0.12em;
+    border-width: 0.025em;
     cursor: pointer;
 }
