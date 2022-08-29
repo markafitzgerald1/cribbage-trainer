@@ -4,8 +4,9 @@
   "version": "0.1.0",
   "source": "src/index.html",
   "scripts": {
-    "start": "parcel",
-    "build": "parcel build --public-url /cribbage-trainer"
+    "start": "parcel serve --public-url /cribbage-trainer",
+    "build": "parcel build --public-url /cribbage-trainer",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
     "@types/react": "^18.0.17",
