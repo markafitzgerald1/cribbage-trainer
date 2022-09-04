@@ -6,6 +6,7 @@ h1 {
 }
 
 .hand {
+    display: inline;
     padding: 0;
 }
 
