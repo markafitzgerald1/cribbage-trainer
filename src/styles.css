@@ -1,5 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap');
 
+html {
+    background-color: green;
+}
+
+h1 {
+    color: #eee;
+    font-family: sans-serif;
+}
+
 .hand {
     display: flex;
     justify-content: space-evenly;
@@ -11,11 +20,13 @@
     padding-right: 0.21em;
     padding-left: 0.29em;
     border: solid;
-    border-color: lightgray;
+    border-color: #c0c0c0;
     background-color: white;
     border-radius: 0.12em;
     border-width: 0.025em;
     cursor: pointer;
+    margin-top: 0;
+    margin-bottom: 0.4em;
 }
 
 .card, .separator {
@@ -27,4 +38,10 @@
     padding-top: 0.16em;
     padding-bottom: 0.17em;
     margin-right: 0.15em;
+}
+
+.discarded {
+    background-color: #d8d8d8;
+    margin-top: 0.4em;
+    margin-bottom: 0;
 }

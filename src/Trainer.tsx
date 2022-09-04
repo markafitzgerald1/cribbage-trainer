@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOMClient from 'react-dom/client';
 
 type CardProps = {
-    rank: string,
+    dealtCard: DealtCard,
     toggleKept: () => void
 };
 
@@ -12,7 +12,7 @@ class Card extends React.Component<CardProps, {}> {
     }
 
     render() {
-        return <li className="card" onClick={this.props.toggleKept}>{this.props.rank}</li>;
+        return <li className={`card ${this.props.dealtCard.kept ? "" : "discarded"}`} onClick={this.props.toggleKept}>{this.props.dealtCard.rank}</li>;
     }
 }
 
@@ -28,9 +28,10 @@ class Hand extends React.Component<HandProps, {}> {
 
     render() {
         return <ul className="hand">
-            {this.props.dealtCards.filter((dealtCard) => dealtCard.kept).map((dealtCard) => <Card rank={dealtCard.rank} toggleKept={() => this.props.toggleKept(dealtCard.index)} key={dealtCard.index} />)}
-            <span className="separator">/</span>
-            {this.props.dealtCards.filter((dealtCard) => !dealtCard.kept).map((dealtCard) => <Card rank={dealtCard.rank} toggleKept={() => this.props.toggleKept(dealtCard.index)} key={dealtCard.index} />)}
+            {/* TODO: add UI cards sort control with descending by rank, ascending by rank and deal order (default) as options */}
+            {/* TODO: then auto-calculate as user clicks: pre-cut hand value, post-cut hand value, pre-cut and opponent discard crib value, pre-cut crib value, pre-opponent discard crib value, post-cut and opponent discard crib value, sum of both */}
+            {/* TODO: then auto-analyze as user clicks: expected hand, crib values for each possible discard */}
+            {this.props.dealtCards.map((dealtCard) => <Card dealtCard={dealtCard} toggleKept={() => this.props.toggleKept(dealtCard.index)} key={dealtCard.index} />)}
         </ul>;
     }
 }
@@ -50,7 +51,7 @@ class Trainer extends React.Component<{}, { dealtCards: DealtCard[] }> {
     }
 
     toggleKept = (index: number) => {
-        this.setState((state, props) => {
+        this.setState((state) => {
             state.dealtCards[index].kept = !state.dealtCards[index].kept;
             return {
                 dealtCards: state.dealtCards
