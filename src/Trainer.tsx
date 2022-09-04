@@ -27,20 +27,11 @@ class Hand extends React.Component<HandProps, {}> {
     }
 
     render() {
-        return <div>
-            <div>
-                <span>Hand: </span>
-                <ul className="hand">
-                    {this.props.dealtCards.filter((dealtCard) => dealtCard.kept).map((dealtCard) => <Card rank={dealtCard.rank} toggleKept={() => this.props.toggleKept(dealtCard.index)} key={dealtCard.index} />)}
-                </ul>
-            </div>
-            <div>
-                <span>Crib: </span>
-                <ul className="hand">
-                    {this.props.dealtCards.filter((dealtCard) => !dealtCard.kept).map((dealtCard) => <Card rank={dealtCard.rank} toggleKept={() => this.props.toggleKept(dealtCard.index)} key={dealtCard.index} />)}
-                </ul>
-            </div>
-        </div>;
+        return <ul className="hand">
+            {this.props.dealtCards.filter((dealtCard) => dealtCard.kept).map((dealtCard) => <Card rank={dealtCard.rank} toggleKept={() => this.props.toggleKept(dealtCard.index)} key={dealtCard.index} />)}
+            <span className="separator">/</span>
+            {this.props.dealtCards.filter((dealtCard) => !dealtCard.kept).map((dealtCard) => <Card rank={dealtCard.rank} toggleKept={() => this.props.toggleKept(dealtCard.index)} key={dealtCard.index} />)}
+        </ul>;
     }
 }
 

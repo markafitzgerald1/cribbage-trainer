@@ -1,20 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap');
 
 .hand {
-    display: inline;
+    display: flex;
+    justify-content: space-evenly;
     padding: 0;
 }
 
 .card {
     display: inline;
+    padding-right: 0.21em;
+    padding-left: 0.29em;
     border: solid;
     border-color: lightgray;
-    padding: 0.16em 0.21em 0.17em 0.29em;
     background-color: white;
     border-radius: 0.12em;
     border-width: 0.025em;
     cursor: pointer;
-    margin-right: 0.15em;
+}
+
+.card, .separator {
     font-family: 'Anonymous Pro', 'Courier New', Courier, monospace;
     font-weight: bold;
+    text-align: center;
+    width: 8vw;
+    font-size: 10vw;
+    padding-top: 0.16em;
+    padding-bottom: 0.17em;
+    margin-right: 0.15em;
 }
