@@ -60,9 +60,7 @@ class Trainer extends React.Component<{}, { dealtCards: DealtCard[] }> {
     }
 
     render() {
-        return <div>
-            <Hand dealtCards={this.state.dealtCards} toggleKept={this.toggleKept}/>
-        </div>
+        return <Hand dealtCards={this.state.dealtCards} toggleKept={this.toggleKept}/>;
     }
 }
 

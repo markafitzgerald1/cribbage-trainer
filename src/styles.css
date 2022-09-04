@@ -7,6 +7,7 @@ html {
 h1 {
     color: #eee;
     font-family: sans-serif;
+    font-size: 3.2em;
 }
 
 .hand {
@@ -17,35 +18,24 @@ h1 {
 
 .card {
     display: inline;
-    padding-right: 0.21em;
-    padding-left: 0.29em;
-    border: solid;
-    border-color: #c0c0c0;
-    background-color: white;
+    padding: 0.16em 0.21em 0.17em 0.29em;
+    border: 0.025em solid #c0c0c0;
     border-radius: 0.12em;
-    border-width: 0.025em;
+    background-color: white;
     cursor: pointer;
-    margin-top: 0;
-    margin-bottom: 0.4em;
+    margin: 0 0.15em 0.4em 0;
+    font: bold 10vw 'Anonymous Pro', 'Courier New', Courier, monospace;
+    text-align: center;
+    width: 8vw;
 }
 
 h1, .card {
     user-select: none;
 }
 
-.card, .separator {
-    font-family: 'Anonymous Pro', 'Courier New', Courier, monospace;
-    font-weight: bold;
-    text-align: center;
-    width: 8vw;
-    font-size: 10vw;
-    padding-top: 0.16em;
-    padding-bottom: 0.17em;
-    margin-right: 0.15em;
-}
-
 .discarded {
     background-color: #d8d8d8;
+    border-color: #a0a0a0;
     margin-top: 0.4em;
     margin-bottom: 0;
 }
