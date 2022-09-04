@@ -29,6 +29,10 @@ h1 {
     margin-bottom: 0.4em;
 }
 
+h1, .card {
+    user-select: none;
+}
+
 .card, .separator {
     font-family: 'Anonymous Pro', 'Courier New', Courier, monospace;
     font-weight: bold;
