@@ -12,7 +12,7 @@ class Card extends React.Component<CardProps, {}> {
     }
 
     render() {
-        return <li className={`card ${this.props.dealtCard.kept ? "" : "discarded"}`} onClick={this.props.toggleKept}>{this.props.dealtCard.rank}</li>;
+        return <li className={`card${this.props.dealtCard.kept ? "" : " discarded"}`} onClick={this.props.toggleKept}>{this.props.dealtCard.rank}</li>;
     }
 }
 
