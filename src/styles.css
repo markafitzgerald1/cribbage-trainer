@@ -5,10 +5,23 @@ html {
 }
 
 h1 {
-    color: #eee;
-    font-family: sans-serif;
     width: 50%;
     font-size: 5.9vw;
+}
+
+.sortorder {
+    width: 50%;
+    font-size: 2.6vw;
+    margin-bottom: 0.9em;
+}
+
+h1, .sortorder {
+    color: #eee;
+    font-family: sans-serif;
+}
+
+.sort-order-description {
+    color: #ddd;
 }
 
 .hand {
@@ -21,7 +34,6 @@ h1 {
     display: inline;
     padding: 0.16em 0.21em 0.17em 0.29em;
     border: 0.025em solid #c0c0c0;
-    border-radius: 0.12em;
     background-color: white;
     cursor: pointer;
     margin: 0 0.15em 0.4em 0;
@@ -30,13 +42,35 @@ h1 {
     width: 8vw;
 }
 
-h1, .card {
+h1, .card, .sortorder {
     user-select: none;
 }
 
 .discarded {
-    background-color: #d8d8d8;
-    border-color: #a0a0a0;
+    background-color: #ababab;
+    border-color: #616161;
+    color: #5c5c5c;
     margin-top: 0.4em;
     margin-bottom: 0;
+}
+
+input[type="radio"] {
+    appearance: none;
+}
+
+input[type="radio"] + label {
+    border: solid;
+    color: lightgray;
+    border-color: black;
+    padding: 0.5em;
+}
+
+.card, input[type="radio"] + label {
+    border-width: thin;
+    border-radius: 0.12em;
+}
+
+input[type="radio"]:checked + label {
+    color: black;
+    background: lightgreen;
 }
