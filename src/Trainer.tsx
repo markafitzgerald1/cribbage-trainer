@@ -81,8 +81,8 @@ class Trainer extends React.Component<{}, { dealtCards: DealtCard[], sortOrder: 
     constructor(props: {}) {
         super(props);
         this.state = {
-            dealtCards: Array.from({ length: 6 }, () => Math.floor(Math.random() * 13)).map((rankValue, index) => ({ rankLabel: "A23456789TJQK"[rankValue], rankValue, kept: true, index })),
-            sortOrder: SortOrdering.DealOrder
+            dealtCards: Array.from({ length: 6 }, () => Math.floor(Math.random() * 13)).map((rankValue, index) => ({ rankLabel: "A23456789TJQK"[rankValue], rankValue, kept: true, index })).sort(this.descendingCompareFn),
+            sortOrder: SortOrdering.Descending
         };
     }
 
@@ -95,6 +95,8 @@ class Trainer extends React.Component<{}, { dealtCards: DealtCard[], sortOrder: 
         });
     }
 
+    descendingCompareFn = ((a: DealtCard, b: DealtCard) => b.rankValue - a.rankValue);
+
     setSortOrder = (sortOrder: string) => {
         this.setState((state) => {
             const newSortOrder: SortOrdering = SortOrdering[sortOrder];
@@ -103,7 +105,7 @@ class Trainer extends React.Component<{}, { dealtCards: DealtCard[], sortOrder: 
                     state.dealtCards.sort((a, b) => a.rankValue - b.rankValue);
                     break;
                 case SortOrdering.Descending:
-                    state.dealtCards.sort((a, b) => b.rankValue - a.rankValue);
+                    state.dealtCards.sort(this.descendingCompareFn);
                     break;
                 default:
                     state.dealtCards.sort((a, b) => a.index - b.index);
