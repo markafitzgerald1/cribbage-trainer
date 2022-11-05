@@ -15,7 +15,7 @@ h1 {
     margin-bottom: 0.9em;
 }
 
-h1, .sortorder {
+h1, .sortorder, .calculations {
     color: #eee;
     font-family: sans-serif;
 }
@@ -37,9 +37,14 @@ h1, .sortorder {
     background-color: white;
     cursor: pointer;
     margin: 0 0.15em 0.4em 0;
-    font: bold 10vw 'Anonymous Pro', 'Courier New', Courier, monospace;
+    font-weight: bold;
+    font-size: 10vw;
     text-align: center;
     width: 8vw;
+}
+
+.card, .keep-discard {
+    font-family: 'Anonymous Pro', 'Courier New', Courier, monospace;
 }
 
 h1, .card, .sortorder {
