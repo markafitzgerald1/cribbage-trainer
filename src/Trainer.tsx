@@ -20,7 +20,7 @@ class Card extends React.Component<CardProps, {}> {
         super(props);
     }
 
-    render() {
+    override render() {
         return <li className={`card${this.props.dealtCard.kept ? "" : " discarded"}`} onClick={this.props.toggleKept}>{this.props.dealtCard.rankLabel}</li>;
     }
 }
@@ -35,7 +35,7 @@ class Hand extends React.Component<HandProps, {}> {
         super(props);
     }
 
-    render() {
+    override render() {
         return <ul className="hand">
             {/* TODO: auto-calculate as user clicks: post-cut hand value, pre-cut and opponent discard crib value, pre-cut crib value, pre-opponent discard crib value, post-cut and opponent discard crib value, sum of both */}
             {/* TODO: auto-analyze as user clicks: expected hand, crib values for each possible discard */}
@@ -67,7 +67,7 @@ class SortOrder extends React.Component<{ sortOrder: SortOrdering, setSortOrder:
         this.props.setSortOrder(e.currentTarget.value);
     }
 
-    render() {
+    override render() {
         return <div className="sortorder">
             <span>Sort: </span>
             {Object.keys(SortOrdering).filter(key => !isNaN(Number(SortOrdering[key]))).map((key) => <span key={SortOrdering[key]}>
@@ -91,7 +91,7 @@ function handToString(dealtCards: DealtCard[]) {
 type ScoredKeepDiscard = KeepDiscard & { points: number };
 
 class Calculation extends React.Component<{ scoredKeepDiscard: ScoredKeepDiscard }> {
-    render() {
+    override render() {
         return <div><span className="keep-discard">{handToString(this.props.scoredKeepDiscard.keep)}</span>-<span className="keep-discard">{handToString(this.props.scoredKeepDiscard.discard)}</span> for {this.props.scoredKeepDiscard.points} points</div>;
     }
 }
@@ -108,7 +108,7 @@ const COUNT = {
 } as const;
 
 class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
-    render() {
+    override render() {
         return <div className="calculations">
             {this.getAllKeepDiscardCombinations().map((keepDiscard) => ({ keep: keepDiscard.keep, discard: keepDiscard.discard, points: this.countPoints(keepDiscard.keep) })).sort((a, b) => b.points - a.points).map((scoredKeepDiscard) => <Calculation scoredKeepDiscard={scoredKeepDiscard} key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard].map((dealtCard) => dealtCard.rankLabel).join('')} />)}
         </div>
@@ -233,7 +233,7 @@ class Trainer extends React.Component<{}, { dealtCards: DealtCard[], sortOrder: 
         });
     }
 
-    render() {
+    override render() {
         return <div>
             <SortOrder sortOrder={this.state.sortOrder} setSortOrder={this.setSortOrder} />
             <Hand dealtCards={this.state.dealtCards} toggleKept={this.toggleKept}/>
