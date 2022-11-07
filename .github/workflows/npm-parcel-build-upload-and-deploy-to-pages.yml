@@ -9,6 +9,7 @@ jobs:
         with:
           node-version: '16'
       - run: npm install
+      - run: npm run lint
       - run: npm run typeCheck
       - run: npm run build
       - name: Upload GitHub Pages artifact

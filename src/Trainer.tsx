@@ -15,7 +15,7 @@ type CardProps = {
     toggleKept: () => void
 };
 
-class Card extends React.Component<CardProps, {}> {
+class Card extends React.Component<CardProps> {
     constructor(props: CardProps) {
         super(props);
     }
@@ -30,7 +30,7 @@ type HandProps = {
     toggleKept: (index: number) => void
 };
 
-class Hand extends React.Component<HandProps, {}> {
+class Hand extends React.Component<HandProps> {
     constructor(props: HandProps) {
         super(props);
     }
@@ -190,8 +190,8 @@ class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
 const CARD_LABELS = "A23456789TJQK";
 const MAXIMUM_CARD_COUNTING_VALUE = 10;
 
-class Trainer extends React.Component<{}, { dealtCards: DealtCard[], sortOrder: SortOrdering, showCalculations: boolean }> {
-    constructor(props: {}) {
+class Trainer extends React.Component<Record<string, never>, { dealtCards: DealtCard[], sortOrder: SortOrdering, showCalculations: boolean }> {
+    constructor(props: Record<string, never>) {
         super(props);
         this.state = {
             dealtCards: Array.from({ length: 6 }, () => Math.floor(Math.random() * 13)).map((rankValue, index) => ({ rankLabel: CARD_LABELS[rankValue], rankValue, count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE), kept: true, index })).sort(this.descendingCompareFn),
@@ -242,4 +242,4 @@ class Trainer extends React.Component<{}, { dealtCards: DealtCard[], sortOrder: 
     }
 }
 
-ReactDOMClient.createRoot(document.querySelector('#trainer')!).render(<Trainer />);
+ReactDOMClient.createRoot(document.querySelector('#trainer') ?? document.documentElement).render(<Trainer />);

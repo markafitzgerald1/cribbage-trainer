@@ -9,5 +9,5 @@ Code in `main` is automatically built on `git push` and deployed to [GitHub Page
 ## Local and development setup
 
 - Install third-party dependencies: `npm install`
-- Run locally in development mode: `npm run clean && npm run typeCheck && npm start`
-- Build and run locally in production (GitHub Pages) mode: `npm run typeCheck && npm run build && npm start`
+- Run locally in development mode: `npm run clean && npm run lint && npm run typeCheck && npm start`
+- Build and run locally in production (GitHub Pages) mode: `npm run clean && npm run lint && npm run typeCheck && npm run build && npm start`
