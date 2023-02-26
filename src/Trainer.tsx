@@ -1,4 +1,4 @@
-// TODO: add formatter, linter (static code analysis tool) to project, build pipeline and GitHub Actions Workflow.
+// TODO: add formatter, linter TODO checks to project, build pipeline and GitHub Actions Workflow.
 import React from 'react';
 import ReactDOMClient from 'react-dom/client';
 
@@ -68,7 +68,7 @@ class SortOrder extends React.Component<{ sortOrder: SortOrdering, setSortOrder:
     }
 
     override render() {
-        return <div className="sortorder">
+        return <div className="sort-order">
             <span>Sort: </span>
             {Object.keys(SortOrdering).filter(key => !isNaN(Number(SortOrdering[key]))).map((key) => <span key={SortOrdering[key]}>
                 <input type="radio" id={key} name="sort" value={SortOrdering[SortOrdering[key]]} checked={this.props.sortOrder === SortOrdering[key]} onChange={this.onChange} />
@@ -171,11 +171,11 @@ class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
         for (let i=0; i<this.props.dealtCards.length; i++) {
             for (let j=i+1; j<this.props.dealtCards.length; j++) {
                 const discard = this.props.dealtCards.filter((_, index) => index === i || index === j);
-                const discardStr1 = discard[0].rankLabel + discard[1].rankLabel;
-                const discardStr2 = discard[1].rankLabel + discard[0].rankLabel;
-                if (!seenDiscards.has(discardStr1) && !seenDiscards.has(discardStr2)) {
-                    seenDiscards.add(discardStr1);
-                    seenDiscards.add(discardStr2);
+                const discard01 = discard[0].rankLabel + discard[1].rankLabel;
+                const discard10 = discard[1].rankLabel + discard[0].rankLabel;
+                if (!seenDiscards.has(discard01) && !seenDiscards.has(discard10)) {
+                    seenDiscards.add(discard01);
+                    seenDiscards.add(discard10);
                     keepDiscards.push({
                         keep: this.props.dealtCards.filter((_, index) => index !== i && index !== j),
                         discard

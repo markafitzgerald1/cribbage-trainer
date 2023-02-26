@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap');
 
+/* TODO: Add a CSS linter, spell checker */
+
 html {
     background-color: green;
 }
@@ -9,13 +11,13 @@ h1 {
     font-size: 5.9vw;
 }
 
-.sortorder {
+.sort-order {
     width: 50%;
     font-size: 2.6vw;
     margin-bottom: 0.9em;
 }
 
-h1, .sortorder, .calculations {
+h1, .sort-order, .calculations {
     color: #eee;
     font-family: sans-serif;
 }
@@ -47,7 +49,7 @@ h1, .sortorder, .calculations {
     font-family: 'Anonymous Pro', 'Courier New', Courier, monospace;
 }
 
-h1, .card, .sortorder {
+h1, .card, .sort-order {
     user-select: none;
 }
 
