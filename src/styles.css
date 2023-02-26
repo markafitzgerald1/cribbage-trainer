@@ -1,83 +1,89 @@
-@import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap");
 
 /* TODO: Add a CSS linter, spell checker */
 
 html {
-    background-color: green;
+  background-color: green;
 }
 
 h1 {
-    width: 50%;
-    font-size: 5.9vw;
+  width: 50%;
+  font-size: 5.9vw;
 }
 
 .sort-order {
-    width: 50%;
-    font-size: 2.6vw;
-    margin-bottom: 0.9em;
+  width: 50%;
+  font-size: 2.6vw;
+  margin-bottom: 0.9em;
 }
 
-h1, .sort-order, .calculations {
-    color: #eee;
-    font-family: sans-serif;
+h1,
+.sort-order,
+.calculations {
+  color: #eee;
+  font-family: sans-serif;
 }
 
 .sort-order-description {
-    color: #ddd;
+  color: #ddd;
 }
 
 .hand {
-    display: flex;
-    justify-content: space-evenly;
-    padding: 0;
+  display: flex;
+  justify-content: space-evenly;
+  padding: 0;
 }
 
 .card {
-    display: inline;
-    padding: 0.16em 0.21em 0.17em 0.29em;
-    border: 0.025em solid #c0c0c0;
-    background-color: white;
-    cursor: pointer;
-    margin: 0 0.15em 0.4em 0;
-    font-weight: bold;
-    font-size: 10vw;
-    text-align: center;
-    width: 8vw;
+  display: inline;
+  padding: 0.16em 0.21em 0.17em 0.29em;
+  border: 0.025em solid #c0c0c0;
+  background-color: white;
+  cursor: pointer;
+  margin: 0 0.15em 0.4em 0;
+  font-weight: bold;
+  font-size: 10vw;
+  text-align: center;
+  width: 8vw;
 }
 
-.card, .keep-discard {
-    font-family: 'Anonymous Pro', 'Courier New', Courier, monospace;
+.card,
+.keep-discard {
+  font-family: "Anonymous Pro", "Courier New", Courier, monospace;
 }
 
-h1, .card, .sort-order {
-    user-select: none;
+h1,
+.card,
+.sort-order {
+  user-select: none;
 }
 
 .discarded {
-    background-color: #ababab;
-    border-color: #616161;
-    color: #5c5c5c;
-    margin-top: 0.4em;
-    margin-bottom: 0;
+  background-color: #ababab;
+  border-color: #616161;
+  color: #5c5c5c;
+  margin-top: 0.4em;
+  margin-bottom: 0;
 }
 
 input[type="radio"] {
-    appearance: none;
+  appearance: none;
 }
 
 input[type="radio"] + label {
-    border: solid;
-    color: lightgray;
-    border-color: black;
-    padding: 0.5em;
+  border: solid;
+  color: lightgray;
+  border-color: black;
+  padding: 0.5em;
 }
 
-.card, input[type="radio"] + label {
-    border-width: thin;
-    border-radius: 0.12em;
+.card,
+input[type="radio"] + label {
+  border-width: thin;
+  border-radius: 0.12em;
 }
 
 input[type="radio"]:checked + label {
-    color: black;
-    background: lightgreen;
+  color: black;
+  background: lightgreen;
 }
