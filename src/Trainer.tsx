@@ -90,7 +90,7 @@ class SortOrder extends React.Component<{
       <div className="sort-order">
         <span>Sort: </span>
         {Object.keys(SortOrdering)
-          .filter((key) => !isNaN(Number(SortOrdering[key])))
+          .filter((key) => isNaN(Number(key)))
           .map((key) => (
             <span key={SortOrdering[key]}>
               <input
