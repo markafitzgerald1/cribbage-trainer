@@ -241,12 +241,13 @@ class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
     const keepDiscards: KeepDiscard[] = [];
     const seenDiscards: Set<string> = new Set();
     for (let i = 0; i < this.props.dealtCards.length; i++) {
+      const iCard = this.props.dealtCards[i] as DealtCard;
+      const iLabel = iCard.rankLabel;
       for (let j = i + 1; j < this.props.dealtCards.length; j++) {
-        const discard = this.props.dealtCards.filter(
-          (_, index) => index === i || index === j
-        );
-        const discard01 = discard[0].rankLabel + discard[1].rankLabel;
-        const discard10 = discard[1].rankLabel + discard[0].rankLabel;
+        const jCard = this.props.dealtCards[j] as DealtCard;
+        const jLabel = jCard.rankLabel;
+        const discard01 = iLabel + jLabel;
+        const discard10 = jLabel + iLabel;
         if (!seenDiscards.has(discard01) && !seenDiscards.has(discard10)) {
           seenDiscards.add(discard01);
           seenDiscards.add(discard10);
@@ -254,7 +255,7 @@ class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
             keep: this.props.dealtCards.filter(
               (_, index) => index !== i && index !== j
             ),
-            discard,
+            discard: [iCard, jCard],
           });
         }
       }
