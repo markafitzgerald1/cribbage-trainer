@@ -185,40 +185,38 @@ class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
     let threeRuns = 0,
       fourRuns = 0;
     for (let i = 0; i < keepCopy.length; i++) {
+      const iCard = keepCopy[i] as DealtCard;
       for (let j = i + 1; j < keepCopy.length; j++) {
-        if (keepCopy[i].rankValue === keepCopy[j].rankValue) {
+        const jCard = keepCopy[j] as DealtCard;
+        if (iCard.rankValue === jCard.rankValue) {
           ans += POINTS.PAIR;
         }
-        if (keepCopy[i].count + keepCopy[j].count == 15) {
+        if (iCard.count + jCard.count == 15) {
           ans += POINTS.FIFTEENS;
         }
         for (let k = j + 1; k < keepCopy.length; k++) {
-          if (
-            keepCopy[i].count + keepCopy[j].count + keepCopy[k].count ==
-            COUNT.FIFTEEN
-          ) {
+          const kCard = keepCopy[k] as DealtCard;
+          if (iCard.count + jCard.count + kCard.count == COUNT.FIFTEEN) {
             ans += POINTS.FIFTEENS;
           }
           if (
-            keepCopy[i].rankValue + 1 === keepCopy[j].rankValue &&
-            keepCopy[j].rankValue + 1 === keepCopy[k].rankValue
+            iCard.rankValue + 1 === jCard.rankValue &&
+            jCard.rankValue + 1 === kCard.rankValue
           ) {
             threeRuns++;
           }
           for (let l = k + 1; l < keepCopy.length; l++) {
+            const lCard = keepCopy[l] as DealtCard;
             if (
-              keepCopy[i].count +
-                keepCopy[j].count +
-                keepCopy[k].count +
-                keepCopy[l].count ==
+              iCard.count + jCard.count + kCard.count + lCard.count ==
               COUNT.FIFTEEN
             ) {
               ans += POINTS.FIFTEENS;
             }
             if (
-              keepCopy[i].rankValue + 1 === keepCopy[j].rankValue &&
-              keepCopy[j].rankValue + 1 === keepCopy[k].rankValue &&
-              keepCopy[k].rankValue + 1 === keepCopy[l].rankValue
+              iCard.rankValue + 1 === jCard.rankValue &&
+              jCard.rankValue + 1 === kCard.rankValue &&
+              kCard.rankValue + 1 === lCard.rankValue
             ) {
               fourRuns++;
             }
