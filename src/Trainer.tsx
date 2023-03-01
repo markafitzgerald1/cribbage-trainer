@@ -294,8 +294,19 @@ class Trainer extends React.Component<
   }
 
   toggleKept = (index: number) => {
+    if (
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= this.state.dealtCards.length
+    ) {
+      throw Error(
+        `Invalid dealtCards ${this.state.dealtCards} index ${index}.`
+      );
+    }
+
     this.setState((state) => {
-      state.dealtCards[index].kept = !state.dealtCards[index].kept;
+      const dealtCard = state.dealtCards[index] as DealtCard;
+      dealtCard.kept = !dealtCard.kept;
       return {
         dealtCards: state.dealtCards,
         showCalculations:
