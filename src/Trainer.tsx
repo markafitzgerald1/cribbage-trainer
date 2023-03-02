@@ -59,7 +59,7 @@ class Hand extends React.Component<HandProps> {
   }
 }
 
-enum SortOrdering {
+enum Sort {
   DealOrder,
   Descending,
   Ascending,
@@ -77,29 +77,31 @@ const SortDescription = {
   Ascending: "ascending",
 };
 
+type SortName = keyof typeof Sort;
+
 class SortOrder extends React.Component<{
-  sortOrder: SortOrdering;
-  setSortOrder: (sortOrder: string) => void;
+  sortOrder: Sort;
+  setSortOrder: (sortOrder: SortName) => void;
 }> {
   onChange = (e: React.FormEvent<HTMLInputElement>) => {
-    this.props.setSortOrder(e.currentTarget.value);
+    this.props.setSortOrder(e.currentTarget.value as SortName);
   };
 
   override render() {
     return (
       <div className="sort-order">
         <span>Sort: </span>
-        {Object.keys(SortOrdering)
+        {Object.keys(Sort)
           .filter((key) => isNaN(Number(key)))
-          .map((key) => key as "DealOrder" | "Descending" | "Ascending")
+          .map((key) => key as SortName)
           .map((key) => (
-            <span key={SortOrdering[key]}>
+            <span key={Sort[key]}>
               <input
                 type="radio"
                 id={key}
                 name="sort"
-                value={SortOrdering[SortOrdering[key]]}
-                checked={this.props.sortOrder === SortOrdering[key]}
+                value={Sort[Sort[key]]}
+                checked={this.props.sortOrder === Sort[key]}
                 onChange={this.onChange}
               />
               <label htmlFor={key}>{SortLabel[key]}</label>
@@ -107,7 +109,7 @@ class SortOrder extends React.Component<{
           ))}
         <span className="sort-order-description">
           {" "}
-          ({SortDescription[SortOrdering[this.props.sortOrder]]})
+          ({SortDescription[Sort[this.props.sortOrder]]})
         </span>
       </div>
     );
@@ -270,7 +272,7 @@ class Trainer extends React.Component<
   Record<string, never>,
   {
     dealtCards: DealtCard[];
-    sortOrder: SortOrdering;
+    sortOrder: Sort;
     showCalculations: boolean;
   }
 > {
@@ -288,7 +290,7 @@ class Trainer extends React.Component<
           index,
         }))
         .sort(this.descendingCompareFn),
-      sortOrder: SortOrdering.Descending,
+      sortOrder: Sort.Descending,
       showCalculations: false,
     };
   }
@@ -318,14 +320,13 @@ class Trainer extends React.Component<
   descendingCompareFn = (a: DealtCard, b: DealtCard) =>
     b.rankValue - a.rankValue;
 
-  setSortOrder = (sortOrder: string) => {
+  setSortOrder = (sortOrder: SortName) => {
     this.setState((state) => {
-      const newSortOrder: SortOrdering = SortOrdering[sortOrder];
-      switch (newSortOrder) {
-        case SortOrdering.Ascending:
+      switch (Sort[sortOrder]) {
+        case Sort.Ascending:
           state.dealtCards.sort((a, b) => a.rankValue - b.rankValue);
           break;
-        case SortOrdering.Descending:
+        case Sort.Descending:
           state.dealtCards.sort(this.descendingCompareFn);
           break;
         default:
@@ -333,7 +334,7 @@ class Trainer extends React.Component<
           break;
       }
       return {
-        sortOrder: SortOrdering[sortOrder],
+        sortOrder: Sort[sortOrder],
         dealtCards: state.dealtCards,
       };
     });
