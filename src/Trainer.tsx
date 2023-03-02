@@ -280,7 +280,7 @@ class Trainer extends React.Component<
         Math.floor(Math.random() * 13)
       )
         .map((rankValue, index) => ({
-          rankLabel: CARD_LABELS[rankValue],
+          rankLabel: CARD_LABELS[rankValue] as string,
           rankValue,
           count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
           kept: true,
