@@ -91,6 +91,7 @@ class SortOrder extends React.Component<{
         <span>Sort: </span>
         {Object.keys(SortOrdering)
           .filter((key) => isNaN(Number(key)))
+          .map((key) => key as "DealOrder" | "Descending" | "Ascending")
           .map((key) => (
             <span key={SortOrdering[key]}>
               <input
