@@ -9,7 +9,7 @@ jobs:
         with:
           node-version: "16"
       - run: npm install
-      - run: npm run lintTypeCheckAndAudit
+      - run: npm run lintTypeCheckAuditAndOutdatedCheck
       - run: npm run build
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v1.0.3
