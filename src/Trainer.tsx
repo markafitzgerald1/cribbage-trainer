@@ -340,24 +340,26 @@ class Trainer extends React.Component<
 
   override render() {
     return (
-      <div>
-        <SortOrder
-          sortOrder={this.state.sortOrder}
-          setSortOrder={this.setSortOrder}
-        />
-        <Hand dealtCards={this.state.dealtCards} toggleKept={this.toggleKept} />
-        {!this.state.showCalculations || (
-          <Calculations dealtCards={this.state.dealtCards} />
-        )}
-      </div>
+      <React.StrictMode>
+        <div>
+          <SortOrder
+            sortOrder={this.state.sortOrder}
+            setSortOrder={this.setSortOrder}
+          />
+          <Hand
+            dealtCards={this.state.dealtCards}
+            toggleKept={this.toggleKept}
+          />
+          {!this.state.showCalculations || (
+            <Calculations dealtCards={this.state.dealtCards} />
+          )}
+        </div>
+      </React.StrictMode>
     );
   }
 }
 
+// TODO: add a test which would fail if I hand <React.StrictMode><Trainer /></React.StrictMode> to render()
 ReactDOMClient.createRoot(
   document.querySelector("#trainer") ?? document.documentElement
-).render(
-  <React.StrictMode>
-    <Trainer />
-  </React.StrictMode>
-);
+).render(<Trainer />);
