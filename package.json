@@ -4,14 +4,15 @@
   "version": "0.1.0",
   "source": "src/index.html",
   "scripts": {
-    "start": "parcel serve --public-url /cribbage-trainer",
-    "typeCheck": "tsc",
+    "prepare": "husky install",
+    "lintTypeCheckAndAudit": "npm run lint && npm run typeCheck && npm audit",
     "lint": "eslint . && stylelint '**/*.css' && prettier --check . && cspell '**' --gitignore",
-    "prettier": "prettier --write .",
     "stylelint": "stylelint --fix '**/*.css'",
+    "prettier": "prettier --write .",
+    "typeCheck": "tsc",
     "build": "parcel build --public-url /cribbage-trainer",
-    "clean": "rm -rf dist",
-    "prepare": "husky install"
+    "start": "parcel serve --public-url /cribbage-trainer",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
     "@types/react": "^18.0.17",
