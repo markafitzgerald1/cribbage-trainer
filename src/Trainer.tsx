@@ -15,17 +15,15 @@ type CardProps = {
   toggleKept: () => void;
 };
 
-class Card extends React.Component<CardProps> {
-  override render() {
-    return (
-      <li
-        className={`card${this.props.dealtCard.kept ? "" : " discarded"}`}
-        onClick={this.props.toggleKept}
-      >
-        {this.props.dealtCard.rankLabel}
-      </li>
-    );
-  }
+function Card(props: CardProps) {
+  return (
+    <li
+      className={`card${props.dealtCard.kept ? "" : " discarded"}`}
+      onClick={props.toggleKept}
+    >
+      {props.dealtCard.rankLabel}
+    </li>
+  );
 }
 
 type HandProps = {
