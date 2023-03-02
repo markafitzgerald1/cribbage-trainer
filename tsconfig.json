@@ -7,10 +7,10 @@
     "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    // "strict": true,  // TODO: enable strict mode
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    // "exactOptionalPropertyTypes": true,  // TODO: enable me
+    "exactOptionalPropertyTypes": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,

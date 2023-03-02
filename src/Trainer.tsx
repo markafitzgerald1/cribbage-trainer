@@ -71,12 +71,6 @@ const SortLabel = {
   Ascending: "↗️",
 };
 
-const SortDescription = {
-  DealOrder: "deal order",
-  Descending: "descending",
-  Ascending: "ascending",
-};
-
 type SortName = keyof typeof Sort;
 
 class SortOrder extends React.Component<{
@@ -109,7 +103,11 @@ class SortOrder extends React.Component<{
           ))}
         <span className="sort-order-description">
           {" "}
-          ({SortDescription[Sort[this.props.sortOrder]]})
+          (
+          {(Sort[this.props.sortOrder] as string)
+            .replace(/([a-z])([A-Z])/, "$1 $2")
+            .toLowerCase()}
+          )
         </span>
       </div>
     );
