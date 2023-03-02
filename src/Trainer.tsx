@@ -15,13 +15,13 @@ type CardProps = {
   toggleKept: () => void;
 };
 
-function Card(props: CardProps) {
+function Card({ dealtCard: { kept, rankLabel }, toggleKept }: CardProps) {
   return (
     <li
-      className={`card${props.dealtCard.kept ? "" : " discarded"}`}
-      onClick={props.toggleKept}
+      className={`card${kept ? "" : " discarded"}`}
+      onClick={toggleKept}
     >
-      {props.dealtCard.rankLabel}
+      {rankLabel}
     </li>
   );
 }
