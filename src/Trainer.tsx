@@ -356,4 +356,8 @@ class Trainer extends React.Component<
 
 ReactDOMClient.createRoot(
   document.querySelector("#trainer") ?? document.documentElement
-).render(<Trainer />);
+).render(
+  <React.StrictMode>
+    <Trainer />
+  </React.StrictMode>
+);
