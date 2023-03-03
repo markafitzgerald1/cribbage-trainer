@@ -54,9 +54,9 @@ enum Sort {
 }
 
 const SortLabel = {
+  Ascending: "↗️",
   DealOrder: "↔️",
   Descending: "↘️",
-  Ascending: "↗️",
 };
 
 type SortName = keyof typeof Sort;
@@ -65,8 +65,8 @@ class SortOrder extends React.Component<{
   sortOrder: Sort;
   setSortOrder: (sortOrder: SortName) => void;
 }> {
-  onChange = (e: React.FormEvent<HTMLInputElement>) => {
-    this.props.setSortOrder(e.currentTarget.value as SortName);
+  handleChange = (event: React.FormEvent<HTMLInputElement>) => {
+    this.props.setSortOrder(event.currentTarget.value as SortName);
   };
 
   override render() {
@@ -79,12 +79,12 @@ class SortOrder extends React.Component<{
           .map((key) => (
             <span key={Sort[key]}>
               <input
-                type="radio"
+                checked={this.props.sortOrder === Sort[key]}
                 id={key}
                 name="sort"
+                onChange={this.handleChange}
+                type="radio"
                 value={Sort[Sort[key]]}
-                checked={this.props.sortOrder === Sort[key]}
-                onChange={this.onChange}
               />
               <label htmlFor={key}>{SortLabel[key]}</label>
             </span>
@@ -93,7 +93,10 @@ class SortOrder extends React.Component<{
           {" "}
           (
           {(Sort[this.props.sortOrder] as string)
-            .replace(/([a-z])([A-Z])/, "$1 $2")
+            .replace(
+              /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
+              "$<lastLower> $<nextFirstUpper>"
+            )
             .toLowerCase()}
           )
         </span>
