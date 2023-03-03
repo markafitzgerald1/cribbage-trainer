@@ -31,26 +31,20 @@ type HandProps = {
   toggleKept: (index: number) => void;
 };
 
-class Hand extends React.Component<HandProps> {
-  constructor(props: HandProps) {
-    super(props);
-  }
-
-  override render() {
-    return (
-      <ul className="hand">
-        {/* TODO: auto-calculate as user clicks: post-cut hand value, pre-cut and opponent discard crib value, pre-cut crib value, pre-opponent discard crib value, post-cut and opponent discard crib value, sum of both */}
-        {/* TODO: auto-analyze as user clicks: expected hand, crib values for each possible discard */}
-        {this.props.dealtCards.map((dealtCard, index) => (
-          <Card
-            dealtCard={dealtCard}
-            toggleKept={() => this.props.toggleKept(index)}
-            key={dealtCard.index}
-          />
-        ))}
-      </ul>
-    );
-  }
+function Hand({ dealtCards, toggleKept }: HandProps) {
+  return (
+    <ul className="hand">
+      {/* TODO: auto-calculate as user clicks: post-cut hand value, pre-cut and opponent discard crib value, pre-cut crib value, pre-opponent discard crib value, post-cut and opponent discard crib value, sum of both */}
+      {/* TODO: auto-analyze as user clicks: expected hand, crib values for each possible discard */}
+      {dealtCards.map((dealtCard, index) => (
+        <Card
+          dealtCard={dealtCard}
+          key={dealtCard.index}
+          toggleKept={() => toggleKept(index)}
+        />
+      ))}
+    </ul>
+  );
 }
 
 enum Sort {
