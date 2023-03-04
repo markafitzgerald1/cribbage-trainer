@@ -70,6 +70,7 @@ class SortOrder extends React.Component<{
   };
 
   override render() {
+    const { sortOrder } = this.props;
     return (
       <div className="sort-order">
         <span>Sort: </span>
@@ -79,7 +80,7 @@ class SortOrder extends React.Component<{
           .map((key) => (
             <span key={Sort[key]}>
               <input
-                checked={this.props.sortOrder === Sort[key]}
+                checked={sortOrder === Sort[key]}
                 id={key}
                 name="sort"
                 onChange={this.handleChange}
@@ -92,7 +93,7 @@ class SortOrder extends React.Component<{
         <span className="sort-order-description">
           {" "}
           (
-          {(Sort[this.props.sortOrder] as string)
+          {(Sort[sortOrder] as string)
             .replace(
               /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
               "$<lastLower> $<nextFirstUpper>"
@@ -120,26 +121,24 @@ class Calculation extends React.Component<{
   scoredKeepDiscard: ScoredKeepDiscard;
 }> {
   override render() {
+    const {
+      scoredKeepDiscard: { keep, discard, points },
+    } = this.props;
     return (
       <div>
-        <span className="keep-discard">
-          {handToString(this.props.scoredKeepDiscard.keep)}
-        </span>
-        -
-        <span className="keep-discard">
-          {handToString(this.props.scoredKeepDiscard.discard)}
-        </span>{" "}
-        for {this.props.scoredKeepDiscard.points} points
+        <span className="keep-discard">{handToString(keep)}</span>-
+        <span className="keep-discard">{handToString(discard)}</span> for{" "}
+        {points} points
       </div>
     );
   }
 }
 
 const POINTS = {
-  PAIR: 2,
   FIFTEENS: 2,
-  THREE_CARD_RUN: 3,
   FOUR_CARD_RUN: 4,
+  PAIR: 2,
+  THREE_CARD_RUN: 3,
 } as const;
 
 const COUNT = {
@@ -147,70 +146,50 @@ const COUNT = {
 } as const;
 
 class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
-  override render() {
-    return (
-      <div className="calculations">
-        {this.getAllKeepDiscardCombinations()
-          .map((keepDiscard) => ({
-            keep: keepDiscard.keep,
-            discard: keepDiscard.discard,
-            points: this.countPoints(keepDiscard.keep),
-          }))
-          .sort((a, b) => b.points - a.points)
-          .map((scoredKeepDiscard) => (
-            <Calculation
-              scoredKeepDiscard={scoredKeepDiscard}
-              key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-                .map((dealtCard) => dealtCard.rankLabel)
-                .join("")}
-            />
-          ))}
-      </div>
-    );
-  }
-
-  countPoints(keep: DealtCard[]) {
+  static countPoints(keep: DealtCard[]) {
     // TODO: unit test me
     let ans = 0;
-    const keepCopy = [...keep].sort((a, b) => a.rankValue - b.rankValue);
+    const keepCopy = [...keep].sort(
+      (first, second) => first.rankValue - second.rankValue
+    );
 
-    let threeRuns = 0,
-      fourRuns = 0;
-    for (let i = 0; i < keepCopy.length; i++) {
-      const iCard = keepCopy[i] as DealtCard;
-      for (let j = i + 1; j < keepCopy.length; j++) {
-        const jCard = keepCopy[j] as DealtCard;
-        if (iCard.rankValue === jCard.rankValue) {
+    let threeRuns = 0;
+    let fourRuns = 0;
+    for (let index1 = 0; index1 < keepCopy.length; index1 += 1) {
+      const card1 = keepCopy[index1] as DealtCard;
+      for (let index2 = index1 + 1; index2 < keepCopy.length; index2 += 1) {
+        const card2 = keepCopy[index2] as DealtCard;
+        if (card1.rankValue === card2.rankValue) {
           ans += POINTS.PAIR;
         }
-        if (iCard.count + jCard.count == 15) {
+        if (card1.count + card2.count === COUNT.FIFTEEN) {
           ans += POINTS.FIFTEENS;
         }
-        for (let k = j + 1; k < keepCopy.length; k++) {
-          const kCard = keepCopy[k] as DealtCard;
-          if (iCard.count + jCard.count + kCard.count == COUNT.FIFTEEN) {
+        for (let index3 = index2 + 1; index3 < keepCopy.length; index3 += 1) {
+          const card3 = keepCopy[index3] as DealtCard;
+          if (card1.count + card2.count + card3.count === COUNT.FIFTEEN) {
             ans += POINTS.FIFTEENS;
           }
           if (
-            iCard.rankValue + 1 === jCard.rankValue &&
-            jCard.rankValue + 1 === kCard.rankValue
+            card1.rankValue + 1 === card2.rankValue &&
+            card2.rankValue + 1 === card3.rankValue
           ) {
-            threeRuns++;
+            threeRuns += 1;
           }
-          for (let l = k + 1; l < keepCopy.length; l++) {
-            const lCard = keepCopy[l] as DealtCard;
+          for (let index4 = index3 + 1; index4 < keepCopy.length; index4 += 1) {
+            const card4 = keepCopy[index4] as DealtCard;
             if (
-              iCard.count + jCard.count + kCard.count + lCard.count ==
+              card1.count + card2.count + card3.count + card4.count ===
               COUNT.FIFTEEN
             ) {
               ans += POINTS.FIFTEENS;
             }
             if (
-              iCard.rankValue + 1 === jCard.rankValue &&
-              jCard.rankValue + 1 === kCard.rankValue &&
-              kCard.rankValue + 1 === lCard.rankValue
+              card1.rankValue + 1 === card2.rankValue &&
+              card2.rankValue + 1 === card3.rankValue &&
+              card3.rankValue + 1 === card4.rankValue
             ) {
-              fourRuns++;
+              fourRuns += 1;
             }
           }
         }
@@ -230,32 +209,58 @@ class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
     // TODO: unit test this!
     const keepDiscards: KeepDiscard[] = [];
     const seenDiscards: Set<string> = new Set();
-    for (let i = 0; i < this.props.dealtCards.length; i++) {
-      const iCard = this.props.dealtCards[i] as DealtCard;
-      const iLabel = iCard.rankLabel;
-      for (let j = i + 1; j < this.props.dealtCards.length; j++) {
-        const jCard = this.props.dealtCards[j] as DealtCard;
-        const jLabel = jCard.rankLabel;
-        const discard01 = iLabel + jLabel;
-        const discard10 = jLabel + iLabel;
-        if (!seenDiscards.has(discard01) && !seenDiscards.has(discard10)) {
-          seenDiscards.add(discard01);
-          seenDiscards.add(discard10);
+    const { dealtCards } = this.props;
+    for (let index1 = 0; index1 < dealtCards.length; index1 += 1) {
+      const card1 = dealtCards[index1] as DealtCard;
+      const label1 = card1.rankLabel;
+      for (let index2 = index1 + 1; index2 < dealtCards.length; index2 += 1) {
+        const card2 = dealtCards[index2] as DealtCard;
+        const label2 = card2.rankLabel;
+        const discard12 = label1 + label2;
+        const discard21 = label2 + label1;
+        if (!seenDiscards.has(discard12) && !seenDiscards.has(discard21)) {
+          seenDiscards.add(discard12);
+          seenDiscards.add(discard21);
           keepDiscards.push({
-            keep: this.props.dealtCards.filter(
-              (_, index) => index !== i && index !== j
+            discard: [card1, card2],
+            keep: dealtCards.filter(
+              (_, index) => index !== index1 && index !== index2
             ),
-            discard: [iCard, jCard],
           });
         }
       }
     }
     return keepDiscards;
   }
+
+  override render() {
+    return (
+      <div className="calculations">
+        {this.getAllKeepDiscardCombinations()
+          .map((keepDiscard) => ({
+            discard: keepDiscard.discard,
+            keep: keepDiscard.keep,
+            points: Calculations.countPoints(keepDiscard.keep),
+          }))
+          .sort((card1, card2) => card2.points - card1.points)
+          .map((scoredKeepDiscard) => (
+            <Calculation
+              key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
+                .map((dealtCard) => dealtCard.rankLabel)
+                .join("")}
+              scoredKeepDiscard={scoredKeepDiscard}
+            />
+          ))}
+      </div>
+    );
+  }
 }
 
 const CARD_LABELS = "A23456789TJQK";
 const MAXIMUM_CARD_COUNTING_VALUE = 10;
+const CARDS_PER_DEALT_HAND = 6;
+const INDICES_PER_SUIT = 13;
+const CARDS_PER_DISCARD = 2;
 
 class Trainer extends React.Component<
   Record<string, never>,
@@ -268,82 +273,79 @@ class Trainer extends React.Component<
   constructor(props: Record<string, never>) {
     super(props);
     this.state = {
-      dealtCards: Array.from({ length: 6 }, () =>
-        Math.floor(Math.random() * 13)
+      dealtCards: Array.from({ length: CARDS_PER_DEALT_HAND }, () =>
+        Math.floor(Math.random() * INDICES_PER_SUIT)
       )
         .map((rankValue, index) => ({
+          count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
+          index,
+          kept: true,
           rankLabel: CARD_LABELS[rankValue] as string,
           rankValue,
-          count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
-          kept: true,
-          index,
         }))
         .sort(this.descendingCompareFn),
-      sortOrder: Sort.Descending,
       showCalculations: false,
+      sortOrder: Sort.Descending,
     };
   }
 
   toggleKept = (index: number) => {
-    if (
-      !Number.isInteger(index) ||
-      index < 0 ||
-      index >= this.state.dealtCards.length
-    ) {
-      throw Error(
-        `Invalid dealtCards ${this.state.dealtCards} index ${index}.`
-      );
+    const { dealtCards } = this.state;
+    if (!Number.isInteger(index) || index < 0 || index >= dealtCards.length) {
+      throw Error(`Invalid dealtCards ${dealtCards} index ${index}.`);
     }
 
     this.setState((state) => {
-      const dealtCard = state.dealtCards[index] as DealtCard;
-      dealtCard.kept = !dealtCard.kept;
+      const toggleCard = state.dealtCards[index] as DealtCard;
+      toggleCard.kept = !toggleCard.kept;
       return {
         dealtCards: state.dealtCards,
         showCalculations:
-          state.dealtCards.filter((dealtCard) => !dealtCard.kept).length == 2,
+          state.dealtCards.filter((dealtCard) => !dealtCard.kept).length ===
+          CARDS_PER_DISCARD,
       };
     });
   };
 
-  descendingCompareFn = (a: DealtCard, b: DealtCard) =>
-    b.rankValue - a.rankValue;
+  descendingCompareFn = (first: DealtCard, second: DealtCard) =>
+    second.rankValue - first.rankValue;
 
   setSortOrder = (sortOrder: SortName) => {
     this.setState((state) => {
       switch (Sort[sortOrder]) {
         case Sort.Ascending:
-          state.dealtCards.sort((a, b) => a.rankValue - b.rankValue);
+          state.dealtCards.sort(
+            (first, second) => first.rankValue - second.rankValue
+          );
           break;
         case Sort.Descending:
           state.dealtCards.sort(this.descendingCompareFn);
           break;
         default:
-          state.dealtCards.sort((a, b) => a.index - b.index);
+          state.dealtCards.sort((first, second) => first.index - second.index);
           break;
       }
       return {
-        sortOrder: Sort[sortOrder],
         dealtCards: state.dealtCards,
+        sortOrder: Sort[sortOrder],
       };
     });
   };
 
   override render() {
+    const { sortOrder, dealtCards, showCalculations } = this.state;
     return (
       <React.StrictMode>
         <div>
           <SortOrder
-            sortOrder={this.state.sortOrder}
             setSortOrder={this.setSortOrder}
+            sortOrder={sortOrder}
           />
           <Hand
-            dealtCards={this.state.dealtCards}
+            dealtCards={dealtCards}
             toggleKept={this.toggleKept}
           />
-          {!this.state.showCalculations || (
-            <Calculations dealtCards={this.state.dealtCards} />
-          )}
+          {!showCalculations || <Calculations dealtCards={dealtCards} />}
         </div>
       </React.StrictMode>
     );
