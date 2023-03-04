@@ -1,4 +1,3 @@
-// TODO: add linter TODO checks to project, build pipeline and GitHub Actions Workflow.
 import React from "react";
 import ReactDOMClient from "react-dom/client";
 
@@ -34,8 +33,6 @@ type HandProps = {
 function Hand({ dealtCards, toggleKept }: HandProps) {
   return (
     <ul className="hand">
-      {/* TODO: auto-calculate as user clicks: post-cut hand value, pre-cut and opponent discard crib value, pre-cut crib value, pre-opponent discard crib value, post-cut and opponent discard crib value, sum of both */}
-      {/* TODO: auto-analyze as user clicks: expected hand, crib values for each possible discard */}
       {dealtCards.map((dealtCard, index) => (
         <Card
           dealtCard={dealtCard}
@@ -147,7 +144,6 @@ const COUNT = {
 
 class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
   static countPoints(keep: DealtCard[]) {
-    // TODO: unit test me
     let ans = 0;
     const keepCopy = [...keep].sort(
       (first, second) => first.rankValue - second.rankValue
@@ -206,7 +202,6 @@ class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
   }
 
   getAllKeepDiscardCombinations() {
-    // TODO: unit test this!
     const keepDiscards: KeepDiscard[] = [];
     const seenDiscards: Set<string> = new Set();
     const { dealtCards } = this.props;
@@ -352,7 +347,6 @@ class Trainer extends React.Component<
   }
 }
 
-// TODO: add a test which would fail if I hand <React.StrictMode><Trainer /></React.StrictMode> to render()
 ReactDOMClient.createRoot(
   document.querySelector("#trainer") ?? document.documentElement
 ).render(<Trainer />);
