@@ -11,7 +11,8 @@ export function handToString(dealtCards: DealtCard[]) {
 export function Calculation({ keep, discard, points }: ScoredKeepDiscard) {
   return (
     <div>
-      <span className="keep-discard">{handToString(keep)}</span>-
+      <span className="keep-discard">{handToString(keep)}</span>
+      <span>-</span>
       <span className="keep-discard">{handToString(discard)}</span> for {points}{" "}
       points
     </div>
