@@ -1,255 +1,11 @@
+import { Calculations } from "./Calculations";
+import { DealtCard } from "./DealtCard";
+import { Hand } from "./Hand";
 import React from "react";
 import ReactDOMClient from "react-dom/client";
-
-type DealtCard = {
-  rankLabel: string;
-  rankValue: number;
-  count: number;
-  kept: boolean;
-  index: number;
-};
-
-type CardProps = {
-  dealtCard: DealtCard;
-  toggleKept: () => void;
-};
-
-function Card({ dealtCard: { kept, rankLabel }, toggleKept }: CardProps) {
-  return (
-    <li
-      className={`card${kept ? "" : " discarded"}`}
-      onClick={toggleKept}
-    >
-      {rankLabel}
-    </li>
-  );
-}
-
-type HandProps = {
-  dealtCards: DealtCard[];
-  toggleKept: (index: number) => void;
-};
-
-function Hand({ dealtCards, toggleKept }: HandProps) {
-  return (
-    <ul className="hand">
-      {dealtCards.map((dealtCard, index) => (
-        <Card
-          dealtCard={dealtCard}
-          key={dealtCard.index}
-          toggleKept={() => toggleKept(index)}
-        />
-      ))}
-    </ul>
-  );
-}
-
-enum Sort {
-  DealOrder,
-  Descending,
-  Ascending,
-}
-
-const SortLabel = {
-  Ascending: "↗️",
-  DealOrder: "↔️",
-  Descending: "↘️",
-};
-
-type SortName = keyof typeof Sort;
-
-class SortOrder extends React.Component<{
-  sortOrder: Sort;
-  setSortOrder: (sortOrder: SortName) => void;
-}> {
-  handleChange = (event: React.FormEvent<HTMLInputElement>) => {
-    this.props.setSortOrder(event.currentTarget.value as SortName);
-  };
-
-  override render() {
-    const { sortOrder } = this.props;
-    return (
-      <div className="sort-order">
-        <span>Sort: </span>
-        {Object.keys(Sort)
-          .filter((key) => isNaN(Number(key)))
-          .map((key) => key as SortName)
-          .map((key) => (
-            <span key={Sort[key]}>
-              <input
-                checked={sortOrder === Sort[key]}
-                id={key}
-                name="sort"
-                onChange={this.handleChange}
-                type="radio"
-                value={Sort[Sort[key]]}
-              />
-              <label htmlFor={key}>{SortLabel[key]}</label>
-            </span>
-          ))}
-        <span className="sort-order-description">
-          {" "}
-          (
-          {(Sort[sortOrder] as string)
-            .replace(
-              /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
-              "$<lastLower> $<nextFirstUpper>"
-            )
-            .toLowerCase()}
-          )
-        </span>
-      </div>
-    );
-  }
-}
-
-type KeepDiscard = {
-  keep: DealtCard[];
-  discard: DealtCard[];
-};
-
-function handToString(dealtCards: DealtCard[]) {
-  return dealtCards.map((dealtCard) => dealtCard.rankLabel).join("");
-}
-
-type ScoredKeepDiscard = KeepDiscard & { points: number };
-
-class Calculation extends React.Component<{
-  scoredKeepDiscard: ScoredKeepDiscard;
-}> {
-  override render() {
-    const {
-      scoredKeepDiscard: { keep, discard, points },
-    } = this.props;
-    return (
-      <div>
-        <span className="keep-discard">{handToString(keep)}</span>-
-        <span className="keep-discard">{handToString(discard)}</span> for{" "}
-        {points} points
-      </div>
-    );
-  }
-}
-
-const POINTS = {
-  FIFTEENS: 2,
-  FOUR_CARD_RUN: 4,
-  PAIR: 2,
-  THREE_CARD_RUN: 3,
-} as const;
-
-const COUNT = {
-  FIFTEEN: 15,
-} as const;
-
-class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
-  static countPoints(keep: DealtCard[]) {
-    let ans = 0;
-    const keepCopy = [...keep].sort(
-      (first, second) => first.rankValue - second.rankValue
-    );
-
-    let threeRuns = 0;
-    let fourRuns = 0;
-    for (let index1 = 0; index1 < keepCopy.length; index1 += 1) {
-      const card1 = keepCopy[index1] as DealtCard;
-      for (let index2 = index1 + 1; index2 < keepCopy.length; index2 += 1) {
-        const card2 = keepCopy[index2] as DealtCard;
-        if (card1.rankValue === card2.rankValue) {
-          ans += POINTS.PAIR;
-        }
-        if (card1.count + card2.count === COUNT.FIFTEEN) {
-          ans += POINTS.FIFTEENS;
-        }
-        for (let index3 = index2 + 1; index3 < keepCopy.length; index3 += 1) {
-          const card3 = keepCopy[index3] as DealtCard;
-          if (card1.count + card2.count + card3.count === COUNT.FIFTEEN) {
-            ans += POINTS.FIFTEENS;
-          }
-          if (
-            card1.rankValue + 1 === card2.rankValue &&
-            card2.rankValue + 1 === card3.rankValue
-          ) {
-            threeRuns += 1;
-          }
-          for (let index4 = index3 + 1; index4 < keepCopy.length; index4 += 1) {
-            const card4 = keepCopy[index4] as DealtCard;
-            if (
-              card1.count + card2.count + card3.count + card4.count ===
-              COUNT.FIFTEEN
-            ) {
-              ans += POINTS.FIFTEENS;
-            }
-            if (
-              card1.rankValue + 1 === card2.rankValue &&
-              card2.rankValue + 1 === card3.rankValue &&
-              card3.rankValue + 1 === card4.rankValue
-            ) {
-              fourRuns += 1;
-            }
-          }
-        }
-      }
-    }
-
-    if (fourRuns) {
-      ans += fourRuns * POINTS.FOUR_CARD_RUN;
-    } else if (threeRuns) {
-      ans += threeRuns * POINTS.THREE_CARD_RUN;
-    }
-
-    return ans;
-  }
-
-  getAllKeepDiscardCombinations() {
-    const keepDiscards: KeepDiscard[] = [];
-    const seenDiscards: Set<string> = new Set();
-    const { dealtCards } = this.props;
-    for (let index1 = 0; index1 < dealtCards.length; index1 += 1) {
-      const card1 = dealtCards[index1] as DealtCard;
-      const label1 = card1.rankLabel;
-      for (let index2 = index1 + 1; index2 < dealtCards.length; index2 += 1) {
-        const card2 = dealtCards[index2] as DealtCard;
-        const label2 = card2.rankLabel;
-        const discard12 = label1 + label2;
-        const discard21 = label2 + label1;
-        if (!seenDiscards.has(discard12) && !seenDiscards.has(discard21)) {
-          seenDiscards.add(discard12);
-          seenDiscards.add(discard21);
-          keepDiscards.push({
-            discard: [card1, card2],
-            keep: dealtCards.filter(
-              (_, index) => index !== index1 && index !== index2
-            ),
-          });
-        }
-      }
-    }
-    return keepDiscards;
-  }
-
-  override render() {
-    return (
-      <div className="calculations">
-        {this.getAllKeepDiscardCombinations()
-          .map((keepDiscard) => ({
-            discard: keepDiscard.discard,
-            keep: keepDiscard.keep,
-            points: Calculations.countPoints(keepDiscard.keep),
-          }))
-          .sort((card1, card2) => card2.points - card1.points)
-          .map((scoredKeepDiscard) => (
-            <Calculation
-              key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-                .map((dealtCard) => dealtCard.rankLabel)
-                .join("")}
-              scoredKeepDiscard={scoredKeepDiscard}
-            />
-          ))}
-      </div>
-    );
-  }
-}
+import { Sort } from "./Sort";
+import { SortName } from "./SortName";
+import { SortOrder } from "./SortOrder";
 
 const CARD_LABELS = "A23456789TJQK";
 const MAXIMUM_CARD_COUNTING_VALUE = 10;
@@ -265,6 +21,10 @@ class Trainer extends React.Component<
     showCalculations: boolean;
   }
 > {
+  static descendingCompareFn(first: DealtCard, second: DealtCard) {
+    return second.rankValue - first.rankValue;
+  }
+
   constructor(props: Record<string, never>) {
     super(props);
     this.state = {
@@ -278,7 +38,7 @@ class Trainer extends React.Component<
           rankLabel: CARD_LABELS[rankValue] as string,
           rankValue,
         }))
-        .sort(this.descendingCompareFn),
+        .sort(Trainer.descendingCompareFn),
       showCalculations: false,
       sortOrder: Sort.Descending,
     };
@@ -302,9 +62,6 @@ class Trainer extends React.Component<
     });
   };
 
-  descendingCompareFn = (first: DealtCard, second: DealtCard) =>
-    second.rankValue - first.rankValue;
-
   setSortOrder = (sortOrder: SortName) => {
     this.setState((state) => {
       switch (Sort[sortOrder]) {
@@ -314,7 +71,7 @@ class Trainer extends React.Component<
           );
           break;
         case Sort.Descending:
-          state.dealtCards.sort(this.descendingCompareFn);
+          state.dealtCards.sort(Trainer.descendingCompareFn);
           break;
         default:
           state.dealtCards.sort((first, second) => first.index - second.index);
