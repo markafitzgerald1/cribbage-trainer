@@ -112,10 +112,12 @@ export class Calculations extends React.Component<{ dealtCards: DealtCard[] }> {
           .sort((card1, card2) => card2.points - card1.points)
           .map((scoredKeepDiscard) => (
             <Calculation
+              discard={scoredKeepDiscard.discard}
+              keep={scoredKeepDiscard.keep}
               key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
                 .map((dealtCard) => dealtCard.rankLabel)
                 .join("")}
-              scoredKeepDiscard={scoredKeepDiscard}
+              points={scoredKeepDiscard.points}
             />
           ))}
       </div>
