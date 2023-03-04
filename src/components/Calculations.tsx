@@ -1,6 +1,6 @@
 import { Calculation } from "./Calculation";
-import { DealtCard } from "./DealtCard";
-import { KeepDiscard } from "./KeepDiscard";
+import { DealtCard } from "../DealtCard";
+import { KeepDiscard } from "../KeepDiscard";
 import React from "react";
 
 const POINTS = {

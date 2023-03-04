@@ -1,5 +1,5 @@
 import { Card } from "./Card";
-import { DealtCard } from "./DealtCard";
+import { DealtCard } from "../DealtCard";
 import React from "react";
 
 export type HandProps = {

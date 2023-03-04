@@ -1,6 +1,6 @@
 import React from "react";
-import { Sort } from "./Sort";
-import { SortName } from "./SortName";
+import { Sort } from "../Sort";
+import { SortName } from "../SortName";
 
 export class SortOrder extends React.Component<{
   sortOrder: Sort;

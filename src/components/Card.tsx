@@ -1,4 +1,4 @@
-import { DealtCard } from "./DealtCard";
+import { DealtCard } from "../DealtCard";
 import React from "react";
 
 export type CardProps = {

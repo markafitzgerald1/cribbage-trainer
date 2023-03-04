@@ -1,10 +1,10 @@
 import { Calculations } from "./Calculations";
-import { DealtCard } from "./DealtCard";
+import { DealtCard } from "../DealtCard";
 import { Hand } from "./Hand";
 import React from "react";
 import ReactDOMClient from "react-dom/client";
-import { Sort } from "./Sort";
-import { SortName } from "./SortName";
+import { Sort } from "../Sort";
+import { SortName } from "../SortName";
 import { SortOrder } from "./SortOrder";
 
 const CARD_LABELS = "A23456789TJQK";

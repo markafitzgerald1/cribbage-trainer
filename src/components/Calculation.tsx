@@ -1,5 +1,5 @@
-import { DealtCard } from "./DealtCard";
-import { KeepDiscard } from "./KeepDiscard";
+import { DealtCard } from "../DealtCard";
+import { KeepDiscard } from "../KeepDiscard";
 import React from "react";
 
 type ScoredKeepDiscard = KeepDiscard & { points: number };
