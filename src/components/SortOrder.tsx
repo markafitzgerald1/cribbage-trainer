@@ -13,8 +13,7 @@ export class SortOrder extends React.Component<{
   };
 
   handleChange = (event: React.FormEvent<HTMLInputElement>) => {
-    const { setSortOrder } = this.props;
-    setSortOrder(event.currentTarget.value as SortName);
+    this.props.setSortOrder(event.currentTarget.value as SortName);
   };
 
   override render() {

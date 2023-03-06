@@ -12,10 +12,9 @@ export function Hand({ dealtCards, toggleKept }: HandProps) {
     <ul className="hand">
       {dealtCards.map((dealtCard, index) => (
         <Card
-          dealOrderIndex={index}
           dealtCard={dealtCard}
           key={dealtCard.index}
-          toggleKept={toggleKept}
+          toggleKept={() => toggleKept(index)}
         />
       ))}
     </ul>
