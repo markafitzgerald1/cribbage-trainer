@@ -1,6 +1,6 @@
 import { Calculation } from "./Calculation";
-import { Combination } from "js-combinatorics";
 import { DealtCard } from "../DealtCard";
+import { KeepDiscard } from "../KeepDiscard";
 import React from "react";
 
 const POINTS = {
@@ -15,14 +15,29 @@ export const COUNT = {
 } as const;
 
 function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
-  return [...new Set([...new Combination(dealtCards, 2)])].map((discard) => ({
-    discard,
-    keep: dealtCards.filter(
-      (_, index) =>
-        index !== (discard[0] as DealtCard).index &&
-        index !== (discard[1] as DealtCard).index
-    ),
-  }));
+  const keepDiscards: KeepDiscard[] = [];
+  const seenDiscards: Set<string> = new Set();
+  for (let index1 = 0; index1 < dealtCards.length; index1 += 1) {
+    const card1 = dealtCards[index1] as DealtCard;
+    const label1 = card1.rankLabel;
+    for (let index2 = index1 + 1; index2 < dealtCards.length; index2 += 1) {
+      const card2 = dealtCards[index2] as DealtCard;
+      const label2 = card2.rankLabel;
+      const discard12 = label1 + label2;
+      const discard21 = label2 + label1;
+      if (!seenDiscards.has(discard12) && !seenDiscards.has(discard21)) {
+        seenDiscards.add(discard12);
+        seenDiscards.add(discard21);
+        keepDiscards.push({
+          discard: [card1, card2],
+          keep: dealtCards.filter(
+            (_, index) => index !== index1 && index !== index2
+          ),
+        });
+      }
+    }
+  }
+  return keepDiscards;
 }
 
 function countPoints(keep: DealtCard[]) {
