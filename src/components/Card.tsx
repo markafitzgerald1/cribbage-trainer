@@ -13,18 +13,6 @@ export class Card extends React.Component<CardProps> {
     this.handleClick = this.handleClick.bind(this);
   }
 
-  override shouldComponentUpdate(nextProps: CardProps) {
-    const {
-      dealOrderIndex,
-      dealtCard: { index, kept },
-    } = this.props;
-    return (
-      dealOrderIndex !== nextProps.dealOrderIndex ||
-      index !== nextProps.dealtCard.index ||
-      kept !== nextProps.dealtCard.kept
-    );
-  }
-
   handleClick() {
     const { dealOrderIndex, toggleKept } = this.props;
     toggleKept(dealOrderIndex);
