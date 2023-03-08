@@ -3,5 +3,5 @@ export type DealtCard = {
   rankValue: number;
   count: number;
   kept: boolean;
-  index: number;
+  dealOrder: number;
 };

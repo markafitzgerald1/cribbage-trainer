@@ -1,6 +1,6 @@
+import { Combination, PowerSet } from "js-combinatorics";
 import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
-import { Combination } from "js-combinatorics";
 import { DealtCard } from "../DealtCard";
 import React from "react";
 
@@ -22,63 +22,68 @@ function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
   }));
 }
 
-function countPoints(keep: DealtCard[]) {
-  let ans = 0;
-  const keepCopy = [...keep].sort(
-    (first, second) => first.rankValue - second.rankValue
-  );
+const CARD_COUNTS = {
+  FIFTEEN: 2,
+  FOUR_RUN: 4,
+  PAIR: 2,
+  THREE_RUN: 3,
+} as const;
 
-  let threeRuns = 0;
-  let fourRuns = 0;
-  for (let index1 = 0; index1 < keepCopy.length; index1 += 1) {
-    const card1 = keepCopy[index1] as DealtCard;
-    for (let index2 = index1 + 1; index2 < keepCopy.length; index2 += 1) {
-      const card2 = keepCopy[index2] as DealtCard;
-      if (card1.rankValue === card2.rankValue) {
-        ans += POINTS.PAIR;
-      }
-      if (card1.count + card2.count === COUNT.FIFTEEN) {
-        ans += POINTS.FIFTEENS;
-      }
-      for (let index3 = index2 + 1; index3 < keepCopy.length; index3 += 1) {
-        const card3 = keepCopy[index3] as DealtCard;
-        if (card1.count + card2.count + card3.count === COUNT.FIFTEEN) {
-          ans += POINTS.FIFTEENS;
-        }
-        if (
-          card1.rankValue + 1 === card2.rankValue &&
-          card2.rankValue + 1 === card3.rankValue
-        ) {
-          threeRuns += 1;
-        }
-        for (let index4 = index3 + 1; index4 < keepCopy.length; index4 += 1) {
-          const card4 = keepCopy[index4] as DealtCard;
-          if (
-            card1.count + card2.count + card3.count + card4.count ===
-            COUNT.FIFTEEN
-          ) {
-            ans += POINTS.FIFTEENS;
-          }
-          if (
-            card1.rankValue + 1 === card2.rankValue &&
-            card2.rankValue + 1 === card3.rankValue &&
-            card3.rankValue + 1 === card4.rankValue
-          ) {
-            fourRuns += 1;
-          }
-        }
-      }
-    }
-  }
+const pairsPoints = (keep: DealtCard[]) =>
+  [...new Combination(keep, CARD_COUNTS.PAIR)].filter(
+    (possiblePair) =>
+      (possiblePair[0] as DealtCard).rankValue ===
+      (possiblePair[1] as DealtCard).rankValue
+  ).length * POINTS.PAIR;
 
-  if (fourRuns) {
-    ans += fourRuns * POINTS.FOUR_CARD_RUN;
-  } else if (threeRuns) {
-    ans += threeRuns * POINTS.THREE_CARD_RUN;
-  }
+const fifteensPoints = (keep: DealtCard[]) =>
+  [...new PowerSet(keep)].filter(
+    (possibleFifteen) =>
+      possibleFifteen
+        .map((card) => card.count)
+        .reduce((count1, count2) => count1 + count2, 0) === COUNT.FIFTEEN
+  ).length * POINTS.FIFTEENS;
 
-  return ans;
-}
+// TODO: zip with itself better: https://stackoverflow.com/questions/22015684/zip-arrays-in-javascript
+// e.g. a=[2,3,4]; a.slice(1).map((e, i) => e - a[i]).every((diff) => diff === 1) // true
+const threeRunPoints = (keep: DealtCard[]) =>
+  [...new Combination(keep, CARD_COUNTS.THREE_RUN)]
+    .map((possibleThreeRun) => {
+      possibleThreeRun.sort(
+        (card1, card2) => card1.rankValue - card2.rankValue
+      );
+      return possibleThreeRun;
+    })
+    .filter(
+      (possibleThreeRun) =>
+        (possibleThreeRun[0] as DealtCard).rankValue + 1 ===
+          (possibleThreeRun[1] as DealtCard).rankValue &&
+        (possibleThreeRun[1] as DealtCard).rankValue + 1 ===
+          (possibleThreeRun[2] as DealtCard).rankValue
+    ).length * POINTS.THREE_CARD_RUN;
+
+// TODO: zip with itself better: https://stackoverflow.com/questions/22015684/zip-arrays-in-javascript
+// TODO: factor out common code with threeRunPoints if it exists post-zip().
+const fourRunPoints = (keep: DealtCard[]) =>
+  [...new Combination(keep, CARD_COUNTS.FOUR_RUN)]
+    .map((possibleFourRun) => {
+      possibleFourRun.sort((card1, card2) => card1.rankValue - card2.rankValue);
+      return possibleFourRun;
+    })
+    .filter(
+      (possibleFourRun) =>
+        (possibleFourRun[0] as DealtCard).rankValue + 1 ===
+          (possibleFourRun[1] as DealtCard).rankValue &&
+        (possibleFourRun[1] as DealtCard).rankValue + 1 ===
+          (possibleFourRun[2] as DealtCard).rankValue &&
+        (possibleFourRun[2] as DealtCard).rankValue + 1 ===
+          (possibleFourRun[3] as DealtCard).rankValue
+    ).length * POINTS.FOUR_CARD_RUN;
+
+const countPoints = (keep: DealtCard[]) =>
+  pairsPoints(keep) +
+  fifteensPoints(keep) +
+  (fourRunPoints(keep) || threeRunPoints(keep));
 
 export function Calculations({ dealtCards }: { dealtCards: DealtCard[] }) {
   return (
@@ -95,7 +100,7 @@ export function Calculations({ dealtCards }: { dealtCards: DealtCard[] }) {
             discard={scoredKeepDiscard.discard}
             keep={scoredKeepDiscard.keep}
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-              .map((dealtCard) => dealtCard.index)
+              .map((dealtCard) => dealtCard.dealOrder)
               .join("")}
             points={scoredKeepDiscard.points}
           />

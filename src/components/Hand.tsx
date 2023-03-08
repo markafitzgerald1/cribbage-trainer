@@ -14,7 +14,7 @@ export function Hand({ dealtCards, toggleKept }: HandProps) {
         <Card
           dealOrderIndex={index}
           dealtCard={dealtCard}
-          key={dealtCard.index}
+          key={dealtCard.dealOrder}
           toggleKept={toggleKept}
         />
       ))}

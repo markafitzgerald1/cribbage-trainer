@@ -31,9 +31,9 @@ class Trainer extends React.Component<
       dealtCards: Array.from({ length: CARDS_PER_DEALT_HAND }, () =>
         Math.floor(Math.random() * INDICES_PER_SUIT)
       )
-        .map((rankValue, index) => ({
+        .map((rankValue, dealOrder) => ({
           count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
-          index,
+          dealOrder,
           kept: true,
           rankLabel: CARD_LABELS[rankValue] as string,
           rankValue,
@@ -74,7 +74,9 @@ class Trainer extends React.Component<
           state.dealtCards.sort(Trainer.descendingCompareFn);
           break;
         default:
-          state.dealtCards.sort((first, second) => first.index - second.index);
+          state.dealtCards.sort(
+            (first, second) => first.dealOrder - second.dealOrder
+          );
           break;
       }
       return {
