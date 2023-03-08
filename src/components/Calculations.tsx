@@ -1,7 +1,8 @@
 import { Calculation } from "./Calculation";
 import { DealtCard } from "../DealtCard";
-import { KeepDiscard } from "../KeepDiscard";
 import React from "react";
+import { Combination } from "js-combinatorics";
+import { CARDS_PER_DISCARD } from "../cribbage";
 
 const POINTS = {
   FIFTEENS: 2,
@@ -10,34 +11,15 @@ const POINTS = {
   THREE_CARD_RUN: 3,
 } as const;
 
-export const COUNT = {
+const COUNT = {
   FIFTEEN: 15,
 } as const;
 
 function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
-  const keepDiscards: KeepDiscard[] = [];
-  const seenDiscards: Set<string> = new Set();
-  for (let index1 = 0; index1 < dealtCards.length; index1 += 1) {
-    const card1 = dealtCards[index1] as DealtCard;
-    const label1 = card1.rankLabel;
-    for (let index2 = index1 + 1; index2 < dealtCards.length; index2 += 1) {
-      const card2 = dealtCards[index2] as DealtCard;
-      const label2 = card2.rankLabel;
-      const discard12 = label1 + label2;
-      const discard21 = label2 + label1;
-      if (!seenDiscards.has(discard12) && !seenDiscards.has(discard21)) {
-        seenDiscards.add(discard12);
-        seenDiscards.add(discard21);
-        keepDiscards.push({
-          discard: [card1, card2],
-          keep: dealtCards.filter(
-            (_, index) => index !== index1 && index !== index2
-          ),
-        });
-      }
-    }
-  }
-  return keepDiscards;
+  return [...new Combination(dealtCards, CARDS_PER_DISCARD)].map((discard) => ({
+    discard,
+    keep: dealtCards.filter((card) => !discard.includes(card)),
+  }));
 }
 
 function countPoints(keep: DealtCard[]) {
@@ -113,7 +95,7 @@ export function Calculations({ dealtCards }: { dealtCards: DealtCard[] }) {
             discard={scoredKeepDiscard.discard}
             keep={scoredKeepDiscard.keep}
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-              .map((dealtCard) => dealtCard.rankLabel)
+              .map((dealtCard) => dealtCard.index)
               .join("")}
             points={scoredKeepDiscard.points}
           />

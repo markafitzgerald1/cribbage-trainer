@@ -1,3 +1,4 @@
+import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculations } from "./Calculations";
 import { DealtCard } from "../DealtCard";
 import { Hand } from "./Hand";
@@ -11,7 +12,6 @@ const CARD_LABELS = "A23456789TJQK";
 const MAXIMUM_CARD_COUNTING_VALUE = 10;
 const CARDS_PER_DEALT_HAND = 6;
 const INDICES_PER_SUIT = 13;
-const CARDS_PER_DISCARD = 2;
 
 class Trainer extends React.Component<
   Record<string, never>,

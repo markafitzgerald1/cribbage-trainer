@@ -1,8 +1,11 @@
 import { DealtCard } from "../DealtCard";
-import { KeepDiscard } from "../KeepDiscard";
 import React from "react";
 
-type ScoredKeepDiscard = KeepDiscard & { points: number };
+type ScoredKeepDiscard = {
+  keep: DealtCard[];
+  discard: DealtCard[];
+  points: number;
+};
 
 export function handToString(dealtCards: DealtCard[]) {
   return dealtCards.map((dealtCard) => dealtCard.rankLabel).join("");

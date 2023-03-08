@@ -46,6 +46,7 @@
   },
   "homepage": "https://github.com/markafitzgerald1/cribbage-trainer#readme",
   "dependencies": {
+    "js-combinatorics": "^2.1.1",
     "parcel": "^2.7.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
