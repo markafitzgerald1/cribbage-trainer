@@ -1,8 +1,8 @@
+import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
+import { Combination } from "js-combinatorics";
 import { DealtCard } from "../DealtCard";
 import React from "react";
-import { Combination } from "js-combinatorics";
-import { CARDS_PER_DISCARD } from "../cribbage";
 
 const POINTS = {
   FIFTEENS: 2,
