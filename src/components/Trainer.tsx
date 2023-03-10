@@ -3,7 +3,6 @@ import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculations } from "./Calculations";
 import { DealtCard } from "../DealtCard";
 import { Hand } from "./Hand";
-import ReactDOMClient from "react-dom/client";
 import { Sort } from "../Sort";
 import { SortOrder } from "./SortOrder";
 
@@ -12,7 +11,7 @@ const MAXIMUM_CARD_COUNTING_VALUE = 10;
 const CARDS_PER_DEALT_HAND = 6;
 const INDICES_PER_SUIT = 13;
 
-function Trainer() {
+export function Trainer() {
   const [sortOrder, setSortOrder] = useState(Sort.Descending);
   const [dealtCards, setDealtCards] = useState(
     Array.from({ length: CARDS_PER_DEALT_HAND }, () =>
@@ -52,7 +51,3 @@ function Trainer() {
     </React.StrictMode>
   );
 }
-
-ReactDOMClient.createRoot(
-  document.querySelector("#trainer") ?? document.documentElement
-).render(<Trainer />);
