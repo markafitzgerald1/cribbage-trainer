@@ -32,11 +32,7 @@
     "no-ternary": "off",
     "one-var": ["error", { "var": "always", "let": "never", "const": "never" }],
     "react/jsx-filename-extension": ["error", { "extensions": [".tsx"] }],
-    "react/jsx-indent": "off",
-    "react/jsx-indent-props": "off",
-    "react/jsx-newline": "off",
     "react/jsx-no-literals": "off",
-    "react/jsx-one-expression-per-line": "off",
     "react/require-optimization": "off",
     "spellcheck/spell-checker": [
       "warn",
