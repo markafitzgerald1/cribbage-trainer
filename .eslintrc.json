@@ -1,8 +1,9 @@
 {
   "extends": [
-    "eslint:recommended",
+    "eslint:all",
     "plugin:@typescript-eslint/recommended",
-    "plugin:react/recommended"
+    "prettier",
+    "plugin:react/all"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -13,14 +14,26 @@
   "plugins": ["@typescript-eslint", "spellcheck", "react"],
   "root": true,
   "rules": {
+    "@typescript-eslint/no-shadow": ["error"],
+    "func-style": "off",
+    "id-length": ["error", { "exceptions": ["_"] }],
+    "no-magic-numbers": ["error", { "ignore": [0, 1] }],
+    "no-shadow": "off",
+    "no-ternary": "off",
+    "one-var": ["error", { "var": "always", "let": "never", "const": "never" }],
+    "react/jsx-filename-extension": ["error", { "extensions": [".tsx"] }],
+    "react/jsx-indent": "off",
+    "react/jsx-indent-props": "off",
+    "react/jsx-newline": "off",
+    "react/jsx-no-literals": "off",
+    "react/jsx-one-expression-per-line": "off",
+    "react/require-optimization": "off",
     "spellcheck/spell-checker": [
       "warn",
       {
         "skipWords": ["formatter"]
       }
-    ],
-    "react/jsx-uses-react": "error",
-    "react/jsx-uses-vars": "error"
+    ]
   },
   "settings": {
     "react": {

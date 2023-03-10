@@ -4,18 +4,18 @@ import React from "react";
 
 export type HandProps = {
   dealtCards: DealtCard[];
-  toggleKept: (index: number) => void;
+  setDealtCards: (dealtCards: DealtCard[]) => void;
 };
 
-export function Hand({ dealtCards, toggleKept }: HandProps) {
+export function Hand({ dealtCards, setDealtCards }: HandProps) {
   return (
     <ul className="hand">
       {dealtCards.map((dealtCard, index) => (
         <Card
           dealOrderIndex={index}
-          dealtCard={dealtCard}
+          dealtCards={dealtCards}
           key={dealtCard.dealOrder}
-          toggleKept={toggleKept}
+          setDealtCards={setDealtCards}
         />
       ))}
     </ul>

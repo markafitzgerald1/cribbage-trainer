@@ -1,10 +1,22 @@
+import { DealtCard } from "../DealtCard";
 import React from "react";
 import { Sort } from "../Sort";
 import { SortName } from "../SortName";
 
+const compareFns = {
+  [Sort.Ascending]: (first: DealtCard, second: DealtCard) =>
+    first.rankValue - second.rankValue,
+  [Sort.Descending]: (first: DealtCard, second: DealtCard) =>
+    second.rankValue - first.rankValue,
+  [Sort.DealOrder]: (first: DealtCard, second: DealtCard) =>
+    first.dealOrder - second.dealOrder,
+};
+
 export class SortOrder extends React.Component<{
+  dealtCards: DealtCard[];
+  setDealtCards: (dealtCards: DealtCard[]) => void;
   sortOrder: Sort;
-  setSortOrder: (sortOrder: SortName) => void;
+  setSortOrder: (sort: Sort) => void;
 }> {
   static SortLabel = {
     Ascending: "↗️",
@@ -13,8 +25,10 @@ export class SortOrder extends React.Component<{
   };
 
   handleChange = (event: React.FormEvent<HTMLInputElement>) => {
-    const { setSortOrder } = this.props;
-    setSortOrder(event.currentTarget.value as SortName);
+    const { dealtCards, setDealtCards, setSortOrder } = this.props;
+    const newSortOrder = Sort[event.currentTarget.value as SortName];
+    setSortOrder(newSortOrder);
+    setDealtCards([...dealtCards].sort(compareFns[newSortOrder]));
   };
 
   override render() {
