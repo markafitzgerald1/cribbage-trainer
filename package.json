@@ -10,11 +10,12 @@
     "stylelint": "stylelint --fix '**/*.css'",
     "prettier": "prettier --write .",
     "typeCheck": "tsc",
-    "build": "parcel build --public-url /cribbage-trainer --detailed-report 20",
-    "start": "parcel serve --public-url /cribbage-trainer",
-    "clean": "rm -rf dist"
+    "build": "parcel build --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer --detailed-report 20",
+    "start": "parcel serve --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer",
+    "clean": "rm -rf dist parcel-bundle-reports"
   },
   "devDependencies": {
+    "@parcel/reporter-bundle-analyzer": "^2.8.3",
     "@types/react": "^18.0.17",
     "@types/react-dom": "^18.0.6",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
