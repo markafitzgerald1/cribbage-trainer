@@ -10,8 +10,8 @@
     "stylelint": "stylelint --fix '**/*.css'",
     "prettier": "prettier --write .",
     "typeCheck": "tsc",
-    "build": "parcel build --public-url /cribbage-trainer --detailed-report",
-    "start": "parcel serve --public-url /cribbage-trainer --detailed-report",
+    "build": "parcel build --public-url /cribbage-trainer --detailed-report 20",
+    "start": "parcel serve --public-url /cribbage-trainer --detailed-report 20",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
