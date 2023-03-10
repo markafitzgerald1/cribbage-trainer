@@ -3,6 +3,7 @@
     "eslint:all",
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:@typescript-eslint/strict",
     "prettier",
     "plugin:react/all"
   ],
@@ -16,11 +17,16 @@
   "plugins": ["@typescript-eslint", "spellcheck", "react"],
   "root": true,
   "rules": {
+    "@typescript-eslint/no-magic-numbers": [
+      "error",
+      { "ignore": [0, 1], "ignoreEnums": true }
+    ],
     "@typescript-eslint/no-shadow": ["error"],
+    "@typescript-eslint/no-non-null-assertion": ["off"],
     "@typescript-eslint/unbound-method": "off",
     "func-style": "off",
     "id-length": ["error", { "exceptions": ["_"] }],
-    "no-magic-numbers": ["error", { "ignore": [0, 1] }],
+    "no-magic-numbers": ["off"],
     "no-shadow": "off",
     "no-ternary": "off",
     "one-var": ["error", { "var": "always", "let": "never", "const": "never" }],

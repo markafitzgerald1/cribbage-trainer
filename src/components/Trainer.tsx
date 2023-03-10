@@ -22,7 +22,7 @@ function Trainer() {
         count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
         dealOrder,
         kept: true,
-        rankLabel: CARD_LABELS[rankValue] as string,
+        rankLabel: CARD_LABELS[rankValue]!,
         rankValue,
       }))
       .sort(

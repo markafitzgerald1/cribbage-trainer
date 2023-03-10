@@ -25,9 +25,7 @@ const PLAY_POINTS = {
 
 const pairsPoints = (keep: DealtCard[]) =>
   [...new Combination(keep, PLAY_POINTS.PAIR)].filter(
-    (possiblePair) =>
-      (possiblePair[0] as DealtCard).rankValue ===
-      (possiblePair[1] as DealtCard).rankValue
+    ([first, second]) => first!.rankValue === second!.rankValue
   ).length * PLAY_POINTS.PAIR;
 
 const fifteensPoints = (keep: DealtCard[]) =>
@@ -38,16 +36,10 @@ const fifteensPoints = (keep: DealtCard[]) =>
         .reduce((count1, count2) => count1 + count2, 0) === COUNT.FIFTEEN
   ).length * PLAY_POINTS.FIFTEEN_COUNT;
 
-const RUN_LENGTHS = {
-  FIVE: 5,
-  FOUR: 4,
-  THREE: 3,
-} as const;
-
 enum RunLength {
-  THREE = RUN_LENGTHS.THREE,
-  FOUR = RUN_LENGTHS.FOUR,
-  FIVE = RUN_LENGTHS.FIVE,
+  THREE = 3,
+  FOUR = 4,
+  FIVE = 5,
 }
 
 const runPoints = (keep: DealtCard[], runLength: RunLength) =>
@@ -59,7 +51,7 @@ const runPoints = (keep: DealtCard[], runLength: RunLength) =>
     .filter((combination) =>
       combination
         .slice(1)
-        .map((rank, index) => rank - (combination[index] as number))
+        .map((rank, index) => rank - combination[index]!)
         .every((diff) => diff === 1)
     ).length *
   PLAY_POINTS.RUN_PER_CARD *

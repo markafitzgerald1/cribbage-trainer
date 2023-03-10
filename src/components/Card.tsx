@@ -1,11 +1,11 @@
 import { DealtCard } from "../DealtCard";
 import React from "react";
 
-export type CardProps = {
+export interface CardProps {
   dealOrderIndex: number;
   dealtCards: DealtCard[];
   setDealtCards: (dealtCards: DealtCard[]) => void;
-};
+}
 
 export class Card extends React.Component<CardProps> {
   constructor(props: CardProps) {
@@ -16,14 +16,14 @@ export class Card extends React.Component<CardProps> {
   handleClick() {
     const { dealtCards, dealOrderIndex, setDealtCards } = this.props;
     const newDealtCards = [...dealtCards];
-    const newDealtCard = newDealtCards[dealOrderIndex] as DealtCard;
+    const newDealtCard = newDealtCards[dealOrderIndex]!;
     newDealtCard.kept = !newDealtCard.kept;
     setDealtCards(newDealtCards);
   }
 
   override render() {
     const { dealtCards, dealOrderIndex } = this.props;
-    const { kept, rankLabel } = dealtCards[dealOrderIndex] as DealtCard;
+    const { kept, rankLabel } = dealtCards[dealOrderIndex]!;
     return (
       <li
         className={`card${kept ? "" : " discarded"}`}

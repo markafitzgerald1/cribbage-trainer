@@ -2,10 +2,10 @@ import { Card } from "./Card";
 import { DealtCard } from "../DealtCard";
 import React from "react";
 
-export type HandProps = {
+export interface HandProps {
   dealtCards: DealtCard[];
   setDealtCards: (dealtCards: DealtCard[]) => void;
-};
+}
 
 export function Hand({ dealtCards, setDealtCards }: HandProps) {
   return (
