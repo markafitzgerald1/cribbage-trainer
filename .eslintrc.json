@@ -2,6 +2,7 @@
   "extends": [
     "eslint:all",
     "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "prettier",
     "plugin:react/all"
   ],
@@ -9,12 +10,14 @@
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true
-    }
+    },
+    "project": ["./tsconfig.json"]
   },
   "plugins": ["@typescript-eslint", "spellcheck", "react"],
   "root": true,
   "rules": {
     "@typescript-eslint/no-shadow": ["error"],
+    "@typescript-eslint/unbound-method": "off",
     "func-style": "off",
     "id-length": ["error", { "exceptions": ["_"] }],
     "no-magic-numbers": ["error", { "ignore": [0, 1] }],

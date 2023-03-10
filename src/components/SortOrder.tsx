@@ -55,7 +55,7 @@ export class SortOrder extends React.Component<{
         <span className="sort-order-description">
           {" "}
           (
-          {(Sort[sortOrder] as string)
+          {Sort[sortOrder]
             .replace(
               /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
               "$<lastLower> $<nextFirstUpper>"
