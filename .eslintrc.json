@@ -16,6 +16,16 @@
     "project": ["./tsconfig.json"]
   },
   "plugins": ["@typescript-eslint", "spellcheck", "react"],
+  "overrides": [
+    {
+      "files": ["**/*.test.ts*"],
+      "plugins": ["jest"],
+      "extends": ["plugin:jest/all"],
+      "rules": {
+        "jest/prefer-expect-assertions": ["off"]
+      }
+    }
+  ],
   "root": true,
   "rules": {
     "@typescript-eslint/no-magic-numbers": [
