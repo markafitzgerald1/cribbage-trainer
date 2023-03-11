@@ -3,6 +3,7 @@ import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
 import { DealtCard } from "../DealtCard";
 import React from "react";
+import { pairsPoints } from "../Scoring";
 
 const COUNT = {
   FIFTEEN: 15,
@@ -18,15 +19,9 @@ function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
 const PLAY_POINTS = {
   FIFTEEN_COUNT: 2,
   FOUR_RUN: 4,
-  PAIR: 2,
   RUN_PER_CARD: 1,
   THREE_RUN: 3,
 } as const;
-
-const pairsPoints = (keep: DealtCard[]) =>
-  [...new Combination(keep, PLAY_POINTS.PAIR)].filter(
-    ([first, second]) => first!.rankValue === second!.rankValue
-  ).length * PLAY_POINTS.PAIR;
 
 const fifteensPoints = (keep: DealtCard[]) =>
   [...new PowerSet(keep)].filter(

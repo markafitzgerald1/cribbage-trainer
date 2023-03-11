@@ -1,7 +1,6 @@
-export interface DealtCard {
-  rankLabel: string;
-  rankValue: number;
-  count: number;
+import { Card } from "./Card";
+
+export interface DealtCard extends Card {
   kept: boolean;
   dealOrder: number;
 }

@@ -4,3 +4,4 @@
 /tsconfig.tsbuildinfo
 /\.vscode/
 /parcel-bundle-reports/
+/coverage/
