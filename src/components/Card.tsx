@@ -1,10 +1,8 @@
-import { DealtCard } from "../DealtCard";
+import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 
-export interface CardProps {
+export interface CardProps extends DealtCardsHook {
   dealOrderIndex: number;
-  dealtCards: DealtCard[];
-  setDealtCards: (dealtCards: DealtCard[]) => void;
 }
 
 export class Card extends React.Component<CardProps> {

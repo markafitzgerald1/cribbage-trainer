@@ -1,13 +1,8 @@
 import { Card } from "./Card";
-import { DealtCard } from "../DealtCard";
+import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 
-export interface HandProps {
-  dealtCards: DealtCard[];
-  setDealtCards: (dealtCards: DealtCard[]) => void;
-}
-
-export function Hand({ dealtCards, setDealtCards }: HandProps) {
+export function Hand({ dealtCards, setDealtCards }: DealtCardsHook) {
   return (
     <ul className="hand">
       {dealtCards.map((dealtCard, index) => (

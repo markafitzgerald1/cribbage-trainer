@@ -1,4 +1,5 @@
 import { DealtCard } from "../DealtCard";
+import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 import { Sort } from "../Sort";
 import { SortName } from "../SortName";
@@ -12,12 +13,12 @@ const compareFns = {
     first.dealOrder - second.dealOrder,
 };
 
-export class SortOrder extends React.Component<{
-  dealtCards: DealtCard[];
-  setDealtCards: (dealtCards: DealtCard[]) => void;
+interface SortOrderProps extends DealtCardsHook {
   sortOrder: Sort;
   setSortOrder: (sort: Sort) => void;
-}> {
+}
+
+export class SortOrder extends React.Component<SortOrderProps> {
   static SortLabel = {
     Ascending: "↗️",
     DealOrder: "↔️",
