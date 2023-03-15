@@ -1,3 +1,4 @@
+import { CARDS, INDICES_PER_SUIT } from "../Card";
 import React, { useState } from "react";
 import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculations } from "./Calculations";
@@ -5,10 +6,7 @@ import { Hand } from "./Hand";
 import { SortOrder } from "../SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 
-const CARD_LABELS = "A23456789TJQK";
-const MAXIMUM_CARD_COUNTING_VALUE = 10;
 const CARDS_PER_DEALT_HAND = 6;
-const INDICES_PER_SUIT = 13;
 
 export function Trainer() {
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
@@ -16,11 +14,9 @@ export function Trainer() {
     Array.from({ length: CARDS_PER_DEALT_HAND }, () =>
       Math.floor(Math.random() * INDICES_PER_SUIT)
     ).map((rankValue, dealOrder) => ({
-      count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
+      ...CARDS[rankValue]!,
       dealOrder,
       kept: true,
-      rankLabel: CARD_LABELS[rankValue]!,
-      rankValue,
     }))
   );
 

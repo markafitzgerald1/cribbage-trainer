@@ -22,6 +22,10 @@
       "plugins": ["jest"],
       "extends": ["plugin:jest/all"],
       "rules": {
+        "jest/expect-expect": [
+          "error",
+          { "assertFunctionNames": ["expect", "expectPairsPoints"] }
+        ],
         "jest/prefer-expect-assertions": ["off"]
       }
     }

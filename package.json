@@ -12,7 +12,7 @@
     "prettier": "prettier --write .",
     "typeCheck": "tsc",
     "jscpd": "jscpd",
-    "build": "parcel build --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer --detailed-report 21",
+    "build": "parcel build --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer --detailed-report 22",
     "start": "parcel serve --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer",
     "clean": "rm -rf dist parcel-bundle-reports coverage"
   },
