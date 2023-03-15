@@ -2,6 +2,10 @@ import { describe, expect, it } from "@jest/globals";
 import { pairsPoints } from "./Scoring";
 
 describe("pairsPoints", () => {
+  it("empty hand", () => {
+    expect(pairsPoints([])).toBe(0);
+  });
+
   it("two equal rank cards", () => {
     const expectedPoints = 2;
     const QUEEN = {
