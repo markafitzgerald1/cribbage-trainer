@@ -1,0 +1,7 @@
+{
+  "pattern": "src/**/*.ts*",
+  "minLines": 1,
+  "minTokens": 14,
+  "threshold": 0,
+  "exitCode": 1
+}

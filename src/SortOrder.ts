@@ -1,4 +1,4 @@
-export enum Sort {
+export enum SortOrder {
   DealOrder,
   Descending,
   Ascending,
