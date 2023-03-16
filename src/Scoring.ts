@@ -1,7 +1,7 @@
 import { Card } from "./Card";
 import { Combination } from "js-combinatorics";
 
-const CARDS_PER_PAIR = 2;
+export const CARDS_PER_PAIR = 2;
 export const POINTS_PER_PAIR = 2;
 
 export const pairsPoints = (keep: Card[]) =>
