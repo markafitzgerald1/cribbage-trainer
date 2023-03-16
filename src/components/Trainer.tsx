@@ -35,7 +35,12 @@ export function Trainer() {
         {!(
           dealtCards.filter((dealtCard) => dealtCard.kept).length ===
           CARDS_PER_DEALT_HAND - CARDS_PER_DISCARD
-        ) || <Calculations dealtCards={dealtCards} />}
+        ) || (
+          <Calculations
+            dealtCards={dealtCards}
+            sortOrder={sortOrder}
+          />
+        )}
       </div>
     </React.StrictMode>
   );

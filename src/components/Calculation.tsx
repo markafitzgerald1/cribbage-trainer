@@ -1,23 +1,36 @@
 import { DealtCard } from "../DealtCard";
 import React from "react";
+import { SortOrder } from "../SortOrder";
+import { compare } from "../sortCards";
 
 interface ScoredKeepDiscard {
   keep: DealtCard[];
   discard: DealtCard[];
   points: number;
+  sortOrder: SortOrder;
 }
 
-export function handToString(dealtCards: DealtCard[]) {
-  return dealtCards.map((dealtCard) => dealtCard.rankLabel).join("");
+export function handToString(dealtCards: DealtCard[], sortOrder: SortOrder) {
+  return [...dealtCards]
+    .sort(compare[SortOrder[sortOrder]])
+    .map((dealtCard) => dealtCard.rankLabel)
+    .join("");
 }
 
-export function Calculation({ keep, discard, points }: ScoredKeepDiscard) {
+export function Calculation({
+  keep,
+  discard,
+  points,
+  sortOrder,
+}: ScoredKeepDiscard) {
   return (
     <div>
-      <span className="keep-discard">{handToString(keep)}</span>
+      <span className="keep-discard">{handToString(keep, sortOrder)}</span>
       <span>-</span>
-      <span className="keep-discard">{handToString(discard)}</span> for {points}{" "}
-      points
+      <span className="keep-discard">
+        {handToString(discard, sortOrder)}
+      </span>{" "}
+      for {points} points
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
 import { DealtCard } from "../DealtCard";
 import React from "react";
+import { SortOrder } from "../SortOrder";
 import { pairsPoints } from "../Scoring";
 
 const COUNT = {
@@ -57,7 +58,12 @@ const countPoints = (keep: DealtCard[]) =>
   fifteensPoints(keep) +
   (runPoints(keep, RunLength.FOUR) || runPoints(keep, RunLength.THREE));
 
-export function Calculations({ dealtCards }: { dealtCards: DealtCard[] }) {
+interface CalculationsProps {
+  dealtCards: DealtCard[];
+  sortOrder: SortOrder;
+}
+
+export function Calculations({ dealtCards, sortOrder }: CalculationsProps) {
   return (
     <div className="calculations">
       {getAllKeepDiscardCombinations(dealtCards)
@@ -75,6 +81,7 @@ export function Calculations({ dealtCards }: { dealtCards: DealtCard[] }) {
               .map((dealtCard) => dealtCard.dealOrder)
               .join("")}
             points={scoredKeepDiscard.points}
+            sortOrder={sortOrder}
           />
         ))}
     </div>

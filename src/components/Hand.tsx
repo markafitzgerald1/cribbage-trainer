@@ -2,23 +2,14 @@ import { Card } from "./Card";
 import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 import { SortOrder } from "../SortOrder";
+import { compare } from "../sortCards";
 
 interface HandProps extends DealtCardsHook {
   sortOrder: SortOrder;
 }
 
 export function Hand({ dealtCards, setDealtCards, sortOrder }: HandProps) {
-  const sortedDealtCards = [...dealtCards].sort((first, second) => {
-    switch (sortOrder) {
-      case SortOrder.DealOrder:
-        return first.dealOrder - second.dealOrder;
-      case SortOrder.Ascending:
-        return first.rankValue - second.rankValue;
-      case SortOrder.Descending:
-      default:
-        return second.rankValue - first.rankValue;
-    }
-  });
+  const sortedDealtCards = [...dealtCards].sort(compare[SortOrder[sortOrder]]);
   return (
     <ul className="hand">
       {sortedDealtCards.map((dealtCard, index) => (
