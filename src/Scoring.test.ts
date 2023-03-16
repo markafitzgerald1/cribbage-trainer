@@ -19,4 +19,12 @@ describe("pairsPoints", () => {
     const QUEEN = CARDS[Rank.QUEEN]!;
     expect(pairsPoints([QUEEN, QUEEN])).toBe(POINTS_PER_PAIR);
   });
+
+  it("two unequal rank cards", () => {
+    expect(pairsPoints([CARDS[Rank.SEVEN]!, CARDS[Rank.EIGHT]!])).toBe(0);
+  });
+
+  it("two same count unequal rank cards", () => {
+    expect(pairsPoints([CARDS[Rank.TEN]!, CARDS[Rank.JACK]!])).toBe(0);
+  });
 });
