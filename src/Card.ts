@@ -15,11 +15,11 @@ const createCard = (rankValue: number): Card => ({
 
 export const INDICES_PER_SUIT = 13;
 
-export const CARDS: Card[] = [...Array(INDICES_PER_SUIT).keys()].map(
+const RANKED_CARDS: Card[] = [...Array(INDICES_PER_SUIT).keys()].map(
   createCard
 );
 
-export enum Rank {
+enum Rank {
   ACE,
   TWO,
   THREE,
@@ -34,3 +34,24 @@ export enum Rank {
   QUEEN,
   KING,
 }
+
+type RankName = keyof typeof Rank;
+
+type NamedCards = {
+  [Property in RankName]: Card;
+};
+
+const NAMED_CARDS = Object.fromEntries(
+  [...Array(INDICES_PER_SUIT).keys()]
+    .map((value) => value as Rank)
+    .map((value) => [Rank[value] as RankName, RANKED_CARDS[value]])
+) as NamedCards;
+
+type Cards = {
+  [Property in RankName | number]: Card;
+};
+
+export const CARDS: Cards = {
+  ...RANKED_CARDS,
+  ...NAMED_CARDS,
+};
