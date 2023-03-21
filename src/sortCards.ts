@@ -16,9 +16,12 @@ const createCompare =
     }
   };
 
-export const compare = Object.fromEntries(
+const compare = Object.fromEntries(
   Object.keys(SortOrder)
     .filter((key) => isNaN(Number(key)))
     .map((key) => key as SortOrderName)
     .map((key) => [key, createCompare(SortOrder[key])])
 );
+
+export const sort = (dealtCards: DealtCard[], sortOrder: SortOrder) =>
+  [...dealtCards].sort(compare[SortOrder[sortOrder]]);

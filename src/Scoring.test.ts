@@ -6,36 +6,42 @@ import { combination } from "js-combinatorics";
 const expectPairsPoints = (keep: Card[], expectedPoints: number) =>
   expect(pairsPoints(keep)).toBe(expectedPoints);
 
+/* jscpd:ignore-start */
+const expectNoPairsPoints = (keep: Card[]) => expectPairsPoints(keep, 0);
+const expectTwoPairsPoints = (keep: Card[]) =>
+  expectPairsPoints(keep, POINTS_PER_PAIR);
+/* jscpd:ignore-end */
+
 const { ACE, TWO, THREE, FOUR, SIX, SEVEN, EIGHT, TEN, JACK, QUEEN, KING } =
   CARDS;
 
 describe("pairsPoints", () => {
   it("empty hand", () => {
-    expectPairsPoints([], 0);
+    expectNoPairsPoints([]);
   });
 
   it("single card hand", () => {
-    expectPairsPoints([SEVEN], 0);
+    expectNoPairsPoints([SEVEN]);
   });
 
   it("two equal rank cards", () => {
-    expect(pairsPoints([QUEEN, QUEEN])).toBe(POINTS_PER_PAIR);
+    expectTwoPairsPoints([QUEEN, QUEEN]);
   });
 
   it("two unequal rank cards", () => {
-    expect(pairsPoints([SEVEN, EIGHT])).toBe(0);
+    expectNoPairsPoints([SEVEN, EIGHT]);
   });
 
   it("two same count unequal rank cards", () => {
-    expect(pairsPoints([TEN, JACK])).toBe(0);
+    expectNoPairsPoints([TEN, JACK]);
   });
 
   it("three unequal rank cards", () => {
-    expect(pairsPoints([TWO, THREE, KING])).toBe(0);
+    expectNoPairsPoints([TWO, THREE, KING]);
   });
 
   it("three cards with two of equal rank", () => {
-    expect(pairsPoints([FOUR, EIGHT, FOUR])).toBe(POINTS_PER_PAIR);
+    expectTwoPairsPoints([FOUR, EIGHT, FOUR]);
   });
 
   it("three cards of equal rank", () => {
@@ -46,6 +52,6 @@ describe("pairsPoints", () => {
   });
 
   it("four unequal rank cards", () => {
-    expect(pairsPoints([EIGHT, ACE, JACK, FOUR])).toBe(0);
+    expectNoPairsPoints([EIGHT, ACE, JACK, FOUR]);
   });
 });

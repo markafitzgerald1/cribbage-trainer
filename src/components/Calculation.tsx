@@ -1,20 +1,15 @@
+/* jscpd:ignore-start */
 import { DealtCard } from "../DealtCard";
+import { PossibleHand } from "./PossibleHand";
 import React from "react";
 import { SortOrder } from "../SortOrder";
-import { compare } from "../sortCards";
+/* jscpd:ignore-end */
 
 interface ScoredKeepDiscard {
   keep: DealtCard[];
   discard: DealtCard[];
   points: number;
   sortOrder: SortOrder;
-}
-
-export function handToString(dealtCards: DealtCard[], sortOrder: SortOrder) {
-  return [...dealtCards]
-    .sort(compare[SortOrder[sortOrder]])
-    .map((dealtCard) => dealtCard.rankLabel)
-    .join("");
 }
 
 export function Calculation({
@@ -25,11 +20,15 @@ export function Calculation({
 }: ScoredKeepDiscard) {
   return (
     <div>
-      <span className="keep-discard">{handToString(keep, sortOrder)}</span>
+      <PossibleHand
+        dealtCards={keep}
+        sortOrder={sortOrder}
+      />
       <span>-</span>
-      <span className="keep-discard">
-        {handToString(discard, sortOrder)}
-      </span>{" "}
+      <PossibleHand
+        dealtCards={discard}
+        sortOrder={sortOrder}
+      />{" "}
       for {points} points
     </div>
   );

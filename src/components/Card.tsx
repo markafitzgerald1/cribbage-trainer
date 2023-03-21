@@ -1,5 +1,7 @@
+/* jscpd:ignore-start */
 import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
+/* jscpd:ignore-end */
 
 export interface CardProps extends DealtCardsHook {
   dealOrderIndex: number;

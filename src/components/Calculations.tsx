@@ -1,9 +1,11 @@
 import { Combination, PowerSet } from "js-combinatorics";
 import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
+/* jscpd:ignore-start */
 import { DealtCard } from "../DealtCard";
 import React from "react";
 import { SortOrder } from "../SortOrder";
+/* jscpd:ignore-end */
 import { pairsPoints } from "../Scoring";
 
 const COUNT = {
@@ -58,7 +60,7 @@ const countPoints = (keep: DealtCard[]) =>
   fifteensPoints(keep) +
   (runPoints(keep, RunLength.FOUR) || runPoints(keep, RunLength.THREE));
 
-interface CalculationsProps {
+export interface CalculationsProps {
   dealtCards: DealtCard[];
   sortOrder: SortOrder;
 }

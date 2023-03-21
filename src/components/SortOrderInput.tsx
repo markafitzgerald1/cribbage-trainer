@@ -1,5 +1,7 @@
+/* jscpd:ignore-start */
 import React from "react";
 import { SortOrder } from "../SortOrder";
+/* jscpd:ignore-end */
 import { SortOrderName } from "../SortOrderName";
 
 interface SortOrderInputProps {
