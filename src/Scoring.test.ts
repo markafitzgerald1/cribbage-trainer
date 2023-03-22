@@ -1,19 +1,33 @@
-import { CARDS, Card } from "./Card";
 import { CARDS_PER_PAIR, POINTS_PER_PAIR, pairsPoints } from "./Scoring";
+import { Card, CARDS as c } from "./Card";
 import { describe, expect, it } from "@jest/globals";
 import { combination } from "js-combinatorics";
 
 const expectPairsPoints = (keep: Card[], expectedPoints: number) =>
   expect(pairsPoints(keep)).toBe(expectedPoints);
 
-/* jscpd:ignore-start */
 const expectNoPairsPoints = (keep: Card[]) => expectPairsPoints(keep, 0);
-const expectTwoPairsPoints = (keep: Card[]) =>
-  expectPairsPoints(keep, POINTS_PER_PAIR);
-/* jscpd:ignore-end */
 
-const { ACE, TWO, THREE, FOUR, SIX, SEVEN, EIGHT, TEN, JACK, QUEEN, KING } =
-  CARDS;
+const expectOnePairPoints = (keep: Card[]) =>
+  expectPairsPoints(keep, POINTS_PER_PAIR);
+
+const TWO_PAIRS_PAIR_COUNT = 2;
+const expectTwoPairsPoints = (keep: Card[]) =>
+  expectPairsPoints(keep, TWO_PAIRS_PAIR_COUNT * POINTS_PER_PAIR);
+
+const PAIRS_ROYALE_CARD_COUNT = 3;
+const PAIRS_ROYALE_PAIR_COUNT = Number(
+  combination(PAIRS_ROYALE_CARD_COUNT, CARDS_PER_PAIR)
+);
+const expectPairsRoyalePoints = (keep: Card[]) =>
+  expectPairsPoints(keep, PAIRS_ROYALE_PAIR_COUNT * POINTS_PER_PAIR);
+
+const DOUBLE_PAIRS_ROYALE_CARD_COUNT = 4;
+const DOUBLE_PAIRS_ROYALE_PAIR_COUNT = Number(
+  combination(DOUBLE_PAIRS_ROYALE_CARD_COUNT, CARDS_PER_PAIR)
+);
+const expectDoublePairsRoyalePoints = (keep: Card[]) =>
+  expectPairsPoints(keep, DOUBLE_PAIRS_ROYALE_PAIR_COUNT * POINTS_PER_PAIR);
 
 describe("pairsPoints", () => {
   it("empty hand", () => {
@@ -21,37 +35,56 @@ describe("pairsPoints", () => {
   });
 
   it("single card hand", () => {
-    expectNoPairsPoints([SEVEN]);
+    expectNoPairsPoints([c.SEVEN]);
   });
 
-  it("two equal rank cards", () => {
-    expectTwoPairsPoints([QUEEN, QUEEN]);
+  describe("two card hand", () => {
+    it("two equal rank cards", () => {
+      expectOnePairPoints([c.QUEEN, c.QUEEN]);
+    });
+
+    it("two unequal rank cards", () => {
+      expectNoPairsPoints([c.SEVEN, c.EIGHT]);
+    });
+
+    it("two same count unequal rank cards", () => {
+      expectNoPairsPoints([c.TEN, c.JACK]);
+    });
   });
 
-  it("two unequal rank cards", () => {
-    expectNoPairsPoints([SEVEN, EIGHT]);
+  describe("three card hand", () => {
+    it("three unequal rank cards", () => {
+      expectNoPairsPoints([c.TWO, c.THREE, c.KING]);
+    });
+
+    it("three cards with two of equal rank", () => {
+      expectOnePairPoints([c.FOUR, c.EIGHT, c.FOUR]);
+    });
+
+    it("three cards of equal rank", () => {
+      expectPairsRoyalePoints([c.SIX, c.SIX, c.SIX]);
+    });
   });
 
-  it("two same count unequal rank cards", () => {
-    expectNoPairsPoints([TEN, JACK]);
-  });
+  describe("four card hand", () => {
+    it("four unequal rank cards", () => {
+      expectNoPairsPoints([c.EIGHT, c.ACE, c.JACK, c.FOUR]);
+    });
 
-  it("three unequal rank cards", () => {
-    expectNoPairsPoints([TWO, THREE, KING]);
-  });
+    it("four cards with one pair", () => {
+      expectOnePairPoints([c.FIVE, c.TWO, c.NINE, c.FIVE]);
+    });
 
-  it("three cards with two of equal rank", () => {
-    expectTwoPairsPoints([FOUR, EIGHT, FOUR]);
-  });
+    it("four cards with two pairs", () => {
+      expectTwoPairsPoints([c.QUEEN, c.FOUR, c.QUEEN, c.FOUR]);
+    });
 
-  it("three cards of equal rank", () => {
-    const keep = [SIX, SIX, SIX];
-    expect(pairsPoints(keep)).toBe(
-      Number(combination(keep.length, CARDS_PER_PAIR)) * POINTS_PER_PAIR
-    );
-  });
+    it("four cards with three of a kind", () => {
+      expectPairsRoyalePoints([c.EIGHT, c.EIGHT, c.TEN, c.EIGHT]);
+    });
 
-  it("four unequal rank cards", () => {
-    expectNoPairsPoints([EIGHT, ACE, JACK, FOUR]);
+    it("four cards with four of a kind", () => {
+      expectDoublePairsRoyalePoints([c.ACE, c.ACE, c.ACE, c.ACE]);
+    });
   });
 });

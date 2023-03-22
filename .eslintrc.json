@@ -24,7 +24,7 @@
       "rules": {
         "jest/expect-expect": [
           "error",
-          { "assertFunctionNames": ["expect", "expect*PairsPoints"] }
+          { "assertFunctionNames": ["expect", "expect*Pair*Points"] }
         ],
         "jest/prefer-expect-assertions": ["off"]
       }
@@ -42,6 +42,7 @@
     "capitalized-comments": ["error", "always", { "ignorePattern": "jscpd" }],
     "func-style": "off",
     "id-length": ["error", { "exceptions": ["_"] }],
+    "max-lines-per-function": ["error", { "skipBlankLines": true }],
     "no-magic-numbers": ["off"],
     "no-shadow": "off",
     "no-ternary": "off",
@@ -52,7 +53,7 @@
     "spellcheck/spell-checker": [
       "warn",
       {
-        "skipWords": ["formatter", "jscpd"]
+        "skipWords": ["formatter", "jscpd", "royale"]
       }
     ]
   },
