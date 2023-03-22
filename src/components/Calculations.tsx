@@ -1,16 +1,12 @@
-import { Combination, PowerSet } from "js-combinatorics";
+import { fifteensPoints, pairsPoints } from "../Scoring";
 import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
+import { Combination } from "js-combinatorics";
 /* jscpd:ignore-start */
 import { DealtCard } from "../DealtCard";
 import React from "react";
 import { SortOrder } from "../SortOrder";
 /* jscpd:ignore-end */
-import { pairsPoints } from "../Scoring";
-
-const COUNT = {
-  FIFTEEN: 15,
-} as const;
 
 function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
   return [...new Combination(dealtCards, CARDS_PER_DISCARD)].map((discard) => ({
@@ -20,19 +16,10 @@ function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
 }
 
 const PLAY_POINTS = {
-  FIFTEEN_COUNT: 2,
   FOUR_RUN: 4,
   RUN_PER_CARD: 1,
   THREE_RUN: 3,
 } as const;
-
-const fifteensPoints = (keep: DealtCard[]) =>
-  [...new PowerSet(keep)].filter(
-    (possibleFifteen) =>
-      possibleFifteen
-        .map((card) => card.count)
-        .reduce((count1, count2) => count1 + count2, 0) === COUNT.FIFTEEN
-  ).length * PLAY_POINTS.FIFTEEN_COUNT;
 
 enum RunLength {
   THREE = 3,
