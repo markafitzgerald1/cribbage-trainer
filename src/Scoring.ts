@@ -1,5 +1,5 @@
 import { Combination, PowerSet } from "js-combinatorics";
-import { Card } from "./Card";
+import { CountedCard, RankedCard } from "./Card";
 const CARDS_PER_PAIR = 2;
 export const HAND_POINTS = {
   DOUBLE_PAIRS_ROYALE: 12,
@@ -12,7 +12,7 @@ export const HAND_POINTS = {
   TWO_PAIRS: 4,
 } as const;
 
-export const pairsPoints = (keep: Card[]) =>
+export const pairsPoints = (keep: RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
     ([first, second]) => first!.rankValue === second!.rankValue
   ).length * HAND_POINTS.PAIR;
@@ -21,7 +21,7 @@ const COUNT = {
   FIFTEEN: 15,
 } as const;
 
-export const fifteensPoints = (keep: Card[]) =>
+export const fifteensPoints = (keep: CountedCard[]) =>
   [...new PowerSet(keep)].filter(
     (possibleFifteen) =>
       possibleFifteen

@@ -1,7 +1,13 @@
-export interface Card {
-  rankLabel: string;
+export interface RankedCard {
   rankValue: number;
+}
+
+export interface CountedCard {
   count: number;
+}
+
+export interface Card extends RankedCard, CountedCard {
+  rankLabel: string;
 }
 
 const MAXIMUM_CARD_COUNTING_VALUE = 10;
