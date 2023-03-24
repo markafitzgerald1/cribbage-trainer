@@ -1,4 +1,4 @@
-import { fifteensPoints, pairsPoints } from "../Scoring";
+import { fifteensPoints, pairsPoints, runsPoints } from "../Scoring";
 import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
 import { Combination } from "js-combinatorics";
@@ -15,37 +15,8 @@ function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
   }));
 }
 
-const PLAY_POINTS = {
-  FOUR_RUN: 4,
-  RUN_PER_CARD: 1,
-  THREE_RUN: 3,
-} as const;
-
-enum RunLength {
-  THREE = 3,
-  FOUR = 4,
-  FIVE = 5,
-}
-
-const runPoints = (keep: DealtCard[], runLength: RunLength) =>
-  [...new Combination(keep, runLength)]
-    .map((combination) => combination.map((card) => card.rankValue))
-    .map((combination) =>
-      [...combination].sort((rank1, rank2) => rank1 - rank2)
-    )
-    .filter((combination) =>
-      combination
-        .slice(1)
-        .map((rank, index) => rank - combination[index]!)
-        .every((diff) => diff === 1)
-    ).length *
-  PLAY_POINTS.RUN_PER_CARD *
-  runLength;
-
 const countPoints = (keep: DealtCard[]) =>
-  pairsPoints(keep) +
-  fifteensPoints(keep) +
-  (runPoints(keep, RunLength.FOUR) || runPoints(keep, RunLength.THREE));
+  pairsPoints(keep) + fifteensPoints(keep) + runsPoints(keep);
 
 export interface CalculationsProps {
   dealtCards: DealtCard[];
