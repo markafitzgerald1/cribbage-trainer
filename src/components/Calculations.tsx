@@ -1,4 +1,3 @@
-import { fifteensPoints, pairsPoints, runsPoints } from "../Scoring";
 import { CARDS_PER_DISCARD } from "../cribbage";
 import { Calculation } from "./Calculation";
 import { Combination } from "js-combinatorics";
@@ -6,6 +5,7 @@ import { Combination } from "js-combinatorics";
 import { DealtCard } from "../DealtCard";
 import React from "react";
 import { SortOrder } from "../SortOrder";
+import { handPoints } from "../Scoring";
 /* jscpd:ignore-end */
 
 function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
@@ -14,9 +14,6 @@ function getAllKeepDiscardCombinations(dealtCards: DealtCard[]) {
     keep: dealtCards.filter((card) => !discard.includes(card)),
   }));
 }
-
-const countPoints = (keep: DealtCard[]) =>
-  pairsPoints(keep) + fifteensPoints(keep) + runsPoints(keep);
 
 export interface CalculationsProps {
   dealtCards: DealtCard[];
@@ -30,7 +27,7 @@ export function Calculations({ dealtCards, sortOrder }: CalculationsProps) {
         .map((keepDiscard) => ({
           discard: keepDiscard.discard,
           keep: keepDiscard.keep,
-          points: countPoints(keepDiscard.keep),
+          points: handPoints(keepDiscard.keep).total,
         }))
         .sort((card1, card2) => card2.points - card1.points)
         .map((scoredKeepDiscard) => (

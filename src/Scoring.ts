@@ -1,5 +1,5 @@
+import { Card, CountedCard, RankedCard } from "./Card";
 import { Combination, PowerSet } from "js-combinatorics";
-import { CountedCard, RankedCard } from "./Card";
 
 const CARDS_PER_PAIR = 2;
 
@@ -15,7 +15,7 @@ const HAND_POINTS = {
   TWO_PAIRS: 4,
 } as const;
 
-export const pairsPoints = (keep: RankedCard[]) =>
+const pairsPoints = (keep: RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
     ([first, second]) => first!.rankValue === second!.rankValue
   ).length * HAND_POINTS.PAIR;
@@ -24,7 +24,7 @@ const COUNT = {
   FIFTEEN: 15,
 } as const;
 
-export const fifteensPoints = (keep: CountedCard[]) =>
+const fifteensPoints = (keep: CountedCard[]) =>
   [...new PowerSet(keep)].filter(
     (possibleFifteen) =>
       possibleFifteen
@@ -52,6 +52,24 @@ const runLengthPoints = (keep: RankedCard[], runLength: RunLength) =>
   HAND_POINTS.RUN_PER_CARD *
   runLength;
 
-export const runsPoints = (keep: RankedCard[]) =>
+const runsPoints = (keep: RankedCard[]) =>
   runLengthPoints(keep, RunLength.FOUR) ||
   runLengthPoints(keep, RunLength.THREE);
+
+export interface HandPoints {
+  fifteens: number;
+  pairs: number;
+  runs: number;
+  total: number;
+}
+export const handPoints = (keep: Card[]): HandPoints => {
+  const pairs = pairsPoints(keep);
+  const fifteens = fifteensPoints(keep);
+  const runs = runsPoints(keep);
+  return {
+    fifteens,
+    pairs,
+    runs,
+    total: pairs + fifteens + runs,
+  };
+};

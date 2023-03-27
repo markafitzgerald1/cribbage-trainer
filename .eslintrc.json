@@ -29,7 +29,8 @@
               "expect",
               "expectPairsPoints",
               "expectFifteensPoints",
-              "expectRunsPoints"
+              "expectRunsPoints",
+              "expectTotalPoints"
             ]
           }
         ],
@@ -49,7 +50,8 @@
     "capitalized-comments": ["error", "always", { "ignorePattern": "jscpd" }],
     "func-style": "off",
     "id-length": ["error", { "exceptions": ["_"] }],
-    "max-lines-per-function": ["error", { "max": 109, "skipBlankLines": true }],
+    "max-lines": ["error", { "max": 343 }],
+    "max-lines-per-function": ["error", { "max": 266, "skipBlankLines": true }],
     "max-statements": ["error", 16],
     "no-magic-numbers": ["off"],
     "no-shadow": "off",
