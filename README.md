@@ -4,7 +4,7 @@ Two-player cribbage discard and play improvement tool.
 
 ## main Branch Build and Deploy Status
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/markafitzgerald1/cribbage-trainer/npm-parcel-build-upload-and-deploy-to-pages.yml?style=plastic)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/markafitzgerald1/cribbage-trainer/npm-parcel-build-upload-and-deploy-to-pages.yml?label=build%2Bdeploy&style=plastic)
 
 ## Continuous deployment
 
