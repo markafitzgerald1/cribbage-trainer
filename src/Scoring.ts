@@ -3,7 +3,7 @@ import { Combination, PowerSet } from "js-combinatorics";
 
 const CARDS_PER_PAIR = 2;
 
-const HAND_POINTS = {
+export const HAND_POINTS = {
   DOUBLE_PAIRS_ROYALE: 12,
   FIFTEEN_EIGHT: 8,
   FIFTEEN_FOUR: 4,

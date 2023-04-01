@@ -1,10 +1,8 @@
 import { Card } from "./Card";
-/* jscpd:ignore-start */
 import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 import { SortOrder } from "../SortOrder";
 import { sort } from "../sortCards";
-/* jscpd:ignore-end */
 
 interface HandProps extends DealtCardsHook {
   sortOrder: SortOrder;

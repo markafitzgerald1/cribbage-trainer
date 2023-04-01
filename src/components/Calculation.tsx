@@ -1,11 +1,9 @@
-/* jscpd:ignore-start */
 import { DealtCard } from "../DealtCard";
 import { PossibleHand } from "./PossibleHand";
 import React from "react";
 import { SortOrder } from "../SortOrder";
-/* jscpd:ignore-end */
 
-interface ScoredKeepDiscard {
+interface CalculationProps {
   keep: DealtCard[];
   discard: DealtCard[];
   points: number;
@@ -17,7 +15,7 @@ export function Calculation({
   discard,
   points,
   sortOrder,
-}: ScoredKeepDiscard) {
+}: CalculationProps) {
   return (
     <div>
       <PossibleHand

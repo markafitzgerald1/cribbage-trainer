@@ -3,10 +3,10 @@
   "collectCoverageFrom": ["src/**/*.{ts,tsx}"],
   "coverageThreshold": {
     "global": {
-      "branches": 16.66,
-      "functions": 37.25,
-      "lines": 38.2,
-      "statements": 40.42
+      "branches": 28.57,
+      "functions": 47.05,
+      "lines": 46.23,
+      "statements": 48.45
     }
   },
   "testEnvironment": "node"
