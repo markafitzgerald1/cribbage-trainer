@@ -31,7 +31,8 @@
               "expectFifteensPoints",
               "expectRunsPoints",
               "expectTotalPoints",
-              "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual"
+              "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
+              "expectSort"
             ]
           }
         ],

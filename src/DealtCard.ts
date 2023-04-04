@@ -1,6 +1,5 @@
-import { Card } from "./Card";
+import { HandCard } from "./HandCard";
 
-export interface DealtCard extends Card {
+export interface DealtCard extends HandCard {
   kept: boolean;
-  dealOrder: number;
 }

@@ -5,7 +5,7 @@
   "source": "src/index.html",
   "scripts": {
     "prepare": "husky install",
-    "test": "jest",
+    "test": "jest --verbose",
     "lintTypeCopyPasteAuditAndOutdatedCheck": "npm run lint && npm run typeCheck && npm run jscpd && npm audit && npm outdated",
     "lint": "eslint . && stylelint '**/*.css' && prettier --check . && cspell '**' --gitignore",
     "stylelint": "stylelint --fix '**/*.css'",

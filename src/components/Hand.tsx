@@ -2,14 +2,14 @@ import { Card } from "./Card";
 import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 import { SortOrder } from "../SortOrder";
-import { sort } from "../sortCards";
+import { sortCards } from "../sortCards";
 
 interface HandProps extends DealtCardsHook {
   sortOrder: SortOrder;
 }
 
 export function Hand({ dealtCards, setDealtCards, sortOrder }: HandProps) {
-  const sortedDealtCards = sort(dealtCards, sortOrder);
+  const sortedDealtCards = sortCards(dealtCards, sortOrder);
   return (
     <ul className="hand">
       {sortedDealtCards.map((dealtCard, index) => (

@@ -1,10 +1,10 @@
-import { DealtCard } from "./DealtCard";
+import { HandCard } from "./HandCard";
 import { SortOrder } from "./SortOrder";
 import { SortOrderName } from "./SortOrderName";
 
 const createCompare =
   (sortOrder: SortOrder) =>
-  (first: DealtCard, second: DealtCard): number => {
+  (first: HandCard, second: HandCard): number => {
     switch (sortOrder) {
       case SortOrder.DealOrder:
         return first.dealOrder - second.dealOrder;
@@ -23,5 +23,7 @@ const compare = Object.fromEntries(
     .map((key) => [key, createCompare(SortOrder[key])])
 );
 
-export const sort = (dealtCards: DealtCard[], sortOrder: SortOrder) =>
-  [...dealtCards].sort(compare[SortOrder[sortOrder]]);
+export const sortCards = <T extends HandCard>(
+  dealtCards: readonly T[],
+  sortOrder: SortOrder
+) => [...dealtCards].sort(compare[SortOrder[sortOrder]]);

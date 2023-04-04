@@ -2,10 +2,10 @@ import { CalculationsProps } from "./Calculations";
 import { DealtCard } from "../DealtCard";
 import React from "react";
 import { SortOrder } from "../SortOrder";
-import { sort } from "../sortCards";
+import { sortCards } from "../sortCards";
 
 export function handToString(dealtCards: DealtCard[], sortOrder: SortOrder) {
-  return sort(dealtCards, sortOrder)
+  return sortCards(dealtCards, sortOrder)
     .map((dealtCard) => dealtCard.rankLabel)
     .join("");
 }
