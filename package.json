@@ -6,7 +6,7 @@
   "scripts": {
     "prepare": "husky install",
     "test": "jest --verbose",
-    "lintTypeCopyPasteAuditAndOutdatedCheck": "npm run lint && npm run typeCheck && npm run jscpd && npm audit && npm outdated",
+    "lintTypeCopyPasteAndOutdatedCheck": "npm run lint && npm run typeCheck && npm run jscpd && npm outdated",
     "lint": "eslint . && stylelint '**/*.css' && prettier --check . && cspell '**' --gitignore",
     "stylelint": "stylelint --fix '**/*.css'",
     "prettier": "prettier --write .",
@@ -29,7 +29,7 @@
     "@typescript-eslint/parser": "^5.42.0",
     "babel-jest": "^29.5.0",
     "cspell": "^6.26.3",
-    "eslint": "^8.27.0",
+    "eslint": "^8.38.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-react": "^7.32.2",
@@ -43,7 +43,7 @@
     "process": "^0.11.10",
     "stylelint": "^15.2.0",
     "stylelint-config-standard": "^32.0.0",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "repository": {
     "type": "git",

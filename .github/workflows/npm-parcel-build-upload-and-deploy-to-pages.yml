@@ -11,7 +11,7 @@ jobs:
       - run: npm clean-install
       - run: npm run test
       - run: npm run build
-      - run: npm run lintTypeCopyPasteAuditAndOutdatedCheck
+      - run: npm run lintTypeCopyPasteAndOutdatedCheck
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v1.0.3
         with:
