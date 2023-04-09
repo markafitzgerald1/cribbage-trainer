@@ -1,6 +1,6 @@
 import { DealtCard } from "../DealtCard";
 
 export interface DealtCardsHook {
-  dealtCards: DealtCard[];
-  setDealtCards: (dealtCards: DealtCard[]) => void;
+  dealtCards: readonly DealtCard[];
+  setDealtCards: (dealtCards: readonly DealtCard[]) => void;
 }

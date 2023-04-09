@@ -4,8 +4,8 @@ import React from "react";
 import { SortOrder } from "../SortOrder";
 
 interface CalculationProps {
-  keep: DealtCard[];
-  discard: DealtCard[];
+  keep: readonly DealtCard[];
+  discard: readonly DealtCard[];
   points: number;
   sortOrder: SortOrder;
 }

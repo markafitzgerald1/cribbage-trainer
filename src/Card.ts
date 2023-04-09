@@ -21,9 +21,9 @@ const createCard = (rankValue: number): Card => ({
 
 export const INDICES_PER_SUIT = 13;
 
-const CARD_INDICES: number[] = [...Array(INDICES_PER_SUIT).keys()];
+const CARD_INDICES: readonly number[] = [...Array(INDICES_PER_SUIT).keys()];
 
-const RANKED_CARDS: Card[] = CARD_INDICES.map(createCard);
+const RANKED_CARDS: readonly Card[] = CARD_INDICES.map(createCard);
 
 enum Rank {
   ACE,

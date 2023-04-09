@@ -15,7 +15,7 @@ export const HAND_POINTS = {
   TWO_PAIRS: 4,
 } as const;
 
-const pairsPoints = (keep: RankedCard[]) =>
+const pairsPoints = (keep: readonly RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
     ([first, second]) => first!.rankValue === second!.rankValue
   ).length * HAND_POINTS.PAIR;
@@ -24,7 +24,7 @@ const COUNT = {
   FIFTEEN: 15,
 } as const;
 
-const fifteensPoints = (keep: CountedCard[]) =>
+const fifteensPoints = (keep: readonly CountedCard[]) =>
   [...new PowerSet(keep)].filter(
     (possibleFifteen) =>
       possibleFifteen
@@ -37,7 +37,7 @@ enum RunLength {
   FOUR = 4,
 }
 
-const runLengthPoints = (keep: RankedCard[], runLength: RunLength) =>
+const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
   [...new Combination(keep, runLength)]
     .map((combination) => combination.map((card) => card.rankValue))
     .map((combination) =>
@@ -52,7 +52,7 @@ const runLengthPoints = (keep: RankedCard[], runLength: RunLength) =>
   HAND_POINTS.RUN_PER_CARD *
   runLength;
 
-const runsPoints = (keep: RankedCard[]) =>
+const runsPoints = (keep: readonly RankedCard[]) =>
   runLengthPoints(keep, RunLength.FOUR) ||
   runLengthPoints(keep, RunLength.THREE);
 
@@ -62,7 +62,7 @@ export interface HandPoints {
   runs: number;
   total: number;
 }
-export const handPoints = (keep: Card[]): HandPoints => {
+export const handPoints = (keep: readonly Card[]): HandPoints => {
   const pairs = pairsPoints(keep);
   const fifteens = fifteensPoints(keep);
   const runs = runsPoints(keep);

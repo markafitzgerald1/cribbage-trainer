@@ -13,14 +13,14 @@ const {
 } = HAND_POINTS;
 
 const expectTypePoints = (
-  keep: Card[],
+  keep: readonly Card[],
   type: keyof HandPoints,
   expectedPoints: number
 ) => expect(handPoints(keep)[type]).toBe(expectedPoints);
 
 describe("handPoints", () => {
   describe("pairs", () => {
-    const expectPairsPoints = (keep: Card[], expectedPoints: number) =>
+    const expectPairsPoints = (keep: readonly Card[], expectedPoints: number) =>
       expectTypePoints(keep, "pairs", expectedPoints);
 
     it("empty hand", () => {
@@ -87,8 +87,10 @@ describe("handPoints", () => {
   });
 
   describe("fifteens", () => {
-    const expectFifteensPoints = (keep: Card[], expectedPoints: number) =>
-      expectTypePoints(keep, "fifteens", expectedPoints);
+    const expectFifteensPoints = (
+      keep: readonly Card[],
+      expectedPoints: number
+    ) => expectTypePoints(keep, "fifteens", expectedPoints);
 
     it("empty hand", () => {
       expectFifteensPoints([], 0);
@@ -191,7 +193,7 @@ describe("handPoints", () => {
   const RUN = 3;
 
   describe("runs", () => {
-    const expectRunsPoints = (keep: Card[], expectedPoints: number) =>
+    const expectRunsPoints = (keep: readonly Card[], expectedPoints: number) =>
       expectTypePoints(keep, "runs", expectedPoints);
 
     it("empty hand", () => {
@@ -265,7 +267,7 @@ describe("handPoints", () => {
   });
 
   describe("total", () => {
-    const expectTotalPoints = (keep: Card[], expectedPoints: number) =>
+    const expectTotalPoints = (keep: readonly Card[], expectedPoints: number) =>
       expectTypePoints(keep, "total", expectedPoints);
 
     it("fifteen and a run", () => {

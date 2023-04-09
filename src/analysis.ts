@@ -4,8 +4,8 @@ import { Combination } from "js-combinatorics";
 import { handPoints } from "./scoring";
 
 export interface ScoredKeepDiscard<T extends Card> {
-  keep: T[];
-  discard: T[];
+  keep: readonly T[];
+  discard: readonly T[];
   points: number;
 }
 

@@ -5,7 +5,7 @@ import { SortOrder } from "../SortOrder";
 import { allScoredKeepDiscardsByScoreDescending } from "../analysis";
 
 export interface CalculationsProps {
-  dealtCards: DealtCard[];
+  dealtCards: readonly DealtCard[];
   sortOrder: SortOrder;
 }
 
