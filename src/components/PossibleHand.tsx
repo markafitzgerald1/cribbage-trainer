@@ -4,7 +4,7 @@ import React from "react";
 import { SortOrder } from "../SortOrder";
 import { sortCards } from "../sortCards";
 
-export function handToString(dealtCards: DealtCard[], sortOrder: SortOrder) {
+function handToString(dealtCards: DealtCard[], sortOrder: SortOrder) {
   return sortCards(dealtCards, sortOrder)
     .map((dealtCard) => dealtCard.rankLabel)
     .join("");
