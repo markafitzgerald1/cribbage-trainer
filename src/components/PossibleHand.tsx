@@ -1,9 +1,11 @@
 import { CalculationsProps } from "./Calculations";
 import React from "react";
-import { handToString } from "../handToString";
+import { handToSortedString } from "../handToSortedString";
 
 export function PossibleHand({ dealtCards, sortOrder }: CalculationsProps) {
   return (
-    <span className="keep-discard">{handToString(dealtCards, sortOrder)}</span>
+    <span className="keep-discard">
+      {handToSortedString(dealtCards, sortOrder)}
+    </span>
   );
 }

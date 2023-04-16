@@ -2,7 +2,7 @@ import { HandCard } from "./HandCard";
 import { SortOrder } from "./SortOrder";
 import { sortCards } from "./sortCards";
 
-export function handToString<T extends HandCard>(
+export function handToSortedString<T extends HandCard>(
   dealtCards: readonly T[],
   sortOrder: SortOrder
 ): string {

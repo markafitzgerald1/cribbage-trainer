@@ -3,7 +3,7 @@ import { describe, expect, it } from "@jest/globals";
 /* jscpd:ignore-start */
 import { HandCard } from "./HandCard";
 import { SortOrder } from "./SortOrder";
-import { handToString } from "./handToString";
+import { handToSortedString } from "./handToSortedString";
 import { sortOrderNames } from "./SortOrderName";
 /* jscpd:ignore-end */
 
@@ -46,7 +46,10 @@ describe("handToString", () => {
         ["descending discard of number cards", "82", ["82", "28"]],
       ])(`%s`, (_, handSpecifier, expectedHands) =>
         expect(
-          handToString(createHand(handSpecifier), SortOrder[sortOrderName])
+          handToSortedString(
+            createHand(handSpecifier),
+            SortOrder[sortOrderName]
+          )
         ).toBe([handSpecifier, ...expectedHands][SortOrder[sortOrderName]])
       );
     });
