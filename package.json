@@ -12,7 +12,7 @@
     "prettier": "prettier --write .",
     "typeCheck": "tsc",
     "jscpd": "jscpd",
-    "build": "parcel build --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer --detailed-report 25",
+    "build": "parcel build --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer --detailed-report 26",
     "start": "parcel serve --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer",
     "clean": "rm -rf dist parcel-bundle-reports coverage"
   },
@@ -23,10 +23,10 @@
     "@babel/preset-typescript": "^7.21.0",
     "@jest/globals": "^29.5.0",
     "@parcel/reporter-bundle-analyzer": "^2.8.3",
-    "@types/react": "^18.0.17",
+    "@types/react": "^18.0.34",
     "@types/react-dom": "^18.0.6",
-    "@typescript-eslint/eslint-plugin": "^5.42.0",
-    "@typescript-eslint/parser": "^5.42.0",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@typescript-eslint/parser": "^5.58.0",
     "babel-jest": "^29.5.0",
     "cspell": "^6.26.3",
     "eslint": "^8.38.0",
@@ -42,7 +42,7 @@
     "prettier": "^2.8.4",
     "process": "^0.11.10",
     "stylelint": "^15.2.0",
-    "stylelint-config-standard": "^32.0.0",
+    "stylelint-config-standard": "^33.0.0",
     "typescript": "^5.0.4"
   },
   "repository": {

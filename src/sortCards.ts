@@ -1,6 +1,8 @@
+/* jscpd:ignore-start */
 import { HandCard } from "./HandCard";
 import { SortOrder } from "./SortOrder";
-import { SortOrderName } from "./SortOrderName";
+import { sortOrderNames } from "./SortOrderName";
+/* jscpd:ignore-end */
 
 const createCompare =
   (sortOrder: SortOrder) =>
@@ -17,10 +19,7 @@ const createCompare =
   };
 
 const compare = Object.fromEntries(
-  Object.keys(SortOrder)
-    .filter((key) => isNaN(Number(key)))
-    .map((key) => key as SortOrderName)
-    .map((key) => [key, createCompare(SortOrder[key])])
+  sortOrderNames.map((key) => [key, createCompare(SortOrder[key])])
 );
 
 export const sortCards = <T extends HandCard>(
