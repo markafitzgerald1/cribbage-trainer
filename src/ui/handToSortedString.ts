@@ -1,4 +1,4 @@
-import { HandCard } from "./HandCard";
+import { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
 import { sortCards } from "./sortCards";
 

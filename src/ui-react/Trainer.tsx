@@ -1,10 +1,10 @@
-import { CARDS, INDICES_PER_SUIT } from "../Card";
+import { CARDS, INDICES_PER_SUIT } from "../game/Card";
 import React, { useState } from "react";
-import { CARDS_PER_DISCARD } from "../cribbage";
+import { CARDS_PER_DISCARD } from "../game/facts";
 import { Calculations } from "./Calculations";
-import { DealtCard } from "../DealtCard";
+import { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
-import { SortOrder } from "../SortOrder";
+import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 
 const CARDS_PER_DEALT_HAND = 6;

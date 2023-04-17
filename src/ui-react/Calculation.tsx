@@ -1,7 +1,7 @@
-import { DealtCard } from "../DealtCard";
+import { DealtCard } from "../game/DealtCard";
 import { PossibleHand } from "./PossibleHand";
 import React from "react";
-import { SortOrder } from "../SortOrder";
+import { SortOrder } from "../ui/SortOrder";
 
 interface CalculationProps {
   keep: readonly DealtCard[];

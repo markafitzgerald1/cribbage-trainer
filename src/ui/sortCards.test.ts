@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
-import { HandCard } from "./HandCard";
+import { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
-import { CARDS as c } from "./Card";
+import { CARDS as c } from "../game/Card";
 import { sortCards } from "./sortCards";
 
 describe("sortCards", () => {

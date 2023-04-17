@@ -1,6 +1,6 @@
 import { CalculationsProps } from "./Calculations";
 import React from "react";
-import { handToSortedString } from "../handToSortedString";
+import { handToSortedString } from "../ui/handToSortedString";
 
 export function PossibleHand({ dealtCards, sortOrder }: CalculationsProps) {
   return (

@@ -1,6 +1,6 @@
-import { SortOrderName, sortOrderNames } from "../SortOrderName";
+import { SortOrderName, sortOrderNames } from "../ui/SortOrderName";
 import React from "react";
-import { SortOrder } from "../SortOrder";
+import { SortOrder } from "../ui/SortOrder";
 
 interface SortOrderInputProps {
   sortOrder: SortOrder;

@@ -1,4 +1,4 @@
-import { DealtCard } from "../DealtCard";
+import { DealtCard } from "../game/DealtCard";
 
 export interface DealtCardsHook {
   dealtCards: readonly DealtCard[];

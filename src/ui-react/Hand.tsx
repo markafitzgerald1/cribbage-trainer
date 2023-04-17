@@ -1,8 +1,8 @@
 import { Card } from "./Card";
 import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
-import { SortOrder } from "../SortOrder";
-import { sortCards } from "../sortCards";
+import { SortOrder } from "../ui/SortOrder";
+import { sortCards } from "../ui/sortCards";
 
 interface HandProps extends DealtCardsHook {
   sortOrder: SortOrder;

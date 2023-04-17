@@ -1,10 +1,10 @@
-import { Card, CARDS as c } from "./Card";
+import { Card, CARDS as c } from "../game/Card";
 import {
   ScoredKeepDiscard,
   allScoredKeepDiscardsByScoreDescending,
 } from "./analysis";
 import { describe, expect, it } from "@jest/globals";
-import { HAND_POINTS } from "./scoring";
+import { HAND_POINTS } from "../game/scoring";
 
 const { FIFTEEN_TWO, FIFTEEN_FOUR, FIFTEEN_SIX } = HAND_POINTS;
 

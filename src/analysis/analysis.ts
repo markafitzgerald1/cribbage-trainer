@@ -1,7 +1,7 @@
-import { CARDS_PER_DISCARD } from "./cribbage";
-import { Card } from "./Card";
+import { CARDS_PER_DISCARD } from "../game/facts";
+import { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
-import { handPoints } from "./scoring";
+import { handPoints } from "../game/scoring";
 
 export interface ScoredKeepDiscard<T extends Card> {
   keep: readonly T[];

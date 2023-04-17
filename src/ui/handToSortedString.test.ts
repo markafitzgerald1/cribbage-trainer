@@ -1,10 +1,10 @@
-import { CARD_LABELS, createCard } from "./Card";
+import { CARD_LABELS, createCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 /* jscpd:ignore-start */
-import { HandCard } from "./HandCard";
+import { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
 import { handToSortedString } from "./handToSortedString";
-import { sortOrderNames } from "./SortOrderName";
+import { sortOrderNames } from "../ui/SortOrderName";
 /* jscpd:ignore-end */
 
 describe("handToString", () => {

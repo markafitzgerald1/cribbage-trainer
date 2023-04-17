@@ -1,8 +1,8 @@
 import { Calculation } from "./Calculation";
-import { DealtCard } from "../DealtCard";
+import { DealtCard } from "../game/DealtCard";
 import React from "react";
-import { SortOrder } from "../SortOrder";
-import { allScoredKeepDiscardsByScoreDescending } from "../analysis";
+import { SortOrder } from "../ui/SortOrder";
+import { allScoredKeepDiscardsByScoreDescending } from "../analysis/analysis";
 
 export interface CalculationsProps {
   dealtCards: readonly DealtCard[];

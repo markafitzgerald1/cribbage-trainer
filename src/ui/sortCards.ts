@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { HandCard } from "./HandCard";
+import { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
 import { sortOrderNames } from "./SortOrderName";
 /* jscpd:ignore-end */
