@@ -1,4 +1,3 @@
-import { CARDS_PER_DEALT_HAND, CARDS_PER_DISCARD } from "../game/facts";
 import React, { useState } from "react";
 import { Calculations } from "./Calculations";
 import { DealtCard } from "../game/DealtCard";
@@ -6,6 +5,7 @@ import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 import { dealHand } from "../game/dealHand";
+import { discardIsComplete } from "../game/discardIsComplete";
 
 export function Trainer() {
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
@@ -25,10 +25,7 @@ export function Trainer() {
           setDealtCards={setDealtCards}
           sortOrder={sortOrder}
         />
-        {!(
-          dealtCards.filter((dealtCard) => dealtCard.kept).length ===
-          CARDS_PER_DEALT_HAND - CARDS_PER_DISCARD
-        ) || (
+        {discardIsComplete(dealtCards) && (
           <Calculations
             dealtCards={dealtCards}
             sortOrder={sortOrder}
