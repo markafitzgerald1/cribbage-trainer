@@ -6,18 +6,13 @@ export interface CardProps extends DealtCardsHook {
 }
 
 export class Card extends React.Component<CardProps> {
-  constructor(props: CardProps) {
-    super(props);
-    this.handleClick = this.handleClick.bind(this);
-  }
-
-  handleClick() {
+  handleClick = () => {
     const { dealtCards, dealOrderIndex, setDealtCards } = this.props;
     const newDealtCards = [...dealtCards];
     const newDealtCard = newDealtCards[dealOrderIndex]!;
     newDealtCard.kept = !newDealtCard.kept;
     setDealtCards(newDealtCards);
-  }
+  };
 
   override render() {
     const { dealtCards, dealOrderIndex } = this.props;

@@ -4,9 +4,9 @@
   "coverageThreshold": {
     "global": {
       "branches": 66.66,
-      "functions": 72.54,
-      "lines": 68.75,
-      "statements": 70.29
+      "functions": 74,
+      "lines": 69.47,
+      "statements": 71
     }
   },
   "testEnvironment": "node"
