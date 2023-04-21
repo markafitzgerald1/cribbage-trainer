@@ -65,7 +65,7 @@
     "spellcheck/spell-checker": [
       "warn",
       {
-        "skipWords": ["formatter", "jscpd", "royale"]
+        "skipWords": ["formatter", "jscpd", "listitem", "royale"]
       }
     ]
   },
