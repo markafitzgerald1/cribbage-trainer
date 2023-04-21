@@ -10,7 +10,7 @@ export interface Card extends RankedCard, CountedCard {
   rankLabel: string;
 }
 
-const MAXIMUM_CARD_COUNTING_VALUE = 10;
+export const MAXIMUM_CARD_COUNTING_VALUE = 10;
 export const CARD_LABELS = "A23456789TJQK";
 
 export const createCard = (rankValue: number): Card => ({
@@ -21,7 +21,9 @@ export const createCard = (rankValue: number): Card => ({
 
 export const INDICES_PER_SUIT = 13;
 
-const CARD_INDICES: readonly number[] = [...Array(INDICES_PER_SUIT).keys()];
+export const CARD_INDICES: readonly number[] = [
+  ...Array(INDICES_PER_SUIT).keys(),
+];
 
 const RANKED_CARDS: readonly Card[] = CARD_INDICES.map(createCard);
 
