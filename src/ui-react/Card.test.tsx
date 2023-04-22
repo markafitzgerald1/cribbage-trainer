@@ -1,54 +1,74 @@
-import { describe, expect, it, jest } from "@jest/globals";
+import React, { useState } from "react";
+import { describe, expect, it } from "@jest/globals";
+import { fireEvent, render } from "@testing-library/react";
 import { Card } from "./Card";
 import { DealtCard } from "../game/DealtCard";
-import React from "react";
 import { dealHand } from "../game/dealHand";
-import { render } from "@testing-library/react";
 
 describe("card", () => {
-  const createAndRenderCard = ({ kept }: { kept: boolean }) => {
-    const dealtCards: readonly DealtCard[] = dealHand();
-    const setDealtCards = jest.fn();
-    const dealOrderIndex = Math.floor(Math.random() * dealtCards.length);
-    dealtCards[dealOrderIndex]!.kept = kept;
+  function CardContainer({
+    dealtHand,
+    dealOrderIndex,
+  }: {
+    dealtHand: readonly DealtCard[];
+    dealOrderIndex: number;
+  }) {
+    const [dealtCards, setDealtCards] =
+      useState<readonly DealtCard[]>(dealtHand);
+    return (
+      <div>
+        <Card
+          dealOrderIndex={dealOrderIndex}
+          dealtCards={dealtCards}
+          setDealtCards={setDealtCards}
+        />
+      </div>
+    );
+  }
+
+  const dealCreateAndRenderCardContainer = ({
+    dealOrderIndex = 0,
+    kept = true,
+  }) => {
+    const dealtHand = dealHand();
+    dealtHand[dealOrderIndex]!.kept = kept;
     const { getByRole, queryByRole } = render(
-      <Card
+      <CardContainer
         dealOrderIndex={dealOrderIndex}
-        dealtCards={dealtCards}
-        setDealtCards={setDealtCards}
+        dealtHand={dealtHand}
       />
     );
-
-    return { dealOrderIndex, dealtCards, getByRole, queryByRole };
+    return { dealtHand, getByRole, queryByRole };
   };
 
   it("returns a list item", () => {
-    const { queryByRole } = createAndRenderCard({ kept: true });
+    const { queryByRole } = dealCreateAndRenderCardContainer({});
 
     expect(queryByRole("listitem")).toBeTruthy();
   });
 
   it("text is its rank label", () => {
-    const { dealOrderIndex, getByRole, dealtCards } = createAndRenderCard({
-      kept: true,
+    const dealOrderIndex = 0;
+    const { dealtHand, getByRole } = dealCreateAndRenderCardContainer({
+      dealOrderIndex,
     });
 
     expect(getByRole("listitem").textContent).toBe(
-      dealtCards[dealOrderIndex]!.rankLabel
+      dealtHand[dealOrderIndex]!.rankLabel
     );
   });
 
   const expectCardListItemHasClass = ({
-    kept,
     className,
     hasClass,
+    kept,
   }: {
-    kept: boolean;
     className: string;
     hasClass: boolean;
+    kept: boolean;
   }) =>
     expect(
-      createAndRenderCard({ kept })
+      dealCreateAndRenderCardContainer({ kept })
         .getByRole("listitem")
         .classList.contains(className)
     ).toBe(hasClass);
@@ -76,4 +96,18 @@ describe("card", () => {
       kept: false,
     });
   });
+
+  const expectKeptAndDiscardedAfterClick = (kept: boolean) => {
+    const { getByRole } = dealCreateAndRenderCardContainer({ kept });
+
+    fireEvent.click(getByRole("listitem"));
+
+    expect(getByRole("listitem").classList.contains("discarded")).toBe(kept);
+  };
+
+  it("if kept, has class 'discarded' after being clicked", () =>
+    expectKeptAndDiscardedAfterClick(true));
+
+  it("if not kept, does not have class 'discarded' after being clicked", () =>
+    expectKeptAndDiscardedAfterClick(false));
 });

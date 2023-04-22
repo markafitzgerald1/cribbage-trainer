@@ -3,10 +3,10 @@
   "collectCoverageFrom": ["src/**/*.{ts,tsx}"],
   "coverageThreshold": {
     "global": {
-      "branches": 75,
-      "functions": 76,
-      "lines": 73.68,
-      "statements": 75
+      "branches": 83.33,
+      "functions": 78,
+      "lines": 78.94,
+      "statements": 80
     }
   },
   "testEnvironment": "jsdom"
