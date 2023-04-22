@@ -6,10 +6,12 @@ import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
+import { sortCards } from "../ui/sortCards";
+import { sortOrderNames } from "../ui/SortOrderName";
 /* jscpd:ignore-end */
 
 describe("hand component", () => {
-  const dealAndRender = () => {
+  const dealAndRender = (sortOrder: SortOrder) => {
     const dealtHand = dealHand();
 
     const { queryByRole, getAllByRole } = render(
@@ -18,7 +20,7 @@ describe("hand component", () => {
           <Hand
             dealtCards={dealtCards}
             setDealtCards={setDealtCards}
-            sortOrder={SortOrder.Ascending}
+            sortOrder={sortOrder}
           />
         )}
         dealtHand={dealtHand}
@@ -29,12 +31,27 @@ describe("hand component", () => {
   };
 
   it("is an unordered list", () => {
-    expect(dealAndRender().queryByRole("list")).toBeTruthy();
+    expect(dealAndRender(SortOrder.Ascending).queryByRole("list")).toBeTruthy();
   });
 
   it("has a list item for each dealt card", () => {
-    const { dealtHand, getAllByRole } = dealAndRender();
+    const { dealtHand, getAllByRole } = dealAndRender(SortOrder.Ascending);
 
     expect(getAllByRole("listitem")).toHaveLength(dealtHand.length);
   });
+
+  it.each(sortOrderNames)(
+    "has a sorted list item for each dealt card in %s order",
+    (sortOrderName) => {
+      const sortOrder = SortOrder[sortOrderName];
+      const { dealtHand, getAllByRole } = dealAndRender(sortOrder);
+      const sortedDealtHand = sortCards(dealtHand, sortOrder);
+
+      const listItems = getAllByRole("listitem");
+
+      listItems.forEach((listItem, index) => {
+        expect(listItem.textContent).toBe(sortedDealtHand[index]!.rankLabel);
+      });
+    }
+  );
 });

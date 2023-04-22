@@ -8,11 +8,11 @@ interface SortOrderInputProps {
 }
 
 export class SortOrderInput extends React.Component<SortOrderInputProps> {
-  static SortLabel = {
+  static SortLabel: Record<SortOrderName, string> = {
     Ascending: "↗️",
-    DealOrder: "↔️",
+    Dealt: "↔️",
     Descending: "↘️",
-  };
+  } as const;
 
   handleChange = (event: React.FormEvent<HTMLInputElement>) => {
     const { setSortOrder } = this.props;

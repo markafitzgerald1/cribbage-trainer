@@ -24,7 +24,7 @@ describe("sortCards", () => {
           switch (sortOrder) {
             case SortOrder.Ascending:
               return first.rankValue - second.rankValue;
-            case SortOrder.DealOrder:
+            case SortOrder.Dealt:
               return first.dealOrder - second.dealOrder;
             case SortOrder.Descending:
             default:
@@ -43,7 +43,7 @@ describe("sortCards", () => {
     });
 
     it("sorts in deal order", () => {
-      expectSort(SortOrder.DealOrder);
+      expectSort(SortOrder.Dealt);
     });
   });
 });
