@@ -9,9 +9,10 @@ import { render } from "@testing-library/react";
 /* jscpd:ignore-end */
 
 describe("hand component", () => {
-  it("is an unordered list", () => {
+  const dealAndRender = () => {
     const dealtHand = dealHand();
-    const { queryByRole } = render(
+
+    const { queryByRole, getAllByRole } = render(
       <DealComponentContainer
         createComponent={({ dealtCards, setDealtCards }) => (
           <Hand
@@ -23,6 +24,17 @@ describe("hand component", () => {
         dealtHand={dealtHand}
       />
     );
-    expect(queryByRole("list")).toBeTruthy();
+
+    return { dealtHand, getAllByRole, queryByRole };
+  };
+
+  it("is an unordered list", () => {
+    expect(dealAndRender().queryByRole("list")).toBeTruthy();
+  });
+
+  it("has a list item for each dealt card", () => {
+    const { dealtHand, getAllByRole } = dealAndRender();
+
+    expect(getAllByRole("listitem")).toHaveLength(dealtHand.length);
   });
 });
