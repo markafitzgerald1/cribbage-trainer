@@ -32,7 +32,8 @@
               "expectRunsPoints",
               "expectTotalPoints",
               "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
-              "expectSort"
+              "expectSort",
+              "expectCardListItemHasClass"
             ]
           }
         ],
@@ -65,7 +66,7 @@
     "spellcheck/spell-checker": [
       "warn",
       {
-        "skipWords": ["formatter", "jscpd", "listitem", "royale"]
+        "skipWords": ["formatter", "jscpd", "listitem", "royale", "Matcher"]
       }
     ]
   },
