@@ -38,7 +38,8 @@
             ]
           }
         ],
-        "jest/prefer-expect-assertions": ["off"]
+        "jest/prefer-expect-assertions": ["off"],
+        "react/jsx-no-bind": ["off"]
       }
     }
   ],
@@ -67,7 +68,14 @@
     "spellcheck/spell-checker": [
       "warn",
       {
-        "skipWords": ["formatter", "jscpd", "listitem", "royale", "Matcher"]
+        "skipWords": [
+          "formatter",
+          "jscpd",
+          "listitem",
+          "royale",
+          "Matcher",
+          "unordered"
+        ]
       }
     ]
   },

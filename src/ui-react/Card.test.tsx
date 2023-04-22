@@ -1,31 +1,12 @@
-import React, { useState } from "react";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { Card } from "./Card";
+import { DealComponentContainer } from "./DealComponentContainer";
 import { DealtCard } from "../game/DealtCard";
+import React from "react";
 import { dealHand } from "../game/dealHand";
 
-describe("card", () => {
-  function CardContainer({
-    dealtHand,
-    dealOrderIndex,
-  }: {
-    dealtHand: readonly DealtCard[];
-    dealOrderIndex: number;
-  }) {
-    const [dealtCards, setDealtCards] =
-      useState<readonly DealtCard[]>(dealtHand);
-    return (
-      <div>
-        <Card
-          dealOrderIndex={dealOrderIndex}
-          dealtCards={dealtCards}
-          setDealtCards={setDealtCards}
-        />
-      </div>
-    );
-  }
-
+describe("card component", () => {
   const dealCreateAndRenderCardContainer = ({
     dealOrderIndex = 0,
     kept = true,
@@ -33,15 +14,29 @@ describe("card", () => {
     const dealtHand = dealHand();
     dealtHand[dealOrderIndex]!.kept = kept;
     const { getByRole, queryByRole } = render(
-      <CardContainer
-        dealOrderIndex={dealOrderIndex}
+      <DealComponentContainer
+        createComponent={({
+          dealtCards,
+          setDealtCards,
+        }: {
+          dealtCards: readonly DealtCard[];
+          setDealtCards: React.Dispatch<
+            React.SetStateAction<readonly DealtCard[]>
+          >;
+        }): JSX.Element => (
+          <Card
+            dealOrderIndex={dealOrderIndex}
+            dealtCards={dealtCards}
+            setDealtCards={setDealtCards}
+          />
+        )}
         dealtHand={dealtHand}
       />
     );
     return { dealtHand, getByRole, queryByRole };
   };
 
-  it("returns a list item", () => {
+  it("is a list item", () => {
     const { queryByRole } = dealCreateAndRenderCardContainer({});
 
     expect(queryByRole("listitem")).toBeTruthy();
@@ -105,9 +100,9 @@ describe("card", () => {
     expect(getByRole("listitem").classList.contains("discarded")).toBe(kept);
   };
 
-  it("if kept, has class 'discarded' after being clicked", () =>
+  it("has class 'discarded' after being clicked if kept", () =>
     expectKeptAndDiscardedAfterClick(true));
 
-  it("if not kept, does not have class 'discarded' after being clicked", () =>
+  it("does not have class 'discarded' after being clicked if not kept", () =>
     expectKeptAndDiscardedAfterClick(false));
 });

@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import React, { useState } from "react";
 import { Calculations } from "./Calculations";
 import { DealtCard } from "../game/DealtCard";
@@ -6,6 +7,7 @@ import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
+/* jscpd:ignore-end */
 
 export function Trainer() {
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
