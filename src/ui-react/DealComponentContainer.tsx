@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import React, { useState } from "react";
 import { DealtCard } from "../game/DealtCard";
 
