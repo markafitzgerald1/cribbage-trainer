@@ -6,11 +6,11 @@ import { render } from "@testing-library/react";
 import { sortOrderNames } from "../ui/SortOrderName";
 
 describe("sort order input component", () => {
-  const renderComponent = () =>
+  const renderComponent = (sortOrder = SortOrder.Ascending) =>
     render(
       <SortOrderInput
         setSortOrder={jest.fn()}
-        sortOrder={SortOrder.Ascending}
+        sortOrder={sortOrder}
       />
     );
 
@@ -28,6 +28,21 @@ describe("sort order input component", () => {
       expect(
         renderComponent().queryByLabelText(
           SortOrderInput.SortLabel[sortOrderName]
+        )
+      ).toBeTruthy()
+  );
+
+  it.each(sortOrderNames)(
+    "displays the %s sort order description when in that initial sort state",
+    (sortOrderName) =>
+      expect(
+        renderComponent(SortOrder[sortOrderName]).queryByText(
+          `(${sortOrderName
+            .replace(
+              /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
+              "$<lastLower> $<nextFirstUpper>"
+            )
+            .toLowerCase()})`
         )
       ).toBeTruthy()
   );
