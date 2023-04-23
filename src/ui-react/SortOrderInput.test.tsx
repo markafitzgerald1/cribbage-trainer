@@ -6,25 +6,29 @@ import { render } from "@testing-library/react";
 import { sortOrderNames } from "../ui/SortOrderName";
 
 describe("sort order input component", () => {
-  it("contains a group", () => {
-    const { queryByRole } = render(
+  const renderComponent = () =>
+    render(
       <SortOrderInput
         setSortOrder={jest.fn()}
         sortOrder={SortOrder.Ascending}
       />
     );
 
-    expect(queryByRole("group")).toBeTruthy();
-  });
+  it("contains a group", () =>
+    expect(renderComponent().queryByRole("group")).toBeTruthy());
 
-  it("contains a radio button for each sort order", () => {
-    const { queryAllByRole } = render(
-      <SortOrderInput
-        setSortOrder={jest.fn()}
-        sortOrder={SortOrder.Ascending}
-      />
-    );
+  it("contains a radio button for each sort order", () =>
+    expect(renderComponent().queryAllByRole("radio")).toHaveLength(
+      sortOrderNames.length
+    ));
 
-    expect(queryAllByRole("radio")).toHaveLength(sortOrderNames.length);
-  });
+  it.each(sortOrderNames)(
+    "contains a %s labeled radio button",
+    (sortOrderName) =>
+      expect(
+        renderComponent().queryByLabelText(
+          SortOrderInput.SortLabel[sortOrderName]
+        )
+      ).toBeTruthy()
+  );
 });
