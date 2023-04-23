@@ -1,5 +1,14 @@
 {
   "version": "0.2",
   "language": "en",
-  "words": ["KJQT", "KJTQ", "KQJT", "listitem", "royale", "stylelint", "TJQK"]
+  "words": [
+    "KJQT",
+    "KJTQ",
+    "KQJT",
+    "listitem",
+    "radiogroup",
+    "royale",
+    "stylelint",
+    "TJQK"
+  ]
 }

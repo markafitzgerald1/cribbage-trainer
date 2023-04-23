@@ -72,8 +72,9 @@
           "formatter",
           "jscpd",
           "listitem",
-          "royale",
           "Matcher",
+          "radiogroup",
+          "royale",
           "unordered"
         ]
       }

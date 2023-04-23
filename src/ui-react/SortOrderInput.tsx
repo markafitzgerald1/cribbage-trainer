@@ -23,7 +23,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
   override render() {
     const { sortOrder } = this.props;
     return (
-      <div className="sort-order">
+      <fieldset className="sort-order">
         <span>Sort: </span>
         {sortOrderNames.map((key) => (
           <span key={SortOrder[key]}>
@@ -49,7 +49,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
             .toLowerCase()}
           )
         </span>
-      </div>
+      </fieldset>
     );
   }
 }
