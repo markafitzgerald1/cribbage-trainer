@@ -8,7 +8,7 @@ const createCompare =
   (sortOrder: SortOrder) =>
   (first: HandCard, second: HandCard): number => {
     switch (sortOrder) {
-      case SortOrder.Dealt:
+      case SortOrder.DealOrder:
         return first.dealOrder - second.dealOrder;
       case SortOrder.Ascending:
         return first.rankValue - second.rankValue;

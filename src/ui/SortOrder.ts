@@ -1,5 +1,5 @@
 export enum SortOrder {
-  Dealt,
+  DealOrder,
   Descending,
   Ascending,
 }

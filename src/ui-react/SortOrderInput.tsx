@@ -1,4 +1,8 @@
-import { SortOrderName, sortOrderNames } from "../ui/SortOrderName";
+import {
+  SortOrderName,
+  lowerCaseSpaceSeparatedSortOrderName,
+  sortOrderNames,
+} from "../ui/SortOrderName";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
@@ -10,7 +14,7 @@ interface SortOrderInputProps {
 export class SortOrderInput extends React.Component<SortOrderInputProps> {
   static SortLabel: Record<SortOrderName, string> = {
     Ascending: "↗️",
-    Dealt: "↔️",
+    DealOrder: "↔️",
     Descending: "↘️",
   } as const;
 
@@ -41,12 +45,11 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
         <span className="sort-order-description">
           {" "}
           (
-          {SortOrder[sortOrder]
-            .replace(
-              /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
-              "$<lastLower> $<nextFirstUpper>"
-            )
-            .toLowerCase()}
+          {
+            lowerCaseSpaceSeparatedSortOrderName[
+              SortOrder[sortOrder] as SortOrderName
+            ]
+          }
           )
         </span>
       </fieldset>
