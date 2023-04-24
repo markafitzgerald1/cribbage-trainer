@@ -1,9 +1,12 @@
 import { describe, expect, it, jest } from "@jest/globals";
+import {
+  lowerCaseSpaceSeparatedSortOrderName,
+  sortOrderNames,
+} from "../ui/SortOrderName";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 import { render } from "@testing-library/react";
-import { sortOrderNames } from "../ui/SortOrderName";
 
 describe("sort order input component", () => {
   const renderComponent = (sortOrder = SortOrder.Ascending) =>
@@ -37,12 +40,7 @@ describe("sort order input component", () => {
     (sortOrderName) =>
       expect(
         renderComponent(SortOrder[sortOrderName]).queryByText(
-          `(${sortOrderName
-            .replace(
-              /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
-              "$<lastLower> $<nextFirstUpper>"
-            )
-            .toLowerCase()})`
+          `(${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]})`
         )
       ).toBeTruthy()
   );
