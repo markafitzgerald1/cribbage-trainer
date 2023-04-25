@@ -40,7 +40,7 @@ describe("sort order input component", () => {
     (sortOrderName) =>
       expect(
         renderComponent(SortOrder[sortOrderName]).queryByText(
-          `(${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]})`
+          `${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]}`
         )
       ).toBeTruthy()
   );

@@ -26,8 +26,25 @@ h1,
   font-family: sans-serif;
 }
 
+legend {
+  display: contents;
+}
+
+legend::after {
+  content: ":";
+}
+
 .sort-order-description {
   color: #ddd;
+  padding-left: 0.25em;
+}
+
+.sort-order-description::before {
+  content: "(";
+}
+
+.sort-order-description::after {
+  content: ")";
 }
 
 .hand {

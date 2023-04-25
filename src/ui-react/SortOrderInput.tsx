@@ -28,7 +28,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
     const { sortOrder } = this.props;
     return (
       <fieldset className="sort-order">
-        <span>Sort: </span>
+        <legend>Sort</legend>
         {sortOrderNames.map((key) => (
           <span key={SortOrder[key]}>
             <input
@@ -43,14 +43,11 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
           </span>
         ))}
         <span className="sort-order-description">
-          {" "}
-          (
           {
             lowerCaseSpaceSeparatedSortOrderName[
               SortOrder[sortOrder] as SortOrderName
             ]
           }
-          )
         </span>
       </fieldset>
     );
