@@ -1,10 +1,11 @@
 import { describe, expect, it } from "@jest/globals";
-import { fireEvent, render } from "@testing-library/react";
 import { Card } from "./Card";
 import { DealComponentContainer } from "./DealComponentContainer";
 import { DealtCard } from "../game/DealtCard";
 import React from "react";
 import { dealHand } from "../game/dealHand";
+import { render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 describe("card component", () => {
   const dealCreateAndRenderCardContainer = ({
@@ -92,10 +93,11 @@ describe("card component", () => {
     });
   });
 
-  const expectKeptAndDiscardedAfterClick = (kept: boolean) => {
+  const expectKeptAndDiscardedAfterClick = async (kept: boolean) => {
+    const user = userEvent.setup();
     const { getByRole } = dealCreateAndRenderCardContainer({ kept });
 
-    fireEvent.click(getByRole("listitem"));
+    await user.click(getByRole("listitem"));
 
     expect(getByRole("listitem").classList.contains("discarded")).toBe(kept);
   };
