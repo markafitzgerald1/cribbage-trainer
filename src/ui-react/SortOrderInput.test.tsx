@@ -36,6 +36,16 @@ describe("sort order input component", () => {
   );
 
   it.each(sortOrderNames)(
+    "contains a checked %s labeled radio button when in that initial sort state",
+    (sortOrderName) =>
+      expect(
+        renderComponent(SortOrder[sortOrderName])
+          .queryByLabelText(SortOrderInput.SortLabel[sortOrderName])
+          ?.attributes.getNamedItem("checked")
+      ).toBeTruthy()
+  );
+
+  it.each(sortOrderNames)(
     "displays the %s sort order description when in that initial sort state",
     (sortOrderName) =>
       expect(
