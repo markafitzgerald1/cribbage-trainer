@@ -1,21 +1,35 @@
-import { describe, expect, it, jest } from "@jest/globals";
+import React, { useState } from "react";
 import {
+  SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
   sortOrderNames,
 } from "../ui/SortOrderName";
-import React from "react";
+import { describe, expect, it } from "@jest/globals";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 import { render } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 describe("sort order input component", () => {
-  const renderComponent = (sortOrder = SortOrder.Ascending) =>
-    render(
-      <SortOrderInput
-        setSortOrder={jest.fn()}
-        sortOrder={sortOrder}
-      />
+  function ComponentContainer({
+    initialSortOrder,
+  }: {
+    initialSortOrder: SortOrder;
+  }) {
+    const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
+    return (
+      <div>
+        <SortOrderInput
+          setSortOrder={setSortOrder}
+          sortOrder={sortOrder}
+        />
+      </div>
     );
+  }
+
+  function renderComponent(initialSortOrder = SortOrder.Ascending) {
+    return render(<ComponentContainer initialSortOrder={initialSortOrder} />);
+  }
 
   it("contains a group", () =>
     expect(renderComponent().queryByRole("group")).toBeTruthy());
@@ -53,5 +67,25 @@ describe("sort order input component", () => {
           `${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]}`
         )
       ).toBeTruthy()
+  );
+
+  it.each(sortOrderNames)(
+    "%s is checked after being clicked",
+    async (sortOrderName) => {
+      const user = userEvent.setup();
+      const sortOrder = SortOrder[sortOrderName];
+      const { queryAllByRole } = renderComponent(
+        SortOrder[
+          SortOrder[(sortOrder + 1) % sortOrderNames.length] as SortOrderName
+        ]
+      );
+      const radioButton = queryAllByRole("radio")[
+        sortOrder
+      ] as HTMLInputElement;
+
+      await user.click(radioButton);
+
+      expect(radioButton.checked).toBeTruthy();
+    }
   );
 });
