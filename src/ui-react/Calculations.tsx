@@ -11,20 +11,23 @@ export interface CalculationsProps {
 
 export function Calculations({ dealtCards, sortOrder }: CalculationsProps) {
   return (
-    <div className="calculations">
-      {allScoredKeepDiscardsByScoreDescending(dealtCards).map(
-        (scoredKeepDiscard) => (
-          <Calculation
-            discard={scoredKeepDiscard.discard}
-            keep={scoredKeepDiscard.keep}
-            key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-              .map((dealtCard) => dealtCard.dealOrder)
-              .join("")}
-            points={scoredKeepDiscard.points}
-            sortOrder={sortOrder}
-          />
-        )
-      )}
-    </div>
+    <figure>
+      <figcaption>Pre-cut hand points:</figcaption>
+      <ul className="calculations">
+        {allScoredKeepDiscardsByScoreDescending(dealtCards).map(
+          (scoredKeepDiscard) => (
+            <Calculation
+              discard={scoredKeepDiscard.discard}
+              keep={scoredKeepDiscard.keep}
+              key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
+                .map((dealtCard) => dealtCard.dealOrder)
+                .join("")}
+              points={scoredKeepDiscard.points}
+              sortOrder={sortOrder}
+            />
+          )
+        )}
+      </ul>
+    </figure>
   );
 }

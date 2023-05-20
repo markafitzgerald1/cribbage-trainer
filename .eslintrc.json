@@ -34,7 +34,8 @@
               "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
               "expectSort",
               "expectCardListItemHasClass",
-              "expectKeptAndDiscardedAfterClick"
+              "expectKeptAndDiscardedAfterClick",
+              "expectCalculationsAfterClicks"
             ]
           }
         ],
@@ -75,6 +76,7 @@
           "Matcher",
           "radiogroup",
           "royale",
+          "ul",
           "unordered"
         ]
       }

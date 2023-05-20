@@ -23,6 +23,14 @@ describe("calculations component", () => {
     return { container, dealtHand };
   };
 
+  const caption = "Pre-cut hand points:";
+
+  it(`has caption '${caption}'`, () => {
+    const { container } = dealAndRender();
+
+    expect(container.textContent).toContain(caption);
+  });
+
   it("should render each possible keep and discard pair exactly once", () => {
     const { container } = dealAndRender();
 

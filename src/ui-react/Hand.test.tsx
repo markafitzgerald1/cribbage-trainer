@@ -14,7 +14,7 @@ describe("hand component", () => {
   const dealAndRender = (sortOrder: SortOrder) => {
     const dealtHand = dealHand();
 
-    const { queryByRole, getAllByRole } = render(
+    const { queryByRole, queryByText, getAllByRole } = render(
       <DealComponentContainer
         createComponent={({ dealtCards, setDealtCards }) => (
           <Hand
@@ -27,11 +27,15 @@ describe("hand component", () => {
       />
     );
 
-    return { dealtHand, getAllByRole, queryByRole };
+    return { dealtHand, getAllByRole, queryByRole, queryByText };
   };
 
-  it("is an unordered list", () => {
-    expect(dealAndRender(SortOrder.Ascending).queryByRole("list")).toBeTruthy();
+  const caption = "Dealt hand:";
+
+  it(`has caption '${caption}'`, () => {
+    expect(
+      dealAndRender(SortOrder.Ascending).queryByText(caption)
+    ).toBeTruthy();
   });
 
   it("has a list item for each dealt card", () => {

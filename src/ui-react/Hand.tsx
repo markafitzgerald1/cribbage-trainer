@@ -11,15 +11,18 @@ interface HandProps extends DealtCardsHook {
 export function Hand({ dealtCards, setDealtCards, sortOrder }: HandProps) {
   const sortedDealtCards = sortCards(dealtCards, sortOrder);
   return (
-    <ul className="hand">
-      {sortedDealtCards.map((dealtCard, index) => (
-        <Card
-          dealOrderIndex={index}
-          dealtCards={sortedDealtCards}
-          key={dealtCard.dealOrder}
-          setDealtCards={setDealtCards}
-        />
-      ))}
-    </ul>
+    <figure>
+      <figcaption>Dealt hand:</figcaption>
+      <ul className="hand">
+        {sortedDealtCards.map((dealtCard, index) => (
+          <Card
+            dealOrderIndex={index}
+            dealtCards={sortedDealtCards}
+            key={dealtCard.dealOrder}
+            setDealtCards={setDealtCards}
+          />
+        ))}
+      </ul>
+    </figure>
   );
 }

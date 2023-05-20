@@ -7,7 +7,7 @@
     "prepare": "husky install",
     "test": "jest --verbose",
     "lintTypeCopyPasteAndOutdatedCheck": "npm run lint && npm run typeCheck && npm run jscpd && npm outdated",
-    "lint": "eslint . && stylelint '**/*.css' && prettier --check . && cspell '**' --gitignore",
+    "lint": "eslint --max-warnings 0 . && stylelint '**/*.css' && prettier --check . && cspell '**' --gitignore",
     "stylelint": "stylelint --fix '**/*.css'",
     "prettier": "prettier --write .",
     "typeCheck": "tsc",

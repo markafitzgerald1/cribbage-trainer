@@ -17,7 +17,7 @@ export function Calculation({
   sortOrder,
 }: CalculationProps) {
   return (
-    <div>
+    <li>
       <PossibleHand
         dealtCards={keep}
         sortOrder={sortOrder}
@@ -28,6 +28,6 @@ export function Calculation({
         sortOrder={sortOrder}
       />{" "}
       for {points} points
-    </div>
+    </li>
   );
 }
