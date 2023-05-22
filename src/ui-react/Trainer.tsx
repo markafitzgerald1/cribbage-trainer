@@ -17,6 +17,7 @@ export function Trainer() {
 
   return (
     <React.StrictMode>
+      <h1>Cribbage Trainer</h1>
       <div>
         <SortOrderInput
           setSortOrder={setSortOrder}

@@ -6,6 +6,12 @@ import { UserEvent } from "@testing-library/user-event/dist/types/setup/setup";
 import userEvent from "@testing-library/user-event";
 
 describe("trainer component", () => {
+  const headingText = "Cribbage Trainer";
+
+  it(`has heading text '${headingText}'`, () => {
+    expect(render(<Trainer />).queryByText(headingText)).toBeTruthy();
+  });
+
   it("initially contains a sort in descending order radio input", () => {
     expect(render(<Trainer />).queryByLabelText("↘️")).toBeTruthy();
   });

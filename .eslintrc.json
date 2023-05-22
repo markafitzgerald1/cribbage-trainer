@@ -70,6 +70,7 @@
       "warn",
       {
         "skipWords": [
+          "entrypoint",
           "formatter",
           "jscpd",
           "listitem",
@@ -77,6 +78,7 @@
           "radiogroup",
           "royale",
           "ul",
+          "unmount",
           "unordered"
         ]
       }
