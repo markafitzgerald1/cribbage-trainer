@@ -1,10 +1,26 @@
 import { expect, test } from "@playwright/test";
 
+test("double tap zoom disabled to speed up mobile onclick handling", async ({
+  page,
+}) => {
+  await page.goto("/");
+  expect(
+    await page.$('meta[name="viewport"][content="width=device-width"]')
+  ).not.toBeNull();
+});
+
 const expectedTitle = "Cribbage Trainer";
 
 test(`has title '${expectedTitle}'`, async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(expectedTitle);
+});
+
+test("styles.css is linked", async ({ page }) => {
+  await page.goto("/");
+  expect(
+    await page.$('link[rel="stylesheet"][href*="index."][href$=".css"]')
+  ).not.toBeNull();
 });
 
 test("pre-cut hand points show after select of two discards", async ({
