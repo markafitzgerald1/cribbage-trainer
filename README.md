@@ -14,5 +14,5 @@ Code in `main` is automatically built on `git push` and deployed to [GitHub Page
 
 - Install the latest version of the major version of [Node.js](https://nodejs.org/en/) specified in `.github/workflows/npm-parcel-build-upload-and-deploy-to-pages.yml`
 - Install third-party dependencies: `npm install`
-- Run locally in development mode: `npm run clean && npm test && npm run lintTypeCopyPasteAndOutdatedCheck && npm start`
-- Build and run locally in production (GitHub Pages) mode: `npm run clean && npm test && npm run build && npm run lintTypeCopyPasteAndOutdatedCheck && npm start`
+- Run locally in development mode: `npm run clean && npm test && npm run lintTypeCopyPasteAndOutdatedCheck && npm run test-e2e && npm start`
+- Build and run locally in production (GitHub Pages) mode: `npm run clean && npm test && npm run build && npm run lintTypeCopyPasteAndOutdatedCheck && npm run test-e2e && npm start`
