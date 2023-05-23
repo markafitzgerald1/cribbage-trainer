@@ -72,10 +72,12 @@
         "skipWords": [
           "cpus",
           "entrypoint",
+          "figcaption",
           "firefox",
           "formatter",
           "goto",
           "jscpd",
+          "li",
           "listitem",
           "Matcher",
           "msedge",
