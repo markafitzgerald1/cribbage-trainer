@@ -6,6 +6,7 @@
   "scripts": {
     "prepare": "husky install",
     "test": "jest --verbose",
+    "test-e2e": "playwright test",
     "lintTypeCopyPasteAndOutdatedCheck": "npm run lint && npm run typeCheck && npm run jscpd && npm outdated",
     "lint": "eslint --max-warnings 0 . && stylelint '**/*.css' && prettier --check . && cspell '**' --gitignore",
     "stylelint": "stylelint --fix '**/*.css'",
@@ -23,6 +24,7 @@
     "@babel/preset-typescript": "^7.21.0",
     "@jest/globals": "^29.5.0",
     "@parcel/reporter-bundle-analyzer": "^2.8.3",
+    "@playwright/test": "^1.34.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
     "@types/react": "^18.0.34",

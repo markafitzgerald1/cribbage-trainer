@@ -5,3 +5,5 @@
 /\.vscode/
 /parcel-bundle-reports/
 /coverage/
+/test-results/
+/playwright-report/

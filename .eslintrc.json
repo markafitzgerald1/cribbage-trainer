@@ -70,16 +70,22 @@
       "warn",
       {
         "skipWords": [
+          "cpus",
           "entrypoint",
+          "firefox",
           "formatter",
+          "goto",
           "jscpd",
           "listitem",
           "Matcher",
+          "msedge",
+          "os",
           "radiogroup",
           "royale",
           "ul",
           "unmount",
-          "unordered"
+          "unordered",
+          "webkit"
         ]
       }
     ]

@@ -9,5 +9,6 @@
       "statements": 100
     }
   },
-  "testEnvironment": "jsdom"
+  "testEnvironment": "jsdom",
+  "testPathIgnorePatterns": ["/tests-e2e/", "/tests-examples"]
 }
