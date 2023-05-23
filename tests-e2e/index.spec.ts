@@ -1,5 +1,21 @@
 import { expect, test } from "@playwright/test";
 
+const expectedHtmlLanguage = "en";
+
+test(`HTML language '${expectedHtmlLanguage}' is specified`, async ({
+  page,
+}) => {
+  await page.goto("/");
+  expect(await page.$(`html[lang="${expectedHtmlLanguage}"]`)).not.toBeNull();
+});
+
+const expectedCharset = "utf-8";
+
+test(`HTML charset '${expectedCharset}' is specified`, async ({ page }) => {
+  await page.goto("/");
+  expect(await page.$(`meta[charset="${expectedCharset}"]`)).not.toBeNull();
+});
+
 test("double tap zoom disabled to speed up mobile onclick handling", async ({
   page,
 }) => {

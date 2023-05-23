@@ -70,6 +70,7 @@
       "warn",
       {
         "skipWords": [
+          "charset",
           "cpus",
           "entrypoint",
           "figcaption",
@@ -78,6 +79,7 @@
           "goto",
           "href",
           "jscpd",
+          "lang",
           "li",
           "listitem",
           "Matcher",
@@ -88,6 +90,7 @@
           "ul",
           "unmount",
           "unordered",
+          "utf",
           "webkit"
         ]
       }
