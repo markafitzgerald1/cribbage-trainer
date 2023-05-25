@@ -1,4 +1,4 @@
-import { Card, CARDS as c } from "./Card";
+import { CARD_LABELS, Card, CARDS as c } from "./Card";
 import { HAND_POINTS, HandPoints, handPoints } from "./scoring";
 import { describe, expect, it } from "@jest/globals";
 
@@ -19,69 +19,69 @@ const expectTypePoints = (
 ) => expect(handPoints(keep)[type]).toBe(expectedPoints);
 
 describe("handPoints", () => {
+  const parseCards = (keepSpecifier: string): Card[] =>
+    keepSpecifier.split("").map((rank) => c[CARD_LABELS.indexOf(rank)]!);
+
   describe("pairs", () => {
     const expectPairsPoints = (keep: readonly Card[], expectedPoints: number) =>
       expectTypePoints(keep, "pairs", expectedPoints);
 
     it("empty hand", () => {
-      expectPairsPoints([], 0);
+      expectPairsPoints(parseCards(""), 0);
     });
 
     it("single card hand", () => {
-      expectPairsPoints([c.SEVEN], 0);
+      expectPairsPoints(parseCards("7"), 0);
     });
 
     describe("two card hand", () => {
       it("two equal rank cards", () => {
-        expectPairsPoints([c.QUEEN, c.QUEEN], PAIR);
+        expectPairsPoints(parseCards("QQ"), PAIR);
       });
 
       it("two unequal rank cards", () => {
-        expectPairsPoints([c.SEVEN, c.EIGHT], 0);
+        expectPairsPoints(parseCards("78"), 0);
       });
 
       it("same count unequal rank cards", () => {
-        expectPairsPoints([c.TEN, c.JACK], 0);
+        expectPairsPoints(parseCards("TJ"), 0);
       });
     });
 
     describe("three card hand", () => {
       it("three unequal rank cards", () => {
-        expectPairsPoints([c.TWO, c.THREE, c.KING], 0);
+        expectPairsPoints(parseCards("23K"), 0);
       });
 
       it("two equal rank cards", () => {
-        expectPairsPoints([c.FOUR, c.EIGHT, c.FOUR], PAIR);
+        expectPairsPoints(parseCards("484"), PAIR);
       });
 
       it("three equal rank cards", () => {
-        expectPairsPoints([c.SIX, c.SIX, c.SIX], PAIRS_ROYALE);
+        expectPairsPoints(parseCards("666"), PAIRS_ROYALE);
       });
     });
 
     describe("four card hand", () => {
       it("four unequal rank cards", () => {
-        expectPairsPoints([c.EIGHT, c.ACE, c.JACK, c.FOUR], 0);
+        expectPairsPoints(parseCards("8AJ4"), 0);
       });
 
       it("one pair", () => {
-        expectPairsPoints([c.FIVE, c.TWO, c.NINE, c.FIVE], PAIR);
+        expectPairsPoints(parseCards("5295"), PAIR);
       });
 
       it("two distinct pairs", () => {
         const PAIR_COUNT = 2;
-        expectPairsPoints(
-          [c.QUEEN, c.FOUR, c.QUEEN, c.FOUR],
-          PAIR_COUNT * PAIR
-        );
+        expectPairsPoints(parseCards("Q4Q4"), PAIR_COUNT * PAIR);
       });
 
       it("three of a kind", () => {
-        expectPairsPoints([c.EIGHT, c.EIGHT, c.TEN, c.EIGHT], PAIRS_ROYALE);
+        expectPairsPoints(parseCards("88T8"), PAIRS_ROYALE);
       });
 
       it("four of a kind", () => {
-        expectPairsPoints([c.ACE, c.ACE, c.ACE, c.ACE], DOUBLE_PAIRS_ROYALE);
+        expectPairsPoints(parseCards("AAAA"), DOUBLE_PAIRS_ROYALE);
       });
     });
   });
@@ -93,99 +93,96 @@ describe("handPoints", () => {
     ) => expectTypePoints(keep, "fifteens", expectedPoints);
 
     it("empty hand", () => {
-      expectFifteensPoints([], 0);
+      expectFifteensPoints(parseCards(""), 0);
     });
 
     it("single card hand", () => {
-      expectFifteensPoints([c.NINE], 0);
+      expectFifteensPoints(parseCards("9"), 0);
     });
 
     describe("two card hand", () => {
       it("with equal card ranks", () => {
-        expectFifteensPoints([c.EIGHT, c.EIGHT], 0);
+        expectFifteensPoints(parseCards("88"), 0);
       });
 
       it("with base one ranks that add up to 15", () => {
-        expectFifteensPoints([c.THREE, c.QUEEN], 0);
+        expectFifteensPoints(parseCards("3Q"), 0);
       });
 
       it("with counts that add up to 15", () => {
-        expectFifteensPoints([c.NINE, c.SIX], FIFTEEN_TWO);
+        expectFifteensPoints(parseCards("96"), FIFTEEN_TWO);
       });
 
       it("with counts but not ranks that add up to 15", () => {
-        expectFifteensPoints([c.FIVE, c.KING], FIFTEEN_TWO);
+        expectFifteensPoints(parseCards("5K"), FIFTEEN_TWO);
       });
     });
 
     describe("three card hand", () => {
       it("with no fifteens", () => {
-        expectFifteensPoints([c.FOUR, c.SEVEN, c.NINE], 0);
+        expectFifteensPoints(parseCards("479"), 0);
       });
 
       it("with a two-card fifteen", () => {
-        expectFifteensPoints([c.SEVEN, c.EIGHT, c.ACE], FIFTEEN_TWO);
+        expectFifteensPoints(parseCards("78A"), FIFTEEN_TWO);
       });
 
       it("with a three-card fifteen", () => {
-        expectFifteensPoints([c.FOUR, c.QUEEN, c.ACE], FIFTEEN_TWO);
+        expectFifteensPoints(parseCards("4QA"), FIFTEEN_TWO);
       });
 
       it("with two fifteens", () => {
-        expectFifteensPoints([c.SIX, c.NINE, c.SIX], FIFTEEN_FOUR);
+        expectFifteensPoints(parseCards("696"), FIFTEEN_FOUR);
       });
     });
 
     describe("four card hand", () => {
       it("with no fifteens", () => {
-        expectFifteensPoints([c.TWO, c.FOUR, c.SIX, c.EIGHT], 0);
+        expectFifteensPoints(parseCards("2468"), 0);
       });
 
       it("with one two-card fifteen", () => {
-        expectFifteensPoints([c.SEVEN, c.SIX, c.EIGHT, c.TEN], FIFTEEN_TWO);
+        expectFifteensPoints(parseCards("768T"), FIFTEEN_TWO);
       });
 
       it("with one three-card fifteen", () => {
-        expectFifteensPoints([c.SEVEN, c.SIX, c.ACE, c.TWO], FIFTEEN_TWO);
+        expectFifteensPoints(parseCards("76A2"), FIFTEEN_TWO);
       });
 
       it("with one four-card fifteen", () => {
-        expectFifteensPoints([c.SEVEN, c.SIX, c.ACE, c.ACE], FIFTEEN_TWO);
+        expectFifteensPoints(parseCards("76AA"), FIFTEEN_TWO);
       });
 
       it("with two distinct fifteens", () => {
-        expectFifteensPoints([c.QUEEN, c.FIVE, c.NINE, c.SIX], FIFTEEN_FOUR);
+        expectFifteensPoints(parseCards("Q596"), FIFTEEN_FOUR);
       });
 
       it("with two distinct overlapping two-card fifteens", () => {
-        expectFifteensPoints([c.KING, c.FIVE, c.FIVE, c.FOUR], FIFTEEN_FOUR);
+        expectFifteensPoints(parseCards("K554"), FIFTEEN_FOUR);
       });
 
       it("with two distinct overlapping three-card fifteens", () => {
-        expectFifteensPoints([c.QUEEN, c.JACK, c.FOUR, c.ACE], FIFTEEN_FOUR);
+        expectFifteensPoints(parseCards("QJ4A"), FIFTEEN_FOUR);
       });
 
       it("with three distinct two-card fifteens", () => {
-        expectFifteensPoints([c.KING, c.TEN, c.JACK, c.FIVE], FIFTEEN_SIX);
+        expectFifteensPoints(parseCards("KJT5"), FIFTEEN_SIX);
       });
 
       it("with three distinct three-card fifteens", () => {
-        expectFifteensPoints([c.SEVEN, c.FOUR, c.FOUR, c.FOUR], FIFTEEN_SIX);
+        expectFifteensPoints(parseCards("7444"), FIFTEEN_SIX);
       });
 
       it("with four distinct two-card fifteens", () => {
-        expectFifteensPoints(
-          [c.EIGHT, c.EIGHT, c.SEVEN, c.SEVEN],
-          FIFTEEN_EIGHT
-        );
+        expectFifteensPoints(parseCards("8877"), FIFTEEN_EIGHT);
       });
 
       it("with four distinct three-card fifteens", () => {
-        expectFifteensPoints([c.JACK, c.FIVE, c.FIVE, c.FIVE], FIFTEEN_EIGHT);
+        expectFifteensPoints(parseCards("J555"), FIFTEEN_EIGHT);
       });
 
       it("with four fives", () => {
-        expectFifteensPoints([c.FIVE, c.FIVE, c.FIVE, c.FIVE], FIFTEEN_EIGHT);
+        expectFifteensPoints(parseCards("5555"), FIFTEEN_EIGHT);
       });
     });
   });
@@ -206,37 +203,37 @@ describe("handPoints", () => {
 
     describe("two card hand", () => {
       it("two cards with adjacent ranks", () => {
-        expectRunsPoints([c.FIVE, c.FOUR], 0);
+        expectRunsPoints(parseCards("54"), 0);
       });
 
       it("two cards with non-adjacent ranks", () => {
-        expectRunsPoints([c.ACE, c.EIGHT], 0);
+        expectRunsPoints(parseCards("A8"), 0);
       });
     });
 
     describe("three card hand", () => {
       it("with no adjacent ranked cards", () => {
-        expectRunsPoints([c.SIX, c.ACE, c.JACK], 0);
+        expectRunsPoints(parseCards("6AJ"), 0);
       });
 
       it("with two adjacent ranked cards", () => {
-        expectRunsPoints([c.SIX, c.SEVEN, c.JACK], 0);
+        expectRunsPoints(parseCards("67J"), 0);
       });
 
       it("with three adjacent ranked cards", () => {
-        expectRunsPoints([c.SIX, c.SEVEN, c.FIVE], RUN);
+        expectRunsPoints(parseCards("765"), RUN);
       });
 
       it("with three adjacent count but not rank cards", () => {
-        expectRunsPoints([c.EIGHT, c.NINE, c.JACK], 0);
+        expectRunsPoints(parseCards("89J"), 0);
       });
 
       it("with three adjacent ascending ranked cards", () => {
-        expectRunsPoints([c.ACE, c.TWO, c.THREE], RUN);
+        expectRunsPoints(parseCards("A23"), RUN);
       });
 
       it("with three adjacent descending ranked cards", () => {
-        expectRunsPoints([c.KING, c.QUEEN, c.JACK], RUN);
+        expectRunsPoints(parseCards("KQJ"), RUN);
       });
     });
 
@@ -244,24 +241,24 @@ describe("handPoints", () => {
 
     describe("four card hand", () => {
       it("with no adjacent ranked cards", () => {
-        expectRunsPoints([c.TWO, c.FIVE, c.NINE, c.KING], 0);
+        expectRunsPoints(parseCards("259K"), 0);
       });
 
       it("with two adjacent ranked cards", () => {
-        expectRunsPoints([c.TWO, c.FIVE, c.SIX, c.KING], 0);
+        expectRunsPoints(parseCards("256K"), 0);
       });
 
       it("with three adjacent ranked cards", () => {
-        expectRunsPoints([c.FOUR, c.FIVE, c.SIX, c.KING], RUN);
+        expectRunsPoints(parseCards("456K"), RUN);
       });
 
       it("with four adjacent ranked cards", () => {
-        expectRunsPoints([c.FOUR, c.FIVE, c.SIX, c.SEVEN], LONG_RUN);
+        expectRunsPoints(parseCards("4567"), LONG_RUN);
       });
 
       it("with two overlapping sets of three adjacent ranked cards", () => {
         const RUN_COUNT = 2;
-        expectRunsPoints([c.ACE, c.THREE, c.TWO, c.THREE], RUN_COUNT * RUN);
+        expectRunsPoints(parseCards("A323"), RUN_COUNT * RUN);
       });
     });
   });
@@ -271,25 +268,22 @@ describe("handPoints", () => {
       expectTypePoints(keep, "total", expectedPoints);
 
     it("fifteen and a run", () => {
-      expectTotalPoints([c.EIGHT, c.NINE, c.SEVEN], FIFTEEN_TWO + RUN);
+      expectTotalPoints(parseCards("897"), FIFTEEN_TWO + RUN);
     });
 
     it("fifteen and a pair", () => {
-      expectTotalPoints([c.SEVEN, c.FOUR, c.FOUR], FIFTEEN_TWO + PAIR);
+      expectTotalPoints(parseCards("744"), FIFTEEN_TWO + PAIR);
     });
 
     it("pair and two runs", () => {
       const expectedRunCount = 2;
-      expectTotalPoints(
-        [c.JACK, c.JACK, c.KING, c.QUEEN],
-        PAIR + expectedRunCount * RUN
-      );
+      expectTotalPoints(parseCards("JJKQ"), PAIR + expectedRunCount * RUN);
     });
 
     it("two fifteens, one pair and two runs", () => {
       const expectedRunCount = 2;
       expectTotalPoints(
-        [c.SIX, c.SEVEN, c.EIGHT, c.EIGHT],
+        parseCards("6788"),
         FIFTEEN_FOUR + PAIR + expectedRunCount * RUN
       );
     });
@@ -297,16 +291,13 @@ describe("handPoints", () => {
     it("four fifteens and two pairs", () => {
       const expectedPairCount = 2;
       expectTotalPoints(
-        [c.TEN, c.TEN, c.FIVE, c.FIVE],
+        parseCards("TT55"),
         FIFTEEN_EIGHT + expectedPairCount * PAIR
       );
     });
 
     it("two fifteens and a pair", () => {
-      expectTotalPoints(
-        [c.QUEEN, c.QUEEN, c.THREE, c.TWO],
-        FIFTEEN_FOUR + PAIR
-      );
+      expectTotalPoints(parseCards("QQ32"), FIFTEEN_FOUR + PAIR);
     });
   });
 });
