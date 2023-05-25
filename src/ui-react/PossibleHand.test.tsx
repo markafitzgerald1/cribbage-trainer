@@ -30,14 +30,14 @@ describe("possible hand component", () => {
   const keptHand = "TAJ4";
   const discard = "5K";
   it.each([
-    ["A4TJ", SortOrder.Ascending, keptHand],
-    ["JT4A", SortOrder.Descending, keptHand],
-    [keptHand, SortOrder.DealOrder, keptHand],
-    [discard, SortOrder.Ascending, discard],
-    ["K5", SortOrder.Descending, discard],
-    [discard, SortOrder.DealOrder, discard],
+    ["A4TJ", SortOrder[SortOrder.Ascending], keptHand],
+    ["JT4A", SortOrder[SortOrder.Descending], keptHand],
+    [keptHand, SortOrder[SortOrder.DealOrder], keptHand],
+    [discard, SortOrder[SortOrder.Ascending], discard],
+    ["K5", SortOrder[SortOrder.Descending], discard],
+    [discard, SortOrder[SortOrder.DealOrder], discard],
   ])(
-    "renders a span with class keep-discard and dealt cards %s sorted %s",
+    "renders a span with class keep-discard and dealt cards %s sorted in %s order",
     (sortedHand, sortOrder, hand) =>
       expect(
         render(
@@ -47,7 +47,7 @@ describe("possible hand component", () => {
               dealOrder,
               kept: true,
             }))}
-            sortOrder={sortOrder}
+            sortOrder={SortOrder[sortOrder as keyof typeof SortOrder]}
           />
         ).container.querySelector("span.keep-discard")!.textContent
       ).toStrictEqual(sortedHand)
