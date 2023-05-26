@@ -1,5 +1,5 @@
+import React, { StrictMode } from "react";
 import { describe, expect, it, jest } from "@jest/globals";
-import React from "react";
 import ReactDOMClient from "react-dom/client";
 import { Trainer } from "./ui-react/Trainer";
 
@@ -27,7 +27,11 @@ describe("app entrypoint", () => {
 
       expect(document.querySelector).toHaveBeenCalledWith(containerSelector);
       expect(ReactDOMClient.createRoot).toHaveBeenCalledWith(container);
-      expect(renderMock).toHaveBeenCalledWith(<Trainer />);
+      expect(renderMock).toHaveBeenCalledWith(
+        <StrictMode>
+          <Trainer />
+        </StrictMode>
+      );
     } finally {
       jest.resetAllMocks();
     }
