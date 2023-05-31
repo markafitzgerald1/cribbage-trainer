@@ -9,10 +9,14 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 /* jscpd:ignore-end */
 
-export function Trainer() {
+interface RandomNumberGenerator {
+  generateRandomNumber: () => number;
+}
+
+export function Trainer({ generateRandomNumber }: RandomNumberGenerator) {
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
   const [dealtCards, setDealtCards] = useState<readonly DealtCard[]>(
-    dealHand()
+    dealHand(generateRandomNumber)
   );
 
   return (

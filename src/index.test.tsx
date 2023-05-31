@@ -29,7 +29,7 @@ describe("app entrypoint", () => {
       expect(ReactDOMClient.createRoot).toHaveBeenCalledWith(container);
       expect(renderMock).toHaveBeenCalledWith(
         <StrictMode>
-          <Trainer />
+          <Trainer generateRandomNumber={Math.random} />
         </StrictMode>
       );
     } finally {

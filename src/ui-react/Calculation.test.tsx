@@ -14,7 +14,7 @@ describe("calculation component", () => {
     "should render %s ordered keep then discard then the points",
     (sortOrderName) => {
       const sortOrder = SortOrder[sortOrderName];
-      const dealtHand = dealHand();
+      const dealtHand = dealHand(Math.random);
       const keep = dealtHand.slice(0, CARDS_PER_KEPT_HAND);
       const discard = dealtHand.slice(CARDS_PER_KEPT_HAND);
       const points = handPoints(keep).total;

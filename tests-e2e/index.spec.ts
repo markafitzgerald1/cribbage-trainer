@@ -39,6 +39,13 @@ test("styles.css is linked", async ({ page }) => {
   ).not.toBeNull();
 });
 
+test("initial page render with fixed random seed still visually the same", async ({
+  page,
+}) => {
+  await page.goto("/?seed=1");
+  await expect(page).toHaveScreenshot();
+});
+
 test("pre-cut hand points show after select of two discards", async ({
   page,
 }) => {

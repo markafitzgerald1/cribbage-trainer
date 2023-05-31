@@ -12,7 +12,7 @@ import { sortOrderNames } from "../ui/SortOrderName";
 
 describe("hand component", () => {
   const dealAndRender = (sortOrder: SortOrder) => {
-    const dealtHand = dealHand();
+    const dealtHand = dealHand(Math.random);
 
     const { queryByRole, queryByText, getAllByRole } = render(
       <DealComponentContainer

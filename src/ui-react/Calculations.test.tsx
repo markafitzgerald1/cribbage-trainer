@@ -10,8 +10,10 @@ import { handToSortedString } from "../ui/handToSortedString";
 import { render } from "@testing-library/react";
 
 describe("calculations component", () => {
+  const mathRandom = Math.random;
+
   const dealAndRender = () => {
-    const dealtHand = dealHand();
+    const dealtHand = dealHand(mathRandom);
 
     const { container } = render(
       <Calculations
@@ -35,7 +37,7 @@ describe("calculations component", () => {
     const { container } = dealAndRender();
 
     const nCombs = Number(
-      new Combination(dealHand(), CARDS_PER_DISCARD).length
+      new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length
     );
     const handPartsPerDeal = 2;
     expect(container.querySelectorAll(".keep-discard")).toHaveLength(

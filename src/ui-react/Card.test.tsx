@@ -12,7 +12,7 @@ describe("card component", () => {
     dealOrderIndex = 0,
     kept = true,
   }) => {
-    const dealtHand = dealHand();
+    const dealtHand = dealHand(Math.random);
     dealtHand[dealOrderIndex]!.kept = kept;
     const { getByRole, queryByRole } = render(
       <DealComponentContainer

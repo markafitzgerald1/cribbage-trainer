@@ -2,23 +2,33 @@ import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "./facts";
 import { INDICES_PER_SUIT } from "./Card";
 import { dealHand } from "./dealHand";
+import seedrandom from "seedrandom";
 
 describe("dealHand", () => {
+  const mathRandom = Math.random;
+
   it(`returns ${CARDS_PER_DEALT_HAND} cards`, () => {
-    expect(dealHand()).toHaveLength(CARDS_PER_DEALT_HAND);
+    expect(dealHand(mathRandom)).toHaveLength(CARDS_PER_DEALT_HAND);
   });
 
-  it("returns different cards each time", () => {
-    expect(dealHand()).not.toStrictEqual(dealHand());
+  it("returns different cards on sequential uses of the same random number generator", () => {
+    expect(dealHand(mathRandom)).not.toStrictEqual(dealHand(mathRandom));
+  });
+
+  it("returns the same cards on uses of equal random number generators", () => {
+    const seed = "my fixed seed value";
+    expect(dealHand(seedrandom(seed))).toStrictEqual(
+      dealHand(seedrandom(seed))
+    );
   });
 
   it("cards have unique deal orders", () => {
-    const dealOrders = dealHand().map((card) => card.dealOrder);
+    const dealOrders = dealHand(mathRandom).map((card) => card.dealOrder);
     expect(dealOrders).toHaveLength(new Set(dealOrders).size);
   });
 
   it("cards have ascending from 0 deal orders", () => {
-    const sortedDealOrders = dealHand()
+    const sortedDealOrders = dealHand(mathRandom)
       .map((card) => card.dealOrder)
       .sort((first, second) => first - second);
     expect(sortedDealOrders).toStrictEqual([
@@ -27,16 +37,18 @@ describe("dealHand", () => {
   });
 
   it("returns cards with non-negative ranks", () => {
-    expect(dealHand().every((card) => card.rankValue >= 0)).toBe(true);
-  });
-
-  it(`returns cards with ranks less than ${INDICES_PER_SUIT}`, () => {
-    expect(dealHand().every((card) => card.rankValue < INDICES_PER_SUIT)).toBe(
+    expect(dealHand(mathRandom).every((card) => card.rankValue >= 0)).toBe(
       true
     );
   });
 
+  it(`returns cards with ranks less than ${INDICES_PER_SUIT}`, () => {
+    expect(
+      dealHand(mathRandom).every((card) => card.rankValue < INDICES_PER_SUIT)
+    ).toBe(true);
+  });
+
   it("return cards with kept set to true", () => {
-    expect(dealHand().every((card) => card.kept)).toBe(true);
+    expect(dealHand(mathRandom).every((card) => card.kept)).toBe(true);
   });
 });

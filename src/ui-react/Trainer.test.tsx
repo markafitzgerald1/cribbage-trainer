@@ -7,17 +7,30 @@ import userEvent from "@testing-library/user-event";
 
 describe("trainer component", () => {
   const headingText = "Cribbage Trainer";
+  const mathRandom = Math.random;
 
   it(`has heading text '${headingText}'`, () => {
-    expect(render(<Trainer />).queryByText(headingText)).toBeTruthy();
+    expect(
+      render(<Trainer generateRandomNumber={mathRandom} />).queryByText(
+        headingText
+      )
+    ).toBeTruthy();
   });
 
   it("initially contains a sort in descending order radio input", () => {
-    expect(render(<Trainer />).queryByLabelText("↘️")).toBeTruthy();
+    expect(
+      render(<Trainer generateRandomNumber={mathRandom} />).queryByLabelText(
+        "↘️"
+      )
+    ).toBeTruthy();
   });
 
   it("contains a dealt hand", () => {
-    expect(render(<Trainer />).queryByText("Dealt hand:")).toBeTruthy();
+    expect(
+      render(<Trainer generateRandomNumber={mathRandom} />).queryByText(
+        "Dealt hand:"
+      )
+    ).toBeTruthy();
   });
 
   const preCutHandPoints = "Pre-cut hand points:";
@@ -39,7 +52,9 @@ describe("trainer component", () => {
     calculationsExpected: boolean
   ) => {
     const user = userEvent.setup();
-    const { getAllByRole, queryByText } = render(<Trainer />);
+    const { getAllByRole, queryByText } = render(
+      <Trainer generateRandomNumber={mathRandom} />
+    );
 
     await clickIndices(getAllByRole, cardIndices, user);
 
