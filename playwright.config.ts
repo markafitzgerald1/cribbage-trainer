@@ -12,20 +12,12 @@ export default defineConfig({
       use: { ...devices["Pixel 7"] },
     },
     {
-      name: "Google Chrome",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
-    },
-    {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "Mobile Safari",
       use: { ...devices["iPhone 14"] },
-    },
-    {
-      name: "Microsoft Edge",
-      use: { ...devices["Desktop Edge"], channel: "msedge" },
     },
     {
       name: "webkit",

@@ -14,5 +14,16 @@ Code in `main` is automatically built on `git push` and deployed to [GitHub Page
 
 - Install the latest version of the major version of [Node.js](https://nodejs.org/en/) specified in `.github/workflows/npm-parcel-build-upload-and-deploy-to-pages.yml`
 - Install third-party dependencies: `npm install`
-- Run locally in development mode: `npm run clean && npm test && npm run lintTypeCopyPasteAndOutdatedCheck && npm run test-e2e && npm start`
-- Build and run locally in production (GitHub Pages) mode: `npm run clean && npm test && npm run lintTypeCopyPasteAndOutdatedCheck && npm run test-e2e && npm run clean && npm run build && npm start`
+- Run locally in development mode: `npm run clean && npm test && npm run lintTypeCopyPasteAndOutdatedCheck && npx --no-install playwright install --with-deps && npm run test-e2e && npm start`
+- Build and run locally in production (GitHub Pages) mode: `npm run clean && npm test && npm run lintTypeCopyPasteAndOutdatedCheck && npx --no-install playwright install --with-deps && npm run test-e2e && npm run clean && npm run build && npm start`
+
+### Update visual regression test screenshots
+
+- Remove out of date screenshots: `rm tests-e2e/index.spec.ts-snapshots/*.png`
+- Generate now expected browser screenshots:
+  - `npm run test-e2e`
+  - If on macOS:
+    - Run the Playwright Docker image: `docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app mcr.microsoft.com/playwright:v1.34.3-jammy /bin/bash`:
+      - Install `make` and `g++` to ensure that Parcel can run: `apt update && apt install make gcc g++`
+      - Remove any potentially non-Linux build or install artifacts then install: `npm install && npm run clean && rm -rf node_modules && npm install`
+      - Generate now expected browser screenshots on Linux (required for GitHub Actions continuous integration to pass): `npm run test-e2e`

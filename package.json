@@ -15,7 +15,7 @@
     "jscpd": "jscpd",
     "build": "parcel build --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer --detailed-report 40",
     "start": "parcel serve --reporter @parcel/reporter-bundle-analyzer --public-url /cribbage-trainer",
-    "clean": "rm -rf dist parcel-bundle-reports coverage"
+    "clean": "rm -rf dist parcel-bundle-reports coverage .parcel-cache"
   },
   "devDependencies": {
     "@babel/core": "^7.21.0",
@@ -27,6 +27,7 @@
     "@playwright/test": "^1.34.0",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
+    "@types/node": "^20.2.5",
     "@types/react": "^18.0.34",
     "@types/react-dom": "^18.0.6",
     "@types/seedrandom": "^3.0.5",
