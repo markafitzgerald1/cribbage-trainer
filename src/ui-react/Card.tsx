@@ -2,7 +2,7 @@ import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 
 export interface CardProps extends DealtCardsHook {
-  dealOrderIndex: number;
+  readonly dealOrderIndex: number;
 }
 
 export class Card extends React.Component<CardProps> {

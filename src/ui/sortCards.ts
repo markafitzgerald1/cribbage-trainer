@@ -19,10 +19,10 @@ const createCompare =
   };
 
 const compare = Object.fromEntries(
-  sortOrderNames.map((key) => [key, createCompare(SortOrder[key])])
+  sortOrderNames.map((key) => [key, createCompare(SortOrder[key])]),
 );
 
 export const sortCards = <T extends HandCard>(
   dealtCards: readonly T[],
-  sortOrder: SortOrder
+  sortOrder: SortOrder,
 ) => [...dealtCards].sort(compare[SortOrder[sortOrder]]);

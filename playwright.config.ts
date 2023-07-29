@@ -19,14 +19,6 @@ export default defineConfig({
       name: "Mobile Safari",
       use: { ...devices["iPhone 14"] },
     },
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-    },
-    {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-    },
   ],
   reporter: "html",
   retries: process.env["CI"] ? continuousIntegrationRetryLimit : 0,

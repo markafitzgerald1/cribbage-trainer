@@ -14,7 +14,7 @@ describe("sort order input component", () => {
   function ComponentContainer({
     initialSortOrder,
   }: {
-    initialSortOrder: SortOrder;
+    readonly initialSortOrder: SortOrder;
   }) {
     const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
     return (
@@ -36,7 +36,7 @@ describe("sort order input component", () => {
 
   it("contains a radio button for each sort order", () =>
     expect(renderComponent().queryAllByRole("radio")).toHaveLength(
-      sortOrderNames.length
+      sortOrderNames.length,
     ));
 
   it.each(sortOrderNames)(
@@ -44,9 +44,9 @@ describe("sort order input component", () => {
     (sortOrderName) =>
       expect(
         renderComponent().queryByLabelText(
-          SortOrderInput.SortLabel[sortOrderName]
-        )
-      ).toBeTruthy()
+          SortOrderInput.SortLabel[sortOrderName],
+        ),
+      ).toBeTruthy(),
   );
 
   it.each(sortOrderNames)(
@@ -55,8 +55,8 @@ describe("sort order input component", () => {
       expect(
         renderComponent(SortOrder[sortOrderName])
           .queryByLabelText(SortOrderInput.SortLabel[sortOrderName])
-          ?.attributes.getNamedItem("checked")
-      ).toBeTruthy()
+          ?.attributes.getNamedItem("checked"),
+      ).toBeTruthy(),
   );
 
   it.each(sortOrderNames)(
@@ -64,9 +64,9 @@ describe("sort order input component", () => {
     (sortOrderName) =>
       expect(
         renderComponent(SortOrder[sortOrderName]).queryByText(
-          `${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]}`
-        )
-      ).toBeTruthy()
+          `${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]}`,
+        ),
+      ).toBeTruthy(),
   );
 
   it.each(sortOrderNames)(
@@ -77,7 +77,7 @@ describe("sort order input component", () => {
       const { queryAllByRole } = renderComponent(
         SortOrder[
           SortOrder[(sortOrder + 1) % sortOrderNames.length] as SortOrderName
-        ]
+        ],
       );
       const radioButton = queryAllByRole("radio")[
         sortOrder
@@ -86,6 +86,6 @@ describe("sort order input component", () => {
       await user.click(radioButton);
 
       expect(radioButton.checked).toBeTruthy();
-    }
+    },
   );
 });

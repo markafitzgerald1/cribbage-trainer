@@ -10,13 +10,13 @@ import { discardIsComplete } from "../game/discardIsComplete";
 /* jscpd:ignore-end */
 
 interface RandomNumberGenerator {
-  generateRandomNumber: () => number;
+  readonly generateRandomNumber: () => number;
 }
 
 export function Trainer({ generateRandomNumber }: RandomNumberGenerator) {
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
   const [dealtCards, setDealtCards] = useState<readonly DealtCard[]>(
-    dealHand(generateRandomNumber)
+    dealHand(generateRandomNumber),
   );
 
   return (

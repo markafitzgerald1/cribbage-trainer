@@ -22,13 +22,13 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
   it("two card deal with duplicate cards throws", () => {
     const cards = [c.ACE, c.ACE];
     expect(() => allScoredKeepDiscardsByScoreDescending(cards)).toThrow(
-      "Duplicate cards exist"
+      "Duplicate cards exist",
     );
   });
 
   function expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
     cards: readonly Card[],
-    points: readonly number[]
+    points: readonly number[],
   ): void {
     const scoreKeepDiscards: ScoredKeepDiscard<Card>[] = [];
     let pointsIndex = 0;
@@ -37,7 +37,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
         scoreKeepDiscards.push({
           discard: [cards[index1]!, cards[index2]!],
           keep: cards.filter(
-            (_, index) => index !== index1 && index !== index2
+            (_, index) => index !== index1 && index !== index2,
           ),
           points: points[pointsIndex]!,
         });
@@ -47,28 +47,28 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     scoreKeepDiscards.sort((card1, card2) => card2.points - card1.points);
 
     expect(allScoredKeepDiscardsByScoreDescending(cards)).toStrictEqual(
-      scoreKeepDiscards
+      scoreKeepDiscards,
     );
   }
 
   it("two card deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [c.ACE, c.TWO],
-      [0]
+      [0],
     );
   });
 
   it("three card deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [c.JACK, c.FOUR, c.FIVE],
-      [0, 0, 0]
+      [0, 0, 0],
     );
   });
 
   it("four card random ranks deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [c.TEN, c.TWO, c.EIGHT, c.FIVE],
-      [0, 0, 0, FIFTEEN_TWO, 0, 0]
+      [0, 0, 0, FIFTEEN_TWO, 0, 0],
     );
   });
 
@@ -86,7 +86,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
         0,
         FIFTEEN_TWO,
         0,
-      ]
+      ],
     );
   });
 
@@ -109,7 +109,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
         RUN,
         FIFTEEN_SIX + RUN,
         RUN,
-      ]
+      ],
     );
   });
 });

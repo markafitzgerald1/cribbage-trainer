@@ -54,6 +54,7 @@
     "@typescript-eslint/no-non-null-assertion": ["off"],
     "@typescript-eslint/unbound-method": "off",
     "capitalized-comments": ["error", "always", { "ignorePattern": "jscpd" }],
+    "dot-notation": ["error", { "allowPattern": "^CI$" }],
     "func-style": "off",
     "id-length": ["error", { "exceptions": ["_"] }],
     "max-lines": ["error", { "max": 343 }],

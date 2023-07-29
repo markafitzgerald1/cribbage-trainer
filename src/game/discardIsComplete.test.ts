@@ -26,7 +26,7 @@ describe("discardIsComplete", () => {
         ...createCard(rankValue),
         dealOrder,
         kept: dealOrder < keptCount,
-      })
+      }),
     );
     expect(discardIsComplete(hand)).toBe(expected);
   });

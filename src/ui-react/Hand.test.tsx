@@ -24,7 +24,7 @@ describe("hand component", () => {
           />
         )}
         dealtHand={dealtHand}
-      />
+      />,
     );
 
     return { dealtHand, getAllByRole, queryByRole, queryByText };
@@ -34,7 +34,7 @@ describe("hand component", () => {
 
   it(`has caption '${caption}'`, () => {
     expect(
-      dealAndRender(SortOrder.Ascending).queryByText(caption)
+      dealAndRender(SortOrder.Ascending).queryByText(caption),
     ).toBeTruthy();
   });
 
@@ -56,6 +56,6 @@ describe("hand component", () => {
       listItems.forEach((listItem, index) => {
         expect(listItem.textContent).toBe(sortedDealtHand[index]!.rankLabel);
       });
-    }
+    },
   );
 });

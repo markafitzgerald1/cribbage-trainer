@@ -12,24 +12,24 @@ describe("trainer component", () => {
   it(`has heading text '${headingText}'`, () => {
     expect(
       render(<Trainer generateRandomNumber={mathRandom} />).queryByText(
-        headingText
-      )
+        headingText,
+      ),
     ).toBeTruthy();
   });
 
   it("initially contains a sort in descending order radio input", () => {
     expect(
       render(<Trainer generateRandomNumber={mathRandom} />).queryByLabelText(
-        "↘️"
-      )
+        "↘️",
+      ),
     ).toBeTruthy();
   });
 
   it("contains a dealt hand", () => {
     expect(
       render(<Trainer generateRandomNumber={mathRandom} />).queryByText(
-        "Dealt hand:"
-      )
+        "Dealt hand:",
+      ),
     ).toBeTruthy();
   });
 
@@ -38,22 +38,22 @@ describe("trainer component", () => {
   const clickIndices = (
     getAllByRole: (
       role: ByRoleMatcher,
-      options?: ByRoleOptions | undefined
+      options?: ByRoleOptions | undefined,
     ) => HTMLElement[],
     indices: number[],
-    user: UserEvent
+    user: UserEvent,
   ) =>
     Promise.all(
-      indices.map((index) => user.click(getAllByRole("listitem")[index]!))
+      indices.map((index) => user.click(getAllByRole("listitem")[index]!)),
     );
 
   const expectCalculationsAfterClicks = async (
     cardIndices: number[],
-    calculationsExpected: boolean
+    calculationsExpected: boolean,
   ) => {
     const user = userEvent.setup();
     const { getAllByRole, queryByText } = render(
-      <Trainer generateRandomNumber={mathRandom} />
+      <Trainer generateRandomNumber={mathRandom} />,
     );
 
     await clickIndices(getAllByRole, cardIndices, user);

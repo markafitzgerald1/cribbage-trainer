@@ -48,9 +48,9 @@ describe("handToString", () => {
         expect(
           handToSortedString(
             createHand(handSpecifier),
-            SortOrder[sortOrderName]
-          )
-        ).toBe([handSpecifier, ...expectedHands][SortOrder[sortOrderName]])
+            SortOrder[sortOrderName],
+          ),
+        ).toBe([handSpecifier, ...expectedHands][SortOrder[sortOrderName]]),
       );
     });
   });

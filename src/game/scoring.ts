@@ -17,7 +17,7 @@ export const HAND_POINTS = {
 
 const pairsPoints = (keep: readonly RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
-    ([first, second]) => first!.rankValue === second!.rankValue
+    ([first, second]) => first!.rankValue === second!.rankValue,
   ).length * HAND_POINTS.PAIR;
 
 const COUNT = {
@@ -29,7 +29,7 @@ const fifteensPoints = (keep: readonly CountedCard[]) =>
     (possibleFifteen) =>
       possibleFifteen
         .map((card) => card.count)
-        .reduce((count1, count2) => count1 + count2, 0) === COUNT.FIFTEEN
+        .reduce((count1, count2) => count1 + count2, 0) === COUNT.FIFTEEN,
   ).length * HAND_POINTS.FIFTEEN_TWO;
 
 enum RunLength {
@@ -41,13 +41,13 @@ const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
   [...new Combination(keep, runLength)]
     .map((combination) => combination.map((card) => card.rankValue))
     .map((combination) =>
-      [...combination].sort((rank1, rank2) => rank1 - rank2)
+      [...combination].sort((rank1, rank2) => rank1 - rank2),
     )
     .filter((combination) =>
       combination
         .slice(1)
         .map((rank, index) => rank - combination[index]!)
-        .every((diff) => diff === 1)
+        .every((diff) => diff === 1),
     ).length *
   HAND_POINTS.RUN_PER_CARD *
   runLength;

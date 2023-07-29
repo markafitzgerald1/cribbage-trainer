@@ -32,7 +32,7 @@ describe("card component", () => {
           />
         )}
         dealtHand={dealtHand}
-      />
+      />,
     );
     return { dealtHand, getByRole, queryByRole };
   };
@@ -50,7 +50,7 @@ describe("card component", () => {
     });
 
     expect(getByRole("listitem").textContent).toBe(
-      dealtHand[dealOrderIndex]!.rankLabel
+      dealtHand[dealOrderIndex]!.rankLabel,
     );
   });
 
@@ -66,7 +66,7 @@ describe("card component", () => {
     expect(
       dealCreateAndRenderCardContainer({ kept })
         .getByRole("listitem")
-        .classList.contains(className)
+        .classList.contains(className),
     ).toBe(hasClass);
 
   it("has class 'card'", () => {

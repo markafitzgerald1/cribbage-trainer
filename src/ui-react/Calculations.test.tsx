@@ -19,7 +19,7 @@ describe("calculations component", () => {
       <Calculations
         dealtCards={dealtHand}
         sortOrder={SortOrder.Ascending}
-      />
+      />,
     );
 
     return { container, dealtHand };
@@ -37,11 +37,11 @@ describe("calculations component", () => {
     const { container } = dealAndRender();
 
     const nCombs = Number(
-      new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length
+      new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length,
     );
     const handPartsPerDeal = 2;
     expect(container.querySelectorAll(".keep-discard")).toHaveLength(
-      nCombs * handPartsPerDeal
+      nCombs * handPartsPerDeal,
     );
   });
 
@@ -53,13 +53,13 @@ describe("calculations component", () => {
         expect(container.textContent).toContain(
           `${handToSortedString(
             scoredKeepDiscard.keep,
-            SortOrder.Ascending
+            SortOrder.Ascending,
           )}-${handToSortedString(
             scoredKeepDiscard.discard,
-            SortOrder.Ascending
-          )} for ${scoredKeepDiscard.points} points`
+            SortOrder.Ascending,
+          )} for ${scoredKeepDiscard.points} points`,
         );
-      }
+      },
     );
   });
 });

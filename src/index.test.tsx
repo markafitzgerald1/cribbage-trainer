@@ -30,7 +30,7 @@ describe("app entrypoint", () => {
       expect(renderMock).toHaveBeenCalledWith(
         <StrictMode>
           <Trainer generateRandomNumber={Math.random} />
-        </StrictMode>
+        </StrictMode>,
       );
     } finally {
       jest.resetAllMocks();

@@ -10,7 +10,7 @@ export interface ScoredKeepDiscard<T extends Card> {
 }
 
 export const allScoredKeepDiscardsByScoreDescending = <T extends Card>(
-  cards: readonly T[]
+  cards: readonly T[],
 ): ScoredKeepDiscard<T>[] => {
   if (new Set(cards).size !== cards.length) {
     throw new Error("Duplicate cards exist");

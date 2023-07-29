@@ -12,8 +12,8 @@ describe("possible hand component", () => {
         <PossibleHand
           dealtCards={[]}
           sortOrder={SortOrder.Ascending}
-        />
-      ).container.querySelector("span")
+        />,
+      ).container.querySelector("span"),
     ).toBeTruthy();
   });
 
@@ -23,8 +23,8 @@ describe("possible hand component", () => {
         <PossibleHand
           dealtCards={[]}
           sortOrder={SortOrder.Ascending}
-        />
-      ).container.querySelector("span.keep-discard")
+        />,
+      ).container.querySelector("span.keep-discard"),
     ).toBeTruthy());
 
   const keptHand = "TAJ4";
@@ -48,8 +48,8 @@ describe("possible hand component", () => {
               kept: true,
             }))}
             sortOrder={SortOrder[sortOrder as keyof typeof SortOrder]}
-          />
-        ).container.querySelector("span.keep-discard")!.textContent
-      ).toStrictEqual(sortedHand)
+          />,
+        ).container.querySelector("span.keep-discard")!.textContent,
+      ).toStrictEqual(sortedHand),
   );
 });

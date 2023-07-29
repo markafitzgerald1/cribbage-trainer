@@ -12,10 +12,10 @@ export const lowerCaseSpaceSeparatedSortOrderName = Object.fromEntries(
     sortOrderName
       .replace(
         /(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,
-        "$<lastLower> $<nextFirstUpper>"
+        "$<lastLower> $<nextFirstUpper>",
       )
       .toLowerCase(),
-  ])
+  ]),
 ) as {
   [K in SortOrderName]: string;
 };

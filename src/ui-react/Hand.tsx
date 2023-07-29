@@ -5,7 +5,7 @@ import { SortOrder } from "../ui/SortOrder";
 import { sortCards } from "../ui/sortCards";
 
 interface HandProps extends DealtCardsHook {
-  sortOrder: SortOrder;
+  readonly sortOrder: SortOrder;
 }
 
 export function Hand({ dealtCards, setDealtCards, sortOrder }: HandProps) {

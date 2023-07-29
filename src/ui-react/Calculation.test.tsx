@@ -24,7 +24,7 @@ describe("calculation component", () => {
           keep={keep}
           points={points}
           sortOrder={sortOrder}
-        />
+        />,
       );
 
       const keepString = handToSortedString(keep, sortOrder);
@@ -32,10 +32,10 @@ describe("calculation component", () => {
 
       const pattern = new RegExp(
         `${keepString}.*-.*${discardString}.*\\s${points}\\spoints`,
-        "u"
+        "u",
       );
 
       expect(container.textContent).toMatch(pattern);
-    }
+    },
   );
 });

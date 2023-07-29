@@ -22,8 +22,9 @@ Code in `main` is automatically built on `git push` and deployed to [GitHub Page
 - Remove out of date screenshots: `rm tests-e2e/index.spec.ts-snapshots/*.png`
 - Generate now expected browser screenshots:
   - `npm run test-e2e`
-  - If on macOS:
-    - Run the Playwright Docker image: `docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app mcr.microsoft.com/playwright:v1.34.3-jammy /bin/bash`:
-      - Install `make` and `g++` to ensure that Parcel can run: `apt update && apt install make gcc g++`
-      - Remove any potentially non-Linux build or install artifacts then install: `npm install && npm run clean && rm -rf node_modules && npm install`
-      - Generate now expected browser screenshots on Linux (required for GitHub Actions continuous integration to pass): `npm run test-e2e`
+  - If not on Linux, also:
+    - Run the Playwright Docker image: `docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app mcr.microsoft.com/playwright:v1.36.0-jammy /bin/bash`:
+      - Install `make` and `g++` to ensure that Parcel can run: `apt update && apt install --yes make gcc g++`,
+      - Remove any potentially non-Linux build or install artifacts then install: `npm install && npm run clean && rm -rf node_modules && npm install`.
+      - Generate now expected browser screenshots on Linux (required for GitHub Actions continuous integration to pass): `npm run test-e2e`, and
+      - Remove Linux-specific build output: `rm -rf node_modules`.

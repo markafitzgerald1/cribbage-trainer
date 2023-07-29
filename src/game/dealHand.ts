@@ -3,7 +3,7 @@ import { CARDS_PER_DEALT_HAND } from "../game/facts";
 
 export const dealHand = (generateRandomNumber: () => number) =>
   Array.from({ length: CARDS_PER_DEALT_HAND }, () =>
-    Math.floor(generateRandomNumber() * INDICES_PER_SUIT)
+    Math.floor(generateRandomNumber() * INDICES_PER_SUIT),
   ).map((rankValue, dealOrder) => ({
     ...CARDS[rankValue]!,
     dealOrder,

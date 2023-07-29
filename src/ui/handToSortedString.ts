@@ -4,7 +4,7 @@ import { sortCards } from "./sortCards";
 
 export function handToSortedString<T extends HandCard>(
   dealtCards: readonly T[],
-  sortOrder: SortOrder
+  sortOrder: SortOrder,
 ): string {
   return sortCards(dealtCards, sortOrder)
     .map((dealtCard) => dealtCard.rankLabel)

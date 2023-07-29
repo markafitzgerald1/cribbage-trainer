@@ -7,8 +7,8 @@ ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
   <StrictMode>
     <Trainer
       generateRandomNumber={create(
-        new URLSearchParams(window.location.search).get("seed")
+        new URLSearchParams(window.location.search).get("seed"),
       )}
     />
-  </StrictMode>
+  </StrictMode>,
 );

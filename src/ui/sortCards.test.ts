@@ -30,7 +30,7 @@ describe("sortCards", () => {
             default:
               return second.rankValue - first.rankValue;
           }
-        })
+        }),
       );
     };
 

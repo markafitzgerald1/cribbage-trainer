@@ -5,8 +5,8 @@ import { SortOrder } from "../ui/SortOrder";
 import { allScoredKeepDiscardsByScoreDescending } from "../analysis/analysis";
 
 export interface CalculationsProps {
-  dealtCards: readonly DealtCard[];
-  sortOrder: SortOrder;
+  readonly dealtCards: readonly DealtCard[];
+  readonly sortOrder: SortOrder;
 }
 
 export function Calculations({ dealtCards, sortOrder }: CalculationsProps) {
@@ -25,7 +25,7 @@ export function Calculations({ dealtCards, sortOrder }: CalculationsProps) {
               points={scoredKeepDiscard.points}
               sortOrder={sortOrder}
             />
-          )
+          ),
         )}
       </ul>
     </figure>

@@ -4,10 +4,10 @@ import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
 interface CalculationProps {
-  keep: readonly DealtCard[];
-  discard: readonly DealtCard[];
-  points: number;
-  sortOrder: SortOrder;
+  readonly keep: readonly DealtCard[];
+  readonly discard: readonly DealtCard[];
+  readonly points: number;
+  readonly sortOrder: SortOrder;
 }
 
 export function Calculation({

@@ -18,7 +18,7 @@ describe("dealHand", () => {
   it("returns the same cards on uses of equal random number generators", () => {
     const seed = "my fixed seed value";
     expect(dealHand(seedrandom(seed))).toStrictEqual(
-      dealHand(seedrandom(seed))
+      dealHand(seedrandom(seed)),
     );
   });
 
@@ -38,13 +38,13 @@ describe("dealHand", () => {
 
   it("returns cards with non-negative ranks", () => {
     expect(dealHand(mathRandom).every((card) => card.rankValue >= 0)).toBe(
-      true
+      true,
     );
   });
 
   it(`returns cards with ranks less than ${INDICES_PER_SUIT}`, () => {
     expect(
-      dealHand(mathRandom).every((card) => card.rankValue < INDICES_PER_SUIT)
+      dealHand(mathRandom).every((card) => card.rankValue < INDICES_PER_SUIT),
     ).toBe(true);
   });
 

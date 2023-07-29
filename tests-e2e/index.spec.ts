@@ -21,7 +21,7 @@ test("double tap zoom disabled to speed up mobile onclick handling", async ({
 }) => {
   await page.goto("/");
   expect(
-    await page.$('meta[name="viewport"][content="width=device-width"]')
+    await page.$('meta[name="viewport"][content="width=device-width"]'),
   ).not.toBeNull();
 });
 
@@ -35,7 +35,7 @@ test(`has title '${expectedTitle}'`, async ({ page }) => {
 test("styles.css is linked", async ({ page }) => {
   await page.goto("/");
   expect(
-    await page.$('link[rel="stylesheet"][href*="index."][href$=".css"]')
+    await page.$('link[rel="stylesheet"][href*="index."][href$=".css"]'),
   ).not.toBeNull();
 });
 
@@ -59,12 +59,10 @@ test("pre-cut hand points show after select of two discards", async ({
 
   expect(
     await Promise.all(
-      (
-        await page.$$("figcaption")
-      ).map(
+      (await page.$$("figcaption")).map(
         async (figcaption) =>
-          (await figcaption.textContent()) === "Pre-cut hand points:"
-      )
-    ).then((results) => results.some(Boolean))
+          (await figcaption.textContent()) === "Pre-cut hand points:",
+      ),
+    ).then((results) => results.some(Boolean)),
   ).toBe(true);
 });

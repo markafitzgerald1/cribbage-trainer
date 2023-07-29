@@ -9,7 +9,7 @@ import { SortOrder } from "./SortOrder";
 describe("lowerCaseSpaceSeparatedSortOrderName", () => {
   it("contains one entry per sort order", () => {
     expect(Object.keys(lowerCaseSpaceSeparatedSortOrderName)).toHaveLength(
-      sortOrderNames.length
+      sortOrderNames.length,
     );
   });
 
@@ -21,7 +21,7 @@ describe("lowerCaseSpaceSeparatedSortOrderName", () => {
     expect(
       lowerCaseSpaceSeparatedSortOrderName[
         SortOrder[sortOrder] as SortOrderName
-      ]
-    ).toBe(expectedValue)
+      ],
+    ).toBe(expectedValue),
   );
 });

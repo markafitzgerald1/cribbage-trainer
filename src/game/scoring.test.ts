@@ -15,7 +15,7 @@ const {
 const expectTypePoints = (
   keep: readonly Card[],
   type: keyof HandPoints,
-  expectedPoints: number
+  expectedPoints: number,
 ) => expect(handPoints(keep)[type]).toBe(expectedPoints);
 
 describe("handPoints", () => {
@@ -89,7 +89,7 @@ describe("handPoints", () => {
   describe("fifteens", () => {
     const expectFifteensPoints = (
       keep: readonly Card[],
-      expectedPoints: number
+      expectedPoints: number,
     ) => expectTypePoints(keep, "fifteens", expectedPoints);
 
     it("empty hand", () => {
@@ -284,7 +284,7 @@ describe("handPoints", () => {
       const expectedRunCount = 2;
       expectTotalPoints(
         parseCards("6788"),
-        FIFTEEN_FOUR + PAIR + expectedRunCount * RUN
+        FIFTEEN_FOUR + PAIR + expectedRunCount * RUN,
       );
     });
 
@@ -292,7 +292,7 @@ describe("handPoints", () => {
       const expectedPairCount = 2;
       expectTotalPoints(
         parseCards("TT55"),
-        FIFTEEN_EIGHT + expectedPairCount * PAIR
+        FIFTEEN_EIGHT + expectedPairCount * PAIR,
       );
     });
 

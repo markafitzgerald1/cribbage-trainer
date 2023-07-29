@@ -7,8 +7,8 @@ import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
 interface SortOrderInputProps {
-  sortOrder: SortOrder;
-  setSortOrder: (sort: SortOrder) => void;
+  readonly sortOrder: SortOrder;
+  readonly setSortOrder: (sort: SortOrder) => void;
 }
 
 export class SortOrderInput extends React.Component<SortOrderInputProps> {

@@ -53,7 +53,7 @@ const NAMED_CARDS = Object.fromEntries(
   CARD_INDICES.map((index) => index as Rank).map((rank) => [
     Rank[rank] as RankName,
     RANKED_CARDS[rank],
-  ])
+  ]),
 ) as NamedCards;
 
 type Cards = {

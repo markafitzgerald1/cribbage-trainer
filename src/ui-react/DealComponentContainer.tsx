@@ -6,8 +6,8 @@ export function DealComponentContainer({
   dealtHand,
   createComponent,
 }: {
-  dealtHand: readonly DealtCard[];
-  createComponent: ({
+  readonly dealtHand: readonly DealtCard[];
+  readonly createComponent: ({
     dealtCards,
     setDealtCards,
   }: {
