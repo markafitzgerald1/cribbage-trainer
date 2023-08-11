@@ -46,6 +46,7 @@ const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
     .filter((combination) =>
       combination
         .slice(1)
+        // eslint-disable-next-line security/detect-object-injection
         .map((rank, index) => rank - combination[index]!)
         .every((diff) => diff === 1),
     ).length *

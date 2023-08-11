@@ -30,21 +30,30 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
       <fieldset className="sort-order">
         <legend>Sort</legend>
         {sortOrderNames.map((key) => (
+          // eslint-disable-next-line security/detect-object-injection
           <span key={SortOrder[key]}>
             <input
+              // eslint-disable-next-line security/detect-object-injection
               checked={sortOrder === SortOrder[key]}
               id={key}
               name="sort"
               onChange={this.handleChange}
               type="radio"
+              // eslint-disable-next-line security/detect-object-injection
               value={SortOrder[SortOrder[key]]}
             />
-            <label htmlFor={key}>{SortOrderInput.SortLabel[key]}</label>
+            <label htmlFor={key}>
+              {
+                // eslint-disable-next-line security/detect-object-injection
+                SortOrderInput.SortLabel[key]
+              }
+            </label>
           </span>
         ))}
         <span className="sort-order-description">
           {
             lowerCaseSpaceSeparatedSortOrderName[
+              // eslint-disable-next-line security/detect-object-injection
               SortOrder[sortOrder] as SortOrderName
             ]
           }

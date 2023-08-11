@@ -6,6 +6,7 @@
     "plugin:@typescript-eslint/strict",
     "plugin:react/all",
     "plugin:react-hooks/recommended",
+    "plugin:security/recommended",
     "prettier"
   ],
   "parser": "@typescript-eslint/parser",
@@ -40,7 +41,9 @@
           }
         ],
         "jest/prefer-expect-assertions": ["off"],
-        "react/jsx-no-bind": ["off"]
+        "react/jsx-no-bind": ["off"],
+        "security/detect-non-literal-regexp": ["off"],
+        "security/detect-object-injection": ["off"]
       }
     }
   ],
@@ -96,7 +99,8 @@
           "webkit"
         ]
       }
-    ]
+    ],
+    "security/detect-object-injection": ["error"]
   },
   "settings": {
     "react": {

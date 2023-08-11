@@ -15,6 +15,7 @@ export const CARD_LABELS = "A23456789TJQK";
 
 export const createCard = (rankValue: number): Card => ({
   count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
+  // eslint-disable-next-line security/detect-object-injection
   rankLabel: CARD_LABELS[rankValue]!,
   rankValue,
 });
@@ -51,7 +52,9 @@ type NamedCards = {
 
 const NAMED_CARDS = Object.fromEntries(
   CARD_INDICES.map((index) => index as Rank).map((rank) => [
+    // eslint-disable-next-line security/detect-object-injection
     Rank[rank] as RankName,
+    // eslint-disable-next-line security/detect-object-injection
     RANKED_CARDS[rank],
   ]),
 ) as NamedCards;

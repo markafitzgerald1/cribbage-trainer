@@ -19,10 +19,12 @@ const createCompare =
   };
 
 const compare = Object.fromEntries(
+  // eslint-disable-next-line security/detect-object-injection
   sortOrderNames.map((key) => [key, createCompare(SortOrder[key])]),
 );
 
 export const sortCards = <T extends HandCard>(
   dealtCards: readonly T[],
   sortOrder: SortOrder,
+  // eslint-disable-next-line security/detect-object-injection
 ) => [...dealtCards].sort(compare[SortOrder[sortOrder]]);

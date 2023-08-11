@@ -9,6 +9,7 @@ export class Card extends React.Component<CardProps> {
   handleClick = () => {
     const { dealtCards, dealOrderIndex, setDealtCards } = this.props;
     const newDealtCards = [...dealtCards];
+    // eslint-disable-next-line security/detect-object-injection
     const newDealtCard = newDealtCards[dealOrderIndex]!;
     newDealtCard.kept = !newDealtCard.kept;
     setDealtCards(newDealtCards);
@@ -16,6 +17,7 @@ export class Card extends React.Component<CardProps> {
 
   override render() {
     const { dealtCards, dealOrderIndex } = this.props;
+    // eslint-disable-next-line security/detect-object-injection
     const { kept, rankLabel } = dealtCards[dealOrderIndex]!;
     return (
       <li
