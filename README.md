@@ -21,10 +21,10 @@ via [GitHub Action Workflow](https://github.com/markafitzgerald1/cribbage-traine
   specified in `.github/workflows/npm-parcel-build-upload-and-deploy-to-pages.yml`
 - Install third-party dependencies: `npm install`
 - Run locally in development mode: `npm run clean && npm test && npm run
-lintTypeCopyPasteAndOutdatedCheck && npx --no-install playwright install
+lintThenTypeCopyPasteOutdatedAndAuditCheck && npx --no-install playwright install
 --with-deps && npm run test-e2e && npm start`
 - Build and run locally in production (GitHub Pages) mode: `npm run clean && npm
-test && npm run lintTypeCopyPasteAndOutdatedCheck && npx --no-install
+test && npm run lintThenTypeCopyPasteOutdatedAndAuditCheck && npx --no-install
 playwright install --with-deps && npm run test-e2e && npm run clean && npm run
 build && npm start`
 
@@ -36,11 +36,11 @@ run test-e2e`.
 - If not developing on Linux, also generate now expected Linux browser
   screenshots by running the Playwright Docker image: `docker run -it --rm
 --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app
-mcr.microsoft.com/playwright:v1.36.0-jammy /bin/bash`, then in that container:
+mcr.microsoft.com/playwright:v1.37.0-jammy /bin/bash`, then in that container:
   - install `make` and `g++` to ensure that Parcel can run: `apt update && apt
 install --yes make gcc g++`,
   - remove any potentially non-Linux build or install artifacts then install:
-    `npm install && npm run clean && rm -rf node_modules && npm install`,
+    `rm -rf node_modules && npm run clean && npm install`,
   - generate now expected browser screenshots on Linux (required for GitHub
     Actions continuous integration to pass): `npm run test-e2e`, and
   - Remove Linux-specific build output: `rm -rf node_modules`.

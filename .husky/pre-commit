@@ -3,5 +3,5 @@
 
 npm test
 npm run build
-npm run lintTypeCopyPasteAndOutdatedCheck
+npm run lintThenTypeCopyPasteOutdatedAndAuditCheck
 npm run test-e2e
