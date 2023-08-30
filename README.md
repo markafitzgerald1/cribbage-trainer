@@ -31,7 +31,7 @@ build && npm start`
 ### Update visual regression test screenshots
 
 - Remove out of date screenshots for all platforms: `rm tests-e2e/index.spec.ts-snapshots/*.png`
-- Generate now expected browser screenshots for your development platform: `npm
+- Generate the now expected browser screenshots for your development platform: `npm
 run test-e2e`.
 - If not developing on Linux, also generate now expected Linux browser
   screenshots by running the Playwright Docker image: `docker run -it --rm

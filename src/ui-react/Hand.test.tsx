@@ -14,7 +14,7 @@ describe("hand component", () => {
   const dealAndRender = (sortOrder: SortOrder) => {
     const dealtHand = dealHand(Math.random);
 
-    const { queryByRole, queryByText, getAllByRole } = render(
+    const { getAllByRole, queryAllByText, queryByRole, queryByText } = render(
       <DealComponentContainer
         createComponent={({ dealtCards, setDealtCards }) => (
           <Hand
@@ -27,7 +27,13 @@ describe("hand component", () => {
       />,
     );
 
-    return { dealtHand, getAllByRole, queryByRole, queryByText };
+    return {
+      dealtHand,
+      getAllByRole,
+      queryAllByText,
+      queryByRole,
+      queryByText,
+    };
   };
 
   const caption = "Dealt hand:";
@@ -38,23 +44,21 @@ describe("hand component", () => {
     ).toBeTruthy();
   });
 
-  it("has a list item for each dealt card", () => {
+  it("has a checkbox for each dealt card", () => {
     const { dealtHand, getAllByRole } = dealAndRender(SortOrder.Ascending);
 
-    expect(getAllByRole("listitem")).toHaveLength(dealtHand.length);
+    expect(getAllByRole("checkbox")).toHaveLength(dealtHand.length);
   });
 
   it.each(sortOrderNames)(
-    "has a sorted list item for each dealt card in %s order",
+    "has a sorted checkbox for each dealt card in %s order",
     (sortOrderName) => {
       const sortOrder = SortOrder[sortOrderName];
-      const { dealtHand, getAllByRole } = dealAndRender(sortOrder);
+      const { dealtHand, queryAllByText } = dealAndRender(sortOrder);
       const sortedDealtHand = sortCards(dealtHand, sortOrder);
 
-      const listItems = getAllByRole("listitem");
-
-      listItems.forEach((listItem, index) => {
-        expect(listItem.textContent).toBe(sortedDealtHand[index]!.rankLabel);
+      sortedDealtHand.forEach((card) => {
+        expect(queryAllByText(card.rankLabel)).not.toHaveLength(0);
       });
     },
   );

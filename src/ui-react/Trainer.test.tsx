@@ -44,7 +44,7 @@ describe("trainer component", () => {
     user: UserEvent,
   ) =>
     Promise.all(
-      indices.map((index) => user.click(getAllByRole("listitem")[index]!)),
+      indices.map((index) => user.click(getAllByRole("checkbox")[index]!)),
     );
 
   const expectCalculationsAfterClicks = async (

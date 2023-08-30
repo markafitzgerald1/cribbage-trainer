@@ -4,6 +4,7 @@
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:@typescript-eslint/strict",
+    "plugin:jsx-a11y/recommended",
     "plugin:react/all",
     "plugin:react-hooks/recommended",
     "plugin:security/recommended",
@@ -34,7 +35,7 @@
               "expectTotalPoints",
               "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
               "expectSort",
-              "expectCardListItemHasClass",
+              "expectCardLabelHasClass",
               "expectKeptAndDiscardedAfterClick",
               "expectCalculationsAfterClicks"
             ]
@@ -75,6 +76,8 @@
       {
         "skipWords": [
           "charset",
+          "checkbox",
+          "checkboxes",
           "cpus",
           "entrypoint",
           "figcaption",
@@ -126,6 +129,14 @@
       "CustomForm",
       { "name": "Form", "formAttribute": "endpoint" }
     ],
-    "linkComponents": ["Hyperlink", { "name": "Link", "linkAttribute": "to" }]
+    "linkComponents": ["Hyperlink", { "name": "Link", "linkAttribute": "to" }],
+    "jsx-a11y": {
+      "components": {
+        "Card": "input",
+        "Calculation": "listitem",
+        "Calculations": "list",
+        "Hand": "list"
+      }
+    }
   }
 }

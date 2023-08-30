@@ -6,7 +6,7 @@ export interface CardProps extends DealtCardsHook {
 }
 
 export class Card extends React.Component<CardProps> {
-  handleClick = () => {
+  handleCheckboxChange = () => {
     const { dealtCards, dealOrderIndex, setDealtCards } = this.props;
     const newDealtCards = [...dealtCards];
     // eslint-disable-next-line security/detect-object-injection
@@ -20,12 +20,14 @@ export class Card extends React.Component<CardProps> {
     // eslint-disable-next-line security/detect-object-injection
     const { kept, rankLabel } = dealtCards[dealOrderIndex]!;
     return (
-      <li
-        className={`card${kept ? "" : " discarded"}`}
-        onClick={this.handleClick}
-      >
+      <label className={`card${kept ? "" : " discarded"}`}>
+        <input
+          checked={kept}
+          onChange={this.handleCheckboxChange}
+          type="checkbox"
+        />
         {rankLabel}
-      </li>
+      </label>
     );
   }
 }

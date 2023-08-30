@@ -77,6 +77,13 @@ figure {
   font-size: 10vw;
   text-align: center;
   width: 8vw;
+  position: relative;
+}
+
+.card input[type="checkbox"] {
+  position: absolute;
+  bottom: 0.5em;
+  right: 0.5em;
 }
 
 .card,

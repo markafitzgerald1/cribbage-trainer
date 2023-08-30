@@ -52,17 +52,11 @@ test("pre-cut hand points show after select of two discards", async ({
   await page.goto("/");
 
   const discardCount = 2;
+  const checkboxes = page.getByRole("checkbox");
   for (let index = 0; index < discardCount; index += 1) {
     // eslint-disable-next-line no-await-in-loop
-    await page.click(`.hand li:nth-child(${index + 1})`);
+    await checkboxes.nth(index).click();
   }
 
-  expect(
-    await Promise.all(
-      (await page.$$("figcaption")).map(
-        async (figcaption) =>
-          (await figcaption.textContent()) === "Pre-cut hand points:",
-      ),
-    ).then((results) => results.some(Boolean)),
-  ).toBe(true);
+  await expect(page.getByText("Pre-cut hand points:")).toBeVisible();
 });

@@ -14,7 +14,7 @@ describe("card component", () => {
   }) => {
     const dealtHand = dealHand(Math.random);
     dealtHand[dealOrderIndex]!.kept = kept;
-    const { getByRole, queryByRole } = render(
+    const { getByRole, getByText, queryByRole } = render(
       <DealComponentContainer
         createComponent={({
           dealtCards,
@@ -34,27 +34,25 @@ describe("card component", () => {
         dealtHand={dealtHand}
       />,
     );
-    return { dealtHand, getByRole, queryByRole };
+    return { dealtHand, getByRole, getByText, queryByRole };
   };
 
-  it("is a list item", () => {
+  it("is a checkbox", () => {
     const { queryByRole } = dealCreateAndRenderCardContainer({});
 
-    expect(queryByRole("listitem")).toBeTruthy();
+    expect(queryByRole("checkbox")).toBeTruthy();
   });
 
-  it("text is its rank label", () => {
+  it("label text is its rank", () => {
     const dealOrderIndex = 0;
-    const { dealtHand, getByRole } = dealCreateAndRenderCardContainer({
+    const { dealtHand, getByText } = dealCreateAndRenderCardContainer({
       dealOrderIndex,
     });
 
-    expect(getByRole("listitem").textContent).toBe(
-      dealtHand[dealOrderIndex]!.rankLabel,
-    );
+    expect(getByText(dealtHand[dealOrderIndex]!.rankLabel)).toBeTruthy();
   });
 
-  const expectCardListItemHasClass = ({
+  const expectCardLabelHasClass = ({
     className,
     hasClass,
     kept,
@@ -62,15 +60,21 @@ describe("card component", () => {
     className: string;
     hasClass: boolean;
     kept: boolean;
-  }) =>
+  }) => {
+    const dealOrderIndex = 0;
+    const { dealtHand, getByText } = dealCreateAndRenderCardContainer({
+      dealOrderIndex,
+      kept,
+    });
     expect(
-      dealCreateAndRenderCardContainer({ kept })
-        .getByRole("listitem")
-        .classList.contains(className),
+      getByText(dealtHand[dealOrderIndex]!.rankLabel).classList.contains(
+        className,
+      ),
     ).toBe(hasClass);
+  };
 
   it("has class 'card'", () => {
-    expectCardListItemHasClass({
+    expectCardLabelHasClass({
       className: "card",
       hasClass: true,
       kept: true,
@@ -78,7 +82,7 @@ describe("card component", () => {
   });
 
   it("does not have class 'discarded' when kept", () => {
-    expectCardListItemHasClass({
+    expectCardLabelHasClass({
       className: "discarded",
       hasClass: false,
       kept: true,
@@ -86,7 +90,7 @@ describe("card component", () => {
   });
 
   it("has class 'discarded' when not kept", () => {
-    expectCardListItemHasClass({
+    expectCardLabelHasClass({
       className: "discarded",
       hasClass: true,
       kept: false,
@@ -95,11 +99,20 @@ describe("card component", () => {
 
   const expectKeptAndDiscardedAfterClick = async (kept: boolean) => {
     const user = userEvent.setup();
-    const { getByRole } = dealCreateAndRenderCardContainer({ kept });
+    const dealOrderIndex = 0;
+    const { dealtHand, getByRole, getByText } =
+      dealCreateAndRenderCardContainer({
+        dealOrderIndex,
+        kept,
+      });
 
-    await user.click(getByRole("listitem"));
+    await user.click(getByRole("checkbox"));
 
-    expect(getByRole("listitem").classList.contains("discarded")).toBe(kept);
+    expect(
+      getByText(dealtHand[dealOrderIndex]!.rankLabel).classList.contains(
+        "discarded",
+      ),
+    ).toBe(kept);
   };
 
   it("has class 'discarded' after being clicked if kept", () =>
