@@ -1,0 +1,16 @@
+@import url("./vars.css");
+
+.figure {
+  margin: 0;
+}
+
+.figcaption {
+  color: var(--text-color from global);
+  font-family: var(--text-font-family from global);
+}
+
+.hand {
+  display: flex;
+  justify-content: space-evenly;
+  padding: 0;
+}

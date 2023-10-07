@@ -17,16 +17,6 @@ describe("possible hand component", () => {
     ).toBeTruthy();
   });
 
-  it("render a span with class keep-discard", () =>
-    expect(
-      render(
-        <PossibleHand
-          dealtCards={[]}
-          sortOrder={SortOrder.Ascending}
-        />,
-      ).container.querySelector("span.keep-discard"),
-    ).toBeTruthy());
-
   const keptHand = "TAJ4";
   const discard = "5K";
   it.each([
@@ -37,7 +27,7 @@ describe("possible hand component", () => {
     ["K5", SortOrder[SortOrder.Descending], discard],
     [discard, SortOrder[SortOrder.DealOrder], discard],
   ])(
-    "renders a span with class keep-discard and dealt cards %s sorted in %s order",
+    "renders a span with dealt cards %s sorted in %s order",
     (sortedHand, sortOrder, hand) =>
       expect(
         render(
@@ -49,7 +39,7 @@ describe("possible hand component", () => {
             }))}
             sortOrder={SortOrder[sortOrder as keyof typeof SortOrder]}
           />,
-        ).container.querySelector("span.keep-discard")!.textContent,
+        ).container.querySelector("span")!.textContent,
       ).toStrictEqual(sortedHand),
   );
 });

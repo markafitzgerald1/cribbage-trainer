@@ -1,6 +1,6 @@
 {
   "collectCoverage": true,
-  "collectCoverageFrom": ["src/**/*.{ts,tsx}"],
+  "collectCoverageFrom": ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
   "coverageThreshold": {
     "global": {
       "branches": 100,
@@ -8,6 +8,9 @@
       "lines": 100,
       "statements": 100
     }
+  },
+  "moduleNameMapper": {
+    "\\.css$": "identity-obj-proxy"
   },
   "testEnvironment": "jsdom",
   "testPathIgnorePatterns": ["/tests-e2e/", "/tests-examples"]

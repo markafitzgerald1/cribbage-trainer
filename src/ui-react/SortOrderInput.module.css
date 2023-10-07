@@ -1,0 +1,51 @@
+@import url("./vars.css");
+
+.fieldset {
+  margin-bottom: 0.9em;
+  border: none;
+  padding: 0;
+  margin-left: 0;
+  margin-right: 0;
+  color: var(--text-color from global);
+  font-family: var(--text-font-family from global);
+  user-select: none;
+}
+
+.legend {
+  display: contents;
+}
+
+.legend::after {
+  content: ":";
+}
+
+.input {
+  appearance: none;
+}
+
+.label {
+  border: solid;
+  color: lightgray;
+  border-color: black;
+  padding: 0.2em;
+  border-width: var(--clickable-border-width from global);
+  border-radius: var(--clickable-border-radius from global);
+}
+
+.input[type="radio"]:checked + label {
+  color: black;
+  background: lightgreen;
+}
+
+.description::before {
+  content: "(";
+}
+
+.description {
+  color: #ddd;
+  padding-left: 0.25em;
+}
+
+.description::after {
+  content: ")";
+}

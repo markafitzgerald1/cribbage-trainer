@@ -1,0 +1,39 @@
+@import url("./vars.css");
+
+.card {
+  display: inline;
+  padding: 0.16em 0.21em 0.17em 0.29em;
+  border: 0.025em solid #c0c0c0;
+  background-color: white;
+  cursor: pointer;
+  margin: 0 0.15em 0.4em 0;
+  font-weight: bold;
+  font-size: 6.6vw;
+  text-align: center;
+  width: 8vw;
+  position: relative;
+  user-select: none;
+  font-family: var(--card-font-family from global);
+  border-width: var(--clickable-border-width from global);
+  border-radius: var(--clickable-border-radius from global);
+}
+
+@media (orientation: portrait) {
+  .card {
+    font-size: 12.9vw;
+  }
+}
+
+.card input[type="checkbox"] {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.discarded {
+  background-color: #ababab;
+  border-color: #616161;
+  color: #5c5c5c;
+  margin-top: 0.4em;
+  margin-bottom: 0;
+}

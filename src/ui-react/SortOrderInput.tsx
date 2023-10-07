@@ -1,3 +1,4 @@
+import * as classes from "./SortOrderInput.module.css";
 import {
   SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
@@ -5,11 +6,7 @@ import {
 } from "../ui/SortOrderName";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
-
-interface SortOrderInputProps {
-  readonly sortOrder: SortOrder;
-  readonly setSortOrder: (sort: SortOrder) => void;
-}
+import { SortOrderInputProps } from "./SortOrderInputProps";
 
 export class SortOrderInput extends React.Component<SortOrderInputProps> {
   static SortLabel: Record<SortOrderName, string> = {
@@ -27,14 +24,15 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
   override render() {
     const { sortOrder } = this.props;
     return (
-      <fieldset className="sort-order">
-        <legend>Sort</legend>
+      <fieldset className={classes.fieldset}>
+        <legend className={classes.legend}>Sort</legend>
         {sortOrderNames.map((key) => (
           // eslint-disable-next-line security/detect-object-injection
           <span key={SortOrder[key]}>
             <input
               // eslint-disable-next-line security/detect-object-injection
               checked={sortOrder === SortOrder[key]}
+              className={classes.input}
               id={key}
               name="sort"
               onChange={this.handleChange}
@@ -42,7 +40,10 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
               // eslint-disable-next-line security/detect-object-injection
               value={SortOrder[SortOrder[key]]}
             />
-            <label htmlFor={key}>
+            <label
+              className={classes.label}
+              htmlFor={key}
+            >
               {
                 // eslint-disable-next-line security/detect-object-injection
                 SortOrderInput.SortLabel[key]
@@ -50,7 +51,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
             </label>
           </span>
         ))}
-        <span className="sort-order-description">
+        <span className={classes.description}>
           {
             lowerCaseSpaceSeparatedSortOrderName[
               // eslint-disable-next-line security/detect-object-injection

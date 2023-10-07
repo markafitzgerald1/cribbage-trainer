@@ -1,3 +1,4 @@
+import * as classes from "./Card.module.css";
 import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 
@@ -20,7 +21,9 @@ export class Card extends React.Component<CardProps> {
     // eslint-disable-next-line security/detect-object-injection
     const { kept, rankLabel } = dealtCards[dealOrderIndex]!;
     return (
-      <label className={`card${kept ? "" : " discarded"}`}>
+      <label
+        className={`${classes.card}${kept ? "" : ` ${classes.discarded}`}`}
+      >
         <input
           checked={kept}
           onChange={this.handleCheckboxChange}

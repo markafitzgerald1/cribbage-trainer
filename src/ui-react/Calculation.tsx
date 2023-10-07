@@ -27,7 +27,7 @@ export function Calculation({
         dealtCards={discard}
         sortOrder={sortOrder}
       />{" "}
-      for {points} points
+      = {points} points
     </li>
   );
 }

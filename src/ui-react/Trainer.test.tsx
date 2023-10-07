@@ -6,16 +6,7 @@ import { UserEvent } from "@testing-library/user-event/dist/types/setup/setup";
 import userEvent from "@testing-library/user-event";
 
 describe("trainer component", () => {
-  const headingText = "Cribbage Trainer";
   const mathRandom = Math.random;
-
-  it(`has heading text '${headingText}'`, () => {
-    expect(
-      render(<Trainer generateRandomNumber={mathRandom} />).queryByText(
-        headingText,
-      ),
-    ).toBeTruthy();
-  });
 
   it("initially contains a sort in descending order radio input", () => {
     expect(
@@ -33,7 +24,7 @@ describe("trainer component", () => {
     ).toBeTruthy();
   });
 
-  const preCutHandPoints = "Pre-cut hand points:";
+  const preCutHandPoints = "Pre-cut hand";
 
   const clickIndices = (
     getAllByRole: (

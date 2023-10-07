@@ -80,6 +80,7 @@
           "checkboxes",
           "cpus",
           "entrypoint",
+          "fieldset",
           "figcaption",
           "firefox",
           "formatter",

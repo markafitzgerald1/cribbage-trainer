@@ -1,3 +1,4 @@
+import * as classes from "./Calculations.module.css";
 import { Calculation } from "./Calculation";
 import { DealtCard } from "../game/DealtCard";
 import React from "react";
@@ -11,9 +12,9 @@ export interface CalculationsProps {
 
 export function Calculations({ dealtCards, sortOrder }: CalculationsProps) {
   return (
-    <figure>
-      <figcaption>Pre-cut hand points:</figcaption>
-      <ul className="calculations">
+    <figure className={classes.calculations}>
+      <figcaption>Pre-cut hand</figcaption>
+      <ul>
         {allScoredKeepDiscardsByScoreDescending(dealtCards).map(
           (scoredKeepDiscard) => (
             <Calculation

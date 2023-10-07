@@ -1,0 +1,29 @@
+@import url("./vars.css");
+
+.calculations {
+  margin: 0 0 0 0.5em;
+  width: var(--trainer-block-width-landscape from global);
+  color: var(--text-color from global);
+  font-family: var(--text-font-family from global);
+}
+
+.calculations ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+@media (orientation: landscape) {
+  .calculations ul {
+    font-size: 0.71em;
+  }
+}
+
+@media (orientation: portrait) {
+  .calculations {
+    width: var(--trainer-block-width-portrait from global);
+  }
+
+  .calculations ul {
+    font-size: large;
+  }
+}

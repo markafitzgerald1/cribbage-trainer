@@ -25,7 +25,7 @@ describe("calculations component", () => {
     return { container, dealtHand };
   };
 
-  const caption = "Pre-cut hand points:";
+  const caption = "Pre-cut hand";
 
   it(`has caption '${caption}'`, () => {
     const { container } = dealAndRender();
@@ -39,8 +39,11 @@ describe("calculations component", () => {
     const nCombs = Number(
       new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length,
     );
-    const handPartsPerDeal = 2;
-    expect(container.querySelectorAll(".keep-discard")).toHaveLength(
+    const hand = 1;
+    const dash = 1;
+    const discard = 1;
+    const handPartsPerDeal = hand + dash + discard;
+    expect(container.querySelectorAll("span")).toHaveLength(
       nCombs * handPartsPerDeal,
     );
   });
@@ -57,7 +60,7 @@ describe("calculations component", () => {
           )}-${handToSortedString(
             scoredKeepDiscard.discard,
             SortOrder.Ascending,
-          )} for ${scoredKeepDiscard.points} points`,
+          )} = ${scoredKeepDiscard.points} points`,
         );
       },
     );

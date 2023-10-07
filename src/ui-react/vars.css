@@ -1,0 +1,9 @@
+:root {
+  --trainer-block-width-landscape: 50%;
+  --trainer-block-width-portrait: 100%;
+  --text-color: #eee;
+  --text-font-family: sans-serif;
+  --card-font-family: "Anonymous Pro", "Courier New", courier, monospace;
+  --clickable-border-width: thin;
+  --clickable-border-radius: 0.12em;
+}

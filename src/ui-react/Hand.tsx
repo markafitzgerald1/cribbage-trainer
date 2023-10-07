@@ -1,19 +1,15 @@
+import * as classes from "./Hand.module.css";
 import { Card } from "./Card";
-import { DealtCardsHook } from "./DealtCardsHook";
+import { HandProps } from "./HandProps";
 import React from "react";
-import { SortOrder } from "../ui/SortOrder";
 import { sortCards } from "../ui/sortCards";
-
-interface HandProps extends DealtCardsHook {
-  readonly sortOrder: SortOrder;
-}
 
 export function Hand({ dealtCards, setDealtCards, sortOrder }: HandProps) {
   const sortedDealtCards = sortCards(dealtCards, sortOrder);
   return (
-    <figure>
-      <figcaption>Dealt hand:</figcaption>
-      <ul className="hand">
+    <figure className={classes.figure}>
+      <figcaption className={classes.figcaption}>Dealt hand:</figcaption>
+      <ul className={classes.hand}>
         {sortedDealtCards.map((dealtCard, index) => (
           <Card
             dealOrderIndex={index}

@@ -34,11 +34,17 @@ build && npm start`
 - Generate the now expected browser screenshots for your development platform: `npm
 run test-e2e`.
 - If not developing on Linux, also generate now expected Linux browser
-  screenshots by running the Playwright Docker image: `docker run -it --rm
---ipc=host -v "$PWD":/usr/src/app -w /usr/src/app
-mcr.microsoft.com/playwright:v1.37.0-jammy /bin/bash`, then in that container:
-  - install `make` and `g++` to ensure that Parcel can run: `apt update && apt
-install --yes make gcc g++`,
+  screenshots by starting a Playwright Docker container (latest at [playwright.dev](https://playwright.dev/docs/docker#pull-the-image)):
+
+  ```sh
+  docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app \
+  mcr.microsoft.com/playwright:v1.38.0-jammy /bin/bash
+  ```
+
+  then in that container:
+
+  - install `make` and `g++` to ensure that Parcel can run:
+    `apt update && apt install --yes make gcc g++`,
   - remove any potentially non-Linux build or install artifacts then install:
     `rm -rf node_modules && npm run clean && npm install`,
   - generate now expected browser screenshots on Linux (required for GitHub

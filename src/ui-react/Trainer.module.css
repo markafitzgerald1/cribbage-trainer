@@ -1,0 +1,9 @@
+.dynamic-ui {
+  display: flex;
+}
+
+@media (orientation: portrait) {
+  .dynamic-ui {
+    flex-direction: column;
+  }
+}
