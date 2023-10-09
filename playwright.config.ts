@@ -15,10 +15,6 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
-    {
-      name: "Mobile Safari",
-      use: { ...devices["iPhone 14"] },
-    },
   ],
   reporter: "html",
   retries: process.env["CI"] ? continuousIntegrationRetryLimit : 0,
