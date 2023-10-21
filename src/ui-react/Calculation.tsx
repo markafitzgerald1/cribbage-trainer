@@ -21,13 +21,13 @@ export function Calculation({
       <PossibleHand
         dealtCards={keep}
         sortOrder={sortOrder}
-      />
-      <span>-</span>
+      />{" "}
+      (
       <PossibleHand
         dealtCards={discard}
         sortOrder={sortOrder}
-      />{" "}
-      = {points} points
+      />
+      ) = {points} points
     </li>
   );
 }

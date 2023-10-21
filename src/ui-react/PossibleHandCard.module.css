@@ -1,0 +1,22 @@
+@import url("./vars.css");
+
+.card {
+  display: inline-block;
+  border: var(--card-border from global);
+  background-color: var(--card-background-color from global);
+  margin: 0.08em;
+  text-align: center;
+  border-width: var(--clickable-border-width from global);
+  border-radius: var(--clickable-border-radius from global);
+  color: black;
+  font-weight: bold;
+  width: 0.85em;
+}
+
+.card div {
+  padding-left: 0.1em;
+}
+
+.ten div {
+  transform: scaleX(0.5) translateX(-3.2px);
+}

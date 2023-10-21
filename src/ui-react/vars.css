@@ -6,4 +6,6 @@
   --card-font-family: "Anonymous Pro", "Courier New", courier, monospace;
   --clickable-border-width: thin;
   --clickable-border-radius: 0.12em;
+  --card-border: 0.025em solid #c0c0c0;
+  --card-background-color: white;
 }

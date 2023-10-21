@@ -11,7 +11,7 @@ export interface Card extends RankedCard, CountedCard {
 }
 
 export const MAXIMUM_CARD_COUNTING_VALUE = 10;
-export const CARD_LABELS = "A23456789TJQK";
+export const CARD_LABELS = [..."A23456789".split(""), "10", ..."JQK".split("")];
 
 export const createCard = (rankValue: number): Card => ({
   count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),

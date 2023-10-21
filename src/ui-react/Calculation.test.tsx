@@ -1,13 +1,24 @@
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
 import { Calculation } from "./Calculation";
+import { HandCard } from "../game/HandCard";
+/* jscpd:ignore-start */
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
+/* jscpd:ignore-end */
 import { handPoints } from "../game/scoring";
-import { handToSortedString } from "../ui/handToSortedString";
 import { render } from "@testing-library/react";
+import { sortCards } from "../ui/sortCards";
 import { sortOrderNames } from "../ui/SortOrderName";
+
+const handToSortedString = (
+  handCards: readonly HandCard[],
+  sortOrder: SortOrder,
+): string =>
+  sortCards(handCards, sortOrder)
+    .map((dealtCard) => dealtCard.rankLabel)
+    .join("");
 
 describe("calculation component", () => {
   it.each(sortOrderNames)(
@@ -31,7 +42,7 @@ describe("calculation component", () => {
       const discardString = handToSortedString(discard, sortOrder);
 
       const pattern = new RegExp(
-        `${keepString}.*-.*${discardString}.*\\s${points}\\spoints`,
+        `${keepString}.*\\(${discardString}\\).*\\s${points}\\spoints`,
         "u",
       );
 

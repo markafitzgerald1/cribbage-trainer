@@ -2,6 +2,7 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 npm test
+npm run clean
 npm run build
 npm run lintThenTypeCopyPasteOutdatedAndAuditCheck
 npm run test-e2e

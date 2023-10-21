@@ -3,14 +3,14 @@
 .card {
   display: inline;
   padding: 0.16em 0.21em 0.17em 0.29em;
-  border: 0.025em solid #c0c0c0;
-  background-color: white;
+  border: var(--card-border from global);
+  background-color: var(--card-background-color from global);
   cursor: pointer;
   margin: 0 0.15em 0.4em 0;
   font-weight: bold;
   font-size: 6.6vw;
   text-align: center;
-  width: 8vw;
+  width: 6.952vw;
   position: relative;
   user-select: none;
   font-family: var(--card-font-family from global);
@@ -18,16 +18,36 @@
   border-radius: var(--clickable-border-radius from global);
 }
 
+.card input[type="checkbox"] {
+  position: absolute;
+  bottom: -0.1em;
+  right: -0.1em;
+}
+
 @media (orientation: portrait) {
   .card {
     font-size: 12.9vw;
+    width: 13.527vw;
+  }
+
+  .card input[type="checkbox"] {
+    width: 3vw;
   }
 }
 
-.card input[type="checkbox"] {
-  position: absolute;
-  bottom: 0;
-  right: 0;
+@media (orientation: landscape) {
+  .card input[type="checkbox"] {
+    width: 1.5vw;
+  }
+}
+
+.ten {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ten div {
+  transform: scaleX(0.5);
 }
 
 .discarded {

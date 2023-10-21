@@ -22,14 +22,16 @@ export class Card extends React.Component<CardProps> {
     const { kept, rankLabel } = dealtCards[dealOrderIndex]!;
     return (
       <label
-        className={`${classes.card}${kept ? "" : ` ${classes.discarded}`}`}
+        className={`${classes.card}${kept ? "" : ` ${classes.discarded}`}${
+          rankLabel === "10" ? ` ${classes.ten}` : ""
+        }`}
       >
         <input
           checked={kept}
           onChange={this.handleCheckboxChange}
           type="checkbox"
         />
-        {rankLabel}
+        <div>{rankLabel}</div>
       </label>
     );
   }

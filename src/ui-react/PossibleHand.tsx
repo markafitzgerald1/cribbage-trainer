@@ -1,12 +1,18 @@
 import * as classes from "./PossibleHand.module.css";
 import { CalculationsProps } from "./Calculations";
+import { PossibleHandCard } from "./PossibleHandCard";
 import React from "react";
-import { handToSortedString } from "../ui/handToSortedString";
+import { sortCards } from "../ui/sortCards";
 
 export function PossibleHand({ dealtCards, sortOrder }: CalculationsProps) {
   return (
     <span className={classes["keep-discard"]}>
-      {handToSortedString(dealtCards, sortOrder)}
+      {sortCards(dealtCards, sortOrder).map((dealtCard) => (
+        <PossibleHandCard
+          dealtCard={dealtCard}
+          key={dealtCard.dealOrder}
+        />
+      ))}
     </span>
   );
 }

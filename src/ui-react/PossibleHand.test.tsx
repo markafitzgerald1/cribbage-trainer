@@ -17,11 +17,11 @@ describe("possible hand component", () => {
     ).toBeTruthy();
   });
 
-  const keptHand = "TAJ4";
-  const discard = "5K";
+  const keptHand = "10,A,J,4";
+  const discard = "5,K";
   it.each([
-    ["A4TJ", SortOrder[SortOrder.Ascending], keptHand],
-    ["JT4A", SortOrder[SortOrder.Descending], keptHand],
+    ["A410J", SortOrder[SortOrder.Ascending], keptHand],
+    ["J104A", SortOrder[SortOrder.Descending], keptHand],
     [keptHand, SortOrder[SortOrder.DealOrder], keptHand],
     [discard, SortOrder[SortOrder.Ascending], discard],
     ["K5", SortOrder[SortOrder.Descending], discard],
@@ -32,7 +32,7 @@ describe("possible hand component", () => {
       expect(
         render(
           <PossibleHand
-            dealtCards={hand.split("").map((rankLabel, dealOrder) => ({
+            dealtCards={hand.split(",").map((rankLabel, dealOrder) => ({
               ...createCard(CARD_LABELS.indexOf(rankLabel)),
               dealOrder,
               kept: true,
@@ -40,6 +40,6 @@ describe("possible hand component", () => {
             sortOrder={SortOrder[sortOrder as keyof typeof SortOrder]}
           />,
         ).container.querySelector("span")!.textContent,
-      ).toStrictEqual(sortedHand),
+      ).toStrictEqual(sortedHand.replace(/,/gu, "")),
   );
 });
