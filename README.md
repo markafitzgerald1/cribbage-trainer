@@ -17,8 +17,7 @@ via [GitHub Action Workflow](https://github.com/markafitzgerald1/cribbage-traine
 
 ## Local and development setup
 
-- Install the latest version of the major version of [Node.js](https://nodejs.org/en/)
-  specified in `.github/workflows/npm-parcel-build-upload-and-deploy-to-pages.yml`
+- Install the latest [LTS version of Node.js](https://nodejs.org/en/)
 - Install third-party dependencies: `npm install`
 - Run locally in development mode: `npm run clean && npm test && npm run
 lintThenTypeCopyPasteOutdatedAndAuditCheck && npx --no-install playwright install
