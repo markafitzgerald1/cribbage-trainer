@@ -35,6 +35,7 @@ jobs:
 
   deploy-artifact-to-github-pages:
     needs: npm-test-build-and-upload-artifact
+    if: github.ref == 'refs/heads/main'
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
