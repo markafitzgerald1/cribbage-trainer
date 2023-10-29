@@ -40,7 +40,7 @@ run test-e2e`.
 
   ```sh
   docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app \
-  mcr.microsoft.com/playwright:v1.39.0-jammy /bin/bash
+  mcr.microsoft.com/playwright:v1.40.1-jammy /bin/bash
   ```
 
 - Then, in that container:

@@ -21,7 +21,7 @@ export function Trainer({ generateRandomNumber }: RandomNumberGenerator) {
 
   return (
     <React.StrictMode>
-      <div className={classes["dynamic-ui"]}>
+      <div className={classes.dynamicUi}>
         <SortableHand
           dealtCards={dealtCards}
           setDealtCards={setDealtCards}

@@ -2,12 +2,12 @@
 
 .card {
   display: inline-block;
-  border: var(--card-border from global);
-  background-color: var(--card-background-color from global);
+  border: var(--card-border);
+  background-color: var(--card-background-color);
   margin: 0.08em;
   text-align: center;
-  border-width: var(--clickable-border-width from global);
-  border-radius: var(--clickable-border-radius from global);
+  border-width: var(--clickable-border-width);
+  border-radius: var(--clickable-border-radius);
   color: black;
   font-weight: bold;
   width: 0.85em;

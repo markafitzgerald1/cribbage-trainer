@@ -6,7 +6,7 @@ import { sortCards } from "../ui/sortCards";
 
 export function PossibleHand({ dealtCards, sortOrder }: CalculationsProps) {
   return (
-    <span className={classes["keep-discard"]}>
+    <span className={classes.keepDiscard}>
       {sortCards(dealtCards, sortOrder).map((dealtCard) => (
         <PossibleHandCard
           dealtCard={dealtCard}

@@ -3,8 +3,8 @@
 .card {
   display: inline;
   padding: 0.16em 0.21em 0.17em 0.29em;
-  border: var(--card-border from global);
-  background-color: var(--card-background-color from global);
+  border: var(--card-border);
+  background-color: var(--card-background-color);
   cursor: pointer;
   margin: 0 0.15em 0.4em 0;
   font-weight: bold;
@@ -13,9 +13,9 @@
   width: 6.952vw;
   position: relative;
   user-select: none;
-  font-family: var(--card-font-family from global);
-  border-width: var(--clickable-border-width from global);
-  border-radius: var(--clickable-border-radius from global);
+  font-family: var(--card-font-family);
+  border-width: var(--clickable-border-width);
+  border-radius: var(--clickable-border-radius);
 }
 
 .card input[type="checkbox"] {

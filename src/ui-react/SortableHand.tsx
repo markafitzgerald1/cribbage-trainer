@@ -14,7 +14,7 @@ export function SortableHand({
   sortOrder,
 }: SortableHandProps) {
   return (
-    <div className={classes["sortable-hand"]}>
+    <div className={classes.sortableHand}>
       <SortOrderInput
         setSortOrder={setSortOrder}
         sortOrder={sortOrder}

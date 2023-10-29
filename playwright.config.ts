@@ -36,13 +36,13 @@ export default defineConfig({
   retries: process.env["CI"] ? continuousIntegrationRetryLimit : 0,
   testDir: "./tests-e2e",
   use: {
-    baseURL: "http://localhost:1234",
+    baseURL: "http://localhost:5173",
     trace: "on-first-retry",
   },
   webServer: {
     command: "npm start",
     reuseExistingServer: !process.env["CI"],
-    url: "http://localhost:1234",
+    url: "http://localhost:5173",
   },
   workers: process.env["CI"] ? 1 : os.cpus().length,
 });

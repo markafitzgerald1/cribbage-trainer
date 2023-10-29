@@ -2,9 +2,9 @@
 
 .calculations {
   margin: 0 0 0 0.5em;
-  width: var(--trainer-block-width-landscape from global);
-  color: var(--text-color from global);
-  font-family: var(--text-font-family from global);
+  width: var(--trainer-block-width-landscape);
+  color: var(--text-color);
+  font-family: var(--text-font-family);
 }
 
 .calculations ul {
@@ -20,7 +20,7 @@
 
 @media (orientation: portrait) {
   .calculations {
-    width: var(--trainer-block-width-portrait from global);
+    width: var(--trainer-block-width-portrait);
   }
 
   .calculations ul {

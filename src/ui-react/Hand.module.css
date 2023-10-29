@@ -5,8 +5,8 @@
 }
 
 .figcaption {
-  color: var(--text-color from global);
-  font-family: var(--text-font-family from global);
+  color: var(--text-color);
+  font-family: var(--text-font-family);
 }
 
 .hand {
