@@ -1,11 +1,11 @@
 @import url("./vars.css");
 
 .sortable-hand {
-  width: var(--trainer-block-width-landscape from global);
+  width: var(--trainer-block-width-landscape);
 }
 
 @media (orientation: portrait) {
   .sortable-hand {
-    width: var(--trainer-block-width-portrait from global);
+    width: var(--trainer-block-width-portrait);
   }
 }

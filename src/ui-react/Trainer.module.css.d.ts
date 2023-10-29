@@ -1,4 +1,4 @@
 declare const classes: {
-  readonly "dynamic-ui": string;
+  readonly dynamicUi: string;
 };
 export = classes;

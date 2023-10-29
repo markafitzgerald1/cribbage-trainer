@@ -1,4 +1,4 @@
 declare const classes: {
-  readonly "sortable-hand": string;
+  readonly sortableHand: string;
 };
 export = classes;

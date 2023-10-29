@@ -1,5 +1,5 @@
 @import url("./vars.css");
 
 .keep-discard {
-  font-family: var(--card-font-family from global);
+  font-family: var(--card-font-family);
 }

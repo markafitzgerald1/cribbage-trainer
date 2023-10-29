@@ -36,7 +36,7 @@ test(`has title '${expectedTitle}'`, async ({ page }) => {
 test("styles.css is linked", async ({ page }) => {
   await page.goto("/");
   expect(
-    await page.$('link[rel="stylesheet"][href*="index."][href$=".css"]'),
+    await page.$('link[rel="stylesheet"][href*="styles."][href$=".css"]'),
   ).not.toBeNull();
 });
 

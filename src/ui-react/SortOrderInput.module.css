@@ -6,8 +6,8 @@
   padding: 0;
   margin-left: 0;
   margin-right: 0;
-  color: var(--text-color from global);
-  font-family: var(--text-font-family from global);
+  color: var(--text-color);
+  font-family: var(--text-font-family);
   user-select: none;
 }
 
@@ -28,8 +28,8 @@
   color: lightgray;
   border-color: black;
   padding: 0.2em;
-  border-width: var(--clickable-border-width from global);
-  border-radius: var(--clickable-border-radius from global);
+  border-width: var(--clickable-border-width);
+  border-radius: var(--clickable-border-radius);
 }
 
 .input[type="radio"]:checked + label {
