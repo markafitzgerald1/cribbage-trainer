@@ -1,7 +1,11 @@
 @import url("./vars.css");
 
+:root {
+  --card-width: 0.562em;
+}
+
 .card {
-  display: inline;
+  display: block;
   padding: 0.16em 0.21em 0.17em 0.29em;
   border: var(--card-border);
   background-color: var(--card-background-color);
@@ -10,7 +14,7 @@
   font-weight: bold;
   font-size: 6.6vw;
   text-align: center;
-  width: 6.952vw;
+  width: var(--card-width);
   position: relative;
   user-select: none;
   font-family: var(--card-font-family);
@@ -44,6 +48,10 @@
 .ten {
   padding-left: 0;
   padding-right: 0;
+}
+
+.card.ten {
+  width: calc(1.8898 * var(--card-width));
 }
 
 .ten div {

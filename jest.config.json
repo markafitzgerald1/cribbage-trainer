@@ -1,6 +1,10 @@
 {
   "collectCoverage": true,
-  "collectCoverageFrom": ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+  "collectCoverageFrom": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/stories/*.stories.ts"
+  ],
   "coverageThreshold": {
     "global": {
       "branches": 100,
