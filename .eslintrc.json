@@ -8,6 +8,7 @@
     "plugin:react/all",
     "plugin:react-hooks/recommended",
     "plugin:security/recommended",
+    "plugin:storybook/recommended",
     "prettier"
   ],
   "parser": "@typescript-eslint/parser",
@@ -46,35 +47,85 @@
         "security/detect-non-literal-regexp": ["off"],
         "security/detect-object-injection": ["off"]
       }
+    },
+    {
+      "files": ["**/*.d.ts"],
+      "rules": {
+        "init-declarations": "off"
+      }
     }
   ],
   "root": true,
   "rules": {
     "@typescript-eslint/no-magic-numbers": [
       "error",
-      { "ignore": [0, 1], "ignoreEnums": true }
+      {
+        "ignore": [0, 1],
+        "ignoreEnums": true
+      }
     ],
     "@typescript-eslint/no-shadow": ["error"],
     "@typescript-eslint/no-non-null-assertion": ["off"],
     "@typescript-eslint/unbound-method": "off",
-    "capitalized-comments": ["error", "always", { "ignorePattern": "jscpd" }],
-    "dot-notation": ["error", { "allowPattern": "^CI$" }],
+    "capitalized-comments": [
+      "error",
+      "always",
+      {
+        "ignorePattern": "jscpd"
+      }
+    ],
+    "dot-notation": [
+      "error",
+      {
+        "allowPattern": "^CI$"
+      }
+    ],
     "func-style": "off",
-    "id-length": ["error", { "exceptions": ["_"] }],
-    "max-lines": ["error", { "max": 343 }],
-    "max-lines-per-function": ["error", { "max": 266, "skipBlankLines": true }],
+    "id-length": [
+      "error",
+      {
+        "exceptions": ["_"]
+      }
+    ],
+    "max-lines": [
+      "error",
+      {
+        "max": 343
+      }
+    ],
+    "max-lines-per-function": [
+      "error",
+      {
+        "max": 266,
+        "skipBlankLines": true
+      }
+    ],
     "max-statements": ["error", 16],
     "no-magic-numbers": ["off"],
     "no-shadow": "off",
     "no-ternary": "off",
-    "one-var": ["error", { "var": "always", "let": "never", "const": "never" }],
-    "react/jsx-filename-extension": ["error", { "extensions": [".tsx"] }],
+    "no-warning-comments": ["error", { "decoration": ["*"] }],
+    "one-var": [
+      "error",
+      {
+        "var": "always",
+        "let": "never",
+        "const": "never"
+      }
+    ],
+    "react/jsx-filename-extension": [
+      "error",
+      {
+        "extensions": [".tsx"]
+      }
+    ],
     "react/jsx-no-literals": "off",
     "react/require-optimization": "off",
     "spellcheck/spell-checker": [
       "warn",
       {
         "skipWords": [
+          "autodocs",
           "charset",
           "checkbox",
           "checkboxes",
@@ -116,21 +167,46 @@
     },
     "propWrapperFunctions": [
       "forbidExtraProps",
-      { "property": "freeze", "object": "Object" },
-      { "property": "myFavoriteWrapper" },
-      { "property": "forbidExtraProps", "exact": true }
+      {
+        "property": "freeze",
+        "object": "Object"
+      },
+      {
+        "property": "myFavoriteWrapper"
+      },
+      {
+        "property": "forbidExtraProps",
+        "exact": true
+      }
     ],
     "componentWrapperFunctions": [
       "observer",
-      { "property": "styled" },
-      { "property": "observer", "object": "Mobx" },
-      { "property": "observer", "object": "<pragma>" }
+      {
+        "property": "styled"
+      },
+      {
+        "property": "observer",
+        "object": "Mobx"
+      },
+      {
+        "property": "observer",
+        "object": "<pragma>"
+      }
     ],
     "formComponents": [
       "CustomForm",
-      { "name": "Form", "formAttribute": "endpoint" }
+      {
+        "name": "Form",
+        "formAttribute": "endpoint"
+      }
     ],
-    "linkComponents": ["Hyperlink", { "name": "Link", "linkAttribute": "to" }],
+    "linkComponents": [
+      "Hyperlink",
+      {
+        "name": "Link",
+        "linkAttribute": "to"
+      }
+    ],
     "jsx-a11y": {
       "components": {
         "Card": "input",

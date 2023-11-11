@@ -20,13 +20,15 @@ via [GitHub Action Workflow](https://github.com/markafitzgerald1/cribbage-traine
 - Install the latest version of the major version of [Node.js](https://nodejs.org/en/)
   specified in `.github/workflows/npm-parcel-build-upload-and-deploy-to-pages.yml`
 - Install third-party dependencies: `npm install`
-- Run locally in development mode: `npm run clean && npm test && npm run
-lintThenTypeCopyPasteOutdatedAndAuditCheck && npx --no-install playwright install
---with-deps && npm run test-e2e && npm start`
-- Build and run locally in production (GitHub Pages) mode: `npm run clean && npm
-test && npm run lintThenTypeCopyPasteOutdatedAndAuditCheck && npx --no-install
-playwright install --with-deps && npm run test-e2e && npm run clean && npm run
-build && npm start`
+- Test, lint then run locally in development mode: `npm run clean && npm test &&
+npm run lintThenTypeCopyPasteOutdatedAndAuditCheck && npx --no-install
+playwright install --with-deps && npm run test-e2e && npm start`
+- Test, lint, build then run locally in production (GitHub Pages) mode: `npm run
+clean && npm test && npm run lintThenTypeCopyPasteOutdatedAndAuditCheck && npx
+--no-install playwright install --with-deps && npm run test-e2e && npm run
+clean && npm run build && npm start`
+- Run Storybook: `npm run storybook`
+- Build static version of Storybook: `npm build storybook`
 
 ### Update visual regression test screenshots
 
