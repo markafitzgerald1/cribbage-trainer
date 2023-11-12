@@ -18,10 +18,10 @@ jobs:
         run: npm run storybook &
       - name: Wait for Storybook
         run: npx --no-install wait-on http://localhost:6006
-      - name: Run Storybook tests
-        run: npm run test-storybook
       - name: Install end to end test browsers
         run: npx --no-install playwright install --with-deps
+      - name: Run Storybook tests
+        run: npm run test-storybook
       - name: Run end to end tests
         run: npm run test-e2e
       - uses: actions/upload-artifact@v3
