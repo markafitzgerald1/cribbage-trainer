@@ -18,7 +18,7 @@
     "start": "vite",
     "clean": "rm -rf dist coverage storybook-static",
     "storybook": "storybook dev -p 6006",
-    "test-storybook": "storybook build && npx --no-install concurrently --kill-others --success first --names 'Storybook,Test' 'npx --no-install http-server storybook-static --port 6006 --silent >& /dev/null | true' 'npx --no-install wait-on --timeout 1s tcp:6006 && test-storybook --browsers chromium webkit firefox'"
+    "test-storybook": "storybook build && npx --no-install concurrently --kill-others --success first --names 'Storybook,Test' 'npx --no-install http-server storybook-static --silent' 'npx --no-install wait-on --timeout 1s tcp:6006 && test-storybook --browsers chromium webkit firefox'"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.23.3",
