@@ -14,10 +14,6 @@ jobs:
         run: npm run test
       - name: Run static code and project analyses
         run: npm run lintThenTypeCopyPasteOutdatedAndAuditCheck
-      - name: Start Storybook
-        run: npm run storybook &
-      - name: Wait for Storybook
-        run: npx --no-install wait-on http://localhost:6006
       - name: Install end to end test browsers
         run: npx --no-install playwright install --with-deps
       - name: Run Storybook tests
