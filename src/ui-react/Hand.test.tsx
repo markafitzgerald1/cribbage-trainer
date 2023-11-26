@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
+import React, { useState } from "react";
 import { describe, expect, it } from "@jest/globals";
-import { DealComponentContainer } from "./DealComponentContainer";
+import { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
-import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
@@ -10,12 +10,29 @@ import { sortCards } from "../ui/sortCards";
 import { sortOrderNames } from "../ui/SortOrderName";
 /* jscpd:ignore-end */
 
+function HandContainer({
+  dealtHand,
+  createComponent,
+}: {
+  readonly dealtHand: readonly DealtCard[];
+  readonly createComponent: ({
+    dealtCards,
+    setDealtCards,
+  }: {
+    dealtCards: readonly DealtCard[];
+    setDealtCards: React.Dispatch<React.SetStateAction<readonly DealtCard[]>>;
+  }) => JSX.Element;
+}) {
+  const [dealtCards, setDealtCards] = useState<readonly DealtCard[]>(dealtHand);
+  return <div>{createComponent({ dealtCards, setDealtCards })}</div>;
+}
+
 describe("hand component", () => {
   const dealAndRender = (sortOrder: SortOrder) => {
     const dealtHand = dealHand(Math.random);
 
     const { getAllByRole, queryAllByText, queryByRole, queryByText } = render(
-      <DealComponentContainer
+      <HandContainer
         createComponent={({ dealtCards, setDealtCards }) => (
           <Hand
             dealtCards={dealtCards}
