@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
+import { CARDS } from "../game/Card";
 import { Card } from "../ui-react/Card";
 
 const meta = {
@@ -14,89 +15,50 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const dealtCards = [
-  {
-    count: 1,
-    dealOrder: 0,
-    kept: false,
-    rankLabel: "A",
-    rankValue: 0,
-  },
-  {
-    count: 5,
-    dealOrder: 1,
-    kept: true,
-    rankLabel: "5",
-    rankValue: 4,
-  },
-  {
-    count: 9,
-    dealOrder: 2,
-    kept: true,
-    rankLabel: "9",
-    rankValue: 8,
-  },
-  {
-    count: 10,
-    dealOrder: 3,
-    kept: true,
-    rankLabel: "10",
-    rankValue: 9,
-  },
-  {
-    count: 10,
-    dealOrder: 4,
-    kept: true,
-    rankLabel: "J",
-    rankValue: 10,
-  },
-  {
-    count: 10,
-    dealOrder: 5,
-    kept: false,
-    rankLabel: "K",
-    rankValue: 12,
-  },
-];
-
 export const DiscardedFirstCardAce: Story = {
   args: {
     dealOrderIndex: 0,
-    dealtCards,
+    kept: false,
+    rankLabel: CARDS.ACE.rankLabel,
   },
 };
 
 export const KeptSecondCardFive: Story = {
   args: {
     dealOrderIndex: 1,
-    dealtCards,
+    kept: true,
+    rankLabel: CARDS.FIVE.rankLabel,
   },
 };
 
 export const KeptThirdCardNine: Story = {
   args: {
     dealOrderIndex: 2,
-    dealtCards,
+    kept: true,
+    rankLabel: CARDS.NINE.rankLabel,
   },
 };
 
 export const KeptFourthCardTen: Story = {
   args: {
     dealOrderIndex: 3,
-    dealtCards,
+    kept: true,
+    rankLabel: CARDS.TEN.rankLabel,
   },
 };
 
 export const KeptFifthCardJack: Story = {
   args: {
     dealOrderIndex: 4,
-    dealtCards,
+    kept: true,
+    rankLabel: CARDS.JACK.rankLabel,
   },
 };
 
 export const DiscardedFifthCardKing: Story = {
   args: {
     dealOrderIndex: 5,
-    dealtCards,
+    kept: false,
+    rankLabel: CARDS.KING.rankLabel,
   },
 };

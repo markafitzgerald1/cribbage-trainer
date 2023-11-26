@@ -1,38 +1,38 @@
 import * as classes from "./Card.module.css";
-import { DealtCardsHook } from "./DealtCardsHook";
 import React from "react";
 
-export interface CardProps extends DealtCardsHook {
+export interface CardProps {
   readonly dealOrderIndex: number;
+  readonly onChange: (dealOrderIndex: number) => void;
+  readonly kept: boolean;
+  readonly rankLabel: string;
 }
 
 export class Card extends React.Component<CardProps> {
-  handleCheckboxChange = () => {
-    const { dealtCards, dealOrderIndex, setDealtCards } = this.props;
-    const newDealtCards = [...dealtCards];
-    // eslint-disable-next-line security/detect-object-injection
-    const newDealtCard = newDealtCards[dealOrderIndex]!;
-    newDealtCard.kept = !newDealtCard.kept;
-    setDealtCards(newDealtCards);
+  handleChange = () => {
+    const { dealOrderIndex, onChange } = this.props;
+    onChange(dealOrderIndex);
   };
 
   override render() {
-    const { dealtCards, dealOrderIndex } = this.props;
-    // eslint-disable-next-line security/detect-object-injection
-    const { kept, rankLabel } = dealtCards[dealOrderIndex]!;
+    const { dealOrderIndex, kept, rankLabel } = this.props;
+    const id = `card-checkbox-${dealOrderIndex}`;
     return (
-      <label
+      <div
         className={`${classes.card}${kept ? "" : ` ${classes.discarded}`}${
           rankLabel === "10" ? ` ${classes.ten}` : ""
         }`}
       >
+        <label htmlFor={id}>
+          <div>{rankLabel}</div>
+        </label>
         <input
           checked={kept}
-          onChange={this.handleCheckboxChange}
+          id={id}
+          onChange={this.handleChange}
           type="checkbox"
         />
-        <div>{rankLabel}</div>
-      </label>
+      </div>
     );
   }
 }

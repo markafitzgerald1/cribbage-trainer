@@ -54,7 +54,7 @@
   width: calc(1.8898 * var(--card-width));
 }
 
-.ten div {
+.ten label div {
   transform: scaleX(0.5);
 }
 
