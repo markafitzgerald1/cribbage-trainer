@@ -1,13 +1,11 @@
 import * as classes from "./Trainer.module.css";
-/* jscpd:ignore-start */
 import React, { useState } from "react";
-import { Calculations } from "./Calculations";
 import { DealtCard } from "../game/DealtCard";
+import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { SortableHand } from "./SortableHand";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
-/* jscpd:ignore-end */
 
 interface RandomNumberGenerator {
   readonly generateRandomNumber: () => number;
@@ -29,7 +27,7 @@ export function Trainer({ generateRandomNumber }: RandomNumberGenerator) {
           sortOrder={sortOrder}
         />
         {discardIsComplete(dealtCards) && (
-          <Calculations
+          <ScoredPossibleKeepDiscards
             dealtCards={dealtCards}
             sortOrder={sortOrder}
           />

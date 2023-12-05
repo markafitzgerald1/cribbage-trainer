@@ -1,34 +1,4 @@
-export interface RankedCard {
-  rankValue: number;
-}
-
-export interface CountedCard {
-  count: number;
-}
-
-export interface Card extends RankedCard, CountedCard {
-  rankLabel: string;
-}
-
-export const MAXIMUM_CARD_COUNTING_VALUE = 10;
-export const CARD_LABELS = [..."A23456789".split(""), "10", ..."JQK".split("")];
-
-export const createCard = (rankValue: number): Card => ({
-  count: Math.min(rankValue + 1, MAXIMUM_CARD_COUNTING_VALUE),
-  // eslint-disable-next-line security/detect-object-injection
-  rankLabel: CARD_LABELS[rankValue]!,
-  rankValue,
-});
-
-export const INDICES_PER_SUIT = 13;
-
-export const CARD_INDICES: readonly number[] = [
-  ...Array(INDICES_PER_SUIT).keys(),
-];
-
-const RANKED_CARDS: readonly Card[] = CARD_INDICES.map(createCard);
-
-enum Rank {
+export enum Rank {
   ACE,
   TWO,
   THREE,
@@ -44,6 +14,36 @@ enum Rank {
   KING,
 }
 
+export interface RankedCard {
+  rank: Rank;
+}
+
+export interface CountedCard {
+  count: number;
+}
+
+export interface Card extends RankedCard, CountedCard {
+  rankLabel: string;
+}
+
+export const MAXIMUM_CARD_COUNTING_VALUE = 10;
+export const CARD_LABELS = [..."A23456789".split(""), "10", ..."JQK".split("")];
+
+export const createCard = (rank: Rank): Card => ({
+  count: Math.min(rank + 1, MAXIMUM_CARD_COUNTING_VALUE),
+  rank,
+  // eslint-disable-next-line security/detect-object-injection
+  rankLabel: CARD_LABELS[rank]!,
+});
+
+export const INDICES_PER_SUIT = 13;
+
+export const CARD_RANKS: Rank[] = Object.values(Rank).filter(
+  Number.isInteger,
+) as Rank[];
+
+const RANKED_CARDS: readonly Card[] = CARD_RANKS.map(createCard);
+
 type RankName = keyof typeof Rank;
 
 type NamedCards = {
@@ -51,7 +51,7 @@ type NamedCards = {
 };
 
 const NAMED_CARDS = Object.fromEntries(
-  CARD_INDICES.map((index) => index as Rank).map((rank) => [
+  CARD_RANKS.map((index) => index as Rank).map((rank) => [
     // eslint-disable-next-line security/detect-object-injection
     Rank[rank] as RankName,
     // eslint-disable-next-line security/detect-object-injection

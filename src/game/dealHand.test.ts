@@ -1,6 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "./facts";
-import { INDICES_PER_SUIT } from "./Card";
 import { dealHand } from "./dealHand";
 import seedrandom from "seedrandom";
 
@@ -34,18 +33,6 @@ describe("dealHand", () => {
     expect(sortedDealOrders).toStrictEqual([
       ...Array(CARDS_PER_DEALT_HAND).keys(),
     ]);
-  });
-
-  it("returns cards with non-negative ranks", () => {
-    expect(dealHand(mathRandom).every((card) => card.rankValue >= 0)).toBe(
-      true,
-    );
-  });
-
-  it(`returns cards with ranks less than ${INDICES_PER_SUIT}`, () => {
-    expect(
-      dealHand(mathRandom).every((card) => card.rankValue < INDICES_PER_SUIT),
-    ).toBe(true);
   });
 
   it("return cards with kept set to true", () => {

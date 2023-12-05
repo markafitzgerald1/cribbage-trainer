@@ -1,16 +1,18 @@
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
-import { Calculation } from "./Calculation";
 import { HandCard } from "../game/HandCard";
 /* jscpd:ignore-start */
 import React from "react";
+import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
-import { dealHand } from "../game/dealHand";
 /* jscpd:ignore-end */
+import { dealHand } from "../game/dealHand";
 import { handPoints } from "../game/scoring";
+/* jscpd:ignore-start */
 import { render } from "@testing-library/react";
 import { sortCards } from "../ui/sortCards";
 import { sortOrderNames } from "../ui/SortOrderName";
+/* jscpd:ignore-end */
 
 const handToSortedString = (
   handCards: readonly HandCard[],
@@ -30,7 +32,7 @@ describe("calculation component", () => {
       const discard = dealtHand.slice(CARDS_PER_KEPT_HAND);
       const points = handPoints(keep).total;
       const { container } = render(
-        <Calculation
+        <ScoredPossibleKeepDiscard
           discard={discard}
           keep={keep}
           points={points}

@@ -3,19 +3,19 @@ import { PossibleHand } from "./PossibleHand";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
-interface CalculationProps {
+interface ScoredPossibleKeepDiscardProps {
   readonly keep: readonly DealtCard[];
   readonly discard: readonly DealtCard[];
   readonly points: number;
   readonly sortOrder: SortOrder;
 }
 
-export function Calculation({
+export function ScoredPossibleKeepDiscard({
   keep,
   discard,
   points,
   sortOrder,
-}: CalculationProps) {
+}: ScoredPossibleKeepDiscardProps) {
   return (
     <li>
       <PossibleHand

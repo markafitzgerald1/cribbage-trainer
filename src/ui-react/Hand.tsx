@@ -1,5 +1,5 @@
 import * as classes from "./Hand.module.css";
-import { Card } from "./Card";
+import { HandCard } from "./HandCard";
 import { HandProps } from "./HandProps";
 import React from "react";
 import { sortCards } from "../ui/sortCards";
@@ -22,12 +22,12 @@ export class Hand extends React.Component<HandProps> {
         <figcaption className={classes.figcaption}>Dealt hand:</figcaption>
         <ul className={classes.hand}>
           {sortedDealtCards.map((dealtCard) => (
-            <Card
+            <HandCard
               dealOrderIndex={dealtCard.dealOrder}
               kept={dealtCard.kept}
               key={dealtCard.dealOrder}
               onChange={this.handleCheckboxChange}
-              rankLabel={dealtCard.rankLabel}
+              rank={dealtCard.rank}
             />
           ))}
         </ul>

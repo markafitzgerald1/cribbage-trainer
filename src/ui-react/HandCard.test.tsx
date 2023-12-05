@@ -1,24 +1,24 @@
-import * as classes from "./Card.module.css";
+import * as classes from "./HandCard.module.css";
 import { describe, expect, it, jest } from "@jest/globals";
-import { CARDS } from "../game/Card";
-import { Card as CardComponent } from "./Card";
+import { CARD_LABELS } from "../game/Card";
 import { DealtCard } from "../game/DealtCard";
+import { HandCard } from "./HandCard";
 import React from "react";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-describe("card component", () => {
+describe("hand card component", () => {
   const renderCard = (
-    { dealOrder, kept, rankLabel }: DealtCard,
+    { dealOrder, kept, rank }: DealtCard,
     mockOnChange: jest.Mock = jest.fn(),
   ) =>
     render(
-      <CardComponent
+      <HandCard
         dealOrderIndex={dealOrder}
         kept={kept}
         onChange={mockOnChange}
-        rankLabel={rankLabel}
+        rank={rank}
       />,
     );
 
@@ -29,7 +29,7 @@ describe("card component", () => {
 
   it("label text is its rank label", () => {
     const card = dealCard();
-    expect(renderCard(card).getByText(card.rankLabel)).toBeTruthy();
+    expect(renderCard(card).getByText(CARD_LABELS[card.rank]!)).toBeTruthy();
   });
 
   it("emits an onChange event on checkbox click", async () => {
@@ -58,23 +58,9 @@ describe("card component", () => {
     const { getByLabelText } = renderCard(card);
 
     expect(
-      getByLabelText(card.rankLabel)
-        .closest("div")!
-        .classList.contains(classes.discarded),
+      getByLabelText(card.rankLabel).parentElement!.classList.contains(
+        classes.discarded,
+      ),
     ).toBe(!card.kept);
   });
-
-  it.each([CARDS.TEN, CARDS.FOUR])(
-    "%s has the 'ten' CSS class if it is a ten",
-    (card) => {
-      const dealtCard = { ...dealCard(), rankLabel: card.rankLabel };
-      const { getByLabelText } = renderCard(dealtCard);
-
-      expect(
-        getByLabelText(dealtCard.rankLabel)
-          .closest("div")!
-          .classList.contains(classes.ten),
-      ).toBe(dealtCard.rankLabel === CARDS.TEN.rankLabel);
-    },
-  );
 });

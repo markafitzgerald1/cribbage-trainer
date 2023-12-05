@@ -23,12 +23,12 @@ describe("sortCards", () => {
         [...handCards].sort((first, second) => {
           switch (sortOrder) {
             case SortOrder.Ascending:
-              return first.rankValue - second.rankValue;
+              return first.rank - second.rank;
             case SortOrder.DealOrder:
               return first.dealOrder - second.dealOrder;
             case SortOrder.Descending:
             default:
-              return second.rankValue - first.rankValue;
+              return second.rank - first.rank;
           }
         }),
       );

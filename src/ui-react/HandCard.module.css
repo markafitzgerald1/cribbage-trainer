@@ -31,7 +31,6 @@
 @media (orientation: portrait) {
   .card {
     font-size: 12.9vw;
-    width: 13.527vw;
   }
 
   .card input[type="checkbox"] {
@@ -43,19 +42,6 @@
   .card input[type="checkbox"] {
     width: 1.5vw;
   }
-}
-
-.ten {
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.card.ten {
-  width: calc(1.8898 * var(--card-width));
-}
-
-.ten label div {
-  transform: scaleX(0.5);
 }
 
 .discarded {

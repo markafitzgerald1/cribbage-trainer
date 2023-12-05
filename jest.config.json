@@ -3,7 +3,7 @@
   "collectCoverageFrom": [
     "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",
-    "!src/stories/*.stories.ts"
+    "!src/ui-react/*.stories.ts"
   ],
   "coverageThreshold": {
     "global": {

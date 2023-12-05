@@ -17,7 +17,7 @@ export const HAND_POINTS = {
 
 const pairsPoints = (keep: readonly RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
-    ([first, second]) => first!.rankValue === second!.rankValue,
+    ([first, second]) => first!.rank === second!.rank,
   ).length * HAND_POINTS.PAIR;
 
 const COUNT = {
@@ -39,7 +39,7 @@ enum RunLength {
 
 const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
   [...new Combination(keep, runLength)]
-    .map((combination) => combination.map((card) => card.rankValue))
+    .map((combination) => combination.map((card) => card.rank))
     .map((combination) =>
       [...combination].sort((rank1, rank2) => rank1 - rank2),
     )
