@@ -1,0 +1,9 @@
+@import url("./vars.css");
+
+.card-label {
+  font-family: var(--card-font-family);
+}
+
+.ten {
+  transform: scaleX(0.5) translateX(-0.3em);
+}

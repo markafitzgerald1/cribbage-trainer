@@ -1,8 +1,8 @@
-/* jscpd:ignore-start */
 import React, { useState } from "react";
 import { describe, expect, it } from "@jest/globals";
 import { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
+/* jscpd:ignore-start */
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";

@@ -1,8 +1,6 @@
-/* jscpd:ignore-start */
 import { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
 import { sortOrderNames } from "./SortOrderName";
-/* jscpd:ignore-end */
 
 const createCompare =
   (sortOrder: SortOrder) =>
@@ -11,10 +9,10 @@ const createCompare =
       case SortOrder.DealOrder:
         return first.dealOrder - second.dealOrder;
       case SortOrder.Ascending:
-        return first.rankValue - second.rankValue;
+        return first.rank - second.rank;
       case SortOrder.Descending:
       default:
-        return second.rankValue - first.rankValue;
+        return second.rank - first.rank;
     }
   };
 

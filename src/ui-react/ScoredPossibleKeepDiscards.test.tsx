@@ -1,22 +1,22 @@
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_DISCARD } from "../game/facts";
-import { Calculations } from "./Calculations";
 import { Combination } from "js-combinatorics";
-/* jscpd:ignore-start */
 import React from "react";
+import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
+/* jscpd:ignore-start */
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-/* jscpd:ignore-end */
 import { render } from "@testing-library/react";
+/* jscpd:ignore-end */
 
-describe("calculations component", () => {
+describe("scored possible keep discards component", () => {
   const mathRandom = Math.random;
 
   const dealAndRender = () => {
     const dealtHand = dealHand(mathRandom);
 
     const { container } = render(
-      <Calculations
+      <ScoredPossibleKeepDiscards
         dealtCards={dealtHand}
         sortOrder={SortOrder.Ascending}
       />,

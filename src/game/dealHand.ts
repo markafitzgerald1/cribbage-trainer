@@ -5,9 +5,9 @@ import { DealtCard } from "./DealtCard";
 export const dealHand = (generateRandomNumber: () => number): DealtCard[] =>
   Array.from({ length: CARDS_PER_DEALT_HAND }, () =>
     Math.floor(generateRandomNumber() * INDICES_PER_SUIT),
-  ).map((rankValue, dealOrder) => ({
+  ).map((rank, dealOrder) => ({
     // eslint-disable-next-line security/detect-object-injection
-    ...CARDS[rankValue]!,
+    ...CARDS[rank]!,
     dealOrder,
     kept: true,
   }));

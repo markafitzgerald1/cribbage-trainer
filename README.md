@@ -64,8 +64,8 @@ If the changes are visually acceptable, update the visual regression test
 screenshots via the following steps:
 
 - Remove out of date screenshots:
-  - Linux: `rm tests-e2e/index.screenshots.ts-snapshots/*-linux.png`
-  - macOS: `rm tests-e2e/index.screenshots.ts-snapshots/*-darwin.png`
+  - Linux: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*-linux.png`
+  - macOS: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*-darwin.png`
 - Generate the now expected browser screenshots for your development platform:
   `npm run test-e2e`.
 - If not developing on Linux, generate the now expected browser screenshots for
@@ -77,7 +77,7 @@ screenshots via the following steps:
 
   ```sh
   docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app \
-  mcr.microsoft.com/playwright:v1.40.0-jammy /bin/bash
+  mcr.microsoft.com/playwright:v1.40.1-jammy /bin/bash
   ```
 
   - Then, in that container:

@@ -1,23 +1,28 @@
-import * as classes from "./Calculations.module.css";
-import { Calculation } from "./Calculation";
+import * as classes from "./ScoredPossibleKeepDiscards.module.css";
 import { DealtCard } from "../game/DealtCard";
+/* jscpd:ignore-start */
 import React from "react";
+import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
+/* jscpd:ignore-end */
 import { allScoredKeepDiscardsByScoreDescending } from "../analysis/analysis";
 
-export interface CalculationsProps {
+export interface ScoredPossibleKeepDiscardsProps {
   readonly dealtCards: readonly DealtCard[];
   readonly sortOrder: SortOrder;
 }
 
-export function Calculations({ dealtCards, sortOrder }: CalculationsProps) {
+export function ScoredPossibleKeepDiscards({
+  dealtCards,
+  sortOrder,
+}: ScoredPossibleKeepDiscardsProps) {
   return (
     <figure className={classes.calculations}>
       <figcaption>Pre-cut hand</figcaption>
       <ul>
         {allScoredKeepDiscardsByScoreDescending(dealtCards).map(
           (scoredKeepDiscard) => (
-            <Calculation
+            <ScoredPossibleKeepDiscard
               discard={scoredKeepDiscard.discard}
               keep={scoredKeepDiscard.keep}
               key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]

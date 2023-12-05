@@ -3,3 +3,22 @@
 .keep-discard {
   font-family: var(--card-font-family);
 }
+
+.card {
+  display: inline-block;
+  border: var(--card-border);
+  background-color: var(--card-background-color);
+  margin: 0.08em;
+  text-align: center;
+  border-width: var(--clickable-border-width);
+  border-radius: var(--clickable-border-radius);
+  color: black;
+  font-weight: bold;
+  width: 0.65em;
+  font-family: var(--card-font-family);
+  padding: 0.1em;
+}
+
+.card div {
+  padding-left: 0.1em;
+}
