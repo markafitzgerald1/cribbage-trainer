@@ -30,7 +30,7 @@ build && npm start`
 
 ### Update visual regression test screenshots
 
-- Remove out of date screenshots for all platforms: `rm tests-e2e/index.spec.ts-snapshots/*.png`
+- Remove out of date screenshots for all platforms: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`
 - Generate the now expected browser screenshots for your development platform: `npm
 run test-e2e`.
 - If not developing on Linux, also generate now expected Linux browser
@@ -40,7 +40,7 @@ run test-e2e`.
 
   ```sh
   docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app \
-  -p 9323:9323 mcr.microsoft.com/playwright:v1.39.0-jammy /bin/bash
+  mcr.microsoft.com/playwright:v1.39.0-jammy /bin/bash
   ```
 
 - Then, in that container:
