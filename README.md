@@ -17,8 +17,16 @@ via [GitHub Action Workflow](https://github.com/markafitzgerald1/cribbage-traine
 
 ## Local and development setup
 
-- Install the latest [LTS version of Node.js](https://nodejs.org/en/)
+### Installation
+
+- Install the latest version of the major version of [Node.js](https://nodejs.org/en/)
+  specified in `.github/workflows/npm-parcel-build-upload-and-deploy-to-pages.yml`
 - Install third-party dependencies: `npm install`
+
+### Testing
+
+#### Local Development Tests
+
 - Test, lint then run locally in development mode: `npm run clean && npm test &&
 npm run lintThenTypeCopyPasteOutdatedAndAuditCheck && npx --no-install
 playwright install --with-deps && npm run test-storybook && npm run test-e2e
@@ -27,6 +35,9 @@ playwright install --with-deps && npm run test-storybook && npm run test-e2e
 clean && npm test && npm run lintThenTypeCopyPasteOutdatedAndAuditCheck && npx
 --no-install playwright install --with-deps && npm run test-storybook && npm
 run test-e2e && npm run clean && npm run build && npm start`
+
+#### Linux-Based Tests from non-Linux Development Environments
+
 - Run e2e (end to end) tests on Linux when development environment is not Linux:
 
   - Install [Docker](https://www.docker.com/) if not already installed for local
@@ -35,7 +46,7 @@ run test-e2e && npm run clean && npm run build && npm start`
 
   ```sh
   docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app \
-  mcr.microsoft.com/playwright:v1.40.0-jammy /bin/bash
+  mcr.microsoft.com/playwright:v1.40.1-jammy /bin/bash
   ```
 
   - In that container:
@@ -43,8 +54,7 @@ run test-e2e && npm run clean && npm run build && npm start`
       `apt update && apt install --yes make gcc g++`,
     - remove any potentially non-Linux build or install artifacts then install:
       `rm -rf node_modules && npm run clean && npm install`,
-    - generate now expected browser screenshots on Linux (required for GitHub
-      Actions continuous integration to pass): `npm run test-e2e`, and
+    - run the e2e tests: `npm run test-e2e`, and
     - Remove Linux-specific build output: `rm -rf node_modules`.
 
 - Run Storybook: `npm run storybook`
@@ -69,22 +79,7 @@ screenshots via the following steps:
 - Generate the now expected browser screenshots for your development platform:
   `npm run test-e2e`.
 - If not developing on Linux, generate the now expected browser screenshots for
-  Linux via [Docker](https://www.docker.com/):
-
-  - Start a [Playwright Docker container](https://playwright.dev/docs/docker#pull-the-image)
-    with the [same version](https://mcr.microsoft.com/en-us/product/playwright/tags)
-    as that in `package.json`:
-
-  ```sh
-  docker run -it --rm --ipc=host -v "$PWD":/usr/src/app -w /usr/src/app \
-  mcr.microsoft.com/playwright:v1.40.1-jammy /bin/bash
-  ```
-
-  - Then, in that container:
-    - install `make` and `g++` to ensure that Parcel can run:
-      `apt update && apt install --yes make gcc g++`,
-    - remove any potentially non-Linux build or install artifacts then install:
-      `rm -rf node_modules && npm run clean && npm install`,
-    - generate now expected browser screenshots on Linux (required for GitHub
-      Actions continuous integration to pass): `npm run test-e2e`, and
-    - Remove Linux-specific build output: `rm -rf node_modules`.
+  Linux via [Docker](https://www.docker.com/) by running the ["Linux-Based Tests
+  from non-Linux Development Environments"](#linux-based-tests-from-non-linux-development-environments)
+  steps above, which will generate the now expected browser screenshots on Linux.
+  These are required for GitHub Actions continuous integration to pass.
