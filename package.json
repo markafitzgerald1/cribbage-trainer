@@ -16,7 +16,7 @@
     "audit": "better-npm-audit audit",
     "build": "vite build",
     "start": "vite",
-    "clean": "rm -rf dist coverage storybook-static",
+    "clean": "rm -rf coverage/ dist/ playwright-report/ storybook-static/ test-results/ tsconfig.tsbuildinfo",
     "storybook": "storybook dev -p 6006",
     "test-storybook": "storybook build && npx --no-install concurrently --kill-others --success first --names 'Storybook,Test' 'npx --no-install http-server storybook-static --port 6006 --silent > /dev/null 2>&1 | tail -f /dev/null' 'npx --no-install wait-on --timeout 1s tcp:6006 && test-storybook --browsers chromium webkit firefox'"
   },
