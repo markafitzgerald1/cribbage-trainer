@@ -21,8 +21,9 @@ on build success via
 
 ### Install
 
-- Install the latest version of the major version of [Node.js](https://nodejs.org/en/)
-  specified in `.github/workflows/npm-parcel-build-upload-and-deploy-to-pages.yml`
+- Install the latest version of the version of [Node.js](https://nodejs.org/en/)
+  specified in `.nvmrc` by hand, or if using [nvm](https://github.com/nvm-sh/nvm):
+  `nvm install`
 - Install third-party dependencies: `npm install`
 
 ### Build and Run
