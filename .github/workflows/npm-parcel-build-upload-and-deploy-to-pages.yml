@@ -10,10 +10,10 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm clean-install
+      - name: Run static code and project analyses
+        run: npm run lint
       - name: Run unit tests
         run: npm run test
-      - name: Run static code and project analyses
-        run: npm run lintThenTypeCopyPasteOutdatedAndAuditCheck
       - name: Install end to end test browsers
         run: npx --no-install playwright install --with-deps
       - name: Run Storybook tests

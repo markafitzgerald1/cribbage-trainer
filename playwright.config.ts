@@ -32,7 +32,7 @@ export default defineConfig({
       use: { ...devices["iPhone 12"] },
     },
   ],
-  reporter: "html",
+  reporter: [["html", { open: "never" }]],
   retries: process.env["CI"] ? continuousIntegrationRetryLimit : 0,
   testDir: "./tests-e2e",
   use: {
