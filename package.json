@@ -7,6 +7,7 @@
     "prepare": "husky install",
     "test": "jest --verbose",
     "test-e2e": "playwright test",
+    "docker-test-e2e": "docker run --rm --ipc=host -v $PWD:/usr/src/app -w /usr/src/app mcr.microsoft.com/playwright:v1.40.1-jammy /bin/bash -c 'apt update && apt install --yes make gcc g++ && npm run clean && npm install && npm run test-e2e'",
     "lintThenTypeCopyPasteOutdatedAndAuditCheck": "npm run lint && npm run typeCheck && npm run jscpd && npm outdated && npm run audit",
     "lint": "eslint --max-warnings 0 . && stylelint '**/*.css' && markdownlint README.md && prettier --check . && cspell '**' --gitignore",
     "stylelint": "stylelint --fix '**/*.css'",

@@ -6,4 +6,4 @@ npm run clean
 npm run build
 npm run lintThenTypeCopyPasteOutdatedAndAuditCheck
 npm run test-storybook
-npm run test-e2e
+rm -rf node_modules && npm run docker-test-e2e && npm install
