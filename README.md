@@ -35,7 +35,7 @@ on build success via
 - Test and lint: `npm run clean && npm test &&
 npm run lintThenTypeCopyPasteOutdatedAndAuditCheck &&
 npx --no-install playwright install --with-deps && npm run test-storybook &&
-rm -rf node_modules && npm run docker-test-e2e && npm install`
+npm run docker-test-e2e`
 
 ### Develop
 
