@@ -30,12 +30,10 @@ on build success via
 - Build production version of app (optional): `npm run build`
 - Serve up and navigate to the app: `npm start`
 
-### Test
+### Lint and Test
 
-- Test and lint: `npm run clean && npm test &&
-npm run lintThenTypeCopyPasteOutdatedAndAuditCheck &&
-npx --no-install playwright install --with-deps && npm run test-storybook &&
-npm run docker-test-e2e`
+- `npm run clean && npm run lint && npm test && npm run playwright-install &&
+npm run test-storybook && npm run docker-test-e2e`
 
 ### Develop
 
