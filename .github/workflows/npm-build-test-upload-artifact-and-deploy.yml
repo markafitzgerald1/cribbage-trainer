@@ -1,8 +1,9 @@
-name: npm-test-build-upload-and-deploy-to-pages
+name: npm-build-test-upload-artifact-and-deploy
 on: [push]
 jobs:
-  npm-test-build-and-upload-artifact:
+  build-and-upload-artifact:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -10,24 +11,6 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install dependencies
         run: npm clean-install
-      - name: Run static code and project analyses
-        run: npm run lint
-      - name: Run unit tests
-        run: npm run test
-      - name: Install end to end test browsers
-        run: npx --no-install playwright install --with-deps
-      - name: Run Storybook tests
-        run: npm run test-storybook
-      - name: Run end to end tests
-        run: npm run test-e2e
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
-      - name: Remove development web application bundles
-        run: npm run clean
       - name: Build web application bundles
         run: npm run build
       - name: Upload GitHub Pages artifact
@@ -35,8 +18,32 @@ jobs:
         with:
           path: dist/
 
-  deploy-artifact-to-github-pages:
-    needs: npm-test-build-and-upload-artifact
+  build-and-test:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+      - name: Install dependencies
+        run: npm clean-install
+      - name: Build web application bundles
+        run: npm run build
+      - name: Run static code and project analyses
+        run: npm run lint
+      - name: Run unit tests
+        run: npm run test
+      - name: Install end to end test browsers
+        run: npm run playwright-install
+      - name: Run Storybook tests
+        run: npm run test-storybook
+      - name: Run end to end tests
+        run: npm run test-e2e
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-upload-artifact
     if: github.ref == 'refs/heads/main'
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
@@ -49,7 +56,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy-to-github-pages.outputs.page_url }}
 
-    runs-on: ubuntu-latest
     steps:
       - id: deploy-to-github-pages
         name: Deploy GitHub Pages site
