@@ -1,7 +1,7 @@
-name: npm-test-build-upload-and-deploy-to-pages
+name: npm-build-test-upload-and-deploy
 on: [push]
 jobs:
-  npm-test-build-and-upload-artifact:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -10,33 +10,38 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install dependencies
         run: npm clean-install
+      - name: Build web application bundles
+        run: npm run build
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref != 'refs/heads/main'
+    steps:
       - name: Run static code and project analyses
         run: npm run lint
       - name: Run unit tests
         run: npm run test
       - name: Install end to end test browsers
-        run: npx --no-install playwright install --with-deps
+        run: npm run playwright-install
       - name: Run Storybook tests
         run: npm run test-storybook
       - name: Run end to end tests
         run: npm run test-e2e
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 30
-      - name: Remove development web application bundles
-        run: npm run clean
-      - name: Build web application bundles
-        run: npm run build
+
+  upload-artifact:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    steps:
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v2
         with:
           path: dist/
 
-  deploy-artifact-to-github-pages:
-    needs: npm-test-build-and-upload-artifact
+  deploy:
+    runs-on: ubuntu-latest
+    needs: upload-artifact
     if: github.ref == 'refs/heads/main'
 
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
@@ -49,7 +54,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy-to-github-pages.outputs.page_url }}
 
-    runs-on: ubuntu-latest
     steps:
       - id: deploy-to-github-pages
         name: Deploy GitHub Pages site
