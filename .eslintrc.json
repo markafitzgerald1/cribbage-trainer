@@ -7,7 +7,7 @@
     "plugin:jsx-a11y/recommended",
     "plugin:react/all",
     "plugin:react-hooks/recommended",
-    "plugin:security/recommended",
+    "plugin:security/recommended-legacy",
     "plugin:storybook/recommended",
     "prettier"
   ],
