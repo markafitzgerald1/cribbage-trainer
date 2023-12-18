@@ -1,8 +1,12 @@
+import { CARDS, RANK_NAMES } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
-import { CARDS } from "../game/Card";
 import { CardLabel } from "./CardLabel";
+/* jscpd:ignore-start */
+import { createArgTypes } from "./stories.common";
+/* jscpd:ignore-end */
 
 const meta = {
+  argTypes: createArgTypes("rank", RANK_NAMES),
   component: CardLabel,
   parameters: {
     layout: "centered",

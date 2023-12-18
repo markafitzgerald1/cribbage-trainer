@@ -1,6 +1,6 @@
 import { Rank } from "../game/Card";
+import { SORT_ORDER_NAMES } from "./SortOrderName";
 import { SortOrder } from "./SortOrder";
-import { sortOrderNames } from "./SortOrderName";
 
 export interface ComparableCard {
   dealOrder: number;
@@ -23,7 +23,7 @@ const createCompare =
 
 const compare = Object.fromEntries(
   // eslint-disable-next-line security/detect-object-injection
-  sortOrderNames.map((key) => [key, createCompare(SortOrder[key])]),
+  SORT_ORDER_NAMES.map((key) => [key, createCompare(SortOrder[key])]),
 );
 
 export const sortCards = <T extends ComparableCard>(

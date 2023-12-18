@@ -2,9 +2,12 @@ import type { Meta, StoryObj } from "@storybook/react";
 
 import { CARDS } from "../game/Card";
 import { PossibleHand } from "./PossibleHand";
+import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
+import { createArgTypes } from "./stories.common";
 
 const meta = {
+  argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
   component: PossibleHand,
   parameters: {
     layout: "centered",
@@ -16,7 +19,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const SingleCard: Story = {
+export const AceEightFourThree: Story = {
   args: {
     dealtCards: [CARDS.ACE, CARDS.EIGHT, CARDS.FOUR, CARDS.THREE].map(
       (card, dealOrder) => ({

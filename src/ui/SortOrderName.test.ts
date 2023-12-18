@@ -1,7 +1,7 @@
 import {
+  SORT_ORDER_NAMES,
   SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
-  sortOrderNames,
 } from "./SortOrderName";
 import { describe, expect, it } from "@jest/globals";
 import { SortOrder } from "./SortOrder";
@@ -9,7 +9,7 @@ import { SortOrder } from "./SortOrder";
 describe("lowerCaseSpaceSeparatedSortOrderName", () => {
   it("contains one entry per sort order", () => {
     expect(Object.keys(lowerCaseSpaceSeparatedSortOrderName)).toHaveLength(
-      sortOrderNames.length,
+      SORT_ORDER_NAMES.length,
     );
   });
 

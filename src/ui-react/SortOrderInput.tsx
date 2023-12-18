@@ -1,8 +1,8 @@
 import * as classes from "./SortOrderInput.module.css";
 import {
+  SORT_ORDER_NAMES,
   SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
-  sortOrderNames,
 } from "../ui/SortOrderName";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
@@ -26,7 +26,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
     return (
       <fieldset className={classes.fieldset}>
         <legend className={classes.legend}>Sort</legend>
-        {sortOrderNames.map((key) => (
+        {SORT_ORDER_NAMES.map((key) => (
           // eslint-disable-next-line security/detect-object-injection
           <span key={SortOrder[key]}>
             <input

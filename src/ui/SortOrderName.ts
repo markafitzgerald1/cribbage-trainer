@@ -2,12 +2,12 @@ import { SortOrder } from "./SortOrder";
 
 export type SortOrderName = keyof typeof SortOrder;
 
-export const sortOrderNames = Object.keys(SortOrder)
+export const SORT_ORDER_NAMES = Object.keys(SortOrder)
   .filter((key) => isNaN(Number(key)))
   .map((key) => key as SortOrderName);
 
 export const lowerCaseSpaceSeparatedSortOrderName = Object.fromEntries(
-  sortOrderNames.map((sortOrderName) => [
+  SORT_ORDER_NAMES.map((sortOrderName) => [
     sortOrderName,
     sortOrderName
       .replace(
