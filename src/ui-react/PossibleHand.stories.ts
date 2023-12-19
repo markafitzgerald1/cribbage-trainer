@@ -1,6 +1,5 @@
+import { CARDS, Card } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
-
-import { CARDS } from "../game/Card";
 import { PossibleHand } from "./PossibleHand";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
@@ -19,14 +18,27 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const AceEightFourThree: Story = {
+const createStory = (dealtCards: Card[], sortOrder: SortOrder): Story => ({
   args: {
-    dealtCards: [CARDS.ACE, CARDS.EIGHT, CARDS.FOUR, CARDS.THREE].map(
-      (card, dealOrder) => ({
-        dealOrder,
-        rank: card.rank,
-      }),
-    ),
-    sortOrder: SortOrder.DealOrder,
+    dealtCards: dealtCards.map((card, index) => ({
+      dealOrder: index,
+      rank: card.rank,
+    })),
+    sortOrder,
   },
-};
+});
+
+export const AceEightFourThreeDescending: Story = createStory(
+  [CARDS.ACE, CARDS.EIGHT, CARDS.FOUR, CARDS.THREE],
+  SortOrder.Descending,
+);
+
+export const TwoThreeTenTenDealOrder: Story = createStory(
+  [CARDS.TWO, CARDS.THREE, CARDS.TEN, CARDS.TEN],
+  SortOrder.DealOrder,
+);
+
+export const KingJackFiveSixAscending: Story = createStory(
+  [CARDS.KING, CARDS.JACK, CARDS.FIVE, CARDS.SIX],
+  SortOrder.Ascending,
+);
