@@ -3,11 +3,11 @@ import { describe, expect, it } from "@jest/globals";
 import { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 /* jscpd:ignore-start */
+import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
 import { sortCards } from "../ui/sortCards";
-import { sortOrderNames } from "../ui/SortOrderName";
 /* jscpd:ignore-end */
 
 function HandContainer({
@@ -67,7 +67,7 @@ describe("hand component", () => {
     expect(getAllByRole("checkbox")).toHaveLength(dealtHand.length);
   });
 
-  it.each(sortOrderNames)(
+  it.each(SORT_ORDER_NAMES)(
     "has a sorted checkbox for each dealt card in %s order",
     (sortOrderName) => {
       const sortOrder = SortOrder[sortOrderName];

@@ -3,7 +3,7 @@ import { CARD_LABELS, Rank } from "../game/Card";
 import React from "react";
 import { getTenClass } from "./getTenClass";
 
-interface CardLabelProps {
+export interface CardLabelProps {
   readonly rank: Rank;
 }
 

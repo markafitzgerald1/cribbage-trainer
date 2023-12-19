@@ -14,6 +14,10 @@ export enum Rank {
   KING,
 }
 
+export const RANK_NAMES = Object.keys(Rank)
+  .filter((key: string) => isNaN(Number(key)))
+  .map((name) => name[0] + name.slice(1).toLowerCase());
+
 export interface RankedCard {
   rank: Rank;
 }

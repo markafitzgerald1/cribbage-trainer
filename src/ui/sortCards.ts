@@ -1,10 +1,15 @@
-import { HandCard } from "../game/HandCard";
+import { Rank } from "../game/Card";
+import { SORT_ORDER_NAMES } from "./SortOrderName";
 import { SortOrder } from "./SortOrder";
-import { sortOrderNames } from "./SortOrderName";
+
+export interface ComparableCard {
+  dealOrder: number;
+  rank: Rank;
+}
 
 const createCompare =
   (sortOrder: SortOrder) =>
-  (first: HandCard, second: HandCard): number => {
+  (first: ComparableCard, second: ComparableCard): number => {
     switch (sortOrder) {
       case SortOrder.DealOrder:
         return first.dealOrder - second.dealOrder;
@@ -18,10 +23,10 @@ const createCompare =
 
 const compare = Object.fromEntries(
   // eslint-disable-next-line security/detect-object-injection
-  sortOrderNames.map((key) => [key, createCompare(SortOrder[key])]),
+  SORT_ORDER_NAMES.map((key) => [key, createCompare(SortOrder[key])]),
 );
 
-export const sortCards = <T extends HandCard>(
+export const sortCards = <T extends ComparableCard>(
   dealtCards: readonly T[],
   sortOrder: SortOrder,
   // eslint-disable-next-line security/detect-object-injection

@@ -3,6 +3,7 @@ import { CARDS_PER_KEPT_HAND } from "../game/facts";
 import { HandCard } from "../game/HandCard";
 /* jscpd:ignore-start */
 import React from "react";
+import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
@@ -11,7 +12,6 @@ import { handPoints } from "../game/scoring";
 /* jscpd:ignore-start */
 import { render } from "@testing-library/react";
 import { sortCards } from "../ui/sortCards";
-import { sortOrderNames } from "../ui/SortOrderName";
 /* jscpd:ignore-end */
 
 const handToSortedString = (
@@ -23,7 +23,7 @@ const handToSortedString = (
     .join("");
 
 describe("calculation component", () => {
-  it.each(sortOrderNames)(
+  it.each(SORT_ORDER_NAMES)(
     "should render %s ordered keep then discard then the points",
     (sortOrderName) => {
       const sortOrder = SortOrder[sortOrderName];

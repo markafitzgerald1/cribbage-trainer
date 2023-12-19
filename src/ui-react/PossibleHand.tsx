@@ -1,12 +1,11 @@
 import * as classes from "./PossibleHand.module.css";
+import { ComparableCard, sortCards } from "../ui/sortCards";
 import { CardLabel } from "./CardLabel";
-import { DealtCard } from "../game/DealtCard";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
-import { sortCards } from "../ui/sortCards";
 
-export interface PossibleHandProps {
-  readonly dealtCards: readonly DealtCard[];
+interface PossibleHandProps {
+  readonly dealtCards: readonly ComparableCard[];
   readonly sortOrder: SortOrder;
 }
 

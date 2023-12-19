@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import {
+  SORT_ORDER_NAMES,
   SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
-  sortOrderNames,
 } from "../ui/SortOrderName";
 import { describe, expect, it } from "@jest/globals";
 import { SortOrder } from "../ui/SortOrder";
@@ -36,10 +36,10 @@ describe("sort order input component", () => {
 
   it("contains a radio button for each sort order", () =>
     expect(renderComponent().queryAllByRole("radio")).toHaveLength(
-      sortOrderNames.length,
+      SORT_ORDER_NAMES.length,
     ));
 
-  it.each(sortOrderNames)(
+  it.each(SORT_ORDER_NAMES)(
     "contains a %s labeled radio button",
     (sortOrderName) =>
       expect(
@@ -49,7 +49,7 @@ describe("sort order input component", () => {
       ).toBeTruthy(),
   );
 
-  it.each(sortOrderNames)(
+  it.each(SORT_ORDER_NAMES)(
     "contains a checked %s labeled radio button when in that initial sort state",
     (sortOrderName) =>
       expect(
@@ -59,7 +59,7 @@ describe("sort order input component", () => {
       ).toBeTruthy(),
   );
 
-  it.each(sortOrderNames)(
+  it.each(SORT_ORDER_NAMES)(
     "displays the %s sort order description when in that initial sort state",
     (sortOrderName) =>
       expect(
@@ -69,14 +69,14 @@ describe("sort order input component", () => {
       ).toBeTruthy(),
   );
 
-  it.each(sortOrderNames)(
+  it.each(SORT_ORDER_NAMES)(
     "%s is checked after being clicked",
     async (sortOrderName) => {
       const user = userEvent.setup();
       const sortOrder = SortOrder[sortOrderName];
       const { queryAllByRole } = renderComponent(
         SortOrder[
-          SortOrder[(sortOrder + 1) % sortOrderNames.length] as SortOrderName
+          SortOrder[(sortOrder + 1) % SORT_ORDER_NAMES.length] as SortOrderName
         ],
       );
       const radioButton = queryAllByRole("radio")[
