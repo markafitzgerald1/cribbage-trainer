@@ -28,17 +28,32 @@ const createStory = (dealtCards: Card[], sortOrder: SortOrder): Story => ({
   },
 });
 
-export const AceEightFourThreeDescending: Story = createStory(
+export const AceEightFourThreeHandSortedDescending: Story = createStory(
   [CARDS.ACE, CARDS.EIGHT, CARDS.FOUR, CARDS.THREE],
   SortOrder.Descending,
 );
 
-export const TwoThreeTenTenDealOrder: Story = createStory(
+export const TwoThreeTenTenHandSortedInDealOrder: Story = createStory(
   [CARDS.TWO, CARDS.THREE, CARDS.TEN, CARDS.TEN],
   SortOrder.DealOrder,
 );
 
-export const KingJackFiveSixAscending: Story = createStory(
+export const KingJackFiveSixHandSortedAscending: Story = createStory(
   [CARDS.KING, CARDS.JACK, CARDS.FIVE, CARDS.SIX],
+  SortOrder.Ascending,
+);
+
+export const EightSevenDiscardSortedInDealOrder: Story = createStory(
+  [CARDS.EIGHT, CARDS.SEVEN],
+  SortOrder.DealOrder,
+);
+
+export const SixQueenDiscardSortedDescending: Story = createStory(
+  [CARDS.SIX, CARDS.QUEEN],
+  SortOrder.Descending,
+);
+
+export const AceAceDiscardSortedAscending: Story = createStory(
+  [CARDS.ACE, CARDS.ACE],
   SortOrder.Ascending,
 );
