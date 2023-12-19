@@ -1,11 +1,11 @@
-import { DealtCard } from "../game/DealtCard";
+import { ComparableCard } from "../ui/sortCards";
 import { PossibleHand } from "./PossibleHand";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
 interface ScoredPossibleKeepDiscardProps {
-  readonly keep: readonly DealtCard[];
-  readonly discard: readonly DealtCard[];
+  readonly keep: readonly ComparableCard[];
+  readonly discard: readonly ComparableCard[];
   readonly points: number;
   readonly sortOrder: SortOrder;
 }
