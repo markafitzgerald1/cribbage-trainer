@@ -25,7 +25,7 @@
     "@jest/globals": "^29.7.0",
     "@playwright/test": "^1.40.1",
     "@storybook/addon-essentials": "^7.6.5",
-    "@storybook/addon-interactions": "^7.6.5",
+    "@storybook/addon-interactions": "^7.6.6",
     "@storybook/addon-links": "^7.6.5",
     "@storybook/react": "^7.6.5",
     "@storybook/react-vite": "^7.6.5",
