@@ -27,7 +27,7 @@
     "@storybook/addon-essentials": "^7.6.5",
     "@storybook/addon-interactions": "^7.6.5",
     "@storybook/addon-links": "^7.6.5",
-    "@storybook/react": "^7.6.5",
+    "@storybook/react": "^7.6.6",
     "@storybook/react-vite": "^7.6.5",
     "@storybook/test-runner": "^0.16.0",
     "@testing-library/react": "^14.1.2",
