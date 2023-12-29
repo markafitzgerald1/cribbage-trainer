@@ -44,7 +44,7 @@ npm run test-storybook && npm run docker-test-e2e`
 ### Handling visual regression test screenshot differences
 
 When the Playwright e2e (end to end) fail due to screenshot differences, compare
-expected and actual screenshots via `npx --no-install playwright report` to
+expected and actual screenshots via `npx --no-install playwright show-report` to
 determine if the changes are visually acceptable. If acceptable, to update the
 expected screenshots:
 

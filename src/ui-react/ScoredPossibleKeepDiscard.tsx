@@ -1,11 +1,12 @@
-import { DealtCard } from "../game/DealtCard";
+import * as classes from "./ScoredPossibleKeepDiscard.module.css";
+import { ComparableCard } from "../ui/sortCards";
 import { PossibleHand } from "./PossibleHand";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
 interface ScoredPossibleKeepDiscardProps {
-  readonly keep: readonly DealtCard[];
-  readonly discard: readonly DealtCard[];
+  readonly keep: readonly ComparableCard[];
+  readonly discard: readonly ComparableCard[];
   readonly points: number;
   readonly sortOrder: SortOrder;
 }
@@ -17,7 +18,7 @@ export function ScoredPossibleKeepDiscard({
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
   return (
-    <li>
+    <li className={classes.scoredPossibleKeepDiscard}>
       <PossibleHand
         dealtCards={keep}
         sortOrder={sortOrder}

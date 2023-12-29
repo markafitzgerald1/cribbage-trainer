@@ -8,22 +8,11 @@
 }
 
 .calculations ul {
-  list-style-type: none;
   padding-left: 0;
-}
-
-@media (orientation: landscape) {
-  .calculations ul {
-    font-size: 0.71em;
-  }
 }
 
 @media (orientation: portrait) {
   .calculations {
     width: var(--trainer-block-width-portrait);
-  }
-
-  .calculations ul {
-    font-size: large;
   }
 }
