@@ -18,7 +18,7 @@ export function ScoredPossibleKeepDiscard({
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
   return (
-    <li className={classes.calculation}>
+    <li className={classes.scoredPossibleKeepDiscard}>
       <PossibleHand
         dealtCards={keep}
         sortOrder={sortOrder}

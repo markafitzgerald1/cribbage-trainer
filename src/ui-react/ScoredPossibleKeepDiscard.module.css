@@ -1,3 +1,19 @@
-.calculation {
+@import url("./vars.css");
+
+.scored-possible-keep-discard {
   list-style-type: none;
+  color: var(--text-color);
+  font-family: var(--text-font-family);
+}
+
+@media (orientation: landscape) {
+  .scored-possible-keep-discard {
+    font-size: 0.71em;
+  }
+}
+
+@media (orientation: portrait) {
+  .scored-possible-keep-discard {
+    font-size: large;
+  }
 }
