@@ -44,3 +44,16 @@ export const JackSixFiveFourDiscardKingQueenSortedDescending: Story =
     [CARDS.KING, CARDS.QUEEN],
     SortOrder.Descending,
   );
+
+export const TwoTenNineJackDiscardKingFourSortedAscending: Story = createStory(
+  [CARDS.TWO, CARDS.TEN, CARDS.NINE, CARDS.JACK],
+  [CARDS.KING, CARDS.FOUR],
+  SortOrder.Ascending,
+);
+
+export const FiveFiveAceJackDiscardFourSevenSortedInDealOrder: Story =
+  createStory(
+    [CARDS.FIVE, CARDS.FIVE, CARDS.ACE, CARDS.JACK],
+    [CARDS.FOUR, CARDS.SEVEN],
+    SortOrder.DealOrder,
+  );
