@@ -1,3 +1,4 @@
+import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import { ComparableCard } from "../ui/sortCards";
 import { PossibleHand } from "./PossibleHand";
 import React from "react";
@@ -17,7 +18,7 @@ export function ScoredPossibleKeepDiscard({
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
   return (
-    <li>
+    <li className={classes.calculation}>
       <PossibleHand
         dealtCards={keep}
         sortOrder={sortOrder}
