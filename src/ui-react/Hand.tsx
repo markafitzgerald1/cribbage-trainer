@@ -9,7 +9,7 @@ export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
     <figure className={classes.figure}>
       <figcaption className={classes.figcaption}>Dealt hand:</figcaption>
       <ul className={classes.hand}>
-        {(sortCards(dealtCards, sortOrder)).map((dealtCard) => (
+        {sortCards(dealtCards, sortOrder).map((dealtCard) => (
           <HandCard
             dealOrderIndex={dealtCard.dealOrder}
             kept={dealtCard.kept}
