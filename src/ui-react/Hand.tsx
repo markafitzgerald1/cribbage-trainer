@@ -4,34 +4,22 @@ import { HandProps } from "./HandProps";
 import React from "react";
 import { sortCards } from "../ui/sortCards";
 
-export class Hand extends React.Component<HandProps> {
-  handleCheckboxChange = (dealOrderIndex: number) => {
-    const { dealtCards, setDealtCards } = this.props;
-    const newDealtCards = [...dealtCards];
-    // eslint-disable-next-line security/detect-object-injection
-    const newDealtCard = newDealtCards[dealOrderIndex]!;
-    newDealtCard.kept = !newDealtCard.kept;
-    setDealtCards(newDealtCards);
-  };
-
-  override render() {
-    const { dealtCards, sortOrder } = this.props;
-    const sortedDealtCards = sortCards(dealtCards, sortOrder);
-    return (
-      <figure className={classes.figure}>
-        <figcaption className={classes.figcaption}>Dealt hand:</figcaption>
-        <ul className={classes.hand}>
-          {sortedDealtCards.map((dealtCard) => (
-            <HandCard
-              dealOrderIndex={dealtCard.dealOrder}
-              kept={dealtCard.kept}
-              key={dealtCard.dealOrder}
-              onChange={this.handleCheckboxChange}
-              rank={dealtCard.rank}
-            />
-          ))}
-        </ul>
-      </figure>
-    );
-  }
+export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
+  const sortedDealtCards = sortCards(dealtCards, sortOrder);
+  return (
+    <figure className={classes.figure}>
+      <figcaption className={classes.figcaption}>Dealt hand:</figcaption>
+      <ul className={classes.hand}>
+        {sortedDealtCards.map((dealtCard) => (
+          <HandCard
+            dealOrderIndex={dealtCard.dealOrder}
+            kept={dealtCard.kept}
+            key={dealtCard.dealOrder}
+            onChange={onChange}
+            rank={dealtCard.rank}
+          />
+        ))}
+      </ul>
+    </figure>
+  );
 }
