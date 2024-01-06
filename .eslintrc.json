@@ -130,6 +130,7 @@
           "checkbox",
           "checkboxes",
           "cpus",
+          "discardable",
           "entrypoint",
           "fieldset",
           "figcaption",
