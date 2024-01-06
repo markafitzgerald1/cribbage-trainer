@@ -5,12 +5,11 @@ import React from "react";
 import { sortCards } from "../ui/sortCards";
 
 export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
-  const sortedDealtCards = sortCards(dealtCards, sortOrder);
   return (
     <figure className={classes.figure}>
       <figcaption className={classes.figcaption}>Dealt hand:</figcaption>
       <ul className={classes.hand}>
-        {sortedDealtCards.map((dealtCard) => (
+        {(sortCards(dealtCards, sortOrder)).map((dealtCard) => (
           <HandCard
             dealOrderIndex={dealtCard.dealOrder}
             kept={dealtCard.kept}
