@@ -5,8 +5,8 @@ import React from "react";
 
 export interface CardProps {
   readonly dealOrderIndex: number;
-  readonly onChange: (dealOrderIndex: number) => void;
   readonly kept: boolean;
+  readonly onChange: (dealOrderIndex: number) => void;
   readonly rank: Rank;
 }
 

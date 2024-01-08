@@ -1,6 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
-import { HandCard } from "../game/HandCard";
 /* jscpd:ignore-start */
 import React from "react";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
@@ -9,18 +8,10 @@ import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
 import { dealHand } from "../game/dealHand";
 import { handPoints } from "../game/scoring";
+import { handToSortedString } from "./handToSortedString.test.common";
 /* jscpd:ignore-start */
 import { render } from "@testing-library/react";
-import { sortCards } from "../ui/sortCards";
 /* jscpd:ignore-end */
-
-const handToSortedString = (
-  handCards: readonly HandCard[],
-  sortOrder: SortOrder,
-): string =>
-  sortCards(handCards, sortOrder)
-    .map((dealtCard) => dealtCard.rankLabel)
-    .join("");
 
 describe("calculation component", () => {
   it.each(SORT_ORDER_NAMES)(

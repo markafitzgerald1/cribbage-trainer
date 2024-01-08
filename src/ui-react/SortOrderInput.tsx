@@ -6,19 +6,22 @@ import {
 } from "../ui/SortOrderName";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
-import { SortOrderInputProps } from "./SortOrderInputProps";
+
+interface SortOrderInputProps {
+  readonly onChange: (sortOrder: SortOrder) => void;
+  readonly sortOrder: SortOrder;
+}
+
+export const SortLabel: Record<SortOrderName, string> = {
+  Ascending: "↗️",
+  DealOrder: "↔️",
+  Descending: "↘️",
+} as const;
 
 export class SortOrderInput extends React.Component<SortOrderInputProps> {
-  static SortLabel: Record<SortOrderName, string> = {
-    Ascending: "↗️",
-    DealOrder: "↔️",
-    Descending: "↘️",
-  } as const;
-
   handleChange = (event: React.FormEvent<HTMLInputElement>) => {
-    const { setSortOrder } = this.props;
-    const newSortOrder = SortOrder[event.currentTarget.value as SortOrderName];
-    setSortOrder(newSortOrder);
+    const { onChange } = this.props;
+    onChange(SortOrder[event.currentTarget.value as SortOrderName]);
   };
 
   override render() {
@@ -46,7 +49,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
             >
               {
                 // eslint-disable-next-line security/detect-object-injection
-                SortOrderInput.SortLabel[key]
+                SortLabel[key]
               }
             </label>
           </span>

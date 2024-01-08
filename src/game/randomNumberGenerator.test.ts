@@ -3,6 +3,10 @@ import { create } from "./randomNumberGenerator";
 
 describe("create", () => {
   it("returns Math.random if no seed is specified", () => {
+    expect(create()).toBe(Math.random);
+  });
+
+  it("returns Math.random if a null seed is specified", () => {
     expect(create(null)).toBe(Math.random);
   });
 

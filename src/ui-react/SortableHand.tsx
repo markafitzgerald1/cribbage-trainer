@@ -2,16 +2,26 @@ import * as classes from "./SortableHand.module.css";
 import { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import React from "react";
+import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
-import { SortOrderInputProps } from "./SortOrderInputProps";
+import { act } from "react-dom/test-utils";
 
-interface SortableHandProps extends SortOrderInputProps {
+interface SortableHandProps {
   readonly dealtCards: readonly DealtCard[];
   readonly setDealtCards: (dealtCards: readonly DealtCard[]) => void;
+  readonly sortOrder: SortOrder;
+  readonly setSortOrder: (sort: SortOrder) => void;
 }
 
 export class SortableHand extends React.Component<SortableHandProps> {
-  handleCheckboxChange = (dealOrderIndex: number) => {
+  handleSortOrderChange = (sortOrder: SortOrder) => {
+    const { setSortOrder } = this.props;
+    act(() => {
+      setSortOrder(sortOrder);
+    });
+  };
+
+  handleHandCardChange = (dealOrderIndex: number) => {
     const { dealtCards, setDealtCards } = this.props;
     const newDealtCards = [...dealtCards];
     // eslint-disable-next-line security/detect-object-injection
@@ -21,16 +31,16 @@ export class SortableHand extends React.Component<SortableHandProps> {
   };
 
   override render() {
-    const { dealtCards, setSortOrder, sortOrder } = this.props;
+    const { dealtCards, sortOrder } = this.props;
     return (
       <div className={classes.sortableHand}>
         <SortOrderInput
-          setSortOrder={setSortOrder}
+          onChange={this.handleSortOrderChange}
           sortOrder={sortOrder}
         />
         <Hand
           dealtCards={dealtCards}
-          onChange={this.handleCheckboxChange}
+          onChange={this.handleHandCardChange}
           sortOrder={sortOrder}
         />
       </div>
