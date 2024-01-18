@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it } from "@jest/globals";
+import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { DealtCard } from "../game/DealtCard";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
 import { SortableHand } from "./SortableHand";
-import { create } from "../game/randomNumberGenerator";
+import { act } from "react-dom/test-utils";
+import { createGenerator } from "../game/randomNumberGenerator";
 import { dealHand } from "../game/dealHand";
 import { handToSortedString } from "./handToSortedString.test.common";
 import { render } from "@testing-library/react";
@@ -35,7 +37,7 @@ describe("sortable hand input component", () => {
   }
 
   function renderComponent(
-    initialDealtCards: readonly DealtCard[] = dealHand(create()),
+    initialDealtCards: readonly DealtCard[] = dealHand(createGenerator()),
     initialSortOrder: SortOrder = SortOrder.Ascending,
   ) {
     return render(
@@ -49,7 +51,7 @@ describe("sortable hand input component", () => {
   it.each(SORT_ORDER_NAMES)(
     "initially renders the dealt cards in the specified initial %s order",
     (sortOrderName) => {
-      const handCards = dealHand(create());
+      const handCards = dealHand(createGenerator());
       const sortOrder = SortOrder[sortOrderName];
       expect(
         renderComponent(handCards, sortOrder).container.textContent,
@@ -60,17 +62,36 @@ describe("sortable hand input component", () => {
   it.each([SortOrder.Ascending, SortOrder.Descending])(
     "reorders cards when sort order is changed from deal order to %s",
     (sortOrder) => {
-      const handCards = dealHand(create());
+      const handCards = dealHand(createGenerator());
       const { container, getByText } = renderComponent(handCards);
       const sortOrderButton = getByText(
         SortLabel[SortOrder[sortOrder] as SortOrderName],
       );
+
       sortOrderButton.click();
+
       expect(container.textContent).toContain(
         sortCards(handCards, sortOrder)
           .map((dealtCard) => dealtCard.rankLabel)
           .join(""),
       );
+    },
+  );
+
+  it.each([...Array(CARDS_PER_DEALT_HAND).keys()])(
+    "marks card %s as not kept when clicked",
+    (dealOrderIndex: number) => {
+      const nthCheckbox = renderComponent(
+        dealHand(createGenerator()),
+      ).container.querySelectorAll("input[type='checkbox']")[
+        dealOrderIndex
+      ] as HTMLInputElement;
+
+      act(() => {
+        nthCheckbox.click();
+      });
+
+      expect(nthCheckbox.checked).toBe(false);
     },
   );
 });
