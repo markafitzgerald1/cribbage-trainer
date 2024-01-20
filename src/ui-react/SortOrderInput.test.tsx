@@ -1,34 +1,29 @@
-import React, { useState } from "react";
 import {
   SORT_ORDER_NAMES,
   SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
 } from "../ui/SortOrderName";
-import { describe, expect, it } from "@jest/globals";
+import { SortLabel, SortOrderInput } from "./SortOrderInput";
+import { cleanup, render } from "@testing-library/react";
+import { describe, expect, it, jest } from "@jest/globals";
+import React from "react";
 import { SortOrder } from "../ui/SortOrder";
-import { SortOrderInput } from "./SortOrderInput";
-import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 describe("sort order input component", () => {
-  function ComponentContainer({
-    initialSortOrder,
+  function renderComponent({
+    initialSortOrder = SortOrder.Ascending,
+    onChange = jest.fn(),
   }: {
-    readonly initialSortOrder: SortOrder;
-  }) {
-    const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
-    return (
-      <div>
-        <SortOrderInput
-          setSortOrder={setSortOrder}
-          sortOrder={sortOrder}
-        />
-      </div>
+    initialSortOrder?: SortOrder;
+    onChange?: (sortOrder: SortOrder) => void;
+  } = {}) {
+    return render(
+      <SortOrderInput
+        onChange={onChange}
+        sortOrder={initialSortOrder}
+      />,
     );
-  }
-
-  function renderComponent(initialSortOrder = SortOrder.Ascending) {
-    return render(<ComponentContainer initialSortOrder={initialSortOrder} />);
   }
 
   it("contains a group", () =>
@@ -43,9 +38,7 @@ describe("sort order input component", () => {
     "contains a %s labeled radio button",
     (sortOrderName) =>
       expect(
-        renderComponent().queryByLabelText(
-          SortOrderInput.SortLabel[sortOrderName],
-        ),
+        renderComponent().queryByLabelText(SortLabel[sortOrderName]),
       ).toBeTruthy(),
   );
 
@@ -53,8 +46,8 @@ describe("sort order input component", () => {
     "contains a checked %s labeled radio button when in that initial sort state",
     (sortOrderName) =>
       expect(
-        renderComponent(SortOrder[sortOrderName])
-          .queryByLabelText(SortOrderInput.SortLabel[sortOrderName])
+        renderComponent({ initialSortOrder: SortOrder[sortOrderName] })
+          .queryByLabelText(SortLabel[sortOrderName])
           ?.attributes.getNamedItem("checked"),
       ).toBeTruthy(),
   );
@@ -63,29 +56,62 @@ describe("sort order input component", () => {
     "displays the %s sort order description when in that initial sort state",
     (sortOrderName) =>
       expect(
-        renderComponent(SortOrder[sortOrderName]).queryByText(
+        renderComponent({
+          initialSortOrder: SortOrder[sortOrderName],
+        }).queryByText(
           `${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]}`,
         ),
       ).toBeTruthy(),
   );
 
   it.each(SORT_ORDER_NAMES)(
-    "%s is checked after being clicked",
+    "onChange(%s) is called after %s click",
     async (sortOrderName) => {
       const user = userEvent.setup();
       const sortOrder = SortOrder[sortOrderName];
-      const { queryAllByRole } = renderComponent(
-        SortOrder[
-          SortOrder[(sortOrder + 1) % SORT_ORDER_NAMES.length] as SortOrderName
-        ],
-      );
+      const mockOnChange = jest.fn();
+      const { queryAllByRole } = renderComponent({
+        initialSortOrder:
+          SortOrder[
+            SortOrder[
+              (sortOrder + 1) % SORT_ORDER_NAMES.length
+            ] as SortOrderName
+          ],
+        onChange: mockOnChange,
+      });
       const radioButton = queryAllByRole("radio")[
         sortOrder
       ] as HTMLInputElement;
 
       await user.click(radioButton);
 
-      expect(radioButton.checked).toBeTruthy();
+      expect(mockOnChange).toHaveBeenCalledWith(sortOrder);
     },
   );
+
+  it("radio buttons all have same name", () => {
+    const radioButtons = renderComponent().queryAllByRole(
+      "radio",
+    ) as HTMLInputElement[];
+
+    expect(
+      radioButtons.every((btn, _index, arr) => btn.name === arr[0]!.name),
+    ).toBe(true);
+  });
+
+  it("radio buttons in have different names in different instances", () => {
+    const radioButtons1 = renderComponent().queryAllByRole(
+      "radio",
+    ) as HTMLInputElement[];
+    cleanup();
+    const radioButtons2 = renderComponent().queryAllByRole(
+      "radio",
+    ) as HTMLInputElement[];
+
+    expect(
+      radioButtons1.every((btn1) =>
+        radioButtons2.every((btn2) => btn1.name !== btn2.name),
+      ),
+    ).toBe(true);
+  });
 });
