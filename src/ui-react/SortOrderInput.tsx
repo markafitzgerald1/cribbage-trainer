@@ -6,6 +6,7 @@ import {
 } from "../ui/SortOrderName";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
+import { v4 } from "uuid";
 
 interface SortOrderInputProps {
   readonly onChange: (sortOrder: SortOrder) => void;
@@ -26,6 +27,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
 
   override render() {
     const { sortOrder } = this.props;
+    const name = `sort-${v4()}`;
     return (
       <fieldset className={classes.fieldset}>
         <legend className={classes.legend}>Sort</legend>
@@ -37,7 +39,7 @@ export class SortOrderInput extends React.Component<SortOrderInputProps> {
               checked={sortOrder === SortOrder[key]}
               className={classes.input}
               id={key}
-              name="sort"
+              name={name}
               onChange={this.handleChange}
               type="radio"
               // eslint-disable-next-line security/detect-object-injection

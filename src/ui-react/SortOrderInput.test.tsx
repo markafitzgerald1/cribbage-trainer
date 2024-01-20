@@ -4,10 +4,10 @@ import {
   lowerCaseSpaceSeparatedSortOrderName,
 } from "../ui/SortOrderName";
 import { SortLabel, SortOrderInput } from "./SortOrderInput";
+import { cleanup, render } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
-import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 describe("sort order input component", () => {
@@ -88,4 +88,30 @@ describe("sort order input component", () => {
       expect(mockOnChange).toHaveBeenCalledWith(sortOrder);
     },
   );
+
+  it("radio buttons all have same name", () => {
+    const radioButtons = renderComponent().queryAllByRole(
+      "radio",
+    ) as HTMLInputElement[];
+
+    expect(
+      radioButtons.every((btn, _index, arr) => btn.name === arr[0]!.name),
+    ).toBe(true);
+  });
+
+  it("radio buttons in have different names in different instances", () => {
+    const radioButtons1 = renderComponent().queryAllByRole(
+      "radio",
+    ) as HTMLInputElement[];
+    cleanup();
+    const radioButtons2 = renderComponent().queryAllByRole(
+      "radio",
+    ) as HTMLInputElement[];
+
+    expect(
+      radioButtons1.every((btn1) =>
+        radioButtons2.every((btn2) => btn1.name !== btn2.name),
+      ),
+    ).toBe(true);
+  });
 });
