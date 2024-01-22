@@ -68,7 +68,9 @@ describe("sortable hand input component", () => {
         SortLabel[SortOrder[sortOrder] as SortOrderName],
       );
 
-      sortOrderButton.click();
+      act(() => {
+        sortOrderButton.click();
+      });
 
       expect(container.textContent).toContain(
         sortCards(handCards, sortOrder)

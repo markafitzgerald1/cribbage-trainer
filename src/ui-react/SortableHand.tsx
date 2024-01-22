@@ -4,7 +4,6 @@ import { Hand } from "./Hand";
 import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
-import { act } from "react-dom/test-utils";
 
 interface SortableHandProps {
   readonly dealtCards: readonly DealtCard[];
@@ -16,9 +15,7 @@ interface SortableHandProps {
 export class SortableHand extends React.Component<SortableHandProps> {
   handleSortOrderChange = (sortOrder: SortOrder) => {
     const { setSortOrder } = this.props;
-    act(() => {
-      setSortOrder(sortOrder);
-    });
+    setSortOrder(sortOrder);
   };
 
   handleHandCardChange = (dealOrderIndex: number) => {
