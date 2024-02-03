@@ -10,7 +10,7 @@ const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
   component: Trainer,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
   tags: ["autodocs"],
   title: "Trainer",
