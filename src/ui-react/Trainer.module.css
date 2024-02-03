@@ -2,7 +2,7 @@
   display: flex;
 }
 
-.dynamic-ui > :first-child {
+.dynamic-ui > * {
   width: var(--trainer-block-width-landscape);
 }
 
@@ -11,7 +11,7 @@
     flex-direction: column;
   }
 
-  .dynamic-ui > :first-child {
+  .dynamic-ui > * {
     width: var(--trainer-block-width-portrait);
   }
 }
