@@ -1,3 +1,6 @@
+import { Card } from "../game/Card";
+import { DealtCard } from "../game/DealtCard";
+
 export const createArgTypes = (property: string, labels: string[]) => ({
   [property]: {
     control: {
@@ -6,3 +9,15 @@ export const createArgTypes = (property: string, labels: string[]) => ({
     },
   },
 });
+
+export const toDealtCards = (
+  cards: readonly Card[],
+  discardedIndices: readonly number[] = [],
+): DealtCard[] =>
+  cards.map((card, index) => ({
+    count: card.count,
+    dealOrder: index,
+    kept: !discardedIndices.includes(index),
+    rank: card.rank,
+    rankLabel: card.rankLabel,
+  }));

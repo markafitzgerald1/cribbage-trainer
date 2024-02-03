@@ -1,18 +1,11 @@
 @import url("./vars.css");
 
-.calculations {
+.scored-possible-keep-discards {
   margin: 0 0 0 0.5em;
-  width: var(--trainer-block-width-landscape);
   color: var(--text-color);
   font-family: var(--text-font-family);
 }
 
-.calculations ul {
+.scored-possible-keep-discards ul {
   padding-left: 0;
-}
-
-@media (orientation: portrait) {
-  .calculations {
-    width: var(--trainer-block-width-portrait);
-  }
 }

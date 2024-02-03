@@ -1,1 +1,1 @@
-export const calculations: string;
+export const scoredPossibleKeepDiscards: string;

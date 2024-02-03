@@ -17,7 +17,7 @@ export function ScoredPossibleKeepDiscards({
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
   return (
-    <figure className={classes.calculations}>
+    <figure className={classes.scoredPossibleKeepDiscards}>
       <figcaption>Pre-cut hand</figcaption>
       <ul>
         {allScoredKeepDiscardsByScoreDescending(dealtCards).map(
