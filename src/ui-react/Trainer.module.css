@@ -2,8 +2,16 @@
   display: flex;
 }
 
+.dynamic-ui > :first-child {
+  width: var(--trainer-block-width-landscape);
+}
+
 @media (orientation: portrait) {
   .dynamic-ui {
     flex-direction: column;
+  }
+
+  .dynamic-ui > :first-child {
+    width: var(--trainer-block-width-portrait);
   }
 }

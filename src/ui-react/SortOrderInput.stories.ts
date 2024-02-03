@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
+/* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
-/* jscpd:ignore-start */
 import { SortOrderInput } from "./SortOrderInput";
 import { createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
