@@ -1,6 +1,7 @@
 import { ByRoleMatcher, ByRoleOptions, render } from "@testing-library/react";
 import { describe, expect, it } from "@jest/globals";
 import React from "react";
+import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 import { UserEvent } from "@testing-library/user-event/dist/types/setup/setup";
 import userEvent from "@testing-library/user-event";
@@ -64,4 +65,24 @@ describe("trainer component", () => {
     const moreThanTwo = 3;
     await expectCalculationsAfterClicks([...Array(moreThanTwo).keys()], false);
   });
+
+  it.each([SortOrder.Ascending, SortOrder.DealOrder])(
+    "re-sorts the dealt hand when the sort order is changed to %s",
+    async (newSortOrder) => {
+      const { container } = render(
+        <Trainer generateRandomNumber={mathRandom} />,
+      );
+      const newSortInput = container.querySelector(
+        `input[value='${SortOrder[newSortOrder]}']`,
+      )!;
+      const initialDealtHand = container.querySelector("div")!.textContent;
+      const user = userEvent.setup();
+
+      await user.click(newSortInput);
+
+      expect(container.querySelector("div")!.textContent).not.toBe(
+        initialDealtHand,
+      );
+    },
+  );
 });

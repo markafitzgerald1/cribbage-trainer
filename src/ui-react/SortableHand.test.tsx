@@ -1,8 +1,7 @@
-import React, { useState } from "react";
 import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
-import { DealtCard } from "../game/DealtCard";
+import React from "react";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
 import { SortableHand } from "./SortableHand";
@@ -11,81 +10,70 @@ import { createGenerator } from "../game/randomNumberGenerator";
 import { dealHand } from "../game/dealHand";
 import { handToSortedString } from "./handToSortedString.test.common";
 import { render } from "@testing-library/react";
-import { sortCards } from "../ui/sortCards";
 
 describe("sortable hand input component", () => {
-  function ComponentContainer({
-    initialSortOrder,
-    initialDealtCards,
-  }: {
-    readonly initialSortOrder: SortOrder;
-    readonly initialDealtCards: readonly DealtCard[];
-  }) {
-    const [dealtCards, setDealtCards] =
-      useState<readonly DealtCard[]>(initialDealtCards);
-    const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
-    return (
-      <div>
+  function renderComponent(initialSortOrder: SortOrder = SortOrder.Ascending) {
+    const handCards = dealHand(createGenerator());
+    const onCardChange = jest.fn();
+    const onSortOrderChange = jest.fn();
+    return {
+      component: render(
         <SortableHand
-          dealtCards={dealtCards}
-          setDealtCards={setDealtCards}
-          setSortOrder={setSortOrder}
-          sortOrder={sortOrder}
-        />
-      </div>
-    );
-  }
-
-  function renderComponent(
-    initialDealtCards: readonly DealtCard[] = dealHand(createGenerator()),
-    initialSortOrder: SortOrder = SortOrder.Ascending,
-  ) {
-    return render(
-      <ComponentContainer
-        initialDealtCards={initialDealtCards}
-        initialSortOrder={initialSortOrder}
-      />,
-    );
+          dealtCards={handCards}
+          onCardChange={onCardChange}
+          onSortOrderChange={onSortOrderChange}
+          sortOrder={initialSortOrder}
+        />,
+      ),
+      handCards,
+      onCardChange,
+      onSortOrderChange,
+    };
   }
 
   it.each(SORT_ORDER_NAMES)(
     "initially renders the dealt cards in the specified initial %s order",
     (sortOrderName) => {
-      const handCards = dealHand(createGenerator());
       const sortOrder = SortOrder[sortOrderName];
-      expect(
-        renderComponent(handCards, sortOrder).container.textContent,
-      ).toContain(handToSortedString(handCards, sortOrder));
+      const { component, handCards } = renderComponent(sortOrder);
+
+      expect(component.container.textContent).toContain(
+        handToSortedString(handCards, sortOrder),
+      );
     },
   );
 
-  it.each([SortOrder.Ascending, SortOrder.Descending])(
-    "reorders cards when sort order is changed from deal order to %s",
-    (sortOrder) => {
-      const handCards = dealHand(createGenerator());
-      const { container, getByText } = renderComponent(handCards);
+  it.each([
+    [SortOrder.Descending, SortOrder.Ascending],
+    [SortOrder.Descending, SortOrder.DealOrder],
+    [SortOrder.Ascending, SortOrder.Descending],
+  ])(
+    "fires a sort order change event when sort order is changed to %s",
+    (initialSortOrder, newSortOrder) => {
+      const {
+        component: { getByText },
+        onSortOrderChange,
+      } = renderComponent(initialSortOrder);
       const sortOrderButton = getByText(
-        SortLabel[SortOrder[sortOrder] as SortOrderName],
+        SortLabel[SortOrder[newSortOrder] as SortOrderName],
       );
 
       act(() => {
         sortOrderButton.click();
       });
 
-      expect(container.textContent).toContain(
-        sortCards(handCards, sortOrder)
-          .map((dealtCard) => dealtCard.rankLabel)
-          .join(""),
-      );
+      expect(onSortOrderChange).toHaveBeenCalledWith(newSortOrder);
     },
   );
 
   it.each([...Array(CARDS_PER_DEALT_HAND).keys()])(
-    "marks card %s as not kept when clicked",
+    "fires a card change event when deal order card %s is clicked",
     (dealOrderIndex: number) => {
-      const nthCheckbox = renderComponent(
-        dealHand(createGenerator()),
-      ).container.querySelectorAll("input[type='checkbox']")[
+      const {
+        component: { container },
+        onCardChange,
+      } = renderComponent(SortOrder.DealOrder);
+      const nthCheckbox = container.querySelectorAll("input[type='checkbox']")[
         dealOrderIndex
       ] as HTMLInputElement;
 
@@ -93,7 +81,7 @@ describe("sortable hand input component", () => {
         nthCheckbox.click();
       });
 
-      expect(nthCheckbox.checked).toBe(false);
+      expect(onCardChange).toHaveBeenCalledWith(dealOrderIndex);
     },
   );
 });
