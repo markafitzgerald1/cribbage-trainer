@@ -13,6 +13,8 @@ jobs:
         run: npm clean-install
       - name: Build web application bundles
         run: npm run build
+      - name: Build static Storybook site
+        run: npm run storybook:build
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v2
         with:
@@ -35,9 +37,9 @@ jobs:
       - name: Run unit tests
         run: npm run test
       - name: Install end to end test browsers
-        run: npm run playwright-install
+        run: npm run playwright:install
       - name: Run Storybook tests
-        run: npm run test-storybook
+        run: npm run storybook:test
       - name: Run end to end tests
         run: npm run test-e2e
 
