@@ -8,15 +8,16 @@
     "lint": "eslint --max-warnings 0 . && stylelint '**/*.css' && markdownlint README.md && prettier --check . && cspell '**' --gitignore && tsc && jscpd && better-npm-audit audit && (check-outdated || true)",
     "prettier:fix": "prettier --write .",
     "test": "jest --verbose",
-    "playwright-install": "playwright install --with-deps",
+    "playwright:install": "playwright install --with-deps",
     "storybook": "storybook dev -p 6006",
-    "test-storybook": "storybook build && npx --no-install concurrently --kill-others --success first --names 'Storybook,Test' 'npx --no-install http-server storybook-static --port 6006 --silent > /dev/null 2>&1 | tail -f /dev/null' 'npx --no-install wait-on --timeout 1s tcp:6006 && test-storybook --browsers chromium webkit firefox'",
+    "storybook:build": "storybook build --output-dir dist/storybook",
+    "storybook:test": "npm run storybook:build && npx --no-install concurrently --kill-others --success first --names 'Storybook,Test' 'npx --no-install http-server dist/storybook --port 6006 --silent > /dev/null 2>&1 | tail -f /dev/null' 'npx --no-install wait-on --timeout 1s tcp:6006 && test-storybook --browsers chromium webkit firefox'",
     "test-e2e": "playwright test",
-    "docker-test-e2e": "docker build -t cribbage-trainer-test-e2e . && docker run --rm --volume ${PWD}/playwright-report:/usr/src/app/playwright-report --volume ${PWD}/test-results:/usr/src/app/test-results --volume ${PWD}/tests-e2e/index.screenshots.spec.ts-snapshots:/usr/src/app/tests-e2e/index.screenshots.spec.ts-snapshots cribbage-trainer-test-e2e",
+    "docker-test-e2e": "docker build -t cribbage-trainer-e2e-test . && docker run --rm --volume ${PWD}/playwright-report:/usr/src/app/playwright-report --volume ${PWD}/test-results:/usr/src/app/test-results --volume ${PWD}/tests-e2e/index.screenshots.spec.ts-snapshots:/usr/src/app/tests-e2e/index.screenshots.spec.ts-snapshots cribbage-trainer-e2e-test",
     "build": "vite build",
     "start": "vite",
     "clean": "rimraf .VSCodeCounter/ coverage/ dist/ playwright-report/ storybook-static/ test-results/ tsconfig.tsbuildinfo",
-    "clean:modules": "rimraf node_modules/"
+    "node_modules:clean": "rimraf node_modules/"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.23.9",

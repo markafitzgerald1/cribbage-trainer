@@ -14,8 +14,8 @@ Two-player cribbage discard and play improvement tool.
 Code in `main` is automatically built on `git push` and deployed to the [GitHub
 Pages](https://pages.github.com/) hosted
 [Cribbage Trainer app site](https://markafitzgerald1.github.io/cribbage-trainer/)
-on build success via
-[GitHub Action Workflow](https://github.com/markafitzgerald1/cribbage-trainer/actions/workflows/npm-build-test-upload-artifact-and-deploy.yml).
+and [Storybook site](https://markafitzgerald1.github.io/cribbage-trainer/storybook/)
+on build success via [GitHub Action Workflow](https://github.com/markafitzgerald1/cribbage-trainer/actions/workflows/npm-build-test-upload-artifact-and-deploy.yml).
 
 ## Local and Development Setup
 
@@ -33,8 +33,8 @@ on build success via
 
 ### Lint and Test
 
-- `npm run clean && npm run lint && npm test && npm run playwright-install &&
-npm run test-storybook && npm run docker-test-e2e`
+- `npm run clean && npm run lint && npm test && npm run playwright:install &&
+npm run storybook:test && npm run docker-test-e2e`
 
 ### Develop
 
