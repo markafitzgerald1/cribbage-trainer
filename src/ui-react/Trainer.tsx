@@ -3,15 +3,15 @@ import React, { useCallback, useState } from "react";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { SortableHand } from "./SortableHand";
+import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
-import { dealHand as gameDealHand } from "../game/dealHand";
 
 interface TrainerProps {
   readonly generateRandomNumber: () => number;
 }
 
 export function Trainer({ generateRandomNumber: generator }: TrainerProps) {
-  const [dealtCards, setDealtCards] = useState(gameDealHand(generator));
+  const [dealtCards, setDealtCards] = useState(dealHand(generator));
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
 
   const toggleKept = useCallback(
