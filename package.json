@@ -58,7 +58,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jscpd": "^3.5.10",
     "markdownlint-cli": "^0.39.0",
-    "prettier": "^3.2.4",
+    "prettier": "^3.2.5",
     "process": "^0.11.10",
     "rimraf": "^5.0.5",
     "seedrandom": "^3.0.5",
