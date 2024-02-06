@@ -40,10 +40,12 @@ test("styles.css is linked", async ({ page }) => {
   ).not.toBeNull();
 });
 
+const constantSeedQuery = "?seed=1";
+
 test("pre-cut hand points show after select of two discards", async ({
   page,
 }) => {
-  await renderThenSelectTwoDiscards(page, "");
+  await renderThenSelectTwoDiscards(page, constantSeedQuery);
 
   await expect(page.getByText("Pre-cut hand")).toBeVisible();
 });
