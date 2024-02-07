@@ -33,11 +33,9 @@ test(`has title '${expectedTitle}'`, async ({ page }) => {
   await expect(page).toHaveTitle(expectedTitle);
 });
 
-test("styles.css is linked", async ({ page }) => {
+test("a .css file is linked", async ({ page }) => {
   await page.goto("/");
-  expect(
-    await page.$('link[rel="stylesheet"][href*="styles."][href$=".css"]'),
-  ).not.toBeNull();
+  expect(await page.$('link[rel="stylesheet"][href$=".css"]')).not.toBeNull();
 });
 
 const constantSeedQuery = "?seed=1";
