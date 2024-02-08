@@ -1,0 +1,6 @@
+@import url("./vars.css");
+
+.privacy-policy {
+  font-family: var(--text-font-family);
+  color: var(--text-color);
+}
