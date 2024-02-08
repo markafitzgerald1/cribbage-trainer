@@ -17,7 +17,7 @@ const meta = {
   },
   component: Trainer,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
   tags: ["autodocs"],
   title: "Trainer",
