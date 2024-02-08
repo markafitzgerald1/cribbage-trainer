@@ -4,7 +4,7 @@
   --card-width: 0.562em;
 }
 
-.card {
+.hand-card {
   display: block;
   padding: 0.16em 0.21em 0.17em 0.29em;
   border: var(--card-border);
@@ -22,24 +22,24 @@
   border-radius: var(--clickable-border-radius);
 }
 
-.card input[type="checkbox"] {
+.hand-card input[type="checkbox"] {
   position: absolute;
   bottom: -0.1em;
   right: -0.1em;
 }
 
 @media (orientation: portrait) {
-  .card {
+  .hand-card {
     font-size: 12.9vw;
   }
 
-  .card input[type="checkbox"] {
+  .hand-card input[type="checkbox"] {
     width: 3vw;
   }
 }
 
 @media (orientation: landscape) {
-  .card input[type="checkbox"] {
+  .hand-card input[type="checkbox"] {
     width: 1.5vw;
   }
 }

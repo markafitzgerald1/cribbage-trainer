@@ -20,7 +20,7 @@ export class HandCard extends React.Component<CardProps> {
     const { kept, rank } = this.props;
     return (
       <label
-        className={`${classes.card}${kept ? "" : ` ${classes.discarded}`}`}
+        className={`${classes.handCard}${kept ? "" : ` ${classes.discarded}`}`}
       >
         <CardLabel rank={rank} />
         {}

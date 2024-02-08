@@ -1,4 +1,5 @@
 import { Page } from "@playwright/test";
+import { SortOrder } from "../src/ui/SortOrder";
 
 export const renderThenSelectTwoDiscards = async (
   page: Page,
@@ -12,4 +13,9 @@ export const renderThenSelectTwoDiscards = async (
     // eslint-disable-next-line no-await-in-loop
     await checkboxes.nth(index).click();
   }
+
+  await page
+    .locator(`label[for="${SortOrder[SortOrder.DealOrder]}"]`)
+    .first()
+    .click();
 };

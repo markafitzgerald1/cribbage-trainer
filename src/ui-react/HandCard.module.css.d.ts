@@ -1,2 +1,2 @@
-export const card: string;
+export const handCard: string;
 export const discarded: string;
