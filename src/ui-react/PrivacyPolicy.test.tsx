@@ -1,6 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
 import { PrivacyPolicy } from "./PrivacyPolicy";
-import React from "react";
 import { render } from "@testing-library/react";
 
 describe("privacy policy component", () => {

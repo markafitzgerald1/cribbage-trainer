@@ -1,5 +1,4 @@
 import * as classes from "./PrivacyPolicy.module.css";
-import React from "react";
 
 export function PrivacyPolicy() {
   return (

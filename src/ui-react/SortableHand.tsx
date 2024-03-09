@@ -1,6 +1,5 @@
 import { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
-import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 

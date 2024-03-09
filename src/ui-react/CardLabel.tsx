@@ -1,6 +1,5 @@
 import * as classes from "./CardLabel.module.css";
 import { CARD_LABELS, Rank } from "../game/Card";
-import React from "react";
 import { getTenClass } from "./getTenClass";
 
 export interface CardLabelProps {

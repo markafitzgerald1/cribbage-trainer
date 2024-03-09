@@ -1,6 +1,6 @@
-import React, { StrictMode } from "react";
 import { describe, expect, it, jest } from "@jest/globals";
 import ReactDOMClient from "react-dom/client";
+import { StrictMode } from "react";
 import { Trainer } from "./ui-react/Trainer";
 
 describe("app entrypoint", () => {

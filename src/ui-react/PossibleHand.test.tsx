@@ -1,7 +1,6 @@
 import { CARD_LABELS, createCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { PossibleHand } from "./PossibleHand";
-import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import { render } from "@testing-library/react";
 

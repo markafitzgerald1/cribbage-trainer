@@ -3,7 +3,6 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { CARD_LABELS } from "../game/Card";
 import { DealtCard } from "../game/DealtCard";
 import { HandCard } from "./HandCard";
-import React from "react";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

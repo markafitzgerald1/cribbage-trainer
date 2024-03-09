@@ -1,7 +1,6 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import { ComparableCard } from "../ui/sortCards";
 import { PossibleHand } from "./PossibleHand";
-import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
 interface ScoredPossibleKeepDiscardProps {

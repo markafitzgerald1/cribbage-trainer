@@ -1,6 +1,5 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { Hand } from "./Hand";
-import React from "react";
 /* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";

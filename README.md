@@ -35,8 +35,12 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Lint and Test
 
-- `npm run clean && npm run lint && npm test && npm run playwright:install &&
+- `npm run clean && npm run build && npm run lint && npm test &&
+npm run playwright:install &&
 npm run storybook:test && npm run docker-test-e2e`
+  (running `build` prior to `lint` as some TypeScript ESLint issues are only found
+  by ESLint when a `dist/` directory containing build output exists for some
+  unknown reason.)
 
 ### Develop
 
