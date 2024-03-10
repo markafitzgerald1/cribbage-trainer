@@ -13,6 +13,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const ConsentUnspecifiedDialog: Story = {};
+
 export const ConsentUnknownDialog: Story = {
   args: {
     consent: null,
