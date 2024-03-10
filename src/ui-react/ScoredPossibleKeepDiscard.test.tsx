@@ -1,7 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
 /* jscpd:ignore-start */
-import React from "react";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";

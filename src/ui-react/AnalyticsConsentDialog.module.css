@@ -1,0 +1,10 @@
+@import url("./vars.css");
+
+.analytics-consent-dialog {
+  font-family: var(--text-font-family);
+  color: var(--text-color);
+}
+
+button + button {
+  margin-left: 0.5em;
+}

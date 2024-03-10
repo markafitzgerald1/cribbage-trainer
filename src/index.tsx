@@ -1,5 +1,5 @@
-import React, { StrictMode } from "react";
 import ReactDOMClient from "react-dom/client";
+import { StrictMode } from "react";
 import { Trainer } from "./ui-react/Trainer";
 import { createGenerator } from "./game/randomNumberGenerator";
 

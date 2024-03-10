@@ -1,7 +1,6 @@
 import * as classes from "./PossibleHand.module.css";
 import { ComparableCard, sortCards } from "../ui/sortCards";
 import { CardLabel } from "./CardLabel";
-import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 
 interface PossibleHandProps {

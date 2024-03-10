@@ -2,7 +2,6 @@ import * as classes from "./CardLabel.module.css";
 import { CARDS, CARD_LABELS, Rank } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { CardLabel } from "./CardLabel";
-import React from "react";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
 

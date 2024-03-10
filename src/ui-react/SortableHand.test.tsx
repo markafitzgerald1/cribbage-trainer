@@ -1,7 +1,6 @@
 import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
-import React from "react";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
 import { SortableHand } from "./SortableHand";

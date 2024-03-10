@@ -6,7 +6,6 @@ import {
 import { SortLabel, SortOrderInput } from "./SortOrderInput";
 import { cleanup, render } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
-import React from "react";
 import { SortOrder } from "../ui/SortOrder";
 import userEvent from "@testing-library/user-event";
 

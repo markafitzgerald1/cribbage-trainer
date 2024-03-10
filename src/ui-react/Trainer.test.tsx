@@ -1,10 +1,8 @@
 import { ByRoleMatcher, ByRoleOptions, render } from "@testing-library/react";
 import { describe, expect, it } from "@jest/globals";
-import React from "react";
+import userEvent, { UserEvent } from "@testing-library/user-event";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
-import { UserEvent } from "@testing-library/user-event/dist/types/setup/setup";
-import userEvent from "@testing-library/user-event";
 
 describe("trainer component", () => {
   const mathRandom = Math.random;

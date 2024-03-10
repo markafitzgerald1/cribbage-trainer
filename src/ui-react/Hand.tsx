@@ -1,7 +1,6 @@
 import * as classes from "./Hand.module.css";
 import { HandCard } from "./HandCard";
 import { HandProps } from "./HandProps";
-import React from "react";
 import { sortCards } from "../ui/sortCards";
 
 export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
