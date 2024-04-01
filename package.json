@@ -43,7 +43,7 @@
     "@types/react-dom": "^18.2.21",
     "@types/seedrandom": "^3.0.8",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
-    "@typescript-eslint/parser": "^7.1.1",
+    "@typescript-eslint/parser": "^7.4.0",
     "better-npm-audit": "^3.7.3",
     "check-outdated": "^2.12.0",
     "concurrently": "^8.2.2",
