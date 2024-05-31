@@ -19,20 +19,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const DealOrder: Story = {
+const createStoryWithSortOrder = (sortOrder: SortOrder) => ({
   args: {
-    sortOrder: SortOrder.DealOrder,
+    onChange: () => null,
+    sortOrder,
   },
-};
+});
 
-export const Ascending: Story = {
-  args: {
-    sortOrder: SortOrder.Ascending,
-  },
-};
-
-export const Descending: Story = {
-  args: {
-    sortOrder: SortOrder.Descending,
-  },
-};
+export const DealOrder: Story = createStoryWithSortOrder(SortOrder.DealOrder);
+export const Ascending: Story = createStoryWithSortOrder(SortOrder.Ascending);
+export const Descending: Story = createStoryWithSortOrder(SortOrder.Descending);

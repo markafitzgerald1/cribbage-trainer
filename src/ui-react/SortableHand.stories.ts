@@ -31,6 +31,8 @@ function createStory(sortOrder: SortOrder): Story {
         CARDS.FOUR,
         CARDS.QUEEN,
       ]),
+      onCardChange: () => null,
+      onSortOrderChange: () => null,
       sortOrder,
     },
   };

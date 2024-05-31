@@ -1,4 +1,4 @@
-import { CARDS, RANK_NAMES } from "../game/Card";
+import { CARDS, RANK_NAMES, Rank } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
 import { HandCard } from "./HandCard";
 /* jscpd:ignore-start */
@@ -18,50 +18,51 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const DiscardedFirstCardAce: Story = {
+const createStory = (dealOrderIndex: number, kept: boolean, rank: Rank) => ({
   args: {
-    dealOrderIndex: 0,
-    kept: false,
-    rank: CARDS.ACE.rank,
+    dealOrderIndex,
+    kept,
+    onChange: () => null,
+    rank,
   },
+});
+
+const DEAL_ORDER_INDEX = {
+  FIFTH: 4,
+  FIRST: 0,
+  FOURTH: 3,
+  SECOND: 1,
+  SIXTH: 5,
+  THIRD: 2,
 };
 
-export const KeptSecondCardFive: Story = {
-  args: {
-    dealOrderIndex: 1,
-    kept: true,
-    rank: CARDS.FIVE.rank,
-  },
-};
-
-export const KeptThirdCardNine: Story = {
-  args: {
-    dealOrderIndex: 2,
-    kept: true,
-    rank: CARDS.NINE.rank,
-  },
-};
-
-export const KeptFourthCardTen: Story = {
-  args: {
-    dealOrderIndex: 3,
-    kept: true,
-    rank: CARDS.TEN.rank,
-  },
-};
-
-export const KeptFifthCardJack: Story = {
-  args: {
-    dealOrderIndex: 4,
-    kept: true,
-    rank: CARDS.JACK.rank,
-  },
-};
-
-export const DiscardedFifthCardKing: Story = {
-  args: {
-    dealOrderIndex: 5,
-    kept: false,
-    rank: CARDS.KING.rank,
-  },
-};
+export const DiscardedFirstCardAce: Story = createStory(
+  DEAL_ORDER_INDEX.FIRST,
+  false,
+  CARDS.ACE.rank,
+);
+export const KeptSecondCardFive: Story = createStory(
+  DEAL_ORDER_INDEX.SECOND,
+  true,
+  CARDS.FIVE.rank,
+);
+export const KeptThirdCardNine: Story = createStory(
+  DEAL_ORDER_INDEX.THIRD,
+  true,
+  CARDS.NINE.rank,
+);
+export const KeptFourthCardTen: Story = createStory(
+  DEAL_ORDER_INDEX.FOURTH,
+  true,
+  CARDS.TEN.rank,
+);
+export const KeptFifthCardJack: Story = createStory(
+  DEAL_ORDER_INDEX.FIFTH,
+  true,
+  CARDS.JACK.rank,
+);
+export const DiscardedFifthCardKing: Story = createStory(
+  DEAL_ORDER_INDEX.SIXTH,
+  false,
+  CARDS.KING.rank,
+);
