@@ -4,7 +4,7 @@ import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
 import { SortableHand } from "./SortableHand";
-import { act } from "react-dom/test-utils";
+import { act } from "react";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { dealHand } from "../game/dealHand";
 import { handToSortedString } from "./handToSortedString.test.common";
