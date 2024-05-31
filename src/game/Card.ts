@@ -55,7 +55,7 @@ type NamedCards = {
 };
 
 const NAMED_CARDS = Object.fromEntries(
-  CARD_RANKS.map((index) => index as Rank).map((rank) => [
+  CARD_RANKS.map((rank) => [
     // eslint-disable-next-line security/detect-object-injection
     Rank[rank] as RankName,
     // eslint-disable-next-line security/detect-object-injection
