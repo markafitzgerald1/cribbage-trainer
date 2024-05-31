@@ -39,6 +39,7 @@ const createStory = (
       kept: predicate(card.rank),
       rank: card.rank,
     })),
+    onChange: () => null,
     sortOrder,
   },
 });

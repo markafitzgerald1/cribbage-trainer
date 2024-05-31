@@ -13,22 +13,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const ConsentUnspecifiedDialog: Story = {};
-
-export const ConsentUnknownDialog: Story = {
+const createStoryWithConsent = (consent: boolean | null) => ({
   args: {
-    consent: null,
+    consent,
+    onChange: () => null,
   },
-};
+});
 
-export const ConsentGivenDialog: Story = {
-  args: {
-    consent: true,
-  },
-};
-
-export const ConsentNotGivenDialog: Story = {
-  args: {
-    consent: false,
-  },
-};
+export const ConsentUnknownOrUnspecifiedDialog: Story =
+  createStoryWithConsent(null);
+export const ConsentGivenDialog: Story = createStoryWithConsent(true);
+export const ConsentNotGivenDialog: Story = createStoryWithConsent(false);
