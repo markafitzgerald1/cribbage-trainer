@@ -3,6 +3,7 @@ import { describe, expect, it } from "@jest/globals";
 import userEvent, { UserEvent } from "@testing-library/user-event";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
+import { act } from "react";
 
 describe("trainer component", () => {
   const mathRandom = Math.random;
@@ -46,7 +47,7 @@ describe("trainer component", () => {
       <Trainer generateRandomNumber={mathRandom} />,
     );
 
-    await clickIndices(getAllByRole, cardIndices, user);
+    await act(() => clickIndices(getAllByRole, cardIndices, user));
 
     expect(Boolean(queryByText(preCutHandPoints))).toBe(calculationsExpected);
   };
@@ -76,7 +77,7 @@ describe("trainer component", () => {
       const initialDealtHand = container.querySelector("div")!.textContent;
       const user = userEvent.setup();
 
-      await user.click(newSortInput);
+      await act(() => user.click(newSortInput));
 
       expect(container.querySelector("div")!.textContent).not.toBe(
         initialDealtHand,
