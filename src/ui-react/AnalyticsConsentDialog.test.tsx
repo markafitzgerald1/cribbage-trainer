@@ -1,4 +1,6 @@
 import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/jest-globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 

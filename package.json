@@ -50,7 +50,7 @@
     "cspell": "^8.9.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jest": "^27.9.0",
+    "eslint-plugin-jest": "^28.6.0",
     "eslint-plugin-jsx-a11y": "^6.9.0",
     "eslint-plugin-react": "^7.34.3",
     "eslint-plugin-react-hooks": "^4.6.2",
@@ -70,7 +70,7 @@
     "storybook": "^8.1.11",
     "stylelint": "^16.6.1",
     "stylelint-config-standard": "^36.0.1",
-    "typescript": "^5.5.2",
+    "typescript": "^5.5.3",
     "vite": "^5.3.2",
     "wait-on": "^7.2.0"
   },
