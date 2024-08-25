@@ -21,6 +21,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
 
   it("two card deal with duplicate cards throws", () => {
     const cards = [c.ACE, c.ACE];
+
     expect(() => allScoredKeepDiscardsByScoreDescending(cards)).toThrow(
       "Duplicate cards exist",
     );

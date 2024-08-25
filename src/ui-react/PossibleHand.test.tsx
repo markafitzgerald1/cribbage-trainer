@@ -18,6 +18,7 @@ describe("possible hand component", () => {
 
   const keptHand = "10,A,J,4";
   const discard = "5,K";
+
   it.each([
     ["A410J", SortOrder[SortOrder.Ascending], keptHand],
     ["J104A", SortOrder[SortOrder.Descending], keptHand],

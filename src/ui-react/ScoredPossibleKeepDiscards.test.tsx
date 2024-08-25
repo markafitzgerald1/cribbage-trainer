@@ -38,6 +38,7 @@ describe("scored possible keep discards component", () => {
     const nCombs = Number(
       new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length,
     );
+
     expect(container.querySelectorAll("li")).toHaveLength(nCombs);
   });
 });

@@ -16,6 +16,7 @@ describe("dealHand", () => {
 
   it("returns the same cards on uses of equal random number generators", () => {
     const seed = "my fixed seed value";
+
     expect(dealHand(seedrandom(seed))).toStrictEqual(
       dealHand(seedrandom(seed)),
     );
@@ -23,6 +24,7 @@ describe("dealHand", () => {
 
   it("cards have unique deal orders", () => {
     const dealOrders = dealHand(mathRandom).map((card) => card.dealOrder);
+
     expect(dealOrders).toHaveLength(new Set(dealOrders).size);
   });
 
@@ -30,6 +32,7 @@ describe("dealHand", () => {
     const sortedDealOrders = dealHand(mathRandom)
       .map((card) => card.dealOrder)
       .sort((first, second) => first - second);
+
     expect(sortedDealOrders).toStrictEqual([
       ...Array(CARDS_PER_DEALT_HAND).keys(),
     ]);

@@ -12,6 +12,7 @@ describe("card label component", () => {
 
   it("label text is its rank label", () => {
     const rank = dealCard();
+
     expect(renderCard(rank).getByText(CARD_LABELS[rank]!)).toBeTruthy();
   });
 
