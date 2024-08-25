@@ -28,6 +28,7 @@ describe("hand card component", () => {
 
   it("label text is its rank label", () => {
     const card = dealCard();
+
     expect(renderCard(card).getByText(CARD_LABELS[card.rank]!)).toBeTruthy();
   });
 

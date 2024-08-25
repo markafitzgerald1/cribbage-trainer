@@ -18,6 +18,7 @@ describe("analytics consent dialog", () => {
 
   it("contains the expected title with null consent", () => {
     const { getByText } = renderDialog();
+
     expect(getByText("Analytics Consent")).toBeInTheDocument();
   });
 
@@ -25,6 +26,7 @@ describe("analytics consent dialog", () => {
 
   it("contains the expected title with unspecified consent", () => {
     const { getByText } = renderDialog();
+
     expect(getByText(ANALYTICS_CONSENT)).toBeInTheDocument();
   });
 
@@ -43,6 +45,7 @@ describe("analytics consent dialog", () => {
     (expected, buttonText: string) => {
       const { onChange, getByText } = renderDialog();
       fireEvent.click(getByText(buttonText));
+
       expect(onChange).toHaveBeenCalledWith(expected);
     },
   );
@@ -55,6 +58,7 @@ describe("analytics consent dialog", () => {
     "shows the correct message when consent is %s",
     (consent: boolean | null, expectedMessage: string) => {
       const { getByText } = renderDialog(consent);
+
       expect(getByText(expectedMessage, { exact: false })).toBeInTheDocument();
     },
   );

@@ -65,7 +65,7 @@
         "ignoreEnums": true
       }
     ],
-    "@typescript-eslint/no-shadow": ["error"],
+    "@typescript-eslint/no-shadow": "error",
     "@typescript-eslint/no-non-null-assertion": ["off"],
     "@typescript-eslint/unbound-method": "off",
     "capitalized-comments": [

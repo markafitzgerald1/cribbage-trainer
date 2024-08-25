@@ -28,6 +28,7 @@ describe("discardIsComplete", () => {
         kept: dealOrder < keptCount,
       }),
     );
+
     expect(discardIsComplete(hand)).toBe(expected);
   });
 });
