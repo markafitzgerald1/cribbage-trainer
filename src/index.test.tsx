@@ -8,6 +8,7 @@ describe("app entrypoint", () => {
 
   it("crashes on render if no #trainer element is found", () => {
     expect(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require(moduleId);
     }).toThrow("Target container is not a DOM element");
   });
@@ -23,6 +24,7 @@ describe("app entrypoint", () => {
         .spyOn(ReactDOMClient, "createRoot")
         .mockImplementation(() => ({ render: renderMock, unmount: jest.fn() }));
 
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require(moduleId);
 
       expect(document.querySelector).toHaveBeenCalledWith(containerSelector);

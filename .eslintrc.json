@@ -1,9 +1,6 @@
 {
   "extends": [
     "eslint:all",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking",
-    "plugin:@typescript-eslint/strict",
     "plugin:jsx-a11y/recommended",
     "plugin:react/all",
     "plugin:react/jsx-runtime",
@@ -12,7 +9,6 @@
     "plugin:storybook/recommended",
     "prettier"
   ],
-  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {
       "jsx": true
@@ -22,10 +18,29 @@
   "plugins": ["@typescript-eslint", "spellcheck", "react"],
   "overrides": [
     {
-      "files": ["**/*.test.ts*"],
+      "files": ["**/*.ts*"],
+      "parser": "@typescript-eslint/parser",
+      "extends": [
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking",
+        "plugin:@typescript-eslint/strict"
+      ]
+    },
+    {
+      "files": ["vite.config.js"],
+      "parser": "espree",
+      "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+      }
+    },
+    {
+      "files": ["**/*.test.ts*", "**/*.stories.ts*"],
       "plugins": ["jest"],
       "extends": ["plugin:jest/all"],
       "rules": {
+        "@typescript-eslint/no-non-null-assertion": ["off"],
+        "@typescript-eslint/unbound-method": "off",
         "jest/expect-expect": [
           "error",
           {
@@ -44,6 +59,7 @@
           }
         ],
         "jest/prefer-expect-assertions": ["off"],
+        "jest/unbound-method": "error",
         "react/jsx-no-bind": ["off"],
         "security/detect-non-literal-regexp": ["off"],
         "security/detect-object-injection": ["off"]
@@ -66,7 +82,6 @@
       }
     ],
     "@typescript-eslint/no-shadow": "error",
-    "@typescript-eslint/no-non-null-assertion": ["off"],
     "@typescript-eslint/unbound-method": "off",
     "capitalized-comments": [
       "error",
