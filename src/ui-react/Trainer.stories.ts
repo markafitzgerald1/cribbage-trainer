@@ -1,4 +1,4 @@
-import { fireEvent, within } from "@storybook/testing-library";
+import { expect, fireEvent, within } from "@storybook/test";
 /* jscpd:ignore-start */
 import type { Meta } from "@storybook/react";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
@@ -6,7 +6,6 @@ import { Trainer } from "./Trainer";
 import { createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
 import { createGenerator } from "../game/randomNumberGenerator";
-import { expect } from "@storybook/jest";
 
 const SEED = "1";
 
@@ -29,8 +28,8 @@ export const DiscardShowsScoredPossibilities = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const checkboxes = within(canvasElement).getAllByRole("checkbox");
 
-    fireEvent.click(checkboxes[0]!);
-    fireEvent.click(checkboxes[1]!);
+    await fireEvent.click(checkboxes[0]!);
+    await fireEvent.click(checkboxes[1]!);
 
     await expect(canvasElement).toHaveTextContent("Pre-cut hand");
   },
@@ -45,7 +44,7 @@ const createPlay =
     )!;
     const initialCanvasElementTextContent = canvasElement.textContent;
 
-    fireEvent.click(dealOrderRadioButton);
+    await fireEvent.click(dealOrderRadioButton);
 
     await expect(canvasElement.textContent).not.toEqual(
       initialCanvasElementTextContent,
