@@ -6,7 +6,7 @@ export const dealHand = (generateRandomNumber: () => number): DealtCard[] =>
   Array.from({ length: CARDS_PER_DEALT_HAND }, () =>
     Math.floor(generateRandomNumber() * INDICES_PER_SUIT),
   ).map((rank, dealOrder) => ({
-    // eslint-disable-next-line security/detect-object-injection
+    // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
     ...CARDS[rank]!,
     dealOrder,
     kept: true,

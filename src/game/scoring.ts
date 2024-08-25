@@ -17,6 +17,7 @@ export const HAND_POINTS = {
 
 const pairsPoints = (keep: readonly RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ([first, second]) => first!.rank === second!.rank,
   ).length * HAND_POINTS.PAIR;
 
@@ -46,7 +47,7 @@ const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
     .filter((combination) =>
       combination
         .slice(1)
-        // eslint-disable-next-line security/detect-object-injection
+        // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
         .map((rank, index) => rank - combination[index]!)
         .every((diff) => diff === 1),
     ).length *

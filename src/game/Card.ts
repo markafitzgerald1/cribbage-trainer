@@ -36,7 +36,7 @@ export const CARD_LABELS = [..."A23456789".split(""), "10", ..."JQK".split("")];
 export const createCard = (rank: Rank): Card => ({
   count: Math.min(rank + 1, MAXIMUM_CARD_COUNTING_VALUE),
   rank,
-  // eslint-disable-next-line security/detect-object-injection
+  // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
   rankLabel: CARD_LABELS[rank]!,
 });
 

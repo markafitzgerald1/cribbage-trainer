@@ -17,7 +17,7 @@ export function Trainer({ generateRandomNumber: generator }: TrainerProps) {
   const toggleKept = useCallback(
     (dealOrderIndex: number) => {
       const newDealtCards = [...dealtCards];
-      // eslint-disable-next-line security/detect-object-injection
+      // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
       // eslint-disable-next-line react/no-set-state
