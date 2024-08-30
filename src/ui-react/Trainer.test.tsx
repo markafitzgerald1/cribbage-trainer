@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom";
 import { ByRoleMatcher, ByRoleOptions, render } from "@testing-library/react";
 import { describe, expect, it } from "@jest/globals";
 import userEvent, { UserEvent } from "@testing-library/user-event";
@@ -84,4 +85,42 @@ describe("trainer component", () => {
       );
     },
   );
+
+  const ANALYTICS_CONSENT = "analyticsConsent";
+
+  const clearAnalyticsConsent = () =>
+    localStorage.removeItem(ANALYTICS_CONSENT);
+
+  it.each([
+    [true, 0],
+    [false, 1],
+  ])(
+    "persists that analytics acceptance is %s when button %d is clicked",
+    async (expectedConsent, buttonIndex) => {
+      clearAnalyticsConsent();
+      const user = userEvent.setup();
+      const { container } = render(
+        <Trainer generateRandomNumber={mathRandom} />,
+      );
+      const acceptDeclineButton =
+        container.querySelectorAll("button")[buttonIndex]!;
+
+      await act(() => user.click(acceptDeclineButton));
+
+      expect(localStorage.getItem(ANALYTICS_CONSENT)).toBe(
+        expectedConsent.toString(),
+      );
+    },
+  );
+
+  it("initially sets the analytics consent based on local storage", () => {
+    localStorage.setItem(ANALYTICS_CONSENT, "true");
+    const renderResult = render(<Trainer generateRandomNumber={mathRandom} />);
+
+    expect(
+      renderResult.getByText(
+        /^Thank you! Your consent helps us improve our site using tools like Google Analytics. /u,
+      ),
+    ).toBeInTheDocument();
+  });
 });

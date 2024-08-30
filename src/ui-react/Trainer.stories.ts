@@ -1,8 +1,8 @@
+import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, within } from "@storybook/test";
 /* jscpd:ignore-start */
 import type { Meta } from "@storybook/react";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
-import { Trainer } from "./Trainer";
 import { createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
 import { createGenerator } from "../game/randomNumberGenerator";
@@ -14,6 +14,9 @@ const meta = {
   args: {
     generateRandomNumber: createGenerator(SEED),
   },
+  beforeEach: () => () => {
+    localStorage.removeItem(analyticsConsentKey);
+  },
   component: Trainer,
   parameters: {
     layout: "fullscreen",
@@ -23,6 +26,29 @@ const meta = {
 } satisfies Meta<typeof Trainer>;
 
 export default meta;
+
+const createAnalyticsSelectionMadeStory = (
+  buttonNumber: number,
+  expectedTextContent: string,
+) => ({
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const buttons = within(canvasElement).getAllByRole("button");
+
+    await fireEvent.click(buttons[buttonNumber]!);
+
+    await expect(canvasElement).toHaveTextContent(expectedTextContent);
+  },
+});
+
+export const AnalyticsAccepted = createAnalyticsSelectionMadeStory(
+  0,
+  "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy (coming soon).",
+);
+
+export const AnalyticsDisabled = createAnalyticsSelectionMadeStory(
+  1,
+  "Analytics have been disabled. You can find more information in our Privacy Policy (coming soon).",
+);
 
 export const DiscardShowsScoredPossibilities = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {

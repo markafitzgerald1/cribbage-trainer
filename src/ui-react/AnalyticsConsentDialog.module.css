@@ -2,7 +2,16 @@
 
 .analytics-consent-dialog {
   font-family: var(--text-font-family);
-  color: var(--text-color);
+  background-color: lightgreen;
+  border: solid;
+  border-width: thin;
+  border-radius: 0.5em;
+  padding: 0.5em;
+  box-sizing: border-box;
+}
+
+.analytics-consent-dialog h2 {
+  margin-top: 0;
 }
 
 button + button {
