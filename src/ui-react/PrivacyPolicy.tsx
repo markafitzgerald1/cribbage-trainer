@@ -3,80 +3,176 @@ import * as classes from "./PrivacyPolicy.module.css";
 export function PrivacyPolicy() {
   return (
     <div className={classes.privacyPolicy}>
-      <h1>Privacy Policy</h1>
+      <h1>Privacy Policy for Cribbage Trainer</h1>
+      <p>Effective Date: August 31, 2024</p>
       <p>
-        This Privacy Policy explains how we collect, use, and disclose
-        information about you when you use the Cribbage Trainer service (the
-        &quot;Service&quot;).
+        At Cribbage Trainer, accessible from{" "}
+        <a href="https://markafitzgerald1.github.io/cribbage-trainer/">
+          https://markafitzgerald1.github.io/cribbage-trainer/
+        </a>
+        , the privacy of our visitors is one of our main priorities. This
+        Privacy Policy document outlines the types of information collected and
+        recorded by Cribbage Trainer and how we use it.
+      </p>
+
+      <h2>Consent to Data Collection</h2>
+
+      <p>
+        Cribbage Trainer uses Google Analytics to collect data only after you
+        have provided consent. No analytics data will be collected until you
+        have explicitly agreed to the use of Google Analytics.
       </p>
 
       <h2>Information We Collect</h2>
+
       <p>
-        We collect several types of information from and about users of our
-        Service:
+        Once consent is given, Cribbage Trainer collects certain information
+        through Google Analytics, including:
       </p>
+
       <ul>
         <li>
-          Device Information: We automatically collect information about your
-          device, such as your browser type, operating system, IP address,
-          unique device identifiers, and network information.
+          {/* eslint-disable-next-line react/jsx-max-depth */}
+          <strong>Usage Data:</strong> Information about how you interact with
+          the site, such as which pages you visit, how long you spend on them,
+          and other behavioral metrics.
         </li>
         <li>
-          Usage Information: We collect information about how you use our
-          Service, such as the pages you visit, the features you use, and the
-          time you spend on the Service.
-        </li>
-        <li>
-          Cookies and Similar Technologies: We use cookies and similar
-          technologies to collect information about your preferences and
-          activity on our Service. You can control your cookie settings through
-          your browser settings.
+          {/* eslint-disable-next-line react/jsx-max-depth */}
+          <strong>Device and Browser Information:</strong> Details about the
+          device and browser used to access the website, including IP address,
+          operating system, browser type, and screen resolution.
         </li>
       </ul>
 
-      <h2>Google Analytics</h2>
+      <h2>Use of Google Analytics</h2>
+
       <p>
-        We use Google Analytics to track user activity on our Service. Google
-        Analytics collects information such as your browser type, operating
-        system, referring website, and pages you visit. You can learn more about
-        how Google uses information from sites or apps that use its services
-        here:{" "}
-        <a href="https://policies.google.com/technologies/partner-sites?hl=en-US">
-          https://policies.google.com/technologies/partner-sites?hl=en-US
-        </a>
+        Cribbage Trainer uses Google Analytics to analyze user interactions and
+        improve the overall experience of the site. This data helps us
+        understand how visitors engage with the site and allows us to optimize
+        content and functionality. Google Analytics may set cookies in your
+        browser to identify returning visitors and enhance your experience.
       </p>
 
-      <h2>Your Choices</h2>
       <p>
-        You have choices about how we collect and use your information. You can:
+        For more details on how Google uses the data it collects, please refer
+        to{" "}
+        <a href="https://policies.google.com/technologies/partner-sites">
+          Google’s Privacy & Terms
+        </a>
+        .
       </p>
+
+      <h2>Consent and Local Storage</h2>
+
+      <p>
+        Cribbage Trainer uses local storage to save your preferences, including
+        whether you have consented to the use of Google Analytics. This allows
+        us to remember your consent choice across sessions, ensuring that
+        analytics data is only collected if you have given permission.
+      </p>
+
+      <p>
+        Local storage is saved on your device and does not expire automatically.
+        You can clear this data through your browser settings at any time,
+        though this may result in being asked to provide consent again when you
+        revisit the site.
+      </p>
+
+      <h2>Cookies</h2>
+
+      <p>Cribbage Trainer uses cookies to:</p>
       <ul>
-        <li>Control your cookie settings through your browser.</li>
+        <li>Understand and save your preferences for future visits.</li>
         <li>
-          Opt out of Google Analytics tracking by visiting{" "}
-          {/* eslint-disable-next-line react/jsx-max-depth */}
-          <a href="https://tools.google.com/dlpage/gaoptout">
-            https://tools.google.com/dlpage/gaoptout
-          </a>
+          Aggregate data about site traffic and interactions to improve the user
+          experience.
         </li>
+      </ul>
+      <p>
+        You can choose to have your computer warn you each time a cookie is
+        sent, or you can choose to turn off all cookies through your browser
+        settings. However, disabling cookies may affect the functionality of
+        Cribbage Trainer.
+      </p>
+
+      <h2>How We Use Your Information</h2>
+
+      <p>The information we collect is used to:</p>
+      <ul>
+        <li>Improve the user experience by analyzing site interactions.</li>
+        <li>Provide, operate, and maintain the website.</li>
+        <li>Detect and prevent fraud or abuse of the site.</li>
       </ul>
 
       <h2>Data Retention</h2>
+
       <p>
-        We will retain your information for as long as necessary to provide the
-        Service to you and comply with our legal obligations.
+        The information collected through Google Analytics will be retained for
+        a period of up to 14 months. After this period, the data will be
+        automatically deleted from Google’s systems. This retention period may
+        be adjusted based on changes to Google Analytics policies or as needed.
       </p>
 
-      <h2>Changes to this Privacy Policy</h2>
       <p>
-        We may update this Privacy Policy from time to time. We will notify you
-        of any changes by posting the new Privacy Policy on this page.
+        You can manage your consent and delete your data at any time by clearing
+        your browser’s local storage and disabling cookies. Please note that
+        doing so may impact your experience on the website.
+      </p>
+
+      <h2>Data Sharing</h2>
+
+      <p>
+        We do not sell, trade, or otherwise transfer your personal information
+        to outside parties except for trusted third parties that assist us in
+        operating our website, such as Google Analytics, as long as those
+        parties agree to keep this information confidential.
+      </p>
+
+      <h2>Your Choices</h2>
+
+      <p>
+        You have choices regarding the use of cookies and the collection of your
+        data:
+      </p>
+      <ul>
+        <li>
+          You can opt out of Google Analytics tracking by using the{" "}
+          {/* eslint-disable-next-line react/jsx-max-depth */}
+          <a href="https://tools.google.com/dlpage/gaoptout">
+            Google Analytics Opt-Out Browser Add-on
+          </a>
+          .
+        </li>
+        <li>
+          You can disable cookies through your browser settings, but this may
+          affect your ability to use certain features of the website.
+        </li>
+      </ul>
+
+      <h2>Security</h2>
+
+      <p>
+        We implement a variety of security measures to protect your personal
+        information. However, no method of transmission over the internet or
+        method of electronic storage is 100% secure, and we cannot guarantee its
+        absolute security.
+      </p>
+
+      <h2>Changes to This Privacy Policy</h2>
+
+      <p>
+        We may update our Privacy Policy from time to time. We encourage you to
+        review this page periodically for any changes. The date of the last
+        update is shown at the top of this Privacy Policy.
       </p>
 
       <h2>Contact Us</h2>
+
       <p>
         If you have any questions about this Privacy Policy, please contact us
-        at{" "}
+        by opening a GitHub Issue at{" "}
         <a href="https://github.com/markafitzgerald1/cribbage-trainer/issues/new">
           https://github.com/markafitzgerald1/cribbage-trainer/issues/new
         </a>
