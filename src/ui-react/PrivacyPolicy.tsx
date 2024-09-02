@@ -124,10 +124,10 @@ export function PrivacyPolicy() {
       <h2>Data Sharing</h2>
 
       <p>
-        We do not sell, trade, or otherwise transfer your personal information
-        to outside parties except for trusted third parties that assist us in
-        operating our website, such as Google Analytics, as long as those
-        parties agree to keep this information confidential.
+        Cribbage Trainer does not handle sensitive personal data. The
+        information we collect through Google Analytics is used solely for site
+        performance analysis and is not shared with third parties beyond Google
+        for the purpose of analytics.
       </p>
 
       <h2>Your Choices</h2>
