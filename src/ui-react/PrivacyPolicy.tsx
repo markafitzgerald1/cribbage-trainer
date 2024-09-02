@@ -171,8 +171,8 @@ export function PrivacyPolicy() {
       <h2>Contact Us</h2>
 
       <p>
-        If you have any questions about this Privacy Policy, please contact us
-        by opening a GitHub Issue at{" "}
+        If you have any questions or concerns about this Privacy Policy, please
+        feel free to contact us by opening an issue on GitHub:{" "}
         <a href="https://github.com/markafitzgerald1/cribbage-trainer/issues/new">
           https://github.com/markafitzgerald1/cribbage-trainer/issues/new
         </a>
