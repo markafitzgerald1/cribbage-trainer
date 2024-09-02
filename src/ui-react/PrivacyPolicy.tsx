@@ -112,10 +112,9 @@ export function PrivacyPolicy() {
       <h2>Data Retention</h2>
 
       <p>
-        The information collected through Google Analytics will be retained for
-        a period of up to 14 months. After this period, the data will be
-        automatically deleted from Google’s systems. This retention period may
-        be adjusted based on changes to Google Analytics policies or as needed.
+        The information collected through Google Analytics is retained according
+        to Google’s default data retention settings. This period is managed by
+        Google and may change over time as per their policies.
       </p>
 
       <p>
