@@ -85,19 +85,17 @@ export function PrivacyPolicy() {
 
       <h2>Cookies</h2>
 
-      <p>Cribbage Trainer uses cookies to:</p>
-      <ul>
-        <li>Understand and save your preferences for future visits.</li>
-        <li>
-          Aggregate data about site traffic and interactions to improve the user
-          experience.
-        </li>
-      </ul>
       <p>
-        You can choose to have your computer warn you each time a cookie is
-        sent, or you can choose to turn off all cookies through your browser
-        settings. However, disabling cookies may affect the functionality of
-        Cribbage Trainer.
+        Cribbage Trainer uses cookies solely for Google Analytics. These cookies
+        help us understand how visitors use the website, such as tracking user
+        behavior and traffic patterns. This information helps improve the
+        overall user experience.
+      </p>
+
+      <p>
+        You can choose to disable cookies through your browser settings.
+        However, disabling cookies may prevent Google Analytics from functioning
+        and could affect our ability to analyze site interactions.
       </p>
 
       <h2>How We Use Your Information</h2>
