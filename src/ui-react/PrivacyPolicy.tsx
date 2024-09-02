@@ -70,26 +70,20 @@ export function PrivacyPolicy() {
         Cribbage Trainer uses local storage to save your preferences, including
         whether you have consented to the use of Google Analytics. Local storage
         is a technology that allows a website to store small amounts of data
-        directly on your device. Unlike cookies, local storage data is not sent
-        with every server request but remains on your device for future use. It
-        enables us to remember your consent choice across sessions, ensuring
-        that analytics data is only collected if you have given permission.
+        directly on your device. It enables us to remember your consent choice
+        across sessions.
       </p>
 
-      <p>
-        Local storage is saved on your device and does not expire automatically.
-        You can clear this data through your browser settings at any time,
-        though this may result in being asked to provide consent again when you
-        revisit the site.
-      </p>
-
-      <h2>Cookies</h2>
+      <h2>Cookies and Local Storage</h2>
 
       <p>
-        Cribbage Trainer uses cookies solely for Google Analytics. These cookies
-        help us understand how visitors use the website, such as tracking user
-        behavior and traffic patterns. This information helps improve the
-        overall user experience.
+        Cribbage Trainer uses cookies and local storage solely for Google
+        Analytics. Cookies help us understand how visitors use the website, such
+        as tracking user behavior and traffic patterns. Local storage is used to
+        remember your consent choice across sessions, ensuring that analytics
+        data is only collected if you have given permission. Local storage does
+        not expire automatically and can be cleared through your browser
+        settings at any time.
       </p>
 
       <p>
@@ -102,9 +96,9 @@ export function PrivacyPolicy() {
 
       <p>The information we collect is used to:</p>
       <ul>
-        <li>Improve the user experience by analyzing site interactions.</li>
-        <li>Provide, operate, and maintain the website.</li>
-        <li>Detect and prevent fraud or abuse of the site.</li>
+        <li>Enhance user experience and site functionality.</li>
+        <li>Maintain and improve the website.</li>
+        <li>Prevent and address any misuse of the site.</li>
       </ul>
 
       <h2>Data Retention</h2>
@@ -125,9 +119,9 @@ export function PrivacyPolicy() {
 
       <p>
         Cribbage Trainer does not handle sensitive personal data. The
-        information we collect through Google Analytics is used solely for site
-        performance analysis and is not shared with third parties beyond Google
-        for the purpose of analytics.
+        information we collect through Google Analytics is used solely for
+        analyzing site performance and is not shared with third parties beyond
+        Google for this purpose.
       </p>
 
       <h2>Your Choices</h2>
