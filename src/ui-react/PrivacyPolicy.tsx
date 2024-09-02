@@ -4,7 +4,7 @@ export function PrivacyPolicy() {
   return (
     <div className={classes.privacyPolicy}>
       <h1>Privacy Policy for Cribbage Trainer</h1>
-      <p>Effective Date: August 31, 2024</p>
+      <p>Effective Date: September 2, 2024</p>
       <p>
         At Cribbage Trainer, accessible from{" "}
         <a href="https://markafitzgerald1.github.io/cribbage-trainer/">
@@ -16,7 +16,6 @@ export function PrivacyPolicy() {
       </p>
 
       <h2>Consent to Data Collection</h2>
-
       <p>
         Cribbage Trainer uses Google Analytics to collect data only after you
         have provided consent. No analytics data will be collected until you
@@ -24,12 +23,10 @@ export function PrivacyPolicy() {
       </p>
 
       <h2>Information We Collect</h2>
-
       <p>
         Once consent is given, Cribbage Trainer collects certain information
         through Google Analytics, including:
       </p>
-
       <ul>
         <li>
           {/* eslint-disable-next-line react/jsx-max-depth */}
@@ -45,8 +42,15 @@ export function PrivacyPolicy() {
         </li>
       </ul>
 
-      <h2>Use of Google Analytics</h2>
+      <h2>How We Use Your Information</h2>
+      <p>The information we collect is used to:</p>
+      <ul>
+        <li>Improve the user experience by analyzing site interactions.</li>
+        <li>Provide, operate, and maintain the website.</li>
+        <li>Detect and prevent fraud or abuse of the site.</li>
+      </ul>
 
+      <h2>Use of Google Analytics</h2>
       <p>
         Cribbage Trainer uses Google Analytics to analyze user interactions and
         improve the overall experience of the site. This data helps us
@@ -54,7 +58,6 @@ export function PrivacyPolicy() {
         content and functionality. Google Analytics may set cookies in your
         browser to identify returning visitors and enhance your experience.
       </p>
-
       <p>
         For more details on how Google uses the data it collects, please refer
         to{" "}
@@ -64,51 +67,37 @@ export function PrivacyPolicy() {
         .
       </p>
 
-      <h2>Consent and Local Storage</h2>
-
+      <h2>Cookies, Local Storage, and Consent Management</h2>
       <p>
-        Cribbage Trainer uses local storage to save your preferences, including
-        whether you have consented to the use of Google Analytics. Local storage
-        is a technology that allows a website to store small amounts of data
-        directly on your device. It enables us to remember your consent choice
-        across sessions.
+        Cribbage Trainer uses local storage to remember whether you have
+        consented to the use of Google Analytics. This ensures that analytics
+        data is only collected if you have given explicit permission.
       </p>
-
-      <h2>Cookies and Local Storage</h2>
-
       <p>
-        Cribbage Trainer uses cookies and local storage solely for Google
-        Analytics. Cookies help us understand how visitors use the website, such
-        as tracking user behavior and traffic patterns. Local storage is used to
-        remember your consent choice across sessions, ensuring that analytics
-        data is only collected if you have given permission. Local storage does
-        not expire automatically and can be cleared through your browser
-        settings at any time.
+        <strong>Functionality and Tracking:</strong> Cookies are primarily used
+        by Google Analytics to help analyze how users interact with the site.
+        These cookies help us aggregate data about site traffic and site
+        interactions to continually improve user experience.
       </p>
-
       <p>
-        You can choose to disable cookies through your browser settings.
-        However, disabling cookies may prevent Google Analytics from functioning
-        and could affect our ability to analyze site interactions.
+        You can manage your cookie settings through your browser to receive
+        notifications when a cookie is set, or to disable cookies entirely. Note
+        that turning off cookies might affect the functionality provided by
+        Google Analytics.
       </p>
-
-      <h2>How We Use Your Information</h2>
-
-      <p>The information we collect is used to:</p>
-      <ul>
-        <li>Enhance user experience and site functionality.</li>
-        <li>Maintain and improve the website.</li>
-        <li>Prevent and address any misuse of the site.</li>
-      </ul>
+      <p>
+        <strong>Managing Preferences:</strong> You can clear local storage and
+        cookies through your browser settings at any time. Doing so may require
+        you to provide consent again for analytics collection upon revisiting
+        the site.
+      </p>
 
       <h2>Data Retention</h2>
-
       <p>
         The information collected through Google Analytics is retained according
         to Google’s default data retention settings. This period is managed by
         Google and may change over time as per their policies.
       </p>
-
       <p>
         You can manage your consent and delete your data at any time by clearing
         your browser’s local storage and disabling cookies. Please note that
@@ -116,7 +105,6 @@ export function PrivacyPolicy() {
       </p>
 
       <h2>Data Sharing</h2>
-
       <p>
         Cribbage Trainer does not handle sensitive personal data. The
         information we collect through Google Analytics is used solely for
@@ -125,7 +113,6 @@ export function PrivacyPolicy() {
       </p>
 
       <h2>Your Choices</h2>
-
       <p>
         You have choices regarding the use of cookies and the collection of your
         data:
@@ -146,7 +133,6 @@ export function PrivacyPolicy() {
       </ul>
 
       <h2>Security</h2>
-
       <p>
         We implement a variety of security measures to protect your personal
         information. However, no method of transmission over the internet or
@@ -155,7 +141,6 @@ export function PrivacyPolicy() {
       </p>
 
       <h2>Changes to This Privacy Policy</h2>
-
       <p>
         We may update our Privacy Policy from time to time. We encourage you to
         review this page periodically for any changes. The date of the last
@@ -163,7 +148,6 @@ export function PrivacyPolicy() {
       </p>
 
       <h2>Contact Us</h2>
-
       <p>
         If you have any questions or concerns about this Privacy Policy, please
         feel free to contact us by opening an issue on GitHub:{" "}
