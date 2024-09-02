@@ -68,9 +68,12 @@ export function PrivacyPolicy() {
 
       <p>
         Cribbage Trainer uses local storage to save your preferences, including
-        whether you have consented to the use of Google Analytics. This allows
-        us to remember your consent choice across sessions, ensuring that
-        analytics data is only collected if you have given permission.
+        whether you have consented to the use of Google Analytics. Local storage
+        is a technology that allows a website to store small amounts of data
+        directly on your device. Unlike cookies, local storage data is not sent
+        with every server request but remains on your device for future use. It
+        enables us to remember your consent choice across sessions, ensuring
+        that analytics data is only collected if you have given permission.
       </p>
 
       <p>
