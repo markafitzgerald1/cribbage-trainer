@@ -30,7 +30,7 @@ describe("trainer component", () => {
   const clickIndices = (
     getAllByRole: (
       role: ByRoleMatcher,
-      options?: ByRoleOptions | undefined,
+      options?: ByRoleOptions,
     ) => HTMLElement[],
     indices: number[],
     user: UserEvent,
