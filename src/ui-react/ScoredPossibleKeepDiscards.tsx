@@ -1,9 +1,7 @@
 import * as classes from "./ScoredPossibleKeepDiscards.module.css";
 import { DealtCard } from "../game/DealtCard";
-/* jscpd:ignore-start */
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
-/* jscpd:ignore-end */
 import { allScoredKeepDiscardsByScoreDescending } from "../analysis/analysis";
 
 export interface ScoredPossibleKeepDiscardsProps {

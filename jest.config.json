@@ -4,7 +4,7 @@
     "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",
     "!src/ui-react/handToSortedString.test.common.ts",
-    "!src/ui-react/*.stories.ts",
+    "!src/ui-react/*.stories.{ts,tsx}",
     "!src/ui-react/stories.common.ts"
   ],
   "coverageThreshold": {

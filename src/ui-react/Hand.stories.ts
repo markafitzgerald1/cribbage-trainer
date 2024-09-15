@@ -1,9 +1,9 @@
 import { CARDS, Rank } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Hand } from "./Hand";
-/* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
+/* jscpd:ignore-start */
 import { createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
 

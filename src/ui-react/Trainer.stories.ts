@@ -1,8 +1,9 @@
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, within } from "@storybook/test";
-/* jscpd:ignore-start */
 import type { Meta } from "@storybook/react";
+/* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
+import { SortOrder } from "../ui/SortOrder";
 import { createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
 import { createGenerator } from "../game/randomNumberGenerator";
@@ -40,14 +41,18 @@ const createAnalyticsSelectionMadeStory = (
   },
 });
 
+const acceptButtonNumber = 1;
+
 export const AnalyticsAccepted = createAnalyticsSelectionMadeStory(
-  0,
-  "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy (coming soon).",
+  acceptButtonNumber,
+  "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy.",
 );
 
+const declineButtonNumber = 2;
+
 export const AnalyticsDisabled = createAnalyticsSelectionMadeStory(
-  1,
-  "Analytics have been disabled. You can find more information in our Privacy Policy (coming soon).",
+  declineButtonNumber,
+  "Analytics have been disabled. You can find more information in our Privacy Policy.",
 );
 
 export const DiscardShowsScoredPossibilities = {
@@ -62,11 +67,12 @@ export const DiscardShowsScoredPossibilities = {
 };
 
 const createPlay =
-  (radioButtonValue: string) =>
+  (radioButtonValue: SortOrder) =>
   async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const radioButtons = within(canvasElement).getAllByRole("radio");
     const dealOrderRadioButton = radioButtons.find(
-      (radioButton) => radioButton.getAttribute("value") === radioButtonValue,
+      (radioButton) =>
+        radioButton.getAttribute("value") === SortOrder[radioButtonValue],
     )!;
     const initialCanvasElementTextContent = canvasElement.textContent;
 
@@ -78,9 +84,9 @@ const createPlay =
   };
 
 export const SortHandInDealOrder = {
-  play: createPlay("DealOrder"),
+  play: createPlay(SortOrder.DealOrder),
 };
 
 export const SortHandInAscendingOrder = {
-  play: createPlay("Ascending"),
+  play: createPlay(SortOrder.Ascending),
 };

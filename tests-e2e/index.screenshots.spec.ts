@@ -12,11 +12,22 @@ const testInitialRenderScreenshot = () =>
     await expect(page).toHaveScreenshot();
   });
 
-const testPostSelectScreenshot = () =>
+const testPrivacyPolicyScreenshot = () =>
+  test("privacy policy modal still visually the same", async ({ page }) => {
+    await page.goto(`/${constantSeedQuery}`);
+
+    await page
+      .locator('span[role="button"]:has-text("Privacy Policy")')
+      .click();
+
+    await expect(page).toHaveScreenshot();
+  });
+
+const testPrivacyPolicyAcceptThenSelectScreenshot = () =>
   test("pre-cut hand points show after select of two discards still visually the same", async ({
     page,
   }) => {
-    await renderThenSelectTwoDiscards(page, constantSeedQuery);
+    await renderThenSelectTwoDiscards(page, constantSeedQuery, true);
 
     await expect(page).toHaveScreenshot();
   });
@@ -32,7 +43,8 @@ const typicalPhoneViewportSize = {
 
 const testScreenshots = () => {
   testInitialRenderScreenshot();
-  testPostSelectScreenshot();
+  testPrivacyPolicyScreenshot();
+  testPrivacyPolicyAcceptThenSelectScreenshot();
 };
 
 test.describe("portrait", () => {
