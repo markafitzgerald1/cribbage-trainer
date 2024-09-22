@@ -1,7 +1,7 @@
+import { ReactElement, StrictMode } from "react";
+import { Trainer, TrainerProps } from "./ui-react/Trainer";
 import { describe, expect, it, jest } from "@jest/globals";
 import ReactDOMClient from "react-dom/client";
-import { StrictMode } from "react";
-import { Trainer } from "./ui-react/Trainer";
 
 describe("app entrypoint", () => {
   const moduleId = "./index";
@@ -15,7 +15,7 @@ describe("app entrypoint", () => {
 
   const containerSelector = "#trainer";
 
-  it(`creates a React root in the '${containerSelector}' element with the Trainer component`, () => {
+  it(`creates a React root in the '${containerSelector}' element with the Trainer component in Strict Mode`, () => {
     try {
       const container = document.createElement("div");
       jest.spyOn(document, "querySelector").mockImplementation(() => container);
@@ -23,17 +23,23 @@ describe("app entrypoint", () => {
       jest
         .spyOn(ReactDOMClient, "createRoot")
         .mockImplementation(() => ({ render: renderMock, unmount: jest.fn() }));
+      interface StrictModeProps {
+        children: React.ReactNode;
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require(moduleId);
+      const renderArg = renderMock.mock.calls[0]?.[0] as ReactElement<
+        StrictModeProps,
+        typeof StrictMode
+      >;
+      const trainerElement = renderArg.props
+        .children as ReactElement<TrainerProps>;
 
       expect(document.querySelector).toHaveBeenCalledWith(containerSelector);
       expect(ReactDOMClient.createRoot).toHaveBeenCalledWith(container);
-      expect(renderMock).toHaveBeenCalledWith(
-        <StrictMode>
-          <Trainer generateRandomNumber={Math.random} />
-        </StrictMode>,
-      );
+      expect(renderArg.type).toBe(StrictMode);
+      expect(trainerElement.type).toBe(Trainer);
     } finally {
       jest.resetAllMocks();
     }

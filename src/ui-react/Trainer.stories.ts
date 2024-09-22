@@ -14,6 +14,7 @@ const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
   args: {
     generateRandomNumber: createGenerator(SEED),
+    loadGoogleAnalytics: () => null,
   },
   beforeEach: () => () => {
     localStorage.removeItem(analyticsConsentKey);

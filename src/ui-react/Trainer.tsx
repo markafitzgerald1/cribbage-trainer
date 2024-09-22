@@ -7,13 +7,17 @@ import { SortableHand } from "./SortableHand";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 
-interface TrainerProps {
+export interface TrainerProps {
   readonly generateRandomNumber: () => number;
+  readonly loadGoogleAnalytics: (consented: boolean | null) => void;
 }
 
 export const analyticsConsentKey = "analyticsConsent";
 
-export function Trainer({ generateRandomNumber: generator }: TrainerProps) {
+export function Trainer({
+  generateRandomNumber: generator,
+  loadGoogleAnalytics,
+}: TrainerProps) {
   const [dealtCards, setDealtCards] = useState(dealHand(generator));
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
   const [analyticsConsented, setAnalyticsConsented] = useState(
@@ -26,23 +30,30 @@ export function Trainer({ generateRandomNumber: generator }: TrainerProps) {
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
-      // eslint-disable-next-line react/no-set-state
       setDealtCards(newDealtCards);
     },
     [dealtCards],
   );
 
-  const setConsented = useCallback((value: boolean) => {
-    setAnalyticsConsented(value);
-    localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
-  }, []);
+  const setConsented = useCallback(
+    (value: boolean) => {
+      setAnalyticsConsented(value);
+      localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
+      loadGoogleAnalytics(value);
+    },
+    [loadGoogleAnalytics],
+  );
 
   useEffect(() => {
     const storedConsent = localStorage.getItem(analyticsConsentKey);
-    if (storedConsent !== null) {
-      setAnalyticsConsented(JSON.parse(storedConsent) as boolean);
+    if (storedConsent === null) {
+      loadGoogleAnalytics(null);
+    } else {
+      const consentValue = JSON.parse(storedConsent) as boolean;
+      setAnalyticsConsented(consentValue);
+      loadGoogleAnalytics(consentValue);
     }
-  }, []);
+  }, [loadGoogleAnalytics]);
 
   return (
     <div className={classes.dynamicUi}>
