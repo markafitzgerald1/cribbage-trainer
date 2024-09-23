@@ -14,8 +14,6 @@ jobs:
         run: npm clean-install
       - name: Build web application bundles
         run: npm run build
-        env:
-          VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ env.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
       - name: Build static Storybook site
         run: npm run storybook:build
       - name: Upload GitHub Pages artifact
