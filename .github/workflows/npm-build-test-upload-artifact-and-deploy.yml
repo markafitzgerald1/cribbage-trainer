@@ -12,6 +12,8 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install dependencies
         run: npm clean-install
+      - name: Debug - Print Variable
+        run: echo "VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID=$VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID"
       - name: Build web application bundles
         run: npm run build
       - name: Build static Storybook site
@@ -24,6 +26,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     if: github.ref != 'refs/heads/main'
+    environment: github-pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,6 +34,8 @@ jobs:
           node-version-file: ".nvmrc"
       - name: Install dependencies
         run: npm clean-install
+      - name: Debug - Print Variable
+        run: echo "VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID=$VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID"
       - name: Build web application bundles
         run: npm run build
       - name: Run static code and project analyses
