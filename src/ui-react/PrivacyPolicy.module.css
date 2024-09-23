@@ -2,5 +2,34 @@
 
 .privacy-policy {
   font-family: var(--text-font-family);
-  color: var(--text-color);
+  color: color-mix(in srgb, black 80%, white);
+  background: color-mix(in srgb, lightgreen 30%, white);
+}
+
+.privacy-policy h1 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.privacy-policy h2 {
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.privacy-policy p {
+  margin-top: 10px;
+  margin-bottom: 5px;
+  line-height: 1.5;
+}
+
+.privacy-policy ul,
+.privacy-policy ol {
+  margin-top: 5px;
+  margin-bottom: 10px;
+  padding-left: 20px;
+}
+
+.privacy-policy li {
+  margin-bottom: 5px;
+  line-height: 1.4;
 }

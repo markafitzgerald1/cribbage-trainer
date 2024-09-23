@@ -1,0 +1,46 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, black 50%, transparent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+:root {
+  --spacing: 20px;
+  --extra-spacing: 80px;
+  --total-spacing: calc(var(--spacing) + var(--extra-spacing));
+}
+
+.content {
+  background: color-mix(in srgb, lightgreen 30%, white);
+  padding: var(--spacing);
+  border-radius: 5px;
+  max-width: calc(100% - var(--total-spacing));
+  max-height: calc(100% - var(--total-spacing));
+  overflow-y: auto;
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: color-mix(in srgb, lightgreen 30%, white);
+  border: 1px solid lightgrey;
+  font-size: medium;
+  cursor: pointer;
+  padding: 5px 7px;
+  border-radius: 5px;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.close:hover,
+.close:focus {
+  background: color-mix(in srgb, lightgreen 80%, white);
+  border-color: grey;
+  outline: none;
+}

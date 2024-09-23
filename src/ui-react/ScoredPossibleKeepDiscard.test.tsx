@@ -1,16 +1,12 @@
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
-/* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
-/* jscpd:ignore-end */
 import { dealHand } from "../game/dealHand";
 import { handPoints } from "../game/scoring";
 import { handToSortedString } from "./handToSortedString.test.common";
-/* jscpd:ignore-start */
 import { render } from "@testing-library/react";
-/* jscpd:ignore-end */
 
 describe("calculation component", () => {
   it.each(SORT_ORDER_NAMES)(

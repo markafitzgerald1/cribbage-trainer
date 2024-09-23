@@ -2,10 +2,10 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { createArgTypes, toDealtCards } from "./stories.common";
 import { CARDS } from "../game/Card";
+/* jscpd:ignore-end */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
 import { SortableHand } from "./SortableHand";
-/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),

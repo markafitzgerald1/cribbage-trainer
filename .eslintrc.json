@@ -116,7 +116,7 @@
         "skipBlankLines": true
       }
     ],
-    "max-statements": ["error", 16],
+    "max-statements": ["error", 20],
     "no-magic-numbers": ["off"],
     "no-shadow": "off",
     "no-ternary": "off",
@@ -142,6 +142,7 @@
       {
         "skipWords": [
           "autodocs",
+          "camelcase",
           "charset",
           "checkbox",
           "checkboxes",
@@ -153,13 +154,16 @@
           "firefox",
           "formatter",
           "goto",
+          "gtag",
           "href",
           "jscpd",
           "JSX",
+          "keydown",
           "lang",
           "li",
           "listitem",
           "Matcher",
+          "mousedown",
           "msedge",
           "os",
           "radiogroup",
