@@ -4,6 +4,7 @@ jobs:
   build-and-upload-artifact:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    environment: github-pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
