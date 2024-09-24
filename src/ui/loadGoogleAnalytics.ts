@@ -9,12 +9,14 @@ export function loadGoogleAnalytics(
   consented: boolean | null,
   measurementId: string | null,
 ) {
-  const gtag = (...args: unknown[]) =>
-    (window.dataLayer as unknown[]).push(args);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function gtag(..._args: unknown[]) {
+    // eslint-disable-next-line prefer-rest-params
+    (window.dataLayer as unknown[]).push(arguments);
+  }
 
   if (!window.dataLayer) {
     window.dataLayer = [];
-    window.gtag = gtag;
 
     if (measurementId) {
       const script = document.createElement("script");
@@ -23,6 +25,7 @@ export function loadGoogleAnalytics(
       document.head.appendChild(script);
 
       gtag("js", new Date());
+      gtag("config", measurementId);
       gtag("consent", "default", {
         // eslint-disable-next-line camelcase
         analytics_storage: "denied",
