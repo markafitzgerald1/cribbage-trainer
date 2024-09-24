@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 import { loadGoogleAnalytics } from "./loadGoogleAnalytics";
 
-describe("handleLoadGoogleAnalytics", () => {
+describe("loadGoogleAnalytics", () => {
   const clearDataLayerGTagAndScript = () => {
     delete window.dataLayer;
     delete window.gtag;
@@ -10,13 +10,16 @@ describe("handleLoadGoogleAnalytics", () => {
     });
   };
 
-  it("sets window.dataLayer and gtag if window.dataLayer is not set", () => {
+  function dataLayerEntryToArray(entry: unknown): unknown[] {
+    return Array.from(entry as IArguments);
+  }
+
+  it("sets window.dataLayer if window.dataLayer is not set", () => {
     clearDataLayerGTagAndScript();
 
     loadGoogleAnalytics(null, null);
 
     expect(window.dataLayer).toStrictEqual([]);
-    expect(window.gtag).toBeInstanceOf(Function);
   });
 
   it("does not set window.dataLayer and gtag if window.dataLayer is set", () => {
@@ -30,16 +33,29 @@ describe("handleLoadGoogleAnalytics", () => {
     expect(window.gtag).toBeUndefined();
   });
 
+  const measurementId = "test-measurement-id";
+
   it("loads the Google Analytics script and populates its data layer if window.dataLayer not set and measurementId is set", () => {
     clearDataLayerGTagAndScript();
+    const consentDefaultDataLayerIndex = 2;
 
-    loadGoogleAnalytics(null, "test-measurement-id");
+    loadGoogleAnalytics(null, measurementId);
 
     expect(document.head.querySelector("script")!.src).toBe(
-      "https://www.googletagmanager.com/gtag/js?id=test-measurement-id",
+      `https://www.googletagmanager.com/gtag/js?id=${measurementId}`,
     );
-    expect(window.dataLayer![0]).toStrictEqual(["js", expect.any(Date)]);
-    expect(window.dataLayer![1]).toStrictEqual([
+
+    expect(dataLayerEntryToArray(window.dataLayer![0])).toStrictEqual([
+      "js",
+      expect.any(Date),
+    ]);
+    expect(dataLayerEntryToArray(window.dataLayer![1])).toStrictEqual([
+      "config",
+      measurementId,
+    ]);
+    expect(
+      dataLayerEntryToArray(window.dataLayer![consentDefaultDataLayerIndex]),
+    ).toStrictEqual([
       "consent",
       "default",
       {
@@ -51,12 +67,14 @@ describe("handleLoadGoogleAnalytics", () => {
 
   it("stores consent grant and measurement ID in the data layer if consented", () => {
     clearDataLayerGTagAndScript();
-    const consentDataLayerIndex = 2;
-    const configDataLayerIndex = 3;
+    const consentUpdateDataLayerIndex = 3;
+    const configDataLayerIndex = 4;
 
-    loadGoogleAnalytics(true, "test-measurement-id");
+    loadGoogleAnalytics(true, measurementId);
 
-    expect(window.dataLayer![consentDataLayerIndex]).toStrictEqual([
+    expect(
+      dataLayerEntryToArray(window.dataLayer![consentUpdateDataLayerIndex]),
+    ).toStrictEqual([
       "consent",
       "update",
       {
@@ -64,9 +82,8 @@ describe("handleLoadGoogleAnalytics", () => {
         analytics_storage: "granted",
       },
     ]);
-    expect(window.dataLayer![configDataLayerIndex]).toStrictEqual([
-      "config",
-      "test-measurement-id",
-    ]);
+    expect(
+      dataLayerEntryToArray(window.dataLayer![configDataLayerIndex]),
+    ).toStrictEqual(["config", measurementId]);
   });
 });
