@@ -1,6 +1,6 @@
 import * as classes from "./PossibleHand.module.css";
 import { ComparableCard, sortCards } from "../ui/sortCards";
-import { CardLabel } from "./CardLabel";
+import { PossibleHandCard } from "./PossibleHandCard";
 import { SortOrder } from "../ui/SortOrder";
 
 interface PossibleHandProps {
@@ -12,12 +12,10 @@ export function PossibleHand({ dealtCards, sortOrder }: PossibleHandProps) {
   return (
     <span className={classes.keepDiscard}>
       {sortCards(dealtCards, sortOrder).map((dealtCard) => (
-        <span
-          className={`${classes.card}`}
+        <PossibleHandCard
           key={dealtCard.dealOrder}
-        >
-          <CardLabel rank={dealtCard.rank} />
-        </span>
+          rank={dealtCard.rank}
+        />
       ))}
     </span>
   );

@@ -1,4 +1,4 @@
 declare const classes: {
-  readonly keepDiscard: string;
+  readonly card: string;
 };
 export = classes;
