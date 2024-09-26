@@ -8,12 +8,12 @@
 
 @media (orientation: landscape) {
   .scored-possible-keep-discard {
-    font-size: 0.71em;
+    font-size: 2.4vw;
   }
 }
 
 @media (orientation: portrait) {
   .scored-possible-keep-discard {
-    font-size: large;
+    font-size: 3.5586vw;
   }
 }
