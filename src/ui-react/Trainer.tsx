@@ -1,9 +1,9 @@
 import * as classes from "./Trainer.module.css";
 import { useCallback, useEffect, useState } from "react";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
+import { InteractiveHand } from "./InteractiveHand";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
-import { SortableHand } from "./SortableHand";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 
@@ -18,7 +18,11 @@ export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
 }: TrainerProps) {
-  const [dealtCards, setDealtCards] = useState(dealHand(generator));
+  const dealHandWithGenerator = useCallback(
+    () => dealHand(generator),
+    [generator],
+  );
+  const [dealtCards, setDealtCards] = useState(dealHandWithGenerator);
   const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
   const [analyticsConsented, setAnalyticsConsented] = useState(
     null as boolean | null,
@@ -34,6 +38,10 @@ export function Trainer({
     },
     [dealtCards],
   );
+
+  const dealNewHand = useCallback(() => {
+    setDealtCards(dealHandWithGenerator);
+  }, [dealHandWithGenerator]);
 
   const setConsented = useCallback(
     (value: boolean) => {
@@ -57,9 +65,10 @@ export function Trainer({
 
   return (
     <div className={classes.dynamicUi}>
-      <SortableHand
+      <InteractiveHand
         dealtCards={dealtCards}
         onCardChange={toggleKept}
+        onDeal={dealNewHand}
         onSortOrderChange={setSortOrder}
         sortOrder={sortOrder}
       />

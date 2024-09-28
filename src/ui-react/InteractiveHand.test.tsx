@@ -1,9 +1,9 @@
 import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
+import { InteractiveHand } from "./InteractiveHand";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
-import { SortableHand } from "./SortableHand";
 import { act } from "react";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { dealHand } from "../game/dealHand";
@@ -14,12 +14,14 @@ describe("sortable hand input component", () => {
   function renderComponent(initialSortOrder: SortOrder = SortOrder.Ascending) {
     const handCards = dealHand(createGenerator());
     const onCardChange = jest.fn();
+    const onDeal = jest.fn();
     const onSortOrderChange = jest.fn();
     return {
       component: render(
-        <SortableHand
+        <InteractiveHand
           dealtCards={handCards}
           onCardChange={onCardChange}
+          onDeal={onDeal}
           onSortOrderChange={onSortOrderChange}
           sortOrder={initialSortOrder}
         />,

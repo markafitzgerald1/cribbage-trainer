@@ -1,0 +1,62 @@
+.deal-button {
+  --bg-color: #28a745;
+  --hover-color: #34c754;
+  --active-color: #218838;
+  --focus-shadow-color: rgb(52 208 88 / 30%);
+  --border-color: #218838;
+  --font-size-portrait: calc(var(--medium-text-font-size-portrait) * 0.6667);
+  --font-size-landscape: calc(var(--medium-text-font-size-portrait) * 0.4);
+  --vertical-padding-multiplier: 0.425;
+  --horizontal-padding-multiplier: 0.6125;
+
+  background-color: var(--bg-color);
+  border: 2px solid var(--border-color);
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing);
+}
+
+.deal-button:hover {
+  background-color: var(--hover-color);
+  border-color: var(--hover-color);
+}
+
+.deal-button:active {
+  background-color: var(--active-color);
+  border-color: var(--active-color);
+}
+
+.deal-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-shadow-color);
+}
+
+@media (orientation: portrait) {
+  .deal-button {
+    font-size: var(--font-size-portrait);
+    padding: calc(
+        var(--font-size-portrait) * var(--vertical-padding-multiplier)
+      )
+      calc(var(--font-size-portrait) * var(--horizontal-padding-multiplier));
+  }
+}
+
+@media (orientation: landscape) {
+  .deal-button {
+    font-size: var(--font-size-landscape);
+    padding: calc(
+        var(--font-size-landscape) * var(--vertical-padding-multiplier)
+      )
+      calc(var(--font-size-landscape) * var(--horizontal-padding-multiplier));
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .deal-button:focus {
+    box-shadow: none;
+  }
+}

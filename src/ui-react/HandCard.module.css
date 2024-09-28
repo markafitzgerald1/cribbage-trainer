@@ -10,9 +10,10 @@
   border: var(--card-border);
   background-color: var(--card-background-color);
   cursor: pointer;
-  margin: 0 0.15em 0.4em 0;
+  margin-top: 0;
+  margin-bottom: 0.4em;
   font-weight: bold;
-  font-size: 8.7vw;
+  font-size: 7.9vw;
   text-align: center;
   width: var(--card-width);
   position: relative;
@@ -30,7 +31,7 @@
 
 @media (orientation: portrait) {
   .hand-card {
-    font-size: 12.9vw;
+    font-size: 12.6vw;
   }
 
   .hand-card input[type="checkbox"] {

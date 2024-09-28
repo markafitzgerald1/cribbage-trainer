@@ -129,9 +129,8 @@ export function AnalyticsConsentDialog({
             <p>
               We use cookies and tools like Google Analytics to analyze how
               visitors use our site. This helps us make improvements and tailor
-              the experience.
+              the experience. See our {PrivacyPolicyLink} for more details.
             </p>
-            <p>See our {PrivacyPolicyLink} for more details.</p>
             <button
               onClick={handleAccept}
               type="button"

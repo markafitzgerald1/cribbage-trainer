@@ -1,11 +1,37 @@
 @import url("./vars.css");
 
 .scored-possible-keep-discards {
-  margin: 0 0 0 0.5em;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
   color: var(--text-color);
   font-family: var(--text-font-family);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 10px;
+}
+
+.scored-possible-keep-discards figcaption {
+  flex-shrink: 0;
+  font-weight: bold;
 }
 
 .scored-possible-keep-discards ul {
   padding-left: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+@media (orientation: portrait) {
+  .scored-possible-keep-discards figcaption {
+    font-size: var(--medium-text-font-size-portrait);
+  }
+}
+
+@media (orientation: landscape) {
+  .scored-possible-keep-discards figcaption {
+    font-size: var(--medium-text-font-size-landscape);
+  }
 }
