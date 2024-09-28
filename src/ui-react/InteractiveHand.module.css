@@ -1,6 +1,6 @@
 @import url("./vars.css");
 
-.sortable-hand {
+.interactive-hand {
   display: flex;
   flex-direction: column;
   width: 100%;
