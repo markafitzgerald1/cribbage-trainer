@@ -1,6 +1,6 @@
 @import url("./vars.css");
 
-.fieldset {
+.sort-order-input {
   border: none;
   padding: 0;
   margin-left: 0;
@@ -10,7 +10,6 @@
   user-select: none;
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
 .legend {
@@ -18,19 +17,29 @@
   font-weight: bold;
 }
 
+.sort-order-input span {
+  flex: 1;
+  display: flex;
+}
+
 .input {
   appearance: none;
 }
 
 .label {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: solid var(--clickable-border-width) black;
   color: var(--text-color);
-  padding: 0.4em 0.6em;
   border-radius: 8px;
   transition:
     background-color var(--transition-duration) var(--transition-timing),
     box-shadow var(--transition-duration) var(--transition-timing);
+  box-sizing: border-box;
+  width: 1.9em;
+  height: 2.06em;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -53,10 +62,6 @@
   .legend {
     font-size: var(--medium-text-font-size-portrait);
   }
-
-  .fieldset {
-    gap: 0;
-  }
 }
 
 @media (orientation: landscape) {
@@ -66,9 +71,5 @@
 
   .legend {
     font-size: var(--medium-text-font-size-landscape);
-  }
-
-  .fieldset {
-    gap: 0;
   }
 }

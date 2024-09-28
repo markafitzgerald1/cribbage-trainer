@@ -10,9 +10,9 @@ interface SortOrderInputProps {
 }
 
 export const SortLabel: Record<SortOrderName, string> = {
-  Ascending: "↗️",
-  DealOrder: "↔️",
-  Descending: "↘️",
+  Ascending: "↑",
+  DealOrder: "🂠",
+  Descending: "↓",
 } as const;
 
 export function SortOrderInput({ sortOrder, onChange }: SortOrderInputProps) {
@@ -26,7 +26,7 @@ export function SortOrderInput({ sortOrder, onChange }: SortOrderInputProps) {
   const name = `sort-${v4()}`;
 
   return (
-    <fieldset className={classes.fieldset}>
+    <fieldset className={classes.sortOrderInput}>
       <legend className={classes.legend}>Sort</legend>
       {SORT_ORDER_NAMES.map((key) => (
         // eslint-disable-next-line security/detect-object-injection
@@ -46,6 +46,7 @@ export function SortOrderInput({ sortOrder, onChange }: SortOrderInputProps) {
           <label
             className={classes.label}
             htmlFor={key}
+            title={`${key} Sort`}
           >
             {
               // eslint-disable-next-line security/detect-object-injection
