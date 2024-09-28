@@ -2,20 +2,20 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { createArgTypes, toDealtCards } from "./stories.common";
 import { CARDS } from "../game/Card";
-/* jscpd:ignore-end */
+import { InteractiveHand } from "./InteractiveHand";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
-import { SortableHand } from "./SortableHand";
+/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
-  component: SortableHand,
+  component: InteractiveHand,
   parameters: {
     layout: "centered",
   },
   tags: ["autodocs"],
-  title: "SortableHand",
-} satisfies Meta<typeof SortableHand>;
+  title: "InteractiveHand",
+} satisfies Meta<typeof InteractiveHand>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -32,6 +32,7 @@ function createStory(sortOrder: SortOrder): Story {
         CARDS.QUEEN,
       ]),
       onCardChange: () => null,
+      onDeal: () => null,
       onSortOrderChange: () => null,
       sortOrder,
     },

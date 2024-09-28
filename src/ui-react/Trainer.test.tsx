@@ -1,7 +1,14 @@
 import "@testing-library/jest-dom";
-import { ByRoleMatcher, ByRoleOptions, render } from "@testing-library/react";
+import {
+  ByRoleMatcher,
+  ByRoleOptions,
+  render,
+  screen,
+} from "@testing-library/react";
+import { ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { UserEvent } from "@testing-library/user-event";
+import { CARD_LABELS } from "../game/Card";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 import { act } from "react";
@@ -17,7 +24,7 @@ describe("trainer component", () => {
       />,
     );
 
-  const preCutHandPoints = "Pre-cut hand";
+  const preCutHandPoints = "Pre-Cut Scores";
 
   const clickIndices = (
     getAllByRole: (
@@ -48,7 +55,7 @@ describe("trainer component", () => {
   });
 
   it("contains a dealt hand", () => {
-    expect(renderTrainer().queryByText("Dealt hand:")).toBeTruthy();
+    expect(renderTrainer().queryByText("Hand")).toBeTruthy();
   });
 
   it("contains pre-cut hand points possibilities once two cards have been selected", async () => {
@@ -64,20 +71,43 @@ describe("trainer component", () => {
     await expectCalculationsAfterClicks([...Array(moreThanTwo).keys()], false);
   });
 
-  it.each([SortOrder.Ascending, SortOrder.DealOrder])(
+  const handTextToComparableCards = (
+    initialDealtHand: string,
+  ): ComparableCard[] => {
+    const initialDealtHandRanks = initialDealtHand
+      .replace(/10/gu, "T")
+      .split("")
+      .map((cardLabel) => (cardLabel === "T" ? "10" : cardLabel))
+      .map((cardLabel, dealOrder) => ({
+        dealOrder,
+        rank: CARD_LABELS.indexOf(cardLabel),
+      }));
+    return initialDealtHandRanks;
+  };
+
+  it.each([SortOrder.Ascending, SortOrder.Descending])(
     "re-sorts the dealt hand when the sort order is changed to %s",
     async (newSortOrder) => {
       const { container } = renderTrainer();
+      const user = userEvent.setup();
+      const sortInDealOrderInput = container.querySelector(
+        `input[value='${SortOrder[SortOrder.DealOrder]}']`,
+      )!;
+      await act(() => user.click(sortInDealOrderInput));
+      const expectedSortedCards = sortCards(
+        handTextToComparableCards(container.querySelector("ul")!.textContent!),
+        newSortOrder,
+      )
+        .map((dealtCard) => CARD_LABELS[dealtCard.rank])
+        .join("");
       const newSortInput = container.querySelector(
         `input[value='${SortOrder[newSortOrder]}']`,
       )!;
-      const initialDealtHand = container.querySelector("div")!.textContent;
-      const user = userEvent.setup();
 
       await act(() => user.click(newSortInput));
 
-      expect(container.querySelector("div")!.textContent).not.toBe(
-        initialDealtHand,
+      expect(container.querySelector("ul")!.textContent).toBe(
+        expectedSortedCards,
       );
     },
   );
@@ -88,18 +118,18 @@ describe("trainer component", () => {
     localStorage.removeItem(ANALYTICS_CONSENT);
 
   it.each([
-    [true, 0],
-    [false, 1],
+    [true, "Accept"],
+    [false, "Decline"],
   ])(
     "persists that analytics acceptance is %s when button %d is clicked",
-    async (expectedConsent, buttonIndex) => {
+    async (expectedConsent, buttonText) => {
       clearAnalyticsConsent();
       const user = userEvent.setup();
-      const { container } = renderTrainer();
-      const acceptDeclineButton =
-        container.querySelectorAll("button")[buttonIndex]!;
+      renderTrainer();
 
-      await act(() => user.click(acceptDeclineButton));
+      const button = screen.getByRole("button", { name: buttonText });
+
+      await act(() => user.click(button));
 
       expect(localStorage.getItem(ANALYTICS_CONSENT)).toBe(
         expectedConsent.toString(),
@@ -116,5 +146,18 @@ describe("trainer component", () => {
         /^Thank you! Your consent helps us improve our site using tools like Google Analytics. /u,
       ),
     ).toBeInTheDocument();
+  });
+
+  it("deals new cards after a 'Deal' button click", async () => {
+    const { container } = renderTrainer();
+    const dealButton = screen.getByRole("button", { name: "Deal" });
+    const user = userEvent.setup();
+    const initialDealtHand = container.querySelector("ul")!.textContent;
+
+    await act(() => user.click(dealButton));
+
+    expect(container.querySelector("ul")!.textContent).not.toBe(
+      initialDealtHand,
+    );
   });
 });

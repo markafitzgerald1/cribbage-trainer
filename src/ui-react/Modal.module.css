@@ -1,3 +1,5 @@
+@import url("./vars.css");
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -34,8 +36,8 @@
   padding: 5px 7px;
   border-radius: 5px;
   transition:
-    background-color 0.3s ease,
-    border-color 0.3s ease;
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
 }
 
 .close:hover,

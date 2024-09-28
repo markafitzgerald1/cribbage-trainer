@@ -29,32 +29,32 @@ const meta = {
 
 export default meta;
 
-const createAnalyticsSelectionMadeStory = (
-  buttonNumber: number,
-  expectedTextContent: string,
-) => ({
+const getButton = (canvasElement: HTMLElement, buttonText: string) =>
+  within(canvasElement).getByRole("button", { name: buttonText });
+
+export const AnalyticsAccepted = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const buttons = within(canvasElement).getAllByRole("button");
+    const acceptButton = getButton(canvasElement, "Accept");
 
-    await fireEvent.click(buttons[buttonNumber]!);
+    await fireEvent.click(acceptButton);
 
-    await expect(canvasElement).toHaveTextContent(expectedTextContent);
+    await expect(canvasElement).toHaveTextContent(
+      "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy.",
+    );
   },
-});
+};
 
-const acceptButtonNumber = 1;
+export const AnalyticsDisabled = {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const declineButton = getButton(canvasElement, "Decline");
 
-export const AnalyticsAccepted = createAnalyticsSelectionMadeStory(
-  acceptButtonNumber,
-  "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy.",
-);
+    await fireEvent.click(declineButton);
 
-const declineButtonNumber = 2;
-
-export const AnalyticsDisabled = createAnalyticsSelectionMadeStory(
-  declineButtonNumber,
-  "Analytics have been disabled. You can find more information in our Privacy Policy.",
-);
+    await expect(canvasElement).toHaveTextContent(
+      "Analytics have been disabled. You can find more information in our Privacy Policy.",
+    );
+  },
+};
 
 export const DiscardShowsScoredPossibilities = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
@@ -63,7 +63,7 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expect(canvasElement).toHaveTextContent("Pre-cut hand");
+    await expect(canvasElement).toHaveTextContent("Pre-Cut Scores");
   },
 };
 

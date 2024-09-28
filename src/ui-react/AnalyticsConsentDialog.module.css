@@ -12,6 +12,11 @@
 
 .analytics-consent-dialog h2 {
   margin-top: 0;
+  margin-bottom: 0.5em;
+}
+
+.analytics-consent-dialog p {
+  margin: 0.5em 0;
 }
 
 button + button {

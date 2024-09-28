@@ -1,16 +1,31 @@
 @import url("./vars.css");
 
 .figure {
-  margin: 0;
+  margin: 0.7em 0 0;
 }
 
 .figcaption {
   color: var(--text-color);
   font-family: var(--text-font-family);
+  font-weight: bold;
+}
+
+@media (orientation: portrait) {
+  .figcaption {
+    font-size: var(--medium-text-font-size-portrait);
+  }
+}
+
+@media (orientation: landscape) {
+  .figcaption {
+    font-size: var(--medium-text-font-size-landscape);
+  }
 }
 
 .hand {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-between;
   padding: 0;
+  margin-top: 0.7em;
+  margin-bottom: 0;
 }

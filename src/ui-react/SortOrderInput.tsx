@@ -1,10 +1,6 @@
 import * as classes from "./SortOrderInput.module.css";
 import React, { useCallback } from "react";
-import {
-  SORT_ORDER_NAMES,
-  SortOrderName,
-  lowerCaseSpaceSeparatedSortOrderName,
-} from "../ui/SortOrderName";
+import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
 import { v4 } from "uuid";
 
@@ -36,6 +32,7 @@ export function SortOrderInput({ sortOrder, onChange }: SortOrderInputProps) {
         // eslint-disable-next-line security/detect-object-injection
         <span key={SortOrder[key]}>
           <input
+            aria-label={key}
             // eslint-disable-next-line security/detect-object-injection
             checked={sortOrder === SortOrder[key]}
             className={classes.input}
@@ -57,14 +54,6 @@ export function SortOrderInput({ sortOrder, onChange }: SortOrderInputProps) {
           </label>
         </span>
       ))}
-      <span className={classes.description}>
-        {
-          lowerCaseSpaceSeparatedSortOrderName[
-            // eslint-disable-next-line security/detect-object-injection
-            SortOrder[sortOrder] as SortOrderName
-          ]
-        }
-      </span>
     </fieldset>
   );
 }

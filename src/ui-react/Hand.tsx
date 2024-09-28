@@ -6,7 +6,7 @@ import { sortCards } from "../ui/sortCards";
 export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
   return (
     <figure className={classes.figure}>
-      <figcaption className={classes.figcaption}>Dealt hand:</figcaption>
+      <figcaption className={classes.figcaption}>Hand</figcaption>
       <ul className={classes.hand}>
         {sortCards(dealtCards, sortOrder).map((dealtCard) => (
           <HandCard

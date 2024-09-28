@@ -29,7 +29,7 @@ describe("hand component", () => {
     };
   };
 
-  const caption = "Dealt hand:";
+  const caption = "Hand";
 
   it(`has caption '${caption}'`, () => {
     expect(

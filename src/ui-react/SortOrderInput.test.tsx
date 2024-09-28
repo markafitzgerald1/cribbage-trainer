@@ -1,8 +1,4 @@
-import {
-  SORT_ORDER_NAMES,
-  SortOrderName,
-  lowerCaseSpaceSeparatedSortOrderName,
-} from "../ui/SortOrderName";
+import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
 import { SortLabel, SortOrderInput } from "./SortOrderInput";
 import { cleanup, render } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
@@ -48,18 +44,6 @@ describe("sort order input component", () => {
         renderComponent({ initialSortOrder: SortOrder[sortOrderName] })
           .queryByLabelText(SortLabel[sortOrderName])
           ?.attributes.getNamedItem("checked"),
-      ).toBeTruthy(),
-  );
-
-  it.each(SORT_ORDER_NAMES)(
-    "displays the %s sort order description when in that initial sort state",
-    (sortOrderName) =>
-      expect(
-        renderComponent({
-          initialSortOrder: SortOrder[sortOrderName],
-        }).queryByText(
-          `${lowerCaseSpaceSeparatedSortOrderName[sortOrderName]}`,
-        ),
       ).toBeTruthy(),
   );
 

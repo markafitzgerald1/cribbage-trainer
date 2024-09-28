@@ -45,5 +45,5 @@ test("pre-cut hand points show after select of two discards", async ({
 }) => {
   await renderThenSelectTwoDiscards(page, constantSeedQuery);
 
-  await expect(page.getByText("Pre-cut hand")).toBeVisible();
+  await expect(page.getByText("Pre-Cut Scores")).toBeVisible();
 });

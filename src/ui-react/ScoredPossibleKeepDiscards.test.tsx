@@ -24,7 +24,7 @@ describe("scored possible keep discards component", () => {
     return { container, dealtHand };
   };
 
-  const caption = "Pre-cut hand";
+  const caption = "Pre-Cut Scores";
 
   it(`has caption '${caption}'`, () => {
     const { container } = dealAndRender();
