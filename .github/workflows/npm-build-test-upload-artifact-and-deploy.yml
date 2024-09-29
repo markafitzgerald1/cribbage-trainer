@@ -18,7 +18,7 @@ jobs:
       - name: Run unit tests
         run: npm run test
       - name: Install end to end test browsers
-        run: npm run playwright:install -- --force
+        run: npm run playwright:install
       - name: Run Storybook tests
         run: npm run storybook:test
       - name: Run end to end tests
