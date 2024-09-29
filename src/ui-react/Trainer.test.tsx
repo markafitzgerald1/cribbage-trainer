@@ -51,7 +51,7 @@ describe("trainer component", () => {
   };
 
   it("initially contains a sort in descending order radio input", () => {
-    expect(renderTrainer().queryByLabelText("↘️")).toBeTruthy();
+    expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();
   });
 
   it("contains a dealt hand", () => {
