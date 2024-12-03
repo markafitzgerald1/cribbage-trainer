@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.47.2-jammy
+FROM mcr.microsoft.com/playwright:v1.49.0-jammy
 
 RUN apt update && \
     apt install --yes make gcc g++
