@@ -1,4 +1,4 @@
-import { CARD_LABELS, Card, CARDS as c } from "./Card";
+import { CARD_LABELS, Card, CARDS as card } from "./Card";
 import { HAND_POINTS, HandPoints, handPoints } from "./scoring";
 import { describe, expect, it } from "@jest/globals";
 
@@ -22,7 +22,9 @@ describe("handPoints", () => {
   const parseCards = (keepSpecifier: string): Card[] =>
     keepSpecifier.length === 0
       ? []
-      : keepSpecifier.split(",").map((rank) => c[CARD_LABELS.indexOf(rank)]!);
+      : keepSpecifier
+          .split(",")
+          .map((rank) => card[CARD_LABELS.indexOf(rank)]!);
 
   describe("pairs", () => {
     const expectPairsPoints = (keep: readonly Card[], expectedPoints: number) =>
@@ -200,7 +202,7 @@ describe("handPoints", () => {
     });
 
     it("single card hand", () => {
-      expectRunsPoints([c.EIGHT], 0);
+      expectRunsPoints([card.EIGHT], 0);
     });
 
     describe("two card hand", () => {

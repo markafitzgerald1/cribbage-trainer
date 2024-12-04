@@ -1,4 +1,4 @@
-import { Card, CARDS as c } from "../game/Card";
+import { Card, CARDS as card } from "../game/Card";
 import {
   ScoredKeepDiscard,
   allScoredKeepDiscardsByScoreDescending,
@@ -16,11 +16,13 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
   });
 
   it("should return nothing for a one-card deal", () => {
-    expect(allScoredKeepDiscardsByScoreDescending([c.ACE])).toStrictEqual([]);
+    expect(allScoredKeepDiscardsByScoreDescending([card.ACE])).toStrictEqual(
+      [],
+    );
   });
 
   it("two card deal with duplicate cards throws", () => {
-    const cards = [c.ACE, c.ACE];
+    const cards = [card.ACE, card.ACE];
 
     expect(() => allScoredKeepDiscardsByScoreDescending(cards)).toThrow(
       "Duplicate cards exist",
@@ -54,28 +56,28 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
 
   it("two card deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
-      [c.ACE, c.TWO],
+      [card.ACE, card.TWO],
       [0],
     );
   });
 
   it("three card deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
-      [c.JACK, c.FOUR, c.FIVE],
+      [card.JACK, card.FOUR, card.FIVE],
       [0, 0, 0],
     );
   });
 
   it("four card random ranks deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
-      [c.TEN, c.TWO, c.EIGHT, c.FIVE],
+      [card.TEN, card.TWO, card.EIGHT, card.FIVE],
       [0, 0, 0, FIFTEEN_TWO, 0, 0],
     );
   });
 
   it("five card random ranks deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
-      [c.TEN, c.THREE, c.JACK, c.FIVE, c.FOUR],
+      [card.TEN, card.THREE, card.JACK, card.FIVE, card.FOUR],
       [
         FIFTEEN_TWO,
         RUN,
@@ -93,7 +95,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
 
   it("six card descending ranks deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
-      [c.KING, c.QUEEN, c.JACK, c.SIX, c.FIVE, c.FOUR],
+      [card.KING, card.QUEEN, card.JACK, card.SIX, card.FIVE, card.FOUR],
       [
         FIFTEEN_FOUR + RUN,
         FIFTEEN_FOUR + RUN,
