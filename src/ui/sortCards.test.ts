@@ -1,20 +1,20 @@
 import { describe, expect, it } from "@jest/globals";
 import { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
-import { CARDS as c } from "../game/Card";
+import { CARDS as card } from "../game/Card";
 import { sortCards } from "./sortCards";
 
 describe("sortCards", () => {
   describe("hand", () => {
     const handCards: readonly HandCard[] = [
-      c.KING,
-      c.ACE,
-      c.SEVEN,
-      c.FOUR,
-      c.QUEEN,
-      c.NINE,
-    ].map((card, index) => ({
-      ...card,
+      card.KING,
+      card.ACE,
+      card.SEVEN,
+      card.FOUR,
+      card.QUEEN,
+      card.NINE,
+    ].map((handCard, index) => ({
+      ...handCard,
       dealOrder: index,
     }));
 

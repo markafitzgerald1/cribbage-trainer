@@ -23,6 +23,12 @@
     /* Projects */
     "composite": true
   },
-  "include": ["*.js", "**/*.ts", "**/*.tsx"],
+  "include": [
+    "*.js",
+    "**/*.ts",
+    "**/*.tsx",
+    ".storybook/**/*.ts",
+    "src/styles.d.ts"
+  ],
   "exclude": ["dist"]
 }
