@@ -23,3 +23,7 @@ updates:
         patterns:
           - "@typescript-eslint/eslint-plugin"
           - "@typescript-eslint/parser"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
