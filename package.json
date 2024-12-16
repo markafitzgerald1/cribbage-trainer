@@ -27,7 +27,7 @@
     "@babel/preset-typescript": "^7.26.0",
     "@eslint/compat": "^1.2.4",
     "@jest/globals": "^29.7.0",
-    "@playwright/test": "^1.49.0",
+    "@playwright/test": "^1.49.1",
     "@storybook/addon-actions": "^8.4.6",
     "@storybook/addon-essentials": "^8.4.7",
     "@storybook/addon-interactions": "^8.4.7",
