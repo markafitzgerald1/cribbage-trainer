@@ -1,6 +1,7 @@
-import { CARD_LABELS, Card, CARDS as card } from "./Card";
-import { HAND_POINTS, HandPoints, handPoints } from "./scoring";
+import { Card, CARDS as card } from "./Card";
+import { HAND_POINTS, HandPoints, handPoints } from "./handPoints";
 import { describe, expect, it } from "@jest/globals";
+import { parseCards } from "./parseCards.common";
 
 const {
   PAIR,
@@ -19,13 +20,6 @@ const expectTypePoints = (
 ) => expect(handPoints(keep)[type]).toBe(expectedPoints);
 
 describe("handPoints", () => {
-  const parseCards = (keepSpecifier: string): Card[] =>
-    keepSpecifier.length === 0
-      ? []
-      : keepSpecifier
-          .split(",")
-          .map((rank) => card[CARD_LABELS.indexOf(rank)]!);
-
   describe("pairs", () => {
     const expectPairsPoints = (keep: readonly Card[], expectedPoints: number) =>
       expectTypePoints(keep, "pairs", expectedPoints);
@@ -263,6 +257,14 @@ describe("handPoints", () => {
       it("with two overlapping sets of three adjacent ranked cards", () => {
         const RUN_COUNT = 2;
         expectRunsPoints(parseCards("A,3,2,3"), RUN_COUNT * RUN);
+      });
+    });
+
+    const DOUBLE_LONG_RUN = 5;
+
+    describe("four card hand with starter", () => {
+      it("with five adjacent ranked cards", () => {
+        expectRunsPoints(parseCards("9,K,10,J,Q"), DOUBLE_LONG_RUN);
       });
     });
   });

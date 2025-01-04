@@ -5,9 +5,9 @@
   "source": "src/index.html",
   "scripts": {
     "prepare": "husky",
-    "lint": "eslint --max-warnings 0 '**/*.{js,ts,tsx}' && stylelint '**/*.css' && markdownlint README.md && prettier --check . && cspell '**' --gitignore && tsc && jscpd && better-npm-audit audit && (check-outdated || true)",
+    "lint": "eslint --max-warnings 0 '**/*.{js,mjs,ts,tsx}' && stylelint '**/*.css' && markdownlint README.md && prettier --check . && cspell '**' --gitignore && tsc && jscpd && better-npm-audit audit && (check-outdated || true)",
     "prettier:fix": "prettier --write .",
-    "test": "jest --verbose",
+    "test": "jest --verbose --expand",
     "playwright:install": "playwright install --with-deps",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build --output-dir dist/storybook",
