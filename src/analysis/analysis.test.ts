@@ -1,4 +1,5 @@
 import { Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
+// jscpd:ignore-start
 const {
   ACE,
   TWO,
@@ -14,6 +15,7 @@ const {
   QUEEN,
   KING,
 } = card;
+// jscpd:ignore-end
 import {
   ScoredKeepDiscard,
   allScoredKeepDiscardsByExpectedScoreDescending,
@@ -21,6 +23,8 @@ import {
 import { describe, expect, it } from "@jest/globals";
 import { HAND_POINTS } from "../game/handPoints";
 import { SUITS_PER_DECK } from "../game/expectedHandPoints";
+import { compareByExpectedScoreDescending } from "./compareByExpectedScoreDescending";
+import { rankCounts } from "../game/rankCounts";
 
 const { FIFTEEN_TWO, FIFTEEN_FOUR, FIFTEEN_SIX, PAIR } = HAND_POINTS;
 
@@ -77,10 +81,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
       };
     },
   ): void {
-    const cardRankCounts = cards.reduce<number[]>((counts, dealCard) => {
-      counts[dealCard.rank]! += 1;
-      return counts;
-    }, Array<number>(INDICES_PER_SUIT).fill(0));
+    const cardRankCounts = rankCounts(cards);
     const REMAINING_DECK_SIZE = CARDS_PER_DECK - cards.length;
     const expectedScoredKeepDiscards: ScoredKeepDiscard<Card>[] = [];
     for (let index1 = 0; index1 < cards.length; index1 += 1) {
@@ -124,24 +125,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
         });
       }
     }
-    expectedScoredKeepDiscards.sort((discardKeep1, discardKeep2) => {
-      if (discardKeep2.expectedHandPoints !== discardKeep1.expectedHandPoints) {
-        return (
-          discardKeep2.expectedHandPoints - discardKeep1.expectedHandPoints
-        );
-      }
-      if (discardKeep2.handPoints !== discardKeep1.handPoints) {
-        return discardKeep2.handPoints - discardKeep1.handPoints;
-      }
-      if (discardKeep2.keep[0]?.rank !== discardKeep1.keep[0]?.rank) {
-        return (
-          (discardKeep2.keep[0]?.rank ?? 0) - (discardKeep1.keep[0]?.rank ?? 0)
-        );
-      }
-      return (
-        (discardKeep2.keep[1]?.rank ?? 0) - (discardKeep1.keep[1]?.rank ?? 0)
-      );
-    });
+    expectedScoredKeepDiscards.sort(compareByExpectedScoreDescending);
     const actualScoredKeepDiscards = roundExpectedHandPoints(
       allScoredKeepDiscardsByExpectedScoreDescending(cards),
     );
