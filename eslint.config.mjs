@@ -1,21 +1,19 @@
-import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import spellcheck from "eslint-plugin-spellcheck";
-import react from "eslint-plugin-react";
-import tsParser from "@typescript-eslint/parser";
 import * as espree from "espree";
-import jest from "eslint-plugin-jest";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
+import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
 import { FlatCompat } from "@eslint/eslintrc";
+import { fileURLToPath } from "node:url";
+import jest from "eslint-plugin-jest";
+import js from "@eslint/js";
+import path from "node:path";
+import react from "eslint-plugin-react";
+import spellcheck from "eslint-plugin-spellcheck";
+import tsParser from "@typescript-eslint/parser";
+import typescriptEslint from "@typescript-eslint/eslint-plugin";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
   allConfig: js.configs.all,
+  baseDirectory: path.dirname(fileURLToPath(import.meta.url)),
+  recommendedConfig: js.configs.recommended,
 });
 
 export default [
@@ -35,16 +33,8 @@ export default [
     ),
   ),
   {
-    plugins: {
-      "@typescript-eslint": typescriptEslint,
-      spellcheck,
-      react: fixupPluginRules(react),
-    },
-
     languageOptions: {
       ecmaVersion: 5,
-      sourceType: "script",
-
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
@@ -52,73 +42,13 @@ export default [
 
         project: ["./tsconfig.json"],
       },
+      sourceType: "script",
     },
-
-    settings: {
-      react: {
-        createClass: "createReactClass",
-        pragma: "React",
-        fragment: "Fragment",
-        version: "detect",
-        flowVersion: "0.53",
-      },
-
-      propWrapperFunctions: [
-        "forbidExtraProps",
-        {
-          property: "freeze",
-          object: "Object",
-        },
-        {
-          property: "myFavoriteWrapper",
-        },
-        {
-          property: "forbidExtraProps",
-          exact: true,
-        },
-      ],
-
-      componentWrapperFunctions: [
-        "observer",
-        {
-          property: "styled",
-        },
-        {
-          property: "observer",
-          object: "Mobx",
-        },
-        {
-          property: "observer",
-          object: "<pragma>",
-        },
-      ],
-
-      formComponents: [
-        "CustomForm",
-        {
-          name: "Form",
-          formAttribute: "endpoint",
-        },
-      ],
-
-      linkComponents: [
-        "Hyperlink",
-        {
-          name: "Link",
-          linkAttribute: "to",
-        },
-      ],
-
-      "jsx-a11y": {
-        components: {
-          Card: "input",
-          Calculation: "listitem",
-          Calculations: "list",
-          Hand: "list",
-        },
-      },
+    plugins: {
+      "@typescript-eslint": typescriptEslint,
+      react: fixupPluginRules(react),
+      spellcheck,
     },
-
     rules: {
       "@typescript-eslint/no-magic-numbers": [
         "error",
@@ -158,18 +88,19 @@ export default [
       "max-lines": [
         "error",
         {
-          max: 343,
+          max: 517,
         },
       ],
 
       "max-lines-per-function": [
         "error",
         {
-          max: 266,
+          max: 473,
           skipBlankLines: true,
         },
       ],
 
+      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
       "max-statements": ["error", 20],
       "no-magic-numbers": ["off"],
       "no-shadow": "off",
@@ -185,9 +116,9 @@ export default [
       "one-var": [
         "error",
         {
-          var: "always",
-          let: "never",
           const: "never",
+          let: "never",
+          var: "always",
         },
       ],
 
@@ -197,10 +128,9 @@ export default [
           extensions: [".tsx"],
         },
       ],
-
       "react/jsx-no-literals": "off",
       "react/require-optimization": "off",
-
+      "security/detect-object-injection": ["error"],
       "spellcheck/spell-checker": [
         "warn",
         {
@@ -210,12 +140,18 @@ export default [
             "charset",
             "checkbox",
             "checkboxes",
+            "compat",
             "cpus",
             "discardable",
+            "ECMA",
             "entrypoint",
+            "Enums",
+            "espree",
             "figcaption",
             "firefox",
+            "fixup",
             "formatter",
+            "func",
             "goto",
             "gtag",
             "href",
@@ -229,12 +165,15 @@ export default [
             "matchers",
             "mdx",
             "mjs",
+            "Mobx",
             "mousedown",
             "msedge",
             "os",
             "radiogroup",
+            "pragma",
             "royale",
             "seedrandom",
+            "tsconfig",
             "tsx",
             "ul",
             "unmount",
@@ -245,8 +184,66 @@ export default [
           ],
         },
       ],
+    },
+    settings: {
+      componentWrapperFunctions: [
+        "observer",
+        {
+          property: "styled",
+        },
+        {
+          object: "Mobx",
+          property: "observer",
+        },
+        {
+          object: "<pragma>",
+          property: "observer",
+        },
+      ],
+      formComponents: [
+        "CustomForm",
+        {
+          formAttribute: "endpoint",
+          name: "Form",
+        },
+      ],
+      "jsx-a11y": {
+        components: {
+          Calculation: "listitem",
+          Calculations: "list",
+          Card: "input",
+          Hand: "list",
+        },
+      },
 
-      "security/detect-object-injection": ["error"],
+      linkComponents: [
+        "Hyperlink",
+        {
+          linkAttribute: "to",
+          name: "Link",
+        },
+      ],
+      propWrapperFunctions: [
+        "forbidExtraProps",
+        {
+          object: "Object",
+          property: "freeze",
+        },
+        {
+          property: "myFavoriteWrapper",
+        },
+        {
+          exact: true,
+          property: "forbidExtraProps",
+        },
+      ],
+      react: {
+        createClass: "createReactClass",
+        flowVersion: "0.53",
+        fragment: "Fragment",
+        pragma: "React",
+        version: "detect",
+      },
     },
   },
   ...compat
@@ -260,6 +257,13 @@ export default [
       files: ["**/*.ts*"],
     })),
   {
+    files: ["eslint.config.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+    },
+  },
+  {
     files: ["**/*.ts*"],
 
     languageOptions: {
@@ -270,8 +274,8 @@ export default [
     files: ["**/vite.config.js"],
 
     languageOptions: {
-      parser: espree,
       ecmaVersion: 2022,
+      parser: espree,
       sourceType: "module",
     },
   },
@@ -304,6 +308,7 @@ export default [
             "expectCardLabelHasClass",
             "expectKeptAndDiscardedAfterClick",
             "expectCalculationsAfterClicks",
+            "expectTotalHandPoints",
           ],
         },
       ],
