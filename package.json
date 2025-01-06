@@ -50,7 +50,7 @@
     "babel-plugin-transform-vite-meta-env": "^1.0.3",
     "better-npm-audit": "^3.11.0",
     "check-outdated": "^2.12.0",
-    "concurrently": "^9.1.1",
+    "concurrently": "^9.1.2",
     "cspell": "^8.17.1",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
