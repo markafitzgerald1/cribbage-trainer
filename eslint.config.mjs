@@ -16,6 +16,8 @@ const compat = new FlatCompat({
   recommendedConfig: js.configs.recommended,
 });
 
+const MAX_STATEMENTS = 20;
+
 export default [
   {
     ignores: ["dist/", "coverage/", "storybook-static/"],
@@ -39,7 +41,6 @@ export default [
         ecmaFeatures: {
           jsx: true,
         },
-
         project: ["./tsconfig.json"],
       },
       sourceType: "script",
@@ -57,10 +58,8 @@ export default [
           ignoreEnums: true,
         },
       ],
-
       "@typescript-eslint/no-shadow": "error",
       "@typescript-eslint/unbound-method": "off",
-
       "capitalized-comments": [
         "error",
         "always",
@@ -68,30 +67,25 @@ export default [
           ignorePattern: "jscpd",
         },
       ],
-
       "dot-notation": [
         "error",
         {
           allowPattern: "^CI$",
         },
       ],
-
       "func-style": "off",
-
       "id-length": [
         "error",
         {
           exceptions: ["_"],
         },
       ],
-
       "max-lines": [
         "error",
         {
           max: 517,
         },
       ],
-
       "max-lines-per-function": [
         "error",
         {
@@ -99,20 +93,16 @@ export default [
           skipBlankLines: true,
         },
       ],
-
-      // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-      "max-statements": ["error", 20],
+      "max-statements": ["error", MAX_STATEMENTS],
       "no-magic-numbers": ["off"],
       "no-shadow": "off",
       "no-ternary": "off",
-
       "no-warning-comments": [
         "error",
         {
           decoration: ["*"],
         },
       ],
-
       "one-var": [
         "error",
         {
@@ -121,7 +111,6 @@ export default [
           var: "always",
         },
       ],
-
       "react/jsx-filename-extension": [
         "error",
         {
@@ -143,9 +132,9 @@ export default [
             "compat",
             "cpus",
             "discardable",
-            "ECMA",
+            "ecma",
+            "enums",
             "entrypoint",
-            "Enums",
             "espree",
             "figcaption",
             "firefox",
@@ -169,6 +158,7 @@ export default [
             "mousedown",
             "msedge",
             "os",
+            "pragma",
             "radiogroup",
             "pragma",
             "royale",
@@ -215,7 +205,6 @@ export default [
           Hand: "list",
         },
       },
-
       linkComponents: [
         "Hyperlink",
         {
@@ -271,7 +260,7 @@ export default [
     },
   },
   {
-    files: ["**/vite.config.js"],
+    files: ["**/vite.config.js", "**/*.mjs"],
 
     languageOptions: {
       ecmaVersion: 2022,
@@ -285,15 +274,12 @@ export default [
   })),
   {
     files: ["**/*.test.ts*", "**/*.stories.ts*"],
-
     plugins: {
       jest,
     },
-
     rules: {
       "@typescript-eslint/no-non-null-assertion": ["off"],
       "@typescript-eslint/unbound-method": "off",
-
       "jest/expect-expect": [
         "error",
         {
@@ -312,7 +298,6 @@ export default [
           ],
         },
       ],
-
       "jest/prefer-expect-assertions": ["off"],
       "jest/unbound-method": "error",
       "react/jsx-no-bind": ["off"],
@@ -322,7 +307,6 @@ export default [
   },
   {
     files: ["**/*.d.ts"],
-
     rules: {
       "init-declarations": "off",
     },
