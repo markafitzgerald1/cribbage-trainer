@@ -5,7 +5,7 @@
   "source": "src/index.html",
   "scripts": {
     "prepare": "husky",
-    "lint": "eslint --max-warnings 0 '**/*.{js,ts,tsx}' && stylelint '**/*.css' && markdownlint README.md && prettier --check . && cspell '**' --gitignore && tsc && jscpd && better-npm-audit audit && (check-outdated || true)",
+    "lint": "eslint --max-warnings 0 '**/*.{js,ts,tsx,mjs}' && stylelint '**/*.css' && markdownlint README.md && prettier --check . && cspell '**' --gitignore && tsc && jscpd && better-npm-audit audit && (check-outdated || true)",
     "prettier:fix": "prettier --write .",
     "test": "jest --verbose",
     "playwright:install": "playwright install --with-deps",
