@@ -11,8 +11,11 @@ export const compareByExpectedScoreDescending = (
   if (discardKeep2.handPoints !== discardKeep1.handPoints) {
     return discardKeep2.handPoints - discardKeep1.handPoints;
   }
-  const MAX_CHECKED_KEEP_LENGTH = 3;
-  for (let keepIndex = 0; keepIndex < MAX_CHECKED_KEEP_LENGTH; keepIndex += 1) {
+  for (
+    let keepIndex = 0;
+    keepIndex < Math.min(discardKeep1.keep.length, discardKeep2.keep.length);
+    keepIndex += 1
+  ) {
     if (
       // eslint-disable-next-line security/detect-object-injection
       discardKeep2.keep[keepIndex]?.rank !== discardKeep1.keep[keepIndex]?.rank

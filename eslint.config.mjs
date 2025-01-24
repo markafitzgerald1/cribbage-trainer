@@ -304,6 +304,7 @@ export default [
             "expectKeptAndDiscardedAfterClick",
             "expectCalculationsAfterClicks",
             "expectTotalHandPoints",
+            "expectHandsInDescendingExpectedScoreOrder",
           ],
         },
       ],
