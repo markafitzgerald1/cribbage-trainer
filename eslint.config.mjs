@@ -95,6 +95,14 @@ export default [
       ],
       "max-statements": ["error", MAX_STATEMENTS],
       "no-magic-numbers": ["off"],
+      "no-restricted-syntax": [
+        "error",
+        {
+          message: "`it.todo()` is not allowed.",
+          selector:
+            "CallExpression[callee.object.name='it'][callee.property.name='todo']",
+        },
+      ],
       "no-shadow": "off",
       "no-ternary": "off",
       "no-warning-comments": [
@@ -125,6 +133,7 @@ export default [
         {
           skipWords: [
             "autodocs",
+            "callee",
             "camelcase",
             "charset",
             "checkbox",
