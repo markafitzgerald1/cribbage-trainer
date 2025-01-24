@@ -1,5 +1,6 @@
 import { CARDS, Card } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
+import { ScoredKeepDiscard } from "./analysis";
 import { compareByExpectedScoreDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 
@@ -24,43 +25,47 @@ describe("compareByExpectedScoreDescending", () => {
     );
   }
 
-  it("sorts unequal expected hands points hands descending by expected hand points", () =>
+  it("is negative when the first hand should come before the second hand", () =>
     expect(
       expectCompareByExpectedScoreDescending(CARDS.FIVE, CARDS.ACE),
     ).toBeLessThan(0));
 
-  it("sorts equal valued hands by highest index descending", () =>
+  it("is positive when the first hand should come after the second hand", () =>
     expect(
       expectCompareByExpectedScoreDescending(CARDS.ACE, CARDS.TWO),
     ).toBeGreaterThan(0));
 
-  it("sorts equal valued equal highest index hands by second highest index descending", () => {
-    const keep1 = [CARDS.FIVE, CARDS.ACE];
-    const discard1 = [CARDS.TWO];
-    const keep2 = [CARDS.FIVE, CARDS.TWO];
-    const discard2 = [CARDS.ACE];
+  const createHand = (
+    keep: Card[],
+    discard: Card[],
+  ): ScoredKeepDiscard<Card> => ({
+    discard,
+    expectedHandPoints: expectedHandPoints(keep, discard).total,
+    handPoints: 0,
+    keep,
+  });
+
+  it("is positive for equal valued equal highest index hands when the first hand should come after the second hand", () => {
+    const { FIVE, TWO, ACE } = CARDS;
 
     expect(
       compareByExpectedScoreDescending(
-        {
-          discard: discard1,
-          expectedHandPoints: expectedHandPoints(keep1, discard1).total,
-          handPoints: 0,
-          keep: keep1,
-        },
-        {
-          discard: discard2,
-          expectedHandPoints: expectedHandPoints(keep2, discard2).total,
-          handPoints: 0,
-          keep: keep2,
-        },
+        createHand([FIVE, ACE], [TWO]),
+        createHand([FIVE, TWO], [ACE]),
       ),
     ).toBeGreaterThan(0);
   });
 
-  it.todo(
-    "sorts equal valued equal highest two indices hands by third highest index descending",
-  );
+  it("is negative for equal valued equal two highest indexes hands when the first hand should come after the second hand", () => {
+    const { KING, THREE, TWO } = CARDS;
+
+    expect(
+      compareByExpectedScoreDescending(
+        createHand([KING, KING, THREE], [TWO]),
+        createHand([KING, KING, TWO], [THREE]),
+      ),
+    ).toBeLessThan(0);
+  });
 
   it.todo(
     "sorts equal valued equal highest three indices hands by fourth highest index descending",
