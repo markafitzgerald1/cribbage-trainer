@@ -1,52 +1,38 @@
+import { CARDS, Card } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
-import { CARDS } from "../game/Card";
 import { compareByExpectedScoreDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 
 describe("compareByExpectedScoreDescending", () => {
-  it("sorts unequal expected hands points hands descending by expected hand points", () => {
-    const card1 = CARDS.FIVE;
-    const card2 = CARDS.ACE;
+  function expectCompareByExpectedScoreDescending(
+    card1: Card,
+    card2: Card,
+  ): number {
+    return compareByExpectedScoreDescending(
+      {
+        discard: [card2],
+        expectedHandPoints: expectedHandPoints([card1], [card2]).total,
+        handPoints: 0,
+        keep: [card1],
+      },
+      {
+        discard: [card1],
+        expectedHandPoints: expectedHandPoints([card2], [card1]).total,
+        handPoints: 0,
+        keep: [card2],
+      },
+    );
+  }
 
+  it("sorts unequal expected hands points hands descending by expected hand points", () =>
     expect(
-      compareByExpectedScoreDescending(
-        {
-          discard: [card2],
-          expectedHandPoints: expectedHandPoints([card1], [card2]).total,
-          handPoints: 0,
-          keep: [card1],
-        },
-        {
-          discard: [card1],
-          expectedHandPoints: expectedHandPoints([card2], [card1]).total,
-          handPoints: 0,
-          keep: [card2],
-        },
-      ),
-    ).toBeLessThan(0);
-  });
+      expectCompareByExpectedScoreDescending(CARDS.FIVE, CARDS.ACE),
+    ).toBeLessThan(0));
 
-  it("sorts equal valued hands by highest index descending", () => {
-    const card1 = CARDS.ACE;
-    const card2 = CARDS.TWO;
-
+  it("sorts equal valued hands by highest index descending", () =>
     expect(
-      compareByExpectedScoreDescending(
-        {
-          discard: [card2],
-          expectedHandPoints: expectedHandPoints([card1], [card2]).total,
-          handPoints: 0,
-          keep: [card1],
-        },
-        {
-          discard: [card1],
-          expectedHandPoints: expectedHandPoints([card2], [card1]).total,
-          handPoints: 0,
-          keep: [card2],
-        },
-      ),
-    ).toBeGreaterThan(0);
-  });
+      expectCompareByExpectedScoreDescending(CARDS.ACE, CARDS.TWO),
+    ).toBeGreaterThan(0));
 
   it("sorts equal valued equal highest index hands by second highest index descending", () => {
     const keep1 = [CARDS.FIVE, CARDS.ACE];
