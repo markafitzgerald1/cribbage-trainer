@@ -5,7 +5,8 @@ import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createArgTypes } from "./stories.common";
-import { handPoints } from "../game/scoring";
+import { expectedHandPoints } from "../game/expectedHandPoints";
+import { handPoints } from "../game/handPoints";
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
@@ -32,8 +33,9 @@ const createStory = (
 ): Story => ({
   args: {
     discard: discard.map(toComparableCard),
+    expectedHandPoints: expectedHandPoints(keep, discard).total,
+    handPoints: handPoints(keep).total,
     keep: keep.map(toComparableCard),
-    points: handPoints(keep).total,
     sortOrder,
   },
 });
