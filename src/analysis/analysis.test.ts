@@ -166,6 +166,8 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     );
   });
 
+  /* jscpd:ignore-start */
+
   it("four card deal order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [TEN, TWO, EIGHT, FIVE],
@@ -495,4 +497,6 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
       },
     );
   });
+
+  /* jscpd:ignore-end */
 });
