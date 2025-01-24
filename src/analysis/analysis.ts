@@ -1,7 +1,7 @@
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
-import { compareByExpectedScoreDescending } from "./compareByExpectedScoreDescending";
+import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
@@ -32,5 +32,5 @@ export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
       handPoints: handPoints(keepDiscard.keep).total,
       keep: keepDiscard.keep,
     }))
-    .sort(compareByExpectedScoreDescending);
+    .sort(compareByExpectedScoreThenRankDescending);
 };

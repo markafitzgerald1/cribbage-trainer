@@ -1,7 +1,7 @@
 import { CARDS, Card } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { ScoredKeepDiscard } from "./analysis";
-import { compareByExpectedScoreDescending } from "./compareByExpectedScoreDescending";
+import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 
 const { ACE, TWO, THREE, FOUR, FIVE, JACK, QUEEN, KING } = CARDS;
@@ -21,8 +21,12 @@ describe("compareByExpectedScoreDescending", () => {
     hand1: ScoredKeepDiscard<Card>,
     hand2: ScoredKeepDiscard<Card>,
   ) => {
-    expect(compareByExpectedScoreDescending(hand1, hand2)).toBeLessThan(0);
-    expect(compareByExpectedScoreDescending(hand2, hand1)).toBeGreaterThan(0);
+    expect(compareByExpectedScoreThenRankDescending(hand1, hand2)).toBeLessThan(
+      0,
+    );
+    expect(
+      compareByExpectedScoreThenRankDescending(hand2, hand1),
+    ).toBeGreaterThan(0);
   };
 
   it("unequal valued single kept card hands", () =>

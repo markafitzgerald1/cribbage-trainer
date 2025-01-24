@@ -23,7 +23,7 @@ import {
 import { describe, expect, it } from "@jest/globals";
 import { HAND_POINTS } from "../game/handPoints";
 import { SUITS_PER_DECK } from "../game/expectedHandPoints";
-import { compareByExpectedScoreDescending } from "./compareByExpectedScoreDescending";
+import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { rankCounts } from "../game/rankCounts";
 
 const { FIFTEEN_TWO, FIFTEEN_FOUR, FIFTEEN_SIX, PAIR } = HAND_POINTS;
@@ -125,7 +125,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
         });
       }
     }
-    expectedScoredKeepDiscards.sort(compareByExpectedScoreDescending);
+    expectedScoredKeepDiscards.sort(compareByExpectedScoreThenRankDescending);
     const actualScoredKeepDiscards = roundExpectedHandPoints(
       allScoredKeepDiscardsByExpectedScoreDescending(cards),
     );
