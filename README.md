@@ -45,7 +45,7 @@ npm run storybook:test && npm run docker-test-e2e`
 ### Develop
 
 - Serve [Storybook](https://storybook.js.org/) stories: `npm run storybook`
-- Build a static version of the Storybook stories: `npm build storybook`
+- Build a static version of the Storybook stories: `npm run storybook:build`
 
 ### Handling visual regression test screenshot differences
 
