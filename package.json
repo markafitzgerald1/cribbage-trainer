@@ -10,7 +10,7 @@
     "test": "jest --verbose",
     "playwright:install": "playwright install --with-deps",
     "storybook": "storybook dev -p 6006",
-    "storybook:build": "storybook build --output-dir dist/storybook",
+    "storybook:build": "storybook build --output-dir dist/storybook && mv dist/storybook/index.html dist/storybook/storybook.html",
     "storybook:test": "npm run storybook:build && npx --no-install concurrently --kill-others --success first --names 'Storybook,Test' 'npx --no-install http-server dist/storybook --port 6006 --silent > /dev/null 2>&1 | tail -f /dev/null' 'npx --no-install wait-on --timeout 1s tcp:6006 && test-storybook --browsers chromium webkit firefox'",
     "test-e2e": "playwright test",
     "docker-test-e2e": "docker build -t cribbage-trainer-e2e-test . && docker run --rm --volume ${PWD}/playwright-report:/usr/src/app/playwright-report --volume ${PWD}/test-results:/usr/src/app/test-results --volume ${PWD}/tests-e2e/index.screenshots.spec.ts-snapshots:/usr/src/app/tests-e2e/index.screenshots.spec.ts-snapshots cribbage-trainer-e2e-test",
