@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.50.1-noble
+FROM mcr.microsoft.com/playwright:v1.52.0-noble
 
 RUN apt update && \
     apt install --yes make gcc g++
