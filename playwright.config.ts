@@ -44,5 +44,5 @@ export default defineConfig({
     reuseExistingServer: !process.env["CI"],
     url: "http://localhost:4173",
   },
-  workers: process.env["CI"] ? 1 : os.cpus().length,
+  workers: os.cpus().length,
 });
