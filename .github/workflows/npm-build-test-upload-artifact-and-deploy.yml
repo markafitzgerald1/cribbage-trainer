@@ -54,12 +54,33 @@ jobs:
       - name: Install dependencies
         run: npm clean-install
 
+      - name: Cache build outputs (dist directory)
+        id: cache-dist
+        uses: actions/cache@v3
+        with:
+          path: dist
+          key: ${{ runner.os }}-dist-${{ hashFiles(
+            'package-lock.json',
+            '.nvmrc',
+            'src/**/*',
+            'styles.d.ts',
+            '.storybook/main.ts',
+            '.storybook/preview.ts',
+            'vite.config.js',
+            'tsconfig.json',
+            'babel.config.js'
+            ) }}
+          restore-keys: |
+            ${{ runner.os }}-dist-
+
       - name: Build web application bundles
+        if: steps.cache-dist.outputs.cache-hit != 'true'
         run: npm run build
         env:
           VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
 
       - name: Build static Storybook site
+        if: steps.cache-dist.outputs.cache-hit != 'true'
         run: npm run storybook:build
 
       - name: Upload GitHub Pages artifact
