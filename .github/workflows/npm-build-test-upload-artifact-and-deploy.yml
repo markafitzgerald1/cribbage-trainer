@@ -51,6 +51,8 @@ jobs:
         run: npm run build
         env:
           VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
+      - name: Build static Storybook site
+        run: npm run storybook:build
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
