@@ -14,7 +14,7 @@
     "lint:jscpd": "jscpd",
     "lint:audit": "better-npm-audit audit",
     "lint:outdated": "(check-outdated || true)",
-    "lint": "concurrently --names 'ESLINT,STYLE,MARKDOWN,PRETTIER,CSPELL,TSC,JSCPD,AUDIT,OUTDATED' --success first \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdown\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:lint:audit\" \"npm:lint:outdated\"",
+    "lint": "concurrently --names 'ESLINT,STYLE,MARKDOWN,PRETTIER,CSPELL,TSC,JSCPD,AUDIT,OUTDATED' \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdown\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:lint:audit\" \"npm:lint:outdated\"",
     "prettier:fix": "prettier --write .",
     "test": "jest --verbose --expand",
     "storybook": "storybook dev -p 6006",
