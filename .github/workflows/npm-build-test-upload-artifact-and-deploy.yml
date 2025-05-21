@@ -52,9 +52,8 @@ jobs:
         env:
           VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: github-pages
           path: dist/
       - id: deploy-to-github-pages
         name: Deploy GitHub Pages site
