@@ -1,1 +1,1 @@
-npm run clean && npm run build && npm run lint && npm test && npm run docker:storybook-e2e
+npm run docker:build-test-suite

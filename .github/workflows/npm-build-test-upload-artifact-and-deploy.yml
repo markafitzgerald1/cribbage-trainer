@@ -8,19 +8,8 @@ jobs:
     if: github.ref != 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
-      - name: Install dependencies
-        run: npm clean-install
-      - name: Build web application bundles
-        run: npm run build
-      - name: Run static code and project analyses
-        run: npm run lint
-      - name: Run unit tests
-        run: npm run test
-      - name: Run Storybook and end to end tests
-        run: npm run docker:storybook-e2e
+      - name: Run site and Storybook builds, linting, unit tests, Storybook tests and end to end tests
+        run: npm run docker:build-test-suite
 
   build-upload-and-deploy:
     runs-on: ubuntu-latest
