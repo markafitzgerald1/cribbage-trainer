@@ -11,4 +11,4 @@ RUN npm install
 
 COPY . .
 
-CMD [ "npm", "run", "test-e2e" ]
+CMD [ "sh", "-c", "npm run storybook:test && npm run test-e2e" ]
