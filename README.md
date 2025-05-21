@@ -35,11 +35,7 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Lint and Test
 
-- `npm run clean && npm run build && npm run lint && npm test &&
-npm run docker:storybook-e2e`
-  (running `build` prior to `lint` as some TypeScript ESLint issues are only found
-  by ESLint when a `dist/` directory containing build output exists for some
-  unknown reason.)
+- `npm run docker:build-test-suite`
 
 ### Develop
 
@@ -56,4 +52,4 @@ expected screenshots:
 
 - remove out of date screenshots: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`
   , then
-- generate the now expected browser screenshots: `npm run docker:storybook-e2e`.
+- generate the now expected browser screenshots: `npm run docker:build-test-suite`.
