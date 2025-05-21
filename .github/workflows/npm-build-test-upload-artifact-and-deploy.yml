@@ -7,9 +7,25 @@ jobs:
       contents: read
     if: github.ref != 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-      - name: Run site and Storybook builds, linting, unit tests, Storybook tests and end to end tests
-        run: npm run docker:build-test-suite
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (includes app/Storybook builds, lint, unit tests) with caching
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: cribbage-trainer-integration-tests:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run e2e and Storybook interaction tests in Docker
+        run: npm run docker:run-e2e-tests
 
   build-upload-and-deploy:
     runs-on: ubuntu-latest
