@@ -3,6 +3,7 @@
   "language": "en",
   "words": [
     "autodocs",
+    "Buildx",
     "camelcase",
     "discardable",
     "espree",
@@ -18,6 +19,7 @@
     "listitem",
     "mousedown",
     "msedge",
+    "nvmrc",
     "radiogroup",
     "royale",
     "seedrandom",
