@@ -1,6 +1,7 @@
 @import url("./vars.css");
 
-.scored-possible-keep-discards {
+/* Renamed from .scored-possible-keep-discards */
+.scoredPossibleKeepDiscardsContainer {
   margin: 0;
   width: 100%;
   box-sizing: border-box;
@@ -9,29 +10,73 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 10px;
+  gap: 0.4em; /* Spacing between header and list - Updated from 10px */
 }
 
-.scored-possible-keep-discards figcaption {
+/* New styles, replaces .scored-possible-keep-discards figcaption */
+.headerWithInfoIcon {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
   font-weight: bold;
+  padding-bottom: 0.2em; /* Space below header */
 }
 
-.scored-possible-keep-discards ul {
+/* New styles for the info icon button */
+.infoIconButton {
+  margin-left: 0.5em;
+  cursor: pointer;
+  font-size: 0.9em;
+  background-color: transparent;
+  border: 1px solid var(--text-color);
+  color: var(--text-color);
+  border-radius: 50%;
+  width: 1.5em; /* Adjust for circle */
+  height: 1.5em; /* Adjust for circle */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1; /* Ensure icon is centered */
+}
+
+.infoIconButton:hover,
+.infoIconButton:focus {
+  background-color: #4f4f4f; /* Darker highlight */
+  outline: none;
+}
+
+/* New styles for the info details panel */
+.infoDetailsPanel {
+  background-color: #333; /* Dark background for info panel */
+  padding: 0.6em;
+  border-radius: 4px;
+  margin-bottom: 0.5em;
+  font-size: 0.85em;
+  color: #e0e0e0;
+  border: 1px solid #4a4a4a;
+}
+
+/* New class for styling the ul specifically, replaces .scored-possible-keep-discards ul */
+.analysisList {
   padding-left: 0;
   margin: 0;
   overflow-y: auto;
   flex-grow: 1;
+  border: 1px solid #4a4a4a; /* Optional: border around the list */
+  border-radius: 4px;
+  background-color: #2a2a2a; /* Slightly different background for list area */
 }
 
+/* Updated media queries */
 @media (orientation: portrait) {
-  .scored-possible-keep-discards figcaption {
+  .headerWithInfoIcon { /* Was previously .scored-possible-keep-discards figcaption */
     font-size: var(--medium-text-font-size-portrait);
   }
 }
 
 @media (orientation: landscape) {
-  .scored-possible-keep-discards figcaption {
+  .headerWithInfoIcon { /* Was previously .scored-possible-keep-discards figcaption */
     font-size: var(--medium-text-font-size-landscape);
   }
 }

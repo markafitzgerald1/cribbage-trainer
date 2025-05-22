@@ -6,13 +6,72 @@
   font-family: var(--text-font-family);
 }
 
+/* New styles */
+.scoredPossibleKeepDiscardItem { /* New class for the clickable list item */
+  list-style-type: none;
+  color: var(--text-color);
+  font-family: var(--text-font-family);
+  padding: 0.4em 0.6em; /* Adjusted padding */
+  cursor: pointer;
+  border-bottom: 1px solid #4a4a4a; /* Subtle separator */
+  transition: background-color 0.2s ease-in-out;
+}
+
+.scoredPossibleKeepDiscardItem:hover,
+.scoredPossibleKeepDiscardItem:focus {
+  background-color: #383838; /* Slightly lighter on hover/focus */
+  outline: 1px dotted var(--text-color); /* Focus outline */
+  outline-offset: -1px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.handDisplay {
+  flex-grow: 1; /* Allow hand display to take available space */
+  margin-right: 0.5em;
+}
+
+.totalPointsDisplay {
+  font-weight: bold;
+  white-space: nowrap; /* Keep score on one line */
+}
+
+.chevronIcon {
+  margin-left: 0.75em;
+  font-size: 0.8em;
+  min-width: 1.2em; /* Ensure space for chevron and prevent layout shift */
+  text-align: right;
+  color: #aaa; /* Chevron color */
+}
+
+.detailsView {
+  margin-top: 0.4em;
+  padding-left: 1.2em; /* Indent the breakdown */
+  font-size: 0.85em; /* Smaller font for details */
+  color: #bdbdbd;   /* Lighter color for details */
+}
+
+/* Updated media queries */
 @media (orientation: landscape) {
+  .scoredPossibleKeepDiscardItem { /* Update class name */
+    font-size: var(--medium-text-font-size-landscape);
+  }
+  /* Keep the old class definition if it's used elsewhere, or remove if it's fully replaced */
   .scored-possible-keep-discard {
     font-size: var(--medium-text-font-size-landscape);
   }
 }
 
 @media (orientation: portrait) {
+  .scoredPossibleKeepDiscardItem { /* Update class name */
+    font-size: var(--medium-text-font-size-portrait);
+  }
+  /* Keep the old class definition if it's used elsewhere, or remove if it's fully replaced */
   .scored-possible-keep-discard {
     font-size: var(--medium-text-font-size-portrait);
   }
