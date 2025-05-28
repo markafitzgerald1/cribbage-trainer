@@ -1,5 +1,5 @@
-import { CARDS, Card, INDICES_PER_SUIT } from "./Card";
-import { HandPoints, handPoints } from "./handPoints";
+import { CARDS, type Card, INDICES_PER_SUIT } from "./Card";
+import { type HandPoints, handPoints } from "./handPoints";
 import { CARDS_PER_DEALT_HAND } from "./facts";
 import { rankCounts } from "./rankCounts";
 

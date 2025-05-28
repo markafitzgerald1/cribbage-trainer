@@ -1,5 +1,5 @@
-import { Card, CARDS as card } from "./Card";
-import { HAND_POINTS, HandPoints, handPoints } from "./handPoints";
+import { type Card, CARDS as card } from "./Card";
+import { HAND_POINTS, type HandPoints, handPoints } from "./handPoints";
 import { describe, expect, it } from "@jest/globals";
 import { parseCards } from "./parseCards.common";
 

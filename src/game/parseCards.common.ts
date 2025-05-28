@@ -1,4 +1,4 @@
-import { CARD_LABELS, Card, CARDS as card } from "./Card";
+import { CARD_LABELS, type Card, CARDS as card } from "./Card";
 
 const NOT_FOUND_INDEX = -1;
 

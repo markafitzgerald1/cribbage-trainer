@@ -1,5 +1,5 @@
 import * as classes from "./ScoredPossibleKeepDiscards.module.css";
-import { DealtCard } from "../game/DealtCard";
+import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { allScoredKeepDiscardsByExpectedScoreDescending } from "../analysis/analysis";

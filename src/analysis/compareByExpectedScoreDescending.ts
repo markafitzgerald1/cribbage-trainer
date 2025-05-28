@@ -1,5 +1,5 @@
-import { Card } from "../game/Card";
-import { ScoredKeepDiscard } from "./analysis";
+import type { Card } from "../game/Card";
+import type { ScoredKeepDiscard } from "./analysis";
 
 export const compareByExpectedScoreThenRankDescending = (
   discardKeep1: ScoredKeepDiscard<Card>,

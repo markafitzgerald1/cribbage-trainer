@@ -1,4 +1,4 @@
-import { Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
+import { type Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
 // jscpd:ignore-start
 const {
   ACE,
@@ -17,7 +17,7 @@ const {
 } = card;
 // jscpd:ignore-end
 import {
-  ScoredKeepDiscard,
+  type ScoredKeepDiscard,
   allScoredKeepDiscardsByExpectedScoreDescending,
 } from "./analysis";
 import { describe, expect, it } from "@jest/globals";

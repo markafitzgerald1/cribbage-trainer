@@ -1,4 +1,4 @@
-import { INDICES_PER_SUIT, RankedCard } from "./Card";
+import { INDICES_PER_SUIT, type RankedCard } from "./Card";
 
 export const rankCounts = (cards: readonly RankedCard[]) =>
   cards.reduce((counts: number[], card: RankedCard): number[] => {

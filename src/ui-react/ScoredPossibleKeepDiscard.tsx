@@ -1,5 +1,5 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
-import { ComparableCard } from "../ui/sortCards";
+import type { ComparableCard } from "../ui/sortCards";
 import { PossibleHand } from "./PossibleHand";
 import { SortOrder } from "../ui/SortOrder";
 

@@ -1,5 +1,5 @@
 import * as classes from "./PossibleHand.module.css";
-import { ComparableCard, sortCards } from "../ui/sortCards";
+import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { PossibleHandCard } from "./PossibleHandCard";
 import { SortOrder } from "../ui/SortOrder";
 

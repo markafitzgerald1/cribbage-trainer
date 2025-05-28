@@ -1,5 +1,5 @@
 import { CARDS_PER_DISCARD } from "../game/facts";
-import { Card } from "../game/Card";
+import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
 import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";

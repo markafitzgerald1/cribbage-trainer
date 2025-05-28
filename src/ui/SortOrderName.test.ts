@@ -1,6 +1,6 @@
 import {
   SORT_ORDER_NAMES,
-  SortOrderName,
+  type SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
 } from "./SortOrderName";
 import { describe, expect, it } from "@jest/globals";

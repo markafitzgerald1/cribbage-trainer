@@ -1,6 +1,6 @@
-import { CARDS, Card } from "../game/Card";
+import { CARDS, type Card } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
-import { ScoredKeepDiscard } from "./analysis";
+import type { ScoredKeepDiscard } from "./analysis";
 import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 
