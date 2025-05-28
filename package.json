@@ -54,7 +54,7 @@
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "@types/seedrandom": "^3.0.8",
-    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/eslint-plugin": "^8.33.0",
     "@typescript-eslint/parser": "^8.32.1",
     "babel-jest": "^29.7.0",
     "babel-plugin-transform-vite-meta-env": "^1.0.3",
