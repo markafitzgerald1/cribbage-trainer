@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { SortOrder } from "../src/ui/SortOrder";
 
 export const renderThenSelectTwoDiscards = async (

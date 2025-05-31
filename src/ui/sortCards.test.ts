@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { HandCard } from "../game/HandCard";
+import type { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
 import { CARDS as card } from "../game/Card";
 import { sortCards } from "./sortCards";

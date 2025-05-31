@@ -1,4 +1,4 @@
-import { Card, CountedCard, RankedCard } from "./Card";
+import type { Card, CountedCard, RankedCard } from "./Card";
 import { Combination, PowerSet } from "js-combinatorics";
 
 const CARDS_PER_PAIR = 2;
@@ -33,10 +33,15 @@ const fifteensPoints = (keep: readonly CountedCard[]) =>
         .reduce((count1, count2) => count1 + count2, 0) === COUNT.FIFTEEN,
   ).length * HAND_POINTS.FIFTEEN_TWO;
 
-enum RunLength {
-  THREE = 3,
-  FOUR = 4,
-}
+/* eslint-disable sort-keys */
+const RunLength = {
+  THREE: 3,
+  FOUR: 4,
+  FIVE: 5,
+} as const;
+/* eslint-enable sort-keys */
+
+type RunLength = (typeof RunLength)[keyof typeof RunLength];
 
 const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
   [...new Combination(keep, runLength)]
@@ -55,6 +60,7 @@ const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
   runLength;
 
 const runsPoints = (keep: readonly RankedCard[]) =>
+  runLengthPoints(keep, RunLength.FIVE) ||
   runLengthPoints(keep, RunLength.FOUR) ||
   runLengthPoints(keep, RunLength.THREE);
 

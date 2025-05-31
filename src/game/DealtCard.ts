@@ -1,4 +1,4 @@
-import { HandCard } from "./HandCard";
+import type { HandCard } from "./HandCard";
 
 export interface DealtCard extends HandCard {
   kept: boolean;

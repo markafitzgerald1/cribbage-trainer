@@ -1,4 +1,4 @@
-import { CARD_LABELS, createCard } from "../game/Card";
+import { CARD_LABELS, Rank, createCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { PossibleHand } from "./PossibleHand";
 import { SortOrder } from "../ui/SortOrder";
@@ -33,7 +33,7 @@ describe("possible hand component", () => {
         render(
           <PossibleHand
             dealtCards={hand.split(",").map((rankLabel, dealOrder) => ({
-              ...createCard(CARD_LABELS.indexOf(rankLabel)),
+              ...createCard(CARD_LABELS.indexOf(rankLabel) as Rank),
               dealOrder,
               kept: true,
             }))}

@@ -1,5 +1,5 @@
-import { ReactElement, StrictMode } from "react";
-import { Trainer, TrainerProps } from "./ui-react/Trainer";
+import { type ReactElement, StrictMode } from "react";
+import { Trainer, type TrainerProps } from "./ui-react/Trainer";
 import { describe, expect, it, jest } from "@jest/globals";
 import ReactDOMClient from "react-dom/client";
 

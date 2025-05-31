@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { createArgTypes, toDealtCards } from "./stories.common";
 import { CARDS } from "../game/Card";
-import { DealtCard } from "../game/DealtCard";
+import type { DealtCard } from "../game/DealtCard";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";

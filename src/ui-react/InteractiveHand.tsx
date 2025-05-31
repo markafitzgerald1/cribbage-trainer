@@ -1,6 +1,6 @@
 import * as classes from "./InteractiveHand.module.css";
 import { DealButton } from "./DealButton";
-import { DealtCard } from "../game/DealtCard";
+import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";

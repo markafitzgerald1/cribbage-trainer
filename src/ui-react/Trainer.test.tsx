@@ -1,14 +1,14 @@
 import "@testing-library/jest-dom";
 import {
-  ByRoleMatcher,
-  ByRoleOptions,
+  type ByRoleMatcher,
+  type ByRoleOptions,
   render,
   screen,
 } from "@testing-library/react";
-import { ComparableCard, sortCards } from "../ui/sortCards";
+import { CARD_LABELS, Rank } from "../game/Card";
+import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
-import userEvent, { UserEvent } from "@testing-library/user-event";
-import { CARD_LABELS } from "../game/Card";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 import { act } from "react";
@@ -24,7 +24,7 @@ describe("trainer component", () => {
       />,
     );
 
-  const preCutHandPoints = "Pre-Cut Scores";
+  const postStarterExpectedHandPoints = "Post-Starter Points";
 
   const clickIndices = (
     getAllByRole: (
@@ -47,7 +47,9 @@ describe("trainer component", () => {
 
     await act(() => clickIndices(getAllByRole, cardIndices, user));
 
-    expect(Boolean(queryByText(preCutHandPoints))).toBe(calculationsExpected);
+    expect(Boolean(queryByText(postStarterExpectedHandPoints))).toBe(
+      calculationsExpected,
+    );
   };
 
   it("initially contains a sort in descending order radio input", () => {
@@ -80,7 +82,7 @@ describe("trainer component", () => {
       .map((cardLabel) => (cardLabel === "T" ? "10" : cardLabel))
       .map((cardLabel, dealOrder) => ({
         dealOrder,
-        rank: CARD_LABELS.indexOf(cardLabel),
+        rank: CARD_LABELS.indexOf(cardLabel) as Rank,
       }));
     return initialDealtHandRanks;
   };

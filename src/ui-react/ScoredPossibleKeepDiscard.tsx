@@ -1,19 +1,23 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
-import { ComparableCard } from "../ui/sortCards";
+import type { ComparableCard } from "../ui/sortCards";
 import { PossibleHand } from "./PossibleHand";
 import { SortOrder } from "../ui/SortOrder";
 
 interface ScoredPossibleKeepDiscardProps {
   readonly keep: readonly ComparableCard[];
   readonly discard: readonly ComparableCard[];
-  readonly points: number;
+  readonly handPoints: number;
+  readonly expectedHandPoints: number;
   readonly sortOrder: SortOrder;
 }
+
+const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 
 export function ScoredPossibleKeepDiscard({
   keep,
   discard,
-  points,
+  handPoints,
+  expectedHandPoints,
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
   return (
@@ -27,7 +31,11 @@ export function ScoredPossibleKeepDiscard({
         dealtCards={discard}
         sortOrder={sortOrder}
       />
-      ) = {points} points
+      ) = {handPoints} +{" "}
+      {(expectedHandPoints - handPoints).toFixed(
+        EXPECTED_POINTS_FRACTION_DIGITS,
+      )}{" "}
+      = {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
     </li>
   );
 }

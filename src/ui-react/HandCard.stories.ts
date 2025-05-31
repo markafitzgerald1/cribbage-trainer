@@ -1,7 +1,7 @@
+/* jscpd:ignore-start */
 import { CARDS, RANK_NAMES, Rank } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
 import { HandCard } from "./HandCard";
-/* jscpd:ignore-start */
 import { createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
 

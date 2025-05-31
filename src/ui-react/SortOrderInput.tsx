@@ -1,6 +1,6 @@
 import * as classes from "./SortOrderInput.module.css";
 import React, { useCallback } from "react";
-import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
+import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
 import { v4 } from "uuid";
 

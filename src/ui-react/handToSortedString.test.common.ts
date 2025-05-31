@@ -1,4 +1,4 @@
-import { DealtCard } from "../game/DealtCard";
+import type { DealtCard } from "../game/DealtCard";
 import { SortOrder } from "../ui/SortOrder";
 import { sortCards } from "../ui/sortCards";
 

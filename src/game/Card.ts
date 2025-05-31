@@ -1,18 +1,22 @@
-export enum Rank {
-  ACE,
-  TWO,
-  THREE,
-  FOUR,
-  FIVE,
-  SIX,
-  SEVEN,
-  EIGHT,
-  NINE,
-  TEN,
-  JACK,
-  QUEEN,
-  KING,
-}
+/* eslint-disable sort-keys */
+export const Rank = {
+  ACE: 0,
+  TWO: 1,
+  THREE: 2,
+  FOUR: 3,
+  FIVE: 4,
+  SIX: 5,
+  SEVEN: 6,
+  EIGHT: 7,
+  NINE: 8,
+  TEN: 9,
+  JACK: 10,
+  QUEEN: 11,
+  KING: 12,
+} as const;
+/* eslint-enable sort-keys */
+
+export type Rank = (typeof Rank)[keyof typeof Rank];
 
 export const RANK_NAMES = Object.keys(Rank)
   .filter((key: string) => isNaN(Number(key)))
@@ -56,8 +60,9 @@ type NamedCards = {
 
 const NAMED_CARDS = Object.fromEntries(
   CARD_RANKS.map((rank) => [
-    // eslint-disable-next-line security/detect-object-injection
-    Rank[rank] as RankName,
+    Object.keys(Rank).find(
+      (key) => Rank[key as keyof typeof Rank] === rank,
+    ) as RankName,
     // eslint-disable-next-line security/detect-object-injection
     RANKED_CARDS[rank],
   ]),
