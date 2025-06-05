@@ -61,7 +61,7 @@ jobs:
 
       - name: Cache build outputs (dist directory)
         id: cache-dist
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: dist
           key: ${{ runner.os }}-dist-${{ hashFiles(
@@ -89,12 +89,12 @@ jobs:
         run: npm run storybook:build
 
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: dist/
 
       - id: deploy-to-github-pages
         name: Deploy GitHub Pages site
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
         with:
           token: ${{ github.token }}
