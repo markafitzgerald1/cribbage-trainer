@@ -1,6 +1,6 @@
 import * as classes from "./Hand.module.css";
 import { HandCard } from "./HandCard";
-import { HandProps } from "./HandProps";
+import type { HandProps } from "./HandProps";
 import { sortCards } from "../ui/sortCards";
 
 export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {

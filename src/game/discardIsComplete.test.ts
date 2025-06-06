@@ -1,6 +1,6 @@
 import { CARDS_PER_DEALT_HAND, CARDS_PER_KEPT_HAND } from "./facts";
+import { Rank, createCard } from "./Card";
 import { describe, expect, it } from "@jest/globals";
-import { createCard } from "./Card";
 import { discardIsComplete } from "./discardIsComplete";
 
 describe("discardIsComplete", () => {
@@ -23,7 +23,7 @@ describe("discardIsComplete", () => {
   ])("%s", (_, keptCount, expected) => {
     const hand = [...Array(CARDS_PER_DEALT_HAND).keys()].map(
       (rank, dealOrder) => ({
-        ...createCard(rank),
+        ...createCard(rank as Rank),
         dealOrder,
         kept: dealOrder < keptCount,
       }),

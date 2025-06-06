@@ -1,4 +1,4 @@
-import { ComparableCard } from "../ui/sortCards";
+import type { ComparableCard } from "../ui/sortCards";
 import { SortOrder } from "../ui/SortOrder";
 
 export interface DiscardableComparableCard extends ComparableCard {

@@ -1,5 +1,5 @@
-import { CARD_LABELS, Card, CARDS as card } from "./Card";
-import { HAND_POINTS, HandPoints, handPoints } from "./scoring";
+import { CARD_LABELS, type Card, CARDS as card } from "./Card";
+import { HAND_POINTS, type HandPoints, handPoints } from "./scoring";
 import { describe, expect, it } from "@jest/globals";
 
 const {

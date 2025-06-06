@@ -1,4 +1,4 @@
-import { SORT_ORDER_NAMES, SortOrderName } from "../ui/SortOrderName";
+import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { InteractiveHand } from "./InteractiveHand";
@@ -55,9 +55,10 @@ describe("sortable hand input component", () => {
         component: { getByText },
         onSortOrderChange,
       } = renderComponent(initialSortOrder);
-      const sortOrderButton = getByText(
-        SortLabel[SortOrder[newSortOrder] as SortOrderName],
-      );
+      const sortOrderName = SORT_ORDER_NAMES.find(
+        (name) => SortOrder[name] === newSortOrder,
+      ) as SortOrderName;
+      const sortOrderButton = getByText(SortLabel[sortOrderName]);
 
       act(() => {
         sortOrderButton.click();
