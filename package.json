@@ -22,6 +22,7 @@
     "storybook:serve": "npx --no-install http-server dist/storybook --port 6006",
     "storybook:test": "npx --no-install concurrently --kill-others --success first --names 'Storybook,Test' 'npm run storybook:serve -- --silent > /dev/null 2>&1 | tail -f /dev/null' 'npx --no-install wait-on --timeout 1s tcp:6006 && test-storybook --browsers chromium webkit firefox'",
     "test-e2e": "playwright test",
+    "act:dry-run": "act -n -W .github/workflows/npm-build-test-upload-artifact-and-deploy.yml -j build-and-test",
     "docker:build-test-suite": "docker build -t cribbage-trainer-integration-tests . && npm run docker:run-e2e-tests",
     "docker:run-e2e-tests": "docker run --rm --volume ${PWD}/playwright-report:/usr/src/app/playwright-report --volume ${PWD}/test-results:/usr/src/app/test-results --volume ${PWD}/tests-e2e/index.screenshots.spec.ts-snapshots:/usr/src/app/tests-e2e/index.screenshots.spec.ts-snapshots cribbage-trainer-integration-tests:latest",
     "build": "vite build",

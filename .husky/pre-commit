@@ -1,1 +1,2 @@
+npm run act:dry-run
 npm run docker:build-test-suite
