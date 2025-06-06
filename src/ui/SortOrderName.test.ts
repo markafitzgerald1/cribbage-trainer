@@ -1,6 +1,6 @@
 import {
   SORT_ORDER_NAMES,
-  SortOrderName,
+  type SortOrderName,
   lowerCaseSpaceSeparatedSortOrderName,
 } from "./SortOrderName";
 import { describe, expect, it } from "@jest/globals";
@@ -13,15 +13,19 @@ describe("lowerCaseSpaceSeparatedSortOrderName", () => {
     );
   });
 
+  const valueToKey = Object.fromEntries(
+    Object.entries(SortOrder).map(([key, value]) => [value, key]),
+  );
+
   it.each([
     [SortOrder.Ascending, "ascending"],
     [SortOrder.Descending, "descending"],
     [SortOrder.DealOrder, "deal order"],
-  ])("%s should be %s", (sortOrder, expectedValue) =>
+  ])("%s should be %s", (sortOrder, expectedValue) => {
     expect(
       lowerCaseSpaceSeparatedSortOrderName[
-        SortOrder[sortOrder] as SortOrderName
+        valueToKey[String(sortOrder)] as SortOrderName
       ],
-    ).toBe(expectedValue),
-  );
+    ).toBe(expectedValue);
+  });
 });

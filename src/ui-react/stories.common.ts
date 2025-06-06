@@ -1,5 +1,5 @@
-import { Card } from "../game/Card";
-import { DealtCard } from "../game/DealtCard";
+import type { Card } from "../game/Card";
+import type { DealtCard } from "../game/DealtCard";
 
 export const createArgTypes = (property: string, labels: string[]) => ({
   [property]: {
