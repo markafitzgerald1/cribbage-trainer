@@ -1,6 +1,6 @@
-import { Card, CARDS as card } from "../game/Card";
+import { type Card, CARDS as card } from "../game/Card";
 import {
-  ScoredKeepDiscard,
+  type ScoredKeepDiscard,
   allScoredKeepDiscardsByScoreDescending,
 } from "./analysis";
 import { describe, expect, it } from "@jest/globals";

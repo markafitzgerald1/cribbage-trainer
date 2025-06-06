@@ -1,6 +1,6 @@
-import { CARDS, Card } from "../game/Card";
+import { CARDS, type Card } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
-import { ComparableCard } from "../ui/sortCards";
+import type { ComparableCard } from "../ui/sortCards";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";

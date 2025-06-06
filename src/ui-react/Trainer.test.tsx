@@ -1,14 +1,14 @@
 import "@testing-library/jest-dom";
 import {
-  ByRoleMatcher,
-  ByRoleOptions,
+  type ByRoleMatcher,
+  type ByRoleOptions,
   render,
   screen,
 } from "@testing-library/react";
-import { ComparableCard, sortCards } from "../ui/sortCards";
+import { CARD_LABELS, Rank } from "../game/Card";
+import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
-import userEvent, { UserEvent } from "@testing-library/user-event";
-import { CARD_LABELS } from "../game/Card";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 import { act } from "react";
@@ -80,19 +80,23 @@ describe("trainer component", () => {
       .map((cardLabel) => (cardLabel === "T" ? "10" : cardLabel))
       .map((cardLabel, dealOrder) => ({
         dealOrder,
-        rank: CARD_LABELS.indexOf(cardLabel),
+        rank: CARD_LABELS.indexOf(cardLabel) as Rank,
       }));
     return initialDealtHandRanks;
   };
+
+  function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
+    return container.querySelector(
+      `input[value='${Object.keys(SortOrder).find((key) => SortOrder[key as keyof typeof SortOrder] === sortOrder)}']`,
+    )!;
+  }
 
   it.each([SortOrder.Ascending, SortOrder.Descending])(
     "re-sorts the dealt hand when the sort order is changed to %s",
     async (newSortOrder) => {
       const { container } = renderTrainer();
       const user = userEvent.setup();
-      const sortInDealOrderInput = container.querySelector(
-        `input[value='${SortOrder[SortOrder.DealOrder]}']`,
-      )!;
+      const sortInDealOrderInput = getSortInput(container, SortOrder.DealOrder);
       await act(() => user.click(sortInDealOrderInput));
       const expectedSortedCards = sortCards(
         handTextToComparableCards(container.querySelector("ul")!.textContent!),
@@ -100,9 +104,7 @@ describe("trainer component", () => {
       )
         .map((dealtCard) => CARD_LABELS[dealtCard.rank])
         .join("");
-      const newSortInput = container.querySelector(
-        `input[value='${SortOrder[newSortOrder]}']`,
-      )!;
+      const newSortInput = getSortInput(container, newSortOrder);
 
       await act(() => user.click(newSortInput));
 

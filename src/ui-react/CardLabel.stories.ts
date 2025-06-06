@@ -1,5 +1,7 @@
-import { CARDS, RANK_NAMES } from "../game/Card";
+/* jscpd:ignore-start */
+import { CARDS, RANK_NAMES, Rank } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
+/* jscpd:ignore-end */
 import { CardLabel } from "./CardLabel";
 /* jscpd:ignore-start */
 import { createArgTypes } from "./stories.common";
@@ -20,7 +22,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const createStory = (rank: number): Story => ({
-  args: { rank },
+  args: { rank: rank as Rank },
 });
 
 export const Ace = createStory(CARDS.ACE.rank);
