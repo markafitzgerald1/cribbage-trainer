@@ -6,18 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate-workflow:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Install act
-        run: curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
-      - name: Dry run workflow with act
-        run: act -n -W .github/workflows/npm-build-test-upload-artifact-and-deploy.yml -j build-and-test
-
   build-and-test:
-    needs: validate-workflow
     runs-on: ubuntu-latest
     permissions:
       contents: read
