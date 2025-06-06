@@ -87,14 +87,18 @@ describe("trainer component", () => {
     return initialDealtHandRanks;
   };
 
+  function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
+    return container.querySelector(
+      `input[value='${Object.keys(SortOrder).find((key) => SortOrder[key as keyof typeof SortOrder] === sortOrder)}']`,
+    )!;
+  }
+
   it.each([SortOrder.Ascending, SortOrder.Descending])(
     "re-sorts the dealt hand when the sort order is changed to %s",
     async (newSortOrder) => {
       const { container } = renderTrainer();
       const user = userEvent.setup();
-      const sortInDealOrderInput = container.querySelector(
-        `input[value='${SortOrder[SortOrder.DealOrder]}']`,
-      )!;
+      const sortInDealOrderInput = getSortInput(container, SortOrder.DealOrder);
       await act(() => user.click(sortInDealOrderInput));
       const expectedSortedCards = sortCards(
         handTextToComparableCards(container.querySelector("ul")!.textContent!),
@@ -102,9 +106,7 @@ describe("trainer component", () => {
       )
         .map((dealtCard) => CARD_LABELS[dealtCard.rank])
         .join("");
-      const newSortInput = container.querySelector(
-        `input[value='${SortOrder[newSortOrder]}']`,
-      )!;
+      const newSortInput = getSortInput(container, newSortOrder);
 
       await act(() => user.click(newSortInput));
 

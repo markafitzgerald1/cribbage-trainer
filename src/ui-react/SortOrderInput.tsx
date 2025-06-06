@@ -40,8 +40,7 @@ export function SortOrderInput({ sortOrder, onChange }: SortOrderInputProps) {
             name={name}
             onChange={handleChange}
             type="radio"
-            // eslint-disable-next-line security/detect-object-injection
-            value={SortOrder[SortOrder[key]]}
+            value={key}
           />
           <label
             className={classes.label}

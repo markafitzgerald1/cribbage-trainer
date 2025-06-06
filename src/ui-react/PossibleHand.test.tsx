@@ -1,4 +1,5 @@
 import { CARD_LABELS, Rank, createCard } from "../game/Card";
+import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it } from "@jest/globals";
 import { PossibleHand } from "./PossibleHand";
 import { SortOrder } from "../ui/SortOrder";
@@ -19,27 +20,49 @@ describe("possible hand component", () => {
   const keptHand = "10,A,J,4";
   const discard = "5,K";
 
-  it.each([
-    ["A410J", SortOrder[SortOrder.Ascending], keptHand],
-    ["J104A", SortOrder[SortOrder.Descending], keptHand],
-    [keptHand, SortOrder[SortOrder.DealOrder], keptHand],
-    [discard, SortOrder[SortOrder.Ascending], discard],
-    ["K5", SortOrder[SortOrder.Descending], discard],
-    [discard, SortOrder[SortOrder.DealOrder], discard],
-  ])(
-    "renders a span with dealt cards %s sorted in %s order",
-    (sortedHand, sortOrder, hand) =>
-      expect(
-        render(
-          <PossibleHand
-            dealtCards={hand.split(",").map((rankLabel, dealOrder) => ({
-              ...createCard(CARD_LABELS.indexOf(rankLabel) as Rank),
-              dealOrder,
-              kept: true,
-            }))}
-            sortOrder={SortOrder[sortOrder as keyof typeof SortOrder]}
-          />,
-        ).container.querySelector("span")!.textContent,
-      ).toStrictEqual(sortedHand.replace(/,/gu, "")),
+  const expectedKeptHand: Record<SortOrderName, string> = {
+    Ascending: "A410J",
+    DealOrder: keptHand,
+    Descending: "J104A",
+  };
+  const expectedDiscard: Record<SortOrderName, string> = {
+    Ascending: discard,
+    DealOrder: discard,
+    Descending: "K5",
+  };
+
+  function expectPossibleHandRendersSpan(
+    hand: string,
+    expectedMap: Record<SortOrderName, string>,
+    sortOrderName: SortOrderName,
+  ) {
+    const expected = expectedMap[sortOrderName].replace(/,/gu, "");
+
+    expect(
+      render(
+        <PossibleHand
+          dealtCards={hand.split(",").map((rankLabel, dealOrder) => ({
+            ...createCard(CARD_LABELS.indexOf(rankLabel) as Rank),
+            dealOrder,
+            kept: true,
+          }))}
+          sortOrder={SortOrder[sortOrderName]}
+        />,
+      ).container.querySelector("span")!.textContent,
+    ).toStrictEqual(expected);
+  }
+
+  it.each(SORT_ORDER_NAMES)(
+    "renders a span with kept hand sorted in %s order",
+    (sortOrderName) => {
+      expectPossibleHandRendersSpan(keptHand, expectedKeptHand, sortOrderName);
+    },
+  );
+
+  it.each(SORT_ORDER_NAMES)(
+    "renders a span with discard sorted in %s order",
+    (sortOrderName) => {
+      expectPossibleHandRendersSpan(discard, expectedDiscard, sortOrderName);
+    },
   );
 });

@@ -52,8 +52,8 @@ const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
     .filter((combination) =>
       combination
         .slice(1)
-        // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
-        .map((rank, index) => rank - combination[index]!)
+        // eslint-disable-next-line security/detect-object-injection
+        .map((rank, index) => rank - (combination[index] as number))
         .every((diff) => diff === 1),
     ).length *
   HAND_POINTS.RUN_PER_CARD *

@@ -7,6 +7,7 @@ import js from "@eslint/js";
 import path from "node:path";
 import react from "eslint-plugin-react";
 import spellcheck from "eslint-plugin-spellcheck";
+import stylistic from "@stylistic/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 
@@ -46,11 +47,13 @@ export default [
       sourceType: "script",
     },
     plugins: {
+      "@stylistic": stylistic,
       "@typescript-eslint": typescriptEslint,
       react: fixupPluginRules(react),
       spellcheck,
     },
     rules: {
+      "@stylistic/no-trailing-spaces": "error",
       "@typescript-eslint/no-magic-numbers": [
         "error",
         {
@@ -305,6 +308,7 @@ export default [
             "expectCalculationsAfterClicks",
             "expectTotalHandPoints",
             "expectHandsInDescendingExpectedScoreOrder",
+            "expectPossibleHandRendersSpan",
           ],
         },
       ],

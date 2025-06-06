@@ -55,9 +55,10 @@ describe("sortable hand input component", () => {
         component: { getByText },
         onSortOrderChange,
       } = renderComponent(initialSortOrder);
-      const sortOrderButton = getByText(
-        SortLabel[SortOrder[newSortOrder] as SortOrderName],
-      );
+      const sortOrderName = SORT_ORDER_NAMES.find(
+        (name) => SortOrder[name] === newSortOrder,
+      ) as SortOrderName;
+      const sortOrderButton = getByText(SortLabel[sortOrderName]);
 
       act(() => {
         sortOrderButton.click();

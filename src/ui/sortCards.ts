@@ -29,5 +29,14 @@ const compare = Object.fromEntries(
 export const sortCards = <T extends ComparableCard>(
   dealtCards: readonly T[],
   sortOrder: SortOrder,
+) => {
+  const sortOrderName = SORT_ORDER_NAMES.find(
+    // eslint-disable-next-line security/detect-object-injection
+    (name) => SortOrder[name] === sortOrder,
+  );
+  if (!sortOrderName) {
+    throw new Error(`Invalid sortOrder: ${sortOrder}`);
+  }
   // eslint-disable-next-line security/detect-object-injection
-) => [...dealtCards].sort(compare[SortOrder[sortOrder]]);
+  return [...dealtCards].sort(compare[sortOrderName]);
+};
