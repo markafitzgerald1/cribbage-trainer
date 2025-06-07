@@ -43,6 +43,7 @@ describe("hand component", () => {
     expect(getAllByRole("checkbox")).toHaveLength(dealtHand.length);
   });
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it.each(SORT_ORDER_NAMES)(
     "has the rank of each dealt card in %s order",
     (sortOrderName) => {

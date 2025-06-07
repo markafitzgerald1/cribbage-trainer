@@ -10,6 +10,7 @@ describe("create", () => {
     expect(createGenerator(null)).toBe(Math.random);
   });
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("returns a function that generates the same sequence of random numbers when given the same seed", () => {
     const seed = "my seed";
     const generateRandomNumber1 = createGenerator(seed);
