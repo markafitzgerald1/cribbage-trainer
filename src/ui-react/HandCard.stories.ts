@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import { CARDS, RANK_NAMES, Rank } from "../game/Card";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 /* jscpd:ignore-end */
 import { HandCard } from "./HandCard";
 /* jscpd:ignore-start */

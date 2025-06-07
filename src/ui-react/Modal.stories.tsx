@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import Modal, { type ModalProps } from "./Modal";
-import { expect, fireEvent } from "@storybook/test";
+import { expect, fireEvent } from "storybook/test";
 import { PrivacyPolicy as PrivacyPolicyNode } from "./PrivacyPolicy";
 import { useState } from "react";
 

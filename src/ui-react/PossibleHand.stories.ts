@@ -1,5 +1,5 @@
 import { CARDS, type Card } from "../game/Card";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { PossibleHand } from "./PossibleHand";
 /* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
