@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/playwright:v1.52.0-noble
 
 WORKDIR /usr/src/app
 
-# Install actionlint and act so npm run lint (and its sub-tasks) work in CI
+# Install actionlint so npm run lint (and its sub-tasks) work in CI
 RUN curl -sSL https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz | tar -xz -C /usr/local/bin && chmod +x /usr/local/bin/actionlint
 
 COPY package*.json ./

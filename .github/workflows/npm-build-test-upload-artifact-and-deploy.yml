@@ -29,9 +29,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Test GitHub Actions workflow
-        run: npm run lint:act
-
       - name: Run e2e and Storybook interaction tests in Docker
         run: npm run docker:run-e2e-tests
 
@@ -64,7 +61,7 @@ jobs:
 
       - name: Cache build outputs (dist directory)
         id: cache-dist
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: dist
           key: ${{ runner.os }}-dist-${{ hashFiles(
