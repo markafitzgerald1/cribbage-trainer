@@ -1,6 +1,6 @@
 import { Trainer, analyticsConsentKey } from "./Trainer";
-import { expect, fireEvent, within } from "@storybook/test";
-import type { Meta } from "@storybook/react";
+import { expect, fireEvent, within } from "storybook/test";
+import type { Meta } from "@storybook/react-vite";
 /* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";

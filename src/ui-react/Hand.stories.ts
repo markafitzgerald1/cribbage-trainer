@@ -1,5 +1,5 @@
 import { CARDS, Rank } from "../game/Card";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Hand } from "./Hand";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";

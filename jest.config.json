@@ -16,7 +16,8 @@
     }
   },
   "moduleNameMapper": {
-    "\\.module\\.css$": "<rootDir>/__mocks__/styleMock.ts"
+    "\\.module\\.css$": "<rootDir>/__mocks__/styleMock.ts",
+    "^uuid$": "<rootDir>/node_modules/uuid/dist/index.js"
   },
   "testEnvironment": "jsdom",
   "testPathIgnorePatterns": ["/tests-e2e/", "/tests-examples"],
