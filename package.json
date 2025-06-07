@@ -12,7 +12,7 @@
     "lint:cspell": "cspell '**' --gitignore",
     "lint:tsc": "tsc",
     "lint:jscpd": "jscpd",
-    "lint:actions": "npx --no-install actionlint",
+    "lint:actions": "npx --no-install act --list",
     "lint:audit": "better-npm-audit audit",
     "lint:outdated": "(check-outdated || true)",
     "lint": "concurrently --names 'ESLINT,STYLE,MARKDOWN,PRETTIER,CSPELL,TSC,JSCPD,ACTIONS,AUDIT,OUTDATED' --success first \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdown\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:lint:actions\" \"npm:lint:audit\" \"npm:lint:outdated\"",

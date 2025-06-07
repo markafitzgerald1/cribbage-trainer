@@ -36,7 +36,7 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 ### Lint and Test
 
 - `npm run docker:build-test-suite`
-- `npm run lint:actions` # validate GitHub Actions workflows
+- `npm run lint:actions` # validate GitHub Actions workflows using [nektos/act](https://github.com/nektos/act)
 
 ### Develop
 
