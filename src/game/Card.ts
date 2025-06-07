@@ -1,22 +1,25 @@
-export enum Rank {
-  ACE,
-  TWO,
-  THREE,
-  FOUR,
-  FIVE,
-  SIX,
-  SEVEN,
-  EIGHT,
-  NINE,
-  TEN,
-  JACK,
-  QUEEN,
-  KING,
-}
+/* eslint-disable sort-keys */
+export const Rank = {
+  ACE: 0,
+  TWO: 1,
+  THREE: 2,
+  FOUR: 3,
+  FIVE: 4,
+  SIX: 5,
+  SEVEN: 6,
+  EIGHT: 7,
+  NINE: 8,
+  TEN: 9,
+  JACK: 10,
+  QUEEN: 11,
+  KING: 12,
+} as const;
+/* eslint-enable sort-keys */
+export type Rank = (typeof Rank)[keyof typeof Rank];
 
-export const RANK_NAMES = Object.keys(Rank)
-  .filter((key: string) => isNaN(Number(key)))
-  .map((name) => name[0] + name.slice(1).toLowerCase());
+export const RANK_NAMES = Object.keys(Rank).map(
+  (name) => name[0] + name.slice(1).toLowerCase(),
+);
 
 export interface RankedCard {
   rank: Rank;
@@ -42,9 +45,7 @@ export const createCard = (rank: Rank): Card => ({
 
 export const INDICES_PER_SUIT = 13;
 
-export const CARD_RANKS: Rank[] = Object.values(Rank).filter(
-  Number.isInteger,
-) as Rank[];
+export const CARD_RANKS: Rank[] = Object.values(Rank) as Rank[];
 
 const RANKED_CARDS: readonly Card[] = CARD_RANKS.map(createCard);
 
@@ -55,11 +56,9 @@ type NamedCards = {
 };
 
 const NAMED_CARDS = Object.fromEntries(
-  CARD_RANKS.map((rank) => [
-    // eslint-disable-next-line security/detect-object-injection
-    Rank[rank] as RankName,
-    // eslint-disable-next-line security/detect-object-injection
-    RANKED_CARDS[rank],
+  Object.entries(Rank).map(([name, value]) => [
+    name,
+    RANKED_CARDS[value as number],
   ]),
 ) as NamedCards;
 

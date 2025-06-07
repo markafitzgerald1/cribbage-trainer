@@ -1,4 +1,4 @@
-import { Card, CountedCard, RankedCard } from "./Card";
+import type { Card, CountedCard, RankedCard } from "./Card";
 import { Combination, PowerSet } from "js-combinatorics";
 
 const CARDS_PER_PAIR = 2;
@@ -33,10 +33,13 @@ const fifteensPoints = (keep: readonly CountedCard[]) =>
         .reduce((count1, count2) => count1 + count2, 0) === COUNT.FIFTEEN,
   ).length * HAND_POINTS.FIFTEEN_TWO;
 
-enum RunLength {
-  THREE = 3,
-  FOUR = 4,
-}
+/* eslint-disable sort-keys */
+const RunLength = {
+  THREE: 3,
+  FOUR: 4,
+} as const;
+/* eslint-enable sort-keys */
+type RunLength = (typeof RunLength)[keyof typeof RunLength];
 
 const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
   [...new Combination(keep, runLength)]
@@ -47,8 +50,8 @@ const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
     .filter((combination) =>
       combination
         .slice(1)
-        // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
-        .map((rank, index) => rank - combination[index]!)
+        // eslint-disable-next-line security/detect-object-injection
+        .map((rank, index) => rank - (combination[index] as number))
         .every((diff) => diff === 1),
     ).length *
   HAND_POINTS.RUN_PER_CARD *

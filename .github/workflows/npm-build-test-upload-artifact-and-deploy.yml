@@ -1,28 +1,36 @@
 name: npm-build-test-upload-artifact-and-deploy
 on: [push]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: github.ref != 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (includes app/Storybook builds, lint, unit tests) with caching
+        uses: docker/build-push-action@v6
         with:
-          node-version-file: ".nvmrc"
-      - name: Install dependencies
-        run: npm clean-install
-      - name: Build web application bundles
-        run: npm run build
-      - name: Run static code and project analyses
-        run: npm run lint
-      - name: Run unit tests
-        run: npm run test
-      - name: Install end to end test browsers
-        run: npm run playwright:install
-      - name: Run Storybook tests
-        run: npm run storybook:test
-      - name: Run end to end tests
-        run: npm run docker-test-e2e
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: cribbage-trainer-integration-tests:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run e2e and Storybook interaction tests in Docker
+        run: npm run docker:run-e2e-tests
 
   build-upload-and-deploy:
     runs-on: ubuntu-latest
@@ -39,24 +47,54 @@ jobs:
       url: ${{ steps.deploy-to-github-pages.outputs.page_url }}
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and cache npm dependencies
+        uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
+          cache: "npm"
+
       - name: Install dependencies
         run: npm clean-install
+
+      - name: Cache build outputs (dist directory)
+        id: cache-dist
+        uses: actions/cache@v4
+        with:
+          path: dist
+          key: ${{ runner.os }}-dist-${{ hashFiles(
+            'package-lock.json',
+            '.nvmrc',
+            'src/**/*',
+            'styles.d.ts',
+            '.storybook/main.ts',
+            '.storybook/preview.ts',
+            'vite.config.js',
+            'tsconfig.json',
+            'babel.config.js'
+            ) }}
+          restore-keys: |
+            ${{ runner.os }}-dist-
+
       - name: Build web application bundles
+        if: steps.cache-dist.outputs.cache-hit != 'true'
         run: npm run build
         env:
           VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
+
       - name: Build static Storybook site
+        if: steps.cache-dist.outputs.cache-hit != 'true'
         run: npm run storybook:build
+
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist/
+
       - id: deploy-to-github-pages
         name: Deploy GitHub Pages site
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
         with:
           token: ${{ github.token }}

@@ -1,4 +1,4 @@
-import { CARDS, Card } from "../game/Card";
+import { CARDS, type Card } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react";
 import { PossibleHand } from "./PossibleHand";
 /* jscpd:ignore-start */

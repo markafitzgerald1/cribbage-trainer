@@ -1,6 +1,6 @@
 import { CARDS, INDICES_PER_SUIT } from "../game/Card";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
-import { DealtCard } from "./DealtCard";
+import type { DealtCard } from "./DealtCard";
 
 export const dealHand = (generateRandomNumber: () => number): DealtCard[] =>
   Array.from({ length: CARDS_PER_DEALT_HAND }, () =>

@@ -1,7 +1,7 @@
 import * as classes from "./HandCard.module.css";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CARD_LABELS } from "../game/Card";
-import { DealtCard } from "../game/DealtCard";
+import type { DealtCard } from "../game/DealtCard";
 import { HandCard } from "./HandCard";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
