@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
 import { createArgTypes, toDealtCards } from "./stories.common";
 import { CARDS } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
