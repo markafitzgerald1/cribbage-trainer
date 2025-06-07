@@ -6,6 +6,7 @@
     "Buildx",
     "camelcase",
     "discardable",
+    "dryrun",
     "espree",
     "fieldset",
     "figcaption",
