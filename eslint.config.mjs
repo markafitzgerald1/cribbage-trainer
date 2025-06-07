@@ -326,6 +326,8 @@ export default [
             "expectPossibleHandRendersSpan",
             "expectCalculationsAfterClicks",
             "expectSort",
+            "expectHandsInDescendingExpectedScoreOrder",
+            "expectTotalHandPoints",
           ],
         },
       ],
