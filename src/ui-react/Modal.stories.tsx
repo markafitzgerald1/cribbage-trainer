@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import Modal, { ModalProps } from "./Modal";
+import Modal, { type ModalProps } from "./Modal";
 import { expect, fireEvent } from "@storybook/test";
 import { PrivacyPolicy as PrivacyPolicyNode } from "./PrivacyPolicy";
 import { useState } from "react";

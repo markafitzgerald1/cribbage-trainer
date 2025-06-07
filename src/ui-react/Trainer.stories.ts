@@ -73,7 +73,11 @@ const createPlay =
     const radioButtons = within(canvasElement).getAllByRole("radio");
     const dealOrderRadioButton = radioButtons.find(
       (radioButton) =>
-        radioButton.getAttribute("value") === SortOrder[radioButtonValue],
+        radioButton.getAttribute("value") ===
+        Object.keys(SortOrder).find(
+          (key) =>
+            SortOrder[key as keyof typeof SortOrder] === radioButtonValue,
+        ),
     )!;
     const initialCanvasElementTextContent = canvasElement.textContent;
 

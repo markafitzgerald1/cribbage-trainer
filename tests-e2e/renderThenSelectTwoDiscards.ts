@@ -1,4 +1,4 @@
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import { SortOrder } from "../src/ui/SortOrder";
 
 export const renderThenSelectTwoDiscards = async (
@@ -19,8 +19,8 @@ export const renderThenSelectTwoDiscards = async (
     await checkboxes.nth(index).click();
   }
 
-  await page
-    .locator(`label[for="${SortOrder[SortOrder.DealOrder]}"]`)
-    .first()
-    .click();
+  const dealOrderKey = Object.entries(SortOrder).find(
+    ([, value]) => value === SortOrder.DealOrder,
+  )?.[0];
+  await page.locator(`label[for="${dealOrderKey}"]`).first().click();
 };

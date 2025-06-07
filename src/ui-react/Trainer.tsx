@@ -23,7 +23,7 @@ export function Trainer({
     [generator],
   );
   const [dealtCards, setDealtCards] = useState(dealHandWithGenerator);
-  const [sortOrder, setSortOrder] = useState(SortOrder.Descending);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
   const [analyticsConsented, setAnalyticsConsented] = useState(
     null as boolean | null,
   );
