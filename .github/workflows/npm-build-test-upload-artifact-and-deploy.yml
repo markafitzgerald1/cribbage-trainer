@@ -29,6 +29,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Test GitHub Actions workflow
+        run: npm run lint:act
+
       - name: Run e2e and Storybook interaction tests in Docker
         run: npm run docker:run-e2e-tests
 
