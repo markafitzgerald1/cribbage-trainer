@@ -312,6 +312,23 @@ export default [
           ],
         },
       ],
+      "jest/prefer-ending-with-an-expect": [
+        "error",
+        {
+          additionalTestBlockFunctions: [],
+          assertFunctionNames: [
+            "expect",
+            "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
+            "expectPairsPoints",
+            "expectFifteensPoints",
+            "expectRunsPoints",
+            "expectTotalPoints",
+            "expectPossibleHandRendersSpan",
+            "expectCalculationsAfterClicks",
+            "expectSort",
+          ],
+        },
+      ],
       "jest/prefer-expect-assertions": ["off"],
       "jest/unbound-method": "error",
       "react/jsx-no-bind": ["off"],

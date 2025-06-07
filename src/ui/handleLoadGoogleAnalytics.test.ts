@@ -19,6 +19,7 @@ const processEnv = process.env as ProcessEnvWithOptionalMeasurementId;
 describe.each([null, false, true])(
   "handleLoadGoogleAnalytics with consented = %s",
   (consented) => {
+    // eslint-disable-next-line jest/prefer-ending-with-an-expect
     it("calls loadGoogleAnalytics with consent status and measurement ID", () => {
       jest.clearAllMocks();
       const measurementId = "test-measurement-id";

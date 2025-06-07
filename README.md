@@ -43,6 +43,11 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - Build a static version of the Storybook stories: `npm run storybook:build`
 - Serve a static version of the Storybook stories: `npm run storybook:serve`
 
+### Dependency Maintenance
+
+- `npm run deps:update:minor`: Updates all npm dependencies to their latest
+  **minor** and **patch** versions (avoiding major updates), then installs them.
+
 ### Handling visual regression test screenshot differences
 
 When the Playwright e2e (end to end) fail due to screenshot differences, compare
