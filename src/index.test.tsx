@@ -15,6 +15,7 @@ describe("app entrypoint", () => {
 
   const containerSelector = "#trainer";
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it(`creates a React root in the '${containerSelector}' element with the Trainer component in Strict Mode`, () => {
     try {
       const container = document.createElement("div");

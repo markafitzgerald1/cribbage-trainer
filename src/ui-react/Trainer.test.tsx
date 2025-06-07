@@ -58,14 +58,17 @@ describe("trainer component", () => {
     expect(renderTrainer().queryByText("Hand")).toBeTruthy();
   });
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("contains pre-cut hand points possibilities once two cards have been selected", async () => {
     await expectCalculationsAfterClicks([0, 1], true);
   });
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("hides pre-cut hand points possibilities once two cards have been selected and then one of them is unselected", async () => {
     await expectCalculationsAfterClicks([0, 1, 1], false);
   });
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("hides pre-cut hand points possibilities if more than two cards are selected", async () => {
     const moreThanTwo = 3;
     await expectCalculationsAfterClicks([...Array(moreThanTwo).keys()], false);
