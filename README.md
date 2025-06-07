@@ -36,7 +36,6 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 ### Lint and Test
 
 - `npm run docker:build-test-suite`
-- `npm run lint:act`
 
 ### Develop
 
