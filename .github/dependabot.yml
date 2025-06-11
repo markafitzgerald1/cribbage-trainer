@@ -5,24 +5,8 @@ updates:
     schedule:
       interval: "daily"
     groups:
-      storybook:
-        patterns:
-          - "storybook"
-          - "@storybook/addon-actions"
-          - "@storybook/addon-essentials"
-          - "@storybook/addon-interactions"
-          - "@storybook/addon-links"
-          - "@storybook/react"
-          - "@storybook/react-vite"
-          - "@storybook/test"
-      react:
-        patterns:
-          - "react"
-          - "react-dom"
-      typescript-eslint:
-        patterns:
-          - "@typescript-eslint/eslint-plugin"
-          - "@typescript-eslint/parser"
+      npm-all:
+        patterns: ["*"]
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
