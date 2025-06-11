@@ -24,6 +24,6 @@ describe("modal component", () => {
   it("is shown when show is true", () => {
     const { getByRole } = renderModal(true);
 
-    expect(getByRole("button")).toBeInTheDocument();
+    expect(getByRole("button")).toBeTruthy();
   });
 });
