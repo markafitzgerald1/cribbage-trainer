@@ -1,0 +1,6 @@
+{
+  "1105422": {
+    "reason": "Low severity brace-expansion RegExp DoS vulnerability - giving dependencies time to patch",
+    "expiry": "2025-07-23"
+  }
+}

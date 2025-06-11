@@ -21,7 +21,7 @@ describe("app entrypoint", () => {
       const container = document.createElement("div");
       jest.spyOn(document, "querySelector").mockImplementation(() => container);
       const renderMock = jest.fn();
-      jest
+      const createRootSpy = jest
         .spyOn(ReactDOMClient, "createRoot")
         .mockImplementation(() => ({ render: renderMock, unmount: jest.fn() }));
       interface StrictModeProps {
@@ -38,7 +38,8 @@ describe("app entrypoint", () => {
         .children as ReactElement<TrainerProps>;
 
       expect(document.querySelector).toHaveBeenCalledWith(containerSelector);
-      expect(ReactDOMClient.createRoot).toHaveBeenCalledWith(container);
+      expect(createRootSpy).toHaveBeenCalledTimes(1);
+      expect(createRootSpy.mock.calls[0]?.[0]).toBe(container);
       expect(renderArg.type).toBe(StrictMode);
       expect(trainerElement.type).toBe(Trainer);
     } finally {

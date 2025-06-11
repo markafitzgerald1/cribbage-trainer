@@ -21,13 +21,13 @@ describe("analytics consent dialog", () => {
   it("contains the expected title with null consent", () => {
     const { getByText } = renderDialog(null);
 
-    expect(getByText(ANALYTICS_CONSENT)).toBeInTheDocument();
+    expect(getByText(ANALYTICS_CONSENT)).toBeTruthy();
   });
 
   it("contains the expected title with unspecified consent", () => {
     const { getByText } = renderDialog();
 
-    expect(getByText(ANALYTICS_CONSENT)).toBeInTheDocument();
+    expect(getByText(ANALYTICS_CONSENT)).toBeTruthy();
   });
 
   it("contains the accept button with null consent", () =>
@@ -35,7 +35,7 @@ describe("analytics consent dialog", () => {
       render(<AnalyticsConsentDialog onChange={jest.fn()} />).getByText(
         ANALYTICS_CONSENT,
       ),
-    ).toBeInTheDocument());
+    ).toBeTruthy());
 
   it.each<[boolean, string]>([
     [true, "Accept"],
@@ -59,7 +59,7 @@ describe("analytics consent dialog", () => {
     (consent: boolean | null, expectedMessage: string) => {
       const { getByText } = renderDialog(consent);
 
-      expect(getByText(expectedMessage, { exact: false })).toBeInTheDocument();
+      expect(getByText(expectedMessage, { exact: false })).toBeTruthy();
     },
   );
 
@@ -71,7 +71,7 @@ describe("analytics consent dialog", () => {
 
     fireEvent.click(getByText(privacyPolicyLinkText));
 
-    expect(getByText(distinctPrivacyPolicyText)).toBeInTheDocument();
+    expect(getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
 
   const ENTER_KEY_CODE = "Enter";
@@ -84,7 +84,7 @@ describe("analytics consent dialog", () => {
       key: ENTER_KEY_CODE,
     });
 
-    expect(getByText(distinctPrivacyPolicyText)).toBeInTheDocument();
+    expect(getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
 
   it("does not show the modal when another key is pressed on the Privacy Policy link", () => {
@@ -96,7 +96,7 @@ describe("analytics consent dialog", () => {
       key: keyCode,
     });
 
-    expect(queryByText(distinctPrivacyPolicyText)).not.toBeInTheDocument();
+    expect(queryByText(distinctPrivacyPolicyText)).toBeFalsy();
   });
 
   const renderAndClick = () => {
@@ -110,7 +110,7 @@ describe("analytics consent dialog", () => {
 
     fireEvent.click(getByText("X"));
 
-    expect(queryByText(distinctPrivacyPolicyText)).not.toBeInTheDocument();
+    expect(queryByText(distinctPrivacyPolicyText)).toBeFalsy();
   });
 
   it("hides the modal when the Escape key is pressed", () => {
@@ -119,7 +119,7 @@ describe("analytics consent dialog", () => {
     const escapeKeyCode = "Escape";
     fireEvent.keyDown(document, { code: escapeKeyCode, key: escapeKeyCode });
 
-    expect(queryByText(distinctPrivacyPolicyText)).not.toBeInTheDocument();
+    expect(queryByText(distinctPrivacyPolicyText)).toBeFalsy();
   });
 
   it("does not hide the modal when another key is pressed", () => {
@@ -127,7 +127,7 @@ describe("analytics consent dialog", () => {
 
     fireEvent.keyDown(document, { code: ENTER_KEY_CODE, key: ENTER_KEY_CODE });
 
-    expect(getByText(distinctPrivacyPolicyText)).toBeInTheDocument();
+    expect(getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
 
   it("hides modal on click outside", () => {
@@ -135,7 +135,7 @@ describe("analytics consent dialog", () => {
 
     fireEvent.mouseDown(document);
 
-    expect(queryByText(distinctPrivacyPolicyText)).not.toBeInTheDocument();
+    expect(queryByText(distinctPrivacyPolicyText)).toBeFalsy();
   });
 
   it("does not hide modal on click inside", () => {
@@ -143,7 +143,7 @@ describe("analytics consent dialog", () => {
 
     fireEvent.mouseDown(getByText(distinctPrivacyPolicyText));
 
-    expect(getByText(distinctPrivacyPolicyText)).toBeInTheDocument();
+    expect(getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
 
   it("renders null for unexpected consent values", () => {
