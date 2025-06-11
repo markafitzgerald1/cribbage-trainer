@@ -35,7 +35,7 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Lint and Test
 
-- `npm run docker:build-test-suite`
+- `npm run docker:build-and-test-all`
 
 ### Develop
 
@@ -57,4 +57,4 @@ expected screenshots:
 
 - remove out of date screenshots: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`
   , then
-- generate the now expected browser screenshots: `npm run docker:build-test-suite`.
+- generate the now expected browser screenshots: `npm run docker:build-and-test-all`.

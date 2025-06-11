@@ -8,7 +8,10 @@ RUN curl -sSL https://github.com/rhysd/actionlint/releases/download/v1.7.7/actio
 COPY package*.json ./
 RUN npm clean-install
 
-COPY . .
+COPY __mocks__/ ./__mocks__/
+COPY .github/ .github/
+COPY .cspell.json .gitignore .jscpd.json .markdownlint.json .markdownlintignore .nsprc .prettierignore .prettierrc.json .stylelintignore .stylelintrc.json babel.config.json eslint.config.mjs jest.config.json package.json package-lock.json styles.d.ts tsconfig.json vite.config.js ./
+COPY src/ ./src/
 
 RUN npm test
 
@@ -19,6 +22,12 @@ RUN npm run build
 
 RUN npm run lint
 
-RUN npm run storybook:build
+COPY .storybook/ ./.storybook/
 
-CMD [ "sh", "-c", "npm run storybook:test && npm run test-e2e" ]
+RUN npm run storybook:build
+RUN npm run storybook:test
+
+COPY playwright.config.ts ./
+COPY tests-e2e/ ./tests-e2e/
+
+CMD [ "sh", "-c", "npm run test-e2e" ]
