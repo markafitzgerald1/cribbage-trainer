@@ -1,7 +1,7 @@
+import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { SortLabel, SortOrderInput } from "./SortOrderInput";
 import { cleanup, render } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
-import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
 import userEvent from "@testing-library/user-event";
 
@@ -53,18 +53,17 @@ describe("sort order input component", () => {
       const user = userEvent.setup();
       const sortOrder = SortOrder[sortOrderName];
       const mockOnChange = jest.fn();
-      const nextSortOrderName =
-        SORT_ORDER_NAMES[
-          (SORT_ORDER_NAMES.indexOf(sortOrderName) + 1) %
-            SORT_ORDER_NAMES.length
-        ];
-      const { queryAllByRole } = renderComponent({
-        initialSortOrder: SortOrder[nextSortOrderName!],
+      const { findByLabelText } = renderComponent({
+        initialSortOrder:
+          SortOrder[
+            SORT_ORDER_NAMES[
+              (SORT_ORDER_NAMES.indexOf(sortOrderName) + 1) %
+                SORT_ORDER_NAMES.length
+            ] as SortOrderName
+          ],
         onChange: mockOnChange,
       });
-      const radioButton = queryAllByRole("radio")[
-        sortOrder
-      ] as HTMLInputElement;
+      const radioButton = await findByLabelText(SortLabel[sortOrderName]);
 
       await user.click(radioButton);
 

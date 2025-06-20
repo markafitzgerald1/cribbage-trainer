@@ -15,6 +15,7 @@ export const Rank = {
   KING: 12,
 } as const;
 /* eslint-enable sort-keys */
+
 export type Rank = (typeof Rank)[keyof typeof Rank];
 
 export const RANK_NAMES = Object.keys(Rank).map(

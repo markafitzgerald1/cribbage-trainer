@@ -20,7 +20,6 @@ const meta = {
 /* jscpd:ignore-start */
 export default meta;
 type Story = StoryObj<typeof meta>;
-
 const createStory = (rank: number): Story => ({
   args: { rank: rank as Rank },
 });
