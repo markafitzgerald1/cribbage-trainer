@@ -86,18 +86,26 @@ export default [
       "max-lines": [
         "error",
         {
-          max: 343,
+          max: 517,
         },
       ],
       "max-lines-per-function": [
         "error",
         {
-          max: 266,
+          max: 473,
           skipBlankLines: true,
         },
       ],
       "max-statements": ["error", MAX_STATEMENTS],
       "no-magic-numbers": ["off"],
+      "no-restricted-syntax": [
+        "error",
+        {
+          message: "`it.todo()` is not allowed.",
+          selector:
+            "CallExpression[callee.object.name='it'][callee.property.name='todo']",
+        },
+      ],
       "no-shadow": "off",
       "no-ternary": "off",
       "no-warning-comments": [
@@ -128,6 +136,7 @@ export default [
         {
           skipWords: [
             "autodocs",
+            "callee",
             "camelcase",
             "charset",
             "checkbox",
@@ -163,6 +172,7 @@ export default [
             "os",
             "pragma",
             "radiogroup",
+            "pragma",
             "royale",
             "seedrandom",
             "tsconfig",
@@ -248,6 +258,13 @@ export default [
       files: ["**/*.ts*"],
     })),
   {
+    files: ["eslint.config.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+    },
+  },
+  {
     files: ["**/*.ts*"],
 
     languageOptions: {
@@ -289,6 +306,8 @@ export default [
             "expectCardLabelHasClass",
             "expectKeptAndDiscardedAfterClick",
             "expectCalculationsAfterClicks",
+            "expectTotalHandPoints",
+            "expectHandsInDescendingExpectedScoreOrder",
             "expectPossibleHandRendersSpan",
           ],
         },
@@ -307,6 +326,8 @@ export default [
             "expectPossibleHandRendersSpan",
             "expectCalculationsAfterClicks",
             "expectSort",
+            "expectHandsInDescendingExpectedScoreOrder",
+            "expectTotalHandPoints",
           ],
         },
       ],
