@@ -27,7 +27,7 @@ export function ScoredPossibleKeepDiscard({
         dealtCards={discard}
         sortOrder={sortOrder}
       />
-      ) = {points} points
+      ) – Pre-cut: {points} points
     </li>
   );
 }

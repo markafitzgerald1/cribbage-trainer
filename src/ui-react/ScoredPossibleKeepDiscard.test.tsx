@@ -30,7 +30,7 @@ describe("calculation component", () => {
       const discardString = handToSortedString(discard, sortOrder);
 
       const pattern = new RegExp(
-        `${keepString}.*\\(${discardString}\\).*\\s${points}\\spoints`,
+        `${keepString}.*\\(${discardString}\\).*Pre-cut:\\s${points}\\spoints`,
         "u",
       );
 
