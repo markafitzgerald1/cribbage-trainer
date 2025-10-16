@@ -1,15 +1,18 @@
 import { CARDS_PER_DISCARD } from "../game/facts";
 import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
-import { handPoints } from "../game/scoring";
+import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
+import { expectedHandPoints } from "../game/expectedHandPoints";
+import { handPoints } from "../game/handPoints";
 
 export interface ScoredKeepDiscard<T extends Card> {
   keep: readonly T[];
   discard: readonly T[];
-  points: number;
+  expectedHandPoints: number;
+  handPoints: number;
 }
 
-export const allScoredKeepDiscardsByScoreDescending = <T extends Card>(
+export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
   cards: readonly T[],
 ): ScoredKeepDiscard<T>[] => {
   if (new Set(cards).size !== cards.length) {
@@ -22,8 +25,12 @@ export const allScoredKeepDiscardsByScoreDescending = <T extends Card>(
     }))
     .map((keepDiscard) => ({
       discard: keepDiscard.discard,
+      expectedHandPoints: expectedHandPoints(
+        keepDiscard.keep,
+        keepDiscard.discard,
+      ).total,
+      handPoints: handPoints(keepDiscard.keep).total,
       keep: keepDiscard.keep,
-      points: handPoints(keepDiscard.keep).total,
     }))
-    .sort((card1, card2) => card2.points - card1.points);
+    .sort(compareByExpectedScoreThenRankDescending);
 };
