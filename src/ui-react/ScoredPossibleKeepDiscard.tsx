@@ -18,16 +18,19 @@ export function ScoredPossibleKeepDiscard({
 }: ScoredPossibleKeepDiscardProps) {
   return (
     <li className={classes.scoredPossibleKeepDiscard}>
-      <PossibleHand
-        dealtCards={keep}
-        sortOrder={sortOrder}
-      />{" "}
-      (
-      <PossibleHand
-        dealtCards={discard}
-        sortOrder={sortOrder}
-      />
-      ) = {points} points
+      <span className={classes.keepColumn}>
+        <PossibleHand
+          dealtCards={keep}
+          sortOrder={sortOrder}
+        />
+      </span>
+      <span className={classes.discardColumn}>
+        <PossibleHand
+          dealtCards={discard}
+          sortOrder={sortOrder}
+        />
+      </span>
+      <span className={classes.pointsColumn}>{points}</span>
     </li>
   );
 }

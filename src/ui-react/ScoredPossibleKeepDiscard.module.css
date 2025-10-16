@@ -4,6 +4,21 @@
   list-style-type: none;
   color: var(--text-color);
   font-family: var(--text-font-family);
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.keep-column,
+.discard-column {
+  display: flex;
+  align-items: center;
+}
+
+.points-column {
+  text-align: right;
 }
 
 @media (orientation: landscape) {

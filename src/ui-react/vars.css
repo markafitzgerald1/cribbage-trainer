@@ -6,6 +6,8 @@
   --clickable-border-radius: 0.12em;
   --card-border: 0.025em solid #c0c0c0;
   --card-background-color: white;
+  --small-text-font-size-landscape: 2.3vw;
+  --small-text-font-size-portrait: 5.8vw;
   --medium-text-font-size-landscape: 2.878vw;
   --medium-text-font-size-portrait: 7.199vw;
   --transition-duration: 0.3s;

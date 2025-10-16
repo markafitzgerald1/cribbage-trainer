@@ -16,6 +16,11 @@ export function ScoredPossibleKeepDiscards({
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
       <figcaption>Pre-Cut Scores</figcaption>
+      <div className={classes.tableHeader}>
+        <span className={classes.keepHeader}>Keep</span>
+        <span className={classes.discardHeader}>Discard</span>
+        <span className={classes.pointsHeader}>Pre-Cut Hand Points</span>
+      </div>
       <ul>
         {allScoredKeepDiscardsByScoreDescending(dealtCards).map(
           (scoredKeepDiscard) => (

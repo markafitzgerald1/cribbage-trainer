@@ -29,10 +29,7 @@ describe("calculation component", () => {
       const keepString = handToSortedString(keep, sortOrder);
       const discardString = handToSortedString(discard, sortOrder);
 
-      const pattern = new RegExp(
-        `${keepString}.*\\(${discardString}\\).*\\s${points}\\spoints`,
-        "u",
-      );
+      const pattern = new RegExp(`${keepString}${discardString}${points}`, "u");
 
       expect(container.textContent).toMatch(pattern);
     },

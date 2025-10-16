@@ -17,6 +17,26 @@
   font-weight: bold;
 }
 
+.table-header {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: 10px;
+  padding: 5px 0;
+  font-weight: bold;
+  border-bottom: 2px solid var(--text-color);
+  flex-shrink: 0;
+}
+
+.keep-header,
+.discard-header,
+.points-header {
+  text-align: left;
+}
+
+.points-header {
+  text-align: right;
+}
+
 .scored-possible-keep-discards ul {
   padding-left: 0;
   margin: 0;
@@ -28,10 +48,18 @@
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-portrait);
   }
+
+  .table-header {
+    font-size: var(--small-text-font-size-portrait);
+  }
 }
 
 @media (orientation: landscape) {
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-landscape);
+  }
+
+  .table-header {
+    font-size: var(--small-text-font-size-landscape);
   }
 }
