@@ -17,7 +17,7 @@
     "lint:outdated": "(check-outdated || true)",
     "lint": "concurrently --names 'ESLINT,STYLE,MARKDOWN,PRETTIER,CSPELL,TSC,JSCPD,ACTIONLINT,AUDIT,OUTDATED' \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdown\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:lint:actionlint\" \"npm:lint:audit\" \"npm:lint:outdated\"",
     "prettier:fix": "prettier --write .",
-    "test": "jest --verbose",
+    "test": "jest --verbose --expand",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build --output-dir dist/storybook",
     "storybook:serve": "npx --no-install http-server dist/storybook --port 6006",

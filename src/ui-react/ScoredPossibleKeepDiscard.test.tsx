@@ -4,7 +4,8 @@ import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-import { handPoints } from "../game/scoring";
+import { expectedHandPoints } from "../game/expectedHandPoints";
+import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
 import { render } from "@testing-library/react";
 
@@ -17,11 +18,13 @@ describe("calculation component", () => {
       const keep = dealtHand.slice(0, CARDS_PER_KEPT_HAND);
       const discard = dealtHand.slice(CARDS_PER_KEPT_HAND);
       const points = handPoints(keep).total;
+      const expectedPoints = expectedHandPoints(keep, discard).total;
       const { container } = render(
         <ScoredPossibleKeepDiscard
           discard={discard}
+          expectedHandPoints={expectedPoints}
+          handPoints={points}
           keep={keep}
-          points={points}
           sortOrder={sortOrder}
         />,
       );
@@ -29,7 +32,11 @@ describe("calculation component", () => {
       const keepString = handToSortedString(keep, sortOrder);
       const discardString = handToSortedString(discard, sortOrder);
 
-      const pattern = new RegExp(`${keepString}${discardString}${points}`, "u");
+      const EXPECTED_POINTS_FRACTION_DIGITS = 2;
+      const pattern = new RegExp(
+        `${keepString}${discardString}${points}\\+${(expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
+        "u",
+      );
 
       expect(container.textContent).toMatch(pattern);
     },

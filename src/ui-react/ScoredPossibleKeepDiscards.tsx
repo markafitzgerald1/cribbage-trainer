@@ -2,7 +2,7 @@ import * as classes from "./ScoredPossibleKeepDiscards.module.css";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
-import { allScoredKeepDiscardsByScoreDescending } from "../analysis/analysis";
+import { allScoredKeepDiscardsByExpectedScoreDescending } from "../analysis/analysis";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly dealtCards: readonly DealtCard[];
@@ -15,22 +15,25 @@ export function ScoredPossibleKeepDiscards({
 }: ScoredPossibleKeepDiscardsProps) {
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
-      <figcaption>Pre-Cut Scores</figcaption>
+      <figcaption>Post-Starter Points</figcaption>
       <div className={classes.tableHeader}>
         <span className={classes.keepHeader}>Keep</span>
         <span className={classes.discardHeader}>Discard</span>
-        <span className={classes.pointsHeader}>Pre-Cut Hand Points</span>
+        <span className={classes.pointsHeader}>Pre-Cut</span>
+        <span className={classes.pointsHeader}>From Cut</span>
+        <span className={classes.pointsHeader}>Total</span>
       </div>
       <ul>
-        {allScoredKeepDiscardsByScoreDescending(dealtCards).map(
+        {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
           (scoredKeepDiscard) => (
             <ScoredPossibleKeepDiscard
               discard={scoredKeepDiscard.discard}
+              expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
+              handPoints={scoredKeepDiscard.handPoints}
               keep={scoredKeepDiscard.keep}
               key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
                 .map((dealtCard) => dealtCard.dealOrder)
                 .join("")}
-              points={scoredKeepDiscard.points}
               sortOrder={sortOrder}
             />
           ),

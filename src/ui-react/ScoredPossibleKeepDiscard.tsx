@@ -6,14 +6,18 @@ import { SortOrder } from "../ui/SortOrder";
 interface ScoredPossibleKeepDiscardProps {
   readonly keep: readonly ComparableCard[];
   readonly discard: readonly ComparableCard[];
-  readonly points: number;
+  readonly handPoints: number;
+  readonly expectedHandPoints: number;
   readonly sortOrder: SortOrder;
 }
+
+const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 
 export function ScoredPossibleKeepDiscard({
   keep,
   discard,
-  points,
+  handPoints,
+  expectedHandPoints,
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
   return (
@@ -30,7 +34,16 @@ export function ScoredPossibleKeepDiscard({
           sortOrder={sortOrder}
         />
       </span>
-      <span className={classes.pointsColumn}>{points}</span>
+      <span className={classes.pointsColumn}>{handPoints}</span>
+      <span className={classes.pointsColumn}>
+        +
+        {(expectedHandPoints - handPoints).toFixed(
+          EXPECTED_POINTS_FRACTION_DIGITS,
+        )}
+      </span>
+      <span className={classes.pointsColumn}>
+        {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
+      </span>
     </li>
   );
 }

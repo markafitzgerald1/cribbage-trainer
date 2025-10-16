@@ -37,8 +37,10 @@ const fifteensPoints = (keep: readonly CountedCard[]) =>
 const RunLength = {
   THREE: 3,
   FOUR: 4,
+  FIVE: 5,
 } as const;
 /* eslint-enable sort-keys */
+
 type RunLength = (typeof RunLength)[keyof typeof RunLength];
 
 const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
@@ -58,6 +60,7 @@ const runLengthPoints = (keep: readonly RankedCard[], runLength: RunLength) =>
   runLength;
 
 const runsPoints = (keep: readonly RankedCard[]) =>
+  runLengthPoints(keep, RunLength.FIVE) ||
   runLengthPoints(keep, RunLength.FOUR) ||
   runLengthPoints(keep, RunLength.THREE);
 
