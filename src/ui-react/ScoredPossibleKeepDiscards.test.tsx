@@ -24,12 +24,14 @@ describe("scored possible keep discards component", () => {
     return { container, dealtHand };
   };
 
-  const caption = "Post-Starter Points";
-
-  it(`has caption '${caption}'`, () => {
+  it("has column headers for Keep, Discard, Pre-Cut, From Cut, and Total", () => {
     const { container } = dealAndRender();
 
-    expect(container.textContent).toContain(caption);
+    expect(container.textContent).toContain("Keep");
+    expect(container.textContent).toContain("Discard");
+    expect(container.textContent).toContain("Pre-Cut");
+    expect(container.textContent).toContain("From Cut");
+    expect(container.textContent).toContain("Total");
   });
 
   it("should render each possible keep and discard pair exactly once", () => {
