@@ -4,6 +4,7 @@
   list-style-type: none;
   color: var(--text-color);
   font-family: var(--text-font-family);
+  white-space: nowrap;
 }
 
 @media (orientation: landscape) {
