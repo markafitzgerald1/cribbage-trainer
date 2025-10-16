@@ -25,12 +25,14 @@
   font-weight: bold;
   border-bottom: 2px solid var(--text-color);
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .keep-header,
 .discard-header,
 .points-header {
   text-align: left;
+  white-space: nowrap;
 }
 
 .points-header {
@@ -50,7 +52,7 @@
   }
 
   .table-header {
-    font-size: var(--small-text-font-size-portrait);
+    font-size: var(--extra-small-text-font-size-portrait);
   }
 }
 
@@ -60,6 +62,6 @@
   }
 
   .table-header {
-    font-size: var(--small-text-font-size-landscape);
+    font-size: var(--extra-small-text-font-size-landscape);
   }
 }

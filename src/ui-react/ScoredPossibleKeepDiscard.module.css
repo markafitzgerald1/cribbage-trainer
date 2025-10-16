@@ -19,6 +19,7 @@
 
 .points-column {
   text-align: right;
+  white-space: nowrap;
 }
 
 @media (orientation: landscape) {

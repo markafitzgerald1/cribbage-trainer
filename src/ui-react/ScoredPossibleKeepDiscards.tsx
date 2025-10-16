@@ -15,7 +15,6 @@ export function ScoredPossibleKeepDiscards({
 }: ScoredPossibleKeepDiscardsProps) {
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
-      <figcaption>Post-Starter Points</figcaption>
       <div className={classes.tableHeader}>
         <span className={classes.keepHeader}>Keep</span>
         <span className={classes.discardHeader}>Discard</span>

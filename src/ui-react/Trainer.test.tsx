@@ -24,7 +24,7 @@ describe("trainer component", () => {
       />,
     );
 
-  const postStarterExpectedHandPoints = "Post-Starter Points";
+  const postStarterExpectedHandPoints = "Pre-Cut";
 
   const clickIndices = (
     getAllByRole: (
