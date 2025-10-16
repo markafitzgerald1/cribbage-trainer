@@ -20,6 +20,7 @@ export function ScoredPossibleKeepDiscard({
   expectedHandPoints,
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
+  const additionalPoints = expectedHandPoints - handPoints;
   return (
     <li className={classes.scoredPossibleKeepDiscard}>
       <PossibleHand
@@ -31,11 +32,9 @@ export function ScoredPossibleKeepDiscard({
         dealtCards={discard}
         sortOrder={sortOrder}
       />
-      ) = {handPoints} +{" "}
-      {(expectedHandPoints - handPoints).toFixed(
-        EXPECTED_POINTS_FRACTION_DIGITS,
-      )}{" "}
-      = {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
+      ) = pre-cut: {handPoints} + from cut:{" "}
+      {additionalPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)} = total:{" "}
+      {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
     </li>
   );
 }
