@@ -33,8 +33,9 @@ describe("calculation component", () => {
       const discardString = handToSortedString(discard, sortOrder);
 
       const EXPECTED_POINTS_FRACTION_DIGITS = 2;
+      const additionalPoints = expectedPoints - points;
       const pattern = new RegExp(
-        `${keepString}.*\\(${discardString}\\)\\s=\\s${points}\\s\\+\\s${(expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}\\s=\\s${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
+        `${keepString}.*\\(${discardString}\\)\\s=\\spre-cut:\\s${points}\\s\\+\\sfrom cut:\\s${additionalPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}\\s=\\stotal:\\s${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
         "u",
       );
 
