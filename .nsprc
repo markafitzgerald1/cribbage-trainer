@@ -1,6 +1,0 @@
-{
-  "1105443": {
-    "reason": "Low severity brace-expansion RegExp DoS vulnerability (CVE-2025-5889) - giving dependencies time to patch",
-    "expiry": "2025-07-23"
-  }
-}

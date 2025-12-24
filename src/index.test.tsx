@@ -19,11 +19,11 @@ describe("app entrypoint", () => {
   it(`creates a React root in the '${containerSelector}' element with the Trainer component in Strict Mode`, () => {
     try {
       const container = document.createElement("div");
-      jest.spyOn(document, "querySelector").mockImplementation(() => container);
+      jest.spyOn(document, "querySelector").mockReturnValue(container);
       const renderMock = jest.fn();
       const createRootSpy = jest
         .spyOn(ReactDOMClient, "createRoot")
-        .mockImplementation(() => ({ render: renderMock, unmount: jest.fn() }));
+        .mockReturnValue({ render: renderMock, unmount: jest.fn() });
       interface StrictModeProps {
         children: React.ReactNode;
       }
