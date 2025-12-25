@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.53.1-noble
+FROM mcr.microsoft.com/playwright:v1.57.0-noble
 
 WORKDIR /usr/src/app
 
@@ -10,7 +10,7 @@ RUN npm clean-install
 
 COPY __mocks__/ ./__mocks__/
 COPY .github/ .github/
-COPY .cspell.json .gitignore .jscpd.json .markdownlint.json .markdownlintignore .nsprc .prettierignore .prettierrc.json .stylelintignore .stylelintrc.json babel.config.json eslint.config.mjs jest.config.json package.json package-lock.json styles.d.ts tsconfig.json vite.config.js ./
+COPY .cspell.json .gitignore .jscpd.json .markdownlint.json .markdownlintignore .prettierignore .prettierrc.json .stylelintignore .stylelintrc.json babel.config.json eslint.config.mjs jest.config.json package.json package-lock.json styles.d.ts tsconfig.json vite.config.js ./
 COPY src/ ./src/
 
 RUN npm test
