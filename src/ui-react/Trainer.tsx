@@ -49,14 +49,10 @@ export function Trainer({
     setDealtCards(dealHandWithGenerator);
   }, [dealHandWithGenerator]);
 
-  const setConsented = useCallback(
-    (value: boolean) => {
-      setAnalyticsConsented(value);
-      localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
-      loadGoogleAnalytics(value);
-    },
-    [loadGoogleAnalytics],
-  );
+  const setConsented = useCallback((value: boolean) => {
+    setAnalyticsConsented(value);
+    localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
+  }, []);
 
   useEffect(() => {
     loadGoogleAnalytics(analyticsConsented);
