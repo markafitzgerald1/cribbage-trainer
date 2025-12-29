@@ -31,10 +31,14 @@ describe("calculation component", () => {
 
       const keepString = handToSortedString(keep, sortOrder);
       const discardString = handToSortedString(discard, sortOrder);
+      const fromCut = expectedPoints - points;
 
       const EXPECTED_POINTS_FRACTION_DIGITS = 2;
+
+      // With the table structure, textContent will concatenate all cells directly.
+      // e.g. "KeepStrDiscardStrPointsFromCutTotal"
       const pattern = new RegExp(
-        `${keepString}.*\\(${discardString}\\)\\s=\\s${points}\\s\\+\\s${(expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}\\s=\\s${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
+        `${keepString}${discardString}${points}${fromCut.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
         "u",
       );
 
