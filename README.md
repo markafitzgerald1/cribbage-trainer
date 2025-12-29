@@ -61,8 +61,7 @@ expected screenshots:
 
 ### Husky/hooks
 
-- Some git commands may invoke Docker-based test hooks. If you need to skip
-  hooks for emergencies only, set `HUSKY=0` in the environment.
+- Some git commands may invoke Docker-based test hooks. For doc-only changes you can optionally skip them (`HUSKY=0` or `--no-verify`), but for code changes let the hooks run.
 
 ### CI workflow notes
 
