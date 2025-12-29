@@ -40,7 +40,9 @@
 
 ## Husky/hooks
 
-- Some git commands may invoke Docker-based test hooks. For doc-only changes you can optionally skip them (`HUSKY=0` or `--no-verify`), but for code changes let the hooks run.
+- Some git commands may invoke Docker-based test hooks. **For doc-only changes,
+  skip hooks** (`HUSKY=0` or `--no-verify`) to avoid unnecessary Docker/test
+  runs. For any code changes, leave the hooks on.
 
 ## CI workflow notes
 
