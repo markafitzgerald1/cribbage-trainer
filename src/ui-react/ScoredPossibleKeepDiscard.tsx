@@ -26,8 +26,10 @@ export function ScoredPossibleKeepDiscard({
       style={{ display: "contents" }}
     >
       <div
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         className={classes.cell}
-        role="cell"
+        // eslint-disable-next-line spellcheck/spell-checker
+        role="gridcell"
       >
         <PossibleHand
           dealtCards={keep}
@@ -35,8 +37,10 @@ export function ScoredPossibleKeepDiscard({
         />
       </div>
       <div
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         className={classes.cell}
-        role="cell"
+        // eslint-disable-next-line spellcheck/spell-checker
+        role="gridcell"
       >
         <PossibleHand
           dealtCards={discard}
@@ -44,22 +48,25 @@ export function ScoredPossibleKeepDiscard({
         />
       </div>
       <div
-        className={[classes.cell, classes.numeric].join(" ")}
-        role="cell"
+        className={`${classes.cell} ${classes.numeric}`}
+        // eslint-disable-next-line spellcheck/spell-checker
+        role="gridcell"
       >
         {handPoints}
       </div>
       <div
-        className={[classes.cell, classes.numeric].join(" ")}
-        role="cell"
+        className={`${classes.cell} ${classes.numeric}`}
+        // eslint-disable-next-line spellcheck/spell-checker
+        role="gridcell"
       >
         {(expectedHandPoints - handPoints).toFixed(
           EXPECTED_POINTS_FRACTION_DIGITS,
         )}
       </div>
       <div
-        className={[classes.cell, classes.numeric].join(" ")}
-        role="cell"
+        className={`${classes.cell} ${classes.numeric}`}
+        // eslint-disable-next-line spellcheck/spell-checker
+        role="gridcell"
       >
         {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
       </div>

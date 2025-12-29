@@ -14,22 +14,24 @@ describe("scored possible keep discards component", () => {
   const dealAndRender = () => {
     const dealtHand = dealHand(mathRandom);
 
-    const { container } = render(
+    const { container, queryByRole } = render(
       <ScoredPossibleKeepDiscards
         dealtCards={dealtHand}
         sortOrder={SortOrder.Ascending}
       />,
     );
 
-    return { container, dealtHand };
+    return { container, dealtHand, queryByRole };
   };
 
   const caption = "Post-Starter Points";
 
   it(`has caption '${caption}'`, () => {
-    const { container } = dealAndRender();
+    const { queryByRole } = dealAndRender();
 
-    expect(container.textContent).toContain(caption);
+    const table = queryByRole("table");
+    expect(table).toBeTruthy();
+    expect(table!.getAttribute("aria-label")).toBe(caption);
   });
 
   it("should render each possible keep and discard pair exactly once", () => {
@@ -39,19 +41,16 @@ describe("scored possible keep discards component", () => {
       new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length,
     );
 
-    // We expect nCombs rows. Since each row has 5 cells, we can count cells and divide by 5,
-    // but that's brittle if we change columns.
-    // Instead, we can look for role="cell" and divide by 5, or check specific content.
-    // Since we are not using 'row' role explicitly on a wrapper element for the row (it's flattened grid),
-    // counting cells is a reasonable proxy given the implementation details.
+    // The grid structure has rows with role="row" and cells with role="gridcell"
+    // eslint-disable-next-line spellcheck/spell-checker
+    const rows = container.querySelectorAll("[role='row']");
 
-    // Actually, ScoredPossibleKeepDiscards renders ScoredPossibleKeepDiscard components.
-    // In JSDOM, we see the rendered HTML.
-    // The columns are: Keep, Discard, Pre-cut, From cut, Total.
-    const cells = container.querySelectorAll("[role='cell']");
-    expect(cells).toHaveLength(nCombs * 5);
+    expect(rows).toHaveLength(nCombs);
 
-    // Alternatively, we can check for a specific class that appears once per row if we had one.
-    // But we don't.
+    // eslint-disable-next-line spellcheck/spell-checker
+    const cells = container.querySelectorAll("[role='gridcell']");
+    const COLUMNS_PER_ROW = 5;
+
+    expect(cells).toHaveLength(nCombs * COLUMNS_PER_ROW);
   });
 });

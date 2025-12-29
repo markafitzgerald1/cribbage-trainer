@@ -14,25 +14,29 @@ export function ScoredPossibleKeepDiscards({
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
   return (
-    <figure className={classes.scoredPossibleKeepDiscards}>
-      <figcaption>Post-Starter Points</figcaption>
-      <div className={classes.grid} role="table" aria-label="Post-Starter Points">
-        <div className={classes.header} role="columnheader">Keep</div>
-        <div className={classes.header} role="columnheader">Discard</div>
-        <div className={[classes.header, classes.numeric].join(" ")} role="columnheader">Pre-cut</div>
-        <div className={[classes.header, classes.numeric].join(" ")} role="columnheader">From cut</div>
-        <div className={[classes.header, classes.numeric].join(" ")} role="columnheader">Total</div>
 
+    <figure className={classes.scoredPossibleKeepDiscards}>
+      {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment */}
+      <div aria-label="Post-Starter Points" className={classes.grid} role="table">
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, spellcheck/spell-checker */}
+        <div className={classes.header} role="columnheader">Keep</div>
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, spellcheck/spell-checker */}
+        <div className={classes.header} role="columnheader">Discard</div>
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, spellcheck/spell-checker */}
+        <div className={classes.header} role="columnheader">Pre-cut</div>
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, spellcheck/spell-checker */}
+        <div className={classes.header} role="columnheader">From cut</div>
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, spellcheck/spell-checker */}
+        <div className={classes.header} role="columnheader">Total</div>
         {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
-          (scoredKeepDiscard) => (
+          ({ keep, discard, handPoints, expectedHandPoints }, index) => (
             <ScoredPossibleKeepDiscard
-              discard={scoredKeepDiscard.discard}
-              expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
-              handPoints={scoredKeepDiscard.handPoints}
-              keep={scoredKeepDiscard.keep}
-              key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-                .map((dealtCard) => dealtCard.dealOrder)
-                .join("")}
+              discard={discard}
+              expectedHandPoints={expectedHandPoints}
+              handPoints={handPoints}
+              keep={keep}
+              // eslint-disable-next-line react/no-array-index-key
+              key={index}
               sortOrder={sortOrder}
             />
           ),

@@ -43,11 +43,13 @@ describe("trainer component", () => {
     calculationsExpected: boolean,
   ) => {
     const user = userEvent.setup();
-    const { getAllByRole, queryByText } = renderTrainer();
+    const { getAllByRole, queryByLabelText } = renderTrainer();
 
     await act(() => clickIndices(getAllByRole, cardIndices, user));
 
-    expect(Boolean(queryByText(postStarterExpectedHandPoints))).toBe(
+    // Changed from queryByText to queryByLabelText because "Post-Starter Points"
+    // is now an aria-label on the grid container, not visible text.
+    expect(Boolean(queryByLabelText(postStarterExpectedHandPoints))).toBe(
       calculationsExpected,
     );
   };

@@ -36,7 +36,7 @@ describe("calculation component", () => {
       const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 
       // With the table structure, textContent will concatenate all cells directly.
-      // e.g. "KeepStrDiscardStrPointsFromCutTotal"
+      // E.g. "KeepStringDiscardStringPointsFromCutTotal"
       const pattern = new RegExp(
         `${keepString}${discardString}${points}${fromCut.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
         "u",
