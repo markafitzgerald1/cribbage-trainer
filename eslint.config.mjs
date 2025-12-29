@@ -182,6 +182,7 @@ export default [
             "unordered",
             "utf",
             "vite",
+            "vitest",
             "webkit",
           ],
         },
