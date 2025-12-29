@@ -101,7 +101,7 @@ describe("trainer component", () => {
       const sortInDealOrderInput = getSortInput(container, SortOrder.DealOrder);
       await act(() => user.click(sortInDealOrderInput));
       const expectedSortedCards = sortCards(
-        handTextToComparableCards(container.querySelector("ul")!.textContent!),
+        handTextToComparableCards(container.querySelector("ul")!.textContent),
         newSortOrder,
       )
         .map((dealtCard) => CARD_LABELS[dealtCard.rank])
