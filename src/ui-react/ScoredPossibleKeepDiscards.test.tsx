@@ -26,6 +26,7 @@ describe("scored possible keep discards component", () => {
 
   const caption = "Post-Starter Points";
 
+  /* jscpd:ignore-start */
   it(`has caption '${caption}'`, () => {
     const { container } = dealAndRender();
 
@@ -39,6 +40,7 @@ describe("scored possible keep discards component", () => {
       "Keep (Discard) = Pre-Cut + From Cut = Total",
     );
   });
+  /* jscpd:ignore-end */
 
   it("should render each possible keep and discard pair exactly once", () => {
     const { container } = dealAndRender();
