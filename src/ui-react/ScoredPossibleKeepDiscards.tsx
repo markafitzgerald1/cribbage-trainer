@@ -9,6 +9,17 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly sortOrder: SortOrder;
 }
 
+function ColumnHeaders() {
+  return (
+    <li className={classes.columnHeaders}>
+      <span>Keep + Discard</span>
+      <span>Pre-cut points</span>
+      <span>From cut (avg)</span>
+      <span>Total (avg)</span>
+    </li>
+  );
+}
+
 export function ScoredPossibleKeepDiscards({
   dealtCards,
   sortOrder,
@@ -17,12 +28,7 @@ export function ScoredPossibleKeepDiscards({
     <figure className={classes.scoredPossibleKeepDiscards}>
       <figcaption>Post-Starter Points</figcaption>
       <ul>
-        <li className={classes.columnHeaders}>
-          <span>Keep + Discard</span>
-          <span>Pre-cut points</span>
-          <span>From cut (avg)</span>
-          <span>Total (avg)</span>
-        </li>
+        <ColumnHeaders />
         {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
           (scoredKeepDiscard) => (
             <ScoredPossibleKeepDiscard
