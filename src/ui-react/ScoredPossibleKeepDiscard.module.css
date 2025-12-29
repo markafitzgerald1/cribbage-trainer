@@ -1,9 +1,20 @@
 @import url("./vars.css");
 
 .scored-possible-keep-discard {
-  list-style-type: none;
   color: var(--text-color);
   font-family: var(--text-font-family);
+  display: contents;
+}
+
+.hand {
+  display: inline-flex;
+  align-items: center;
+}
+
+.preCut,
+.fromCut,
+.total {
+  text-align: right;
 }
 
 @media (orientation: landscape) {

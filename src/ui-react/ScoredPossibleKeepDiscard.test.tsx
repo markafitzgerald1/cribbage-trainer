@@ -34,7 +34,7 @@ describe("calculation component", () => {
 
       const EXPECTED_POINTS_FRACTION_DIGITS = 2;
       const pattern = new RegExp(
-        `${keepString}.*\\(${discardString}\\)\\s=\\s${points}\\s\\+\\s${(expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}\\s=\\s${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
+        `${keepString}.*\\(${discardString}\\).*${points}.*${(expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}.*${expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
         "u",
       );
 
