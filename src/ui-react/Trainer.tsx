@@ -24,8 +24,14 @@ export function Trainer({
   );
   const [dealtCards, setDealtCards] = useState(dealHandWithGenerator);
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
-  const [analyticsConsented, setAnalyticsConsented] = useState(
-    null as boolean | null,
+  const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
+    () => {
+      const storedConsent = localStorage.getItem(analyticsConsentKey);
+      if (storedConsent === null) {
+        return null;
+      }
+      return JSON.parse(storedConsent) as boolean;
+    },
   );
 
   const toggleKept = useCallback(
@@ -43,25 +49,14 @@ export function Trainer({
     setDealtCards(dealHandWithGenerator);
   }, [dealHandWithGenerator]);
 
-  const setConsented = useCallback(
-    (value: boolean) => {
-      setAnalyticsConsented(value);
-      localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
-      loadGoogleAnalytics(value);
-    },
-    [loadGoogleAnalytics],
-  );
+  const setConsented = useCallback((value: boolean) => {
+    setAnalyticsConsented(value);
+    localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
+  }, []);
 
   useEffect(() => {
-    const storedConsent = localStorage.getItem(analyticsConsentKey);
-    if (storedConsent === null) {
-      loadGoogleAnalytics(null);
-    } else {
-      const consentValue = JSON.parse(storedConsent) as boolean;
-      setAnalyticsConsented(consentValue);
-      loadGoogleAnalytics(consentValue);
-    }
-  }, [loadGoogleAnalytics]);
+    loadGoogleAnalytics(analyticsConsented);
+  }, [analyticsConsented, loadGoogleAnalytics]);
 
   return (
     <div className={classes.dynamicUi}>

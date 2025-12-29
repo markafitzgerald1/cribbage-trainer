@@ -1,8 +1,7 @@
 import * as classes from "./SortOrderInput.module.css";
-import React, { useCallback } from "react";
+import React, { useCallback, useId } from "react";
 import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
-import { v4 } from "uuid";
 
 interface SortOrderInputProps {
   readonly onChange: (sortOrder: SortOrder) => void;
@@ -23,7 +22,7 @@ export function SortOrderInput({ sortOrder, onChange }: SortOrderInputProps) {
     [onChange],
   );
 
-  const name = `sort-${v4()}`;
+  const name = `sort-${useId()}`;
 
   return (
     <fieldset className={classes.sortOrderInput}>
