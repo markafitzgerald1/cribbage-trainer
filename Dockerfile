@@ -15,6 +15,7 @@ COPY src/ ./src/
 
 RUN npm test
 
+COPY .storybook/ ./.storybook/
 # Running `build` prior to `lint` as some TypeScript ESLint issues are only
 # found by ESLint when a `dist/` directory containing build output exists for
 # some unknown reason.
@@ -22,10 +23,8 @@ RUN npm run build
 
 RUN npm run lint
 
-COPY .storybook/ ./.storybook/
-
 RUN npm run storybook:build
-RUN npm run storybook:test
+RUN npm run storybook:test:coverage
 
 COPY playwright.config.ts ./
 COPY tests-e2e/ ./tests-e2e/

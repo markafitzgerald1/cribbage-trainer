@@ -24,8 +24,14 @@ export function Trainer({
   );
   const [dealtCards, setDealtCards] = useState(dealHandWithGenerator);
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
-  const [analyticsConsented, setAnalyticsConsented] = useState(
-    null as boolean | null,
+  const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
+    () => {
+      const storedConsent = localStorage.getItem(analyticsConsentKey);
+      if (storedConsent === null) {
+        return null;
+      }
+      return JSON.parse(storedConsent) as boolean;
+    },
   );
 
   const toggleKept = useCallback(
@@ -53,15 +59,8 @@ export function Trainer({
   );
 
   useEffect(() => {
-    const storedConsent = localStorage.getItem(analyticsConsentKey);
-    if (storedConsent === null) {
-      loadGoogleAnalytics(null);
-    } else {
-      const consentValue = JSON.parse(storedConsent) as boolean;
-      setAnalyticsConsented(consentValue);
-      loadGoogleAnalytics(consentValue);
-    }
-  }, [loadGoogleAnalytics]);
+    loadGoogleAnalytics(analyticsConsented);
+  }, [analyticsConsented, loadGoogleAnalytics]);
 
   return (
     <div className={classes.dynamicUi}>
