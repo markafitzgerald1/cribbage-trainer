@@ -16,6 +16,9 @@ export function ScoredPossibleKeepDiscards({
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
       <figcaption>Post-Starter Points</figcaption>
+      <div className={classes.header}>
+        Keep (Discard) = Pre-Cut + From Cut = Total
+      </div>
       <ul>
         {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
           (scoredKeepDiscard) => (

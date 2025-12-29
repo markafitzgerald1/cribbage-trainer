@@ -32,6 +32,14 @@ describe("scored possible keep discards component", () => {
     expect(container.textContent).toContain(caption);
   });
 
+  it("has header explaining the formula", () => {
+    const { container } = dealAndRender();
+
+    expect(container.textContent).toContain(
+      "Keep (Discard) = Pre-Cut + From Cut = Total",
+    );
+  });
+
   it("should render each possible keep and discard pair exactly once", () => {
     const { container } = dealAndRender();
 
