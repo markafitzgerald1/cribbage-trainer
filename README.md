@@ -58,3 +58,23 @@ expected screenshots:
 - remove out of date screenshots: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`
   , then
 - generate the now expected browser screenshots: `npm run docker:build-and-test-all`.
+
+### Husky/hooks
+
+- Some git commands may invoke Docker-based test hooks. For doc-only changes,
+  prefer skipping them (`HUSKY=0` or `--no-verify`) to avoid long runs; for code
+  changes, leave the hooks on.
+
+### CI workflow notes
+
+- Workflow: `.github/workflows/npm-build-test-upload-artifact-and-deploy.yml`.
+- On non-`main` branches: builds Docker test image and runs Playwright e2e via
+  `npm run docker:run-e2e-only`.
+- On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
+  artifact, deploys to GitHub Pages.
+
+### Commit messages
+
+- Follow the 50/72 Git commit message convention: subject line ≤ 50 chars, then
+  blank line, body wrapped at 72 chars.
+- Prefer semantic prefixes (e.g., feat, fix, chore, docs, refactor, test, ci, build).
