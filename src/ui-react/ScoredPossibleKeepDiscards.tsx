@@ -16,7 +16,13 @@ export function ScoredPossibleKeepDiscards({
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
       <figcaption>Post-Starter Points</figcaption>
-      <ul>
+      <div className={classes.grid} role="table" aria-label="Post-Starter Points">
+        <div className={classes.header} role="columnheader">Keep</div>
+        <div className={classes.header} role="columnheader">Discard</div>
+        <div className={[classes.header, classes.numeric].join(" ")} role="columnheader">Pre-cut</div>
+        <div className={[classes.header, classes.numeric].join(" ")} role="columnheader">From cut</div>
+        <div className={[classes.header, classes.numeric].join(" ")} role="columnheader">Total</div>
+
         {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
           (scoredKeepDiscard) => (
             <ScoredPossibleKeepDiscard
@@ -31,7 +37,7 @@ export function ScoredPossibleKeepDiscards({
             />
           ),
         )}
-      </ul>
+      </div>
     </figure>
   );
 }

@@ -39,6 +39,19 @@ describe("scored possible keep discards component", () => {
       new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length,
     );
 
-    expect(container.querySelectorAll("li")).toHaveLength(nCombs);
+    // We expect nCombs rows. Since each row has 5 cells, we can count cells and divide by 5,
+    // but that's brittle if we change columns.
+    // Instead, we can look for role="cell" and divide by 5, or check specific content.
+    // Since we are not using 'row' role explicitly on a wrapper element for the row (it's flattened grid),
+    // counting cells is a reasonable proxy given the implementation details.
+
+    // Actually, ScoredPossibleKeepDiscards renders ScoredPossibleKeepDiscard components.
+    // In JSDOM, we see the rendered HTML.
+    // The columns are: Keep, Discard, Pre-cut, From cut, Total.
+    const cells = container.querySelectorAll("[role='cell']");
+    expect(cells).toHaveLength(nCombs * 5);
+
+    // Alternatively, we can check for a specific class that appears once per row if we had one.
+    // But we don't.
   });
 });

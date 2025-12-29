@@ -21,21 +21,48 @@ export function ScoredPossibleKeepDiscard({
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
   return (
-    <li className={classes.scoredPossibleKeepDiscard}>
-      <PossibleHand
-        dealtCards={keep}
-        sortOrder={sortOrder}
-      />{" "}
-      (
-      <PossibleHand
-        dealtCards={discard}
-        sortOrder={sortOrder}
-      />
-      ) = {handPoints} +{" "}
-      {(expectedHandPoints - handPoints).toFixed(
-        EXPECTED_POINTS_FRACTION_DIGITS,
-      )}{" "}
-      = {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
-    </li>
+    <div
+      role="row"
+      style={{ display: "contents" }}
+    >
+      <div
+        className={classes.cell}
+        role="cell"
+      >
+        <PossibleHand
+          dealtCards={keep}
+          sortOrder={sortOrder}
+        />
+      </div>
+      <div
+        className={classes.cell}
+        role="cell"
+      >
+        <PossibleHand
+          dealtCards={discard}
+          sortOrder={sortOrder}
+        />
+      </div>
+      <div
+        className={[classes.cell, classes.numeric].join(" ")}
+        role="cell"
+      >
+        {handPoints}
+      </div>
+      <div
+        className={[classes.cell, classes.numeric].join(" ")}
+        role="cell"
+      >
+        {(expectedHandPoints - handPoints).toFixed(
+          EXPECTED_POINTS_FRACTION_DIGITS,
+        )}
+      </div>
+      <div
+        className={[classes.cell, classes.numeric].join(" ")}
+        role="cell"
+      >
+        {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
+      </div>
+    </div>
   );
 }
