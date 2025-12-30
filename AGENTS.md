@@ -31,6 +31,8 @@
 - When Playwright snapshot diffs are acceptable:
   - Remove outdated screenshots: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`.
   - Regenerate: `npm run docker:build-and-test-all`.
+  - In PRs, explicitly note the screenshot updates and ensure expected images
+    are updated to match the current actuals (these will be human reviewed).
 
 ## Code style and conventions
 
