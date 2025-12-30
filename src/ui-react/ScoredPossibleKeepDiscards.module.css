@@ -29,6 +29,10 @@
   border-collapse: collapse;
 }
 
+.scored-possible-keep-discards tbody tr:nth-child(even) {
+  background-color: rgb(255 255 255 / 4%);
+}
+
 .scored-possible-keep-discards th {
   position: sticky;
   top: 0;

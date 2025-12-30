@@ -3,12 +3,15 @@
 .scored-possible-keep-discard {
   color: var(--text-color);
   font-family: var(--text-font-family);
+  min-height: 44px;
 }
 
 .scored-possible-keep-discard td {
-  padding: 5px;
+  padding: 2px 8px;
   border-bottom: 1px solid rgb(255 255 255 / 10%);
   text-align: right;
+  vertical-align: middle;
+  line-height: 1.15;
 }
 
 .scored-possible-keep-discard td:first-child {
