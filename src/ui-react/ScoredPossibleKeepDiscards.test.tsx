@@ -24,14 +24,6 @@ describe("scored possible keep discards component", () => {
     return { container, dealtHand };
   };
 
-  const caption = "Post-Starter Points";
-
-  it(`has caption '${caption}'`, () => {
-    const { container } = dealAndRender();
-
-    expect(container.textContent).toContain(caption);
-  });
-
   it("should render each possible keep and discard pair exactly once", () => {
     const { container } = dealAndRender();
 
@@ -39,6 +31,6 @@ describe("scored possible keep discards component", () => {
       new Combination(dealHand(mathRandom), CARDS_PER_DISCARD).length,
     );
 
-    expect(container.querySelectorAll("li")).toHaveLength(nCombs);
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(nCombs);
   });
 });

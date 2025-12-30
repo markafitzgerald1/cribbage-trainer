@@ -1,9 +1,19 @@
 @import url("./vars.css");
 
 .scored-possible-keep-discard {
-  list-style-type: none;
   color: var(--text-color);
   font-family: var(--text-font-family);
+}
+
+.scored-possible-keep-discard td {
+  padding: 5px;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+  text-align: right;
+}
+
+.scored-possible-keep-discard td:first-child {
+  text-align: left;
+  white-space: nowrap;
 }
 
 @media (orientation: landscape) {

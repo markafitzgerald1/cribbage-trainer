@@ -24,7 +24,7 @@ describe("trainer component", () => {
       />,
     );
 
-  const postStarterExpectedHandPoints = "Post-Starter Points";
+  const calculationsHeader = "Pre-cut";
 
   const clickIndices = (
     getAllByRole: (
@@ -47,9 +47,7 @@ describe("trainer component", () => {
 
     await act(() => clickIndices(getAllByRole, cardIndices, user));
 
-    expect(Boolean(queryByText(postStarterExpectedHandPoints))).toBe(
-      calculationsExpected,
-    );
+    expect(Boolean(queryByText(calculationsHeader))).toBe(calculationsExpected);
   };
 
   it("initially contains a sort in descending order radio input", () => {

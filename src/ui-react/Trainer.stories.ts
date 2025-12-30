@@ -63,7 +63,8 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expect(canvasElement).toHaveTextContent("Post-Starter Points");
+    await expect(canvasElement).toHaveTextContent("Pre-cut");
+    await expect(canvasElement).toHaveTextContent("From Cut");
   },
 };
 

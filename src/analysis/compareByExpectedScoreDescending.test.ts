@@ -52,4 +52,10 @@ describe("compareByExpectedScoreDescending", () => {
       createHand([KING, QUEEN, JACK, FOUR], [ACE]),
       createHand([KING, QUEEN, JACK, ACE], [FOUR]),
     ));
+
+  it("returns 0 for identical expected scores and keeps", () => {
+    const hand = createHand([ACE, KING], [THREE, TWO]);
+
+    expect(compareByExpectedScoreThenRankDescending(hand, hand)).toBe(0);
+  });
 });

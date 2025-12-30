@@ -5,12 +5,21 @@ import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createArgTypes } from "./stories.common";
+import { createElement } from "react";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
   component: ScoredPossibleKeepDiscard,
+  decorators: [
+    (Story) =>
+      createElement(
+        "table",
+        null,
+        createElement("tbody", null, createElement(Story, null)),
+      ),
+  ],
   parameters: {
     layout: "centered",
   },

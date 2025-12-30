@@ -21,21 +21,26 @@ export function ScoredPossibleKeepDiscard({
   sortOrder,
 }: ScoredPossibleKeepDiscardProps) {
   return (
-    <li className={classes.scoredPossibleKeepDiscard}>
-      <PossibleHand
-        dealtCards={keep}
-        sortOrder={sortOrder}
-      />{" "}
-      (
-      <PossibleHand
-        dealtCards={discard}
-        sortOrder={sortOrder}
-      />
-      ) = {handPoints} +{" "}
-      {(expectedHandPoints - handPoints).toFixed(
-        EXPECTED_POINTS_FRACTION_DIGITS,
-      )}{" "}
-      = {expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}
-    </li>
+    <tr className={classes.scoredPossibleKeepDiscard}>
+      <td>
+        <PossibleHand
+          dealtCards={keep}
+          sortOrder={sortOrder}
+        />{" "}
+        (
+        <PossibleHand
+          dealtCards={discard}
+          sortOrder={sortOrder}
+        />
+        )
+      </td>
+      <td>{handPoints}</td>
+      <td>
+        {(expectedHandPoints - handPoints).toFixed(
+          EXPECTED_POINTS_FRACTION_DIGITS,
+        )}
+      </td>
+      <td>{expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
+    </tr>
   );
 }
