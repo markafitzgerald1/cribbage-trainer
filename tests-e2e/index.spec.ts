@@ -46,9 +46,9 @@ test("pre-cut hand points show after select of two discards", async ({
   await renderThenSelectTwoDiscards(page, constantSeedQuery);
 
   await expect(
-    page.getByRole("columnheader", { name: "Hand" }),
+    page.getByRole("columnheader", { name: "Hand", exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("columnheader", { name: "Cut" }),
+    page.getByRole("columnheader", { name: "Cut", exact: true }),
   ).toBeVisible();
 });

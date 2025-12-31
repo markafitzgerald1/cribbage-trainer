@@ -1,3 +1,4 @@
 LICENSE
 /.VSCodeCounter/
 /node_modules/
+playwright-report/

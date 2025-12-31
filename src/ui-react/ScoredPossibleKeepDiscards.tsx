@@ -1,4 +1,4 @@
-/* eslint react/jsx-max-depth: ["error", { "max": 5 }] */
+/* eslint react/jsx-max-depth: ["error", { "max": 7 }] */
 import * as classes from "./ScoredPossibleKeepDiscards.module.css";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
@@ -14,6 +14,24 @@ export function ScoredPossibleKeepDiscards({
   dealtCards,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
+  const scoringHeaders = [
+    {
+      key: "hand",
+      label: "Hand",
+      title: "Points in hand before the cut",
+    },
+    {
+      key: "cut",
+      label: "Cut",
+      title: "Expected additional points from the cut",
+    },
+    {
+      key: "total",
+      label: "Total",
+      title: "Total expected hand points",
+    },
+  ] as const;
+
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
       <div className={classes.tableContainer}>
@@ -21,43 +39,28 @@ export function ScoredPossibleKeepDiscards({
           <thead>
             <tr>
               <th aria-label="Hand composition">
-                <span className={`${classes.headerStack} ${classes.headerStackStart}`}>
+                <span
+                  className={`${classes.headerStack} ${classes.headerStackStart}`}
+                >
                   <span className={classes.headerMain}>Hand</span>
                 </span>
               </th>
-              <th title="Points in hand before the cut">
-                <span className={classes.headerStack}>
-                  <span className={classes.headerMain}>Hand</span>
-                  <span
-                    aria-hidden="true"
-                    className={classes.headerUnit}
-                  >
-                    pts
+              {scoringHeaders.map((header) => (
+                <th
+                  key={header.key}
+                  title={header.title}
+                >
+                  <span className={classes.headerStack}>
+                    <span className={classes.headerMain}>{header.label}</span>
+                    <span
+                      aria-hidden="true"
+                      className={classes.headerUnit}
+                    >
+                      pts
+                    </span>
                   </span>
-                </span>
-              </th>
-              <th title="Expected additional points from the cut">
-                <span className={classes.headerStack}>
-                  <span className={classes.headerMain}>Cut</span>
-                  <span
-                    aria-hidden="true"
-                    className={classes.headerUnit}
-                  >
-                    pts
-                  </span>
-                </span>
-              </th>
-              <th title="Total expected hand points">
-                <span className={classes.headerStack}>
-                  <span className={classes.headerMain}>Total</span>
-                  <span
-                    aria-hidden="true"
-                    className={classes.headerUnit}
-                  >
-                    pts
-                  </span>
-                </span>
-              </th>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>

@@ -48,9 +48,7 @@ describe("trainer component", () => {
     await act(() => clickIndices(getAllByRole, cardIndices, user));
 
     expect(
-      Boolean(
-        queryByRole("columnheader", { name: calculationsHeaderName }),
-      ),
+      Boolean(queryByRole("columnheader", { name: calculationsHeaderName })),
     ).toBe(calculationsExpected);
   };
 

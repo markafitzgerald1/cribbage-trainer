@@ -38,6 +38,8 @@
 
 - TypeScript/React with Vite; keep types sound.
 - Follow existing ESLint/Prettier configs; avoid introducing non-ASCII unless justified.
+- Do not automate disabling lint rules; only a human developer may add or
+  request disables.
 - Prefer small, focused commits; summarize why changes are needed.
 
 ## Husky/hooks

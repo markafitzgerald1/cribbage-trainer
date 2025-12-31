@@ -182,6 +182,7 @@ export default [
             "ul",
             "unmount",
             "unordered",
+            "unselected",
             "utf",
             "vite",
             "vitest",
