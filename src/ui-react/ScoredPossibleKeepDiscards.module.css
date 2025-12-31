@@ -40,10 +40,33 @@
   z-index: 1;
   text-align: right;
   padding: 5px;
+  vertical-align: middle;
 }
 
 .scored-possible-keep-discards th:first-child {
   text-align: left;
+}
+
+.headerStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+  gap: 2px;
+}
+
+.headerStackStart {
+  align-items: flex-start;
+}
+
+.headerMain {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.headerUnit {
+  font-size: 0.75rem;
+  opacity: 0.65;
 }
 
 @media (orientation: portrait) {

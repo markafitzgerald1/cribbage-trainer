@@ -63,8 +63,12 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expect(canvasElement).toHaveTextContent("Pre-cut");
-    await expect(canvasElement).toHaveTextContent("From Cut");
+    await expect(
+      within(canvasElement).getByRole("columnheader", { name: "Hand" }),
+    ).toBeVisible();
+    await expect(
+      within(canvasElement).getByRole("columnheader", { name: "Cut" }),
+    ).toBeVisible();
   },
 };
 

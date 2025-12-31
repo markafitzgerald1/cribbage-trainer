@@ -20,10 +20,44 @@ export function ScoredPossibleKeepDiscards({
         <table>
           <thead>
             <tr>
-              <th>Hand</th>
-              <th title="Points in hand before the cut">Pre-cut</th>
-              <th title="Expected additional points from the cut">From Cut</th>
-              <th title="Total expected hand points">Total</th>
+              <th aria-label="Hand composition">
+                <span className={`${classes.headerStack} ${classes.headerStackStart}`}>
+                  <span className={classes.headerMain}>Hand</span>
+                </span>
+              </th>
+              <th title="Points in hand before the cut">
+                <span className={classes.headerStack}>
+                  <span className={classes.headerMain}>Hand</span>
+                  <span
+                    aria-hidden="true"
+                    className={classes.headerUnit}
+                  >
+                    pts
+                  </span>
+                </span>
+              </th>
+              <th title="Expected additional points from the cut">
+                <span className={classes.headerStack}>
+                  <span className={classes.headerMain}>Cut</span>
+                  <span
+                    aria-hidden="true"
+                    className={classes.headerUnit}
+                  >
+                    pts
+                  </span>
+                </span>
+              </th>
+              <th title="Total expected hand points">
+                <span className={classes.headerStack}>
+                  <span className={classes.headerMain}>Total</span>
+                  <span
+                    aria-hidden="true"
+                    className={classes.headerUnit}
+                  >
+                    pts
+                  </span>
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -45,8 +79,7 @@ export function ScoredPossibleKeepDiscards({
         </table>
       </div>
       <div className={classes.legend}>
-        Pre-cut: Points in hand. From Cut: Expected additional. Total: Expected
-        total.
+        Hand: Points in hand. Cut: Expected additional. Total: Expected total.
       </div>
     </figure>
   );
