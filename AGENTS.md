@@ -13,8 +13,8 @@
 ## Core commands
 
 - Dev server: `npm start` (opens <http://localhost:5173>).
-- Prod preview server: `npm start:production-preview` (opens <http://localhost:4173>).
 - Build: `npm run build`.
+- Prod preview server: `npm run build` then `npm run start:production-preview` (opens <http://localhost:4173>).
 - Storybook: `npm run storybook`; static build `npm run storybook:build`; serve
   static `npm run storybook:serve`.
 

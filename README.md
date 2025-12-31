@@ -31,7 +31,7 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - Build production version of app (optional): `npm run build`
 - Serve up and navigate to the dev app server: `npm start` then `open http://localhost:5173`
 - Serve up and navigate to the production preview app server:
-  `npm start:production-preview` then `open http://localhost:4173`
+  `npm run build` then `npm run start:production-preview` and `open http://localhost:4173`
 
 ### Lint and Test
 
