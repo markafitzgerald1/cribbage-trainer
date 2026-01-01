@@ -24,7 +24,7 @@ describe("trainer component", () => {
       />,
     );
 
-  const preCutHandPoints = "Pre-Cut Scores";
+  const calculationsHeaderName = "Hand";
 
   const clickIndices = (
     getAllByRole: (
@@ -43,11 +43,13 @@ describe("trainer component", () => {
     calculationsExpected: boolean,
   ) => {
     const user = userEvent.setup();
-    const { getAllByRole, queryByText } = renderTrainer();
+    const { getAllByRole, queryByRole } = renderTrainer();
 
     await act(() => clickIndices(getAllByRole, cardIndices, user));
 
-    expect(Boolean(queryByText(preCutHandPoints))).toBe(calculationsExpected);
+    expect(
+      Boolean(queryByRole("columnheader", { name: calculationsHeaderName })),
+    ).toBe(calculationsExpected);
   };
 
   it("initially contains a sort in descending order radio input", () => {
@@ -58,15 +60,15 @@ describe("trainer component", () => {
     expect(renderTrainer().queryByText("Hand")).toBeTruthy();
   });
 
-  it("contains pre-cut hand points possibilities once two cards have been selected", async () => {
+  it("contains hand points once two cards have been selected", async () => {
     await expectCalculationsAfterClicks([0, 1], true);
   });
 
-  it("hides pre-cut hand points possibilities once two cards have been selected and then one of them is unselected", async () => {
+  it("hides hand points once two cards have been selected and then one of them is unselected", async () => {
     await expectCalculationsAfterClicks([0, 1, 1], false);
   });
 
-  it("hides pre-cut hand points possibilities if more than two cards are selected", async () => {
+  it("hides hand points if more than two cards are selected", async () => {
     const moreThanTwo = 3;
     await expectCalculationsAfterClicks([...Array(moreThanTwo).keys()], false);
   });

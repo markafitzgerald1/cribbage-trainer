@@ -56,6 +56,38 @@ export const AnalyticsDisabled = {
   },
 };
 
+export const StoredConsentGiven = {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    await expect(canvasElement).toHaveTextContent(
+      "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy.",
+    );
+  },
+  render: ({
+    generateRandomNumber,
+    loadGoogleAnalytics,
+  }: Parameters<typeof Trainer>[0]) => {
+    localStorage.setItem(analyticsConsentKey, "true");
+
+    return (
+      <Trainer
+        generateRandomNumber={generateRandomNumber}
+        loadGoogleAnalytics={loadGoogleAnalytics}
+      />
+    );
+  },
+};
+
+export const DealNewHandReplacesCards = {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const dealButton = getButton(canvasElement, "Deal");
+    const initialHandText = canvasElement.textContent;
+
+    await fireEvent.click(dealButton);
+
+    await expect(canvasElement.textContent).not.toEqual(initialHandText);
+  },
+};
+
 export const DiscardShowsScoredPossibilities = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const checkboxes = within(canvasElement).getAllByRole("checkbox");
@@ -63,7 +95,12 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expect(canvasElement).toHaveTextContent("Pre-Cut Scores");
+    await expect(
+      within(canvasElement).getByRole("columnheader", { name: "Hand" }),
+    ).toBeVisible();
+    await expect(
+      within(canvasElement).getByRole("columnheader", { name: "Cut" }),
+    ).toBeVisible();
   },
 };
 
