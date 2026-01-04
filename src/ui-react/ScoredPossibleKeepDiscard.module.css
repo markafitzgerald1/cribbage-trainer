@@ -22,7 +22,7 @@
 }
 
 .highlighted {
-  background-color: rgb(255 255 255 / 35%) !important;
+  background-color: rgb(255 255 255 / 35%);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
 }
 
