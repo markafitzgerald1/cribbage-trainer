@@ -6,11 +6,12 @@ import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { expectedHandPoints } from "../game/expectedHandPoints";
+import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
-const EXPECTED_CELL_COUNT = 4;
+const EXPECTED_CELL_COUNT = 7; // Hand, Hand pts, Cut, E[+15s], E[+pairs], E[+runs], Total
 
 function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const sortOrder = SortOrder[sortOrderName];
@@ -19,10 +20,12 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const discard = dealtHand.slice(CARDS_PER_KEPT_HAND);
   const points = handPoints(keep).total;
   const expectedPoints = expectedHandPoints(keep, discard).total;
+  const cutAdded = expectedCutAddedPoints(keep, discard);
   const keepString = handToSortedString(keep, sortOrder);
   const discardString = handToSortedString(discard, sortOrder);
 
   return {
+    cutAdded,
     discard,
     discardString,
     expectedPoints,
@@ -34,13 +37,16 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 }
 
 const highlightedPresent = (isHighlighted: boolean) => {
-  const { discard, expectedPoints, keep, points, sortOrder } =
+  const { cutAdded, discard, expectedPoints, keep, points, sortOrder } =
     setupScenario("Ascending");
 
   const { container } = render(
     <table>
       <tbody>
         <ScoredPossibleKeepDiscard
+          avgCutAdded15s={cutAdded.avg15s}
+          avgCutAddedPairs={cutAdded.avgPairs}
+          avgCutAddedRuns={cutAdded.avgRuns}
           discard={discard}
           expectedHandPoints={expectedPoints}
           handPoints={points}
@@ -62,6 +68,7 @@ describe("calculation component", () => {
     "should render %s ordered keep then discard then the points",
     (sortOrderName) => {
       const {
+        cutAdded,
         discard,
         discardString,
         expectedPoints,
@@ -75,6 +82,9 @@ describe("calculation component", () => {
         <table>
           <tbody>
             <ScoredPossibleKeepDiscard
+              avgCutAdded15s={cutAdded.avg15s}
+              avgCutAddedPairs={cutAdded.avgPairs}
+              avgCutAddedRuns={cutAdded.avgRuns}
               discard={discard}
               expectedHandPoints={expectedPoints}
               handPoints={points}
@@ -97,6 +107,9 @@ describe("calculation component", () => {
         ),
         points.toString(),
         (expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        cutAdded.avg15s.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        cutAdded.avgPairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        cutAdded.avgRuns.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
         expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
       ]);
     },

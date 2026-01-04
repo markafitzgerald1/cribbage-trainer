@@ -11,6 +11,9 @@ describe("compareByExpectedScoreDescending", () => {
     keep: Card[],
     discard: Card[],
   ): ScoredKeepDiscard<Card> => ({
+    avgCutAdded15s: 0,
+    avgCutAddedPairs: 0,
+    avgCutAddedRuns: 0,
     discard,
     expectedHandPoints: expectedHandPoints(keep, discard).total,
     handPoints: 0,

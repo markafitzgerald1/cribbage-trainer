@@ -64,8 +64,10 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     actualScoredKeepDiscards: ScoredKeepDiscard<Card>[],
   ) =>
     actualScoredKeepDiscards.map((scoredKeepDiscard) => ({
-      ...scoredKeepDiscard,
+      discard: scoredKeepDiscard.discard,
       expectedHandPoints: round(scoredKeepDiscard.expectedHandPoints),
+      handPoints: scoredKeepDiscard.handPoints,
+      keep: scoredKeepDiscard.keep,
     }));
 
   const CARDS_PER_DECK = INDICES_PER_SUIT * SUITS_PER_DECK;
@@ -118,6 +120,9 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
               REMAINING_DECK_SIZE,
         );
         expectedScoredKeepDiscards.push({
+          avgCutAdded15s: 0,
+          avgCutAddedPairs: 0,
+          avgCutAddedRuns: 0,
           discard: [cards[index1]!, cards[index2]!],
           expectedHandPoints,
           handPoints,

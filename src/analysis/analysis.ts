@@ -3,6 +3,7 @@ import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
 import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
+import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { handPoints } from "../game/handPoints";
 
 export interface ScoredKeepDiscard<T extends Card> {
@@ -10,6 +11,9 @@ export interface ScoredKeepDiscard<T extends Card> {
   discard: readonly T[];
   expectedHandPoints: number;
   handPoints: number;
+  avgCutAdded15s: number;
+  avgCutAddedPairs: number;
+  avgCutAddedRuns: number;
 }
 
 export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
@@ -23,14 +27,23 @@ export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
       discard,
       keep: cards.filter((card) => !discard.includes(card)),
     }))
-    .map((keepDiscard) => ({
-      discard: keepDiscard.discard,
-      expectedHandPoints: expectedHandPoints(
+    .map((keepDiscard) => {
+      const cutAdded = expectedCutAddedPoints(
         keepDiscard.keep,
         keepDiscard.discard,
-      ).total,
-      handPoints: handPoints(keepDiscard.keep).total,
-      keep: keepDiscard.keep,
-    }))
+      );
+      return {
+        avgCutAdded15s: cutAdded.avg15s,
+        avgCutAddedPairs: cutAdded.avgPairs,
+        avgCutAddedRuns: cutAdded.avgRuns,
+        discard: keepDiscard.discard,
+        expectedHandPoints: expectedHandPoints(
+          keepDiscard.keep,
+          keepDiscard.discard,
+        ).total,
+        handPoints: handPoints(keepDiscard.keep).total,
+        keep: keepDiscard.keep,
+      };
+    })
     .sort(compareByExpectedScoreThenRankDescending);
 };

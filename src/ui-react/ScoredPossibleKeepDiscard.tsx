@@ -8,6 +8,9 @@ interface ScoredPossibleKeepDiscardProps {
   readonly discard: readonly ComparableCard[];
   readonly handPoints: number;
   readonly expectedHandPoints: number;
+  readonly avgCutAdded15s: number;
+  readonly avgCutAddedPairs: number;
+  readonly avgCutAddedRuns: number;
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
 }
@@ -19,6 +22,9 @@ export function ScoredPossibleKeepDiscard({
   discard,
   handPoints,
   expectedHandPoints,
+  avgCutAdded15s,
+  avgCutAddedPairs,
+  avgCutAddedRuns,
   sortOrder,
   isHighlighted,
 }: ScoredPossibleKeepDiscardProps) {
@@ -46,6 +52,9 @@ export function ScoredPossibleKeepDiscard({
           EXPECTED_POINTS_FRACTION_DIGITS,
         )}
       </td>
+      <td>{avgCutAdded15s.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
+      <td>{avgCutAddedPairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
+      <td>{avgCutAddedRuns.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
       <td>{expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
     </tr>
   );
