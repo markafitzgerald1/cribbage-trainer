@@ -70,6 +70,9 @@ export function ScoredPossibleKeepDiscards({
                   discard={scoredKeepDiscard.discard}
                   expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
                   handPoints={scoredKeepDiscard.handPoints}
+                  isHighlighted={scoredKeepDiscard.keep.every(
+                    (card) => card.kept,
+                  )}
                   keep={scoredKeepDiscard.keep}
                   key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
                     .map((dealtCard) => dealtCard.dealOrder)

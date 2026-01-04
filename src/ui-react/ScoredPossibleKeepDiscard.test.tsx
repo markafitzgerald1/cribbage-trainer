@@ -33,6 +33,30 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
   };
 }
 
+const highlightedPresent = (isHighlighted: boolean) => {
+  const { discard, expectedPoints, keep, points, sortOrder } =
+    setupScenario("Ascending");
+
+  const { container } = render(
+    <table>
+      <tbody>
+        <ScoredPossibleKeepDiscard
+          discard={discard}
+          expectedHandPoints={expectedPoints}
+          handPoints={points}
+          isHighlighted={isHighlighted}
+          keep={keep}
+          sortOrder={sortOrder}
+        />
+      </tbody>
+    </table>,
+  );
+
+  const rowClass = container.querySelector("tr")?.className ?? "";
+
+  return rowClass.includes("highlighted");
+};
+
 describe("calculation component", () => {
   it.each(SORT_ORDER_NAMES)(
     "should render %s ordered keep then discard then the points",
@@ -54,6 +78,7 @@ describe("calculation component", () => {
               discard={discard}
               expectedHandPoints={expectedPoints}
               handPoints={points}
+              isHighlighted={false}
               keep={keep}
               sortOrder={sortOrder}
             />
@@ -76,4 +101,9 @@ describe("calculation component", () => {
       ]);
     },
   );
+
+  it("should toggle highlighted class based on prop", () => {
+    expect(highlightedPresent(true)).toBe(true);
+    expect(highlightedPresent(false)).toBe(false);
+  });
 });

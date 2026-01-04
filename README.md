@@ -43,6 +43,12 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - Build a static version of the Storybook stories: `npm run storybook:build`
 - Serve a static version of the Storybook stories: `npm run storybook:serve`
 
+### Coding conventions
+
+- When suppressing duplication (`jscpd`), only ignore import/include statements
+  and only for the minimum necessary lines; do not blanket-ignore larger code
+  sections.
+
 ### Dependency Maintenance
 
 - `npm run deps:update:minor`: Updates all npm dependencies to their latest

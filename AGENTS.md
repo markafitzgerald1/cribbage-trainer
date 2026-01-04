@@ -42,6 +42,8 @@
 - Do not automate disabling lint rules; only a human developer may add or
   request disables.
 - Prefer small, focused commits; summarize why changes are needed.
+- Only add `jscpd` ignore comments for import/include statements and only for
+  the minimal lines required; do not blanket-ignore large code segments.
 
 ## Husky/hooks
 

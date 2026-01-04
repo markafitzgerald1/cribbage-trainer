@@ -9,6 +9,7 @@ interface ScoredPossibleKeepDiscardProps {
   readonly handPoints: number;
   readonly expectedHandPoints: number;
   readonly sortOrder: SortOrder;
+  readonly isHighlighted: boolean;
 }
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
@@ -19,9 +20,14 @@ export function ScoredPossibleKeepDiscard({
   handPoints,
   expectedHandPoints,
   sortOrder,
+  isHighlighted,
 }: ScoredPossibleKeepDiscardProps) {
   return (
-    <tr className={classes.scoredPossibleKeepDiscard}>
+    <tr
+      className={`${classes.scoredPossibleKeepDiscard} ${
+        isHighlighted ? classes.highlighted : ""
+      }`}
+    >
       <td>
         <PossibleHand
           dealtCards={keep}

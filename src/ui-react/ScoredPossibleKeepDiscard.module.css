@@ -4,6 +4,8 @@
   color: var(--text-color);
   font-family: var(--text-font-family);
   min-height: 44px;
+  transition: background-color var(--transition-duration)
+    var(--transition-timing);
 }
 
 .scored-possible-keep-discard td {
@@ -17,6 +19,11 @@
 .scored-possible-keep-discard td:first-child {
   text-align: left;
   white-space: nowrap;
+}
+
+.highlighted {
+  background-color: rgb(255 255 255 / 35%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
 }
 
 @media (orientation: landscape) {
