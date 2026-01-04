@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
-const constantSeedQuery = "?seed=1";
+const constantSeedQuery = "?seed=4";
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
