@@ -54,6 +54,7 @@ describe("calculation component", () => {
               discard={discard}
               expectedHandPoints={expectedPoints}
               handPoints={points}
+              isHighlighted={false}
               keep={keep}
               sortOrder={sortOrder}
             />

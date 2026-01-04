@@ -35,36 +35,55 @@ const toComparableCard = (card: Card, index: number): ComparableCard => ({
   rank: card.rank,
 });
 
-const createStory = (
-  keep: Card[],
-  discard: Card[],
-  sortOrder: SortOrder,
-): Story => ({
+interface CreateStoryOptions {
+  readonly keep: Card[];
+  readonly discard: Card[];
+  readonly sortOrder: SortOrder;
+  readonly isHighlighted?: boolean;
+}
+
+const createStory = ({
+  keep,
+  discard,
+  sortOrder,
+  isHighlighted = false,
+}: CreateStoryOptions): Story => ({
   args: {
     discard: discard.map(toComparableCard),
     expectedHandPoints: expectedHandPoints(keep, discard).total,
     handPoints: handPoints(keep).total,
+    isHighlighted,
     keep: keep.map(toComparableCard),
     sortOrder,
   },
 });
 
 export const JackSixFiveFourDiscardKingQueenSortedDescending: Story =
-  createStory(
-    [CARDS.JACK, CARDS.SIX, CARDS.FIVE, CARDS.FOUR],
-    [CARDS.KING, CARDS.QUEEN],
-    SortOrder.Descending,
-  );
+  createStory({
+    discard: [CARDS.KING, CARDS.QUEEN],
+    keep: [CARDS.JACK, CARDS.SIX, CARDS.FIVE, CARDS.FOUR],
+    sortOrder: SortOrder.Descending,
+  });
 
-export const TwoTenNineJackDiscardKingFourSortedAscending: Story = createStory(
-  [CARDS.TWO, CARDS.TEN, CARDS.NINE, CARDS.JACK],
-  [CARDS.KING, CARDS.FOUR],
-  SortOrder.Ascending,
-);
+/* jscpd:ignore-start */
+export const JackSixFiveFourDiscardKingQueenSortedDescendingHighlighted: Story =
+  createStory({
+    discard: [CARDS.KING, CARDS.QUEEN],
+    isHighlighted: true,
+    keep: [CARDS.JACK, CARDS.SIX, CARDS.FIVE, CARDS.FOUR],
+    sortOrder: SortOrder.Descending,
+  });
+/* jscpd:ignore-end */
+
+export const TwoTenNineJackDiscardKingFourSortedAscending: Story = createStory({
+  discard: [CARDS.KING, CARDS.FOUR],
+  keep: [CARDS.TWO, CARDS.TEN, CARDS.NINE, CARDS.JACK],
+  sortOrder: SortOrder.Ascending,
+});
 
 export const FiveFiveAceJackDiscardFourSevenSortedInDealOrder: Story =
-  createStory(
-    [CARDS.FIVE, CARDS.FIVE, CARDS.ACE, CARDS.JACK],
-    [CARDS.FOUR, CARDS.SEVEN],
-    SortOrder.DealOrder,
-  );
+  createStory({
+    discard: [CARDS.FOUR, CARDS.SEVEN],
+    keep: [CARDS.FIVE, CARDS.FIVE, CARDS.ACE, CARDS.JACK],
+    sortOrder: SortOrder.DealOrder,
+  });
