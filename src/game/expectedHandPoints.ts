@@ -47,3 +47,64 @@ export const expectedHandPoints = (
 
   return scaledTotalPoints;
 };
+
+export interface ExpectedCutAddedPoints {
+  readonly fifteens: number;
+  readonly pairs: number;
+  readonly runs: number;
+}
+
+export const expectedCutAddedPoints = (
+  keep: readonly Card[],
+  discard: readonly Card[],
+): ExpectedCutAddedPoints => {
+  const basePoints = handPoints(keep);
+  const summedPoints = rankCounts([...keep, ...discard])
+    .map((count: number, rank: number) => {
+      const remaining = SUITS_PER_DECK - count;
+      if (remaining <= 0) {
+        return {
+          fifteens: 0,
+          pairs: 0,
+          runs: 0,
+          weight: 0,
+        };
+      }
+      // eslint-disable-next-line security/detect-object-injection
+      const points = handPoints([...keep, CARDS[rank] as Card]);
+      return {
+        fifteens: (points.fifteens - basePoints.fifteens) * remaining,
+        pairs: (points.pairs - basePoints.pairs) * remaining,
+        runs: (points.runs - basePoints.runs) * remaining,
+        weight: remaining,
+      };
+    })
+    .reduce(
+      (previous, current) => ({
+        fifteens: previous.fifteens + current.fifteens,
+        pairs: previous.pairs + current.pairs,
+        runs: previous.runs + current.runs,
+        weight: previous.weight + current.weight,
+      }),
+      {
+        fifteens: 0,
+        pairs: 0,
+        runs: 0,
+        weight: 0,
+      },
+    );
+
+  if (summedPoints.weight === 0) {
+    return {
+      fifteens: 0,
+      pairs: 0,
+      runs: 0,
+    };
+  }
+
+  return {
+    fifteens: summedPoints.fifteens / summedPoints.weight,
+    pairs: summedPoints.pairs / summedPoints.weight,
+    runs: summedPoints.runs / summedPoints.weight,
+  };
+};

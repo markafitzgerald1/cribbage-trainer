@@ -26,6 +26,21 @@ export function ScoredPossibleKeepDiscards({
       title: "Expected additional points from the cut",
     },
     {
+      key: "cut-fifteens",
+      label: "E[+15s]",
+      title: "Expected added points from fifteens due to the cut",
+    },
+    {
+      key: "cut-pairs",
+      label: "E[+pairs]",
+      title: "Expected added points from pairs due to the cut",
+    },
+    {
+      key: "cut-runs",
+      label: "E[+runs]",
+      title: "Expected added points from runs due to the cut",
+    },
+    {
       key: "total",
       label: "Total",
       title: "Total expected hand points",
@@ -68,6 +83,13 @@ export function ScoredPossibleKeepDiscards({
               (scoredKeepDiscard) => (
                 <ScoredPossibleKeepDiscard
                   discard={scoredKeepDiscard.discard}
+                  expectedCutAddedFifteens={
+                    scoredKeepDiscard.expectedCutAddedFifteens
+                  }
+                  expectedCutAddedPairs={
+                    scoredKeepDiscard.expectedCutAddedPairs
+                  }
+                  expectedCutAddedRuns={scoredKeepDiscard.expectedCutAddedRuns}
                   expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
                   handPoints={scoredKeepDiscard.handPoints}
                   isHighlighted={scoredKeepDiscard.keep.every(
@@ -85,7 +107,8 @@ export function ScoredPossibleKeepDiscards({
         </table>
       </div>
       <div className={classes.legend}>
-        Hand: Points in hand. Cut: Expected additional. Total: Expected total.
+        Hand: Points in hand. Cut: Expected additional. E[+15s], E[+pairs],
+        E[+runs]: Category averages. Total: Expected total.
       </div>
     </figure>
   );

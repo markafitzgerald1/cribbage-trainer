@@ -5,12 +5,15 @@ import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-import { expectedHandPoints } from "../game/expectedHandPoints";
+import {
+  expectedCutAddedPoints,
+  expectedHandPoints,
+} from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
-const EXPECTED_CELL_COUNT = 4;
+const EXPECTED_CELL_COUNT = 7;
 
 function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const sortOrder = SortOrder[sortOrderName];
@@ -19,12 +22,14 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const discard = dealtHand.slice(CARDS_PER_KEPT_HAND);
   const points = handPoints(keep).total;
   const expectedPoints = expectedHandPoints(keep, discard).total;
+  const expectedCutAdded = expectedCutAddedPoints(keep, discard);
   const keepString = handToSortedString(keep, sortOrder);
   const discardString = handToSortedString(discard, sortOrder);
 
   return {
     discard,
     discardString,
+    expectedCutAdded,
     expectedPoints,
     keep,
     keepString,
@@ -34,7 +39,7 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 }
 
 const highlightedPresent = (isHighlighted: boolean) => {
-  const { discard, expectedPoints, keep, points, sortOrder } =
+  const { discard, expectedCutAdded, expectedPoints, keep, points, sortOrder } =
     setupScenario("Ascending");
 
   const { container } = render(
@@ -42,6 +47,9 @@ const highlightedPresent = (isHighlighted: boolean) => {
       <tbody>
         <ScoredPossibleKeepDiscard
           discard={discard}
+          expectedCutAddedFifteens={expectedCutAdded.fifteens}
+          expectedCutAddedPairs={expectedCutAdded.pairs}
+          expectedCutAddedRuns={expectedCutAdded.runs}
           expectedHandPoints={expectedPoints}
           handPoints={points}
           isHighlighted={isHighlighted}
@@ -64,6 +72,7 @@ describe("calculation component", () => {
       const {
         discard,
         discardString,
+        expectedCutAdded,
         expectedPoints,
         keep,
         keepString,
@@ -76,6 +85,9 @@ describe("calculation component", () => {
           <tbody>
             <ScoredPossibleKeepDiscard
               discard={discard}
+              expectedCutAddedFifteens={expectedCutAdded.fifteens}
+              expectedCutAddedPairs={expectedCutAdded.pairs}
+              expectedCutAddedRuns={expectedCutAdded.runs}
               expectedHandPoints={expectedPoints}
               handPoints={points}
               isHighlighted={false}
@@ -97,6 +109,9 @@ describe("calculation component", () => {
         ),
         points.toString(),
         (expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        expectedCutAdded.fifteens.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        expectedCutAdded.pairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        expectedCutAdded.runs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
         expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
       ]);
     },
