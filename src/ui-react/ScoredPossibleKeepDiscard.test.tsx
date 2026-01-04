@@ -77,4 +77,52 @@ describe("calculation component", () => {
       ]);
     },
   );
+
+  it.each(SORT_ORDER_NAMES)(
+    "should render highlighted %s ordered keep then discard then the points",
+    (sortOrderName) => {
+      const {
+        discard,
+        discardString,
+        expectedPoints,
+        keep,
+        keepString,
+        points,
+        sortOrder,
+      } = setupScenario(sortOrderName);
+
+      render(
+        <table>
+          <tbody>
+            <ScoredPossibleKeepDiscard
+              discard={discard}
+              expectedHandPoints={expectedPoints}
+              handPoints={points}
+              isHighlighted
+              keep={keep}
+              sortOrder={sortOrder}
+            />
+          </tbody>
+        </table>,
+      );
+
+      const row = screen.getByRole("row");
+      const cells = screen.getAllByRole("cell");
+      const texts = cells.map((cell) => String(cell.textContent));
+
+      // Verify the row has the highlighted class
+      expect(row.className).toMatch(/highlighted/u);
+
+      expect(cells).toHaveLength(EXPECTED_CELL_COUNT);
+      expect(cells.every(Boolean)).toBe(true);
+      expect(texts).toStrictEqual([
+        expect.stringMatching(
+          new RegExp(`${keepString}.*\\(${discardString}\\)`, "u"),
+        ),
+        points.toString(),
+        (expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+      ]);
+    },
+  );
 });
