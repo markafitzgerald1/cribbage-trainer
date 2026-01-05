@@ -48,11 +48,17 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - When suppressing duplication (`jscpd`), only ignore import/include statements
   and only for the minimum necessary lines; do not blanket-ignore larger code
   sections.
+- Only comment on the "why" behind code; strongly prefer meaningful test names,
+  function names, and variable names to comments in code.
 
 ### Dependency Maintenance
 
+- Keep dependencies current in PRs: include minor and patch bumps, and take
+  major upgrades when they do not overshadow the PR's primary purpose.
 - `npm run deps:update:minor`: Updates all npm dependencies to their latest
   **minor** and **patch** versions (avoiding major updates), then installs them.
+  Use a dedicated PR for large major upgrades when they would dominate the
+  change set.
 
 ### Handling visual regression test screenshot differences
 
@@ -69,7 +75,9 @@ expected screenshots:
 
 - Some git commands may invoke Docker-based test hooks. For doc-only changes,
   prefer skipping them (`HUSKY=0` or `--no-verify`) to avoid long runs; for code
-  changes, leave the hooks on. Keep GPG signing enabled for commits.
+  changes, only skip hooks if absolutely sure they are not needed (i.e., a build
+  and all tests have been performed on the current uncommitted code). Keep GPG
+  signing enabled for commits. Do not create unsigned commits.
 
 ### CI workflow notes
 

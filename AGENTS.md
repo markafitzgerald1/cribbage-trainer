@@ -27,6 +27,13 @@
 - Playwright e2e report viewer: `npx --no-install playwright show-report`.
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 
+## Dependency maintenance
+
+- Keep dependencies current in PRs: include minor and patch bumps, and take major
+  upgrades when they do not overshadow the PR's primary purpose.
+- Use `npm run deps:update:minor` for routine refreshes; handle larger major
+  upgrades separately if they would dominate the change set.
+
 ## Visual regression updates
 
 - When Playwright snapshot diffs are acceptable:
@@ -44,13 +51,16 @@
 - Prefer small, focused commits; summarize why changes are needed.
 - Only add `jscpd` ignore comments for import/include statements and only for
   the minimal lines required; do not blanket-ignore large code segments.
+- Only comment on the "why" behind code; strongly prefer meaningful test names,
+  function names, and variable names to comments in code.
 
 ## Husky/hooks
 
 - Some git commands may invoke Docker-based test hooks. **For doc-only changes,
   skip hooks** (`HUSKY=0` or `--no-verify`) to avoid unnecessary Docker/test
-  runs. For any code changes, leave the hooks on. Keep GPG signing enabled for
-  commits.
+  runs. For code changes, only skip hooks if absolutely sure they are not needed
+  (i.e., a build and all tests have been performed on the current uncommitted
+  code). Keep GPG signing enabled for commits. Do not create unsigned commits.
 
 ## CI workflow notes
 

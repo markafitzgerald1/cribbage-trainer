@@ -22,7 +22,8 @@
 }
 
 .highlighted {
-  background-color: rgb(255 255 255 / 35%);
+  /* !important is needed to override the specificity of the nth-child row striping in the parent component */
+  background-color: rgb(255 255 255 / 35%) !important;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
 }
 
