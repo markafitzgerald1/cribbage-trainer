@@ -11,7 +11,7 @@ import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
-const EXPECTED_CELL_COUNT = 7; // Hand, Hand pts, Cut, E[+15s], E[+pairs], E[+runs], Total
+const EXPECTED_CELL_COUNT = 4; // Hand, Hand pts, Cut, Total
 
 function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const sortOrder = SortOrder[sortOrderName];
@@ -107,9 +107,6 @@ describe("calculation component", () => {
         ),
         points.toString(),
         (expectedPoints - points).toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
-        cutAdded.avg15s.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
-        cutAdded.avgPairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
-        cutAdded.avgRuns.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
         expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
       ]);
     },
