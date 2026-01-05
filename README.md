@@ -48,6 +48,8 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - When suppressing duplication (`jscpd`), only ignore import/include statements
   and only for the minimum necessary lines; do not blanket-ignore larger code
   sections.
+- Only comment on the "why" behind code; strongly prefer meaningful test names,
+  function names, and variable names to comments in code.
 
 ### Dependency Maintenance
 
@@ -69,7 +71,8 @@ expected screenshots:
 
 - Some git commands may invoke Docker-based test hooks. For doc-only changes,
   prefer skipping them (`HUSKY=0` or `--no-verify`) to avoid long runs; for code
-  changes, leave the hooks on. Keep GPG signing enabled for commits.
+  changes, leave the hooks on. Keep GPG signing enabled for commits. Do not
+  create unsigned commits.
 
 ### CI workflow notes
 

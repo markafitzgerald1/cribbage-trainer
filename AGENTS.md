@@ -44,13 +44,15 @@
 - Prefer small, focused commits; summarize why changes are needed.
 - Only add `jscpd` ignore comments for import/include statements and only for
   the minimal lines required; do not blanket-ignore large code segments.
+- Only comment on the "why" behind code; strongly prefer meaningful test names,
+  function names, and variable names to comments in code.
 
 ## Husky/hooks
 
 - Some git commands may invoke Docker-based test hooks. **For doc-only changes,
   skip hooks** (`HUSKY=0` or `--no-verify`) to avoid unnecessary Docker/test
   runs. For any code changes, leave the hooks on. Keep GPG signing enabled for
-  commits.
+  commits. Do not create unsigned commits.
 
 ## CI workflow notes
 
