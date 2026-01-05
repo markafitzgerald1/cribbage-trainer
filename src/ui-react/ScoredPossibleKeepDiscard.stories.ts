@@ -6,10 +6,7 @@ import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createArgTypes } from "./stories.common";
 import { createElement } from "react";
-import {
-  expectedCutAddedPoints,
-  expectedHandPoints,
-} from "../game/expectedHandPoints";
+import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
 const meta = {
@@ -52,16 +49,14 @@ const createStory = ({
   isHighlighted = false,
 }: CreateStoryOptions): Story => ({
   args: (() => {
-    const cutAddedPoints = expectedCutAddedPoints(keep, discard);
     return {
       discard: discard.map(toComparableCard),
-      expectedCutAddedFifteens: cutAddedPoints.fifteens,
-      expectedCutAddedPairs: cutAddedPoints.pairs,
-      expectedCutAddedRuns: cutAddedPoints.runs,
       expectedHandPoints: expectedHandPoints(keep, discard).total,
       handPoints: handPoints(keep).total,
+      isExpanded: false,
       isHighlighted,
       keep: keep.map(toComparableCard),
+      onToggleExpand: () => undefined,
       sortOrder,
     };
   })(),

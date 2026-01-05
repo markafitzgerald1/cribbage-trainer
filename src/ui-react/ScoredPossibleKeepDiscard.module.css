@@ -27,6 +27,14 @@
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 20%);
 }
 
+.expandable-row {
+  cursor: pointer;
+}
+
+.expanded-row {
+  background-color: rgb(255 255 255 / 10%);
+}
+
 @media (orientation: landscape) {
   .scored-possible-keep-discard {
     font-size: var(--medium-text-font-size-landscape);

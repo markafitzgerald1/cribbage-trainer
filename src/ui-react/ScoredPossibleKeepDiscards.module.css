@@ -33,6 +33,36 @@
   background-color: rgb(255 255 255 / 4%);
 }
 
+.cut-breakdown-row td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.cut-breakdown-row {
+  cursor: pointer;
+  background-color: rgb(255 255 255 / 6%);
+}
+
+.cut-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.9em;
+}
+
+.cut-breakdown-label {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.cut-breakdown-item {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .scored-possible-keep-discards th {
   position: sticky;
   top: 0;

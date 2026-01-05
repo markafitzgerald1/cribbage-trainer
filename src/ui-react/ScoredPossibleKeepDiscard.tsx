@@ -8,11 +8,10 @@ interface ScoredPossibleKeepDiscardProps {
   readonly discard: readonly ComparableCard[];
   readonly handPoints: number;
   readonly expectedHandPoints: number;
-  readonly expectedCutAddedFifteens: number;
-  readonly expectedCutAddedPairs: number;
-  readonly expectedCutAddedRuns: number;
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
+  readonly isExpanded: boolean;
+  readonly onToggleExpand: () => void;
 }
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
@@ -22,17 +21,17 @@ export function ScoredPossibleKeepDiscard({
   discard,
   handPoints,
   expectedHandPoints,
-  expectedCutAddedFifteens,
-  expectedCutAddedPairs,
-  expectedCutAddedRuns,
   sortOrder,
   isHighlighted,
+  isExpanded,
+  onToggleExpand,
 }: ScoredPossibleKeepDiscardProps) {
   return (
     <tr
       className={`${classes.scoredPossibleKeepDiscard} ${
         isHighlighted ? classes.highlighted : ""
-      }`}
+      } ${classes.expandableRow} ${isExpanded ? classes.expandedRow : ""}`}
+      onClick={onToggleExpand}
     >
       <td>
         <PossibleHand
@@ -52,9 +51,6 @@ export function ScoredPossibleKeepDiscard({
           EXPECTED_POINTS_FRACTION_DIGITS,
         )}
       </td>
-      <td>{expectedCutAddedFifteens.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
-      <td>{expectedCutAddedPairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
-      <td>{expectedCutAddedRuns.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
       <td>{expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}</td>
     </tr>
   );
