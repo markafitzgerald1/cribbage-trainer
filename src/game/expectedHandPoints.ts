@@ -62,6 +62,7 @@ export interface CutBreakdownItem {
 export interface CutBreakdownCategory {
   readonly cuts: readonly CutBreakdownItem[];
   readonly totalCuts: number;
+  readonly totalPoints: number;
 }
 
 export interface CutBreakdown {
@@ -73,17 +74,21 @@ export interface CutBreakdown {
 const createCutBreakdownCategory = (): {
   cuts: CutBreakdownItem[];
   totalCuts: number;
+  totalPoints: number;
 } => ({
   cuts: [],
   totalCuts: 0,
+  totalPoints: 0,
 });
 
 const addCutBreakdownItem = (
-  category: { cuts: CutBreakdownItem[]; totalCuts: number },
+  category: { cuts: CutBreakdownItem[]; totalCuts: number; totalPoints: number },
   cut: CutBreakdownItem,
+  points: number,
 ) => {
   category.cuts.push(cut);
   category.totalCuts += cut.count;
+  category.totalPoints += points;
 };
 
 export const cutAddedPointsBreakdown = (
@@ -103,26 +108,29 @@ export const cutAddedPointsBreakdown = (
     // eslint-disable-next-line security/detect-object-injection
     const cutCard = CARDS[rank] as Card;
     const points = handPoints([...keep, cutCard]);
+    const fifteensDelta = points.fifteens - basePoints.fifteens;
+    const pairsDelta = points.pairs - basePoints.pairs;
+    const runsDelta = points.runs - basePoints.runs;
 
-    if (points.fifteens > basePoints.fifteens) {
+    if (fifteensDelta > 0) {
       addCutBreakdownItem(fifteens, {
         count: remaining,
         rankLabel: cutCard.rankLabel,
-      });
+      }, fifteensDelta * remaining);
     }
 
-    if (points.pairs > basePoints.pairs) {
+    if (pairsDelta > 0) {
       addCutBreakdownItem(pairs, {
         count: remaining,
         rankLabel: cutCard.rankLabel,
-      });
+      }, pairsDelta * remaining);
     }
 
-    if (points.runs > basePoints.runs) {
+    if (runsDelta > 0) {
       addCutBreakdownItem(runs, {
         count: remaining,
         rankLabel: cutCard.rankLabel,
-      });
+      }, runsDelta * remaining);
     }
   });
 

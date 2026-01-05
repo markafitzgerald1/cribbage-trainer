@@ -64,6 +64,12 @@
   flex-wrap: wrap;
 }
 
+.cut-breakdown-item + .cut-breakdown-item {
+  border-left: 1px solid rgb(255 255 255 / 25%);
+  padding-left: 10px;
+  margin-left: 4px;
+}
+
 .cut-breakdown-details {
   font-size: 0.85em;
   opacity: 0.85;

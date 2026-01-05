@@ -41,6 +41,8 @@ export function ScoredPossibleKeepDiscards({
   const formatCutList = (
     cuts: readonly { rankLabel: string; count: number }[],
   ) => cuts.map((cut) => `${cut.rankLabel}×${cut.count}`).join(", ");
+  const formatCutTotals = (totalCuts: number, totalPoints: number) =>
+    `${totalCuts} cuts • ${totalPoints} pts total`;
 
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
@@ -130,7 +132,10 @@ export function ScoredPossibleKeepDiscards({
                                 )}
                               </strong>
                               <span className={classes.cutBreakdownDetails}>
-                                {fifteensCuts.totalCuts} cuts
+                                {formatCutTotals(
+                                  fifteensCuts.totalCuts,
+                                  fifteensCuts.totalPoints,
+                                )}
                                 {fifteensCuts.totalCuts > 0
                                   ? `: ${formatCutList(fifteensCuts.cuts)}`
                                   : ""}
@@ -144,7 +149,10 @@ export function ScoredPossibleKeepDiscards({
                                 )}
                               </strong>
                               <span className={classes.cutBreakdownDetails}>
-                                {pairsCuts.totalCuts} cuts
+                                {formatCutTotals(
+                                  pairsCuts.totalCuts,
+                                  pairsCuts.totalPoints,
+                                )}
                                 {pairsCuts.totalCuts > 0
                                   ? `: ${formatCutList(pairsCuts.cuts)}`
                                   : ""}
@@ -158,7 +166,10 @@ export function ScoredPossibleKeepDiscards({
                                 )}
                               </strong>
                               <span className={classes.cutBreakdownDetails}>
-                                {runsCuts.totalCuts} cuts
+                                {formatCutTotals(
+                                  runsCuts.totalCuts,
+                                  runsCuts.totalPoints,
+                                )}
                                 {runsCuts.totalCuts > 0
                                   ? `: ${formatCutList(runsCuts.cuts)}`
                                   : ""}
