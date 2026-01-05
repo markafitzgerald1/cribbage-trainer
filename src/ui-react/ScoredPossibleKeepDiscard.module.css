@@ -29,10 +29,22 @@
 
 .clickable {
   cursor: pointer;
+  position: relative;
 }
 
 .clickable:hover {
   background-color: rgb(255 255 255 / 15%);
+}
+
+.clickable::after {
+  content: "▸";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.4;
+  font-size: 0.8em;
+  pointer-events: none;
 }
 
 .expandedRow {
@@ -84,16 +96,17 @@
 .contributionItem {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 2px 6px;
+  gap: 5px;
+  padding: 3px 8px;
   background-color: rgb(255 255 255 / 10%);
   border-radius: 4px;
   font-size: 0.9em;
 }
 
 .contributionCount {
-  color: rgb(255 255 255 / 80%);
-  font-weight: 500;
+  color: rgb(255 255 255 / 60%);
+  font-weight: 400;
+  font-size: 0.85em;
 }
 
 .contributionPoints {

@@ -92,7 +92,8 @@ export function ScoredPossibleKeepDiscards({
       </div>
       <div className={classes.legend}>
         Hand: Points in hand. Cut: Expected additional. Total: Expected total.
-        Click any row to see breakdown of expected cut points.
+        <strong> Click any row </strong>
+        to see detailed breakdown of expected cut points by category.
       </div>
     </figure>
   );
