@@ -1,6 +1,7 @@
 import { INDICES_PER_SUIT, CARDS as card } from "./Card";
 import {
   SUITS_PER_DECK,
+  cutAddedPointsBreakdown,
   expectedCutAddedPoints,
   expectedHandPoints,
 } from "./expectedHandPoints";
@@ -181,5 +182,23 @@ describe("expectedCutAddedPoints", () => {
     );
     expect(added.pairs).toBeCloseTo(expected.pairs - basePoints.pairs, 10);
     expect(added.runs).toBeCloseTo(expected.runs - basePoints.runs, 10);
+  });
+});
+
+describe("cutAddedPointsBreakdown", () => {
+  it("reports which cuts add fifteens and pairs", () => {
+    const keep = parseCards("10,5,5,5");
+    const discard = parseCards("A,K");
+    const breakdown = cutAddedPointsBreakdown(keep, discard);
+
+    expect(breakdown.fifteens.totalCuts).toBe(4);
+    expect(breakdown.fifteens.cuts).toEqual([
+      { count: 1, rankLabel: "5" },
+      { count: 3, rankLabel: "10" },
+    ]);
+    expect(breakdown.pairs.totalCuts).toBe(1);
+    expect(breakdown.pairs.cuts).toEqual([{ count: 1, rankLabel: "5" }]);
+    expect(breakdown.runs.totalCuts).toBe(0);
+    expect(breakdown.runs.cuts).toEqual([]);
   });
 });

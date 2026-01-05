@@ -17,7 +17,9 @@ export function ScoredPossibleKeepDiscards({
   dealtCards,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
-  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const scoringHeaders = [
     {
       key: "hand",
@@ -35,6 +37,10 @@ export function ScoredPossibleKeepDiscards({
       title: "Total expected hand points",
     },
   ] as const;
+
+  const formatCutList = (
+    cuts: readonly { rankLabel: string; count: number }[],
+  ) => cuts.map((cut) => `${cut.rankLabel}×${cut.count}`).join(", ");
 
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
@@ -76,12 +82,21 @@ export function ScoredPossibleKeepDiscards({
                 ]
                   .map((dealtCard) => dealtCard.dealOrder)
                   .join("");
-                const isExpanded = rowKey === expandedKey;
+                const isExpanded = expandedKeys.has(rowKey);
                 const toggleExpanded = () => {
-                  setExpandedKey((currentKey) =>
-                    currentKey === rowKey ? null : rowKey,
-                  );
+                  setExpandedKeys((currentKeys) => {
+                    const nextKeys = new Set(currentKeys);
+                    if (nextKeys.has(rowKey)) {
+                      nextKeys.delete(rowKey);
+                    } else {
+                      nextKeys.add(rowKey);
+                    }
+                    return nextKeys;
+                  });
                 };
+                const fifteensCuts = scoredKeepDiscard.cutBreakdown.fifteens;
+                const pairsCuts = scoredKeepDiscard.cutBreakdown.pairs;
+                const runsCuts = scoredKeepDiscard.cutBreakdown.runs;
 
                 return (
                   <Fragment key={rowKey}>
@@ -114,6 +129,12 @@ export function ScoredPossibleKeepDiscards({
                                   EXPECTED_POINTS_FRACTION_DIGITS,
                                 )}
                               </strong>
+                              <span className={classes.cutBreakdownDetails}>
+                                {fifteensCuts.totalCuts} cuts
+                                {fifteensCuts.totalCuts > 0
+                                  ? `: ${formatCutList(fifteensCuts.cuts)}`
+                                  : ""}
+                              </span>
                             </span>
                             <span className={classes.cutBreakdownItem}>
                               pairs{" "}
@@ -122,6 +143,12 @@ export function ScoredPossibleKeepDiscards({
                                   EXPECTED_POINTS_FRACTION_DIGITS,
                                 )}
                               </strong>
+                              <span className={classes.cutBreakdownDetails}>
+                                {pairsCuts.totalCuts} cuts
+                                {pairsCuts.totalCuts > 0
+                                  ? `: ${formatCutList(pairsCuts.cuts)}`
+                                  : ""}
+                              </span>
                             </span>
                             <span className={classes.cutBreakdownItem}>
                               runs{" "}
@@ -130,6 +157,12 @@ export function ScoredPossibleKeepDiscards({
                                   EXPECTED_POINTS_FRACTION_DIGITS,
                                 )}
                               </strong>
+                              <span className={classes.cutBreakdownDetails}>
+                                {runsCuts.totalCuts} cuts
+                                {runsCuts.totalCuts > 0
+                                  ? `: ${formatCutList(runsCuts.cuts)}`
+                                  : ""}
+                              </span>
                             </span>
                           </div>
                         </td>
@@ -144,7 +177,7 @@ export function ScoredPossibleKeepDiscards({
       </div>
       <div className={classes.legend}>
         Hand: Points in hand. Cut: Expected additional. Total: Expected total.
-        Click a row to show the cut breakdown (15s, pairs, runs).
+        Click rows to toggle cut breakdown (15s, pairs, runs, cuts).
       </div>
     </figure>
   );

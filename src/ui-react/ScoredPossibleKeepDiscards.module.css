@@ -49,7 +49,7 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  font-size: 0.9em;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
 }
 
 .cut-breakdown-label {
@@ -61,6 +61,12 @@
   display: inline-flex;
   gap: 6px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.cut-breakdown-details {
+  font-size: 0.85em;
+  opacity: 0.85;
 }
 
 .scored-possible-keep-discards th {
@@ -91,11 +97,11 @@
 
 .header-main {
   font-weight: 700;
-  font-size: 1.35rem;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
 }
 
 .header-unit {
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
   opacity: 0.65;
   margin-top: 2px;
 }

@@ -54,6 +54,85 @@ export interface ExpectedCutAddedPoints {
   readonly runs: number;
 }
 
+export interface CutBreakdownItem {
+  readonly rankLabel: string;
+  readonly count: number;
+}
+
+export interface CutBreakdownCategory {
+  readonly cuts: readonly CutBreakdownItem[];
+  readonly totalCuts: number;
+}
+
+export interface CutBreakdown {
+  readonly fifteens: CutBreakdownCategory;
+  readonly pairs: CutBreakdownCategory;
+  readonly runs: CutBreakdownCategory;
+}
+
+const createCutBreakdownCategory = (): {
+  cuts: CutBreakdownItem[];
+  totalCuts: number;
+} => ({
+  cuts: [],
+  totalCuts: 0,
+});
+
+const addCutBreakdownItem = (
+  category: { cuts: CutBreakdownItem[]; totalCuts: number },
+  cut: CutBreakdownItem,
+) => {
+  category.cuts.push(cut);
+  category.totalCuts += cut.count;
+};
+
+export const cutAddedPointsBreakdown = (
+  keep: readonly Card[],
+  discard: readonly Card[],
+): CutBreakdown => {
+  const basePoints = handPoints(keep);
+  const fifteens = createCutBreakdownCategory();
+  const pairs = createCutBreakdownCategory();
+  const runs = createCutBreakdownCategory();
+
+  rankCounts([...keep, ...discard]).forEach((count: number, rank: number) => {
+    const remaining = SUITS_PER_DECK - count;
+    if (remaining <= 0) {
+      return;
+    }
+    // eslint-disable-next-line security/detect-object-injection
+    const cutCard = CARDS[rank] as Card;
+    const points = handPoints([...keep, cutCard]);
+
+    if (points.fifteens > basePoints.fifteens) {
+      addCutBreakdownItem(fifteens, {
+        count: remaining,
+        rankLabel: cutCard.rankLabel,
+      });
+    }
+
+    if (points.pairs > basePoints.pairs) {
+      addCutBreakdownItem(pairs, {
+        count: remaining,
+        rankLabel: cutCard.rankLabel,
+      });
+    }
+
+    if (points.runs > basePoints.runs) {
+      addCutBreakdownItem(runs, {
+        count: remaining,
+        rankLabel: cutCard.rankLabel,
+      });
+    }
+  });
+
+  return {
+    fifteens,
+    pairs,
+    runs,
+  };
+};
+
 export const expectedCutAddedPoints = (
   keep: readonly Card[],
   discard: readonly Card[],

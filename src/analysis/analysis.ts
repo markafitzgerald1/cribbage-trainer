@@ -3,6 +3,7 @@ import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
 import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import {
+  cutAddedPointsBreakdown,
   expectedCutAddedPoints,
   expectedHandPoints,
 } from "../game/expectedHandPoints";
@@ -15,6 +16,7 @@ export interface ScoredKeepDiscard<T extends Card> {
   expectedCutAddedFifteens: number;
   expectedCutAddedPairs: number;
   expectedCutAddedRuns: number;
+  cutBreakdown: ReturnType<typeof cutAddedPointsBreakdown>;
   handPoints: number;
 }
 
@@ -35,6 +37,10 @@ export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
         keepDiscard.discard,
       );
       return {
+        cutBreakdown: cutAddedPointsBreakdown(
+          keepDiscard.keep,
+          keepDiscard.discard,
+        ),
         discard: keepDiscard.discard,
         expectedHandPoints: expectedHandPoints(
           keepDiscard.keep,
