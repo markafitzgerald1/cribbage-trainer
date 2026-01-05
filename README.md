@@ -53,8 +53,12 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Dependency Maintenance
 
+- Keep dependencies current in PRs: include minor and patch bumps, and take
+  major upgrades when they do not overshadow the PR's primary purpose.
 - `npm run deps:update:minor`: Updates all npm dependencies to their latest
   **minor** and **patch** versions (avoiding major updates), then installs them.
+  Use a dedicated PR for large major upgrades when they would dominate the
+  change set.
 
 ### Handling visual regression test screenshot differences
 

@@ -27,6 +27,13 @@
 - Playwright e2e report viewer: `npx --no-install playwright show-report`.
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 
+## Dependency maintenance
+
+- Keep dependencies current in PRs: include minor and patch bumps, and take major
+  upgrades when they do not overshadow the PR's primary purpose.
+- Use `npm run deps:update:minor` for routine refreshes; handle larger major
+  upgrades separately if they would dominate the change set.
+
 ## Visual regression updates
 
 - When Playwright snapshot diffs are acceptable:
