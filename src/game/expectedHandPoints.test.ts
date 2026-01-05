@@ -194,12 +194,14 @@ describe("cutAddedPointsBreakdown", () => {
     expect(breakdown.fifteens.totalCuts).toBe(4);
     expect(breakdown.fifteens.totalPoints).toBe(26);
     expect(breakdown.fifteens.cuts).toEqual([
-      { count: 1, rankLabel: "5" },
-      { count: 3, rankLabel: "10" },
+      { count: 1, pointsPerCut: 10, rankLabel: "5" },
+      { count: 3, pointsPerCut: 2, rankLabel: "10" },
     ]);
     expect(breakdown.pairs.totalCuts).toBe(1);
     expect(breakdown.pairs.totalPoints).toBe(6);
-    expect(breakdown.pairs.cuts).toEqual([{ count: 1, rankLabel: "5" }]);
+    expect(breakdown.pairs.cuts).toEqual([
+      { count: 1, pointsPerCut: 6, rankLabel: "5" },
+    ]);
     expect(breakdown.runs.totalCuts).toBe(0);
     expect(breakdown.runs.totalPoints).toBe(0);
     expect(breakdown.runs.cuts).toEqual([]);

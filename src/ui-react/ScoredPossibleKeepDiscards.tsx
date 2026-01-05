@@ -39,10 +39,22 @@ export function ScoredPossibleKeepDiscards({
   ] as const;
 
   const formatCutList = (
-    cuts: readonly { rankLabel: string; count: number }[],
-  ) => cuts.map((cut) => `${cut.rankLabel}×${cut.count}`).join(", ");
-  const formatCutTotals = (totalCuts: number, totalPoints: number) =>
-    `${totalCuts} cuts • ${totalPoints} pts total`;
+    cuts: readonly { rankLabel: string; count: number; pointsPerCut: number }[],
+  ) =>
+    cuts
+      .map(
+        (cut) =>
+          `${cut.rankLabel} (${cut.count} x ${cut.pointsPerCut}pts)`,
+      )
+      .join(", ");
+  const formatCutTotals = (
+    totalCuts: number,
+    totalPoints: number,
+    expectedPoints: number,
+  ) =>
+    `${totalCuts} cuts • ${totalPoints} pts total (A = ${totalPoints} / 46 = ${expectedPoints.toFixed(
+      EXPECTED_POINTS_FRACTION_DIGITS,
+    )})`;
 
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
@@ -135,6 +147,7 @@ export function ScoredPossibleKeepDiscards({
                                 {formatCutTotals(
                                   fifteensCuts.totalCuts,
                                   fifteensCuts.totalPoints,
+                                  scoredKeepDiscard.expectedCutAddedFifteens,
                                 )}
                                 {fifteensCuts.totalCuts > 0
                                   ? `: ${formatCutList(fifteensCuts.cuts)}`
@@ -152,6 +165,7 @@ export function ScoredPossibleKeepDiscards({
                                 {formatCutTotals(
                                   pairsCuts.totalCuts,
                                   pairsCuts.totalPoints,
+                                  scoredKeepDiscard.expectedCutAddedPairs,
                                 )}
                                 {pairsCuts.totalCuts > 0
                                   ? `: ${formatCutList(pairsCuts.cuts)}`
@@ -169,6 +183,7 @@ export function ScoredPossibleKeepDiscards({
                                 {formatCutTotals(
                                   runsCuts.totalCuts,
                                   runsCuts.totalPoints,
+                                  scoredKeepDiscard.expectedCutAddedRuns,
                                 )}
                                 {runsCuts.totalCuts > 0
                                   ? `: ${formatCutList(runsCuts.cuts)}`

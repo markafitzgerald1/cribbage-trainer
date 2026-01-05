@@ -57,6 +57,7 @@ export interface ExpectedCutAddedPoints {
 export interface CutBreakdownItem {
   readonly rankLabel: string;
   readonly count: number;
+  readonly pointsPerCut: number;
 }
 
 export interface CutBreakdownCategory {
@@ -83,12 +84,19 @@ const createCutBreakdownCategory = (): {
 
 const addCutBreakdownItem = (
   category: { cuts: CutBreakdownItem[]; totalCuts: number; totalPoints: number },
-  cut: CutBreakdownItem,
-  points: number,
+  {
+    count,
+    pointsPerCut,
+    rankLabel,
+  }: { count: number; pointsPerCut: number; rankLabel: string },
 ) => {
-  category.cuts.push(cut);
-  category.totalCuts += cut.count;
-  category.totalPoints += points;
+  category.cuts.push({
+    count,
+    pointsPerCut,
+    rankLabel,
+  });
+  category.totalCuts += count;
+  category.totalPoints += pointsPerCut * count;
 };
 
 export const cutAddedPointsBreakdown = (
@@ -115,22 +123,25 @@ export const cutAddedPointsBreakdown = (
     if (fifteensDelta > 0) {
       addCutBreakdownItem(fifteens, {
         count: remaining,
+        pointsPerCut: fifteensDelta,
         rankLabel: cutCard.rankLabel,
-      }, fifteensDelta * remaining);
+      });
     }
 
     if (pairsDelta > 0) {
       addCutBreakdownItem(pairs, {
         count: remaining,
+        pointsPerCut: pairsDelta,
         rankLabel: cutCard.rankLabel,
-      }, pairsDelta * remaining);
+      });
     }
 
     if (runsDelta > 0) {
       addCutBreakdownItem(runs, {
         count: remaining,
+        pointsPerCut: runsDelta,
         rankLabel: cutCard.rankLabel,
-      }, runsDelta * remaining);
+      });
     }
   });
 
