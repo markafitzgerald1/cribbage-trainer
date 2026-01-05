@@ -3,6 +3,8 @@ import type { ComparableCard } from "../ui/sortCards";
 import { PossibleHand } from "./PossibleHand";
 import { SortOrder } from "../ui/SortOrder";
 import { useState } from "react";
+import type { CutContribution } from "../game/expectedCutAddedPoints";
+import { CardLabel } from "./CardLabel";
 
 interface ScoredPossibleKeepDiscardProps {
   readonly keep: readonly ComparableCard[];
@@ -12,6 +14,9 @@ interface ScoredPossibleKeepDiscardProps {
   readonly avgCutAdded15s: number;
   readonly avgCutAddedPairs: number;
   readonly avgCutAddedRuns: number;
+  readonly fifteensContributions: CutContribution[];
+  readonly pairsContributions: CutContribution[];
+  readonly runsContributions: CutContribution[];
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
 }
@@ -26,6 +31,9 @@ export function ScoredPossibleKeepDiscard({
   avgCutAdded15s,
   avgCutAddedPairs,
   avgCutAddedRuns,
+  fifteensContributions,
+  pairsContributions,
+  runsContributions,
   sortOrder,
   isHighlighted,
 }: ScoredPossibleKeepDiscardProps) {
@@ -70,30 +78,92 @@ export function ScoredPossibleKeepDiscard({
         >
           <td colSpan={4}>
             <div className={classes.breakdownContainer}>
-              <div className={classes.breakdownItem}>
-                <span className={classes.breakdownLabel}>
-                  Expected cut-added 15s:
-                </span>
-                <span className={classes.breakdownValue}>
-                  {avgCutAdded15s.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)} pts
-                </span>
+              <div className={classes.breakdownSection}>
+                <div className={classes.breakdownItem}>
+                  <span className={classes.breakdownLabel}>
+                    Expected cut-added 15s:
+                  </span>
+                  <span className={classes.breakdownValue}>
+                    {avgCutAdded15s.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}{" "}
+                    pts
+                  </span>
+                </div>
+                {fifteensContributions.length > 0 && (
+                  <div className={classes.contributionDetails}>
+                    {fifteensContributions.map((contrib, idx) => (
+                      <span
+                        className={classes.contributionItem}
+                        key={idx}
+                      >
+                        <CardLabel rank={contrib.cutCard.rank} />
+                        <span className={classes.contributionCount}>
+                          ×{contrib.count}
+                        </span>
+                        <span className={classes.contributionPoints}>
+                          +{contrib.points}pts
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className={classes.breakdownItem}>
-                <span className={classes.breakdownLabel}>
-                  Expected cut-added pairs:
-                </span>
-                <span className={classes.breakdownValue}>
-                  {avgCutAddedPairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}{" "}
-                  pts
-                </span>
+              <div className={classes.breakdownSection}>
+                <div className={classes.breakdownItem}>
+                  <span className={classes.breakdownLabel}>
+                    Expected cut-added pairs:
+                  </span>
+                  <span className={classes.breakdownValue}>
+                    {avgCutAddedPairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}{" "}
+                    pts
+                  </span>
+                </div>
+                {pairsContributions.length > 0 && (
+                  <div className={classes.contributionDetails}>
+                    {pairsContributions.map((contrib, idx) => (
+                      <span
+                        className={classes.contributionItem}
+                        key={idx}
+                      >
+                        <CardLabel rank={contrib.cutCard.rank} />
+                        <span className={classes.contributionCount}>
+                          ×{contrib.count}
+                        </span>
+                        <span className={classes.contributionPoints}>
+                          +{contrib.points}pts
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className={classes.breakdownItem}>
-                <span className={classes.breakdownLabel}>
-                  Expected cut-added runs:
-                </span>
-                <span className={classes.breakdownValue}>
-                  {avgCutAddedRuns.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)} pts
-                </span>
+              <div className={classes.breakdownSection}>
+                <div className={classes.breakdownItem}>
+                  <span className={classes.breakdownLabel}>
+                    Expected cut-added runs:
+                  </span>
+                  <span className={classes.breakdownValue}>
+                    {avgCutAddedRuns.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}{" "}
+                    pts
+                  </span>
+                </div>
+                {runsContributions.length > 0 && (
+                  <div className={classes.contributionDetails}>
+                    {runsContributions.map((contrib, idx) => (
+                      <span
+                        className={classes.contributionItem}
+                        key={idx}
+                      >
+                        <CardLabel rank={contrib.cutCard.rank} />
+                        <span className={classes.contributionCount}>
+                          ×{contrib.count}
+                        </span>
+                        <span className={classes.contributionPoints}>
+                          +{contrib.points}pts
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </td>

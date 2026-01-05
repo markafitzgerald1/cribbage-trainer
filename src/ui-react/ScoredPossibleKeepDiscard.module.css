@@ -48,6 +48,12 @@
 .breakdownContainer {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.breakdownSection {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 
@@ -59,11 +65,40 @@
 
 .breakdownLabel {
   color: rgb(255 255 255 / 70%);
+  font-weight: 600;
 }
 
 .breakdownValue {
   font-weight: bold;
   color: var(--text-color);
+}
+
+.contributionDetails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 12px;
+  margin-top: 2px;
+}
+
+.contributionItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background-color: rgb(255 255 255 / 10%);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.contributionCount {
+  color: rgb(255 255 255 / 80%);
+  font-weight: 500;
+}
+
+.contributionPoints {
+  color: rgb(100 255 100 / 90%);
+  font-weight: 600;
 }
 
 @media (orientation: landscape) {

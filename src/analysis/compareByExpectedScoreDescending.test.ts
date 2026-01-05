@@ -16,8 +16,11 @@ describe("compareByExpectedScoreDescending", () => {
     avgCutAddedRuns: 0,
     discard,
     expectedHandPoints: expectedHandPoints(keep, discard).total,
+    fifteensContributions: [],
     handPoints: 0,
     keep,
+    pairsContributions: [],
+    runsContributions: [],
   });
 
   const expectHandsInDescendingExpectedScoreOrder = (

@@ -57,9 +57,12 @@ const createStory = ({
       avgCutAddedRuns: cutAdded.avgRuns,
       discard: discard.map(toComparableCard),
       expectedHandPoints: expectedHandPoints(keep, discard).total,
+      fifteensContributions: cutAdded.fifteensContributions,
       handPoints: handPoints(keep).total,
       isHighlighted,
       keep: keep.map(toComparableCard),
+      pairsContributions: cutAdded.pairsContributions,
+      runsContributions: cutAdded.runsContributions,
       sortOrder,
     },
   };

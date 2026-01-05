@@ -49,9 +49,12 @@ const highlightedPresent = (isHighlighted: boolean) => {
           avgCutAddedRuns={cutAdded.avgRuns}
           discard={discard}
           expectedHandPoints={expectedPoints}
+          fifteensContributions={cutAdded.fifteensContributions}
           handPoints={points}
           isHighlighted={isHighlighted}
           keep={keep}
+          pairsContributions={cutAdded.pairsContributions}
+          runsContributions={cutAdded.runsContributions}
           sortOrder={sortOrder}
         />
       </tbody>
@@ -87,9 +90,12 @@ describe("calculation component", () => {
               avgCutAddedRuns={cutAdded.avgRuns}
               discard={discard}
               expectedHandPoints={expectedPoints}
+              fifteensContributions={cutAdded.fifteensContributions}
               handPoints={points}
               isHighlighted={false}
               keep={keep}
+              pairsContributions={cutAdded.pairsContributions}
+              runsContributions={cutAdded.runsContributions}
               sortOrder={sortOrder}
             />
           </tbody>
