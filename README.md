@@ -71,8 +71,9 @@ expected screenshots:
 
 - Some git commands may invoke Docker-based test hooks. For doc-only changes,
   prefer skipping them (`HUSKY=0` or `--no-verify`) to avoid long runs; for code
-  changes, leave the hooks on. Keep GPG signing enabled for commits. Do not
-  create unsigned commits.
+  changes, only skip hooks if absolutely sure they are not needed (i.e., a build
+  and all tests have been performed on the current uncommitted code). Keep GPG
+  signing enabled for commits. Do not create unsigned commits.
 
 ### CI workflow notes
 

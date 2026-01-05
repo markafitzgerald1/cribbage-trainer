@@ -1,9 +1,9 @@
+import { Rank, createCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
-import { createCard, Rank } from "../game/Card";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
-import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 /* jscpd:ignore-start */
+import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
