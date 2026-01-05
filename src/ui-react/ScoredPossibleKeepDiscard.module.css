@@ -57,6 +57,18 @@
   background-color: rgb(0 0 0 / 20%);
 }
 
+@media (orientation: landscape) {
+  .expandedRow {
+    font-size: var(--medium-text-font-size-landscape);
+  }
+}
+
+@media (orientation: portrait) {
+  .expandedRow {
+    font-size: var(--medium-text-font-size-portrait);
+  }
+}
+
 .breakdownContainer {
   display: flex;
   flex-direction: column;
