@@ -52,7 +52,7 @@ export function ScoredPossibleKeepDiscards({
     totalPoints: number,
     expectedPoints: number,
   ) =>
-    `${totalCuts} cuts • ${totalPoints} pts total (A = ${totalPoints} / 46 = ${expectedPoints.toFixed(
+    `${totalCuts} cuts • ${totalPoints} pts total (Avg = ${totalPoints}/46 = ${expectedPoints.toFixed(
       EXPECTED_POINTS_FRACTION_DIGITS,
     )})`;
 
