@@ -120,10 +120,7 @@ export function ScoredPossibleKeepDiscard({
                         }}
                       >
                         {" "}
-                        ({fifteensStats.totalCuts} cuts,{" "}
-                        {fifteensStats.totalPoints.toFixed(
-                          EXPECTED_POINTS_FRACTION_DIGITS,
-                        )}{" "}
+                        ({fifteensStats.totalCuts} cuts, {fifteensStats.totalPoints}{" "}
                         pts = {fifteensStats.totalPoints}/{TOTAL_POSSIBLE_CUTS})
                       </span>
                     )}
@@ -166,10 +163,7 @@ export function ScoredPossibleKeepDiscard({
                         }}
                       >
                         {" "}
-                        ({pairsStats.totalCuts} cuts,{" "}
-                        {pairsStats.totalPoints.toFixed(
-                          EXPECTED_POINTS_FRACTION_DIGITS,
-                        )}{" "}
+                        ({pairsStats.totalCuts} cuts, {pairsStats.totalPoints}{" "}
                         pts = {pairsStats.totalPoints}/{TOTAL_POSSIBLE_CUTS})
                       </span>
                     )}
@@ -212,10 +206,7 @@ export function ScoredPossibleKeepDiscard({
                         }}
                       >
                         {" "}
-                        ({runsStats.totalCuts} cuts,{" "}
-                        {runsStats.totalPoints.toFixed(
-                          EXPECTED_POINTS_FRACTION_DIGITS,
-                        )}{" "}
+                        ({runsStats.totalCuts} cuts, {runsStats.totalPoints}{" "}
                         pts = {runsStats.totalPoints}/{TOTAL_POSSIBLE_CUTS})
                       </span>
                     )}
