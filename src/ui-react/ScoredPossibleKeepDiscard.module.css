@@ -85,6 +85,13 @@
   color: var(--text-color);
 }
 
+.breakdownStats {
+  font-weight: normal;
+  font-size: 0.9em;
+  opacity: 0.8;
+  margin-left: 4px;
+}
+
 .contributionDetails {
   display: flex;
   flex-wrap: wrap;

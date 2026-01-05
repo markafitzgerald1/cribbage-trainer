@@ -22,6 +22,26 @@ interface ScoredPossibleKeepDiscardProps {
 }
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
+const TOTAL_POSSIBLE_CUTS = 46; // 52 cards - 6 dealt cards
+
+interface CategoryStats {
+  totalCuts: number;
+  totalPoints: number;
+}
+
+function calculateCategoryStats(
+  contributions: CutContribution[],
+): CategoryStats {
+  let totalCuts = 0;
+  let totalPoints = 0;
+
+  for (const contrib of contributions) {
+    totalCuts += contrib.count;
+    totalPoints += contrib.count * contrib.points;
+  }
+
+  return { totalCuts, totalPoints };
+}
 
 export function ScoredPossibleKeepDiscard({
   keep,
@@ -42,6 +62,10 @@ export function ScoredPossibleKeepDiscard({
   const handleRowClick = () => {
     setIsExpanded(!isExpanded);
   };
+
+  const fifteensStats = calculateCategoryStats(fifteensContributions);
+  const pairsStats = calculateCategoryStats(pairsContributions);
+  const runsStats = calculateCategoryStats(runsContributions);
 
   return (
     <>
@@ -86,6 +110,23 @@ export function ScoredPossibleKeepDiscard({
                   <span className={classes.breakdownValue}>
                     {avgCutAdded15s.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}{" "}
                     pts
+                    {fifteensStats.totalCuts > 0 && (
+                      <span
+                        style={{
+                          fontWeight: "normal",
+                          fontSize: "0.9em",
+                          opacity: 0.8,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        {" "}
+                        ({fifteensStats.totalCuts} cuts,{" "}
+                        {fifteensStats.totalPoints.toFixed(
+                          EXPECTED_POINTS_FRACTION_DIGITS,
+                        )}{" "}
+                        pts = {fifteensStats.totalPoints}/{TOTAL_POSSIBLE_CUTS})
+                      </span>
+                    )}
                   </span>
                 </div>
                 {fifteensContributions.length > 0 && (
@@ -115,6 +156,23 @@ export function ScoredPossibleKeepDiscard({
                   <span className={classes.breakdownValue}>
                     {avgCutAddedPairs.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}{" "}
                     pts
+                    {pairsStats.totalCuts > 0 && (
+                      <span
+                        style={{
+                          fontWeight: "normal",
+                          fontSize: "0.9em",
+                          opacity: 0.8,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        {" "}
+                        ({pairsStats.totalCuts} cuts,{" "}
+                        {pairsStats.totalPoints.toFixed(
+                          EXPECTED_POINTS_FRACTION_DIGITS,
+                        )}{" "}
+                        pts = {pairsStats.totalPoints}/{TOTAL_POSSIBLE_CUTS})
+                      </span>
+                    )}
                   </span>
                 </div>
                 {pairsContributions.length > 0 && (
@@ -144,6 +202,23 @@ export function ScoredPossibleKeepDiscard({
                   <span className={classes.breakdownValue}>
                     {avgCutAddedRuns.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}{" "}
                     pts
+                    {runsStats.totalCuts > 0 && (
+                      <span
+                        style={{
+                          fontWeight: "normal",
+                          fontSize: "0.9em",
+                          opacity: 0.8,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        {" "}
+                        ({runsStats.totalCuts} cuts,{" "}
+                        {runsStats.totalPoints.toFixed(
+                          EXPECTED_POINTS_FRACTION_DIGITS,
+                        )}{" "}
+                        pts = {runsStats.totalPoints}/{TOTAL_POSSIBLE_CUTS})
+                      </span>
+                    )}
                   </span>
                 </div>
                 {runsContributions.length > 0 && (
