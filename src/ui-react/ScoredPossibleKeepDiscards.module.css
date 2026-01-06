@@ -71,7 +71,7 @@
 }
 
 .cut-breakdown-details {
-  font-size: 0.85em;
+  font-size: clamp(0.7rem, 1.4vw, 0.9rem);
   opacity: 0.85;
 }
 
