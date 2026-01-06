@@ -10,6 +10,8 @@ interface ScoredPossibleKeepDiscardProps {
   readonly expectedHandPoints: number;
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
+  readonly isExpanded: boolean;
+  readonly onToggleExpand: () => void;
 }
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
@@ -21,12 +23,15 @@ export function ScoredPossibleKeepDiscard({
   expectedHandPoints,
   sortOrder,
   isHighlighted,
+  isExpanded,
+  onToggleExpand,
 }: ScoredPossibleKeepDiscardProps) {
   return (
     <tr
       className={`${classes.scoredPossibleKeepDiscard} ${
         isHighlighted ? classes.highlighted : ""
-      }`}
+      } ${classes.expandableRow} ${isExpanded ? classes.expandedRow : ""}`}
+      onClick={onToggleExpand}
     >
       <td>
         <PossibleHand

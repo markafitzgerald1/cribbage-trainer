@@ -1,5 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
@@ -36,6 +36,7 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 const highlightedPresent = (isHighlighted: boolean) => {
   const { discard, expectedPoints, keep, points, sortOrder } =
     setupScenario("Ascending");
+  const onToggleExpand = jest.fn();
 
   const { container } = render(
     <table>
@@ -44,8 +45,10 @@ const highlightedPresent = (isHighlighted: boolean) => {
           discard={discard}
           expectedHandPoints={expectedPoints}
           handPoints={points}
+          isExpanded={false}
           isHighlighted={isHighlighted}
           keep={keep}
+          onToggleExpand={onToggleExpand}
           sortOrder={sortOrder}
         />
       </tbody>
@@ -70,6 +73,7 @@ describe("calculation component", () => {
         points,
         sortOrder,
       } = setupScenario(sortOrderName);
+      const onToggleExpand = jest.fn();
 
       render(
         <table>
@@ -78,8 +82,10 @@ describe("calculation component", () => {
               discard={discard}
               expectedHandPoints={expectedPoints}
               handPoints={points}
+              isExpanded={false}
               isHighlighted={false}
               keep={keep}
+              onToggleExpand={onToggleExpand}
               sortOrder={sortOrder}
             />
           </tbody>
@@ -105,5 +111,32 @@ describe("calculation component", () => {
   it("should toggle highlighted class based on prop", () => {
     expect(highlightedPresent(true)).toBe(true);
     expect(highlightedPresent(false)).toBe(false);
+  });
+
+  it("should call the toggle callback on click", () => {
+    const { discard, expectedPoints, keep, points, sortOrder } =
+      setupScenario("Ascending");
+    const onToggleExpand = jest.fn();
+
+    render(
+      <table>
+        <tbody>
+          <ScoredPossibleKeepDiscard
+            discard={discard}
+            expectedHandPoints={expectedPoints}
+            handPoints={points}
+            isExpanded={false}
+            isHighlighted={false}
+            keep={keep}
+            onToggleExpand={onToggleExpand}
+            sortOrder={sortOrder}
+          />
+        </tbody>
+      </table>,
+    );
+
+    fireEvent.click(screen.getByRole("row"));
+
+    expect(onToggleExpand).toHaveBeenCalledTimes(1);
   });
 });

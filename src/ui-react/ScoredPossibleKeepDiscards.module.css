@@ -33,6 +33,48 @@
   background-color: rgb(255 255 255 / 4%);
 }
 
+.cut-breakdown-row td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.cut-breakdown-row {
+  cursor: pointer;
+  background-color: rgb(255 255 255 / 6%);
+}
+
+.cut-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+}
+
+.cut-breakdown-label {
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.cut-breakdown-item {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cut-breakdown-item + .cut-breakdown-item {
+  border-left: 1px solid rgb(255 255 255 / 25%);
+  padding-left: 10px;
+  margin-left: 4px;
+}
+
+.cut-breakdown-details {
+  font-size: clamp(0.7rem, 1.4vw, 0.9rem);
+  opacity: 0.85;
+}
+
 .scored-possible-keep-discards th {
   position: sticky;
   top: 0;
@@ -61,11 +103,11 @@
 
 .header-main {
   font-weight: 700;
-  font-size: 1.35rem;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
 }
 
 .header-unit {
-  font-size: 0.75rem;
+  font-size: clamp(0.65rem, 1.5vw, 0.75rem);
   opacity: 0.65;
   margin-top: 2px;
 }

@@ -48,14 +48,18 @@ const createStory = ({
   sortOrder,
   isHighlighted = false,
 }: CreateStoryOptions): Story => ({
-  args: {
-    discard: discard.map(toComparableCard),
-    expectedHandPoints: expectedHandPoints(keep, discard).total,
-    handPoints: handPoints(keep).total,
-    isHighlighted,
-    keep: keep.map(toComparableCard),
-    sortOrder,
-  },
+  args: (() => {
+    return {
+      discard: discard.map(toComparableCard),
+      expectedHandPoints: expectedHandPoints(keep, discard).total,
+      handPoints: handPoints(keep).total,
+      isExpanded: false,
+      isHighlighted,
+      keep: keep.map(toComparableCard),
+      onToggleExpand: () => undefined,
+      sortOrder,
+    };
+  })(),
 });
 
 export const JackSixFiveFourDiscardKingQueenSortedDescending: Story =
