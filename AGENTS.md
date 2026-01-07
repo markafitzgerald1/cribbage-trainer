@@ -45,6 +45,8 @@
 ## Code style and conventions
 
 - TypeScript/React with Vite; keep types sound.
+- Every React component should have a corresponding Storybook story file
+  (`ComponentName.stories.ts` or `.tsx`).
 - Follow existing ESLint/Prettier configs; avoid introducing non-ASCII unless justified.
 - Do not automate disabling lint rules; only a human developer may add or
   request disables.

@@ -1,5 +1,6 @@
+/* eslint-disable max-lines */
 import { type Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
-// jscpd:ignore-start
+/* jscpd:ignore-start */
 const {
   ACE,
   TWO,
@@ -15,7 +16,7 @@ const {
   QUEEN,
   KING,
 } = card;
-// jscpd:ignore-end
+/* jscpd:ignore-end */
 import {
   type ScoredKeepDiscard,
   allScoredKeepDiscardsByExpectedScoreDescending,
@@ -27,11 +28,11 @@ import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedSco
 import { rankCounts } from "../game/rankCounts";
 
 const { FIFTEEN_TWO, FIFTEEN_FOUR, FIFTEEN_SIX, PAIR } = HAND_POINTS;
-
 const RUN_POINTS_PER_CARD = 1;
 const RUN_LENGTH = 3;
 const RUN = RUN_LENGTH * RUN_POINTS_PER_CARD;
 
+// eslint-disable-next-line max-lines-per-function
 describe("allScoredKeepDiscardsByScoreDescending", () => {
   it("should return nothing for an empty deal", () => {
     expect(allScoredKeepDiscardsByExpectedScoreDescending([])).toStrictEqual(
@@ -59,7 +60,6 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
   const round = (expectedHandPoints: number) =>
     Math.round(expectedHandPoints * TEN_EXP_ROUND_DIGITS) /
     TEN_EXP_ROUND_DIGITS;
-
   const roundExpectedHandPoints = (
     actualScoredKeepDiscards: ScoredKeepDiscard<Card>[],
   ) =>
@@ -67,7 +67,6 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
       ...scoredKeepDiscard,
       expectedHandPoints: round(scoredKeepDiscard.expectedHandPoints),
     }));
-
   const CARDS_PER_DECK = INDICES_PER_SUIT * SUITS_PER_DECK;
   const TEN_INDEX_COUNT = 4;
 
@@ -131,26 +130,26 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
       }
     }
     expectedScoredKeepDiscards.sort(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       compareByExpectedScoreThenRankDescending as any,
     );
     const actualScoredKeepDiscards = roundExpectedHandPoints(
       allScoredKeepDiscardsByExpectedScoreDescending(cards),
     );
-
-    // Compare only the fields that the test is designed to verify
-    const actualForComparison = actualScoredKeepDiscards.map((s) => ({
-      discard: s.discard,
-      expectedHandPoints: s.expectedHandPoints,
-      handPoints: s.handPoints,
-      keep: s.keep,
+    /* jscpd:ignore-start */
+    const actualForComparison = actualScoredKeepDiscards.map((scored) => ({
+      discard: scored.discard,
+      expectedHandPoints: scored.expectedHandPoints,
+      handPoints: scored.handPoints,
+      keep: scored.keep,
     }));
-    const expectedForComparison = expectedScoredKeepDiscards.map((s) => ({
-      discard: s.discard,
-      expectedHandPoints: s.expectedHandPoints,
-      handPoints: s.handPoints,
-      keep: s.keep,
+    const expectedForComparison = expectedScoredKeepDiscards.map((scored) => ({
+      discard: scored.discard,
+      expectedHandPoints: scored.expectedHandPoints,
+      handPoints: scored.handPoints,
+      keep: scored.keep,
     }));
+    /* jscpd:ignore-end */
 
     expect(actualForComparison).toStrictEqual(expectedForComparison);
   }
@@ -189,7 +188,6 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
   });
 
   /* jscpd:ignore-start */
-
   it("four card deal order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [TEN, TWO, EIGHT, FIVE],
@@ -519,6 +517,5 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
       },
     );
   });
-
   /* jscpd:ignore-end */
 });

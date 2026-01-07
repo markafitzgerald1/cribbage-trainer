@@ -65,14 +65,16 @@ export function ScoredPossibleKeepDiscards({
           </thead>
           <tbody>
             {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
-              (scoredKeepDiscard) => (
+              (scoredKeepDiscard, index) => (
                 <ScoredPossibleKeepDiscard
                   avgCutAdded15s={scoredKeepDiscard.avgCutAdded15s}
                   avgCutAddedPairs={scoredKeepDiscard.avgCutAddedPairs}
                   avgCutAddedRuns={scoredKeepDiscard.avgCutAddedRuns}
                   discard={scoredKeepDiscard.discard}
                   expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
-                  fifteensContributions={scoredKeepDiscard.fifteensContributions}
+                  fifteensContributions={
+                    scoredKeepDiscard.fifteensContributions
+                  }
                   handPoints={scoredKeepDiscard.handPoints}
                   isHighlighted={scoredKeepDiscard.keep.every(
                     (card) => card.kept,
@@ -82,6 +84,7 @@ export function ScoredPossibleKeepDiscards({
                     .map((dealtCard) => dealtCard.dealOrder)
                     .join("")}
                   pairsContributions={scoredKeepDiscard.pairsContributions}
+                  rowIndex={index}
                   runsContributions={scoredKeepDiscard.runsContributions}
                   sortOrder={sortOrder}
                 />

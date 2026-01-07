@@ -6,8 +6,8 @@ import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createArgTypes } from "./stories.common";
 import { createElement } from "react";
-import { expectedHandPoints } from "../game/expectedHandPoints";
 import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
+import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
 const meta = {
@@ -62,6 +62,7 @@ const createStory = ({
       isHighlighted,
       keep: keep.map(toComparableCard),
       pairsContributions: cutAdded.pairsContributions,
+      rowIndex: 0,
       runsContributions: cutAdded.runsContributions,
       sortOrder,
     },

@@ -29,6 +29,8 @@ const testPrivacyPolicyAcceptThenSelectScreenshot = () =>
   }) => {
     await renderThenSelectTwoDiscards(page, constantSeedQuery, true);
 
+    await page.locator("tbody tr").first().click();
+
     await expect(page).toHaveScreenshot();
   });
 

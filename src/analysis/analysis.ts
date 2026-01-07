@@ -1,12 +1,12 @@
+import {
+  type CutContribution,
+  expectedCutAddedPoints,
+} from "../game/expectedCutAddedPoints";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
 import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
-import {
-  expectedCutAddedPoints,
-  type CutContribution,
-} from "../game/expectedCutAddedPoints";
 import { handPoints } from "../game/handPoints";
 
 export interface ScoredKeepDiscard<T extends Card> {
@@ -14,12 +14,14 @@ export interface ScoredKeepDiscard<T extends Card> {
   discard: readonly T[];
   expectedHandPoints: number;
   handPoints: number;
+  /* jscpd:ignore-start */
   avgCutAdded15s: number;
   avgCutAddedPairs: number;
   avgCutAddedRuns: number;
   fifteensContributions: CutContribution[];
   pairsContributions: CutContribution[];
   runsContributions: CutContribution[];
+  /* jscpd:ignore-end */
 }
 
 export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(

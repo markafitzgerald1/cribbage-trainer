@@ -28,10 +28,14 @@
 .scored-possible-keep-discards table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
 }
 
-.scored-possible-keep-discards tbody tr:nth-child(even) {
+.scored-possible-keep-discards tbody tr.odd-row {
+  background-color: transparent;
+}
+
+.scored-possible-keep-discards tbody tr.even-row {
   background-color: rgb(255 255 255 / 4%);
 }
 
@@ -46,7 +50,16 @@
 }
 
 .scored-possible-keep-discards th:first-child {
+  width: 40%;
   text-align: left;
+}
+
+.scored-possible-keep-discards th:nth-child(n + 2) {
+  width: 20%;
+}
+
+.scored-possible-keep-discards th:nth-child(3) {
+  padding-right: 0.5em;
 }
 
 .header-stack {

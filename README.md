@@ -45,6 +45,8 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Coding conventions
 
+- Every React component should have a corresponding Storybook story file
+  (`ComponentName.stories.ts` or `.tsx`).
 - When suppressing duplication (`jscpd`), only ignore import/include statements
   and only for the minimum necessary lines; do not blanket-ignore larger code
   sections.
