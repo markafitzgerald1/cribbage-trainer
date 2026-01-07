@@ -29,7 +29,7 @@
 @media (orientation: landscape) {
   .dynamic-ui {
     display: grid;
-    grid-template-columns: 60%;
+    grid-template-columns: 46%;
     grid-template-rows: 1fr auto;
     gap: 0.5em;
   }

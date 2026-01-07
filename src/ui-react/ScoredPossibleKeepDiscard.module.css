@@ -66,13 +66,13 @@
 
 @media (orientation: landscape) {
   .expanded-row {
-    font-size: calc(var(--medium-text-font-size-landscape) * 0.6);
+    font-size: calc(var(--medium-text-font-size-landscape) * 0.8);
   }
 }
 
 @media (orientation: portrait) {
   .expanded-row {
-    font-size: calc(var(--medium-text-font-size-portrait) * 0.6);
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.8);
   }
 }
 
