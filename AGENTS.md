@@ -55,6 +55,9 @@
   the minimal lines required; do not blanket-ignore large code segments.
 - Only comment on the "why" behind code; strongly prefer meaningful test names,
   function names, and variable names to comments in code.
+- Use long-form flags for command-line tools (e.g., `git commit --message` not
+  `git commit -m`, `ls --all` not `ls -a`) to improve readability and
+  understanding.
 
 ## Husky/hooks
 
