@@ -1,0 +1,39 @@
+@import url("./vars.css");
+
+.cut-result-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid rgb(255 255 255 / 5%);
+}
+
+.cut-result-row:last-child {
+  border-bottom: none;
+}
+
+.cuts-column {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cut-count {
+  font-size: 0.85em;
+  color: rgb(255 255 255 / 60%);
+  margin-left: 4px;
+}
+
+.points-column {
+  text-align: right;
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+
+.total-column {
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-color);
+}
