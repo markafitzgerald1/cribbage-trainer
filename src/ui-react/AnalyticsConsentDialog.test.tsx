@@ -4,8 +4,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 
-const FADE_DELAY_MS = 3000;
-const FADE_TRANSITION_MS = 500;
+const FADE_DELAY_MS = 5000;
+const FADE_TRANSITION_MS = 800;
 const ANALYTICS_CONSENT = "Analytics Consent";
 const privacyPolicyLinkText = "Privacy Policy";
 const distinctPrivacyPolicyText = "Consent to Data Collection";

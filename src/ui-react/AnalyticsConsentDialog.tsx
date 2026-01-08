@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "./Modal";
 import { PrivacyPolicy } from "./PrivacyPolicy";
 
-const FADE_DELAY_MS = 3000;
+const FADE_DELAY_MS = 5000;
 
 type AnalyticsConsentDialogProps = {
   // eslint-disable-next-line react/require-default-props
@@ -32,7 +32,7 @@ const useModalEventListeners = (
   }, [showModal, handleClickOutside, handleKeyDown]);
 };
 
-const FADE_TRANSITION_MS = 500;
+const FADE_TRANSITION_MS = 800;
 
 interface FadeState {
   isFading: boolean;

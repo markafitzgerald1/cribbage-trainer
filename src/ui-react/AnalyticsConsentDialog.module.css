@@ -9,7 +9,7 @@
   padding: 0.5em;
   box-sizing: border-box;
   opacity: 1;
-  transition: opacity 0.5s ease-out;
+  transition: opacity 0.8s ease-out;
 }
 
 .analytics-consent-dialog-fading {
@@ -21,13 +21,24 @@
   padding: 0.5em;
   box-sizing: border-box;
   opacity: 0;
-  transition: opacity 0.5s ease-out;
+  transition: opacity 0.8s ease-out;
 }
 
 .analytics-consent-dialog-minimal {
   font-family: var(--text-font-family);
   padding: 0.25em 0;
   text-align: center;
+  animation: fade-in 0.8s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .analytics-consent-dialog h2 {

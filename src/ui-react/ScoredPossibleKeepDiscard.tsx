@@ -73,15 +73,15 @@ export function ScoredPossibleKeepDiscard({
           )
         </td>
         <td>{handPoints}</td>
-        <td>{diff}</td>
         <td>
-          {total}
+          {diff}
           <span
             className={`${classes.expandIndicator} ${isExpanded ? classes.expandIndicatorExpanded : ""}`}
           >
             ▸
           </span>
         </td>
+        <td>{total}</td>
       </tr>
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow

@@ -93,10 +93,10 @@ describe("calculation component", () => {
           ),
         ),
         scenario.points.toString(),
-        (scenario.expectedPoints - scenario.points).toFixed(
+        `${(scenario.expectedPoints - scenario.points).toFixed(
           EXPECTED_POINTS_FRACTION_DIGITS,
-        ),
-        `${scenario.expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}▸`,
+        )}▸`,
+        scenario.expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
       ]);
     },
   );

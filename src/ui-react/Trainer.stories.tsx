@@ -1,5 +1,5 @@
 import { Trainer, analyticsConsentKey } from "./Trainer";
-import { expect, fireEvent, within } from "storybook/test";
+import { expect, fireEvent, waitFor, within } from "storybook/test";
 import type { Meta } from "@storybook/react-vite";
 /* jscpd:ignore-start */
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
@@ -59,9 +59,16 @@ export const AnalyticsDisabled = {
 export const StoredConsentGiven = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     // When consent is already stored, only the Privacy Policy link is shown (no Thank You message)
-    await expect(
-      within(canvasElement).getByText("Privacy Policy"),
-    ).toBeVisible();
+    // Wait for fade-in animation to complete before checking visibility
+    await waitFor(
+      async () => {
+        await expect(
+          within(canvasElement).getByText("Privacy Policy"),
+        ).toBeVisible();
+      },
+      { timeout: 1000 },
+    );
+
     await expect(
       within(canvasElement).queryByText("Thank you!"),
     ).not.toBeInTheDocument();
