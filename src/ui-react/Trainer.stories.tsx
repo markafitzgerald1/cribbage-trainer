@@ -58,9 +58,13 @@ export const AnalyticsDisabled = {
 
 export const StoredConsentGiven = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    await expect(canvasElement).toHaveTextContent(
-      "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy.",
-    );
+    // When consent is already stored, only the Privacy Policy link is shown (no Thank You message)
+    await expect(
+      within(canvasElement).getByText("Privacy Policy"),
+    ).toBeVisible();
+    await expect(
+      within(canvasElement).queryByText("Thank you!"),
+    ).not.toBeInTheDocument();
   },
   render: ({
     generateRandomNumber,

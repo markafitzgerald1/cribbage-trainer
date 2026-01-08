@@ -2,9 +2,9 @@
 
 .cut-result-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 3fr 1fr 1fr 1fr 1fr;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   padding: 2px 0;
   border-bottom: 1px solid rgb(255 255 255 / 5%);
 }
@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 2px;
 }
 
 .points-column {

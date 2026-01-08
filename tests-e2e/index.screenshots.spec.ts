@@ -13,8 +13,10 @@ const testInitialRenderScreenshot = () =>
   });
 
 const testPrivacyPolicyScreenshot = () =>
-  test("privacy policy modal still visually the same", async ({ page }) => {
-    await page.goto(`/${constantSeedQuery}`);
+  test("privacy policy modal with analysis visible still visually the same", async ({
+    page,
+  }) => {
+    await renderThenSelectTwoDiscards(page, constantSeedQuery, true);
 
     await page
       .locator('span[role="button"]:has-text("Privacy Policy")')

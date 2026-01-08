@@ -141,15 +141,14 @@ describe("trainer component", () => {
     },
   );
 
-  it("initially sets the analytics consent based on local storage", () => {
+  it("initially shows only Privacy Policy link when consent is in local storage", () => {
     localStorage.setItem(ANALYTICS_CONSENT, "true");
     const renderResult = renderTrainer();
 
+    expect(renderResult.getByText("Privacy Policy")).toBeTruthy();
     expect(
-      renderResult.queryByText(
-        /^Thank you! Your consent helps us improve our site using tools like Google Analytics. /u,
-      ),
-    ).toBeTruthy();
+      renderResult.queryByText(/^Thank you! Your consent helps/u),
+    ).toBeFalsy();
   });
 
   it("deals new cards after a 'Deal' button click", async () => {

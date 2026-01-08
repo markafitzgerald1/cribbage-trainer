@@ -1,5 +1,5 @@
 import * as classes from "./AnalyticsConsentDialog.module.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Modal from "./Modal";
 import { PrivacyPolicy } from "./PrivacyPolicy";
 
@@ -32,23 +32,51 @@ const useModalEventListeners = (
   }, [showModal, handleClickOutside, handleKeyDown]);
 };
 
+const FADE_TRANSITION_MS = 500;
+
+interface FadeState {
+  isFading: boolean;
+  isFadedOut: boolean;
+}
+
+interface FadeSetters {
+  setIsFading: (value: boolean) => void;
+  setIsFadedOut: (value: boolean) => void;
+}
+
 const useFadeOutTimer = (
   consent: boolean | null,
-  setIsFadedOut: (value: boolean) => void,
+  fadeState: FadeState,
+  setters: FadeSetters,
 ) => {
   useEffect(() => {
-    if (consent !== null) {
-      const timer = setTimeout(() => {
-        setIsFadedOut(true);
+    if (consent !== null && !fadeState.isFadedOut) {
+      const fadeTimer = setTimeout(() => {
+        setters.setIsFading(true);
       }, FADE_DELAY_MS);
+      const removeTimer = setTimeout(() => {
+        setters.setIsFadedOut(true);
+        setters.setIsFading(false);
+      }, FADE_DELAY_MS + FADE_TRANSITION_MS);
       return () => {
-        clearTimeout(timer);
+        clearTimeout(fadeTimer);
+        clearTimeout(removeTimer);
       };
     }
     return () => {
-      // No cleanup needed when consent is null
+      // No cleanup needed when consent is null or already faded
     };
-  }, [consent, setIsFadedOut]);
+  }, [consent, fadeState.isFadedOut, setters]);
+};
+
+const getDialogClassName = (isFadedOut: boolean, isFading: boolean): string => {
+  if (isFadedOut) {
+    return classes.analyticsConsentDialogMinimal;
+  }
+  if (isFading) {
+    return classes.analyticsConsentDialogFading;
+  }
+  return classes.analyticsConsentDialog;
 };
 
 export function AnalyticsConsentDialog({
@@ -56,7 +84,8 @@ export function AnalyticsConsentDialog({
   onChange,
 }: AnalyticsConsentDialogProps) {
   const [showModal, setShowModal] = useState(false);
-  const [isFadedOut, setIsFadedOut] = useState(false);
+  const [isFadedOut, setIsFadedOut] = useState(consent !== null);
+  const [isFading, setIsFading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const privacyPolicyRef = useRef<HTMLDivElement>(null);
 
@@ -102,7 +131,12 @@ export function AnalyticsConsentDialog({
   );
 
   useModalEventListeners(showModal, handleKeyDown, handleClickOutside);
-  useFadeOutTimer(consent, setIsFadedOut);
+
+  const fadeSetters = useMemo(
+    () => ({ setIsFadedOut, setIsFading }),
+    [setIsFadedOut, setIsFading],
+  );
+  useFadeOutTimer(consent, { isFadedOut, isFading }, fadeSetters);
 
   const handleKeyDownEnter = useCallback(
     (event: React.KeyboardEvent<HTMLSpanElement>) => {
@@ -151,6 +185,7 @@ export function AnalyticsConsentDialog({
           </>
         );
       case null:
+      default:
         return (
           <>
             <h2>Analytics Consent</h2>
@@ -173,20 +208,10 @@ export function AnalyticsConsentDialog({
             </button>
           </>
         );
-      default:
-        return null;
     }
   };
 
-  const content = renderConsentMessage();
-
-  if (content === null) {
-    return null;
-  }
-
-  const dialogClassName = isFadedOut
-    ? classes.analyticsConsentDialogMinimal
-    : classes.analyticsConsentDialog;
+  const dialogClassName = getDialogClassName(isFadedOut, isFading);
 
   return (
     <div className={dialogClassName}>
