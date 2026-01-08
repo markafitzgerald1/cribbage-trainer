@@ -9,6 +9,8 @@ type AnalyticsConsentDialogProps = {
   // eslint-disable-next-line react/require-default-props
   readonly consent?: boolean | null;
   readonly onChange: (value: boolean) => void;
+  // eslint-disable-next-line react/require-default-props
+  readonly wasInitiallyConsented?: boolean;
 };
 
 const useModalEventListeners = (
@@ -69,9 +71,15 @@ const useFadeOutTimer = (
   }, [consent, fadeState.isFadedOut, setters]);
 };
 
-const getDialogClassName = (isFadedOut: boolean, isFading: boolean): string => {
+const getDialogClassName = (
+  isFadedOut: boolean,
+  isFading: boolean,
+  shouldAnimate: boolean,
+): string => {
   if (isFadedOut) {
-    return classes.analyticsConsentDialogMinimal;
+    return shouldAnimate
+      ? classes.analyticsConsentDialogMinimalAnimated
+      : classes.analyticsConsentDialogMinimal;
   }
   if (isFading) {
     return classes.analyticsConsentDialogFading;
@@ -82,6 +90,7 @@ const getDialogClassName = (isFadedOut: boolean, isFading: boolean): string => {
 export function AnalyticsConsentDialog({
   consent = null,
   onChange,
+  wasInitiallyConsented = false,
 }: AnalyticsConsentDialogProps) {
   const [showModal, setShowModal] = useState(false);
   const [isFadedOut, setIsFadedOut] = useState(consent !== null);
@@ -211,7 +220,11 @@ export function AnalyticsConsentDialog({
     }
   };
 
-  const dialogClassName = getDialogClassName(isFadedOut, isFading);
+  const dialogClassName = getDialogClassName(
+    isFadedOut,
+    isFading,
+    !wasInitiallyConsented,
+  );
 
   return (
     <div className={dialogClassName}>

@@ -104,10 +104,3 @@
     font-size: var(--medium-text-font-size-landscape);
   }
 }
-
-.legend {
-  font-size: 0.8em;
-  text-align: center;
-  padding: 0 5px;
-  opacity: 0.9;
-}

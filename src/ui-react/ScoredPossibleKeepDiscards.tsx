@@ -94,9 +94,6 @@ export function ScoredPossibleKeepDiscards({
           </tbody>
         </table>
       </div>
-      <div className={classes.legend}>
-        Hand: Points in hand. Cut: Expected additional. Total: Expected total.
-      </div>
     </figure>
   );
 }

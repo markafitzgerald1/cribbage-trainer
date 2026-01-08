@@ -26,7 +26,11 @@
 
 .analytics-consent-dialog-minimal {
   font-family: var(--text-font-family);
-  padding: 0.25em 0;
+  text-align: center;
+}
+
+.analytics-consent-dialog-minimal-animated {
+  font-family: var(--text-font-family);
   text-align: center;
   animation: fade-in 0.8s ease-out;
 }
