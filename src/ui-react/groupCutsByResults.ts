@@ -1,5 +1,7 @@
+import { CARD_RANKS, type Rank } from "../game/Card";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
-import type { Rank } from "../game/Card";
+
+const CARDS_PER_RANK = 4;
 
 export interface CutResult {
   readonly cutCount: number;
@@ -67,7 +69,8 @@ export function groupCutsByResults(
   };
 
   const groupMap = new Map<string, Rank[]>();
-  for (const rank of cutCountMap.keys()) {
+  // Include all 13 ranks, not just those with contributions
+  for (const rank of CARD_RANKS) {
     const key = resultKey(rank);
     const group = groupMap.get(key);
     if (group) {
@@ -86,11 +89,11 @@ export function groupCutsByResults(
     const pairsPoints = Number(pairsString);
     const runsPoints = Number(runsString);
     // Sum cut counts for all ranks in this group
-    // All ranks in groupMap exist in cutCountMap since groupMap is built from cutCountMap.keys()
-    const counts = ranks
-      .map((rank) => cutCountMap.get(rank))
-      .filter((count): count is number => typeof count === "number");
-    const cutCount = counts.reduce((sum, count) => sum + count, 0);
+    // Use CARDS_PER_RANK for ranks not in cutCountMap (zero-point cuts)
+    const cutCount = ranks.reduce<number>(
+      (sum, rank) => sum + (cutCountMap.get(rank) ?? CARDS_PER_RANK),
+      0,
+    );
     results.push({
       cutCount,
       cuts: ranks,

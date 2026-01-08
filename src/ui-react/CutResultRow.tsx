@@ -3,7 +3,6 @@ import { CardLabel } from "./CardLabel";
 import type { Rank } from "../game/Card";
 
 const MINIMUM_CUT_COUNT_TO_SHOW_MULTIPLIER = 2;
-const DECIMAL_PLACES = 2;
 
 interface CutResultRowProps {
   readonly cuts: readonly Rank[];
@@ -36,17 +35,15 @@ export function CutResultRow({
         </span>
       </div>
       <div className={classes.pointsColumn}>
-        {fifteensPoints > 0 ? fifteensPoints.toFixed(DECIMAL_PLACES) : "—"}
+        {fifteensPoints > 0 ? fifteensPoints : "—"}
       </div>
       <div className={classes.pointsColumn}>
-        {pairsPoints > 0 ? pairsPoints.toFixed(DECIMAL_PLACES) : "—"}
+        {pairsPoints > 0 ? pairsPoints : "—"}
       </div>
       <div className={classes.pointsColumn}>
-        {runsPoints > 0 ? runsPoints.toFixed(DECIMAL_PLACES) : "—"}
+        {runsPoints > 0 ? runsPoints : "—"}
       </div>
-      <div className={classes.totalColumn}>
-        {totalPoints.toFixed(DECIMAL_PLACES)}
-      </div>
+      <div className={classes.totalColumn}>{totalPoints}</div>
     </div>
   );
 }

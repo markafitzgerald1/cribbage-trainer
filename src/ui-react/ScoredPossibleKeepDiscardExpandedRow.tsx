@@ -40,7 +40,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
             <div className={classes.totalHeader}>Total</div>
           </div>
           <div className={classes.breakdownSummary}>
-            <div className={classes.summaryLabel}>Average:</div>
+            <div className={classes.summaryLabel} />
             <div className={classes.summaryValue}>
               {avgCutAdded15s.toFixed(DECIMAL_PLACES)}
             </div>
