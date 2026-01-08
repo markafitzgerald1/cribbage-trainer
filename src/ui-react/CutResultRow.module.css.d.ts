@@ -3,3 +3,4 @@ export declare const cutsColumn: string;
 export declare const cutCount: string;
 export declare const pointsColumn: string;
 export declare const totalColumn: string;
+export declare const muted: string;

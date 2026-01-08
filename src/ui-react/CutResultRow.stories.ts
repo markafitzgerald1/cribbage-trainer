@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 /* jscpd:ignore-end */
 import { CutResultRow } from "./CutResultRow";
 import { Rank } from "../game/Card";
+import { SortOrder } from "../ui/SortOrder";
 
 const SINGLE_CUT_COUNT = 4;
 const MULTI_CUT_COUNT = 8;
@@ -33,20 +34,36 @@ export const SingleCut: Story = {
     fifteensPoints: FOUR_POINTS,
     pairsPoints: 0,
     runsPoints: 0,
+    sortOrder: SortOrder.Descending,
     totalPoints: FOUR_POINTS,
   },
 };
 
-export const MultipleCuts: Story = {
+/* jscpd:ignore-start */
+export const MultipleCutsDescending: Story = {
   args: {
     cutCount: MULTI_CUT_COUNT,
     cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
     fifteensPoints: TWO_POINTS,
     pairsPoints: FOUR_POINTS,
     runsPoints: 0,
+    sortOrder: SortOrder.Descending,
     totalPoints: SIX_POINTS,
   },
 };
+
+export const MultipleCutsAscending: Story = {
+  args: {
+    cutCount: MULTI_CUT_COUNT,
+    cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
+    fifteensPoints: TWO_POINTS,
+    pairsPoints: FOUR_POINTS,
+    runsPoints: 0,
+    sortOrder: SortOrder.Ascending,
+    totalPoints: SIX_POINTS,
+  },
+};
+/* jscpd:ignore-end */
 
 export const AllCategories: Story = {
   args: {
@@ -55,6 +72,7 @@ export const AllCategories: Story = {
     fifteensPoints: TWO_POINTS,
     pairsPoints: TWO_POINTS,
     runsPoints: SIX_POINTS,
+    sortOrder: SortOrder.Descending,
     totalPoints: TEN_POINTS,
   },
 };
@@ -66,6 +84,7 @@ export const NoPoints: Story = {
     fifteensPoints: 0,
     pairsPoints: 0,
     runsPoints: 0,
+    sortOrder: SortOrder.Descending,
     totalPoints: 0,
   },
 };

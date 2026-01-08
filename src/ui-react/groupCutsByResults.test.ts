@@ -21,9 +21,15 @@ const ELEVEN_RANKS_CUT_COUNT = 44;
 const TEN_RANKS_CUT_COUNT = 40;
 const TOTAL_RANKS = 13;
 
+const EMPTY: CutContribution[] = [];
+
 describe("groupCutsByResults", () => {
   it("returns all ranks as zero-point group when no contributions", () => {
-    const result = groupCutsByResults([], [], []);
+    const result = groupCutsByResults({
+      fifteens: EMPTY,
+      pairs: EMPTY,
+      runs: EMPTY,
+    });
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
@@ -62,9 +68,8 @@ describe("groupCutsByResults", () => {
         points: TWO_PAIR_POINTS,
       },
     ];
-    const runs: CutContribution[] = [];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens, pairs, runs: EMPTY });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({
@@ -102,9 +107,8 @@ describe("groupCutsByResults", () => {
         points: FIFTEEN_POINTS,
       },
     ];
-    const runs: CutContribution[] = [];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens, pairs, runs: EMPTY });
 
     expect(results).toHaveLength(RUN_OF_THREE_POINTS);
     expect(results[0]).toHaveProperty("totalPoints", DOUBLE_FIFTEEN_POINTS);
@@ -138,7 +142,7 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens, pairs, runs });
 
     expect(results[0]?.totalPoints).toBe(TWELVE_POINTS);
     expect(results[1]?.totalPoints).toBe(TWO_PAIR_POINTS);
@@ -148,8 +152,6 @@ describe("groupCutsByResults", () => {
   });
 
   it("handles cuts that only contribute to runs category plus zero-point group", () => {
-    const fifteens: CutContribution[] = [];
-    const pairs: CutContribution[] = [];
     const runs: CutContribution[] = [
       {
         count: CARD_COUNT_FOR_UNIQUE_RANK,
@@ -158,7 +160,7 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens: EMPTY, pairs: EMPTY, runs });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({
@@ -187,10 +189,8 @@ describe("groupCutsByResults", () => {
         points: FIFTEEN_POINTS,
       },
     ];
-    const pairs: CutContribution[] = [];
-    const runs: CutContribution[] = [];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens, pairs: EMPTY, runs: EMPTY });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]?.cutCount).toBe(THREE_OF_KIND_POINTS);
@@ -220,9 +220,8 @@ describe("groupCutsByResults", () => {
         points: FIFTEEN_POINTS,
       },
     ];
-    const runs: CutContribution[] = [];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens, pairs, runs: EMPTY });
 
     expect(results).toHaveLength(RUN_OF_THREE_POINTS);
     expect(results[0]).toMatchObject({
@@ -240,7 +239,6 @@ describe("groupCutsByResults", () => {
   });
 
   it("handles cuts that only contribute to pairs category plus zero-point group", () => {
-    const fifteens: CutContribution[] = [];
     const pairs: CutContribution[] = [
       {
         count: CARD_COUNT_FOR_SINGLE,
@@ -248,9 +246,8 @@ describe("groupCutsByResults", () => {
         points: THREE_OF_KIND_POINTS,
       },
     ];
-    const runs: CutContribution[] = [];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens: EMPTY, pairs, runs: EMPTY });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({
@@ -289,7 +286,7 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults(fifteens, pairs, runs);
+    const results = groupCutsByResults({ fifteens, pairs, runs });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({

@@ -2,12 +2,14 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CutResultRow } from "./CutResultRow";
+import { SortOrder } from "../ui/SortOrder";
 import { groupCutsByResults } from "./groupCutsByResults";
 
 const DECIMAL_PLACES = 2;
 
 interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
   readonly onRowClick: () => void;
+  readonly sortOrder: SortOrder;
 }
 
 export function ScoredPossibleKeepDiscardExpandedRow({
@@ -18,12 +20,13 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   pairsContributions,
   runsContributions,
   onRowClick,
+  sortOrder,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
-  const cutResults = groupCutsByResults(
-    fifteensContributions,
-    pairsContributions,
-    runsContributions,
-  );
+  const cutResults = groupCutsByResults({
+    fifteens: fifteensContributions,
+    pairs: pairsContributions,
+    runs: runsContributions,
+  });
 
   return (
     <tr
@@ -65,6 +68,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
                 key={result.cuts.join(",")}
                 pairsPoints={result.pairsPoints}
                 runsPoints={result.runsPoints}
+                sortOrder={sortOrder}
                 totalPoints={result.totalPoints}
               />
             ))}

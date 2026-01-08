@@ -91,6 +91,7 @@ export function ScoredPossibleKeepDiscard({
           onRowClick={handleRowClick}
           pairsContributions={pairsContributions}
           runsContributions={runsContributions}
+          sortOrder={sortOrder}
         />
       ) : null}
     </>

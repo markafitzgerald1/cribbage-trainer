@@ -27,17 +27,29 @@ function addSecondaryContribution(
   }
 }
 
+const DESCENDING_MULTIPLIER = -1;
+
+export interface CutContributions {
+  readonly fifteens: readonly CutContribution[];
+  readonly pairs: readonly CutContribution[];
+  readonly runs: readonly CutContribution[];
+}
+
 /**
  * Groups cut contributions by their combined point value across all categories,
  * returning one CutResult per unique combination of (15s points, Pairs points, Runs points).
  * Results are sorted by total points descending, then by cut count descending.
+ * Zero-point results are always sorted last.
  */
 /* eslint-disable max-statements */
 export function groupCutsByResults(
-  fifteensContributions: readonly CutContribution[],
-  pairsContributions: readonly CutContribution[],
-  runsContributions: readonly CutContribution[],
+  contributions: CutContributions,
 ): CutResult[] {
+  const {
+    fifteens: fifteensContributions,
+    pairs: pairsContributions,
+    runs: runsContributions,
+  } = contributions;
   // Create maps from cutCard rank to points for each category
   const fifteensMap = new Map<Rank, number>();
   const pairsMap = new Map<Rank, number>();
@@ -104,12 +116,18 @@ export function groupCutsByResults(
     });
   }
 
-  // Sort by total points desc, then by cut count desc
+  // Sort by total points descending, then by cut count descending
+  // Zero-point results always go last
   results.sort((first, second) => {
-    if (first.totalPoints !== second.totalPoints) {
-      return second.totalPoints - first.totalPoints;
+    const firstIsZero = first.totalPoints === 0;
+    const secondIsZero = second.totalPoints === 0;
+    if (firstIsZero !== secondIsZero) {
+      return firstIsZero ? 1 : DESCENDING_MULTIPLIER;
     }
-    return second.cutCount - first.cutCount;
+    if (first.totalPoints !== second.totalPoints) {
+      return DESCENDING_MULTIPLIER * (first.totalPoints - second.totalPoints);
+    }
+    return DESCENDING_MULTIPLIER * (first.cutCount - second.cutCount);
   });
 
   return results;
