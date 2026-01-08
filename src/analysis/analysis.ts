@@ -18,6 +18,7 @@ export interface ScoredKeepDiscard<T extends Card> {
   avgCutAdded15s: number;
   avgCutAddedPairs: number;
   avgCutAddedRuns: number;
+  cutCountsRemaining: readonly number[];
   fifteensContributions: CutContribution[];
   pairsContributions: CutContribution[];
   runsContributions: CutContribution[];
@@ -40,10 +41,13 @@ export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
         keepDiscard.keep,
         keepDiscard.discard,
       );
+      /* jscpd:ignore-start - object spread pattern also used in stories */
       return {
         avgCutAdded15s: cutAdded.avg15s,
         avgCutAddedPairs: cutAdded.avgPairs,
         avgCutAddedRuns: cutAdded.avgRuns,
+        cutCountsRemaining: cutAdded.cutCountsRemaining,
+        /* jscpd:ignore-end */
         discard: keepDiscard.discard,
         expectedHandPoints: expectedHandPoints(
           keepDiscard.keep,

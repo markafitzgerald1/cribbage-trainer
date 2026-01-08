@@ -6,6 +6,12 @@ import { expectedHandPoints } from "../game/expectedHandPoints";
 
 const { ACE, TWO, THREE, FOUR, FIVE, JACK, QUEEN, KING } = CARDS;
 
+const CARDS_PER_RANK = 4;
+const NUM_RANKS = 13;
+const ALL_FOUR_REMAINING = Array.from<number>({
+  length: NUM_RANKS,
+}).fill(CARDS_PER_RANK);
+
 describe("compareByExpectedScoreDescending", () => {
   const createHand = (
     keep: Card[],
@@ -14,6 +20,7 @@ describe("compareByExpectedScoreDescending", () => {
     avgCutAdded15s: 0,
     avgCutAddedPairs: 0,
     avgCutAddedRuns: 0,
+    cutCountsRemaining: ALL_FOUR_REMAINING,
     discard,
     expectedHandPoints: expectedHandPoints(keep, discard).total,
     fifteensContributions: [],

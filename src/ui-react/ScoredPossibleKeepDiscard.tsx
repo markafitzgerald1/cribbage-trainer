@@ -29,6 +29,7 @@ export function ScoredPossibleKeepDiscard({
   avgCutAdded15s,
   avgCutAddedPairs,
   avgCutAddedRuns,
+  cutCountsRemaining,
   fifteensContributions,
   pairsContributions,
   runsContributions,
@@ -87,6 +88,7 @@ export function ScoredPossibleKeepDiscard({
           avgCutAdded15s={avgCutAdded15s}
           avgCutAddedPairs={avgCutAddedPairs}
           avgCutAddedRuns={avgCutAddedRuns}
+          cutCountsRemaining={cutCountsRemaining}
           fifteensContributions={fifteensContributions}
           onRowClick={handleRowClick}
           pairsContributions={pairsContributions}

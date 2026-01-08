@@ -55,6 +55,7 @@ const createStory = ({
       avgCutAdded15s: cutAdded.avg15s,
       avgCutAddedPairs: cutAdded.avgPairs,
       avgCutAddedRuns: cutAdded.avgRuns,
+      cutCountsRemaining: cutAdded.cutCountsRemaining,
       discard: discard.map(toComparableCard),
       expectedHandPoints: expectedHandPoints(keep, discard).total,
       fifteensContributions: cutAdded.fifteensContributions,

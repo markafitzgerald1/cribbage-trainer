@@ -13,6 +13,7 @@ export interface ExpectedCutAddedPoints {
   avg15s: number;
   avgPairs: number;
   avgRuns: number;
+  cutCountsRemaining: readonly number[];
   fifteensContributions: CutContribution[];
   pairsContributions: CutContribution[];
   runsContributions: CutContribution[];
@@ -92,6 +93,7 @@ export const expectedCutAddedPoints = (
     avg15s: sum15s / sumWeight,
     avgPairs: sumPairs / sumWeight,
     avgRuns: sumRuns / sumWeight,
+    cutCountsRemaining: countRemaining,
     fifteensContributions,
     pairsContributions,
     runsContributions,

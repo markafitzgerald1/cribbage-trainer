@@ -47,6 +47,7 @@ function renderComponentWithScenario(
           avgCutAdded15s={scenario.cutAdded.avg15s}
           avgCutAddedPairs={scenario.cutAdded.avgPairs}
           avgCutAddedRuns={scenario.cutAdded.avgRuns}
+          cutCountsRemaining={scenario.cutAdded.cutCountsRemaining}
           discard={scenario.discard}
           expectedHandPoints={scenario.expectedPoints}
           fifteensContributions={scenario.cutAdded.fifteensContributions}

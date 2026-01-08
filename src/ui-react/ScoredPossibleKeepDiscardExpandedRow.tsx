@@ -16,6 +16,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   avgCutAdded15s,
   avgCutAddedPairs,
   avgCutAddedRuns,
+  cutCountsRemaining,
   fifteensContributions,
   pairsContributions,
   runsContributions,
@@ -23,6 +24,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   sortOrder,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
   const cutResults = groupCutsByResults({
+    cutCountsRemaining,
     fifteens: fifteensContributions,
     pairs: pairsContributions,
     runs: runsContributions,

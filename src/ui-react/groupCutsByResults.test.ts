@@ -23,9 +23,28 @@ const TOTAL_RANKS = 13;
 
 const EMPTY: CutContribution[] = [];
 
+/* jscpd:ignore-start - repetitive array initialization for test constants */
+const ALL_FOUR_REMAINING: readonly number[] = [
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+  CARD_COUNT_FOR_UNIQUE_RANK,
+];
+/* jscpd:ignore-end */
+
 describe("groupCutsByResults", () => {
   it("returns all ranks as zero-point group when no contributions", () => {
     const result = groupCutsByResults({
+      cutCountsRemaining: ALL_FOUR_REMAINING,
       fifteens: EMPTY,
       pairs: EMPTY,
       runs: EMPTY,
@@ -69,7 +88,12 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens, pairs, runs: EMPTY });
+    const results = groupCutsByResults({
+      cutCountsRemaining: ALL_FOUR_REMAINING,
+      fifteens,
+      pairs,
+      runs: EMPTY,
+    });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({
@@ -108,7 +132,12 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens, pairs, runs: EMPTY });
+    const results = groupCutsByResults({
+      cutCountsRemaining: ALL_FOUR_REMAINING,
+      fifteens,
+      pairs,
+      runs: EMPTY,
+    });
 
     expect(results).toHaveLength(RUN_OF_THREE_POINTS);
     expect(results[0]).toHaveProperty("totalPoints", DOUBLE_FIFTEEN_POINTS);
@@ -142,7 +171,12 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens, pairs, runs });
+    const results = groupCutsByResults({
+      cutCountsRemaining: ALL_FOUR_REMAINING,
+      fifteens,
+      pairs,
+      runs,
+    });
 
     expect(results[0]?.totalPoints).toBe(TWELVE_POINTS);
     expect(results[1]?.totalPoints).toBe(TWO_PAIR_POINTS);
@@ -160,7 +194,12 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens: EMPTY, pairs: EMPTY, runs });
+    const results = groupCutsByResults({
+      cutCountsRemaining: ALL_FOUR_REMAINING,
+      fifteens: EMPTY,
+      pairs: EMPTY,
+      runs,
+    });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({
@@ -190,10 +229,15 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens, pairs: EMPTY, runs: EMPTY });
+    const results = groupCutsByResults({
+      cutCountsRemaining: ALL_FOUR_REMAINING,
+      fifteens,
+      pairs: EMPTY,
+      runs: EMPTY,
+    });
 
     expect(results).toHaveLength(PAIR_POINTS);
-    expect(results[0]?.cutCount).toBe(THREE_OF_KIND_POINTS);
+    expect(results[0]?.cutCount).toBe(EIGHT_POINTS);
     expect(results[1]).toMatchObject({
       cutCount: ELEVEN_RANKS_CUT_COUNT,
       totalPoints: 0,
@@ -201,6 +245,21 @@ describe("groupCutsByResults", () => {
   });
 
   it("sorts by cut count when points are equal and groups are separate plus zero-point group", () => {
+    const fiveWithTwoRemaining: readonly number[] = [
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_PAIR,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+    ];
     const fifteens: CutContribution[] = [
       {
         count: CARD_COUNT_FOR_PAIR,
@@ -221,7 +280,12 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens, pairs, runs: EMPTY });
+    const results = groupCutsByResults({
+      cutCountsRemaining: fiveWithTwoRemaining,
+      fifteens,
+      pairs,
+      runs: EMPTY,
+    });
 
     expect(results).toHaveLength(RUN_OF_THREE_POINTS);
     expect(results[0]).toMatchObject({
@@ -239,6 +303,21 @@ describe("groupCutsByResults", () => {
   });
 
   it("handles cuts that only contribute to pairs category plus zero-point group", () => {
+    const queenWithThreeRemaining: readonly number[] = [
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_SINGLE,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+    ];
     const pairs: CutContribution[] = [
       {
         count: CARD_COUNT_FOR_SINGLE,
@@ -247,7 +326,12 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens: EMPTY, pairs, runs: EMPTY });
+    const results = groupCutsByResults({
+      cutCountsRemaining: queenWithThreeRemaining,
+      fifteens: EMPTY,
+      pairs,
+      runs: EMPTY,
+    });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({
@@ -286,7 +370,12 @@ describe("groupCutsByResults", () => {
       },
     ];
 
-    const results = groupCutsByResults({ fifteens, pairs, runs });
+    const results = groupCutsByResults({
+      cutCountsRemaining: ALL_FOUR_REMAINING,
+      fifteens,
+      pairs,
+      runs,
+    });
 
     expect(results).toHaveLength(PAIR_POINTS);
     expect(results[0]).toMatchObject({
@@ -298,6 +387,60 @@ describe("groupCutsByResults", () => {
     });
     expect(results[1]).toMatchObject({
       cutCount: TWELVE_RANKS_CUT_COUNT,
+      totalPoints: 0,
+    });
+  });
+
+  it("uses cutCountsRemaining for zero-point ranks that have cards in hand", () => {
+    const customCutCounts: readonly number[] = [
+      CARD_COUNT_FOR_SINGLE,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_PAIR,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+    ];
+
+    const results = groupCutsByResults({
+      cutCountsRemaining: customCutCounts,
+      fifteens: EMPTY,
+      pairs: EMPTY,
+      runs: EMPTY,
+    });
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({
+      cutCount: ALL_RANKS_CUT_COUNT - RUN_OF_THREE_POINTS,
+      totalPoints: 0,
+    });
+  });
+
+  it("treats undefined values in cutCountsRemaining as zero", () => {
+    // Intentionally create sparse array to test defensive fallback
+    const sparseCutCounts: readonly number[] = [
+      CARD_COUNT_FOR_UNIQUE_RANK,
+      CARD_COUNT_FOR_UNIQUE_RANK,
+    ];
+
+    const results = groupCutsByResults({
+      cutCountsRemaining: sparseCutCounts,
+      fifteens: EMPTY,
+      pairs: EMPTY,
+      runs: EMPTY,
+    });
+
+    expect(results).toHaveLength(1);
+    // Only first two ranks have defined counts (4 + 4 = 8)
+    // Remaining 11 ranks have undefined which falls back to 0
+    expect(results[0]).toMatchObject({
+      cutCount: EIGHT_POINTS,
       totalPoints: 0,
     });
   });

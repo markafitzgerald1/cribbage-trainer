@@ -1,8 +1,6 @@
 import { CARD_RANKS, type Rank } from "../game/Card";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
 
-const CARDS_PER_RANK = 4;
-
 export interface CutResult {
   readonly cutCount: number;
   readonly cuts: readonly Rank[];
@@ -12,24 +10,10 @@ export interface CutResult {
   readonly totalPoints: number;
 }
 
-/**
- * Adds rank to pointsMap and updates cutCountMap if rank not already present.
- */
-function addSecondaryContribution(
-  contribution: CutContribution,
-  pointsMap: Map<Rank, number>,
-  cutCountMap: Map<Rank, number>,
-) {
-  const { rank } = contribution.cutCard;
-  pointsMap.set(rank, contribution.points);
-  if (!cutCountMap.has(rank)) {
-    cutCountMap.set(rank, contribution.count);
-  }
-}
-
 const DESCENDING_MULTIPLIER = -1;
 
 export interface CutContributions {
+  readonly cutCountsRemaining: readonly number[];
   readonly fifteens: readonly CutContribution[];
   readonly pairs: readonly CutContribution[];
   readonly runs: readonly CutContribution[];
@@ -46,6 +30,7 @@ export function groupCutsByResults(
   contributions: CutContributions,
 ): CutResult[] {
   const {
+    cutCountsRemaining,
     fifteens: fifteensContributions,
     pairs: pairsContributions,
     runs: runsContributions,
@@ -54,22 +39,17 @@ export function groupCutsByResults(
   const fifteensMap = new Map<Rank, number>();
   const pairsMap = new Map<Rank, number>();
   const runsMap = new Map<Rank, number>();
-  const cutCountMap = new Map<Rank, number>();
 
   for (const contribution of fifteensContributions) {
     fifteensMap.set(contribution.cutCard.rank, contribution.points);
-    cutCountMap.set(
-      contribution.cutCard.rank,
-      (cutCountMap.get(contribution.cutCard.rank) ?? 0) + contribution.count,
-    );
   }
 
   for (const contribution of pairsContributions) {
-    addSecondaryContribution(contribution, pairsMap, cutCountMap);
+    pairsMap.set(contribution.cutCard.rank, contribution.points);
   }
 
   for (const contribution of runsContributions) {
-    addSecondaryContribution(contribution, runsMap, cutCountMap);
+    runsMap.set(contribution.cutCard.rank, contribution.points);
   }
 
   // Group ranks by their combination of point values
@@ -100,10 +80,10 @@ export function groupCutsByResults(
     const fifteensPoints = Number(fifteensString);
     const pairsPoints = Number(pairsString);
     const runsPoints = Number(runsString);
-    // Sum cut counts for all ranks in this group
-    // Use CARDS_PER_RANK for ranks not in cutCountMap (zero-point cuts)
+    // Sum cut counts for all ranks in this group using actual remaining counts
     const cutCount = ranks.reduce<number>(
-      (sum, rank) => sum + (cutCountMap.get(rank) ?? CARDS_PER_RANK),
+      // eslint-disable-next-line security/detect-object-injection
+      (sum, rank) => sum + (cutCountsRemaining[rank] ?? 0),
       0,
     );
     results.push({
