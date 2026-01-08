@@ -5,9 +5,6 @@ import { CutResultRow } from "./CutResultRow";
 import { Rank } from "../game/Card";
 import { SortOrder } from "../ui/SortOrder";
 
-const SINGLE_CUT_COUNT = 4;
-const MULTI_CUT_COUNT = 8;
-const THREE_CUT_COUNT = 3;
 const TWO_POINTS = 2;
 const FOUR_POINTS = 4;
 const SIX_POINTS = 6;
@@ -29,7 +26,6 @@ type Story = StoryObj<typeof meta>;
 
 export const SingleCut: Story = {
   args: {
-    cutCount: SINGLE_CUT_COUNT,
     cuts: [Rank.FIVE],
     fifteensPoints: FOUR_POINTS,
     pairsPoints: 0,
@@ -42,7 +38,6 @@ export const SingleCut: Story = {
 /* jscpd:ignore-start */
 export const MultipleCutsDescending: Story = {
   args: {
-    cutCount: MULTI_CUT_COUNT,
     cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
     fifteensPoints: TWO_POINTS,
     pairsPoints: FOUR_POINTS,
@@ -54,7 +49,6 @@ export const MultipleCutsDescending: Story = {
 
 export const MultipleCutsAscending: Story = {
   args: {
-    cutCount: MULTI_CUT_COUNT,
     cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
     fifteensPoints: TWO_POINTS,
     pairsPoints: FOUR_POINTS,
@@ -67,7 +61,6 @@ export const MultipleCutsAscending: Story = {
 
 export const AllCategories: Story = {
   args: {
-    cutCount: THREE_CUT_COUNT,
     cuts: [Rank.ACE],
     fifteensPoints: TWO_POINTS,
     pairsPoints: TWO_POINTS,
@@ -79,7 +72,6 @@ export const AllCategories: Story = {
 
 export const NoPoints: Story = {
   args: {
-    cutCount: SINGLE_CUT_COUNT,
     cuts: [Rank.KING],
     fifteensPoints: 0,
     pairsPoints: 0,

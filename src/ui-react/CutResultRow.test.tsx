@@ -5,7 +5,6 @@ import { Rank } from "../game/Card";
 import { SortOrder } from "../ui/SortOrder";
 import { render } from "@testing-library/react";
 
-const CUT_COUNT = 8;
 const TWO_POINTS = 2;
 const FOUR_POINTS = 4;
 const SIX_POINTS = 6;
@@ -27,7 +26,6 @@ describe("cutResultRow", () => {
   it("renders cuts in ascending order when sortOrder is Ascending", () => {
     const renderResult = render(
       <CutResultRow
-        cutCount={CUT_COUNT}
         cuts={[Rank.KING, Rank.QUEEN, Rank.JACK, Rank.TEN]}
         fifteensPoints={TWO_POINTS}
         pairsPoints={FOUR_POINTS}
@@ -43,7 +41,6 @@ describe("cutResultRow", () => {
   it("renders cuts in descending order when sortOrder is Descending", () => {
     const renderResult = render(
       <CutResultRow
-        cutCount={CUT_COUNT}
         cuts={[Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING]}
         fifteensPoints={TWO_POINTS}
         pairsPoints={FOUR_POINTS}
@@ -59,7 +56,6 @@ describe("cutResultRow", () => {
   it("renders cuts in descending order when sortOrder is DealOrder", () => {
     const renderResult = render(
       <CutResultRow
-        cutCount={CUT_COUNT}
         cuts={[Rank.ACE, Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE]}
         fifteensPoints={FOUR_POINTS}
         pairsPoints={0}

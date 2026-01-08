@@ -64,7 +64,6 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           <div className={classes.cutResultsList}>
             {cutResults.map((result) => (
               <CutResultRow
-                cutCount={result.cutCount}
                 cuts={result.cuts}
                 fifteensPoints={result.fifteensPoints}
                 key={result.cuts.join(",")}
