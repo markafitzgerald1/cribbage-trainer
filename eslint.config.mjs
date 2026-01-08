@@ -174,6 +174,8 @@ export default [
             "pragma",
             "radiogroup",
             "pragma",
+            "rerender",
+            "rerenders",
             "royale",
             "seedrandom",
             "tbody",

@@ -6,6 +6,7 @@ import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createArgTypes } from "./stories.common";
 import { createElement } from "react";
+import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
@@ -47,16 +48,27 @@ const createStory = ({
   discard,
   sortOrder,
   isHighlighted = false,
-}: CreateStoryOptions): Story => ({
-  args: {
-    discard: discard.map(toComparableCard),
-    expectedHandPoints: expectedHandPoints(keep, discard).total,
-    handPoints: handPoints(keep).total,
-    isHighlighted,
-    keep: keep.map(toComparableCard),
-    sortOrder,
-  },
-});
+}: CreateStoryOptions): Story => {
+  const cutAdded = expectedCutAddedPoints(keep, discard);
+  return {
+    args: {
+      avgCutAdded15s: cutAdded.avg15s,
+      avgCutAddedPairs: cutAdded.avgPairs,
+      avgCutAddedRuns: cutAdded.avgRuns,
+      cutCountsRemaining: cutAdded.cutCountsRemaining,
+      discard: discard.map(toComparableCard),
+      expectedHandPoints: expectedHandPoints(keep, discard).total,
+      fifteensContributions: cutAdded.fifteensContributions,
+      handPoints: handPoints(keep).total,
+      isHighlighted,
+      keep: keep.map(toComparableCard),
+      pairsContributions: cutAdded.pairsContributions,
+      rowIndex: 0,
+      runsContributions: cutAdded.runsContributions,
+      sortOrder,
+    },
+  };
+};
 
 export const JackSixFiveFourDiscardKingQueenSortedDescending: Story =
   createStory({

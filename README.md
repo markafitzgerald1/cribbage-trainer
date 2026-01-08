@@ -45,6 +45,8 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Coding conventions
 
+- Every React component should have a corresponding Storybook story file
+  (`ComponentName.stories.ts` or `.tsx`).
 - When suppressing duplication (`jscpd`), only ignore import/include statements
   and only for the minimum necessary lines; do not blanket-ignore larger code
   sections.
@@ -64,12 +66,12 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 When the Playwright e2e (end to end) fail due to screenshot differences, compare
 expected and actual screenshots via `npx --no-install playwright show-report` to
-determine if the changes are visually acceptable. If acceptable, to update the
-expected screenshots:
+determine if the changes are visually acceptable. If acceptable, regenerate the
+expected screenshots in Docker:
 
-- remove out of date screenshots: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`
-  , then
-- generate the now expected browser screenshots: `npm run docker:build-and-test-all`.
+```sh
+npm run docker:build-and-test-all -- -- --update-snapshots
+```
 
 ### Husky/hooks
 

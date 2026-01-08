@@ -65,10 +65,17 @@ export function ScoredPossibleKeepDiscards({
           </thead>
           <tbody>
             {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
-              (scoredKeepDiscard) => (
+              (scoredKeepDiscard, index) => (
                 <ScoredPossibleKeepDiscard
+                  avgCutAdded15s={scoredKeepDiscard.avgCutAdded15s}
+                  avgCutAddedPairs={scoredKeepDiscard.avgCutAddedPairs}
+                  avgCutAddedRuns={scoredKeepDiscard.avgCutAddedRuns}
+                  cutCountsRemaining={scoredKeepDiscard.cutCountsRemaining}
                   discard={scoredKeepDiscard.discard}
                   expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
+                  fifteensContributions={
+                    scoredKeepDiscard.fifteensContributions
+                  }
                   handPoints={scoredKeepDiscard.handPoints}
                   isHighlighted={scoredKeepDiscard.keep.every(
                     (card) => card.kept,
@@ -77,15 +84,15 @@ export function ScoredPossibleKeepDiscards({
                   key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
                     .map((dealtCard) => dealtCard.dealOrder)
                     .join("")}
+                  pairsContributions={scoredKeepDiscard.pairsContributions}
+                  rowIndex={index}
+                  runsContributions={scoredKeepDiscard.runsContributions}
                   sortOrder={sortOrder}
                 />
               ),
             )}
           </tbody>
         </table>
-      </div>
-      <div className={classes.legend}>
-        Hand: Points in hand. Cut: Expected additional. Total: Expected total.
       </div>
     </figure>
   );

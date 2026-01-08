@@ -1,5 +1,5 @@
 import * as classes from "./Trainer.module.css";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 import { InteractiveHand } from "./InteractiveHand";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
@@ -14,6 +14,14 @@ export interface TrainerProps {
 
 export const analyticsConsentKey = "analyticsConsent";
 
+const getStoredConsent = (): boolean | null => {
+  const storedConsent = localStorage.getItem(analyticsConsentKey);
+  if (storedConsent === null) {
+    return null;
+  }
+  return JSON.parse(storedConsent) as boolean;
+};
+
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
@@ -24,14 +32,10 @@ export function Trainer({
   );
   const [dealtCards, setDealtCards] = useState(dealHandWithGenerator);
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
+  // Capture initial consent state on first render only
+  const initialConsent = useMemo(() => getStoredConsent(), []);
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
-    () => {
-      const storedConsent = localStorage.getItem(analyticsConsentKey);
-      if (storedConsent === null) {
-        return null;
-      }
-      return JSON.parse(storedConsent) as boolean;
-    },
+    initialConsent,
   );
 
   const toggleKept = useCallback(
@@ -76,6 +80,7 @@ export function Trainer({
       <AnalyticsConsentDialog
         consent={analyticsConsented}
         onChange={setConsented}
+        wasInitiallyConsented={initialConsent !== null}
       />
     </div>
   );
