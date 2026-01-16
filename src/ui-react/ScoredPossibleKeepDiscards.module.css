@@ -62,6 +62,12 @@
   padding-right: 0.5em;
 }
 
+@media (orientation: portrait) {
+  .scored-possible-keep-discards th:nth-child(3) {
+    padding-left: 0.5em;
+  }
+}
+
 .header-stack {
   display: flex;
   flex-direction: column;
