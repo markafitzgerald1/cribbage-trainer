@@ -37,22 +37,30 @@
 ## Visual regression updates
 
 - When Playwright snapshot diffs are acceptable:
-  - Remove outdated screenshots: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`.
-  - Regenerate: `npm run docker:build-and-test-all`.
+  - Regenerate screenshots in Docker:
+    `npm run docker:build-and-test-all -- -- --update-snapshots`.
   - In PRs, explicitly note the screenshot updates and ensure expected images
     are updated to match the current actuals (these will be human reviewed).
 
 ## Code style and conventions
 
 - TypeScript/React with Vite; keep types sound.
+- Every React component should have a corresponding Storybook story file
+  (`ComponentName.stories.ts` or `.tsx`).
 - Follow existing ESLint/Prettier configs; avoid introducing non-ASCII unless justified.
+- Prefer `--fix` flags (e.g., `eslint --fix`, `prettier --write`) over manual
+  code fixes for auto-fixable lint and formatting issues.
 - Do not automate disabling lint rules; only a human developer may add or
   request disables.
+- Never use inline `CSpell:ignore` comments; instead add words to `.cspell.json`.
 - Prefer small, focused commits; summarize why changes are needed.
 - Only add `jscpd` ignore comments for import/include statements and only for
   the minimal lines required; do not blanket-ignore large code segments.
 - Only comment on the "why" behind code; strongly prefer meaningful test names,
   function names, and variable names to comments in code.
+- Use long-form flags for command-line tools (e.g., `git commit --message` not
+  `git commit -m`, `ls --all` not `ls -a`) to improve readability and
+  understanding.
 
 ## Husky/hooks
 
