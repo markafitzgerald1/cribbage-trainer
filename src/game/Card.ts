@@ -46,7 +46,7 @@ export const createCard = (rank: Rank): Card => ({
 
 export const INDICES_PER_SUIT = 13;
 
-export const CARD_RANKS: Rank[] = Object.values(Rank) as Rank[];
+export const CARD_RANKS: Rank[] = Object.values(Rank);
 
 const RANKED_CARDS: readonly Card[] = CARD_RANKS.map(createCard);
 
