@@ -5,8 +5,17 @@ updates:
     schedule:
       interval: "daily"
     groups:
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+          - "eslint-plugin-storybook"
       npm-all:
-        patterns: ["*"]
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "eslint"
+        versions: ["10.2.1"]
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
