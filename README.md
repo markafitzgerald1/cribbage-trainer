@@ -9,12 +9,17 @@
 
 Two-player cribbage discard and play improvement tool.
 
+<div align="center">
+
+[![Play Cribbage Trainer](https://img.shields.io/badge/🃏_Play_Cribbage_Trainer_App-2ea44f?style=for-the-badge)](https://markafitzgerald1.github.io/cribbage-trainer/)
+
+</div>
+
 ## Continuous deployment
 
 Code in `main` is automatically built on `git push` and deployed to the [GitHub
-Pages](https://pages.github.com/) hosted
-[Cribbage Trainer app site](https://markafitzgerald1.github.io/cribbage-trainer/)
-and [Storybook site](https://markafitzgerald1.github.io/cribbage-trainer/storybook/)
+Pages](https://pages.github.com/) hosted app and
+[Storybook site](https://markafitzgerald1.github.io/cribbage-trainer/storybook/)
 on build success via [GitHub Action Workflow](https://github.com/markafitzgerald1/cribbage-trainer/actions/workflows/npm-build-test-upload-artifact-and-deploy.yml).
 
 ## Local and Development Setup
@@ -43,54 +48,6 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - Build a static version of the Storybook stories: `npm run storybook:build`
 - Serve a static version of the Storybook stories: `npm run storybook:serve`
 
-### Coding conventions
+## Contributing
 
-- Every React component should have a corresponding Storybook story file
-  (`ComponentName.stories.ts` or `.tsx`).
-- When suppressing duplication (`jscpd`), only ignore import/include statements
-  and only for the minimum necessary lines; do not blanket-ignore larger code
-  sections.
-- Only comment on the "why" behind code; strongly prefer meaningful test names,
-  function names, and variable names to comments in code.
-
-### Dependency Maintenance
-
-- Keep dependencies current in PRs: include minor and patch bumps, and take
-  major upgrades when they do not overshadow the PR's primary purpose.
-- `npm run deps:update:minor`: Updates all npm dependencies to their latest
-  **minor** and **patch** versions (avoiding major updates), then installs them.
-  Use a dedicated PR for large major upgrades when they would dominate the
-  change set.
-
-### Handling visual regression test screenshot differences
-
-When the Playwright e2e (end to end) fail due to screenshot differences, compare
-expected and actual screenshots via `npx --no-install playwright show-report` to
-determine if the changes are visually acceptable. If acceptable, regenerate the
-expected screenshots in Docker:
-
-```sh
-npm run docker:build-and-test-all -- -- --update-snapshots
-```
-
-### Husky/hooks
-
-- Some git commands may invoke Docker-based test hooks. For doc-only changes,
-  prefer skipping them (`HUSKY=0` or `--no-verify`) to avoid long runs; for code
-  changes, only skip hooks if absolutely sure they are not needed (i.e., a build
-  and all tests have been performed on the current uncommitted code). Keep GPG
-  signing enabled for commits. Do not create unsigned commits.
-
-### CI workflow notes
-
-- Workflow: `.github/workflows/npm-build-test-upload-artifact-and-deploy.yml`.
-- On non-`main` branches: builds Docker test image and runs Playwright e2e via
-  `npm run docker:run-e2e-only`.
-- On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
-  artifact, deploys to GitHub Pages.
-
-### Commit messages
-
-- Follow the 50/72 Git commit message convention: subject line ≤ 50 chars, then
-  blank line, body wrapped at 72 chars.
-- Prefer semantic prefixes (e.g., feat, fix, chore, docs, refactor, test, ci, build).
+Before making changes, all developers and AI agents must read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
