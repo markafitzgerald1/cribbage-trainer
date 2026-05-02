@@ -1,6 +1,4 @@
-/* eslint-disable max-lines */
 import { type Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
-/* jscpd:ignore-start */
 const {
   ACE,
   TWO,
@@ -16,7 +14,7 @@ const {
   QUEEN,
   KING,
 } = card;
-/* jscpd:ignore-end */
+
 import {
   type ScoredKeepDiscard,
   allScoredKeepDiscardsByExpectedScoreDescending,
@@ -32,7 +30,6 @@ const RUN_POINTS_PER_CARD = 1;
 const RUN_LENGTH = 3;
 const RUN = RUN_LENGTH * RUN_POINTS_PER_CARD;
 
-// eslint-disable-next-line max-lines-per-function
 describe("allScoredKeepDiscardsByScoreDescending", () => {
   it("should return nothing for an empty deal", () => {
     expect(allScoredKeepDiscardsByExpectedScoreDescending([])).toStrictEqual(
@@ -136,20 +133,21 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     const actualScoredKeepDiscards = roundExpectedHandPoints(
       allScoredKeepDiscardsByExpectedScoreDescending(cards),
     );
-    /* jscpd:ignore-start */
-    const actualForComparison = actualScoredKeepDiscards.map((scored) => ({
+
+    interface ComparisonScored {
+      readonly discard: readonly Card[];
+      readonly expectedHandPoints: number;
+      readonly handPoints: number;
+      readonly keep: readonly Card[];
+    }
+    const toComparison = (scored: ComparisonScored) => ({
       discard: scored.discard,
       expectedHandPoints: scored.expectedHandPoints,
       handPoints: scored.handPoints,
       keep: scored.keep,
-    }));
-    const expectedForComparison = expectedScoredKeepDiscards.map((scored) => ({
-      discard: scored.discard,
-      expectedHandPoints: scored.expectedHandPoints,
-      handPoints: scored.handPoints,
-      keep: scored.keep,
-    }));
-    /* jscpd:ignore-end */
+    });
+    const actualForComparison = actualScoredKeepDiscards.map(toComparison);
+    const expectedForComparison = expectedScoredKeepDiscards.map(toComparison);
 
     expect(actualForComparison).toStrictEqual(expectedForComparison);
   }

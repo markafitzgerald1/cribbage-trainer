@@ -32,13 +32,11 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     </p>
     <ul>
       <li>
-        {/* eslint-disable-next-line react/jsx-max-depth */}
         <strong>Usage Data:</strong> Information about how you interact with the
         site, such as which pages you visit, how long you spend on them, and
         other behavioral metrics.
       </li>
       <li>
-        {/* eslint-disable-next-line react/jsx-max-depth */}
         <strong>Device and Browser Information:</strong> Details about the
         device and browser used to access the website, including IP address,
         operating system, browser type, and screen resolution.
@@ -122,7 +120,6 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <ul>
       <li>
         You can opt out of Google Analytics tracking by using the{" "}
-        {/* eslint-disable-next-line react/jsx-max-depth */}
         <a href="https://tools.google.com/dlpage/gaoptout">
           Google Analytics Opt-Out Browser Add-on
         </a>

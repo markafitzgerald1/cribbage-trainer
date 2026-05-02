@@ -19,6 +19,27 @@ export interface ExpectedCutAddedPoints {
   runsContributions: CutContribution[];
 }
 
+export interface CutBreakdown extends Omit<
+  ExpectedCutAddedPoints,
+  "avg15s" | "avgPairs" | "avgRuns"
+> {
+  avgCutAdded15s: number;
+  avgCutAddedPairs: number;
+  avgCutAddedRuns: number;
+}
+
+export function toCutBreakdown(cutAdded: ExpectedCutAddedPoints): CutBreakdown {
+  return {
+    avgCutAdded15s: cutAdded.avg15s,
+    avgCutAddedPairs: cutAdded.avgPairs,
+    avgCutAddedRuns: cutAdded.avgRuns,
+    cutCountsRemaining: cutAdded.cutCountsRemaining,
+    fifteensContributions: cutAdded.fifteensContributions,
+    pairsContributions: cutAdded.pairsContributions,
+    runsContributions: cutAdded.runsContributions,
+  };
+}
+
 /**
  * Calculate the average cut-added points by category (fifteens, pairs, runs)
  * for a given keep and discard combination.

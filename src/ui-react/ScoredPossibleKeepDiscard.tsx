@@ -1,4 +1,3 @@
-/* eslint react/jsx-max-depth: ["error", { "max": 3 }] */
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
 import { useCallback, useState } from "react";

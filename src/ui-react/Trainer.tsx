@@ -32,10 +32,9 @@ export function Trainer({
   );
   const [dealtCards, setDealtCards] = useState(dealHandWithGenerator);
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
-  // Capture initial consent state on first render only
-  const initialConsent = useMemo(() => getStoredConsent(), []);
+  const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
-    initialConsent,
+    storedConsentOnFirstRender,
   );
 
   const toggleKept = useCallback(
@@ -80,7 +79,7 @@ export function Trainer({
       <AnalyticsConsentDialog
         consent={analyticsConsented}
         onChange={setConsented}
-        wasInitiallyConsented={initialConsent !== null}
+        wasInitiallyConsented={storedConsentOnFirstRender !== null}
       />
     </div>
   );

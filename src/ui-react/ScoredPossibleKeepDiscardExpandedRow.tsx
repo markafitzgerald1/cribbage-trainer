@@ -1,4 +1,3 @@
-/* eslint react/jsx-max-depth: ["error", { "max": 4 }] */
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CutResultRow } from "./CutResultRow";

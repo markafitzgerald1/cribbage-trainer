@@ -1,12 +1,17 @@
+/* jscpd:ignore-start */
 import { CARDS, type Card } from "../game/Card";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+/* jscpd:ignore-end */
+import {
+  expectedCutAddedPoints,
+  toCutBreakdown,
+} from "../game/expectedCutAddedPoints";
 import type { ComparableCard } from "../ui/sortCards";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createArgTypes } from "./stories.common";
 import { createElement } from "react";
-import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
@@ -52,19 +57,13 @@ const createStory = ({
   const cutAdded = expectedCutAddedPoints(keep, discard);
   return {
     args: {
-      avgCutAdded15s: cutAdded.avg15s,
-      avgCutAddedPairs: cutAdded.avgPairs,
-      avgCutAddedRuns: cutAdded.avgRuns,
-      cutCountsRemaining: cutAdded.cutCountsRemaining,
+      ...toCutBreakdown(cutAdded),
       discard: discard.map(toComparableCard),
       expectedHandPoints: expectedHandPoints(keep, discard).total,
-      fifteensContributions: cutAdded.fifteensContributions,
       handPoints: handPoints(keep).total,
       isHighlighted,
       keep: keep.map(toComparableCard),
-      pairsContributions: cutAdded.pairsContributions,
       rowIndex: 0,
-      runsContributions: cutAdded.runsContributions,
       sortOrder,
     },
   };
