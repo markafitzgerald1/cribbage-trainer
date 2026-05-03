@@ -83,7 +83,7 @@ export function ScoredPossibleKeepDiscards({
             isHighlighted={scoredKeepDiscard.keep.every((card) => card.kept)}
             keep={scoredKeepDiscard.keep}
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-              .map((dealtCard) => dealtCard.rankLabel)
+              .map((dealtCard) => dealtCard.dealOrder)
               .join("")}
             pairsContributions={scoredKeepDiscard.pairsContributions}
             rowIndex={index}

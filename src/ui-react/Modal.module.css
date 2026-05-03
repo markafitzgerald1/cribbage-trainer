@@ -24,6 +24,7 @@
   max-height: calc(100% - var(--total-spacing));
   overflow-y: auto;
   position: relative;
+  font-family: var(--text-font-family);
 }
 
 .close {

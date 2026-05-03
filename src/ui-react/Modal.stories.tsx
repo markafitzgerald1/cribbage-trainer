@@ -7,7 +7,7 @@ import { useState } from "react";
 const meta = {
   component: Modal,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
   tags: ["autodocs"],
   title: "Modal",
@@ -22,6 +22,13 @@ export const Default: Story = {
     onClose: () => null,
     show: true,
   },
+  decorators: [
+    (Story) => (
+      <div style={{ minHeight: "300px", position: "relative" }}>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 const privacyPolicyArgs = {

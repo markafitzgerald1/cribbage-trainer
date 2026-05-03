@@ -1,8 +1,8 @@
-import * as classes from "./CutResultRow.module.css";
+import * as classes from "./PointsCell.module.css";
 
 export function PointsCell({ points }: { readonly points: number }) {
   return (
-    <div className={classes.pointsColumn}>
+    <div className={classes.pointsCell}>
       {points > 0 ? points : <span className={classes.muted}>—</span>}
     </div>
   );

@@ -8,7 +8,7 @@ import { createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
 import { createGenerator } from "../game/randomNumberGenerator";
 
-const SEED = "42";
+const SEED = "1";
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
@@ -100,9 +100,6 @@ export const DealNewHandReplacesCards = {
 };
 
 export const DiscardShowsScoredPossibilities = {
-  args: {
-    generateRandomNumber: createGenerator(SEED),
-  },
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const checkboxes = within(canvasElement).getAllByRole("checkbox");
 

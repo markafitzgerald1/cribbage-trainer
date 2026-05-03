@@ -1,0 +1,13 @@
+@import url("./vars.css");
+
+.points-cell {
+  text-align: right;
+  font-family: var(--text-font-family);
+  font-size: 0.9em;
+  font-weight: normal;
+  color: var(--text-color);
+}
+
+.muted {
+  color: rgb(255 255 255 / 30%);
+}
