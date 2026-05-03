@@ -28,6 +28,7 @@
 
 .total-column {
   text-align: right;
+  font-family: var(--text-font-family);
   font-weight: 600;
   color: var(--text-color);
 }
