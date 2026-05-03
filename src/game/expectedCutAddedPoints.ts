@@ -94,14 +94,7 @@ function processCutContributions({
   }
 }
 
-/**
- * Calculate the average cut-added points by category (fifteens, pairs, runs)
- * for a given keep and discard combination.
- *
- * For each possible cut card (weighted by how many remain in the deck),
- * compute the delta in points for each category compared to the base hand.
- * Also returns which cuts contribute to each category and how many.
- */
+
 export const expectedCutAddedPoints = (
   keep: readonly Card[],
   discard: readonly Card[],

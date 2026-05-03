@@ -73,6 +73,7 @@
   runs. For code changes, only skip hooks if absolutely sure they are not needed
   (i.e., a build and all tests have been performed on the current uncommitted
   code). Keep GPG signing enabled for commits. Autonomous AI agents MUST bypass GPG signing using the `--no-gpg-sign` flag for intermediate commits. The human engineer assumes cryptographic accountability via the final Squash and Merge signature.
+- If an agent uses `--no-verify` or `HUSKY=0` to bypass local git hooks, it MUST execute `npm run docker:build-and-test-all` to explicitly ensure full CI compliance before pushing.
 
 ## CI workflow notes
 
