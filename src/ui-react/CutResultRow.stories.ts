@@ -1,3 +1,4 @@
+import "./vars.css";
 /* jscpd:ignore-start */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 /* jscpd:ignore-end */
