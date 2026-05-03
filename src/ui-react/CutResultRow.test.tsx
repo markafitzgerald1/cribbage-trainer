@@ -5,7 +5,6 @@ import { Rank } from "../game/Card";
 import { SortOrder } from "../ui/SortOrder";
 import { render } from "@testing-library/react";
 
-const TWO_POINTS = 2;
 const FOUR_POINTS = 4;
 const SIX_POINTS = 6;
 
@@ -21,57 +20,38 @@ function getCutLabelTexts(renderResult: ReturnType<typeof render>): string[] {
   return Array.from(labels).map((label) => label.textContent ?? "");
 }
 
-/* jscpd:ignore-start */
 describe("cutResultRow", () => {
-  it("renders cuts in ascending order when sortOrder is Ascending", () => {
+  it.each([
+    {
+      cuts: [Rank.KING, Rank.QUEEN, Rank.JACK, Rank.TEN],
+      expected: ["10", "J", "Q", "K"],
+      name: "ascending order when sortOrder is Ascending",
+      sortOrder: SortOrder.Ascending,
+    },
+    {
+      cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
+      expected: ["K", "Q", "J", "10"],
+      name: "descending order when sortOrder is Descending",
+      sortOrder: SortOrder.Descending,
+    },
+    {
+      cuts: [Rank.ACE, Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE],
+      expected: ["5", "4", "3", "2", "A"],
+      name: "descending order when sortOrder is DealOrder",
+      sortOrder: SortOrder.DealOrder,
+    },
+  ])("renders cuts in $name", ({ cuts, expected, sortOrder }) => {
     const renderResult = render(
       <CutResultRow
-        cuts={[Rank.KING, Rank.QUEEN, Rank.JACK, Rank.TEN]}
-        fifteensPoints={TWO_POINTS}
-        pairsPoints={FOUR_POINTS}
-        runsPoints={0}
-        sortOrder={SortOrder.Ascending}
-        totalPoints={SIX_POINTS}
-      />,
-    );
-
-    expect(getCutLabelTexts(renderResult)).toStrictEqual(["10", "J", "Q", "K"]);
-  });
-
-  it("renders cuts in descending order when sortOrder is Descending", () => {
-    const renderResult = render(
-      <CutResultRow
-        cuts={[Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING]}
-        fifteensPoints={TWO_POINTS}
-        pairsPoints={FOUR_POINTS}
-        runsPoints={0}
-        sortOrder={SortOrder.Descending}
-        totalPoints={SIX_POINTS}
-      />,
-    );
-
-    expect(getCutLabelTexts(renderResult)).toStrictEqual(["K", "Q", "J", "10"]);
-  });
-
-  it("renders cuts in descending order when sortOrder is DealOrder", () => {
-    const renderResult = render(
-      <CutResultRow
-        cuts={[Rank.ACE, Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE]}
+        cuts={cuts}
         fifteensPoints={FOUR_POINTS}
         pairsPoints={0}
         runsPoints={0}
-        sortOrder={SortOrder.DealOrder}
-        totalPoints={FOUR_POINTS}
+        sortOrder={sortOrder}
+        totalPoints={SIX_POINTS}
       />,
     );
 
-    expect(getCutLabelTexts(renderResult)).toStrictEqual([
-      "5",
-      "4",
-      "3",
-      "2",
-      "A",
-    ]);
+    expect(getCutLabelTexts(renderResult)).toStrictEqual(expected);
   });
 });
-/* jscpd:ignore-end */

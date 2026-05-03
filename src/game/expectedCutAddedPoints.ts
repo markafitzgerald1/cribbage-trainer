@@ -40,6 +40,60 @@ export function toCutBreakdown(cutAdded: ExpectedCutAddedPoints): CutBreakdown {
   };
 }
 
+function processCutContributions({
+  accumulator,
+  basePoints,
+  cutCard,
+  keep,
+  remaining,
+}: {
+  accumulator: {
+    fifteensContributions: CutContribution[];
+    pairsContributions: CutContribution[];
+    runsContributions: CutContribution[];
+    sum15s: number;
+    sumPairs: number;
+    sumRuns: number;
+    sumWeight: number;
+  };
+  basePoints: ReturnType<typeof handPoints>;
+  cutCard: Card;
+  keep: readonly Card[];
+  remaining: number;
+}) {
+  const pointsWithCut = handPoints([...keep, cutCard]);
+  const fifteensDelta = pointsWithCut.fifteens - basePoints.fifteens;
+  const pairsDelta = pointsWithCut.pairs - basePoints.pairs;
+  const runsDelta = pointsWithCut.runs - basePoints.runs;
+
+  accumulator.sumWeight += remaining;
+  accumulator.sum15s += fifteensDelta * remaining;
+  accumulator.sumPairs += pairsDelta * remaining;
+  accumulator.sumRuns += runsDelta * remaining;
+
+  if (fifteensDelta > 0) {
+    accumulator.fifteensContributions.push({
+      count: remaining,
+      cutCard,
+      points: fifteensDelta,
+    });
+  }
+  if (pairsDelta > 0) {
+    accumulator.pairsContributions.push({
+      count: remaining,
+      cutCard,
+      points: pairsDelta,
+    });
+  }
+  if (runsDelta > 0) {
+    accumulator.runsContributions.push({
+      count: remaining,
+      cutCard,
+      points: runsDelta,
+    });
+  }
+}
+
 /**
  * Calculate the average cut-added points by category (fifteens, pairs, runs)
  * for a given keep and discard combination.
@@ -48,7 +102,6 @@ export function toCutBreakdown(cutAdded: ExpectedCutAddedPoints): CutBreakdown {
  * compute the delta in points for each category compared to the base hand.
  * Also returns which cuts contribute to each category and how many.
  */
-/* eslint-disable max-statements */
 export const expectedCutAddedPoints = (
   keep: readonly Card[],
   discard: readonly Card[],
@@ -58,66 +111,39 @@ export const expectedCutAddedPoints = (
   );
   const basePoints = handPoints(keep);
 
-  let sumWeight = 0;
-  let sum15s = 0;
-  let sumPairs = 0;
-  let sumRuns = 0;
-
-  const fifteensContributions: CutContribution[] = [];
-  const pairsContributions: CutContribution[] = [];
-  const runsContributions: CutContribution[] = [];
+  const accumulator = {
+    fifteensContributions: [] as CutContribution[],
+    pairsContributions: [] as CutContribution[],
+    runsContributions: [] as CutContribution[],
+    sum15s: 0,
+    sumPairs: 0,
+    sumRuns: 0,
+    sumWeight: 0,
+  };
 
   for (let cut = 0; cut < INDICES_PER_SUIT; cut += 1) {
     // eslint-disable-next-line security/detect-object-injection
     const remaining = countRemaining[cut] as number;
-    if (remaining === 0) {
-      // eslint-disable-next-line no-continue
-      continue;
-    }
-    // eslint-disable-next-line security/detect-object-injection
-    const cutCard = CARDS[cut] as Card;
-    const pointsWithCut = handPoints([...keep, cutCard]);
-
-    const fifteensDelta = pointsWithCut.fifteens - basePoints.fifteens;
-    const pairsDelta = pointsWithCut.pairs - basePoints.pairs;
-    const runsDelta = pointsWithCut.runs - basePoints.runs;
-
-    sumWeight += remaining;
-    sum15s += fifteensDelta * remaining;
-    sumPairs += pairsDelta * remaining;
-    sumRuns += runsDelta * remaining;
-
-    if (fifteensDelta > 0) {
-      fifteensContributions.push({
-        count: remaining,
+    if (remaining > 0) {
+      // eslint-disable-next-line security/detect-object-injection
+      const cutCard = CARDS[cut] as Card;
+      processCutContributions({
+        accumulator,
+        basePoints,
         cutCard,
-        points: fifteensDelta,
-      });
-    }
-    if (pairsDelta > 0) {
-      pairsContributions.push({
-        count: remaining,
-        cutCard,
-        points: pairsDelta,
-      });
-    }
-    if (runsDelta > 0) {
-      runsContributions.push({
-        count: remaining,
-        cutCard,
-        points: runsDelta,
+        keep,
+        remaining,
       });
     }
   }
 
   return {
-    avg15s: sum15s / sumWeight,
-    avgPairs: sumPairs / sumWeight,
-    avgRuns: sumRuns / sumWeight,
+    avg15s: accumulator.sum15s / accumulator.sumWeight,
+    avgPairs: accumulator.sumPairs / accumulator.sumWeight,
+    avgRuns: accumulator.sumRuns / accumulator.sumWeight,
     cutCountsRemaining: countRemaining,
-    fifteensContributions,
-    pairsContributions,
-    runsContributions,
+    fifteensContributions: accumulator.fifteensContributions,
+    pairsContributions: accumulator.pairsContributions,
+    runsContributions: accumulator.runsContributions,
   };
 };
-/* eslint-enable max-statements */

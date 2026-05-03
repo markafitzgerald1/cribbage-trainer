@@ -1,0 +1,174 @@
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [110:6 - 116:2] (6 lines, 41 tokens)
+   src/ui-react/groupCutsByResults.test.ts [103:9 - 109:2]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [119:15 - 125:20] (6 lines, 40 tokens)
+   src/ui-react/groupCutsByResults.test.ts [80:16 - 86:12]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [128:12 - 134:70] (6 lines, 35 tokens)
+   src/ui-react/groupCutsByResults.test.ts [96:2 - 102:67]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [137:31 - 144:31] (7 lines, 47 tokens)
+   src/ui-react/groupCutsByResults.test.ts [105:22 - 112:22]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [185:5 - 189:27] (4 lines, 34 tokens)
+   src/ui-react/groupCutsByResults.test.ts [84:2 - 88:13]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [204:20 - 210:4] (6 lines, 38 tokens)
+   src/ui-react/groupCutsByResults.test.ts [112:22 - 118:5]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [218:13 - 225:89] (7 lines, 44 tokens)
+   src/ui-react/groupCutsByResults.test.ts [95:4 - 102:67]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [241:5 - 250:22] (9 lines, 66 tokens)
+   src/ui-react/groupCutsByResults.test.ts [202:5 - 119:15]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [253:6 - 259:2] (6 lines, 41 tokens)
+   src/ui-react/groupCutsByResults.test.ts [202:9 - 208:2]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [271:2 - 278:76] (7 lines, 44 tokens)
+   src/ui-react/groupCutsByResults.test.ts [127:15 - 102:67]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [302:2 - 306:22] (4 lines, 34 tokens)
+   src/ui-react/groupCutsByResults.test.ts [84:2 - 88:13]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [310:21 - 318:90] (8 lines, 48 tokens)
+   src/ui-react/groupCutsByResults.test.ts [193:13 - 201:82]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [318:90 - 322:5] (4 lines, 39 tokens)
+   src/ui-react/groupCutsByResults.test.ts [58:75 - 62:4]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [321:27 - 330:22] (9 lines, 63 tokens)
+   src/ui-react/groupCutsByResults.test.ts [105:22 - 114:15]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [337:21 - 348:2] (11 lines, 51 tokens)
+   src/ui-react/groupCutsByResults.test.ts [153:14 - 164:2]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [344:6 - 351:15] (7 lines, 48 tokens)
+   src/ui-react/groupCutsByResults.test.ts [183:6 - 190:2]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [354:14 - 362:71] (8 lines, 48 tokens)
+   src/ui-react/groupCutsByResults.test.ts [193:13 - 201:82]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [365:7 - 377:2] (12 lines, 48 tokens)
+   src/ui-react/groupCutsByResults.test.ts [227:7 - 239:27]
+
+Clone found (typescript):
+ - src/ui-react/groupCutsByResults.test.ts [379:2 - 383:2] (4 lines, 36 tokens)
+   src/ui-react/groupCutsByResults.test.ts [45:3 - 49:2]
+
+Clone found (tsx):
+ - src/ui-react/ScoredPossibleKeepDiscards.test.tsx [4:19 - 8:7] (4 lines, 45 tokens)
+   src/ui-react/Trainer.tsx [4:20 - 8:18]
+
+Clone found (tsx):
+ - src/ui-react/Hand.test.tsx [3:22 - 7:7] (4 lines, 41 tokens)
+   src/ui-react/ScoredPossibleKeepDiscards.test.tsx [5:31 - 10:9]
+
+Clone found (tsx):
+ - src/ui-react/CutResultRow.test.tsx [40:64 - 52:4] (12 lines, 97 tokens)
+   src/ui-react/CutResultRow.test.tsx [25:62 - 37:5]
+
+Clone found (tsx):
+ - src/ui-react/CutResultRow.test.tsx [55:63 - 68:4] (13 lines, 103 tokens)
+   src/ui-react/CutResultRow.test.tsx [25:62 - 37:5]
+
+Clone found (typescript):
+ - src/game/expectedCutAddedPoints.test.ts [46:6 - 50:16] (4 lines, 42 tokens)
+   src/game/expectedCutAddedPoints.test.ts [24:6 - 28:5]
+
+Clone found (typescript):
+ - src/game/expectedCutAddedPoints.test.ts [78:6 - 85:2] (7 lines, 67 tokens)
+   src/game/expectedCutAddedPoints.test.ts [24:6 - 54:3]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [246:5 - 250:4] (4 lines, 40 tokens)
+   src/analysis/analysis.test.ts [223:5 - 227:4]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [258:5 - 264:6] (6 lines, 62 tokens)
+   src/analysis/analysis.test.ts [229:6 - 235:4]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [264:5 - 270:6] (6 lines, 67 tokens)
+   src/analysis/analysis.test.ts [235:6 - 241:4]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [279:5 - 285:2] (6 lines, 66 tokens)
+   src/analysis/analysis.test.ts [252:4 - 258:2]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [301:2 - 306:5] (5 lines, 43 tokens)
+   src/analysis/analysis.test.ts [293:2 - 298:5]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [308:5 - 314:2] (6 lines, 57 tokens)
+   src/analysis/analysis.test.ts [293:4 - 307:2]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [337:6 - 343:5] (6 lines, 61 tokens)
+   src/analysis/analysis.test.ts [317:5 - 323:6]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [344:6 - 349:5] (5 lines, 49 tokens)
+   src/analysis/analysis.test.ts [324:5 - 329:6]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [350:6 - 356:6] (6 lines, 58 tokens)
+   src/analysis/analysis.test.ts [330:5 - 336:5]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [358:4 - 364:6] (6 lines, 58 tokens)
+   src/analysis/analysis.test.ts [317:5 - 323:5]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [366:4 - 371:6] (5 lines, 46 tokens)
+   src/analysis/analysis.test.ts [324:5 - 329:5]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [373:4 - 379:4] (6 lines, 61 tokens)
+   src/analysis/analysis.test.ts [330:5 - 336:5]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [388:6 - 397:5] (9 lines, 111 tokens)
+   src/analysis/analysis.test.ts [379:5 - 388:6]
+
+Clone found (typescript):
+ - src/analysis/analysis.test.ts [397:5 - 406:2] (9 lines, 108 tokens)
+   src/analysis/analysis.test.ts [379:5 - 388:2]
+
+┌────────────┬────────────────┬─────────────┬──────────────┬──────────────┬──────────────────┬───────────────────┐
+│ Format     │ Files analyzed │ Total lines │ Total tokens │ Clones found │ Duplicated lines │ Duplicated tokens │
+├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+│ typescript │ 70             │ 3323        │ 28380        │ 35           │ 227 (6.83%)      │ 1841 (6.49%)      │
+├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+│ javascript │ 34             │ 525         │ 4343         │ 0            │ 0 (0%)           │ 0 (0%)            │
+├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+│ tsx        │ 36             │ 2563        │ 22240        │ 4            │ 33 (1.29%)       │ 286 (1.29%)       │
+├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+│ Total:     │ 140            │ 6411        │ 54963        │ 39           │ 260 (4.06%)      │ 2127 (3.87%)      │
+└────────────┴────────────────┴─────────────┴──────────────┴──────────────┴──────────────────┴───────────────────┘
+Found 39 clones.
+Error: ERROR: jscpd found too many duplicates (4.06%) over threshold (0%)
+    at ThresholdReporter.report (/Volumes/CaseSensitiveCode/personal/cribbage-trainer/node_modules/@jscpd/finder/dist/index.js:615:13)
+    at /Volumes/CaseSensitiveCode/personal/cribbage-trainer/node_modules/@jscpd/finder/dist/index.js:109:18
+    at Array.forEach (<anonymous>)
+    at /Volumes/CaseSensitiveCode/personal/cribbage-trainer/node_modules/@jscpd/finder/dist/index.js:108:22
+    at async /Volumes/CaseSensitiveCode/personal/cribbage-trainer/node_modules/jscpd/dist/bin/jscpd.js:9:5

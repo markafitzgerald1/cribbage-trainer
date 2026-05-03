@@ -302,6 +302,7 @@ export default [
       jest,
     },
     rules: {
+      "@typescript-eslint/no-magic-numbers": ["off"],
       "@typescript-eslint/no-non-null-assertion": ["off"],
       "@typescript-eslint/unbound-method": "off",
       "jest/expect-expect": [

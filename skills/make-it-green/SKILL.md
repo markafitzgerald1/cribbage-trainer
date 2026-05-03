@@ -9,6 +9,7 @@ compatibility: Requires docker and npm.
 **Description:** An autonomous execution loop to ensure the project maintains a green build status.
 
 **Execution Loop:**
+
 1. Run `npm run docker:build-and-test-all` in the terminal.
 2. Read the terminal output.
 3. Surgically fix any coverage gaps, linting errors, or build failures.

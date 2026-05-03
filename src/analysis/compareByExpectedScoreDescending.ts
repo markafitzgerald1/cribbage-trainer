@@ -1,9 +1,14 @@
 import type { Card } from "../game/Card";
-import type { ScoredKeepDiscard } from "./analysis";
 
 export const compareByExpectedScoreThenRankDescending = (
-  discardKeep1: ScoredKeepDiscard<Card>,
-  discardKeep2: ScoredKeepDiscard<Card>,
+  discardKeep1: {
+    readonly expectedHandPoints: number;
+    readonly keep: readonly Card[];
+  },
+  discardKeep2: {
+    readonly expectedHandPoints: number;
+    readonly keep: readonly Card[];
+  },
 ): number => {
   if (discardKeep2.expectedHandPoints !== discardKeep1.expectedHandPoints) {
     return discardKeep2.expectedHandPoints - discardKeep1.expectedHandPoints;
