@@ -54,4 +54,16 @@ npm run docker:build-and-test-all -- -- --update-snapshots
 
 ## Gotchas & Lessons Learned
 
-- **React Keys in Mapping Functions:** When rendering lists of cards or similar ephemeral state in React components, React keys must use stable card identity (e.g., combining rank and suit labels) rather than ephemeral array indices or `dealOrder`. This prevents UI state expansion bugs and unnecessary re-renders between deals.
+- **React Keys in Mapping Functions:** When rendering lists of cards or similar
+  ephemeral state in React components, React keys must use stable card identity
+  (e.g., combining rank and suit labels) rather than ephemeral array indices or
+  `dealOrder`. This prevents UI state expansion bugs and unnecessary re-renders
+  between deals.
+- **Hidden Linter Failures and Globbing:** When using `npm-run-all` or `concurrently`
+  to run multiple linting scripts, a failure in one script (like `markdownlint`)
+  might be buried in the output. Always verify that linting scripts use exact,
+  quoted globbing (e.g., `'**/*.md'`) to ensure they run correctly across platforms.
+- **Bypassing Husky Hooks:** Bypassing local Husky pre-commit hooks
+  (`--no-verify`) will hide linting and test failures until they hit the CI
+  pipeline. If hooks must be bypassed locally, the agent MUST run the full Docker
+  CI loop manually to verify compliance before pushing.

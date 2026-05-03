@@ -94,7 +94,6 @@ function processCutContributions({
   }
 }
 
-
 export const expectedCutAddedPoints = (
   keep: readonly Card[],
   discard: readonly Card[],

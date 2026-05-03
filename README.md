@@ -9,11 +9,7 @@
 
 Two-player cribbage discard and play improvement tool.
 
-<div align="center">
-
 [![Play Cribbage Trainer](https://img.shields.io/badge/🃏_Play_Cribbage_Trainer_App-2ea44f?style=for-the-badge)](https://markafitzgerald1.github.io/cribbage-trainer/)
-
-</div>
 
 ## Continuous deployment
 
@@ -50,4 +46,5 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ## Contributing
 
-Before making changes, all developers and AI agents must read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
+Before making changes, all developers and AI agents must read
+[CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).

@@ -1,0 +1,232 @@
+
+> cribbage-trainer@0.1.0 lint
+> concurrently --names 'ESLINT,STYLE,MARKDOWN,PRETTIER,CSPELL,TSC,JSCPD,ACTIONLINT,AUDIT,OUTDATED' "npm:lint:eslint" "npm:lint:stylelint" "npm:lint:markdown" "npm:lint:prettier" "npm:lint:cspell" "npm:lint:tsc" "npm:lint:jscpd" "npm:lint:actionlint" "npm:lint:audit" "npm:lint:outdated"
+
+[AUDIT] 
+[AUDIT] > cribbage-trainer@0.1.0 lint:audit
+[AUDIT] > better-npm-audit audit
+[AUDIT] 
+[ESLINT] 
+[ESLINT] > cribbage-trainer@0.1.0 lint:eslint
+[ESLINT] > eslint --max-warnings 0 '**/*.{js,ts,tsx,mjs}'
+[ESLINT] 
+[JSCPD] 
+[JSCPD] > cribbage-trainer@0.1.0 lint:jscpd
+[JSCPD] > jscpd
+[JSCPD] 
+[PRETTIER] 
+[PRETTIER] > cribbage-trainer@0.1.0 lint:prettier
+[PRETTIER] > prettier --check .
+[PRETTIER] 
+[STYLE] 
+[STYLE] > cribbage-trainer@0.1.0 lint:stylelint
+[STYLE] > stylelint '**/*.css'
+[STYLE] 
+[MARKDOWN] 
+[MARKDOWN] > cribbage-trainer@0.1.0 lint:markdown
+[MARKDOWN] > markdownlint '**/*.md'
+[MARKDOWN] 
+[ACTIONLINT] 
+[ACTIONLINT] > cribbage-trainer@0.1.0 lint:actionlint
+[ACTIONLINT] > actionlint .github/workflows/*.yml
+[ACTIONLINT] 
+[TSC] 
+[TSC] > cribbage-trainer@0.1.0 lint:tsc
+[TSC] > tsc
+[TSC] 
+[OUTDATED] 
+[OUTDATED] > cribbage-trainer@0.1.0 lint:outdated
+[OUTDATED] > (check-outdated || true)
+[OUTDATED] 
+[CSPELL] 
+[CSPELL] > cribbage-trainer@0.1.0 lint:cspell
+[CSPELL] > cspell '**' --gitignore
+[CSPELL] 
+[PRETTIER] Checking formatting...
+[ACTIONLINT] npm run lint:actionlint exited with code 0
+[MARKDOWN] npm run lint:markdown exited with code 0
+[STYLE] npm run lint:stylelint exited with code 0
+[PRETTIER] [warn] src/game/expectedCutAddedPoints.ts
+[JSCPD] ┌────────────┬────────────────┬─────────────┬──────────────┬──────────────┬──────────────────┬───────────────────┐
+[JSCPD] │ Format     │ Files analyzed │ Total lines │ Total tokens │ Clones found │ Duplicated lines │ Duplicated tokens │
+[JSCPD] ├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+[JSCPD] │ typescript │ 70             │ 3360        │ 23777        │ 0            │ 0 (0%)           │ 0 (0%)            │
+[JSCPD] ├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+[JSCPD] │ javascript │ 34             │ 495         │ 4079         │ 0            │ 0 (0%)           │ 0 (0%)            │
+[JSCPD] ├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+[JSCPD] │ tsx        │ 36             │ 2549        │ 22097        │ 0            │ 0 (0%)           │ 0 (0%)            │
+[JSCPD] ├────────────┼────────────────┼─────────────┼──────────────┼──────────────┼──────────────────┼───────────────────┤
+[JSCPD] │ Total:     │ 140            │ 6404        │ 49953        │ 0            │ 0 (0%)           │ 0 (0%)            │
+[JSCPD] └────────────┴────────────────┴─────────────┴──────────────┴──────────────┴──────────────────┴───────────────────┘
+[JSCPD] Found 0 clones.
+[JSCPD] time: 714.729ms
+[JSCPD] npm run lint:jscpd exited with code 0
+[AUDIT] 🤝  All good!
+[AUDIT] npm run lint:audit exited with code 0
+[CSPELL]   1/145 __mocks__/styleMock.ts 929.75ms
+[CSPELL]   2/145 AGENTS.md 117.70ms
+[CSPELL]   3/145 babel.config.json 4.53ms
+[CSPELL]   4/145 CONTRIBUTING.md 6.53ms
+[CSPELL]   5/145 Dockerfile 7.75ms
+[CSPELL]   6/145 eslint.config.mjs 14.94ms
+[CSPELL]   7/145 jest.config.json 3.34ms
+[CSPELL]   8/145 LICENSE 10.37ms
+[CSPELL]   9/145 lint_output.txt 3.31ms
+[CSPELL]  10/145 package.json 5.26ms
+[CSPELL]  11/145 playwright.config.ts 2.61ms
+[CSPELL]  12/145 README.md 4.66ms
+[CSPELL]  13/145 skills/make-it-green/SKILL.md 1.21ms
+[CSPELL]  14/145 src/analysis/analysis.test.ts 6.59ms
+[CSPELL]  15/145 src/analysis/analysis.ts 4.38ms
+[CSPELL]  16/145 src/analysis/compareByExpectedScoreDescending.test.ts 3.78ms
+[CSPELL]  17/145 src/analysis/compareByExpectedScoreDescending.ts 1.68ms
+[CSPELL]  18/145 src/game/Card.test.ts 1.40ms
+[CSPELL]  19/145 src/game/Card.ts 1.85ms
+[CSPELL]  20/145 src/game/dealHand.test.ts 1.33ms
+[CSPELL]  21/145 src/game/dealHand.ts 1.28ms
+[CSPELL]  22/145 src/game/DealtCard.ts 2.77ms
+[CSPELL]  23/145 src/game/discardIsComplete.test.ts 4.86ms
+[CSPELL]  24/145 src/game/discardIsComplete.ts 1.33ms
+[CSPELL]  25/145 src/game/expectedCutAddedPoints.test.ts 2.44ms
+[CSPELL]  26/145 src/game/expectedCutAddedPoints.ts 4.66ms
+[CSPELL]  27/145 src/game/expectedHandPoints.test.ts 3.59ms
+[CSPELL]  28/145 src/game/expectedHandPoints.ts 1.33ms
+[CSPELL]  29/145 src/game/facts.ts 0.52ms
+[CSPELL]  30/145 src/game/HandCard.ts 0.45ms
+[CSPELL]  31/145 src/game/handPoints.test.ts 4.49ms
+[CSPELL]  32/145 src/game/handPoints.ts 3.70ms
+[CSPELL]  33/145 src/game/parseCards.common.ts 4.68ms
+[CSPELL]  34/145 src/game/randomNumberGenerator.test.ts 3.35ms
+[CSPELL]  35/145 src/game/randomNumberGenerator.ts 3.75ms
+[CSPELL]  36/145 src/game/rankCounts.test.ts 1.64ms
+[CSPELL]  37/145 src/game/rankCounts.ts 1.85ms
+[CSPELL]  38/145 src/index.html 66.57ms
+[CSPELL]  39/145 src/index.test.tsx 2.28ms
+[CSPELL]  40/145 src/index.tsx 1.19ms
+[CSPELL]  41/145 src/site.webmanifest 1.14ms
+[CSPELL]  42/145 src/styles.css 1.96ms
+[CSPELL]  43/145 src/ui-react/AnalyticsConsentDialog.module.css 1.63ms
+[CSPELL]  44/145 src/ui-react/AnalyticsConsentDialog.module.css.d.ts 20.19ms
+[CSPELL]  45/145 src/ui-react/AnalyticsConsentDialog.stories.ts 14.52ms
+[CSPELL]  46/145 src/ui-react/AnalyticsConsentDialog.test.tsx 9.81ms
+[CSPELL]  47/145 src/ui-react/AnalyticsConsentDialog.tsx 3.97ms
+[CSPELL]  48/145 src/ui-react/BreakdownProps.ts 8.01ms
+[CSPELL]  49/145 src/ui-react/CardLabel.module.css 4.52ms
+[CSPELL]  50/145 src/ui-react/CardLabel.module.css.d.ts 1.50ms
+[CSPELL]  51/145 src/ui-react/CardLabel.stories.ts 1.89ms
+[CSPELL]  52/145 src/ui-react/CardLabel.test.tsx 1.23ms
+[CSPELL]  53/145 src/ui-react/CardLabel.tsx 0.92ms
+[CSPELL]  54/145 src/ui-react/CutResultRow.module.css 0.78ms
+[CSPELL]  55/145 src/ui-react/CutResultRow.module.css.d.ts 0.67ms
+[CSPELL]  56/145 src/ui-react/CutResultRow.stories.ts 1.38ms
+[CSPELL]  57/145 src/ui-react/CutResultRow.test.tsx 2.21ms
+[CSPELL]  58/145 src/ui-react/CutResultRow.tsx 1.50ms
+[CSPELL]  59/145 src/ui-react/DealButton.module.css 1.08ms
+[CSPELL]  60/145 src/ui-react/DealButton.module.css.d.ts 1.24ms
+[CSPELL]  61/145 src/ui-react/DealButton.stories.ts 1.09ms
+[CSPELL]  62/145 src/ui-react/DealButton.test.tsx 0.83ms
+[CSPELL]  63/145 src/ui-react/DealButton.tsx 1.28ms
+[CSPELL]  64/145 src/ui-react/getTenClass.test.ts 0.78ms
+[CSPELL]  65/145 src/ui-react/getTenClass.ts 0.57ms
+[CSPELL]  66/145 src/ui-react/groupCutsByResults.test.ts 3.47ms
+[CSPELL]  67/145 src/ui-react/groupCutsByResults.ts 4.00ms
+[CSPELL]  68/145 src/ui-react/Hand.module.css 1.20ms
+[CSPELL]  69/145 src/ui-react/Hand.module.css.d.ts 1.16ms
+[CSPELL]  70/145 src/ui-react/Hand.stories.ts 1.28ms
+[CSPELL]  71/145 src/ui-react/Hand.test.tsx 4.53ms
+[CSPELL]  72/145 src/ui-react/Hand.tsx 2.25ms
+[CSPELL]  73/145 src/ui-react/HandCard.module.css 2.34ms
+[CSPELL]  74/145 src/ui-react/HandCard.module.css.d.ts 0.84ms
+[CSPELL]  75/145 src/ui-react/HandCard.stories.ts 1.65ms
+[CSPELL]  76/145 src/ui-react/HandCard.test.tsx 1.61ms
+[CSPELL]  77/145 src/ui-react/HandCard.tsx 0.90ms
+[CSPELL]  78/145 src/ui-react/HandProps.ts 1.97ms
+[CSPELL]  79/145 src/ui-react/handToSortedString.test.common.ts 1.46ms
+[CSPELL]  80/145 src/ui-react/InteractiveHand.module.css 0.92ms
+[CSPELL]  81/145 src/ui-react/InteractiveHand.module.css.d.ts 0.59ms
+[CSPELL]  82/145 src/ui-react/InteractiveHand.stories.ts 2.60ms
+[CSPELL]  83/145 src/ui-react/InteractiveHand.test.tsx 2.22ms
+[CSPELL]  84/145 src/ui-react/InteractiveHand.tsx 1.71ms
+[CSPELL]  85/145 src/ui-react/Modal.module.css 1.74ms
+[CSPELL]  86/145 src/ui-react/Modal.module.css.d.ts 3.12ms
+[CSPELL]  87/145 src/ui-react/Modal.stories.tsx 5.03ms
+[CSPELL]  88/145 src/ui-react/Modal.test.tsx 0.84ms
+[CSPELL]  89/145 src/ui-react/Modal.tsx 0.73ms
+[CSPELL]  90/145 src/ui-react/PointsCell.tsx 0.79ms
+[CSPELL]  91/145 src/ui-react/PossibleHand.module.css 0.53ms
+[CSPELL]  92/145 src/ui-react/PossibleHand.module.css.d.ts 0.38ms
+[CSPELL]  93/145 src/ui-react/PossibleHand.stories.ts 3.56ms
+[CSPELL]  94/145 src/ui-react/PossibleHand.test.tsx 2.79ms
+[CSPELL]  95/145 src/ui-react/PossibleHand.tsx 0.89ms
+[CSPELL]  96/145 src/ui-react/PossibleHandCard.module.css 0.53ms
+[CSPELL]  97/145 src/ui-react/PossibleHandCard.module.css.d.ts 0.37ms
+[CSPELL]  98/145 src/ui-react/PossibleHandCard.stories.ts 0.82ms
+[CSPELL]  99/145 src/ui-react/PossibleHandCard.test.tsx 0.72ms
+[CSPELL] 100/145 src/ui-react/PossibleHandCard.tsx 0.51ms
+[CSPELL] 101/145 src/ui-react/PrivacyPolicy.module.css 0.68ms
+[CSPELL] 102/145 src/ui-react/PrivacyPolicy.module.css.d.ts 0.40ms
+[CSPELL] 103/145 src/ui-react/PrivacyPolicy.stories.ts 0.51ms
+[CSPELL] 104/145 src/ui-react/PrivacyPolicy.test.tsx 0.98ms
+[CSPELL] 105/145 src/ui-react/PrivacyPolicy.tsx 5.83ms
+[CSPELL] 106/145 src/ui-react/ScoredPossibleKeepDiscard.module.css 1.97ms
+[CSPELL] 107/145 src/ui-react/ScoredPossibleKeepDiscard.module.css.d.ts 2.72ms
+[CSPELL] 108/145 src/ui-react/ScoredPossibleKeepDiscard.stories.ts 4.37ms
+[CSPELL] 109/145 src/ui-react/ScoredPossibleKeepDiscard.test.tsx 3.23ms
+[CSPELL] 110/145 src/ui-react/ScoredPossibleKeepDiscard.tsx 2.00ms
+[CSPELL] 111/145 src/ui-react/ScoredPossibleKeepDiscardExpandedRow.tsx 1.99ms
+[CSPELL] 112/145 src/ui-react/ScoredPossibleKeepDiscards.module.css 0.95ms
+[CSPELL] 113/145 src/ui-react/ScoredPossibleKeepDiscards.module.css.d.ts 0.59ms
+[CSPELL] 114/145 src/ui-react/ScoredPossibleKeepDiscards.stories.ts 2.08ms
+[CSPELL] 115/145 src/ui-react/ScoredPossibleKeepDiscards.test.tsx 1.39ms
+[CSPELL] 116/145 src/ui-react/ScoredPossibleKeepDiscards.tsx 1.84ms
+[CSPELL] 117/145 src/ui-react/SortOrderInput.module.css 1.27ms
+[CSPELL] 118/145 src/ui-react/SortOrderInput.module.css.d.ts 0.58ms
+[CSPELL] 119/145 src/ui-react/SortOrderInput.stories.ts 2.54ms
+[CSPELL] 120/145 src/ui-react/SortOrderInput.test.tsx 1.73ms
+[CSPELL] 121/145 src/ui-react/SortOrderInput.tsx 1.28ms
+[CSPELL] 122/145 src/ui-react/stories.common.ts 0.80ms
+[CSPELL] 123/145 src/ui-react/Trainer.module.css 0.61ms
+[CSPELL] 124/145 src/ui-react/Trainer.module.css.d.ts 0.51ms
+[CSPELL] 125/145 src/ui-react/Trainer.stories.tsx 3.23ms
+[CSPELL] 126/145 src/ui-react/Trainer.test.tsx 3.58ms
+[CSPELL] 127/145 src/ui-react/Trainer.tsx 1.90ms
+[CSPELL] 128/145 src/ui-react/vars.css 1.22ms
+[CSPELL] 129/145 src/ui/handleLoadGoogleAnalytics.test.ts 1.01ms
+[CSPELL] 130/145 src/ui/handleLoadGoogleAnalytics.ts 0.53ms
+[CSPELL] 131/145 src/ui/loadGoogleAnalytics.test.ts 1.60ms
+[CSPELL] 132/145 src/ui/loadGoogleAnalytics.ts 0.90ms
+[CSPELL] 133/145 src/ui/sortCards.test.ts 3.21ms
+[CSPELL] 134/145 src/ui/sortCards.ts 2.76ms
+[CSPELL] 135/145 src/ui/SortOrder.ts 0.55ms
+[CSPELL] 136/145 src/ui/SortOrderName.test.ts 0.93ms
+[CSPELL] 137/145 src/ui/SortOrderName.ts 0.76ms
+[CSPELL] 138/145 src/vite-env.d.ts 0.49ms
+[CSPELL] 139/145 styles.d.ts 0.44ms
+[CSPELL] 140/145 tests-e2e/index.screenshots.spec.ts 1.07ms
+[CSPELL] 141/145 tests-e2e/index.spec.ts 1.10ms
+[CSPELL] 142/145 tests-e2e/renderThenSelectTwoDiscards.ts 0.85ms
+[CSPELL] 143/145 tsconfig.json 0.97ms
+[CSPELL] 144/145 vite.config.js 2.10ms
+[CSPELL] 145/145 vitest.shims.d.ts 1.06ms
+[CSPELL] CSpell: Files checked: 145, Issues found: 0 in 0 files.
+[CSPELL] npm run lint:cspell exited with code 0
+[PRETTIER] [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+[PRETTIER] npm run lint:prettier exited with code 1
+[TSC] npm run lint:tsc exited with code 0
+[OUTDATED] 3 outdated dependencies found:
+[OUTDATED] 
+[OUTDATED] [4mPackage[24m            [4mCurrent[24m  [4mWanted[24m  [4mLatest[24m  [4mReference[24m                                                               [4mChanges[24m                                                                   [4mLocation[24m                                                                           
+[OUTDATED] 
+[OUTDATED] [4mdevDependencies[24m
+[OUTDATED] [32m@babel/preset-env[39m   7.29.[4m2[24m  [32m7[39m[32m.[39m[32m29[39m[32m.[39m[32;4m3[39;24m  [35m7[39m[35m.[39m[35m29[39m[35m.[39m[35;4m3[39;24m  /Volumes/CaseSensitiveCode/personal/cribbage-trainer/package.json:39:5  https://github.com/babel/babel/releases                                   /Volumes/CaseSensitiveCode/personal/cribbage-trainer/node_modules/@babel/preset-env
+[OUTDATED] [33meslint[39m              [4m9[24m.[4m39[24m.[4m4[24m  [32m9[39m[32m.[39m[32m39[39m[32m.[39m[32m4[39m  [35;4m10[39;24m[35m.[39m[35;4m3[39;24m[35m.[39m[35;4m0[39;24m  /Volumes/CaseSensitiveCode/personal/cribbage-trainer/package.json:68:5  https://eslint.org                                                        /Volumes/CaseSensitiveCode/personal/cribbage-trainer/node_modules/eslint           
+[OUTDATED] [36mnpm-check-updates[39m   22.[4m0[24m.[4m1[24m  [32m22[39m[32m.[39m[32;4m1[39;24m[32m.[39m[32;4m0[39;24m  [35m22[39m[35m.[39m[35;4m1[39;24m[35m.[39m[35;4m0[39;24m  /Volumes/CaseSensitiveCode/personal/cribbage-trainer/package.json:83:5  https://github.com/raineorshine/npm-check-updates/blob/main/CHANGELOG.md  /Volumes/CaseSensitiveCode/personal/cribbage-trainer/node_modules/npm-check-updates
+[OUTDATED] 
+[OUTDATED] [4mColor legend[24m
+[OUTDATED] [33mMajor update[39m: backward-incompatible updates
+[OUTDATED] [36mMinor update[39m: backward-compatible features
+[OUTDATED] [32mPatch update[39m: backward-compatible bug fixes
+[OUTDATED] [31mReverted[39m:     latest available version is lower than the installed version
+[OUTDATED] 
+[OUTDATED] npm run lint:outdated exited with code 0
+[ESLINT] npm run lint:eslint exited with code 0
