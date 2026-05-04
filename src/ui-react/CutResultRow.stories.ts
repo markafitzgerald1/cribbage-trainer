@@ -1,10 +1,13 @@
 import "./vars.css";
-/* jscpd:ignore-start */
-import type { Meta, StoryObj } from "@storybook/react-vite";
-/* jscpd:ignore-end */
+import {
+  type Meta,
+  SORT_ORDER_NAMES,
+  SortOrder,
+  type StoryObj,
+  createArgTypes,
+} from "./stories.common";
 import { CutResultRow } from "./CutResultRow";
 import { Rank } from "../game/Card";
-import { SortOrder } from "../ui/SortOrder";
 
 const TWO_POINTS = 2;
 const FOUR_POINTS = 4;
@@ -12,6 +15,7 @@ const SIX_POINTS = 6;
 const TEN_POINTS = 10;
 
 const meta = {
+  argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
   component: CutResultRow,
   parameters: {
     layout: "centered",
@@ -20,10 +24,17 @@ const meta = {
   title: "CutResultRow",
 } satisfies Meta<typeof CutResultRow>;
 
-/* jscpd:ignore-start */
 export default meta;
 type Story = StoryObj<typeof meta>;
-/* jscpd:ignore-end */
+
+const MULTIPLE_CUTS = [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING];
+const MULTIPLE_CUTS_SHARED_ARGS = {
+  cuts: MULTIPLE_CUTS,
+  fifteensPoints: TWO_POINTS,
+  pairsPoints: FOUR_POINTS,
+  runsPoints: 0,
+  totalPoints: SIX_POINTS,
+};
 
 export const SingleCut: Story = {
   args: {
@@ -36,29 +47,19 @@ export const SingleCut: Story = {
   },
 };
 
-/* jscpd:ignore-start */
 export const MultipleCutsDescending: Story = {
   args: {
-    cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
-    fifteensPoints: TWO_POINTS,
-    pairsPoints: FOUR_POINTS,
-    runsPoints: 0,
+    ...MULTIPLE_CUTS_SHARED_ARGS,
     sortOrder: SortOrder.Descending,
-    totalPoints: SIX_POINTS,
   },
 };
 
 export const MultipleCutsAscending: Story = {
   args: {
-    cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
-    fifteensPoints: TWO_POINTS,
-    pairsPoints: FOUR_POINTS,
-    runsPoints: 0,
+    ...MULTIPLE_CUTS_SHARED_ARGS,
     sortOrder: SortOrder.Ascending,
-    totalPoints: SIX_POINTS,
   },
 };
-/* jscpd:ignore-end */
 
 export const AllCategories: Story = {
   args: {

@@ -65,6 +65,7 @@
 
 .expanded-row {
   cursor: pointer;
+  font-family: var(--text-font-family);
 }
 
 @media (orientation: landscape) {
@@ -91,6 +92,7 @@
   gap: 4px;
   padding-bottom: 2px;
   border-bottom: 1px solid rgb(255 255 255 / 20%);
+  font-family: var(--text-font-family);
   font-weight: 600;
   font-size: 0.9em;
   color: rgb(255 255 255 / 80%);
@@ -115,6 +117,7 @@
   padding: 2px 0;
   background-color: rgb(255 255 255 / 5%);
   border-radius: 4px;
+  font-family: var(--text-font-family);
   font-weight: 600;
 }
 

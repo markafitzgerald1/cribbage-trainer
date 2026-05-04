@@ -30,15 +30,17 @@ const RUN_POINTS_PER_CARD = 1;
 const RUN_LENGTH = 3;
 const RUN = RUN_LENGTH * RUN_POINTS_PER_CARD;
 
+type StarterPoints = [Card, number][];
+
 function expectedPointsMap(
   handPoints: number,
-  expectedHandPoints: [Card, number][] = [],
+  expectedHandPoints: StarterPoints = [],
   expectedAnyTenPoints?: number,
 ) {
   const result: {
-    handPoints: number;
-    expectedHandPoints: [Card, number][];
     expectedAnyTenPoints?: number;
+    expectedHandPoints: StarterPoints;
+    handPoints: number;
   } = { expectedHandPoints, handPoints };
   if (typeof expectedAnyTenPoints !== "undefined") {
     result.expectedAnyTenPoints = expectedAnyTenPoints;
@@ -46,7 +48,119 @@ function expectedPointsMap(
   return result;
 }
 
-/* jscpd:ignore-start */
+interface KeepExpectation {
+  readonly anyTenPoints?: number;
+  readonly handPoints: number;
+  readonly keep: Card[];
+  readonly starterPoints?: StarterPoints;
+}
+
+function buildExpectedPoints(expectations: KeepExpectation[]): Record<
+  string,
+  {
+    expectedAnyTenPoints?: number;
+    expectedHandPoints: StarterPoints;
+    handPoints: number;
+  }
+> {
+  return Object.fromEntries(
+    expectations.map(({ anyTenPoints, handPoints, keep, starterPoints }) => [
+      keep.map((keepCard) => keepCard.rankLabel).join("-"),
+      expectedPointsMap(handPoints, starterPoints ?? [], anyTenPoints),
+    ]),
+  );
+}
+
+const tenLikeThreeFiveStarters: StarterPoints = [
+  [SEVEN, FIFTEEN_TWO],
+  [FIVE, FIFTEEN_TWO],
+  [FOUR, RUN],
+  [TWO, FIFTEEN_TWO],
+];
+
+const tenLikeThreeFourStarters: StarterPoints = [
+  [EIGHT, FIFTEEN_TWO],
+  [FIVE, FIFTEEN_TWO + RUN],
+  [TWO, FIFTEEN_TWO + RUN],
+  [ACE, FIFTEEN_TWO],
+];
+
+const tenLikeFiveFourStarters: StarterPoints = [
+  [SIX, FIFTEEN_TWO + RUN],
+  [FIVE, FIFTEEN_TWO],
+  [THREE, RUN],
+  [ACE, FIFTEEN_TWO],
+];
+
+const faceCardSixFiveFourStarters: StarterPoints = [
+  [NINE, FIFTEEN_TWO],
+  [SEVEN, RUN_POINTS_PER_CARD],
+  [SIX, FIFTEEN_TWO + RUN],
+  [FIVE, FIFTEEN_FOUR + RUN],
+  [FOUR, FIFTEEN_TWO + RUN],
+  [THREE, RUN_POINTS_PER_CARD],
+  [ACE, FIFTEEN_TWO],
+];
+
+const faceCardRunPrefix: StarterPoints = [
+  [KING, RUN],
+  [QUEEN, RUN],
+  [JACK, RUN],
+  [TEN, RUN_POINTS_PER_CARD],
+];
+const sixFiveRunTail: StarterPoints = [
+  [NINE, FIFTEEN_TWO],
+  [SEVEN, RUN],
+  [FIVE, FIFTEEN_FOUR],
+  [FOUR, FIFTEEN_TWO + RUN],
+];
+const sixFourRunTail: StarterPoints = [
+  [NINE, FIFTEEN_TWO],
+  [FIVE, FIFTEEN_SIX + RUN],
+  [ACE, FIFTEEN_FOUR],
+];
+const fiveFourRunTail: StarterPoints = [
+  [SIX, FIFTEEN_TWO + RUN],
+  [FIVE, FIFTEEN_FOUR],
+  [THREE, RUN],
+  [ACE, FIFTEEN_FOUR],
+];
+
+const queenNineFiveFifteenFourStarters: StarterPoints = [
+  [QUEEN, RUN],
+  [NINE, RUN],
+  [FIVE, FIFTEEN_FOUR],
+];
+
+interface FaceCardPrefixGroup {
+  readonly faceCards: readonly [Card, Card];
+  readonly prefix: StarterPoints;
+}
+
+function buildFaceCardGroupExpectations(
+  groups: FaceCardPrefixGroup[],
+): KeepExpectation[] {
+  return groups.flatMap(({ faceCards, prefix }) => [
+    {
+      anyTenPoints: FIFTEEN_TWO,
+      handPoints: FIFTEEN_FOUR,
+      keep: [...faceCards, SIX, FIVE],
+      starterPoints: [...prefix, ...sixFiveRunTail],
+    },
+    {
+      handPoints: 0,
+      keep: [...faceCards, SIX, FOUR],
+      starterPoints: [...prefix, ...sixFourRunTail],
+    },
+    {
+      anyTenPoints: FIFTEEN_TWO,
+      handPoints: FIFTEEN_FOUR,
+      keep: [...faceCards, FIVE, FOUR],
+      starterPoints: [...prefix, ...fiveFourRunTail],
+    },
+  ]);
+}
+
 describe("allScoredKeepDiscardsByScoreDescending", () => {
   it("should return nothing for an empty deal", () => {
     expect(allScoredKeepDiscardsByExpectedScoreDescending([])).toStrictEqual(
@@ -89,7 +203,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     expectedPoints: {
       [dashSeparatedKeepLabels: string]: {
         expectedAnyTenPoints?: number;
-        expectedHandPoints: [Card, number][];
+        expectedHandPoints: StarterPoints;
         handPoints: number;
       };
     },
@@ -169,134 +283,138 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
   }
 
   it("two card deal order deal", () => {
-    expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual([ACE, TWO], {
-      "": expectedPointsMap(0, []),
-    });
+    expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
+      [ACE, TWO],
+      buildExpectedPoints([{ handPoints: 0, keep: [] }]),
+    );
   });
-
-  const keepLabel = (...cards: Card[]): string =>
-    cards.map((keepCard) => keepCard.rankLabel).join("-");
 
   it("three card deal order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [JACK, FOUR, FIVE],
-      {
-        [keepLabel(JACK)]: expectedPointsMap(0, [[FIVE, FIFTEEN_TWO]]),
-        [keepLabel(FOUR)]: expectedPointsMap(0, []),
-        [keepLabel(FIVE)]: expectedPointsMap(0, [], FIFTEEN_TWO),
-      },
+      buildExpectedPoints([
+        { handPoints: 0, keep: [JACK], starterPoints: [[FIVE, FIFTEEN_TWO]] },
+        { handPoints: 0, keep: [FOUR] },
+        { anyTenPoints: FIFTEEN_TWO, handPoints: 0, keep: [FIVE] },
+      ]),
     );
   });
 
   it("four card deal order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [TEN, TWO, EIGHT, FIVE],
-      {
-        [keepLabel(EIGHT, FIVE)]: expectedPointsMap(
-          0,
-          [
+      buildExpectedPoints([
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: 0,
+          keep: [EIGHT, FIVE],
+          starterPoints: [
             [SEVEN, FIFTEEN_TWO],
             [TWO, FIFTEEN_TWO],
           ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(TWO, FIVE)]: expectedPointsMap(
-          0,
-          [[EIGHT, FIFTEEN_TWO]],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(TWO, EIGHT)]: expectedPointsMap(0, [
-          [SEVEN, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_TWO],
-        ]),
-        [keepLabel(TEN, FIVE)]: expectedPointsMap(
-          FIFTEEN_TWO,
-          [[FIVE, FIFTEEN_TWO]],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(TEN, EIGHT)]: expectedPointsMap(0, [
-          [NINE, RUN],
-          [SEVEN, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_TWO],
-        ]),
-        [keepLabel(TEN, TWO)]: expectedPointsMap(0, [
-          [FIVE, FIFTEEN_TWO],
-          [THREE, FIFTEEN_TWO],
-        ]),
-      },
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: 0,
+          keep: [TWO, FIVE],
+          starterPoints: [[EIGHT, FIFTEEN_TWO]],
+        },
+        {
+          handPoints: 0,
+          keep: [TWO, EIGHT],
+          starterPoints: [
+            [SEVEN, FIFTEEN_TWO],
+            [FIVE, FIFTEEN_TWO],
+          ],
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: FIFTEEN_TWO,
+          keep: [TEN, FIVE],
+          starterPoints: [[FIVE, FIFTEEN_TWO]],
+        },
+        {
+          handPoints: 0,
+          keep: [TEN, EIGHT],
+          starterPoints: [
+            [NINE, RUN],
+            [SEVEN, FIFTEEN_TWO],
+            [FIVE, FIFTEEN_TWO],
+          ],
+        },
+        {
+          handPoints: 0,
+          keep: [TEN, TWO],
+          starterPoints: [
+            [FIVE, FIFTEEN_TWO],
+            [THREE, FIFTEEN_TWO],
+          ],
+        },
+      ]),
     );
   });
 
   it("five card deal order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [TEN, THREE, JACK, FIVE, FOUR],
-      {
-        [keepLabel(TEN, THREE, JACK)]: expectedPointsMap(0, [
-          [QUEEN, RUN],
-          [NINE, RUN],
-          [FIVE, FIFTEEN_FOUR],
-          [TWO, FIFTEEN_FOUR],
-        ]),
-        [keepLabel(TEN, THREE, FIVE)]: expectedPointsMap(
-          FIFTEEN_TWO,
-          [
-            [SEVEN, FIFTEEN_TWO],
-            [FIVE, FIFTEEN_TWO],
-            [FOUR, RUN],
-            [TWO, FIFTEEN_TWO],
+      buildExpectedPoints([
+        {
+          handPoints: 0,
+          keep: [TEN, THREE, JACK],
+          starterPoints: [
+            ...queenNineFiveFifteenFourStarters,
+            [TWO, FIFTEEN_FOUR],
           ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(TEN, THREE, FOUR)]: expectedPointsMap(0, [
-          [EIGHT, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_TWO + RUN],
-          [TWO, FIFTEEN_TWO + RUN],
-          [ACE, FIFTEEN_TWO],
-        ]),
-        [keepLabel(TEN, JACK, FIVE)]: expectedPointsMap(
-          FIFTEEN_FOUR,
-          [
-            [QUEEN, RUN],
-            [NINE, RUN],
-            [FIVE, FIFTEEN_FOUR],
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: FIFTEEN_TWO,
+          keep: [TEN, THREE, FIVE],
+          starterPoints: tenLikeThreeFiveStarters,
+        },
+        {
+          handPoints: 0,
+          keep: [TEN, THREE, FOUR],
+          starterPoints: tenLikeThreeFourStarters,
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: FIFTEEN_FOUR,
+          keep: [TEN, JACK, FIVE],
+          starterPoints: queenNineFiveFifteenFourStarters,
+        },
+        /* jscpd:ignore-start: test data entry boundary */
+        {
+          handPoints: 0,
+          keep: [TEN, JACK, FOUR],
+          starterPoints: [
+            ...queenNineFiveFifteenFourStarters,
+            [ACE, FIFTEEN_FOUR],
           ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(TEN, JACK, FOUR)]: expectedPointsMap(0, [
-          [QUEEN, RUN],
-          [NINE, RUN],
-          [FIVE, FIFTEEN_FOUR],
-          [ACE, FIFTEEN_FOUR],
-        ]),
-        [keepLabel(TEN, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_TWO,
-          [
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_TWO],
-            [THREE, RUN],
-            [ACE, FIFTEEN_TWO],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(THREE, JACK, FIVE)]: expectedPointsMap(
-          FIFTEEN_TWO,
-          [
-            [SEVEN, FIFTEEN_TWO],
-            [FIVE, FIFTEEN_TWO],
-            [FOUR, RUN],
-            [TWO, FIFTEEN_TWO],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(THREE, JACK, FOUR)]: expectedPointsMap(0, [
-          [EIGHT, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_TWO + RUN],
-          [TWO, FIFTEEN_TWO + RUN],
-          [ACE, FIFTEEN_TWO],
-        ]),
-        [keepLabel(THREE, FIVE, FOUR)]: expectedPointsMap(
-          RUN,
-          [
+        },
+        /* jscpd:ignore-end */
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: FIFTEEN_TWO,
+          keep: [TEN, FIVE, FOUR],
+          starterPoints: tenLikeFiveFourStarters,
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: FIFTEEN_TWO,
+          keep: [THREE, JACK, FIVE],
+          starterPoints: tenLikeThreeFiveStarters,
+        },
+        {
+          handPoints: 0,
+          keep: [THREE, JACK, FOUR],
+          starterPoints: tenLikeThreeFourStarters,
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: RUN,
+          keep: [THREE, FIVE, FOUR],
+          starterPoints: [
             [EIGHT, FIFTEEN_TWO],
             [SEVEN, FIFTEEN_TWO],
             [SIX, FIFTEEN_TWO + RUN_POINTS_PER_CARD],
@@ -305,181 +423,65 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
             [THREE, FIFTEEN_TWO + RUN],
             [TWO, RUN_POINTS_PER_CARD],
           ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(JACK, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_TWO,
-          [
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_TWO],
-            [THREE, RUN],
-            [ACE, FIFTEEN_TWO],
-          ],
-          FIFTEEN_TWO,
-        ),
-      },
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: FIFTEEN_TWO,
+          keep: [JACK, FIVE, FOUR],
+          starterPoints: tenLikeFiveFourStarters,
+        },
+      ]),
     );
   });
 
   it("six card descending rank order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
       [KING, QUEEN, JACK, SIX, FIVE, FOUR],
-      {
-        [keepLabel(KING, QUEEN, JACK, SIX)]: expectedPointsMap(RUN, [
-          [KING, RUN],
-          [QUEEN, RUN],
-          [JACK, RUN],
-          [TEN, RUN_POINTS_PER_CARD],
-          [NINE, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_SIX],
-        ]),
-        [keepLabel(KING, QUEEN, JACK, FIVE)]: expectedPointsMap(
-          FIFTEEN_SIX + RUN,
-          [
-            [KING, RUN],
-            [QUEEN, RUN],
-            [JACK, RUN],
-            [TEN, RUN_POINTS_PER_CARD],
+      buildExpectedPoints([
+        {
+          handPoints: RUN,
+          keep: [KING, QUEEN, JACK, SIX],
+          starterPoints: [
+            ...faceCardRunPrefix,
+            [NINE, FIFTEEN_TWO],
             [FIVE, FIFTEEN_SIX],
           ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(KING, QUEEN, JACK, FOUR)]: expectedPointsMap(RUN, [
-          [KING, RUN],
-          [QUEEN, RUN],
-          [JACK, RUN],
-          [TEN, RUN_POINTS_PER_CARD],
-          [FIVE, FIFTEEN_SIX],
-          [ACE, FIFTEEN_SIX],
+        },
+        {
+          anyTenPoints: FIFTEEN_TWO,
+          handPoints: FIFTEEN_SIX + RUN,
+          keep: [KING, QUEEN, JACK, FIVE],
+          starterPoints: [...faceCardRunPrefix, [FIVE, FIFTEEN_SIX]],
+        },
+        {
+          handPoints: RUN,
+          keep: [KING, QUEEN, JACK, FOUR],
+          starterPoints: [
+            ...faceCardRunPrefix,
+            [FIVE, FIFTEEN_SIX],
+            [ACE, FIFTEEN_SIX],
+          ],
+        },
+        ...buildFaceCardGroupExpectations([
+          { faceCards: [KING, QUEEN], prefix: [[JACK, RUN]] },
+          { faceCards: [KING, JACK], prefix: [[QUEEN, RUN]] },
+          {
+            faceCards: [QUEEN, JACK],
+            prefix: [
+              [KING, RUN],
+              [TEN, RUN],
+            ],
+          },
         ]),
-        [keepLabel(KING, QUEEN, SIX, FIVE)]: expectedPointsMap(
-          FIFTEEN_FOUR,
-          [
-            [JACK, RUN],
-            [NINE, FIFTEEN_TWO],
-            [SEVEN, RUN],
-            [FIVE, FIFTEEN_FOUR],
-            [FOUR, FIFTEEN_TWO + RUN],
-          ],
-          FIFTEEN_TWO,
+        ...[KING, QUEEN, JACK].map(
+          (faceCard): KeepExpectation => ({
+            anyTenPoints: FIFTEEN_TWO,
+            handPoints: FIFTEEN_FOUR + RUN,
+            keep: [faceCard, SIX, FIVE, FOUR],
+            starterPoints: faceCardSixFiveFourStarters,
+          }),
         ),
-        [keepLabel(KING, QUEEN, SIX, FOUR)]: expectedPointsMap(0, [
-          [JACK, RUN],
-          [NINE, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_SIX + RUN],
-          [ACE, FIFTEEN_FOUR],
-        ]),
-        [keepLabel(KING, QUEEN, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_FOUR,
-          [
-            [JACK, RUN],
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_FOUR],
-            [THREE, RUN],
-            [ACE, FIFTEEN_FOUR],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(KING, JACK, SIX, FIVE)]: expectedPointsMap(
-          FIFTEEN_FOUR,
-          [
-            [QUEEN, RUN],
-            [NINE, FIFTEEN_TWO],
-            [SEVEN, RUN],
-            [FIVE, FIFTEEN_FOUR],
-            [FOUR, FIFTEEN_TWO + RUN],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(KING, JACK, SIX, FOUR)]: expectedPointsMap(0, [
-          [QUEEN, RUN],
-          [NINE, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_SIX + RUN],
-          [ACE, FIFTEEN_FOUR],
-        ]),
-        [keepLabel(KING, JACK, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_FOUR,
-          [
-            [QUEEN, RUN],
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_FOUR],
-            [THREE, RUN],
-            [ACE, FIFTEEN_FOUR],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(QUEEN, JACK, SIX, FIVE)]: expectedPointsMap(
-          FIFTEEN_FOUR,
-          [
-            [KING, RUN],
-            [TEN, RUN],
-            [NINE, FIFTEEN_TWO],
-            [SEVEN, RUN],
-            [FIVE, FIFTEEN_FOUR],
-            [FOUR, FIFTEEN_TWO + RUN],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(QUEEN, JACK, SIX, FOUR)]: expectedPointsMap(0, [
-          [KING, RUN],
-          [TEN, RUN],
-          [NINE, FIFTEEN_TWO],
-          [FIVE, FIFTEEN_SIX + RUN],
-          [ACE, FIFTEEN_FOUR],
-        ]),
-        [keepLabel(QUEEN, JACK, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_FOUR,
-          [
-            [KING, RUN],
-            [TEN, RUN],
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_FOUR],
-            [THREE, RUN],
-            [ACE, FIFTEEN_FOUR],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(KING, SIX, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_FOUR + RUN,
-          [
-            [NINE, FIFTEEN_TWO],
-            [SEVEN, RUN_POINTS_PER_CARD],
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_FOUR + RUN],
-            [FOUR, FIFTEEN_TWO + RUN],
-            [THREE, RUN_POINTS_PER_CARD],
-            [ACE, FIFTEEN_TWO],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(QUEEN, SIX, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_FOUR + RUN,
-          [
-            [NINE, FIFTEEN_TWO],
-            [SEVEN, RUN_POINTS_PER_CARD],
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_FOUR + RUN],
-            [FOUR, FIFTEEN_TWO + RUN],
-            [THREE, RUN_POINTS_PER_CARD],
-            [ACE, FIFTEEN_TWO],
-          ],
-          FIFTEEN_TWO,
-        ),
-        [keepLabel(JACK, SIX, FIVE, FOUR)]: expectedPointsMap(
-          FIFTEEN_FOUR + RUN,
-          [
-            [NINE, FIFTEEN_TWO],
-            [SEVEN, RUN_POINTS_PER_CARD],
-            [SIX, FIFTEEN_TWO + RUN],
-            [FIVE, FIFTEEN_FOUR + RUN],
-            [FOUR, FIFTEEN_TWO + RUN],
-            [THREE, RUN_POINTS_PER_CARD],
-            [ACE, FIFTEEN_TWO],
-          ],
-          FIFTEEN_TWO,
-        ),
-      },
+      ]),
     );
   });
 });
-/* jscpd:ignore-end */

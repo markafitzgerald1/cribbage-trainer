@@ -1,12 +1,12 @@
+/* jscpd:ignore-start */
 import { describe, expect, it, jest } from "@jest/globals";
 import { Hand } from "./Hand";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
-/* jscpd:ignore-start */
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
-/* jscpd:ignore-end */
 import { sortCards } from "../ui/sortCards";
+/* jscpd:ignore-end */
 
 describe("hand component", () => {
   const dealAndRender = (sortOrder: SortOrder) => {

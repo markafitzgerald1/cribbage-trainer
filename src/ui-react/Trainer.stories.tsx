@@ -1,11 +1,11 @@
+import {
+  type Meta,
+  SORT_ORDER_NAMES,
+  SortOrder,
+  createArgTypes,
+} from "./stories.common";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
-import type { Meta } from "@storybook/react-vite";
-/* jscpd:ignore-start */
-import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
-import { SortOrder } from "../ui/SortOrder";
-import { createArgTypes } from "./stories.common";
-/* jscpd:ignore-end */
 import { createGenerator } from "../game/randomNumberGenerator";
 
 const SEED = "1";

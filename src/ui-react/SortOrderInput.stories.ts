@@ -1,10 +1,11 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
-import { SortOrder } from "../ui/SortOrder";
+import {
+  type Meta,
+  SORT_ORDER_NAMES,
+  SortOrder,
+  type StoryObj,
+  createArgTypes,
+} from "./stories.common";
 import { SortOrderInput } from "./SortOrderInput";
-/* jscpd:ignore-start */
-import { createArgTypes } from "./stories.common";
-/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),

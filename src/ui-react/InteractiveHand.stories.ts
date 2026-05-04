@@ -1,11 +1,15 @@
 /* jscpd:ignore-start */
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { createArgTypes, toDealtCards } from "./stories.common";
+import {
+  type Meta,
+  SORT_ORDER_NAMES,
+  SortOrder,
+  type StoryObj,
+  createArgTypes,
+  toDealtCards,
+} from "./stories.common";
+/* jscpd:ignore-end */
 import { CARDS } from "../game/Card";
 import { InteractiveHand } from "./InteractiveHand";
-import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
-import { SortOrder } from "../ui/SortOrder";
-/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
