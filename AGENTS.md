@@ -81,6 +81,8 @@
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
+- Always hard-wrap Markdown text to a maximum of 80 characters per line to
+  satisfy strict markdownlint rules.
 
 ## Husky/hooks
 
