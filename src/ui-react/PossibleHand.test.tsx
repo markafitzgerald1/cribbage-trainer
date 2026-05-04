@@ -42,7 +42,7 @@ describe("possible hand component", () => {
       render(
         <PossibleHand
           dealtCards={hand.split(",").map((rankLabel, dealOrder) => ({
-            ...createCard(CARD_LABELS.indexOf(rankLabel) as Rank),
+            ...createCard(CARD_LABELS.indexOf(rankLabel) as Rank, "♠"),
             dealOrder,
             kept: true,
           }))}

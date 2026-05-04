@@ -24,4 +24,5 @@ export const toDealtCards = (
     kept: !discardedIndices.includes(index),
     rank: card.rank,
     rankLabel: card.rankLabel,
+    suit: card.suit,
   }));
