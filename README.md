@@ -11,6 +11,10 @@ Two-player cribbage discard and play improvement tool.
 
 [![Play Cribbage Trainer](https://img.shields.io/badge/🃏_Play_Cribbage_Trainer_App-2ea44f?style=for-the-badge)](https://markafitzgerald1.github.io/cribbage-trainer/)
 
+## Project Philosophy
+
+To ensure the app's value proposition remains intact, the scoring engine relies strictly on objective simulation and probability, not subjective expert rules of thumb. Both humans and AI agents need to understand and respect this constraint. Expected values must always be derived from simulation, enumeration, or probability, rather than hard-coded heuristics or subjective weighting.
+
 ## Continuous deployment
 
 Code in `main` is automatically built on `git push` and deployed to the [GitHub

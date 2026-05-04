@@ -1,5 +1,9 @@
 # Contributing
 
+## Architecture and Core Philosophy
+
+- **No Heuristic Scoring:** The app's value proposition depends on the scoring engine relying entirely on objective simulation and probability. It is strictly forbidden to use arbitrary heuristic scoring, expert "rules of thumb", or subjective weighting in the scoring algorithms. All expected values must be mathematically derived from simulation, enumeration, or probability.
+
 ## Coding conventions
 
 - Every React component should have a corresponding Storybook story file

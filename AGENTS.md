@@ -3,6 +3,7 @@
 ## Project overview
 
 - Two-player cribbage discard and play trainer built with Vite + React + TypeScript.
+- **Architectural Constraint:** The scoring engine must rely exclusively on objective simulation, enumeration, or probability. AI agents are explicitly forbidden from introducing or using hard-coded heuristics, expert "rules of thumb", or subjective weighting in scoring algorithms. All expected values must be mathematically derived.
 - Primary branch: `main`; active work often happens on feature branches.
 
 ## Agent Skills & Tools
