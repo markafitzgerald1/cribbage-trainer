@@ -56,3 +56,10 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 Before making changes, all developers and AI agents must read
 [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
+
+## License & AI Provenance
+
+This project utilizes AI coding assistants in its development. All AI-generated
+code is rigorously reviewed, tested, and modified by human maintainers. The
+compiled repository and all its contents are distributed under the Mozilla
+Public License 2.0 (MPL 2.0). See the [LICENSE](LICENSE) file for more details.
