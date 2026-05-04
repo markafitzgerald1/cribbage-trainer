@@ -7,7 +7,7 @@ import { useState } from "react";
 const meta = {
   component: Modal,
   parameters: {
-    layout: "centered",
+    layout: "fullscreen",
   },
   tags: ["autodocs"],
   title: "Modal",
@@ -16,14 +16,29 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const args = {
+export const Default: Story = {
+  args: {
+    children: <p>Sample modal content.</p>,
+    onClose: () => null,
+    show: true,
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ minHeight: "300px", position: "relative" }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+const privacyPolicyArgs = {
   children: <PrivacyPolicyNode />,
   onClose: () => null,
   show: true,
 };
 
 export const ShownPrivacyPolicy: Story = {
-  args,
+  args: privacyPolicyArgs,
   play: async ({ canvasElement }) => {
     await expect(canvasElement).toHaveTextContent(
       "Privacy Policy for Cribbage Trainer",
@@ -32,7 +47,7 @@ export const ShownPrivacyPolicy: Story = {
 };
 
 export const ClosedPrivacyPolicy: Story = {
-  args,
+  args: privacyPolicyArgs,
   play: async ({ canvasElement }) => {
     const closeButton = canvasElement.querySelector("button");
 

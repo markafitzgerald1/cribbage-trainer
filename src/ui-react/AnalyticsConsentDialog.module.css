@@ -8,6 +8,41 @@
   border-radius: 0.5em;
   padding: 0.5em;
   box-sizing: border-box;
+  opacity: 1;
+  transition: opacity 0.8s ease-out;
+}
+
+.analytics-consent-dialog-fading {
+  font-family: var(--text-font-family);
+  background-color: lightgreen;
+  border: solid;
+  border-width: thin;
+  border-radius: 0.5em;
+  padding: 0.5em;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+}
+
+.analytics-consent-dialog-minimal {
+  font-family: var(--text-font-family);
+  text-align: center;
+}
+
+.analytics-consent-dialog-minimal-animated {
+  font-family: var(--text-font-family);
+  text-align: center;
+  animation: fade-in 0.8s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .analytics-consent-dialog h2 {

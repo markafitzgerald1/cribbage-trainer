@@ -1,11 +1,8 @@
 /* jscpd:ignore-start */
-import { CARDS, RANK_NAMES, Rank } from "../game/Card";
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import { CARDS, RANK_NAMES, type Rank } from "../game/Card";
+import { type Meta, type StoryObj, createArgTypes } from "./stories.common";
 /* jscpd:ignore-end */
 import { PossibleHandCard } from "./PossibleHandCard";
-/* jscpd:ignore-start */
-import { createArgTypes } from "./stories.common";
-/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("rank", RANK_NAMES),
@@ -17,7 +14,6 @@ const meta = {
   title: "PossibleHandCard",
 } satisfies Meta<typeof PossibleHandCard>;
 
-/* jscpd:ignore-start */
 export default meta;
 type Story = StoryObj<typeof meta>;
 
@@ -31,4 +27,3 @@ export const Seven = createStory(CARDS.SEVEN.rank);
 export const Jack = createStory(CARDS.JACK.rank);
 export const Queen = createStory(CARDS.QUEEN.rank);
 export const King = createStory(CARDS.KING.rank);
-/* jscpd:ignore-end */

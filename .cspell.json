@@ -4,7 +4,9 @@
   "words": [
     "actuals",
     "autodocs",
+    "cardlabel",
     "Buildx",
+    "cutscolumn",
     "camelcase",
     "discardable",
     "espree",
@@ -22,6 +24,8 @@
     "msedge",
     "nvmrc",
     "radiogroup",
+    "rerender",
+    "rerenders",
     "rhysd",
     "royale",
     "seedrandom",

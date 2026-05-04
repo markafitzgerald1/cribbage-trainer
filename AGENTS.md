@@ -5,6 +5,12 @@
 - Two-player cribbage discard and play trainer built with Vite + React + TypeScript.
 - Primary branch: `main`; active work often happens on feature branches.
 
+## Agent Skills & Tools
+
+- Agents must index and activate any skills found in the `skills/` directory
+  before performing complex tasks.
+- Specifically, use the `make-it-green` skill for build validation and CI compliance.
+
 ## Setup
 
 - Node: use version specified in `.nvmrc` (install via `nvm install` if available).
@@ -37,22 +43,39 @@
 ## Visual regression updates
 
 - When Playwright snapshot diffs are acceptable:
-  - Remove outdated screenshots: `rm tests-e2e/index.screenshots.spec.ts-snapshots/*.png`.
-  - Regenerate: `npm run docker:build-and-test-all`.
+  - Regenerate screenshots in Docker:
+    `npm run docker:build-and-test-all -- -- --update-snapshots`.
   - In PRs, explicitly note the screenshot updates and ensure expected images
     are updated to match the current actuals (these will be human reviewed).
 
 ## Code style and conventions
 
 - TypeScript/React with Vite; keep types sound.
+- Every React component should have a corresponding Storybook story file
+  (`ComponentName.stories.ts` or `.tsx`).
 - Follow existing ESLint/Prettier configs; avoid introducing non-ASCII unless justified.
-- Do not automate disabling lint rules; only a human developer may add or
-  request disables.
+- Prefer `--fix` flags (e.g., `eslint --fix`, `prettier --write`) over manual
+  code fixes for auto-fixable lint and formatting issues.
+- **ESLint:** There is a strict prohibition against file-scoped `eslint-disable`
+  comments. If a rule is violated, the agent must fix the code or update the
+  global config. Do not automate disabling lint rules; only a human developer
+  may request disables.
+- **Duplicate Code (`jscpd`):** Duplication must be resolved via general
+  architectural refactoring (e.g., extracting helper functions, extracting React
+  components, or interface inheritance via `extends`/`Omit`). Explicitly forbid
+  using `/* jscpd:ignore */` for business logic or UI rendering; reserve ignores
+  strictly for unavoidable boilerplate like import blocks.
+- **React Depth:** To satisfy strict `react/jsx-max-depth` limits without
+  violating `react/no-multi-comp`, agents must extract layout markup into
+  internal `renderX` helper functions (e.g., `renderTableBody()`) rather than
+  declaring multiple React components in a single file.
+- Never use inline `CSpell:ignore` comments; instead add words to `.cspell.json`.
 - Prefer small, focused commits; summarize why changes are needed.
-- Only add `jscpd` ignore comments for import/include statements and only for
-  the minimal lines required; do not blanket-ignore large code segments.
 - Only comment on the "why" behind code; strongly prefer meaningful test names,
   function names, and variable names to comments in code.
+- Use long-form flags for command-line tools (e.g., `git commit --message` not
+  `git commit -m`, `ls --all` not `ls -a`) to improve readability and
+  understanding.
 
 ## Husky/hooks
 
@@ -60,7 +83,13 @@
   skip hooks** (`HUSKY=0` or `--no-verify`) to avoid unnecessary Docker/test
   runs. For code changes, only skip hooks if absolutely sure they are not needed
   (i.e., a build and all tests have been performed on the current uncommitted
-  code). Keep GPG signing enabled for commits. Do not create unsigned commits.
+  code). Keep GPG signing enabled for commits. Autonomous AI agents MUST bypass
+  GPG signing using the `--no-gpg-sign` flag for intermediate commits. The human
+  engineer assumes cryptographic accountability via the final Squash and Merge
+  signature.
+- If an agent uses `--no-verify` or `HUSKY=0` to bypass local git hooks, it MUST
+  execute `npm run docker:build-and-test-all` to explicitly ensure full CI
+  compliance before pushing.
 
 ## CI workflow notes
 

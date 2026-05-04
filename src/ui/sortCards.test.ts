@@ -3,7 +3,6 @@ import { describe, expect, it } from "@jest/globals";
 import type { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
 import { sortCards } from "./sortCards";
-// eslint-disable-next-line @typescript-eslint/no-magic-numbers
 const INVALID_SORT_ORDER = -1 as SortOrder;
 
 describe("sortCards", () => {

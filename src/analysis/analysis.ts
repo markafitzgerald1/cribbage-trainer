@@ -1,3 +1,8 @@
+import {
+  type CutBreakdown,
+  expectedCutAddedPoints,
+  toCutBreakdown,
+} from "../game/expectedCutAddedPoints";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
@@ -5,7 +10,7 @@ import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedSco
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
-export interface ScoredKeepDiscard<T extends Card> {
+export interface ScoredKeepDiscard<T extends Card> extends CutBreakdown {
   keep: readonly T[];
   discard: readonly T[];
   expectedHandPoints: number;
@@ -23,14 +28,21 @@ export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
       discard,
       keep: cards.filter((card) => !discard.includes(card)),
     }))
-    .map((keepDiscard) => ({
-      discard: keepDiscard.discard,
-      expectedHandPoints: expectedHandPoints(
+    .map((keepDiscard) => {
+      const cutAdded = expectedCutAddedPoints(
         keepDiscard.keep,
         keepDiscard.discard,
-      ).total,
-      handPoints: handPoints(keepDiscard.keep).total,
-      keep: keepDiscard.keep,
-    }))
+      );
+      return {
+        ...toCutBreakdown(cutAdded),
+        discard: keepDiscard.discard,
+        expectedHandPoints: expectedHandPoints(
+          keepDiscard.keep,
+          keepDiscard.discard,
+        ).total,
+        handPoints: handPoints(keepDiscard.keep).total,
+        keep: keepDiscard.keep,
+      };
+    })
     .sort(compareByExpectedScoreThenRankDescending);
 };

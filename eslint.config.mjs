@@ -86,13 +86,13 @@ export default [
       "max-lines": [
         "error",
         {
-          max: 517,
+          max: 520,
         },
       ],
       "max-lines-per-function": [
         "error",
         {
-          max: 473,
+          max: 490,
           skipBlankLines: true,
         },
       ],
@@ -126,6 +126,12 @@ export default [
         "error",
         {
           extensions: [".tsx"],
+        },
+      ],
+      "react/jsx-max-depth": [
+        "error",
+        {
+          max: 4,
         },
       ],
       "react/jsx-no-literals": "off",
@@ -171,9 +177,11 @@ export default [
             "mousedown",
             "msedge",
             "os",
-            "pragma",
             "radiogroup",
+            "readonly",
             "pragma",
+            "rerender",
+            "rerenders",
             "royale",
             "seedrandom",
             "tbody",
@@ -294,6 +302,7 @@ export default [
       jest,
     },
     rules: {
+      "@typescript-eslint/no-magic-numbers": ["off"],
       "@typescript-eslint/no-non-null-assertion": ["off"],
       "@typescript-eslint/unbound-method": "off",
       "jest/expect-expect": [

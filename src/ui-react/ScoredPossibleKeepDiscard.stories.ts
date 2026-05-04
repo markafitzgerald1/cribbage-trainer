@@ -1,10 +1,20 @@
+/* jscpd:ignore-start */
 import { CARDS, type Card } from "../game/Card";
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import {
+  type Meta,
+  SORT_ORDER_NAMES,
+  SortOrder,
+  type StoryObj,
+  createArgTypes,
+} from "./stories.common";
+/* jscpd:ignore-end */
+import {
+  expectedCutAddedPoints,
+  toCutBreakdown,
+} from "../game/expectedCutAddedPoints";
+import { fireEvent, within } from "storybook/test";
 import type { ComparableCard } from "../ui/sortCards";
-import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
-import { SortOrder } from "../ui/SortOrder";
-import { createArgTypes } from "./stories.common";
 import { createElement } from "react";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
@@ -36,10 +46,10 @@ const toComparableCard = (card: Card, index: number): ComparableCard => ({
 });
 
 interface CreateStoryOptions {
-  readonly keep: Card[];
-  readonly discard: Card[];
-  readonly sortOrder: SortOrder;
+  readonly discard: readonly Card[];
   readonly isHighlighted?: boolean;
+  readonly keep: readonly Card[];
+  readonly sortOrder: SortOrder;
 }
 
 const createStory = ({
@@ -47,33 +57,39 @@ const createStory = ({
   discard,
   sortOrder,
   isHighlighted = false,
-}: CreateStoryOptions): Story => ({
-  args: {
-    discard: discard.map(toComparableCard),
-    expectedHandPoints: expectedHandPoints(keep, discard).total,
-    handPoints: handPoints(keep).total,
-    isHighlighted,
-    keep: keep.map(toComparableCard),
-    sortOrder,
-  },
-});
+}: CreateStoryOptions): Story => {
+  const cutAdded = expectedCutAddedPoints(keep, discard);
+  return {
+    args: {
+      ...toCutBreakdown(cutAdded),
+      discard: discard.map(toComparableCard),
+      expectedHandPoints: expectedHandPoints(keep, discard).total,
+      handPoints: handPoints(keep).total,
+      isHighlighted,
+      keep: keep.map(toComparableCard),
+      rowIndex: 0,
+      sortOrder,
+    },
+  };
+};
+
+const jackSixFiveFourKeepKingQueenDiscard = {
+  discard: [CARDS.KING, CARDS.QUEEN],
+  keep: [CARDS.JACK, CARDS.SIX, CARDS.FIVE, CARDS.FOUR],
+} as const;
 
 export const JackSixFiveFourDiscardKingQueenSortedDescending: Story =
   createStory({
-    discard: [CARDS.KING, CARDS.QUEEN],
-    keep: [CARDS.JACK, CARDS.SIX, CARDS.FIVE, CARDS.FOUR],
+    ...jackSixFiveFourKeepKingQueenDiscard,
     sortOrder: SortOrder.Descending,
   });
 
-/* jscpd:ignore-start */
 export const JackSixFiveFourDiscardKingQueenSortedDescendingHighlighted: Story =
   createStory({
-    discard: [CARDS.KING, CARDS.QUEEN],
+    ...jackSixFiveFourKeepKingQueenDiscard,
     isHighlighted: true,
-    keep: [CARDS.JACK, CARDS.SIX, CARDS.FIVE, CARDS.FOUR],
     sortOrder: SortOrder.Descending,
   });
-/* jscpd:ignore-end */
 
 export const TwoTenNineJackDiscardKingFourSortedAscending: Story = createStory({
   discard: [CARDS.KING, CARDS.FOUR],
@@ -87,3 +103,12 @@ export const FiveFiveAceJackDiscardFourSevenSortedInDealOrder: Story =
     keep: [CARDS.FIVE, CARDS.FIVE, CARDS.ACE, CARDS.JACK],
     sortOrder: SortOrder.DealOrder,
   });
+
+export const ExpandedRow: Story = {
+  ...JackSixFiveFourDiscardKingQueenSortedDescendingHighlighted,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = canvas.getByRole("row");
+    await fireEvent.click(row);
+  },
+};

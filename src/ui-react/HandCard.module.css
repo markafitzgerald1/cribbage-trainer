@@ -40,6 +40,10 @@
 }
 
 @media (orientation: landscape) {
+  .hand-card {
+    font-size: 5.8vw;
+  }
+
   .hand-card input[type="checkbox"] {
     width: 1.5vw;
   }
