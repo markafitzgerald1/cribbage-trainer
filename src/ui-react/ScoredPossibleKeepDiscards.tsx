@@ -75,6 +75,10 @@ export function ScoredPossibleKeepDiscards({
             avgCutAdded15s={scoredKeepDiscard.avgCutAdded15s}
             avgCutAddedPairs={scoredKeepDiscard.avgCutAddedPairs}
             avgCutAddedRuns={scoredKeepDiscard.avgCutAddedRuns}
+            avgCutAddedFlushes={scoredKeepDiscard.avgCutAddedFlushes}
+            avgCutAddedNobs={scoredKeepDiscard.avgCutAddedNobs}
+            flushesContributions={scoredKeepDiscard.flushesContributions}
+            nobsContributions={scoredKeepDiscard.nobsContributions}
             cutCountsRemaining={scoredKeepDiscard.cutCountsRemaining}
             discard={scoredKeepDiscard.discard}
             expectedHandPoints={scoredKeepDiscard.expectedHandPoints}

@@ -269,6 +269,37 @@ describe("handPoints", () => {
     });
   });
 
+
+  describe("flushes", () => {
+    const expectFlushesPoints = (keep: readonly Card[], expectedPoints: number) =>
+      expectTypePoints(keep, "flushes", expectedPoints);
+
+    it("three card hand has no flush", () => {
+      expectFlushesPoints(parseCards("2,3,4"), 0);
+    });
+
+    it("four card flush", () => {
+      // parseCards makes alternating suits, so it won't be a flush.
+      // We must manually construct a flush hand.
+      const cards = parseCards("2,3,4,5").map(c => ({ ...c, suit: "♠" as import("./Card").Suit }));
+      expectFlushesPoints(cards, HAND_POINTS.FLUSH);
+    });
+
+    it("four card not flush", () => {
+      expectFlushesPoints(parseCards("2,3,4,5"), 0);
+    });
+
+    it("five card flush with starter", () => {
+      const cards = parseCards("2,3,4,5,6").map(c => ({ ...c, suit: "♠" as import("./Card").Suit }));
+      expectFlushesPoints(cards, HAND_POINTS.FLUSH_WITH_STARTER);
+    });
+
+    it("five card flush without starter", () => {
+      const cards = parseCards("2,3,4,5,6").map((c, i) => ({ ...c, suit: (i === 4 ? "♥" : "♠") as import("./Card").Suit }));
+      expectFlushesPoints(cards, HAND_POINTS.FLUSH);
+    });
+  });
+
   describe("total", () => {
     const expectTotalPoints = (keep: readonly Card[], expectedPoints: number) =>
       expectTypePoints(keep, "total", expectedPoints);
