@@ -35,7 +35,7 @@ determine if the changes are visually acceptable. If acceptable, regenerate the
 expected screenshots in Docker:
 
 ```sh
-npm run docker:build-and-test-all -- -- --update-snapshots
+npm run docker:update-snapshots
 ```
 
 ## Husky/hooks

@@ -27,6 +27,7 @@
     "test-e2e": "playwright test",
     "docker:build-and-test-all": "docker build -t cribbage-trainer-integration-tests . && npm run docker:run-e2e-only",
     "docker:run-e2e-only": "docker run --rm --volume ${PWD}/playwright-report:/usr/src/app/playwright-report --volume ${PWD}/test-results:/usr/src/app/test-results --volume ${PWD}/tests-e2e/index.screenshots.spec.ts-snapshots:/usr/src/app/tests-e2e/index.screenshots.spec.ts-snapshots cribbage-trainer-integration-tests:latest",
+    "docker:update-snapshots": "docker run --rm --volume ${PWD}/playwright-report:/usr/src/app/playwright-report --volume ${PWD}/test-results:/usr/src/app/test-results --volume ${PWD}/tests-e2e/index.screenshots.spec.ts-snapshots:/usr/src/app/tests-e2e/index.screenshots.spec.ts-snapshots cribbage-trainer-integration-tests:latest npx playwright test --update-snapshots",
     "build": "vite build",
     "start": "vite",
     "start:production-preview": "vite build && vite preview",
