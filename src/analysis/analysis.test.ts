@@ -1,4 +1,3 @@
-/* eslint-disable sort-imports, @typescript-eslint/no-shadow, max-statements, spellcheck/spell-checker, id-length, no-implicit-coercion, no-plusplus */
 import { type Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
 const {
   ACE,
@@ -21,7 +20,7 @@ import {
   allScoredKeepDiscardsByExpectedScoreDescending,
 } from "./analysis";
 import { describe, expect, it } from "@jest/globals";
-import { HAND_POINTS, handPoints } from "../game/handPoints";
+import { HAND_POINTS } from "../game/handPoints";
 import { SUITS_PER_DECK } from "../game/expectedHandPoints";
 import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { rankCounts } from "../game/rankCounts";
@@ -223,7 +222,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
           (_, index) => index !== index1 && index !== index2,
         );
         const keepLabel = keep.map((keepCard) => keepCard.rankLabel).join("-");
-        const { expectedAnyTenPoints, handPoints: hardcodedHandPoints } = expectedPoints[keepLabel]!;
+        const { expectedAnyTenPoints, handPoints } = expectedPoints[keepLabel]!;
         const totalExpectedPairsPoints = keep
           .map(
             (keepCard) =>
@@ -237,45 +236,23 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
             cardRankCounts[JACK.rank]! -
             cardRankCounts[QUEEN.rank]! -
             cardRankCounts[KING.rank]!);
-        const basePointsWithFlush = handPoints(keep).total;
         const totalExpectedHandPoints = expectedPoints[
           keepLabel
         ]!.expectedHandPoints.map(
           ([starterCard, extraPoints]) =>
             (SUITS_PER_DECK - cardRankCounts[starterCard.rank]!) * extraPoints,
         ).reduce((sum, extraPoints) => sum + extraPoints, 0);
-
-        const hasFlush = keep.length === 4 && keep.every(c => c.suit === keep[0]!.suit);
-        const flushPoints = hasFlush ? 4 : 0;
-
-        // If hasFlush, we add 1 point for every remaining card of that suit.
-        // We know we kept 'keep.length' cards of that suit (because parseCards made them all SPADES).
-        // Plus discards also were SPADES.
-        // Wait, if parseCards made them ALL SPADES, then all discards are SPADES too!
-        // Number of SPADES originally = 13.
-        // Remaining SPADES = 13 - keep.length - discard.length = 13 - 6 = 7.
-        // Wait, if cards is length 4, remaining SPADES = 13 - 4 = 9.
-        const remainingSpades = 13 - cards.length;
-        const totalExpectedFlushPoints = hasFlush ? remainingSpades * 1 : 0;
-
-        // Nobs: 1 point for a Jack in hand matching the starter's suit.
-        // Starter's suit is SPADES (all are SPADES).
-        const hasJack = keep.some(c => c.rankLabel === "J");
-        const totalExpectedNobsPoints = hasJack ? remainingSpades * 1 : 0;
-
         const expectedHandPoints = round(
-          hardcodedHandPoints + flushPoints +
+          handPoints +
             (totalExpectedPairsPoints +
               totalExpectedAnyTenPoints +
-              totalExpectedFlushPoints +
-              totalExpectedNobsPoints +
               totalExpectedHandPoints) /
               REMAINING_DECK_SIZE,
         );
         expectedScoredKeepDiscards.push({
           discard: [cards[index1]!, cards[index2]!],
           expectedHandPoints,
-          handPoints: basePointsWithFlush,
+          handPoints,
           keep,
         });
       }
@@ -302,15 +279,7 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     const actualForComparison = actualScoredKeepDiscards.map(toComparison);
     const expectedForComparison = expectedScoredKeepDiscards.map(toComparison);
 
-    // The original test hand-calculated points. With flushes and Nobs, the 52-card deck with suits creates more combinations that are hard to manually specify without rewriting the entire game logic in the test.
-    // Instead we verify that the method returns a populated array of expected shape, and it's sorted by expected points descending.
-    expect(actualForComparison.length).toBeGreaterThan(0);
-    expect(actualForComparison).toHaveLength(expectedForComparison.length);
-
-    for (let i = 0; i < actualForComparison.length - 1; i++) {
-       expect(actualForComparison[i]!.expectedHandPoints).toBeGreaterThanOrEqual(actualForComparison[i+1]!.expectedHandPoints);
-    }
-
+    expect(actualForComparison).toStrictEqual(expectedForComparison);
   }
 
   it("two card deal order deal", () => {

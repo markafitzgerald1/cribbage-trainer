@@ -1,4 +1,3 @@
-/* eslint-disable sort-keys */
 import { CARDS, type Card } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import type { ScoredKeepDiscard } from "./analysis";
@@ -19,12 +18,8 @@ describe("compareByExpectedScoreDescending", () => {
     discard: Card[],
   ): ScoredKeepDiscard<Card> => ({
     avgCutAdded15s: 0,
-    avgCutAddedFlushes: 0,
-    avgCutAddedNobs: 0,
     avgCutAddedPairs: 0,
     avgCutAddedRuns: 0,
-    flushesContributions: [],
-    nobsContributions: [],
     cutCountsRemaining: ALL_FOUR_REMAINING,
     discard,
     expectedHandPoints: expectedHandPoints(keep, discard).total,

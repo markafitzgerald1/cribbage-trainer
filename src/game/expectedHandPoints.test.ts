@@ -1,4 +1,3 @@
-/* eslint-disable max-statements, id-length */
 import { INDICES_PER_SUIT, CARDS as card } from "./Card";
 import { SUITS_PER_DECK, expectedHandPoints } from "./expectedHandPoints";
 import { describe, expect, it } from "@jest/globals";
@@ -53,38 +52,10 @@ describe("expectedHandPoints", () => {
           totalPairsAddedPoints +
           totalAnyTenAddedPoints) /
         (INDICES_PER_SUIT * SUITS_PER_DECK - keep.length - discard.length);
-      // Since all test cards are generated with SPADES, any 4 cards will automatically form a flush (+4 points).
-      // But wait! handPoints(keep).total ALREADY includes the flush points!
-      // So expectedStartersAddedPoints needs to account for flushes!
-      // Wait! Is expectedStartersAddedPoints hand-calculated in the test?
-      // Let's see: `expectedStartersAddedPoints = ...`
       const preStarterPoints = handPoints(keep).total;
 
-      // The preStarterPoints has 4 flush points (since 4 spades).
-      // For each remaining card in the deck (46 cards), if its suit is SPADES (9 cards), it adds 1 flush point.
-      // Also, if the hand contains a Jack, and the cut card is SPADES (9 cards), it adds 1 Nobs point.
-      const jackCards = keep.filter(c => c.rankLabel === "J");
-      let totalNobsAdded = 0;
-      for (const jack of jackCards) {
-         // For each jack, how many cards of its suit are left in deck?
-         // Deck size is 52. 13 of that suit originally.
-         // Count how many of that suit are in keep/discard.
-         const suitCountInDealt = dealtCards.filter(c => c.suit === jack.suit).length;
-         totalNobsAdded += (13 - suitCountInDealt) * 1;
-      }
-
-      const hasFlush = keep.length === 4 && keep.every(c => c.suit === keep[0]!.suit);
-      let totalFlushAdded = 0;
-      if (hasFlush) {
-         const flushSuit = keep[0]!.suit;
-         const suitCountInDealt = dealtCards.filter(c => c.suit === flushSuit).length;
-         totalFlushAdded += (13 - suitCountInDealt) * 1;
-      }
-
-      const remainingCards = 46;
-
-      expect(expectedHandPoints(keep, discard).total).toBeCloseTo(
-        preStarterPoints + expectedStartersAddedPoints + (totalNobsAdded + totalFlushAdded) / remainingCards, 12
+      expect(expectedHandPoints(keep, discard).total).toBe(
+        preStarterPoints + expectedStartersAddedPoints,
       );
     };
 

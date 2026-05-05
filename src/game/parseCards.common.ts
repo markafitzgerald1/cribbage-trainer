@@ -1,4 +1,4 @@
-import { CARD_LABELS, type Card, SUITS, Suit, CARDS as card } from "./Card";
+import { CARD_LABELS, type Card, CARDS as card } from "./Card";
 
 const NOT_FOUND_INDEX = -1;
 
@@ -7,7 +7,7 @@ export const parseCards = (keepSpecifier: string): Card[] => {
     return [];
   }
 
-  return keepSpecifier.split(",").map((rank, index) => {
+  return keepSpecifier.split(",").map((rank) => {
     const cardIndex = CARD_LABELS.indexOf(rank);
     if (cardIndex === NOT_FOUND_INDEX) {
       throw new Error(
@@ -15,9 +15,6 @@ export const parseCards = (keepSpecifier: string): Card[] => {
       );
     }
     // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
-    const baseCard = card[cardIndex]!;
-    // Assign different suits to avoid accidental flushes
-
-    return { ...baseCard, suit: SUITS[index % SUITS.length] as Suit };
+    return card[cardIndex]!;
   });
 };

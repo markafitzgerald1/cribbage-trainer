@@ -1,14 +1,4 @@
 /* eslint-disable sort-keys */
-export const Suit = {
-  SPADES: "♠",
-  HEARTS: "♥",
-  DIAMONDS: "♦",
-  CLUBS: "♣",
-} as const;
-
-export type Suit = (typeof Suit)[keyof typeof Suit];
-export const SUITS: Suit[] = Object.values(Suit);
-
 export const Rank = {
   ACE: 0,
   TWO: 1,
@@ -41,32 +31,24 @@ export interface CountedCard {
 }
 
 export interface Card extends RankedCard, CountedCard {
-  suit: Suit;
   rankLabel: string;
 }
 
 export const MAXIMUM_CARD_COUNTING_VALUE = 10;
 export const CARD_LABELS = [..."A23456789".split(""), "10", ..."JQK".split("")];
 
-export const createCard = (rank: Rank, suit: Suit): Card => ({
+export const createCard = (rank: Rank): Card => ({
   count: Math.min(rank + 1, MAXIMUM_CARD_COUNTING_VALUE),
   rank,
   // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
   rankLabel: CARD_LABELS[rank]!,
-  suit,
 });
 
 export const INDICES_PER_SUIT = 13;
 
 export const CARD_RANKS: Rank[] = Object.values(Rank);
 
-export const DECK: readonly Card[] = SUITS.flatMap((suit) =>
-  CARD_RANKS.map((rank) => createCard(rank, suit)),
-);
-
-const RANKED_CARDS: readonly Card[] = CARD_RANKS.map((rank) =>
-  createCard(rank, Suit.SPADES),
-);
+const RANKED_CARDS: readonly Card[] = CARD_RANKS.map(createCard);
 
 type RankName = keyof typeof Rank;
 

@@ -1,7 +1,7 @@
-/* eslint-disable id-length */
-import { type Card, DECK, INDICES_PER_SUIT } from "./Card";
+import { type Card, INDICES_PER_SUIT } from "./Card";
 import { type HandPoints, handPoints } from "./handPoints";
 import { CARDS_PER_DEALT_HAND } from "./facts";
+import { getRemainingDeck } from "./getRemainingDeck";
 
 export const SUITS_PER_DECK = 4;
 export const POSSIBLE_STARTER_COUNT =
@@ -11,17 +11,18 @@ export const expectedHandPoints = (
   keep: readonly Card[],
   discard: readonly Card[],
 ): HandPoints => {
-  const deck = DECK.filter(card => ![...keep, ...discard].some(c => c.rank === card.rank && c.suit === card.suit));
-  const totalPoints: HandPoints = deck.map(card => {
-    const points = handPoints([...keep, card]);
-    return {
-      fifteens: points.fifteens,
-      flushes: points.flushes,
-      pairs: points.pairs,
-      runs: points.runs,
-      total: points.total,
-    };
-  })
+  const deck = getRemainingDeck([...keep, ...discard]);
+  const totalPoints: HandPoints = deck
+    .map((card) => {
+      const points = handPoints([...keep, card]);
+      return {
+        fifteens: points.fifteens,
+        flushes: points.flushes,
+        pairs: points.pairs,
+        runs: points.runs,
+        total: points.total,
+      };
+    })
     .reduce(
       (previous, current) => ({
         fifteens: previous.fifteens + current.fifteens,
