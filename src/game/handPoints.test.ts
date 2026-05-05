@@ -271,6 +271,9 @@ describe("handPoints", () => {
 
 
   describe("flushes", () => {
+    it("more than 5 card hand", () => {
+      expect(handPoints(parseCards("2,3,4,5,6,7")).flushes).toBe(0);
+    });
     const expectFlushesPoints = (keep: readonly Card[], expectedPoints: number) =>
       expectTypePoints(keep, "flushes", expectedPoints);
 
