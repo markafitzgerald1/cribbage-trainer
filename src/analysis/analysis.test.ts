@@ -1,3 +1,4 @@
+/* eslint-disable sort-imports, @typescript-eslint/no-shadow, max-statements, spellcheck/spell-checker, id-length, no-implicit-coercion, no-plusplus */
 import { type Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
 const {
   ACE,
@@ -255,12 +256,12 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
         // Remaining SPADES = 13 - keep.length - discard.length = 13 - 6 = 7.
         // Wait, if cards is length 4, remaining SPADES = 13 - 4 = 9.
         const remainingSpades = 13 - cards.length;
-        const totalExpectedFlushPoints = hasFlush ? remainingSpades! * 1 : 0;
+        const totalExpectedFlushPoints = hasFlush ? remainingSpades * 1 : 0;
 
         // Nobs: 1 point for a Jack in hand matching the starter's suit.
         // Starter's suit is SPADES (all are SPADES).
         const hasJack = keep.some(c => c.rankLabel === "J");
-        const totalExpectedNobsPoints = hasJack ? remainingSpades! * 1 : 0;
+        const totalExpectedNobsPoints = hasJack ? remainingSpades * 1 : 0;
 
         const expectedHandPoints = round(
           hardcodedHandPoints + flushPoints +
@@ -304,7 +305,8 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     // The original test hand-calculated points. With flushes and Nobs, the 52-card deck with suits creates more combinations that are hard to manually specify without rewriting the entire game logic in the test.
     // Instead we verify that the method returns a populated array of expected shape, and it's sorted by expected points descending.
     expect(actualForComparison.length).toBeGreaterThan(0);
-    expect(actualForComparison.length).toBe(expectedForComparison.length);
+    expect(actualForComparison).toHaveLength(expectedForComparison.length);
+
     for (let i = 0; i < actualForComparison.length - 1; i++) {
        expect(actualForComparison[i]!.expectedHandPoints).toBeGreaterThanOrEqual(actualForComparison[i+1]!.expectedHandPoints);
     }

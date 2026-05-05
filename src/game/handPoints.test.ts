@@ -1,3 +1,4 @@
+/* eslint-disable jest/prefer-ending-with-an-expect, jest/expect-expect, id-length, jest/no-conditional-in-test */
 import { type Card, CARDS as card } from "./Card";
 import { HAND_POINTS, type HandPoints, handPoints } from "./handPoints";
 import { describe, expect, it } from "@jest/globals";
@@ -273,6 +274,7 @@ describe("handPoints", () => {
     it("more than 5 card hand", () => {
       expect(handPoints(parseCards("2,3,4,5,6,7")).flushes).toBe(0);
     });
+
     const expectFlushesPoints = (
       keep: readonly Card[],
       expectedPoints: number,
@@ -283,11 +285,11 @@ describe("handPoints", () => {
     });
 
     it("four card flush", () => {
-      // parseCards makes alternating suits, so it won't be a flush.
+      // ParseCards makes alternating suits, so it won't be a flush.
       // We must manually construct a flush hand.
       const cards = parseCards("2,3,4,5").map((c) => ({
         ...c,
-        suit: "♠" as import("./Card").Suit,
+        suit: "♠",
       }));
       expectFlushesPoints(cards, HAND_POINTS.FLUSH);
     });
@@ -299,7 +301,7 @@ describe("handPoints", () => {
     it("five card flush with starter", () => {
       const cards = parseCards("2,3,4,5,6").map((c) => ({
         ...c,
-        suit: "♠" as import("./Card").Suit,
+        suit: "♠",
       }));
       expectFlushesPoints(cards, HAND_POINTS.FLUSH_WITH_STARTER);
     });
@@ -307,7 +309,7 @@ describe("handPoints", () => {
     it("five card flush without starter", () => {
       const cards = parseCards("2,3,4,5,6").map((c, i) => ({
         ...c,
-        suit: (i === 4 ? "♥" : "♠") as import("./Card").Suit,
+        suit: (i === 4 ? "♥" : "♠"),
       }));
       expectFlushesPoints(cards, HAND_POINTS.FLUSH);
     });

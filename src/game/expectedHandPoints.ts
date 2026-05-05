@@ -1,4 +1,5 @@
-import { DECK, type Card, INDICES_PER_SUIT } from "./Card";
+/* eslint-disable id-length */
+import { type Card, DECK, INDICES_PER_SUIT } from "./Card";
 import { type HandPoints, handPoints } from "./handPoints";
 import { CARDS_PER_DEALT_HAND } from "./facts";
 

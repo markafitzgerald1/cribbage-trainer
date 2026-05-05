@@ -1,4 +1,4 @@
-import { CARD_LABELS, type Card, CARDS as card, Suit, SUITS } from "./Card";
+import { CARD_LABELS, type Card, SUITS, Suit, CARDS as card } from "./Card";
 
 const NOT_FOUND_INDEX = -1;
 
@@ -17,7 +17,7 @@ export const parseCards = (keepSpecifier: string): Card[] => {
     // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
     const baseCard = card[cardIndex]!;
     // Assign different suits to avoid accidental flushes
-    // eslint-disable-next-line security/detect-object-injection
+
     return { ...baseCard, suit: SUITS[index % SUITS.length] as Suit };
   });
 };

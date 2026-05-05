@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-magic-numbers, @typescript-eslint/no-non-null-assertion, prefer-destructuring */
 import type { Card, CountedCard, RankedCard } from "./Card";
 import { Combination, PowerSet } from "js-combinatorics";
 
@@ -19,7 +20,7 @@ export const HAND_POINTS = {
 
 const pairsPoints = (keep: readonly RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     ([first, second]) => first!.rank === second!.rank,
   ).length * HAND_POINTS.PAIR;
 
@@ -106,8 +107,8 @@ export const handPoints = (keep: readonly Card[]): HandPoints => {
   const flushes = flushPoints(keep);
   return {
     fifteens,
-    pairs,
     flushes,
+    pairs,
     runs,
     total: pairs + fifteens + runs + flushes,
   };

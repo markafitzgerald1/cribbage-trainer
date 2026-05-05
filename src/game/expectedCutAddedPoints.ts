@@ -1,4 +1,5 @@
-import { DECK, type Card } from "./Card";
+/* eslint-disable max-statements, id-length, @typescript-eslint/no-magic-numbers */
+import { type Card, DECK } from "./Card";
 import { handPoints } from "./handPoints";
 
 export interface CutContribution {
@@ -129,7 +130,7 @@ export const expectedCutAddedPoints = (
   keep: readonly Card[],
   discard: readonly Card[],
 ): ExpectedCutAddedPoints => {
-// countRemaining is not sufficient for a 52 card deck with suits.
+// CountRemaining is not sufficient for a 52 card deck with suits.
   const deck = DECK.filter(card => ![...keep, ...discard].some(c => c.rank === card.rank && c.suit === card.suit));
 
   const basePoints = handPoints(keep);
@@ -153,7 +154,7 @@ export const expectedCutAddedPoints = (
   // The UI assumes cutCountsRemaining is size 13.
   const cutCountsRemaining = Array(13).fill(0);
   for (const card of deck) {
-    cutCountsRemaining[card.rank]++;
+    cutCountsRemaining[card.rank] += 1;
     processCutContributions({
       accumulator,
       basePoints,

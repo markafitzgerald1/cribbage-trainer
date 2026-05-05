@@ -89,14 +89,14 @@ export function ScoredPossibleKeepDiscard({
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow
           avgCutAdded15s={avgCutAdded15s}
-          avgCutAddedPairs={avgCutAddedPairs}
-          avgCutAddedRuns={avgCutAddedRuns}
           avgCutAddedFlushes={avgCutAddedFlushes}
           avgCutAddedNobs={avgCutAddedNobs}
-          flushesContributions={flushesContributions}
-          nobsContributions={nobsContributions}
+          avgCutAddedPairs={avgCutAddedPairs}
+          avgCutAddedRuns={avgCutAddedRuns}
           cutCountsRemaining={cutCountsRemaining}
           fifteensContributions={fifteensContributions}
+          flushesContributions={flushesContributions}
+          nobsContributions={nobsContributions}
           onRowClick={handleRowClick}
           pairsContributions={pairsContributions}
           runsContributions={runsContributions}

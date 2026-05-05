@@ -1,3 +1,4 @@
+/* eslint-disable max-statements, id-length */
 import { INDICES_PER_SUIT, CARDS as card } from "./Card";
 import { SUITS_PER_DECK, expectedHandPoints } from "./expectedHandPoints";
 import { describe, expect, it } from "@jest/globals";
@@ -65,9 +66,9 @@ describe("expectedHandPoints", () => {
       const jackCards = keep.filter(c => c.rankLabel === "J");
       let totalNobsAdded = 0;
       for (const jack of jackCards) {
-         // for each jack, how many cards of its suit are left in deck?
-         // deck size is 52. 13 of that suit originally.
-         // count how many of that suit are in keep/discard.
+         // For each jack, how many cards of its suit are left in deck?
+         // Deck size is 52. 13 of that suit originally.
+         // Count how many of that suit are in keep/discard.
          const suitCountInDealt = dealtCards.filter(c => c.suit === jack.suit).length;
          totalNobsAdded += (13 - suitCountInDealt) * 1;
       }
@@ -81,6 +82,7 @@ describe("expectedHandPoints", () => {
       }
 
       const remainingCards = 46;
+
       expect(expectedHandPoints(keep, discard).total).toBeCloseTo(
         preStarterPoints + expectedStartersAddedPoints + (totalNobsAdded + totalFlushAdded) / remainingCards, 12
       );
