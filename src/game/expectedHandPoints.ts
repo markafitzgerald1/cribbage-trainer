@@ -1,9 +1,7 @@
-import { type Card, INDICES_PER_SUIT } from "./Card";
+import { type Card, INDICES_PER_SUIT, SUITS_PER_DECK } from "./Card";
 import { type HandPoints, handPoints } from "./handPoints";
 import { CARDS_PER_DEALT_HAND } from "./facts";
 import { getRemainingDeck } from "./getRemainingDeck";
-
-export const SUITS_PER_DECK = 4;
 export const POSSIBLE_STARTER_COUNT =
   INDICES_PER_SUIT * SUITS_PER_DECK - CARDS_PER_DEALT_HAND;
 
@@ -18,6 +16,7 @@ export const expectedHandPoints = (
       return {
         fifteens: points.fifteens,
         flushes: points.flushes,
+        nobs: points.nobs,
         pairs: points.pairs,
         runs: points.runs,
         total: points.total,
@@ -27,6 +26,7 @@ export const expectedHandPoints = (
       (previous, current) => ({
         fifteens: previous.fifteens + current.fifteens,
         flushes: previous.flushes + current.flushes,
+        nobs: previous.nobs + current.nobs,
         pairs: previous.pairs + current.pairs,
         runs: previous.runs + current.runs,
         total: previous.total + current.total,
@@ -34,6 +34,7 @@ export const expectedHandPoints = (
       {
         fifteens: 0,
         flushes: 0,
+        nobs: 0,
         pairs: 0,
         runs: 0,
         total: 0,

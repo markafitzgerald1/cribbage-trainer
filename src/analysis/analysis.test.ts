@@ -1,4 +1,4 @@
-import { type Card, INDICES_PER_SUIT, CARDS as card } from "../game/Card";
+import { type Card, INDICES_PER_SUIT, SUITS_PER_DECK, CARDS as card } from "../game/Card";
 const {
   ACE,
   TWO,
@@ -21,7 +21,6 @@ import {
 } from "./analysis";
 import { describe, expect, it } from "@jest/globals";
 import { HAND_POINTS } from "../game/handPoints";
-import { SUITS_PER_DECK } from "../game/expectedHandPoints";
 import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { rankCounts } from "../game/rankCounts";
 

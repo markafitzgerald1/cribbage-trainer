@@ -1,4 +1,4 @@
-import type { Card, CountedCard, RankedCard } from "./Card";
+import { type Card, type CountedCard, Rank, type RankedCard } from "./Card";
 import { Combination, PowerSet } from "js-combinatorics";
 
 const CARDS_PER_PAIR = 2;
@@ -13,6 +13,8 @@ export const HAND_POINTS = {
   PAIRS_ROYALE: 6,
   RUN_PER_CARD: 1,
   TWO_PAIRS: 4,
+  FLUSH_PER_CARD: 1,
+  NOBS: 1,
 } as const;
 
 const pairsPoints = (keep: readonly RankedCard[]) =>
@@ -64,8 +66,41 @@ const runsPoints = (keep: readonly RankedCard[]) =>
   runLengthPoints(keep, RunLength.FOUR) ||
   runLengthPoints(keep, RunLength.THREE);
 
+const CARDS_PER_HAND = 4;
+const CARDS_PER_HAND_WITH_CUT = 5;
+
+const flushesPoints = (keep: readonly Card[]) => {
+  if (keep.length < CARDS_PER_HAND || new Set(keep).size !== keep.length) {
+    return 0;
+  }
+  const hand = keep.slice(0, CARDS_PER_HAND);
+  const firstSuit = hand[0]!.suit;
+  const isHandFlush = hand.every((card) => card.suit === firstSuit);
+  if (!isHandFlush) {
+    return 0;
+  }
+  if (keep.length === CARDS_PER_HAND_WITH_CUT && keep[CARDS_PER_HAND]!.suit === firstSuit) {
+    return CARDS_PER_HAND_WITH_CUT * HAND_POINTS.FLUSH_PER_CARD;
+  }
+  return CARDS_PER_HAND * HAND_POINTS.FLUSH_PER_CARD;
+};
+
+const nobsPoints = (keep: readonly Card[]) => {
+  if (keep.length !== CARDS_PER_HAND_WITH_CUT || new Set(keep).size !== keep.length) {
+    return 0;
+  }
+  const hand = keep.slice(0, CARDS_PER_HAND);
+  const cutCard = keep[CARDS_PER_HAND]!;
+  const hasNobs = hand.some(
+    (card) => card.rank === Rank.JACK && card.suit === cutCard.suit,
+  );
+  return hasNobs ? HAND_POINTS.NOBS : 0;
+};
+
 export interface HandPoints {
   fifteens: number;
+  flushes: number;
+  nobs: number;
   pairs: number;
   runs: number;
   total: number;
@@ -74,8 +109,12 @@ export const handPoints = (keep: readonly Card[]): HandPoints => {
   const pairs = pairsPoints(keep);
   const fifteens = fifteensPoints(keep);
   const runs = runsPoints(keep);
+  const flushes = flushesPoints(keep);
+  const nobs = nobsPoints(keep);
   return {
     fifteens,
+    flushes,
+    nobs,
     pairs,
     runs,
     total: pairs + fifteens + runs,
