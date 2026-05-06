@@ -18,6 +18,17 @@ export const Rank = {
 
 export type Rank = (typeof Rank)[keyof typeof Rank];
 
+export const Suit = {
+  CLUBS: "♣",
+  DIAMONDS: "♦",
+  HEARTS: "♥",
+  SPADES: "♠",
+} as const;
+
+export type Suit = (typeof Suit)[keyof typeof Suit];
+
+export const SUITS: readonly Suit[] = Object.values(Suit);
+
 export const RANK_NAMES = Object.keys(Rank).map(
   (name) => name[0] + name.slice(1).toLowerCase(),
 );
@@ -32,23 +43,34 @@ export interface CountedCard {
 
 export interface Card extends RankedCard, CountedCard {
   rankLabel: string;
+  suit: Suit;
 }
 
 export const MAXIMUM_CARD_COUNTING_VALUE = 10;
 export const CARD_LABELS = [..."A23456789".split(""), "10", ..."JQK".split("")];
 
-export const createCard = (rank: Rank): Card => ({
+export const createCard = (rank: Rank, suit: Suit): Card => ({
   count: Math.min(rank + 1, MAXIMUM_CARD_COUNTING_VALUE),
   rank,
   // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
   rankLabel: CARD_LABELS[rank]!,
+  suit,
 });
 
 export const INDICES_PER_SUIT = 13;
+export const SUITS_PER_DECK = 4;
 
 export const CARD_RANKS: Rank[] = Object.values(Rank);
 
-const RANKED_CARDS: readonly Card[] = CARD_RANKS.map(createCard);
+export const DECK: readonly Card[] = SUITS.flatMap((suit) =>
+  CARD_RANKS.map((rank) => createCard(rank, suit)),
+);
+
+const RANKED_CARDS: readonly Card[] = CARD_RANKS.map((rank, index) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const suit = SUITS[index % SUITS.length]!;
+  return createCard(rank, suit);
+});
 
 type RankName = keyof typeof Rank;
 

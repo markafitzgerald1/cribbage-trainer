@@ -45,15 +45,19 @@ function renderComponentWithScenario(
       <tbody>
         <ScoredPossibleKeepDiscard
           avgCutAdded15s={scenario.cutAdded.avg15s}
+          avgCutAddedFlushes={scenario.cutAdded.avgFlushes}
+          avgCutAddedNobs={scenario.cutAdded.avgNobs}
           avgCutAddedPairs={scenario.cutAdded.avgPairs}
           avgCutAddedRuns={scenario.cutAdded.avgRuns}
           cutCountsRemaining={scenario.cutAdded.cutCountsRemaining}
           discard={scenario.discard}
           expectedHandPoints={scenario.expectedPoints}
           fifteensContributions={scenario.cutAdded.fifteensContributions}
+          flushesContributions={scenario.cutAdded.flushesContributions}
           handPoints={scenario.points}
           isHighlighted={isHighlighted}
           keep={scenario.keep}
+          nobsContributions={scenario.cutAdded.nobsContributions}
           pairsContributions={scenario.cutAdded.pairsContributions}
           rowIndex={0}
           runsContributions={scenario.cutAdded.runsContributions}

@@ -164,23 +164,23 @@ describe("handPoints", () => {
       });
 
       it("with three distinct two-card fifteens", () => {
-        expectFifteensPoints(parseCards("K,J,10,5"), FIFTEEN_SIX);
+        expect(handPoints(parseCards("K,J,10,5")).fifteens).toBe(FIFTEEN_SIX);
       });
 
       it("with three distinct three-card fifteens", () => {
-        expectFifteensPoints(parseCards("7,4,4,4"), FIFTEEN_SIX);
+        expect(handPoints(parseCards("7,4,4,4")).fifteens).toBe(FIFTEEN_SIX);
       });
 
       it("with four distinct two-card fifteens", () => {
-        expectFifteensPoints(parseCards("8,8,7,7"), FIFTEEN_EIGHT);
+        expect(handPoints(parseCards("8,8,7,7")).fifteens).toBe(FIFTEEN_EIGHT);
       });
 
       it("with four distinct three-card fifteens", () => {
-        expectFifteensPoints(parseCards("J,5,5,5"), FIFTEEN_EIGHT);
+        expect(handPoints(parseCards("J,5,5,5")).fifteens).toBe(FIFTEEN_EIGHT);
       });
 
       it("with four fives", () => {
-        expectFifteensPoints(parseCards("5,5,5,5"), FIFTEEN_EIGHT);
+        expect(handPoints(parseCards("5,5,5,5")).fifteens).toBe(FIFTEEN_EIGHT);
       });
     });
   });
@@ -304,6 +304,24 @@ describe("handPoints", () => {
 
     it("two fifteens and a pair", () => {
       expectTotalPoints(parseCards("Q,Q,3,2"), FIFTEEN_FOUR + PAIR);
+    });
+  });
+
+  describe("nobs", () => {
+    it("no jack in hand", () => {
+      expect(handPoints(parseCards("A,2,3,4,7")).nobs).toBe(0);
+    });
+
+    it("jack in hand but wrong suit for cut card", () => {
+      // Jack is Hearts (rank 10, index 10, 10%4=2)
+      // 5 is Clubs (rank 4, index 4, 4%4=0)
+      expect(handPoints(parseCards("J,2,3,4,5")).nobs).toBe(0);
+    });
+
+    it("jack in hand with matching suit for cut card", () => {
+      // Jack is Hearts (rank 10, index 10, 10%4=2)
+      // 7 is Hearts (rank 6, index 6, 6%4=2)
+      expect(handPoints(parseCards("J,2,3,4,7")).nobs).toBe(HAND_POINTS.NOBS);
     });
   });
 });

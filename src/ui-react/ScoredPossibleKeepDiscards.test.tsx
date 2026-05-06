@@ -44,7 +44,7 @@ describe("scored possible keep discards component", () => {
       { dealOrder: 4, kept: true, rank: Rank.EIGHT },
       { dealOrder: 5, kept: false, rank: Rank.NINE },
     ].map((card) => ({
-      ...createCard(card.rank),
+      ...createCard(card.rank, "♠"),
       dealOrder: card.dealOrder,
       kept: card.kept,
     }));

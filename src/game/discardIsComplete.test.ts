@@ -23,7 +23,7 @@ describe("discardIsComplete", () => {
   ])("%s", (_, keptCount, expected) => {
     const hand = [...Array(CARDS_PER_DEALT_HAND).keys()].map(
       (rank, dealOrder) => ({
-        ...createCard(rank as Rank),
+        ...createCard(rank as Rank, "♠"),
         dealOrder,
         kept: dealOrder < keptCount,
       }),
