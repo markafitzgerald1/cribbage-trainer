@@ -16,9 +16,29 @@ const scoringHeaders = [
     title: "Points in hand before the cut",
   },
   {
-    key: "cut",
-    label: "Cut",
-    title: "Expected additional points from the cut",
+    key: "15s",
+    label: "15s",
+    title: "Expected additional points from 15s",
+  },
+  {
+    key: "pairs",
+    label: "Pairs",
+    title: "Expected additional points from pairs",
+  },
+  {
+    key: "runs",
+    label: "Runs",
+    title: "Expected additional points from runs",
+  },
+  {
+    key: "flushes",
+    label: "Flushes",
+    title: "Expected additional points from flushes",
+  },
+  {
+    key: "nobs",
+    label: "Nobs",
+    title: "Expected additional points from nobs",
   },
   {
     key: "total",

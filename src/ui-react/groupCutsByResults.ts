@@ -7,6 +7,8 @@ export interface CutResult {
   readonly fifteensPoints: number;
   readonly pairsPoints: number;
   readonly runsPoints: number;
+  readonly flushesPoints: number;
+  readonly nobsPoints: number;
   readonly totalPoints: number;
 }
 
@@ -17,6 +19,8 @@ export interface CutContributions {
   readonly fifteens: readonly CutContribution[];
   readonly pairs: readonly CutContribution[];
   readonly runs: readonly CutContribution[];
+  readonly flushes: readonly CutContribution[];
+  readonly nobs: readonly CutContribution[];
 }
 
 function buildPointsMap(
@@ -33,10 +37,12 @@ interface PointMaps {
   readonly fifteensMap: Map<Rank, number>;
   readonly pairsMap: Map<Rank, number>;
   readonly runsMap: Map<Rank, number>;
+  readonly flushesMap: Map<Rank, number>;
+  readonly nobsMap: Map<Rank, number>;
 }
 
 function pointsKey(rank: Rank, maps: PointMaps): string {
-  return `${maps.fifteensMap.get(rank) ?? 0},${maps.pairsMap.get(rank) ?? 0},${maps.runsMap.get(rank) ?? 0}`;
+  return `${maps.fifteensMap.get(rank) ?? 0},${maps.pairsMap.get(rank) ?? 0},${maps.runsMap.get(rank) ?? 0},${maps.flushesMap.get(rank) ?? 0},${maps.nobsMap.get(rank) ?? 0}`;
 }
 
 function groupRanksByPointCombination(
@@ -73,10 +79,13 @@ function sortByTotalPointsDescending(results: CutResult[]): void {
 export function groupCutsByResults(
   contributions: CutContributions,
 ): CutResult[] {
-  const { cutCountsRemaining, fifteens, pairs, runs } = contributions;
+  const { cutCountsRemaining, fifteens, pairs, runs, flushes, nobs } =
+    contributions;
 
   const maps: PointMaps = {
     fifteensMap: buildPointsMap(fifteens),
+    flushesMap: buildPointsMap(flushes),
+    nobsMap: buildPointsMap(nobs),
     pairsMap: buildPointsMap(pairs),
     runsMap: buildPointsMap(runs),
   };
@@ -90,10 +99,13 @@ export function groupCutsByResults(
 
   const results: CutResult[] = [];
   for (const [key, ranks] of groupMap) {
-    const [fifteensString, pairsString, runsString] = key.split(",");
+    const [fifteensString, pairsString, runsString, flushesString, nobsString] =
+      key.split(",");
     const fifteensPoints = Number(fifteensString);
     const pairsPoints = Number(pairsString);
     const runsPoints = Number(runsString);
+    const flushesPoints = Number(flushesString);
+    const nobsPoints = Number(nobsString);
     const cutCount = ranks.reduce<number>(
       // eslint-disable-next-line security/detect-object-injection
       (sum, rank) => sum + (cutCountsRemaining[rank] as number),
@@ -103,9 +115,12 @@ export function groupCutsByResults(
       cutCount,
       cuts: ranks,
       fifteensPoints,
+      flushesPoints,
+      nobsPoints,
       pairsPoints,
       runsPoints,
-      totalPoints: fifteensPoints + pairsPoints + runsPoints,
+      totalPoints:
+        fifteensPoints + pairsPoints + runsPoints + flushesPoints + nobsPoints,
     });
   }
 

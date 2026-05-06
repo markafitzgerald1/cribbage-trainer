@@ -9,6 +9,8 @@ interface CutResultRowProps {
   readonly fifteensPoints: number;
   readonly pairsPoints: number;
   readonly runsPoints: number;
+  readonly flushesPoints: number;
+  readonly nobsPoints: number;
   readonly sortOrder: SortOrder;
   readonly totalPoints: number;
 }
@@ -18,6 +20,8 @@ export function CutResultRow({
   fifteensPoints,
   pairsPoints,
   runsPoints,
+  flushesPoints,
+  nobsPoints,
   sortOrder,
   totalPoints,
 }: CutResultRowProps) {
@@ -39,6 +43,8 @@ export function CutResultRow({
       <PointsCell points={fifteensPoints} />
       <PointsCell points={pairsPoints} />
       <PointsCell points={runsPoints} />
+      <PointsCell points={flushesPoints} />
+      <PointsCell points={nobsPoints} />
       <div className={classes.totalColumn}>{totalPoints}</div>
     </div>
   );

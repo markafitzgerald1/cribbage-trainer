@@ -15,16 +15,22 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   avgCutAdded15s,
   avgCutAddedPairs,
   avgCutAddedRuns,
+  avgCutAddedFlushes,
+  avgCutAddedNobs,
   cutCountsRemaining,
   fifteensContributions,
   pairsContributions,
   runsContributions,
+  flushesContributions,
+  nobsContributions,
   onRowClick,
   sortOrder,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
   const cutResults = groupCutsByResults({
     cutCountsRemaining,
     fifteens: fifteensContributions,
+    flushes: flushesContributions,
+    nobs: nobsContributions,
     pairs: pairsContributions,
     runs: runsContributions,
   });
@@ -34,13 +40,15 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       className={classes.expandedRow}
       onClick={onRowClick}
     >
-      <td colSpan={4}>
+      <td colSpan={8}>
         <div className={classes.breakdownContainer}>
           <div className={classes.breakdownHeader}>
             <div className={classes.cutsHeader}>Cuts</div>
             <div className={classes.categoryHeader}>15s</div>
             <div className={classes.categoryHeader}>Pairs</div>
             <div className={classes.categoryHeader}>Runs</div>
+            <div className={classes.categoryHeader}>Flushes</div>
+            <div className={classes.categoryHeader}>Nobs</div>
             <div className={classes.totalHeader}>Total</div>
           </div>
           <div className={classes.breakdownSummary}>
@@ -54,10 +62,20 @@ export function ScoredPossibleKeepDiscardExpandedRow({
             <div className={classes.summaryValue}>
               {avgCutAddedRuns.toFixed(DECIMAL_PLACES)}
             </div>
+            <div className={classes.summaryValue}>
+              {avgCutAddedFlushes.toFixed(DECIMAL_PLACES)}
+            </div>
+            <div className={classes.summaryValue}>
+              {avgCutAddedNobs.toFixed(DECIMAL_PLACES)}
+            </div>
             <div className={classes.summaryTotal}>
-              {(avgCutAdded15s + avgCutAddedPairs + avgCutAddedRuns).toFixed(
-                DECIMAL_PLACES,
-              )}
+              {(
+                avgCutAdded15s +
+                avgCutAddedPairs +
+                avgCutAddedRuns +
+                avgCutAddedFlushes +
+                avgCutAddedNobs
+              ).toFixed(DECIMAL_PLACES)}
             </div>
           </div>
           <div className={classes.cutResultsList}>
@@ -65,7 +83,9 @@ export function ScoredPossibleKeepDiscardExpandedRow({
               <CutResultRow
                 cuts={result.cuts}
                 fifteensPoints={result.fifteensPoints}
+                flushesPoints={result.flushesPoints}
                 key={result.cuts.join(",")}
+                nobsPoints={result.nobsPoints}
                 pairsPoints={result.pairsPoints}
                 runsPoints={result.runsPoints}
                 sortOrder={sortOrder}

@@ -53,6 +53,8 @@ interface TestArgs {
   fifteens?: readonly CutContribution[];
   pairs?: readonly CutContribution[];
   runs?: readonly CutContribution[];
+  flushes?: readonly CutContribution[];
+  nobs?: readonly CutContribution[];
 }
 
 describe("groupCutsByResults", () => {
@@ -313,12 +315,37 @@ describe("groupCutsByResults", () => {
       },
       [{ cutCount: EIGHT_POINTS, totalPoints: 0 }],
     ],
+    [
+      "handles flushes and nobs correctly",
+      {
+        cutCountsRemaining: ALL_FOUR_REMAINING,
+        flushes: [makeContribution(CARD_COUNT_FOR_SINGLE, CARDS.FIVE, 4)],
+        nobs: [makeContribution(CARD_COUNT_FOR_SINGLE, CARDS.JACK, 1)],
+      },
+      [
+        {
+          cutCount: CARD_COUNT_FOR_UNIQUE_RANK,
+          flushesPoints: 4,
+          nobsPoints: 0,
+          totalPoints: 4,
+        },
+        {
+          cutCount: CARD_COUNT_FOR_UNIQUE_RANK,
+          flushesPoints: 0,
+          nobsPoints: 1,
+          totalPoints: 1,
+        },
+        { cutCount: ALL_RANKS_CUT_COUNT - 8, totalPoints: 0 },
+      ],
+    ],
   ] as const)("%s", (_, args, expectedGroups) => {
     // We cast args to TestArgs to bypass complex readonly inference issues with const
     const typedArgs = args as unknown as TestArgs;
     const result = groupCutsByResults({
       cutCountsRemaining: typedArgs.cutCountsRemaining as readonly number[],
       fifteens: getContributions(typedArgs.fifteens),
+      flushes: getContributions(typedArgs.flushes),
+      nobs: getContributions(typedArgs.nobs),
       pairs: getContributions(typedArgs.pairs),
       runs: getContributions(typedArgs.runs),
     });
