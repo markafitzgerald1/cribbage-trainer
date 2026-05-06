@@ -6,7 +6,7 @@ import { groupCutsByResults } from "./groupCutsByResults";
 
 const DECIMAL_PLACES = 2;
 
-interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
+export interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
   readonly onRowClick: () => void;
   readonly sortOrder: SortOrder;
 }

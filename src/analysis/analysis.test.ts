@@ -1,4 +1,9 @@
-import { type Card, INDICES_PER_SUIT, SUITS_PER_DECK, CARDS as card } from "../game/Card";
+import {
+  type Card,
+  INDICES_PER_SUIT,
+  SUITS_PER_DECK,
+  CARDS as card,
+} from "../game/Card";
 const {
   ACE,
   TWO,

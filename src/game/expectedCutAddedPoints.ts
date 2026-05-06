@@ -9,18 +9,21 @@ export interface CutContribution {
   points: number;
 }
 
-export interface ExpectedCutAddedPoints {
+export interface ContributionsBreakdown {
+  fifteensContributions: CutContribution[];
+  flushesContributions: CutContribution[];
+  nobsContributions: CutContribution[];
+  pairsContributions: CutContribution[];
+  runsContributions: CutContribution[];
+}
+
+export interface ExpectedCutAddedPoints extends ContributionsBreakdown {
   avg15s: number;
   avgFlushes: number;
   avgNobs: number;
   avgPairs: number;
   avgRuns: number;
   cutCountsRemaining: readonly number[];
-  fifteensContributions: CutContribution[];
-  flushesContributions: CutContribution[];
-  nobsContributions: CutContribution[];
-  pairsContributions: CutContribution[];
-  runsContributions: CutContribution[];
 }
 
 export interface CutBreakdown extends Omit<
@@ -77,12 +80,7 @@ function processCutContributions({
   keep,
   remaining,
 }: {
-  accumulator: {
-    fifteensContributions: CutContribution[];
-    flushesContributions: CutContribution[];
-    nobsContributions: CutContribution[];
-    pairsContributions: CutContribution[];
-    runsContributions: CutContribution[];
+  accumulator: ContributionsBreakdown & {
     sum15s: number;
     sumFlushes: number;
     sumNobs: number;
@@ -109,36 +107,22 @@ function processCutContributions({
   accumulator.sumFlushes += flushesDelta * remaining;
   accumulator.sumNobs += nobsDelta * remaining;
 
-  updateContribution({
-    contributions: accumulator.fifteensContributions,
-    cutCard,
-    delta: fifteensDelta,
-    remaining,
-  });
-  updateContribution({
-    contributions: accumulator.pairsContributions,
-    cutCard,
-    delta: pairsDelta,
-    remaining,
-  });
-  updateContribution({
-    contributions: accumulator.runsContributions,
-    cutCard,
-    delta: runsDelta,
-    remaining,
-  });
-  updateContribution({
-    contributions: accumulator.flushesContributions,
-    cutCard,
-    delta: flushesDelta,
-    remaining,
-  });
-  updateContribution({
-    contributions: accumulator.nobsContributions,
-    cutCard,
-    delta: nobsDelta,
-    remaining,
-  });
+  const categories = [
+    { contributions: accumulator.fifteensContributions, delta: fifteensDelta },
+    { contributions: accumulator.pairsContributions, delta: pairsDelta },
+    { contributions: accumulator.runsContributions, delta: runsDelta },
+    { contributions: accumulator.flushesContributions, delta: flushesDelta },
+    { contributions: accumulator.nobsContributions, delta: nobsDelta },
+  ];
+
+  for (const { contributions, delta } of categories) {
+    updateContribution({
+      contributions,
+      cutCard,
+      delta,
+      remaining,
+    });
+  }
 }
 
 export const expectedCutAddedPoints = (
@@ -188,4 +172,4 @@ export const expectedCutAddedPoints = (
     pairsContributions: accumulator.pairsContributions,
     runsContributions: accumulator.runsContributions,
   };
-}
+};
