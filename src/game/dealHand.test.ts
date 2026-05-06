@@ -44,7 +44,8 @@ describe("dealHand", () => {
 
   it("returns unique cards (no duplicates)", () => {
     const hand = dealHand(mathRandom);
-    const uniqueCards = new Set(hand.map(c => c.rankLabel + c.suit));
+    const uniqueCards = new Set(hand.map((card) => card.rankLabel + card.suit));
+
     expect(uniqueCards.size).toBe(CARDS_PER_DEALT_HAND);
   });
 });
