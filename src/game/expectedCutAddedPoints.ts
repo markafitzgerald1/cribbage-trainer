@@ -1,5 +1,4 @@
-import { DECK, type Card, INDICES_PER_SUIT } from "./Card";
-import { SUITS_PER_DECK } from "./expectedHandPoints";
+import { type Card, SUITS_PER_DECK } from "./Card";
 import { getRemainingDeck } from "./getRemainingDeck";
 import { handPoints } from "./handPoints";
 import { rankCounts } from "./rankCounts";
@@ -51,6 +50,26 @@ export function toCutBreakdown(cutAdded: ExpectedCutAddedPoints): CutBreakdown {
   };
 }
 
+function updateContribution({
+  contributions,
+  delta,
+  cutCard,
+  remaining,
+}: {
+  contributions: CutContribution[];
+  delta: number;
+  cutCard: Card;
+  remaining: number;
+}) {
+  if (delta > 0) {
+    contributions.push({
+      count: remaining,
+      cutCard,
+      points: delta,
+    });
+  }
+}
+
 function processCutContributions({
   accumulator,
   basePoints,
@@ -90,41 +109,36 @@ function processCutContributions({
   accumulator.sumFlushes += flushesDelta * remaining;
   accumulator.sumNobs += nobsDelta * remaining;
 
-  if (fifteensDelta > 0) {
-    accumulator.fifteensContributions.push({
-      count: remaining,
-      cutCard,
-      points: fifteensDelta,
-    });
-  }
-  if (pairsDelta > 0) {
-    accumulator.pairsContributions.push({
-      count: remaining,
-      cutCard,
-      points: pairsDelta,
-    });
-  }
-  if (runsDelta > 0) {
-    accumulator.runsContributions.push({
-      count: remaining,
-      cutCard,
-      points: runsDelta,
-    });
-  }
-  if (flushesDelta > 0) {
-    accumulator.flushesContributions.push({
-      count: remaining,
-      cutCard,
-      points: flushesDelta,
-    });
-  }
-  if (nobsDelta > 0) {
-    accumulator.nobsContributions.push({
-      count: remaining,
-      cutCard,
-      points: nobsDelta,
-    });
-  }
+  updateContribution({
+    contributions: accumulator.fifteensContributions,
+    cutCard,
+    delta: fifteensDelta,
+    remaining,
+  });
+  updateContribution({
+    contributions: accumulator.pairsContributions,
+    cutCard,
+    delta: pairsDelta,
+    remaining,
+  });
+  updateContribution({
+    contributions: accumulator.runsContributions,
+    cutCard,
+    delta: runsDelta,
+    remaining,
+  });
+  updateContribution({
+    contributions: accumulator.flushesContributions,
+    cutCard,
+    delta: flushesDelta,
+    remaining,
+  });
+  updateContribution({
+    contributions: accumulator.nobsContributions,
+    cutCard,
+    delta: nobsDelta,
+    remaining,
+  });
 }
 
 export const expectedCutAddedPoints = (

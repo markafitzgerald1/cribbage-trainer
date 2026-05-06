@@ -1,7 +1,7 @@
 import { INDICES_PER_SUIT, SUITS_PER_DECK, CARDS as card } from "./Card";
-import { expectedHandPoints } from "./expectedHandPoints";
 import { describe, expect, it } from "@jest/globals";
 import { HAND_POINTS } from "../game/handPoints";
+import { expectedHandPoints } from "./expectedHandPoints";
 import { handPoints } from "./handPoints";
 import { parseCards } from "./parseCards.common";
 import { rankCounts } from "./rankCounts";

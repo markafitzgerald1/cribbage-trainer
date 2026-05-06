@@ -9,18 +9,17 @@ export const HAND_POINTS = {
   FIFTEEN_FOUR: 4,
   FIFTEEN_SIX: 6,
   FIFTEEN_TWO: 2,
+  FLUSH_PER_CARD: 1,
+  NOBS: 1,
   PAIR: 2,
   PAIRS_ROYALE: 6,
   RUN_PER_CARD: 1,
   TWO_PAIRS: 4,
-  FLUSH_PER_CARD: 1,
-  NOBS: 1,
 } as const;
 
 const pairsPoints = (keep: readonly RankedCard[]) =>
   [...new Combination(keep, CARDS_PER_PAIR)].filter(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    ([first, second]) => first!.rank === second!.rank,
+    ([first, second]) => first?.rank === second?.rank,
   ).length * HAND_POINTS.PAIR;
 
 const COUNT = {
@@ -69,30 +68,43 @@ const runsPoints = (keep: readonly RankedCard[]) =>
 const CARDS_PER_HAND = 4;
 const CARDS_PER_HAND_WITH_CUT = 5;
 
+const isUnique = (cards: readonly Card[]) =>
+  new Set(cards).size === cards.length;
+
+const getHandAndCut = (keep: readonly Card[]) => {
+  const hand = keep.slice(0, CARDS_PER_HAND);
+  const [, , , , cutCard] = keep;
+  return { cutCard, hand };
+};
+
 const flushesPoints = (keep: readonly Card[]) => {
-  if (keep.length < CARDS_PER_HAND || new Set(keep).size !== keep.length) {
+  if (keep.length < CARDS_PER_HAND || !isUnique(keep)) {
     return 0;
   }
-  const hand = keep.slice(0, CARDS_PER_HAND);
-  const firstSuit = hand[0]!.suit;
+  const { hand } = getHandAndCut(keep);
+  const firstSuit = hand[0]?.suit;
   const isHandFlush = hand.every((card) => card.suit === firstSuit);
   if (!isHandFlush) {
     return 0;
   }
-  if (keep.length === CARDS_PER_HAND_WITH_CUT && keep[CARDS_PER_HAND]!.suit === firstSuit) {
+  const [, , , , fifthCard] = keep;
+  if (
+    keep.length === CARDS_PER_HAND_WITH_CUT &&
+    fifthCard?.suit === firstSuit
+  ) {
     return CARDS_PER_HAND_WITH_CUT * HAND_POINTS.FLUSH_PER_CARD;
   }
   return CARDS_PER_HAND * HAND_POINTS.FLUSH_PER_CARD;
 };
 
 const nobsPoints = (keep: readonly Card[]) => {
-  if (keep.length !== CARDS_PER_HAND_WITH_CUT || new Set(keep).size !== keep.length) {
+  if (keep.length !== CARDS_PER_HAND_WITH_CUT || !isUnique(keep)) {
     return 0;
   }
-  const hand = keep.slice(0, CARDS_PER_HAND);
-  const cutCard = keep[CARDS_PER_HAND]!;
+  const { cutCard, hand } = getHandAndCut(keep);
   const hasNobs = hand.some(
-    (card) => card.rank === Rank.JACK && card.suit === cutCard.suit,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    (card) => card.rank === Rank.JACK && card.suit === cutCard!.suit,
   );
   return hasNobs ? HAND_POINTS.NOBS : 0;
 };

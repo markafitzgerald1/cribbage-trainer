@@ -66,9 +66,11 @@ export const DECK: readonly Card[] = SUITS.flatMap((suit) =>
   CARD_RANKS.map((rank) => createCard(rank, suit)),
 );
 
-const RANKED_CARDS: readonly Card[] = CARD_RANKS.map((rank, index) =>
-  createCard(rank, SUITS[index % SUITS.length]!),
-);
+const RANKED_CARDS: readonly Card[] = CARD_RANKS.map((rank, index) => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const suit = SUITS[index % SUITS.length]!;
+  return createCard(rank, suit);
+});
 
 type RankName = keyof typeof Rank;
 

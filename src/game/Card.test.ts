@@ -1,4 +1,5 @@
 import {
+  CARDS,
   CARD_LABELS,
   CARD_RANKS,
   MAXIMUM_CARD_COUNTING_VALUE,
@@ -21,5 +22,13 @@ describe.each(CARD_RANKS)("createCard %p", (rank) => {
 
   it(`count is ${expectedCount}`, () => {
     expect(createCard(rank, "♠").count).toBe(expectedCount);
+  });
+});
+
+describe("cards", () => {
+  it("contains all ranks", () => {
+    const allRanksFound = CARD_RANKS.every((rank) => Boolean(CARDS[rank]));
+
+    expect(allRanksFound).toBe(true);
   });
 });
