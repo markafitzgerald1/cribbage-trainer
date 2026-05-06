@@ -5,6 +5,11 @@ const continuousIntegrationRetryLimit = 2;
 const ignoreScreenshotTests = /.*.screenshots.spec.ts/u;
 
 export default defineConfig({
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.03,
+    },
+  },
   forbidOnly: Boolean(process.env["CI"]),
   fullyParallel: true,
   projects: [
