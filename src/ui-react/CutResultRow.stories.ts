@@ -27,26 +27,28 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const MULTIPLE_CUTS = [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING];
-const MULTIPLE_CUTS_SHARED_ARGS = {
-  cuts: MULTIPLE_CUTS,
-  fifteensPoints: TWO_POINTS,
+const SHARED_BASE_ARGS = {
   flushesPoints: 0,
   nobsPoints: 0,
-  pairsPoints: FOUR_POINTS,
   runsPoints: 0,
+  sortOrder: SortOrder.Descending,
+} as const;
+
+const MULTIPLE_CUTS = [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING];
+const MULTIPLE_CUTS_SHARED_ARGS = {
+  ...SHARED_BASE_ARGS,
+  cuts: MULTIPLE_CUTS,
+  fifteensPoints: TWO_POINTS,
+  pairsPoints: FOUR_POINTS,
   totalPoints: SIX_POINTS,
 };
 
 export const SingleCut: Story = {
   args: {
+    ...SHARED_BASE_ARGS,
     cuts: [Rank.FIVE],
     fifteensPoints: FOUR_POINTS,
-    flushesPoints: 0,
-    nobsPoints: 0,
     pairsPoints: 0,
-    runsPoints: 0,
-    sortOrder: SortOrder.Descending,
     totalPoints: FOUR_POINTS,
   },
 };
@@ -54,7 +56,6 @@ export const SingleCut: Story = {
 export const MultipleCutsDescending: Story = {
   args: {
     ...MULTIPLE_CUTS_SHARED_ARGS,
-    sortOrder: SortOrder.Descending,
   },
 };
 
@@ -67,26 +68,21 @@ export const MultipleCutsAscending: Story = {
 
 export const AllCategories: Story = {
   args: {
+    ...SHARED_BASE_ARGS,
     cuts: [Rank.ACE],
     fifteensPoints: TWO_POINTS,
-    flushesPoints: 0,
-    nobsPoints: 0,
     pairsPoints: TWO_POINTS,
     runsPoints: SIX_POINTS,
-    sortOrder: SortOrder.Descending,
     totalPoints: TEN_POINTS,
   },
 };
 
 export const NoPoints: Story = {
   args: {
+    ...SHARED_BASE_ARGS,
     cuts: [Rank.KING],
     fifteensPoints: 0,
-    flushesPoints: 0,
-    nobsPoints: 0,
     pairsPoints: 0,
-    runsPoints: 0,
-    sortOrder: SortOrder.Descending,
     totalPoints: 0,
   },
 };
