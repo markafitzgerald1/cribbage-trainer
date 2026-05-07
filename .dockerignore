@@ -6,5 +6,3 @@ playwright-report/
 storybook-static/
 test-results/
 tsconfig.tsbuildinfo
-root/.npm
-root/
