@@ -35,6 +35,48 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     runs: runsContributions,
   });
 
+  const categories = [
+    { label: "15s", value: avgCutAdded15s },
+    { label: "Pairs", value: avgCutAddedPairs },
+    { label: "Runs", value: avgCutAddedRuns },
+    { label: "Flushes", value: avgCutAddedFlushes },
+    { label: "Nobs", value: avgCutAddedNobs },
+  ];
+
+  const totalAvg = categories.reduce((sum, cat) => sum + cat.value, 0);
+
+  const renderHeader = () => (
+    <div className={classes.breakdownHeader}>
+      <div className={classes.cutsHeader}>Cuts</div>
+      {categories.map((cat) => (
+        <div
+          className={classes.categoryHeader}
+          key={cat.label}
+        >
+          {cat.label}
+        </div>
+      ))}
+      <div className={classes.totalHeader}>Total</div>
+    </div>
+  );
+
+  const renderSummary = () => (
+    <div className={classes.breakdownSummary}>
+      <div className={classes.summaryLabel} />
+      {categories.map((cat) => (
+        <div
+          className={classes.summaryValue}
+          key={cat.label}
+        >
+          {cat.value.toFixed(DECIMAL_PLACES)}
+        </div>
+      ))}
+      <div className={classes.summaryTotal}>
+        {totalAvg.toFixed(DECIMAL_PLACES)}
+      </div>
+    </div>
+  );
+
   return (
     <tr
       className={classes.expandedRow}
@@ -42,42 +84,8 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     >
       <td colSpan={8}>
         <div className={classes.breakdownContainer}>
-          <div className={classes.breakdownHeader}>
-            <div className={classes.cutsHeader}>Cuts</div>
-            <div className={classes.categoryHeader}>15s</div>
-            <div className={classes.categoryHeader}>Pairs</div>
-            <div className={classes.categoryHeader}>Runs</div>
-            <div className={classes.categoryHeader}>Flushes</div>
-            <div className={classes.categoryHeader}>Nobs</div>
-            <div className={classes.totalHeader}>Total</div>
-          </div>
-          <div className={classes.breakdownSummary}>
-            <div className={classes.summaryLabel} />
-            <div className={classes.summaryValue}>
-              {avgCutAdded15s.toFixed(DECIMAL_PLACES)}
-            </div>
-            <div className={classes.summaryValue}>
-              {avgCutAddedPairs.toFixed(DECIMAL_PLACES)}
-            </div>
-            <div className={classes.summaryValue}>
-              {avgCutAddedRuns.toFixed(DECIMAL_PLACES)}
-            </div>
-            <div className={classes.summaryValue}>
-              {avgCutAddedFlushes.toFixed(DECIMAL_PLACES)}
-            </div>
-            <div className={classes.summaryValue}>
-              {avgCutAddedNobs.toFixed(DECIMAL_PLACES)}
-            </div>
-            <div className={classes.summaryTotal}>
-              {(
-                avgCutAdded15s +
-                avgCutAddedPairs +
-                avgCutAddedRuns +
-                avgCutAddedFlushes +
-                avgCutAddedNobs
-              ).toFixed(DECIMAL_PLACES)}
-            </div>
-          </div>
+          {renderHeader()}
+          {renderSummary()}
           <div className={classes.cutResultsList}>
             {cutResults.map((result) => (
               <CutResultRow

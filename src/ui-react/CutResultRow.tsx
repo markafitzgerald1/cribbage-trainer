@@ -30,6 +30,14 @@ export function CutResultRow({
       ? [...cuts].sort((first, second) => first - second)
       : [...cuts].sort((first, second) => second - first);
 
+  const categories = [
+    { label: "15s", points: fifteensPoints },
+    { label: "Pairs", points: pairsPoints },
+    { label: "Runs", points: runsPoints },
+    { label: "Flushes", points: flushesPoints },
+    { label: "Nobs", points: nobsPoints },
+  ];
+
   return (
     <div className={classes.cutResultRow}>
       <div className={classes.cutsColumn}>
@@ -40,11 +48,12 @@ export function CutResultRow({
           />
         ))}
       </div>
-      <PointsCell points={fifteensPoints} />
-      <PointsCell points={pairsPoints} />
-      <PointsCell points={runsPoints} />
-      <PointsCell points={flushesPoints} />
-      <PointsCell points={nobsPoints} />
+      {categories.map((category) => (
+        <PointsCell
+          key={category.label}
+          points={category.points}
+        />
+      ))}
       <div className={classes.totalColumn}>{totalPoints}</div>
     </div>
   );
