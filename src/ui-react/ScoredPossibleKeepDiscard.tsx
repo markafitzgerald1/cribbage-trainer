@@ -2,14 +2,18 @@ import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
 import { useCallback, useState } from "react";
 import type { BreakdownProps } from "./BreakdownProps";
-import type { ComparableCard } from "../ui/sortCards";
+import type { Card } from "../game/Card";
 import { PossibleHand } from "./PossibleHand";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
 
+export interface DealtCard extends Card {
+  readonly dealOrder: number;
+}
+
 interface ScoredPossibleKeepDiscardProps extends BreakdownProps {
-  readonly keep: readonly ComparableCard[];
-  readonly discard: readonly ComparableCard[];
+  readonly keep: readonly DealtCard[];
+  readonly discard: readonly DealtCard[];
   readonly handPoints: number;
   readonly expectedHandPoints: number;
   readonly sortOrder: SortOrder;

@@ -12,11 +12,10 @@ import {
   expectedCutAddedPoints,
   toCutBreakdown,
 } from "../game/expectedCutAddedPoints";
-import { fireEvent, within } from "storybook/test";
-import type { ComparableCard } from "../ui/sortCards";
-import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
+import { type DealtCard, ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { createElement } from "react";
 import { expectedHandPoints } from "../game/expectedHandPoints";
+import { fireEvent, within } from "storybook/test";
 import { handPoints } from "../game/handPoints";
 
 const meta = {
@@ -40,9 +39,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const toComparableCard = (card: Card, index: number): ComparableCard => ({
+const toDealtCard = (card: Card, index: number): DealtCard => ({
+  ...card,
   dealOrder: index,
-  rank: card.rank,
 });
 
 interface CreateStoryOptions {
@@ -62,11 +61,11 @@ const createStory = ({
   return {
     args: {
       ...toCutBreakdown(cutAdded),
-      discard: discard.map(toComparableCard),
+      discard: discard.map(toDealtCard),
       expectedHandPoints: expectedHandPoints(keep, discard).total,
       handPoints: handPoints(keep).total,
       isHighlighted,
-      keep: keep.map(toComparableCard),
+      keep: keep.map(toDealtCard),
       rowIndex: 0,
       sortOrder,
     },
