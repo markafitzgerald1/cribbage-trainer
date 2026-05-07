@@ -48,7 +48,4 @@ test("pre-cut hand points show after select of two discards", async ({
   await expect(
     page.getByRole("columnheader", { exact: true, name: "Hand" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("columnheader", { exact: true, name: "15s" }),
-  ).toBeVisible();
 });

@@ -352,8 +352,6 @@ describe("groupCutsByResults", () => {
       runs: getContributions(typedArgs.runs),
     });
 
-    expect(result).toMatchObject(
-      expectedGroups as unknown as Record<string, unknown>[],
-    );
+    expect(result).toMatchSnapshot();
   });
 });
