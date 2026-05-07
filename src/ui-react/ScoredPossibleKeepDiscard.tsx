@@ -94,8 +94,10 @@ export function ScoredPossibleKeepDiscard({
           avgCutAddedPairs={avgCutAddedPairs}
           avgCutAddedRuns={avgCutAddedRuns}
           cutCountsRemaining={cutCountsRemaining}
+          discard={discard}
           fifteensContributions={fifteensContributions}
           flushesContributions={flushesContributions}
+          keep={keep}
           nobsContributions={nobsContributions}
           onRowClick={handleRowClick}
           pairsContributions={pairsContributions}

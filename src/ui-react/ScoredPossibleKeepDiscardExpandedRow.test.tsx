@@ -34,6 +34,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     const runs = overrides.runsContributions ?? [];
     const order = overrides.sortOrder ?? SortOrder.Ascending;
 
+    const keep = overrides.keep ?? [];
+    const discard = overrides.discard ?? [];
+
     render(
       <table>
         <tbody>
@@ -44,8 +47,10 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
             avgCutAddedPairs={aPairs}
             avgCutAddedRuns={aRuns}
             cutCountsRemaining={counts}
+            discard={discard}
             fifteensContributions={fifteens}
             flushesContributions={flushes}
+            keep={keep}
             nobsContributions={nobs}
             onRowClick={onRowClick}
             pairsContributions={pairs}
@@ -109,8 +114,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     expect(screen.getAllByText("4♠")).toHaveLength(1);
     expect(screen.getAllByText("5♣")).toHaveLength(1);
     expect(screen.getAllByText("6♦")).toHaveLength(1);
-    expect(screen.getAllByText("10")).toHaveLength(2);
-    expect(screen.getAllByText("2")).toHaveLength(4);
+    // Total points for the rows
+    expect(screen.getAllByText("10")).toHaveLength(1);
+    expect(screen.getAllByText("2")).toHaveLength(2);
   });
 
   it("should cover remaining branches in groupCutsByResults", () => {

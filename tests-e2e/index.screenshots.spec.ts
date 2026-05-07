@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
-const constantSeedQuery = "?seed=4";
+const constantHandQuery = "?hand=KH,QS,10D,JH,9S,8C";
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
     page,
   }) => {
-    await page.goto(`/${constantSeedQuery}`);
+    await page.goto(`/${constantHandQuery}`);
 
     await expect(page).toHaveScreenshot();
   });
@@ -16,7 +16,7 @@ const testPrivacyPolicyScreenshot = () =>
   test("privacy policy modal with analysis visible still visually the same", async ({
     page,
   }) => {
-    await renderThenSelectTwoDiscards(page, constantSeedQuery, true);
+    await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page
       .locator('span[role="button"]:has-text("Privacy Policy")')
@@ -29,7 +29,7 @@ const testPrivacyPolicyAcceptThenSelectScreenshot = () =>
   test("pre-cut hand points show after select of two discards still visually the same", async ({
     page,
   }) => {
-    await renderThenSelectTwoDiscards(page, constantSeedQuery, true);
+    await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
 

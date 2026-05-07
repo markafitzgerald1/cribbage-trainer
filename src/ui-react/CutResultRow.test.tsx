@@ -44,11 +44,6 @@ describe("cutResultRow", () => {
     const renderResult = render(
       <CutResultRow
         cuts={cuts}
-        fifteensPoints={FOUR_POINTS}
-        flushesPoints={0}
-        nobsPoints={0}
-        pairsPoints={0}
-        runsPoints={0}
         sortOrder={sortOrder}
         totalPoints={SIX_POINTS}
       />,

@@ -1,4 +1,5 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
+import { type Card, type Rank } from "../game/Card";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
@@ -7,8 +8,33 @@ import { groupCutsByResults } from "./groupCutsByResults";
 const DECIMAL_PLACES = 2;
 
 export interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
+  readonly keep: readonly Card[];
+  readonly discard: readonly Card[];
   readonly onRowClick: () => void;
   readonly sortOrder: SortOrder;
+}
+
+function groupCuts(
+  cuts: readonly Card[],
+  cutCountsRemaining: readonly number[],
+): (Rank | Card)[] {
+  const groups = new Map<Rank, Card[]>();
+  for (const card of cuts) {
+    const group = groups.get(card.rank) ?? [];
+    group.push(card);
+    groups.set(card.rank, group);
+  }
+
+  const result: (Rank | Card)[] = [];
+  for (const [rank, group] of groups) {
+    // eslint-disable-next-line security/detect-object-injection
+    if (group.length === cutCountsRemaining[rank]) {
+      result.push(rank);
+    } else {
+      result.push(...group);
+    }
+  }
+  return result;
 }
 
 export function ScoredPossibleKeepDiscardExpandedRow({
@@ -23,13 +49,16 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   runsContributions,
   flushesContributions,
   nobsContributions,
+  keep,
+  discard,
   onRowClick,
   sortOrder,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
   const cutResults = groupCutsByResults({
-    cutCountsRemaining,
+    discard,
     fifteens: fifteensContributions,
     flushes: flushesContributions,
+    keep,
     nobs: nobsContributions,
     pairs: pairsContributions,
     runs: runsContributions,
@@ -82,20 +111,15 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       className={classes.expandedRow}
       onClick={onRowClick}
     >
-      <td colSpan={8}>
+      <td colSpan={4}>
         <div className={classes.breakdownContainer}>
           {renderHeader()}
           {renderSummary()}
           <div className={classes.cutResultsList}>
             {cutResults.map((result) => (
               <CutResultRow
-                cuts={result.cuts}
-                fifteensPoints={result.fifteensPoints}
-                flushesPoints={result.flushesPoints}
-                key={result.cuts.join(",")}
-                nobsPoints={result.nobsPoints}
-                pairsPoints={result.pairsPoints}
-                runsPoints={result.runsPoints}
+                cuts={groupCuts(result.cuts, cutCountsRemaining)}
+                key={result.cuts.map((card) => `${card.rank}${card.suit}`).join(",")}
                 sortOrder={sortOrder}
                 totalPoints={result.totalPoints}
               />

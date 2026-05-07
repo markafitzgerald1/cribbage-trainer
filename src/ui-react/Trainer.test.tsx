@@ -5,7 +5,7 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { CARD_LABELS, Rank, type Suit } from "../game/Card";
+import { CARD_LABELS, Rank, type Suit, parseHand } from "../game/Card";
 import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
@@ -165,5 +165,34 @@ describe("trainer component", () => {
     expect(container.querySelector("ul")!.textContent).not.toBe(
       initialDealtHand,
     );
+  });
+
+  it("renders the specified initialCards", () => {
+    const initialCards = parseHand("AH,2H,3H,4H,5H,6H");
+    const { container } = render(
+      <Trainer
+        generateRandomNumber={mathRandom}
+        initialCards={initialCards}
+        loadGoogleAnalytics={jest.fn()}
+      />,
+    );
+
+    expect(container.querySelector("ul")!.textContent).toBe("6♥5♥4♥3♥2♥A♥");
+  });
+
+  it("toggles card selection", async () => {
+    const user = userEvent.setup();
+    const { getAllByRole } = renderTrainer();
+    const firstCheckbox = getAllByRole("checkbox")[0]!;
+
+    expect(firstCheckbox).toBeChecked();
+
+    await act(() => user.click(firstCheckbox));
+
+    expect(firstCheckbox).not.toBeChecked();
+
+    await act(() => user.click(firstCheckbox));
+
+    expect(firstCheckbox).toBeChecked();
   });
 });

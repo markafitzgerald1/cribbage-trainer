@@ -93,3 +93,35 @@ export const CARDS: Cards = {
   ...RANKED_CARDS,
   ...NAMED_CARDS,
 };
+
+export const parseSuit = (suitChar: string): Suit => {
+  switch (suitChar.toUpperCase()) {
+    case "C":
+      return Suit.CLUBS;
+    case "D":
+      return Suit.DIAMONDS;
+    case "H":
+      return Suit.HEARTS;
+    case "S":
+      return Suit.SPADES;
+    default:
+
+      if (Object.values(Suit).includes(suitChar as Suit)) {
+        return suitChar as Suit;
+      }
+      throw new Error(`Invalid suit character: ${suitChar}`);
+  }
+};
+
+export const parseCard = (card: string): Card => {
+  const suitChar = card.slice(card.length - 1);
+  const rankLabel = card.slice(0, card.length - 1);
+  if (!CARD_LABELS.includes(rankLabel)) {
+    throw new Error(`Invalid rank label: ${rankLabel}`);
+  }
+  const rank = CARD_LABELS.indexOf(rankLabel);
+  return createCard(rank as Rank, parseSuit(suitChar));
+};
+
+export const parseHand = (hand: string): Card[] =>
+  hand.split(",").map(parseCard);

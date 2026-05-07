@@ -1,9 +1,9 @@
-import { CARD_RANKS, type Rank } from "../game/Card";
+import { type Card, DECK } from "../game/Card";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
 
 export interface CutResult {
   readonly cutCount: number;
-  readonly cuts: readonly Rank[];
+  readonly cuts: readonly Card[];
   readonly fifteensPoints: number;
   readonly pairsPoints: number;
   readonly runsPoints: number;
@@ -15,7 +15,7 @@ export interface CutResult {
 const DESCENDING_MULTIPLIER = -1;
 
 export interface CutContributions {
-  readonly cutCountsRemaining: readonly number[];
+  readonly availableCards: readonly Card[];
   readonly fifteens: readonly CutContribution[];
   readonly pairs: readonly CutContribution[];
   readonly runs: readonly CutContribution[];
@@ -23,40 +23,45 @@ export interface CutContributions {
   readonly nobs: readonly CutContribution[];
 }
 
+function getCardKey(card: Card): string {
+  return `${card.rank}-${card.suit}`;
+}
+
 function buildPointsMap(
   contributions: readonly CutContribution[],
-): Map<Rank, number> {
-  const pointsByRank = new Map<Rank, number>();
+): Map<string, number> {
+  const pointsByCardKey = new Map<string, number>();
   for (const contribution of contributions) {
-    pointsByRank.set(contribution.cutCard.rank, contribution.points);
+    pointsByCardKey.set(getCardKey(contribution.cutCard), contribution.points);
   }
-  return pointsByRank;
+  return pointsByCardKey;
 }
 
 interface PointMaps {
-  readonly fifteensMap: Map<Rank, number>;
-  readonly pairsMap: Map<Rank, number>;
-  readonly runsMap: Map<Rank, number>;
-  readonly flushesMap: Map<Rank, number>;
-  readonly nobsMap: Map<Rank, number>;
+  readonly fifteensMap: Map<string, number>;
+  readonly pairsMap: Map<string, number>;
+  readonly runsMap: Map<string, number>;
+  readonly flushesMap: Map<string, number>;
+  readonly nobsMap: Map<string, number>;
 }
 
-function pointsKey(rank: Rank, maps: PointMaps): string {
-  return `${maps.fifteensMap.get(rank) ?? 0},${maps.pairsMap.get(rank) ?? 0},${maps.runsMap.get(rank) ?? 0},${maps.flushesMap.get(rank) ?? 0},${maps.nobsMap.get(rank) ?? 0}`;
+function pointsKey(card: Card, maps: PointMaps): string {
+  const key = getCardKey(card);
+  return `${maps.fifteensMap.get(key) ?? 0},${maps.pairsMap.get(key) ?? 0},${maps.runsMap.get(key) ?? 0},${maps.flushesMap.get(key) ?? 0},${maps.nobsMap.get(key) ?? 0}`;
 }
 
-function groupRanksByPointCombination(
-  availableRanks: Rank[],
+function groupCardsByPointCombination(
+  availableCards: Card[],
   maps: PointMaps,
-): Map<string, Rank[]> {
-  const groupMap = new Map<string, Rank[]>();
-  for (const rank of availableRanks) {
-    const key = pointsKey(rank, maps);
+): Map<string, Card[]> {
+  const groupMap = new Map<string, Card[]>();
+  for (const card of availableCards) {
+    const key = pointsKey(card, maps);
     const group = groupMap.get(key);
     if (group) {
-      group.push(rank);
+      group.push(card);
     } else {
-      groupMap.set(key, [rank]);
+      groupMap.set(key, [card]);
     }
   }
   return groupMap;
@@ -79,8 +84,7 @@ function sortByTotalPointsDescending(results: CutResult[]): void {
 export function groupCutsByResults(
   contributions: CutContributions,
 ): CutResult[] {
-  const { cutCountsRemaining, fifteens, pairs, runs, flushes, nobs } =
-    contributions;
+  const { keep, discard, fifteens, pairs, runs, flushes, nobs } = contributions;
 
   const maps: PointMaps = {
     fifteensMap: buildPointsMap(fifteens),
@@ -90,15 +94,18 @@ export function groupCutsByResults(
     runsMap: buildPointsMap(runs),
   };
 
-  const availableRanks = CARD_RANKS.filter(
-    // eslint-disable-next-line security/detect-object-injection
-    (rank) => (cutCountsRemaining[rank] ?? 0) > 0,
+  const handAndDiscard = [...keep, ...discard];
+  const availableCards = DECK.filter(
+    (card) =>
+      !handAndDiscard.some(
+        (existingCard) => existingCard.rank === card.rank && existingCard.suit === card.suit,
+      ),
   );
 
-  const groupMap = groupRanksByPointCombination(availableRanks, maps);
+  const groupMap = groupCardsByPointCombination(availableCards, maps);
 
   const results: CutResult[] = [];
-  for (const [key, ranks] of groupMap) {
+  for (const [key, cards] of groupMap) {
     const [fifteensString, pairsString, runsString, flushesString, nobsString] =
       key.split(",");
     const fifteensPoints = Number(fifteensString);
@@ -106,14 +113,9 @@ export function groupCutsByResults(
     const runsPoints = Number(runsString);
     const flushesPoints = Number(flushesString);
     const nobsPoints = Number(nobsString);
-    const cutCount = ranks.reduce<number>(
-      // eslint-disable-next-line security/detect-object-injection
-      (sum, rank) => sum + (cutCountsRemaining[rank] as number),
-      0,
-    );
     results.push({
-      cutCount,
-      cuts: ranks,
+      cutCount: cards.length,
+      cuts: cards,
       fifteensPoints,
       flushesPoints,
       nobsPoints,

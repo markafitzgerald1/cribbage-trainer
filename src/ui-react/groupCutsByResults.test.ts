@@ -49,12 +49,13 @@ function getContributions(
 }
 
 interface TestArgs {
-  cutCountsRemaining?: readonly number[];
+  discard?: readonly Card[];
   fifteens?: readonly CutContribution[];
+  flushes?: readonly CutContribution[];
+  keep?: readonly Card[];
+  nobs?: readonly CutContribution[];
   pairs?: readonly CutContribution[];
   runs?: readonly CutContribution[];
-  flushes?: readonly CutContribution[];
-  nobs?: readonly CutContribution[];
 }
 
 describe("groupCutsByResults", () => {
@@ -342,9 +343,10 @@ describe("groupCutsByResults", () => {
     // We cast args to TestArgs to bypass complex readonly inference issues with const
     const typedArgs = args as unknown as TestArgs;
     const result = groupCutsByResults({
-      cutCountsRemaining: typedArgs.cutCountsRemaining as readonly number[],
+      discard: typedArgs.discard ?? [],
       fifteens: getContributions(typedArgs.fifteens),
       flushes: getContributions(typedArgs.flushes),
+      keep: typedArgs.keep ?? [],
       nobs: getContributions(typedArgs.nobs),
       pairs: getContributions(typedArgs.pairs),
       runs: getContributions(typedArgs.runs),
