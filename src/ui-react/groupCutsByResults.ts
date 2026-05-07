@@ -15,8 +15,7 @@ export interface CutResult {
 const DESCENDING_MULTIPLIER = -1;
 
 export interface CutContributions {
-  readonly keep: readonly Card[];
-  readonly discard: readonly Card[];
+  readonly availableCards: readonly Card[];
   readonly fifteens: readonly CutContribution[];
   readonly pairs: readonly CutContribution[];
   readonly runs: readonly CutContribution[];
