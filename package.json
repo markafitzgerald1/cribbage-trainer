@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.28.5",
-    "@babel/preset-env": "^7.29.3",
+    "@babel/preset-env": "^7.29.5",
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@eslint/compat": "^2.0.0",
@@ -55,7 +55,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/seedrandom": "^3.0.8",
-    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.52.0",
     "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
@@ -80,17 +80,17 @@
     "jest-environment-jsdom": "^30.2.0",
     "jscpd": "^4.0.5",
     "markdownlint-cli": "^0.48.0",
-    "npm-check-updates": "^22.1.0",
+    "npm-check-updates": "^22.1.1",
     "playwright": "^1.57.0",
     "prettier": "^3.7.4",
     "process": "^0.11.10",
     "rimraf": "^6.1.2",
     "seedrandom": "^3.0.5",
     "storybook": "^10.3.6",
-    "stylelint": "^17.10.0",
+    "stylelint": "^17.11.0",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.10",
+    "vite": "^8.0.11",
     "vitest": "^4.0.16",
     "wait-on": "^9.0.3"
   },
@@ -111,8 +111,8 @@
   "homepage": "https://github.com/markafitzgerald1/cribbage-trainer#readme",
   "dependencies": {
     "js-combinatorics": "^2.1.2",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "@parcel/transformer-css": {
     "cssModules": {
