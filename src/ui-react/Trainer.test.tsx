@@ -5,7 +5,7 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { CARD_LABELS, Rank } from "../game/Card";
+import { CARD_LABELS, Rank, type Suit } from "../game/Card";
 import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
@@ -76,15 +76,18 @@ describe("trainer component", () => {
   const handTextToComparableCards = (
     initialDealtHand: string,
   ): ComparableCard[] => {
-    const initialDealtHandRanks = initialDealtHand
-      .replace(/10/gu, "T")
-      .split("")
-      .map((cardLabel) => (cardLabel === "T" ? "10" : cardLabel))
-      .map((cardLabel, dealOrder) => ({
-        dealOrder,
-        rank: CARD_LABELS.indexOf(cardLabel) as Rank,
-      }));
-    return initialDealtHandRanks;
+    const regex = /(?<rankLabel>10|[A2-9JQK])(?<suit>[♣♦♥♠])/gu;
+    const matches = Array.from(initialDealtHand.matchAll(regex));
+
+    return matches.map((match, index) => {
+      const { rankLabel, suit } = match.groups!;
+
+      return {
+        dealOrder: index,
+        rank: CARD_LABELS.indexOf(rankLabel!) as Rank,
+        suit: suit as Suit,
+      };
+    });
   };
 
   function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
@@ -104,7 +107,7 @@ describe("trainer component", () => {
         handTextToComparableCards(container.querySelector("ul")!.textContent),
         newSortOrder,
       )
-        .map((dealtCard) => CARD_LABELS[dealtCard.rank])
+        .map((dealtCard) => `${CARD_LABELS[dealtCard.rank]}${dealtCard.suit}`)
         .join("");
       const newSortInput = getSortInput(container, newSortOrder);
 

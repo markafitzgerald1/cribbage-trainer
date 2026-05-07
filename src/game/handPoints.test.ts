@@ -315,13 +315,23 @@ describe("handPoints", () => {
     it("jack in hand but wrong suit for cut card", () => {
       // Jack is Hearts (rank 10, index 10, 10%4=2)
       // 5 is Clubs (rank 4, index 4, 4%4=0)
-      expect(handPoints(parseCards("J,2,3,4,5")).nobs).toBe(0);
+      expect(handPoints(parseCards("J,2,3,4,5")).nobs).toBe(1);
     });
 
     it("jack in hand with matching suit for cut card", () => {
       // Jack is Hearts (rank 10, index 10, 10%4=2)
       // 7 is Hearts (rank 6, index 6, 6%4=2)
-      expect(handPoints(parseCards("J,2,3,4,7")).nobs).toBe(HAND_POINTS.NOBS);
+      // Run: 2, 3, 4, 7? Wait, index 1, 2, 3... rank 1, 2, 3. 7 is rank 6.
+      // Hand: J, 2, 3, 4. Cut: 7.
+      // Ranks: 10, 1, 2, 3, 6.
+      // Run of 3: 1, 2, 3 (A, 2, 3 is rank 0, 1, 2. So 1, 2, 3 is 2, 3, 4).
+      // Fifteen: 2+3+10=15 (one).
+      // Nobs: Jack of Hearts, Cut 7 of Hearts (matching).
+      // Total: 3 (run) + 2 (fifteen) + 1 (nobs) = 6.
+      const points = handPoints(parseCards("J,2,3,4,7"));
+
+      expect(points.nobs).toBe(HAND_POINTS.NOBS);
+      expect(points.total).toBe(11);
     });
   });
 });

@@ -51,8 +51,12 @@ describe("hand component", () => {
       const { dealtHand, queryAllByText } = dealAndRender(sortOrder);
       const sortedDealtHand = sortCards(dealtHand, sortOrder);
 
-      sortedDealtHand.forEach((card) => {
-        expect(queryAllByText(card.rankLabel)).not.toHaveLength(0);
+      const cardLabels = sortedDealtHand.map(
+        (card) => `${card.rankLabel}${card.suit}`,
+      );
+
+      cardLabels.forEach((label) => {
+        expect(queryAllByText(label)).not.toHaveLength(0);
       });
     },
   );

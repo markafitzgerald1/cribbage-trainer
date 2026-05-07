@@ -21,14 +21,14 @@ describe("possible hand component", () => {
   const discard = "5,K";
 
   const expectedKeptHand: Record<SortOrderName, string> = {
-    Ascending: "A410J",
-    DealOrder: keptHand,
-    Descending: "J104A",
+    Ascending: "A♠4♠10♠J♠",
+    DealOrder: "10♠A♠J♠4♠",
+    Descending: "J♠10♠4♠A♠",
   };
   const expectedDiscard: Record<SortOrderName, string> = {
-    Ascending: discard,
-    DealOrder: discard,
-    Descending: "K5",
+    Ascending: "5♠K♠",
+    DealOrder: "5♠K♠",
+    Descending: "K♠5♠",
   };
 
   function expectPossibleHandRendersSpan(
@@ -36,7 +36,7 @@ describe("possible hand component", () => {
     expectedMap: Record<SortOrderName, string>,
     sortOrderName: SortOrderName,
   ) {
-    const expected = expectedMap[sortOrderName].replace(/,/gu, "");
+    const expected = expectedMap[sortOrderName];
 
     expect(
       render(

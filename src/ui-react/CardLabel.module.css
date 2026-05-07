@@ -10,3 +10,11 @@
   margin-left: -0.3em;
   margin-right: -0.2em;
 }
+
+.red-suit {
+  color: #c41e3a; /* A standard deep red for cards */
+}
+
+.black-suit {
+  color: #222; /* Almost black */
+}

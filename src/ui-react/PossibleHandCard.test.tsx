@@ -19,7 +19,7 @@ describe("possible hand card component", () => {
         <PossibleHandCard rank={card.rank} />,
       ).container.querySelector("span");
 
-      expect(spanElement!.textContent).toBe(card.rankLabel);
+      expect(spanElement!.textContent).toBe(`${card.rankLabel}${card.suit}`);
     },
   );
 });

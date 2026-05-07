@@ -1,4 +1,4 @@
-import type { Card } from "../game/Card";
+import { type Card, SUITS } from "../game/Card";
 
 export const compareByExpectedScoreThenRankDescending = (
   discardKeep1: {
@@ -22,11 +22,17 @@ export const compareByExpectedScoreThenRankDescending = (
     .slice(0, minLength)
     // eslint-disable-next-line security/detect-object-injection
     .map((card, index) => [card, discardKeep2.keep[index]] as [Card, Card])
-    .find(([card1, card2]) => card1?.rank !== card2?.rank);
+    .find(
+      ([card1, card2]) =>
+        card1?.rank !== card2?.rank || card1?.suit !== card2?.suit,
+    );
 
   if (differingPair) {
     const [card1, card2] = differingPair;
-    return card2?.rank - card1?.rank;
+    if (card1?.rank !== card2?.rank) {
+      return card2?.rank - card1?.rank;
+    }
+    return SUITS.indexOf(card2?.suit) - SUITS.indexOf(card1?.suit);
   }
 
   return 0;

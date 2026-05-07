@@ -24,19 +24,19 @@ describe("cutResultRow", () => {
   it.each([
     {
       cuts: [Rank.KING, Rank.QUEEN, Rank.JACK, Rank.TEN],
-      expected: ["10", "J", "Q", "K"],
+      expected: ["10♦", "J♥", "Q♠", "K♣"],
       name: "ascending order when sortOrder is Ascending",
       sortOrder: SortOrder.Ascending,
     },
     {
       cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
-      expected: ["K", "Q", "J", "10"],
+      expected: ["K♣", "Q♠", "J♥", "10♦"],
       name: "descending order when sortOrder is Descending",
       sortOrder: SortOrder.Descending,
     },
     {
       cuts: [Rank.ACE, Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE],
-      expected: ["5", "4", "3", "2", "A"],
+      expected: ["5♣", "4♠", "3♥", "2♦", "A♣"],
       name: "descending order when sortOrder is DealOrder",
       sortOrder: SortOrder.DealOrder,
     },

@@ -7,5 +7,5 @@ export const handToSortedString = (
   sortOrder: SortOrder,
 ): string =>
   sortCards(handCards, sortOrder)
-    .map((dealtCard) => dealtCard.rankLabel)
+    .map((dealtCard) => `${dealtCard.rankLabel}${dealtCard.suit}`)
     .join("");

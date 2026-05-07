@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 
 describe("hand card component", () => {
   const renderCard = (
-    { dealOrder, kept, rank }: DealtCard,
+    { dealOrder, kept, rank, suit }: DealtCard,
     mockOnChange: jest.Mock = jest.fn(),
   ) =>
     render(
@@ -18,10 +18,16 @@ describe("hand card component", () => {
         kept={kept}
         onChange={mockOnChange}
         rank={rank}
+        suit={suit}
       />,
     );
 
   const dealCard = () => dealHand(Math.random)[0]!;
+
+  const getLabel = (
+    { getAllByText }: { getAllByText: (content: string) => HTMLElement[] },
+    card: DealtCard,
+  ) => getAllByText(`${card.rankLabel}${card.suit}`)[0]!.closest("label")!;
 
   it("is a checkbox", () =>
     expect(renderCard(dealCard()).queryByRole("checkbox")).toBeTruthy());
@@ -29,7 +35,9 @@ describe("hand card component", () => {
   it("label text is its rank label", () => {
     const card = dealCard();
 
-    expect(renderCard(card).getByText(CARD_LABELS[card.rank]!)).toBeTruthy();
+    expect(
+      renderCard(card).getByText(`${CARD_LABELS[card.rank]}${card.suit}`),
+    ).toBeTruthy();
   });
 
   it("emits an onChange event on checkbox click", async () => {
@@ -46,21 +54,19 @@ describe("hand card component", () => {
     const user = userEvent.setup();
     const card = dealCard();
     const mock = jest.fn();
-    const { getByLabelText } = renderCard(card, mock);
+    const label = getLabel(renderCard(card, mock), card);
 
-    await user.click(getByLabelText(card.rankLabel));
+    await user.click(label);
 
     expect(mock).toHaveBeenCalledTimes(1);
   });
 
   it.each([false, true])(`%s has class 'discarded' if not kept`, (kept) => {
     const card = { ...dealCard(), kept };
-    const { getByLabelText } = renderCard(card);
+    renderCard(card);
 
     expect(
-      getByLabelText(card.rankLabel).parentElement!.classList.contains(
-        classes.discarded,
-      ),
+      getLabel(renderCard(card), card).classList.contains(classes.discarded),
     ).toBe(!card.kept);
   });
 });

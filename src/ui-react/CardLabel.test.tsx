@@ -12,17 +12,21 @@ describe("card label component", () => {
 
   it("label text is its rank label", () => {
     const rank = dealCard();
+    const { suit } = CARDS[rank]!;
 
-    expect(renderCard(rank).getByText(CARD_LABELS[rank]!)).toBeTruthy();
+    expect(
+      renderCard(rank).getByText(`${CARD_LABELS[rank]}${suit}`),
+    ).toBeTruthy();
   });
 
   it.each([CARDS.TEN.rank, CARDS.FOUR.rank])(
     "%s has the 'ten' CSS class if it is a ten",
     (dealtCardRank) => {
+      const { suit } = CARDS[dealtCardRank]!;
       const { getByText } = renderCard(dealtCardRank);
 
       expect(
-        getByText(CARD_LABELS[dealtCardRank]!)
+        getByText(`${CARD_LABELS[dealtCardRank]}${suit}`)
           .className.split(" ")
           .includes(classes.ten),
       ).toBe(dealtCardRank === CARDS.TEN.rank);

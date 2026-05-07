@@ -109,7 +109,7 @@ describe("groupCutsByResults", () => {
           fifteensPoints: FIFTEEN_POINTS,
           pairsPoints: TWO_PAIR_POINTS,
           runsPoints: 0,
-          totalPoints: THREE_OF_KIND_POINTS,
+          totalPoints: FIFTEEN_POINTS + TWO_PAIR_POINTS,
         },
         { cutCount: ELEVEN_RANKS_CUT_COUNT, totalPoints: 0 },
       ],
