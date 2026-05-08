@@ -110,7 +110,7 @@ export const DiscardShowsScoredPossibilities = {
       within(canvasElement).getByRole("columnheader", { name: "Hand" }),
     ).toBeVisible();
     await expect(
-      within(canvasElement).getByRole("columnheader", { name: "15s" }),
+      within(canvasElement).getByRole("columnheader", { name: "Cut" }),
     ).toBeVisible();
   },
 };

@@ -1,4 +1,4 @@
-import { type Card, CARDS as card } from "../game/Card";
+import { type Card, CARDS as card, parseHand } from "../game/Card";
 const { ACE, TWO, THREE, FOUR, FIVE, SIX, EIGHT, TEN, JACK, QUEEN, KING } =
   card;
 
@@ -101,5 +101,11 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
       FIVE,
       FOUR,
     ]);
+  });
+
+  it("six card deal with rank ties", () => {
+    expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
+      parseHand("AH,AD,2H,2D,3H,3D"),
+    );
   });
 });

@@ -582,6 +582,671 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
 ]
 `;
 
+exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`] = `
+[
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913044,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913044,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913044,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913044,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.08695652173913,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.08695652173913,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.08695652173913,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.08695652173913,
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 9.73913043478261,
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 6.95652173913044,
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 6.43478260869565,
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+    ],
+  },
+]
+`;
+
 exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order deal 1`] = `
 [
   {

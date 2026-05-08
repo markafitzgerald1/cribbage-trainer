@@ -181,6 +181,7 @@ describe("trainer component", () => {
   });
 
   it("toggles card selection", async () => {
+    /* jscpd:ignore-start */
     const user = userEvent.setup();
     const { getAllByRole } = renderTrainer();
     const firstCheckbox = getAllByRole("checkbox")[0]!;
@@ -194,5 +195,6 @@ describe("trainer component", () => {
     await act(() => user.click(firstCheckbox));
 
     expect(firstCheckbox).toBeChecked();
+    /* jscpd:ignore-end */
   });
 });

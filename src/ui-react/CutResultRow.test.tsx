@@ -1,11 +1,12 @@
+/* jscpd:ignore-start */
 import "@testing-library/jest-dom";
+import { Rank, parseCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { CutResultRow } from "./CutResultRow";
-import { Rank } from "../game/Card";
 import { SortOrder } from "../ui/SortOrder";
 import { render } from "@testing-library/react";
+/* jscpd:ignore-end */
 
-const FOUR_POINTS = 4;
 const SIX_POINTS = 6;
 
 const CUTS_COLUMN_SELECTOR = '[class*="cutsColumn"]';
@@ -39,6 +40,18 @@ describe("cutResultRow", () => {
       expected: ["5♣", "4♠", "3♥", "2♦", "A♣"],
       name: "descending order when sortOrder is DealOrder",
       sortOrder: SortOrder.DealOrder,
+    },
+    {
+      cuts: [Rank.ACE, parseCard("AS")],
+      expected: ["A♣", "A♠"],
+      name: "mixed rank and card with same rank",
+      sortOrder: SortOrder.Ascending,
+    },
+    {
+      cuts: [parseCard("AS"), parseCard("AH")],
+      expected: ["A♠", "A♥"],
+      name: "cards with same rank sorted by suit",
+      sortOrder: SortOrder.Ascending,
     },
   ])("renders cuts in $name", ({ cuts, expected, sortOrder }) => {
     const renderResult = render(

@@ -1,5 +1,10 @@
-import { type Card, DECK } from "../game/Card";
+import { type Card, DECK, type Rank, type Suit } from "../game/Card";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
+
+export interface MinimalCard {
+  readonly rank: Rank;
+  readonly suit?: Suit | undefined;
+}
 
 export interface CutResult {
   readonly cutCount: number;
@@ -15,7 +20,9 @@ export interface CutResult {
 const DESCENDING_MULTIPLIER = -1;
 
 export interface CutContributions {
-  readonly availableCards: readonly Card[];
+  readonly availableCards?: readonly Card[];
+  readonly discard: readonly MinimalCard[];
+  readonly keep: readonly MinimalCard[];
   readonly fifteens: readonly CutContribution[];
   readonly pairs: readonly CutContribution[];
   readonly runs: readonly CutContribution[];
@@ -98,7 +105,8 @@ export function groupCutsByResults(
   const availableCards = DECK.filter(
     (card) =>
       !handAndDiscard.some(
-        (existingCard) => existingCard.rank === card.rank && existingCard.suit === card.suit,
+        (existingCard) =>
+          existingCard.rank === card.rank && existingCard.suit === card.suit,
       ),
   );
 

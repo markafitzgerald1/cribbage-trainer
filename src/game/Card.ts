@@ -105,7 +105,6 @@ export const parseSuit = (suitChar: string): Suit => {
     case "S":
       return Suit.SPADES;
     default:
-
       if (Object.values(Suit).includes(suitChar as Suit)) {
         return suitChar as Suit;
       }

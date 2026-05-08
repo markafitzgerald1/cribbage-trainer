@@ -1,15 +1,15 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import { type Card, type Rank } from "../game/Card";
+import { type MinimalCard, groupCutsByResults } from "./groupCutsByResults";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
-import { groupCutsByResults } from "./groupCutsByResults";
 
 const DECIMAL_PLACES = 2;
 
 export interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
-  readonly keep: readonly Card[];
-  readonly discard: readonly Card[];
+  readonly keep: readonly MinimalCard[];
+  readonly discard: readonly MinimalCard[];
   readonly onRowClick: () => void;
   readonly sortOrder: SortOrder;
 }
@@ -119,7 +119,9 @@ export function ScoredPossibleKeepDiscardExpandedRow({
             {cutResults.map((result) => (
               <CutResultRow
                 cuts={groupCuts(result.cuts, cutCountsRemaining)}
-                key={result.cuts.map((card) => `${card.rank}${card.suit}`).join(",")}
+                key={result.cuts
+                  .map((card) => `${card.rank}${card.suit}`)
+                  .join(",")}
                 sortOrder={sortOrder}
                 totalPoints={result.totalPoints}
               />

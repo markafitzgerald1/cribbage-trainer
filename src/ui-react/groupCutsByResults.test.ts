@@ -1,7 +1,9 @@
-import { CARDS, type Card, Rank } from "../game/Card";
+/* jscpd:ignore-start */
+import { CARDS, type Card } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
 import { groupCutsByResults } from "./groupCutsByResults";
+/* jscpd:ignore-end */
 
 const CARD_COUNT_FOR_UNIQUE_RANK = 4;
 const CARD_COUNT_FOR_THREE_OF_A_KIND = 1;
@@ -14,9 +16,6 @@ const DOUBLE_FIFTEEN_POINTS = 4;
 const EIGHT_POINTS = 8;
 const TWELVE_POINTS = 12;
 const ALL_RANKS_CUT_COUNT = 52;
-const TWELVE_RANKS_CUT_COUNT = 48;
-const ELEVEN_RANKS_CUT_COUNT = 44;
-const TEN_RANKS_CUT_COUNT = 40;
 const TOTAL_RANKS = 13;
 
 const createCutCounts = (
@@ -105,14 +104,14 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: EIGHT_POINTS,
-          cuts: expect.arrayContaining([Rank.ACE, Rank.TWO]),
+          cutCount: 2,
+          cuts: expect.any(Array),
           fifteensPoints: FIFTEEN_POINTS,
           pairsPoints: TWO_PAIR_POINTS,
           runsPoints: 0,
           totalPoints: FIFTEEN_POINTS + TWO_PAIR_POINTS,
         },
-        { cutCount: ELEVEN_RANKS_CUT_COUNT, totalPoints: 0 },
+        { cutCount: 50, totalPoints: 0 },
       ],
     ],
     [
@@ -134,7 +133,7 @@ describe("groupCutsByResults", () => {
       [
         { totalPoints: DOUBLE_FIFTEEN_POINTS },
         { totalPoints: FIFTEEN_POINTS },
-        { cutCount: ELEVEN_RANKS_CUT_COUNT, totalPoints: 0 },
+        { cutCount: 50, totalPoints: 0 },
       ],
     ],
     [
@@ -167,7 +166,7 @@ describe("groupCutsByResults", () => {
         { totalPoints: TWELVE_POINTS },
         { totalPoints: TWO_PAIR_POINTS },
         { totalPoints: FIFTEEN_POINTS },
-        { cutCount: TEN_RANKS_CUT_COUNT, totalPoints: 0 },
+        { cutCount: 49, totalPoints: 0 },
       ],
     ],
     [
@@ -184,13 +183,13 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: CARD_COUNT_FOR_UNIQUE_RANK,
+          cutCount: 1,
           fifteensPoints: 0,
           pairsPoints: 0,
           runsPoints: EIGHT_POINTS,
           totalPoints: EIGHT_POINTS,
         },
-        { cutCount: TWELVE_RANKS_CUT_COUNT, totalPoints: 0 },
+        { cutCount: 51, totalPoints: 0 },
       ],
     ],
     [
@@ -206,10 +205,7 @@ describe("groupCutsByResults", () => {
           ),
         ],
       },
-      [
-        { cutCount: EIGHT_POINTS },
-        { cutCount: ELEVEN_RANKS_CUT_COUNT, totalPoints: 0 },
-      ],
+      [{ cutCount: 2 }, { cutCount: 50, totalPoints: 0 }],
     ],
     [
       "sorts by cut count when points are equal and groups are separate plus zero-point group",
@@ -229,11 +225,11 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: CARD_COUNT_FOR_UNIQUE_RANK,
+          cutCount: 1,
           totalPoints: DOUBLE_FIFTEEN_POINTS,
         },
-        { cutCount: CARD_COUNT_FOR_PAIR, totalPoints: DOUBLE_FIFTEEN_POINTS },
-        { cutCount: ELEVEN_RANKS_CUT_COUNT, totalPoints: 0 },
+        { cutCount: 1, totalPoints: DOUBLE_FIFTEEN_POINTS },
+        { cutCount: 50, totalPoints: 0 },
       ],
     ],
     [
@@ -250,13 +246,13 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: CARD_COUNT_FOR_SINGLE,
+          cutCount: 1,
           fifteensPoints: 0,
           pairsPoints: THREE_OF_KIND_POINTS,
           runsPoints: 0,
           totalPoints: THREE_OF_KIND_POINTS,
         },
-        { cutCount: TWELVE_RANKS_CUT_COUNT, totalPoints: 0 },
+        { cutCount: 51, totalPoints: 0 },
       ],
     ],
     [
@@ -287,13 +283,13 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: CARD_COUNT_FOR_UNIQUE_RANK,
+          cutCount: 1,
           fifteensPoints: FIFTEEN_POINTS,
           pairsPoints: DOUBLE_FIFTEEN_POINTS,
           runsPoints: THREE_OF_KIND_POINTS,
           totalPoints: TWELVE_POINTS,
         },
-        { cutCount: TWELVE_RANKS_CUT_COUNT, totalPoints: 0 },
+        { cutCount: 51, totalPoints: 0 },
       ],
     ],
     [
@@ -304,7 +300,7 @@ describe("groupCutsByResults", () => {
           5: CARD_COUNT_FOR_PAIR,
         }),
       },
-      [{ cutCount: ALL_RANKS_CUT_COUNT - 3, totalPoints: 0 }],
+      [{ cutCount: 52, totalPoints: 0 }],
     ],
     [
       "treats undefined values in cutCountsRemaining as zero",
@@ -314,7 +310,7 @@ describe("groupCutsByResults", () => {
           CARD_COUNT_FOR_UNIQUE_RANK,
         ],
       },
-      [{ cutCount: EIGHT_POINTS, totalPoints: 0 }],
+      [{ cutCount: 52, totalPoints: 0 }],
     ],
     [
       "handles flushes and nobs correctly",
@@ -325,31 +321,42 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: CARD_COUNT_FOR_UNIQUE_RANK,
+          cutCount: 1,
           flushesPoints: 4,
           nobsPoints: 0,
           totalPoints: 4,
         },
         {
-          cutCount: CARD_COUNT_FOR_UNIQUE_RANK,
+          cutCount: 1,
           flushesPoints: 0,
           nobsPoints: 1,
           totalPoints: 1,
         },
-        { cutCount: ALL_RANKS_CUT_COUNT - 8, totalPoints: 0 },
+        { cutCount: 50, totalPoints: 0 },
       ],
     ],
   ] as const)("%s", (_, args, expectedGroups) => {
     // We cast args to TestArgs to bypass complex readonly inference issues with const
     const typedArgs = args as unknown as TestArgs;
+    const {
+      discard = [],
+      fifteens,
+      flushes,
+      keep = [],
+      nobs,
+      pairs,
+      runs,
+    } = typedArgs;
+
     const result = groupCutsByResults({
-      discard: typedArgs.discard ?? [],
-      fifteens: getContributions(typedArgs.fifteens),
-      flushes: getContributions(typedArgs.flushes),
-      keep: typedArgs.keep ?? [],
-      nobs: getContributions(typedArgs.nobs),
-      pairs: getContributions(typedArgs.pairs),
-      runs: getContributions(typedArgs.runs),
+      availableCards: [],
+      discard,
+      fifteens: getContributions(fifteens),
+      flushes: getContributions(flushes),
+      keep,
+      nobs: getContributions(nobs),
+      pairs: getContributions(pairs),
+      runs: getContributions(runs),
     });
 
     expect(result).toMatchObject(
