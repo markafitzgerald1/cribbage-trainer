@@ -12,9 +12,15 @@
 }
 
 .red-suit {
-  color: #c41e3a; /* A standard deep red for cards */
+  color: #c41e3a;
 }
 
 .black-suit {
   color: #222; /* Almost black */
+}
+
+.suit {
+  font-size: 0.6em;
+  margin-left: 0.1em;
+  vertical-align: top;
 }

@@ -4,6 +4,7 @@ import { Hand } from "./Hand";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
+import { queryAllByCardText } from "./test-utils";
 import { render } from "@testing-library/react";
 import { sortCards } from "../ui/sortCards";
 /* jscpd:ignore-end */
@@ -56,7 +57,9 @@ describe("hand component", () => {
       );
 
       cardLabels.forEach((label) => {
-        expect(queryAllByText(label)).not.toHaveLength(0);
+        expect(queryAllByCardText({ queryAllByText }, label)).not.toHaveLength(
+          0,
+        );
       });
     },
   );

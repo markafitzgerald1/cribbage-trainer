@@ -111,10 +111,14 @@ function processCutsForGroup(
   }
 
   for (const [rank, cardsOfRank] of cardsByRank) {
-    if (cardsOfRank.length === (remainingByRank.get(rank) as number)) {
+    const [firstCardOfRank] = cardsOfRank;
+    if (
+      cardsOfRank.length > 1 ||
+      cardsOfRank.length === (remainingByRank.get(rank) as number)
+    ) {
       processedCuts.push(rank);
     } else {
-      processedCuts.push(...cardsOfRank);
+      processedCuts.push(firstCardOfRank as Card);
     }
   }
   return processedCuts;

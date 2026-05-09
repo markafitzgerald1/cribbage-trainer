@@ -1,11 +1,14 @@
+/* jscpd:ignore-start */
 import { Rank, createCard } from "../game/Card";
 import {
   ScoredPossibleKeepDiscardExpandedRow,
   type ScoredPossibleKeepDiscardExpandedRowProps,
 } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { describe, expect, it, jest } from "@jest/globals";
+import { getAllByCardText, getByCardText } from "./test-utils";
 import { render, screen } from "@testing-library/react";
 import { SortOrder } from "../ui/SortOrder";
+/* jscpd:ignore-end */
 
 describe("scoredPossibleKeepDiscardExpandedRow", () => {
   const createContribution = (rank: Rank, points: number) => ({
@@ -69,7 +72,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     expect(screen.getByText("0.50")).toBeTruthy();
 
     // Verify that the CutResultRow is rendered for the 5 rank
-    expect(screen.getByText("5♠")).toBeTruthy();
+    expect(getByCardText(screen, "5♠")).toBeTruthy();
   });
 
   it("should render cut results in descending order", () => {
@@ -85,8 +88,8 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     });
 
     // Verify that both cards are rendered
-    expect(screen.getByText("5♠")).toBeTruthy();
-    expect(screen.getByText("4♠")).toBeTruthy();
+    expect(getByCardText(screen, "5♠")).toBeTruthy();
+    expect(getByCardText(screen, "4♠")).toBeTruthy();
   });
 
   it("should render multiple cut results sorted by points and count", () => {
@@ -111,9 +114,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     });
 
     // Verify rendering (use getAllByText to avoid multiple elements error)
-    expect(screen.getAllByText("4♠")).toHaveLength(1);
-    expect(screen.getAllByText("5♠")).toHaveLength(1);
-    expect(screen.getAllByText("6♠")).toHaveLength(1);
+    expect(getAllByCardText(screen, "4♠")).toHaveLength(1);
+    expect(getAllByCardText(screen, "5♠")).toHaveLength(1);
+    expect(getAllByCardText(screen, "6♠")).toHaveLength(1);
     // "10" appears 3 times: 15sPoints column, totalPoints column, and rank 10 card label
     expect(screen.getAllByText("10")).toHaveLength(3);
     // "2" appears 5 times:
@@ -132,7 +135,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
     });
 
-    expect(screen.getByText("5♠")).toBeTruthy();
+    expect(getByCardText(screen, "5♠")).toBeTruthy();
     // King should be rendered as "K" because it's in the zero-point group and collapsed
     expect(screen.getByText("K")).toBeTruthy();
   });
@@ -146,11 +149,11 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       sortOrder: SortOrder.Descending,
     });
 
-    expect(screen.getByText("5♠")).toBeTruthy();
+    expect(getByCardText(screen, "5♠")).toBeTruthy();
 
     // Verify that zero point rows (like rank 4) are sorted after
     // CardLabel for '5' should be before CardLabel for '4'
-    const fiveLabel = screen.getByText("5♠");
+    const fiveLabel = getByCardText(screen, "5♠");
     const fourLabel = screen.getByText("4");
 
     // DOCUMENT_POSITION_FOLLOWING is 4

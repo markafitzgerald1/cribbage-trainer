@@ -22,7 +22,7 @@ export function CardLabel({ rank, suit }: CardLabelProps) {
         // eslint-disable-next-line security/detect-object-injection
         CARD_LABELS[rank]
       }
-      {suit}
+      {suit ? <span className={classes.suit}>{suit}</span> : null}
     </div>
   );
 }

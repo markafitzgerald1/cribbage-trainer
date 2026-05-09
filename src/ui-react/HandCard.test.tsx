@@ -1,11 +1,19 @@
 import * as classes from "./HandCard.module.css";
 import { describe, expect, it, jest } from "@jest/globals";
+import { render, screen } from "@testing-library/react";
 import { CARD_LABELS } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 import { HandCard } from "./HandCard";
 import { dealHand } from "../game/dealHand";
-import { render } from "@testing-library/react";
+import { getByCardText } from "./test-utils";
 import userEvent from "@testing-library/user-event";
+/* jscpd:ignore-end */
+
+const getLabel = ({
+  getByRole,
+}: {
+  getByRole: (role: string) => HTMLElement;
+}) => getByRole("checkbox").closest("label")!;
 
 describe("hand card component", () => {
   const renderCard = (
@@ -24,19 +32,15 @@ describe("hand card component", () => {
 
   const dealCard = () => dealHand(Math.random)[0]!;
 
-  const getLabel = (
-    { getAllByText }: { getAllByText: (content: string) => HTMLElement[] },
-    card: DealtCard,
-  ) => getAllByText(`${card.rankLabel}${card.suit}`)[0]!.closest("label")!;
-
   it("is a checkbox", () =>
     expect(renderCard(dealCard()).queryByRole("checkbox")).toBeTruthy());
 
   it("label text is its rank label", () => {
     const card = dealCard();
+    renderCard(card);
 
     expect(
-      renderCard(card).getByText(`${CARD_LABELS[card.rank]}${card.suit}`),
+      getByCardText(screen, `${CARD_LABELS[card.rank]}${card.suit}`),
     ).toBeTruthy();
   });
 
@@ -54,7 +58,7 @@ describe("hand card component", () => {
     const user = userEvent.setup();
     const card = dealCard();
     const mock = jest.fn();
-    const label = getLabel(renderCard(card, mock), card);
+    const label = getLabel(renderCard(card, mock));
 
     await user.click(label);
 
@@ -63,10 +67,9 @@ describe("hand card component", () => {
 
   it.each([false, true])(`%s has class 'discarded' if not kept`, (kept) => {
     const card = { ...dealCard(), kept };
-    renderCard(card);
 
     expect(
-      getLabel(renderCard(card), card).classList.contains(classes.discarded),
+      getLabel(renderCard(card)).classList.contains(classes.discarded),
     ).toBe(!card.kept);
   });
 });

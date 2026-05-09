@@ -46,12 +46,12 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     avgCutAddedNobs;
 
   const categories = [
-    { label: "Nobs", value: avgCutAddedNobs },
     { label: "15s", value: avgCutAdded15s },
-    { label: "Total", value: totalAvg },
     { label: "Pairs", value: avgCutAddedPairs },
     { label: "Runs", value: avgCutAddedRuns },
     { label: "Flushes", value: avgCutAddedFlushes },
+    { label: "Nobs", value: avgCutAddedNobs },
+    { label: "Total", value: totalAvg },
   ];
 
   const renderHeader = () => (

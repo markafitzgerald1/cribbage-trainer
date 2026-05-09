@@ -61,12 +61,21 @@ export function CutResultRow({
           );
         })}
       </div>
-      <div className={classes.pointsColumn}>{nobsPoints || 0}</div>
-      <div className={classes.pointsColumn}>{fifteensPoints || 0}</div>
+      {[
+        { label: "fifteens", points: fifteensPoints },
+        { label: "pairs", points: pairsPoints },
+        { label: "runs", points: runsPoints },
+        { label: "flushes", points: flushesPoints },
+        { label: "nobs", points: nobsPoints },
+      ].map((cat) => (
+        <div
+          className={classes.pointsColumn}
+          key={cat.label}
+        >
+          {cat.points === 0 ? "—" : cat.points}
+        </div>
+      ))}
       <div className={classes.totalColumn}>{totalPoints}</div>
-      <div className={classes.pointsColumn}>{pairsPoints || 0}</div>
-      <div className={classes.pointsColumn}>{runsPoints || 0}</div>
-      <div className={classes.pointsColumn}>{flushesPoints || 0}</div>
     </div>
   );
 }

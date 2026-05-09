@@ -1,9 +1,12 @@
 import * as classes from "./CardLabel.module.css";
+/* jscpd:ignore-start */
 import { CARDS, CARD_LABELS, Rank } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { CardLabel } from "./CardLabel";
 import { dealHand } from "../game/dealHand";
+import { getByCardText } from "./test-utils";
 import { render } from "@testing-library/react";
+/* jscpd:ignore-end */
 
 describe("card label component", () => {
   function renderLabelComponent(rank: Rank) {
@@ -23,7 +26,7 @@ describe("card label component", () => {
     const { suit } = CARDS[rank]!;
 
     expect(
-      renderLabelComponent(rank).getByText(`${CARD_LABELS[rank]}${suit}`),
+      getByCardText(renderLabelComponent(rank), `${CARD_LABELS[rank]}${suit}`),
     ).toBeTruthy();
   });
 
@@ -31,10 +34,13 @@ describe("card label component", () => {
     "%s has the 'ten' CSS class if it is a ten",
     (dealtCardRank) => {
       const { suit } = CARDS[dealtCardRank]!;
-      const { getByText } = renderLabelComponent(dealtCardRank);
+      // GetByText is no longer used here as we use getByCardText helper
 
       expect(
-        getByText(`${CARD_LABELS[dealtCardRank]}${suit}`)
+        getByCardText(
+          renderLabelComponent(dealtCardRank),
+          `${CARD_LABELS[dealtCardRank]}${suit}`,
+        )
           .className.split(" ")
           .includes(classes.ten),
       ).toBe(dealtCardRank === CARDS.TEN.rank);
