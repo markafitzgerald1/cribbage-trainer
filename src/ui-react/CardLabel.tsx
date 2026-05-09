@@ -1,5 +1,5 @@
 import * as classes from "./CardLabel.module.css";
-import { CARDS, CARD_LABELS, Rank, Suit } from "../game/Card";
+import { CARD_LABELS, Rank, Suit } from "../game/Card";
 import { getTenClass } from "./getTenClass";
 
 export interface CardLabelProps {
@@ -8,9 +8,7 @@ export interface CardLabelProps {
 }
 
 export function CardLabel({ rank, suit }: CardLabelProps) {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, security/detect-object-injection
-  const displaySuit = suit ?? CARDS[rank]!.suit;
-  const isRed = displaySuit === Suit.HEARTS || displaySuit === Suit.DIAMONDS;
+  const isRed = suit === Suit.HEARTS || suit === Suit.DIAMONDS;
   const suitClass = isRed ? classes.redSuit : classes.blackSuit;
 
   return (
@@ -24,7 +22,7 @@ export function CardLabel({ rank, suit }: CardLabelProps) {
         // eslint-disable-next-line security/detect-object-injection
         CARD_LABELS[rank]
       }
-      {displaySuit}
+      {suit}
     </div>
   );
 }

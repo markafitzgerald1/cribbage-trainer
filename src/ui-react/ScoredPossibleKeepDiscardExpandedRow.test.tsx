@@ -69,7 +69,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     expect(screen.getByText("0.50")).toBeTruthy();
 
     // Verify that the CutResultRow is rendered for the 5 rank
-    expect(screen.getByText("5♣")).toBeTruthy();
+    expect(screen.getByText("5♠")).toBeTruthy();
   });
 
   it("should render cut results in descending order", () => {
@@ -85,7 +85,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     });
 
     // Verify that both cards are rendered
-    expect(screen.getByText("5♣")).toBeTruthy();
+    expect(screen.getByText("5♠")).toBeTruthy();
     expect(screen.getByText("4♠")).toBeTruthy();
   });
 
@@ -112,11 +112,15 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
 
     // Verify rendering (use getAllByText to avoid multiple elements error)
     expect(screen.getAllByText("4♠")).toHaveLength(1);
-    expect(screen.getAllByText("5♣")).toHaveLength(1);
-    expect(screen.getAllByText("6♦")).toHaveLength(1);
-    // Total points for the rows
-    expect(screen.getAllByText("10")).toHaveLength(1);
-    expect(screen.getAllByText("2")).toHaveLength(2);
+    expect(screen.getAllByText("5♠")).toHaveLength(1);
+    expect(screen.getAllByText("6♠")).toHaveLength(1);
+    // "10" appears 3 times: 15sPoints column, totalPoints column, and rank 10 card label
+    expect(screen.getAllByText("10")).toHaveLength(3);
+    // "2" appears 5 times:
+    // - rank 5 row: 15sPoints (2) and totalPoints (2)
+    // - rank 6 row: pairsPoints (2) and totalPoints (2)
+    // - rank 2 card label ("2")
+    expect(screen.getAllByText("2")).toHaveLength(5);
   });
 
   it("should cover remaining branches in groupCutsByResults", () => {
@@ -128,9 +132,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
     });
 
-    expect(screen.getByText("5♣")).toBeTruthy();
-    // King has 0 count
-    expect(screen.queryByText("K")).toBeNull();
+    expect(screen.getByText("5♠")).toBeTruthy();
+    // King should be rendered as "K" because it's in the zero-point group and collapsed
+    expect(screen.getByText("K")).toBeTruthy();
   });
 
   it("should cover zero point sorting branches", () => {
@@ -142,12 +146,12 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       sortOrder: SortOrder.Descending,
     });
 
-    expect(screen.getByText("5♣")).toBeTruthy();
+    expect(screen.getByText("5♠")).toBeTruthy();
 
     // Verify that zero point rows (like rank 4) are sorted after
     // CardLabel for '5' should be before CardLabel for '4'
-    const fiveLabel = screen.getByText("5♣");
-    const fourLabel = screen.getByText("4♠");
+    const fiveLabel = screen.getByText("5♠");
+    const fourLabel = screen.getByText("4");
 
     // DOCUMENT_POSITION_FOLLOWING is 4
     const FOLLOWING = 4;

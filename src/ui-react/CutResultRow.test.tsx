@@ -25,25 +25,25 @@ describe("cutResultRow", () => {
   it.each([
     {
       cuts: [Rank.KING, Rank.QUEEN, Rank.JACK, Rank.TEN],
-      expected: ["10♦", "J♥", "Q♠", "K♣"],
+      expected: ["10", "J", "Q", "K"],
       name: "ascending order when sortOrder is Ascending",
       sortOrder: SortOrder.Ascending,
     },
     {
       cuts: [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING],
-      expected: ["K♣", "Q♠", "J♥", "10♦"],
+      expected: ["K", "Q", "J", "10"],
       name: "descending order when sortOrder is Descending",
       sortOrder: SortOrder.Descending,
     },
     {
       cuts: [Rank.ACE, Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE],
-      expected: ["5♣", "4♠", "3♥", "2♦", "A♣"],
+      expected: ["5", "4", "3", "2", "A"],
       name: "descending order when sortOrder is DealOrder",
       sortOrder: SortOrder.DealOrder,
     },
     {
       cuts: [Rank.ACE, parseCard("AS")],
-      expected: ["A♣", "A♠"],
+      expected: ["A", "A♠"],
       name: "mixed rank and card with same rank",
       sortOrder: SortOrder.Ascending,
     },
@@ -57,6 +57,11 @@ describe("cutResultRow", () => {
     const renderResult = render(
       <CutResultRow
         cuts={cuts}
+        fifteensPoints={0}
+        flushesPoints={0}
+        nobsPoints={0}
+        pairsPoints={0}
+        runsPoints={0}
         sortOrder={sortOrder}
         totalPoints={SIX_POINTS}
       />,

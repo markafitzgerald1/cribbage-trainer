@@ -6,12 +6,22 @@ import { SortOrder } from "../ui/SortOrder";
 interface CutResultRowProps {
   readonly cuts: readonly (Rank | Card)[];
   readonly sortOrder: SortOrder;
+  readonly fifteensPoints: number;
+  readonly pairsPoints: number;
+  readonly runsPoints: number;
+  readonly flushesPoints: number;
+  readonly nobsPoints: number;
   readonly totalPoints: number;
 }
 
 export function CutResultRow({
   cuts,
   sortOrder,
+  fifteensPoints,
+  pairsPoints,
+  runsPoints,
+  flushesPoints,
+  nobsPoints,
   totalPoints,
 }: CutResultRowProps) {
   const sortedCuts = [...cuts].sort((first, second) => {
@@ -51,7 +61,12 @@ export function CutResultRow({
           );
         })}
       </div>
+      <div className={classes.pointsColumn}>{nobsPoints || 0}</div>
+      <div className={classes.pointsColumn}>{fifteensPoints || 0}</div>
       <div className={classes.totalColumn}>{totalPoints}</div>
+      <div className={classes.pointsColumn}>{pairsPoints || 0}</div>
+      <div className={classes.pointsColumn}>{runsPoints || 0}</div>
+      <div className={classes.pointsColumn}>{flushesPoints || 0}</div>
     </div>
   );
 }

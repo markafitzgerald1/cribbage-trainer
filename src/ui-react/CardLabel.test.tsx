@@ -6,7 +6,15 @@ import { dealHand } from "../game/dealHand";
 import { render } from "@testing-library/react";
 
 describe("card label component", () => {
-  const renderCard = (rank: Rank) => render(<CardLabel rank={rank} />);
+  function renderLabelComponent(rank: Rank) {
+    const cardData = CARDS[rank]!;
+    return render(
+      <CardLabel
+        rank={rank}
+        suit={cardData.suit}
+      />,
+    );
+  }
 
   const dealCard = () => dealHand(Math.random)[0]!.rank;
 
@@ -15,7 +23,7 @@ describe("card label component", () => {
     const { suit } = CARDS[rank]!;
 
     expect(
-      renderCard(rank).getByText(`${CARD_LABELS[rank]}${suit}`),
+      renderLabelComponent(rank).getByText(`${CARD_LABELS[rank]}${suit}`),
     ).toBeTruthy();
   });
 
@@ -23,7 +31,7 @@ describe("card label component", () => {
     "%s has the 'ten' CSS class if it is a ten",
     (dealtCardRank) => {
       const { suit } = CARDS[dealtCardRank]!;
-      const { getByText } = renderCard(dealtCardRank);
+      const { getByText } = renderLabelComponent(dealtCardRank);
 
       expect(
         getByText(`${CARD_LABELS[dealtCardRank]}${suit}`)

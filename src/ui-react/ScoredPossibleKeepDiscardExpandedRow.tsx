@@ -38,16 +38,21 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     pairs: pairsContributions,
     runs: runsContributions,
   });
+  const totalAvg =
+    avgCutAdded15s +
+    avgCutAddedPairs +
+    avgCutAddedRuns +
+    avgCutAddedFlushes +
+    avgCutAddedNobs;
 
   const categories = [
+    { label: "Nobs", value: avgCutAddedNobs },
     { label: "15s", value: avgCutAdded15s },
+    { label: "Total", value: totalAvg },
     { label: "Pairs", value: avgCutAddedPairs },
     { label: "Runs", value: avgCutAddedRuns },
     { label: "Flushes", value: avgCutAddedFlushes },
-    { label: "Nobs", value: avgCutAddedNobs },
   ];
-
-  const totalAvg = categories.reduce((sum, cat) => sum + cat.value, 0);
 
   const renderHeader = () => (
     <div className={classes.breakdownHeader}>
@@ -60,7 +65,6 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           {cat.label}
         </div>
       ))}
-      <div className={classes.totalHeader}>Total</div>
     </div>
   );
 
@@ -69,15 +73,14 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       <div className={classes.summaryLabel} />
       {categories.map((cat) => (
         <div
-          className={classes.summaryValue}
+          className={
+            cat.label === "Total" ? classes.summaryTotal : classes.summaryValue
+          }
           key={cat.label}
         >
           {cat.value.toFixed(DECIMAL_PLACES)}
         </div>
       ))}
-      <div className={classes.summaryTotal}>
-        {totalAvg.toFixed(DECIMAL_PLACES)}
-      </div>
     </div>
   );
 
@@ -94,6 +97,8 @@ export function ScoredPossibleKeepDiscardExpandedRow({
             {cutResults.map((result) => (
               <CutResultRow
                 cuts={result.cuts}
+                fifteensPoints={result.fifteensPoints}
+                flushesPoints={result.flushesPoints}
                 key={result.cuts
                   .map((item) =>
                     typeof item === "number"
@@ -101,6 +106,9 @@ export function ScoredPossibleKeepDiscardExpandedRow({
                       : `${item.rank}${item.suit}`,
                   )
                   .join(",")}
+                nobsPoints={result.nobsPoints}
+                pairsPoints={result.pairsPoints}
+                runsPoints={result.runsPoints}
                 sortOrder={sortOrder}
                 totalPoints={result.totalPoints}
               />
