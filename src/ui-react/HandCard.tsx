@@ -27,6 +27,7 @@ export function HandCard({
       className={`${classes.handCard}${kept ? "" : ` ${classes.discarded}`}`}
     >
       <CardLabel
+        isHandCard
         rank={rank}
         suit={suit}
       />

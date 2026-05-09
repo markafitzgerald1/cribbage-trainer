@@ -17,12 +17,14 @@ interface RenderCutResultRowOptions {
   readonly cuts?: readonly (Rank | Card)[];
   readonly pairsPoints?: number;
   readonly sortOrder?: SortOrder;
+  readonly totalPoints?: number;
 }
 
 function renderCutResultRow({
   cuts = [Rank.FIVE],
   pairsPoints = 0,
   sortOrder = SortOrder.Ascending,
+  totalPoints = SIX_POINTS,
 }: RenderCutResultRowOptions = {}) {
   return render(
     <CutResultRow
@@ -33,7 +35,7 @@ function renderCutResultRow({
       pairsPoints={pairsPoints}
       runsPoints={0}
       sortOrder={sortOrder}
-      totalPoints={SIX_POINTS}
+      totalPoints={totalPoints}
     />,
   );
 }
@@ -45,6 +47,13 @@ function getCutLabelTexts(renderResult: ReturnType<typeof render>): string[] {
   }
   const labels = cutsColumn.querySelectorAll(CARD_LABEL_SELECTOR);
   return Array.from(labels).map((label) => label.textContent ?? "");
+}
+
+function getMutedTexts(renderResult: ReturnType<typeof render>): string[] {
+  return Array.from(
+    renderResult.container.querySelectorAll(MUTED_SELECTOR),
+    (dash) => dash.textContent ?? "",
+  );
 }
 
 describe("cutResultRow", () => {
@@ -88,11 +97,21 @@ describe("cutResultRow", () => {
   it("renders zero point categories as dimmed dashes", () => {
     const renderResult = renderCutResultRow({ pairsPoints: SIX_POINTS });
 
-    const mutedDashes = renderResult.container.querySelectorAll(MUTED_SELECTOR);
+    expect(getMutedTexts(renderResult)).toStrictEqual(["—", "—", "—", "—"]);
+  });
 
-    expect(mutedDashes).toHaveLength(4);
-    expect(
-      Array.from(mutedDashes).map((dash) => dash.textContent),
-    ).toStrictEqual(["—", "—", "—", "—"]);
+  it("renders zero total points as a dimmed dash", () => {
+    const renderResult = renderCutResultRow({
+      pairsPoints: SIX_POINTS,
+      totalPoints: 0,
+    });
+
+    expect(getMutedTexts(renderResult)).toStrictEqual([
+      "—",
+      "—",
+      "—",
+      "—",
+      "—",
+    ]);
   });
 });

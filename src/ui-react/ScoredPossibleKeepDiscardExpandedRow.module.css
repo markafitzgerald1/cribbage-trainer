@@ -1,0 +1,126 @@
+@import url("./vars.css");
+
+/* stylelint-disable color-hex-length -- Expanded row contrast spec requires #ffffff. */
+
+.expanded-row {
+  cursor: pointer;
+  font-family: var(--text-font-family);
+}
+
+.expanded-row td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgb(255 255 255 / 20%);
+  background-color: #0f5132;
+  color: #ffffff;
+  white-space: normal;
+}
+
+.expanded-row :global(.black-suit) {
+  color: #ffffff !important;
+}
+
+.expanded-row :global(.red-suit) {
+  color: #ff4d4d !important;
+}
+
+.expanded-row :global(.points-column),
+.expanded-row :global(.total-column) {
+  color: #ffffff !important;
+}
+
+.expanded-row :global(.generic-cut .black-suit) {
+  color: #a8d5ba !important;
+}
+
+.expanded-row :global(.cut-cards-column),
+.expanded-row :global(.cut-cards-column *) {
+  color: #a8d5ba !important;
+}
+
+@media (orientation: landscape) {
+  .expanded-row {
+    font-size: calc(var(--medium-text-font-size-landscape) * 0.8);
+  }
+}
+
+@media (orientation: portrait) {
+  .expanded-row {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.8);
+  }
+}
+
+.breakdown-container {
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.breakdown-header {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
+    minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgb(255 255 255 / 20%);
+  font-family: var(--text-font-family);
+  font-weight: 600;
+  font-size: 0.9em;
+  color: rgb(255 255 255 / 80%);
+}
+
+.cuts-header {
+  text-align: left;
+}
+
+.category-header {
+  text-align: right;
+}
+
+.total-header {
+  text-align: right;
+}
+
+.breakdown-summary {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
+    minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+  background-color: #0f5132;
+  border-radius: 4px;
+  font-family: var(--text-font-family);
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.summary-label {
+  text-align: left;
+  color: rgb(255 255 255 / 70%);
+}
+
+.summary-value {
+  text-align: right;
+  color: #ffffff;
+}
+
+.summary-total {
+  text-align: right;
+  color: #ffffff;
+}
+
+.muted {
+  opacity: 0.5;
+}
+
+.cut-results-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* stylelint-enable color-hex-length */

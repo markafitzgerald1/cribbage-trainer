@@ -3,31 +3,43 @@ import { CARD_LABELS, Rank, Suit } from "../game/Card";
 import { getTenClass } from "./getTenClass";
 
 export interface CardLabelProps {
+  readonly isHandCard?: boolean;
   readonly rank: Rank;
   readonly suit?: Suit | undefined;
 }
 
-export function CardLabel({ rank, suit }: CardLabelProps) {
+export function CardLabel({ isHandCard, rank, suit }: CardLabelProps) {
   const isRed = suit === Suit.HEARTS || suit === Suit.DIAMONDS;
   const suitClass = isRed ? classes.redSuit : classes.blackSuit;
+  const suitColorClass = isRed ? "red-suit" : "black-suit";
 
   return (
     <div
-      className={[classes.cardLabel, getTenClass(rank, classes.ten), suitClass]
+      className={[
+        classes.cardLabel,
+        getTenClass(rank, classes.ten),
+        suitClass,
+        suitColorClass,
+        !suit && classes.rankOnly,
+        isHandCard && classes.handCardLabel,
+      ]
         .filter(Boolean)
         .join(" ")
         .trim()}
     >
-      {
-        // eslint-disable-next-line security/detect-object-injection
-        CARD_LABELS[rank]
-      }
+      <span className={classes.rank}>
+        {
+          // eslint-disable-next-line security/detect-object-injection
+          CARD_LABELS[rank]
+        }
+      </span>
       {suit ? <span className={classes.suit}>{suit}</span> : null}
     </div>
   );
 }
 
 CardLabel.defaultProps = {
+  isHandCard: false,
   // eslint-disable-next-line no-undefined
   suit: undefined,
 };

@@ -102,7 +102,7 @@ function shouldRenderRankOnly(
   cardsOfRank: readonly Card[],
   remainingOfRank: number,
 ): boolean {
-  return cardsOfRank.length > 1 || cardsOfRank.length === remainingOfRank;
+  return cardsOfRank.length === remainingOfRank;
 }
 
 function processCutsForGroup(
@@ -118,12 +118,11 @@ function processCutsForGroup(
   }
 
   for (const [rank, cardsOfRank] of cardsByRank) {
-    const [firstCardOfRank] = cardsOfRank;
     const remainingOfRank = remainingByRank.get(rank) as number;
     if (shouldRenderRankOnly(cardsOfRank, remainingOfRank)) {
       processedCuts.push(rank);
     } else {
-      processedCuts.push(firstCardOfRank as Card);
+      processedCuts.push(...cardsOfRank);
     }
   }
   return processedCuts;

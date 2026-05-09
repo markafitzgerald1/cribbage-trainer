@@ -2,9 +2,12 @@
 
 .cut-result-row {
   display: grid;
-  grid-template-columns: 3fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns:
+    minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
+    minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  min-width: 0;
   padding: 2px 0;
   border-bottom: 1px solid rgb(255 255 255 / 5%);
 }
@@ -14,10 +17,27 @@
 }
 
 .cuts-column {
+  color: #a8d5ba;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
+  font-size: 0.9em;
+  line-height: 1.05;
+  min-width: 0;
+}
+
+.generic-cut {
+  color: #a8d5ba;
+  min-width: 0;
+  opacity: 0.8;
+}
+
+.specific-cut {
+  color: #a8d5ba;
+  font-weight: 700;
+  min-width: 0;
+  opacity: 1;
 }
 
 .points-column {

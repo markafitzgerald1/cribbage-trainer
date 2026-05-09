@@ -1,4 +1,4 @@
-import * as classes from "./ScoredPossibleKeepDiscard.module.css";
+import * as classes from "./ScoredPossibleKeepDiscardExpandedRow.module.css";
 import {
   type CutResult,
   type MinimalCard,
@@ -9,6 +9,7 @@ import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
 
 const DECIMAL_PLACES = 2;
+const ZERO_AVERAGE = "0.00";
 
 function getCutResultKey(result: CutResult): string {
   const cutsKey = result.cuts
@@ -70,18 +71,44 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   const categories = [
     { label: "15s", value: avgCutAdded15s },
     { label: "Pairs", value: avgCutAddedPairs },
-    { label: "Runs", value: avgCutAddedRuns },
-    { label: "Flushes", value: avgCutAddedFlushes },
-    { label: "Nobs", value: avgCutAddedNobs },
+    {
+      isMutedHeader: avgCutAddedRuns === 0,
+      label: "Runs",
+      value: avgCutAddedRuns,
+    },
+    {
+      isMutedHeader: avgCutAddedFlushes === 0,
+      label: "Flushes",
+      value: avgCutAddedFlushes,
+    },
+    {
+      isMutedHeader: avgCutAddedNobs === 0,
+      label: "Nobs",
+      value: avgCutAddedNobs,
+    },
     { label: "Total", value: totalAvg },
   ];
+  const renderAverage = (value: number) => {
+    const formatted = value.toFixed(DECIMAL_PLACES);
+
+    return formatted === ZERO_AVERAGE ? (
+      <span className={classes.muted}>—</span>
+    ) : (
+      formatted
+    );
+  };
 
   const renderHeader = () => (
     <div className={classes.breakdownHeader}>
       <div className={classes.cutsHeader}>Cuts</div>
       {categories.map((cat) => (
         <div
-          className={classes.categoryHeader}
+          className={[
+            classes.categoryHeader,
+            cat.isMutedHeader && classes.muted,
+          ]
+            .filter(Boolean)
+            .join(" ")}
           key={cat.label}
         >
           {cat.label}
@@ -100,7 +127,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           }
           key={cat.label}
         >
-          {cat.value.toFixed(DECIMAL_PLACES)}
+          {renderAverage(cat.value)}
         </div>
       ))}
     </div>

@@ -10,6 +10,18 @@ import { render, screen } from "@testing-library/react";
 import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
 
+const MUTED_SELECTOR = '[class*="muted"]';
+const SUMMARY_SELECTOR = '[class*="breakdownSummary"]';
+
+function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
+  const summary = container.querySelector(SUMMARY_SELECTOR)!;
+
+  return Array.from(
+    summary.querySelectorAll(MUTED_SELECTOR),
+    (dash) => dash.textContent,
+  );
+}
+
 describe("scoredPossibleKeepDiscardExpandedRow", () => {
   const createContribution = (rank: Rank, points: number) => ({
     count: 4,
@@ -40,7 +52,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     const keep = overrides.keep ?? [];
     const discard = overrides.discard ?? [];
 
-    render(
+    return render(
       <table>
         <tbody>
           <ScoredPossibleKeepDiscardExpandedRow
@@ -73,6 +85,25 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
 
     // Verify that the CutResultRow is rendered for the 5 rank
     expect(getByCardText(screen, "5♠")).toBeTruthy();
+  });
+
+  it("renders zero summary averages as dimmed dashes", () => {
+    const { container } = renderRow({
+      avgCutAdded15s: 0,
+      avgCutAddedFlushes: 0,
+      avgCutAddedNobs: 0,
+      avgCutAddedPairs: 0,
+      avgCutAddedRuns: 0,
+    });
+
+    expect(getSummaryMutedTexts(container)).toStrictEqual([
+      "—",
+      "—",
+      "—",
+      "—",
+      "—",
+      "—",
+    ]);
   });
 
   it("should render cut results in descending order", () => {

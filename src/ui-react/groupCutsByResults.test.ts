@@ -49,6 +49,27 @@ function getContributions(
   return contributions;
 }
 
+function groupFifteensOnly(
+  fifteens: readonly CutContribution[],
+): ReturnType<typeof groupCutsByResults> {
+  return groupCutsByResults({
+    discard: [],
+    fifteens,
+    flushes: [],
+    keep: [],
+    nobs: [],
+    pairs: [],
+    runs: [],
+  });
+}
+
+function cutGroup(
+  cuts: readonly (Card | Rank)[],
+  totalPoints: number,
+): Pick<ReturnType<typeof groupCutsByResults>[number], "cuts" | "totalPoints"> {
+  return { cuts, totalPoints };
+}
+
 interface TestArgs {
   discard?: readonly Card[];
   fifteens?: readonly CutContribution[];
@@ -366,33 +387,37 @@ describe("groupCutsByResults", () => {
     );
   });
 
-  it("merges same-rank split-score cards within their scoring group", () => {
-    const result = groupCutsByResults({
-      discard: [],
-      fifteens: [
-        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JC"), 4),
-        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JS"), 3),
-        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JH"), 3),
-        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JD"), 3),
-      ],
-      flushes: [],
-      keep: [],
-      nobs: [],
-      pairs: [],
-      runs: [],
-    });
+  it("keeps suits when same-rank cards are split across score tiers", () => {
+    const result = groupFifteensOnly([
+      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JC"), 4),
+      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JS"), 3),
+      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JH"), 3),
+      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JD"), 3),
+    ]);
 
-    expect(result).toStrictEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          cuts: [parseCard("JC")],
-          totalPoints: FOUR_POINTS,
-        }),
-        expect.objectContaining({
-          cuts: [Rank.JACK],
-          totalPoints: THREE_POINTS,
-        }),
-      ]),
+    expect(result).toContainEqual(
+      expect.objectContaining(cutGroup([parseCard("JC")], FOUR_POINTS)),
+    );
+    expect(result).toContainEqual(
+      expect.objectContaining(
+        cutGroup(
+          [parseCard("JD"), parseCard("JH"), parseCard("JS")],
+          THREE_POINTS,
+        ),
+      ),
+    );
+  });
+
+  it("renders a rank only when all remaining cards of that rank share a score tier", () => {
+    const result = groupFifteensOnly([
+      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8C"), 1),
+      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8D"), 1),
+      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8H"), 1),
+      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8S"), 1),
+    ]);
+
+    expect(result).toContainEqual(
+      expect.objectContaining(cutGroup([Rank.EIGHT], 1)),
     );
   });
 });

@@ -52,27 +52,35 @@ export function CutResultRow({
     cutKeyCounts.set(baseKey, count + 1);
     return `${baseKey}-${count}`;
   };
+  const renderCut = (item: Rank | Card) => {
+    if (typeof item === "number") {
+      return (
+        <span
+          className={`${classes.genericCut} generic-cut`}
+          key={getCutKey(item)}
+        >
+          <CardLabel rank={item} />
+        </span>
+      );
+    }
+
+    return (
+      <span
+        className={`${classes.specificCut} specific-cut`}
+        key={getCutKey(item)}
+      >
+        <CardLabel
+          rank={item.rank}
+          suit={item.suit}
+        />
+      </span>
+    );
+  };
 
   return (
     <div className={classes.cutResultRow}>
-      <div className={classes.cutsColumn}>
-        {sortedCuts.map((item) => {
-          if (typeof item === "number") {
-            return (
-              <CardLabel
-                key={getCutKey(item)}
-                rank={item}
-              />
-            );
-          }
-          return (
-            <CardLabel
-              key={getCutKey(item)}
-              rank={item.rank}
-              suit={item.suit}
-            />
-          );
-        })}
+      <div className={`${classes.cutsColumn} cut-cards-column`}>
+        {sortedCuts.map((item) => renderCut(item))}
       </div>
       {[
         { label: "fifteens", points: fifteensPoints },
@@ -82,13 +90,15 @@ export function CutResultRow({
         { label: "nobs", points: nobsPoints },
       ].map((cat) => (
         <div
-          className={classes.pointsColumn}
+          className={`${classes.pointsColumn} points-column`}
           key={cat.label}
         >
           {renderPoints(cat.points)}
         </div>
       ))}
-      <div className={classes.totalColumn}>{totalPoints}</div>
+      <div className={`${classes.totalColumn} total-column`}>
+        {renderPoints(totalPoints)}
+      </div>
     </div>
   );
 }

@@ -1,14 +1,54 @@
 @import url("./vars.css");
 
 .card-label {
+  box-sizing: border-box;
+  display: inline-block;
   font-family: var(--card-font-family);
+  min-height: 1.18em;
+  padding: 0 0.52em 0.22em 0.02em;
+  position: relative;
+  text-align: left;
 }
 
 .ten {
   display: inline-block;
-  transform: scaleX(0.5);
   margin-left: -0.3em;
   margin-right: -0.2em;
+  transform: scaleX(0.5);
+}
+
+.rank {
+  display: inline-block;
+  line-height: 1;
+  transform: translateX(-0.04em);
+  white-space: nowrap;
+}
+
+.rank-only {
+  padding-right: 0.08em;
+}
+
+.hand-card-label {
+  display: block;
+  min-height: 1.18em;
+  padding: 0 0.32em 0.18em 0;
+  width: 100%;
+}
+
+.hand-card-label .rank {
+  transform: translateX(0.05em);
+}
+
+.hand-card-label.ten {
+  margin-left: 0;
+  margin-right: 0;
+  transform: none;
+}
+
+.hand-card-label.ten .rank {
+  margin-left: -0.3em;
+  margin-right: -0.2em;
+  transform: translateX(0.05em) scaleX(0.5);
 }
 
 .red-suit {
@@ -20,11 +60,15 @@
 }
 
 .suit {
-  display: inline-block;
-  font-size: 0.6em;
+  display: block;
+  font-size: 0.5em;
   line-height: 1;
-  margin-left: 0.02em;
-  position: relative;
-  top: -0.18em;
-  left: -0.08em;
+  position: absolute;
+  right: 0.08em;
+  bottom: 0.08em;
+}
+
+.hand-card-label .suit {
+  font-size: 0.48em;
+  inset: auto 0 0 auto;
 }

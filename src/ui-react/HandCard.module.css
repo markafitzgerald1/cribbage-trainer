@@ -1,12 +1,12 @@
 @import url("./vars.css");
 
 :root {
-  --card-width: 0.562em;
+  --card-width: 0.9em;
 }
 
 .hand-card {
   display: block;
-  padding: 0.16em 0.21em 0.17em 0.29em;
+  padding: 0.16em 0.16em 0.22em;
   border: var(--card-border);
   background-color: var(--card-background-color);
   cursor: pointer;
@@ -25,8 +25,8 @@
 
 .hand-card input[type="checkbox"] {
   position: absolute;
-  bottom: -0.1em;
-  right: -0.1em;
+  bottom: 0.02em;
+  left: 0.02em;
 }
 
 @media (orientation: portrait) {
