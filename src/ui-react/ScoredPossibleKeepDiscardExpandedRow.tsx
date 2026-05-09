@@ -100,7 +100,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
 
   const renderHeader = () => (
     <div className={classes.breakdownHeader}>
-      <div className={classes.cutsHeader}>Cuts</div>
+      <div className={classes.cutsHeader}>Starters</div>
       {categories.map((cat) => (
         <div
           className={[

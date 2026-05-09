@@ -37,6 +37,14 @@
   color: #a8d5ba !important;
 }
 
+.expanded-row :global(.cut-cards-column .specific-cut) {
+  color: #ffffff !important;
+}
+
+.expanded-row :global(.cut-cards-column .specific-cut .red-suit) {
+  color: #ff4d4d !important;
+}
+
 @media (orientation: landscape) {
   .expanded-row {
     font-size: calc(var(--medium-text-font-size-landscape) * 0.8);
@@ -45,7 +53,7 @@
 
 @media (orientation: portrait) {
   .expanded-row {
-    font-size: calc(var(--medium-text-font-size-portrait) * 0.8);
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.74);
   }
 }
 
@@ -121,6 +129,17 @@
 .cut-results-list {
   display: flex;
   flex-direction: column;
+}
+
+@media (orientation: portrait) {
+  .breakdown-header,
+  .breakdown-summary {
+    grid-template-columns:
+      minmax(3.8em, 2.05fr) minmax(2.2em, 0.78fr) minmax(2.8em, 0.9fr)
+      minmax(2.6em, 0.85fr) minmax(3.8em, 1.2fr) minmax(2.8em, 0.9fr)
+      minmax(2.8em, 0.9fr);
+    gap: 3px;
+  }
 }
 
 /* stylelint-enable color-hex-length */

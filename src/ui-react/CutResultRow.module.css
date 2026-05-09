@@ -1,5 +1,7 @@
 @import url("./vars.css");
 
+/* stylelint-disable color-hex-length -- Specific starter contrast spec requires #ffffff. */
+
 .cut-result-row {
   display: grid;
   grid-template-columns:
@@ -30,11 +32,11 @@
 .generic-cut {
   color: #a8d5ba;
   min-width: 0;
-  opacity: 0.8;
+  opacity: 0.5;
 }
 
 .specific-cut {
-  color: #a8d5ba;
+  color: #ffffff;
   font-weight: 700;
   min-width: 0;
   opacity: 1;
@@ -56,3 +58,15 @@
 .muted {
   opacity: 0.5;
 }
+
+@media (orientation: portrait) {
+  .cut-result-row {
+    grid-template-columns:
+      minmax(3.8em, 2.05fr) minmax(2.2em, 0.78fr) minmax(2.8em, 0.9fr)
+      minmax(2.6em, 0.85fr) minmax(3.8em, 1.2fr) minmax(2.8em, 0.9fr)
+      minmax(2.8em, 0.9fr);
+    gap: 3px;
+  }
+}
+
+/* stylelint-enable color-hex-length */
