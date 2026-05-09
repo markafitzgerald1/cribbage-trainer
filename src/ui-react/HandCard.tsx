@@ -1,6 +1,6 @@
 import * as classes from "./HandCard.module.css";
-import { Rank, Suit } from "../game/Card";
 import { CardLabel } from "./CardLabel";
+import { Rank } from "../game/Card";
 import { useCallback } from "react";
 
 export interface CardProps {
@@ -8,16 +8,9 @@ export interface CardProps {
   readonly kept: boolean;
   readonly onChange: (dealOrderIndex: number) => void;
   readonly rank: Rank;
-  readonly suit?: Suit | undefined;
 }
 
-export function HandCard({
-  dealOrderIndex,
-  onChange,
-  kept,
-  rank,
-  suit,
-}: CardProps) {
+export function HandCard({ dealOrderIndex, onChange, kept, rank }: CardProps) {
   const handleChange = useCallback(() => {
     onChange(dealOrderIndex);
   }, [dealOrderIndex, onChange]);
@@ -26,10 +19,7 @@ export function HandCard({
     <label
       className={`${classes.handCard}${kept ? "" : ` ${classes.discarded}`}`}
     >
-      <CardLabel
-        rank={rank}
-        suit={suit}
-      />
+      <CardLabel rank={rank} />
       {}
       <input
         checked={kept}
@@ -39,8 +29,3 @@ export function HandCard({
     </label>
   );
 }
-
-HandCard.defaultProps = {
-  // eslint-disable-next-line no-undefined
-  suit: undefined,
-};

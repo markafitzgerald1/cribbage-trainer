@@ -4,7 +4,6 @@ import { Hand } from "./Hand";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-import { queryAllByCardText } from "./test-utils";
 import { render } from "@testing-library/react";
 import { sortCards } from "../ui/sortCards";
 /* jscpd:ignore-end */
@@ -52,14 +51,8 @@ describe("hand component", () => {
       const { dealtHand, queryAllByText } = dealAndRender(sortOrder);
       const sortedDealtHand = sortCards(dealtHand, sortOrder);
 
-      const cardLabels = sortedDealtHand.map(
-        (card) => `${card.rankLabel}${card.suit}`,
-      );
-
-      cardLabels.forEach((label) => {
-        expect(queryAllByCardText({ queryAllByText }, label)).not.toHaveLength(
-          0,
-        );
+      sortedDealtHand.forEach((card) => {
+        expect(queryAllByText(card.rankLabel)).not.toHaveLength(0);
       });
     },
   );

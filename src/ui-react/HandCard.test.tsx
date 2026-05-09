@@ -1,23 +1,15 @@
 import * as classes from "./HandCard.module.css";
 import { describe, expect, it, jest } from "@jest/globals";
-import { render, screen } from "@testing-library/react";
 import { CARD_LABELS } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 import { HandCard } from "./HandCard";
 import { dealHand } from "../game/dealHand";
-import { getByCardText } from "./test-utils";
+import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-/* jscpd:ignore-end */
-
-const getLabel = ({
-  getByRole,
-}: {
-  getByRole: (role: string) => HTMLElement;
-}) => getByRole("checkbox").closest("label")!;
 
 describe("hand card component", () => {
   const renderCard = (
-    { dealOrder, kept, rank, suit }: DealtCard,
+    { dealOrder, kept, rank }: DealtCard,
     mockOnChange: jest.Mock = jest.fn(),
   ) =>
     render(
@@ -26,7 +18,6 @@ describe("hand card component", () => {
         kept={kept}
         onChange={mockOnChange}
         rank={rank}
-        suit={suit}
       />,
     );
 
@@ -37,11 +28,8 @@ describe("hand card component", () => {
 
   it("label text is its rank label", () => {
     const card = dealCard();
-    renderCard(card);
 
-    expect(
-      getByCardText(screen, `${CARD_LABELS[card.rank]}${card.suit}`),
-    ).toBeTruthy();
+    expect(renderCard(card).getByText(CARD_LABELS[card.rank]!)).toBeTruthy();
   });
 
   it("emits an onChange event on checkbox click", async () => {
@@ -58,18 +46,21 @@ describe("hand card component", () => {
     const user = userEvent.setup();
     const card = dealCard();
     const mock = jest.fn();
-    const label = getLabel(renderCard(card, mock));
+    const { getByLabelText } = renderCard(card, mock);
 
-    await user.click(label);
+    await user.click(getByLabelText(card.rankLabel));
 
     expect(mock).toHaveBeenCalledTimes(1);
   });
 
   it.each([false, true])(`%s has class 'discarded' if not kept`, (kept) => {
     const card = { ...dealCard(), kept };
+    const { getByLabelText } = renderCard(card);
 
     expect(
-      getLabel(renderCard(card)).classList.contains(classes.discarded),
+      getByLabelText(card.rankLabel).parentElement!.classList.contains(
+        classes.discarded,
+      ),
     ).toBe(!card.kept);
   });
 });

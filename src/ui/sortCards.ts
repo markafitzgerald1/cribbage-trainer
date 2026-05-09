@@ -1,29 +1,23 @@
-import { Rank, Suit } from "../game/Card";
+import { Rank } from "../game/Card";
 import { SORT_ORDER_NAMES } from "./SortOrderName";
 import { SortOrder } from "./SortOrder";
 
 export interface ComparableCard {
   dealOrder: number;
   rank: Rank;
-  suit?: Suit | undefined;
 }
 
 const createCompare =
   (sortOrder: SortOrder) =>
   (first: ComparableCard, second: ComparableCard): number => {
-    const tieBreak = () => first.dealOrder - second.dealOrder;
     switch (sortOrder) {
       case SortOrder.DealOrder:
-        return tieBreak();
-      case SortOrder.Ascending: {
-        const rankDiff = first.rank - second.rank;
-        return rankDiff === 0 ? tieBreak() : rankDiff;
-      }
+        return first.dealOrder - second.dealOrder;
+      case SortOrder.Ascending:
+        return first.rank - second.rank;
       case SortOrder.Descending:
-      default: {
-        const rankDiff = second.rank - first.rank;
-        return rankDiff === 0 ? tieBreak() : rankDiff;
-      }
+      default:
+        return second.rank - first.rank;
     }
   };
 

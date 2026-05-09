@@ -38,17 +38,17 @@ test("a .css file is linked", async ({ page }) => {
   expect(await page.$('link[rel="stylesheet"][href$=".css"]')).not.toBeNull();
 });
 
-const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H";
+const constantSeedQuery = "?seed=1";
 
 test("pre-cut hand points show after select of two discards", async ({
   page,
 }) => {
-  await renderThenSelectTwoDiscards(page, constantHandQuery);
+  await renderThenSelectTwoDiscards(page, constantSeedQuery);
 
   await expect(
     page.getByRole("columnheader", { exact: true, name: "Hand" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("columnheader", { exact: true, name: "Cut" }),
+    page.getByRole("columnheader", { exact: true, name: "15s" }),
   ).toBeVisible();
 });

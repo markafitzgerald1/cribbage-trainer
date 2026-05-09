@@ -15,7 +15,6 @@ export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
             key={dealtCard.dealOrder}
             onChange={onChange}
             rank={dealtCard.rank}
-            suit={dealtCard.suit}
           />
         ))}
       </ul>

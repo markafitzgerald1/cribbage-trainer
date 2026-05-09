@@ -1,14 +1,12 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
-import { type MinimalCard, groupCutsByResults } from "./groupCutsByResults";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
+import { groupCutsByResults } from "./groupCutsByResults";
 
 const DECIMAL_PLACES = 2;
 
 export interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
-  readonly keep: readonly MinimalCard[];
-  readonly discard: readonly MinimalCard[];
   readonly onRowClick: () => void;
   readonly sortOrder: SortOrder;
 }
@@ -19,93 +17,74 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   avgCutAddedRuns,
   avgCutAddedFlushes,
   avgCutAddedNobs,
+  cutCountsRemaining,
   fifteensContributions,
   pairsContributions,
   runsContributions,
   flushesContributions,
   nobsContributions,
-  keep,
-  discard,
   onRowClick,
   sortOrder,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
   const cutResults = groupCutsByResults({
-    discard,
+    cutCountsRemaining,
     fifteens: fifteensContributions,
     flushes: flushesContributions,
-    keep,
     nobs: nobsContributions,
     pairs: pairsContributions,
     runs: runsContributions,
   });
-  const totalAvg =
-    avgCutAdded15s +
-    avgCutAddedPairs +
-    avgCutAddedRuns +
-    avgCutAddedFlushes +
-    avgCutAddedNobs;
-
-  const categories = [
-    { label: "15s", value: avgCutAdded15s },
-    { label: "Pairs", value: avgCutAddedPairs },
-    { label: "Runs", value: avgCutAddedRuns },
-    { label: "Flushes", value: avgCutAddedFlushes },
-    { label: "Nobs", value: avgCutAddedNobs },
-    { label: "Total", value: totalAvg },
-  ];
-
-  const renderHeader = () => (
-    <div className={classes.breakdownHeader}>
-      <div className={classes.cutsHeader}>Cuts</div>
-      {categories.map((cat) => (
-        <div
-          className={classes.categoryHeader}
-          key={cat.label}
-        >
-          {cat.label}
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderSummary = () => (
-    <div className={classes.breakdownSummary}>
-      <div className={classes.summaryLabel} />
-      {categories.map((cat) => (
-        <div
-          className={
-            cat.label === "Total" ? classes.summaryTotal : classes.summaryValue
-          }
-          key={cat.label}
-        >
-          {cat.value.toFixed(DECIMAL_PLACES)}
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <tr
       className={classes.expandedRow}
       onClick={onRowClick}
     >
-      <td colSpan={4}>
+      <td colSpan={8}>
         <div className={classes.breakdownContainer}>
-          {renderHeader()}
-          {renderSummary()}
+          <div className={classes.breakdownHeader}>
+            <div className={classes.cutsHeader}>Cuts</div>
+            <div className={classes.categoryHeader}>15s</div>
+            <div className={classes.categoryHeader}>Pairs</div>
+            <div className={classes.categoryHeader}>Runs</div>
+            <div className={classes.categoryHeader}>Flushes</div>
+            <div className={classes.categoryHeader}>Nobs</div>
+            <div className={classes.totalHeader}>Total</div>
+          </div>
+          <div className={classes.breakdownSummary}>
+            <div className={classes.summaryLabel} />
+            <div className={classes.summaryValue}>
+              {avgCutAdded15s.toFixed(DECIMAL_PLACES)}
+            </div>
+            <div className={classes.summaryValue}>
+              {avgCutAddedPairs.toFixed(DECIMAL_PLACES)}
+            </div>
+            <div className={classes.summaryValue}>
+              {avgCutAddedRuns.toFixed(DECIMAL_PLACES)}
+            </div>
+            <div className={classes.summaryValue}>
+              {avgCutAddedFlushes.toFixed(DECIMAL_PLACES)}
+            </div>
+            <div className={classes.summaryValue}>
+              {avgCutAddedNobs.toFixed(DECIMAL_PLACES)}
+            </div>
+            <div className={classes.summaryTotal}>
+              {(
+                avgCutAdded15s +
+                avgCutAddedPairs +
+                avgCutAddedRuns +
+                avgCutAddedFlushes +
+                avgCutAddedNobs
+              ).toFixed(DECIMAL_PLACES)}
+            </div>
+          </div>
           <div className={classes.cutResultsList}>
             {cutResults.map((result) => (
               <CutResultRow
                 cuts={result.cuts}
                 fifteensPoints={result.fifteensPoints}
                 flushesPoints={result.flushesPoints}
-                key={result.cuts
-                  .map((item) =>
-                    typeof item === "number"
-                      ? item
-                      : `${item.rank}${item.suit}`,
-                  )
-                  .join(",")}
+                key={result.cuts.join(",")}
                 nobsPoints={result.nobsPoints}
                 pairsPoints={result.pairsPoints}
                 runsPoints={result.runsPoints}

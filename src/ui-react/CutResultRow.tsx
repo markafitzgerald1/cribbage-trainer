@@ -1,80 +1,50 @@
 import * as classes from "./CutResultRow.module.css";
-import { type Card, type Rank } from "../game/Card";
 import { CardLabel } from "./CardLabel";
+import { PointsCell } from "./PointsCell";
+import type { Rank } from "../game/Card";
 import { SortOrder } from "../ui/SortOrder";
 
 interface CutResultRowProps {
-  readonly cuts: readonly (Rank | Card)[];
-  readonly sortOrder: SortOrder;
+  readonly cuts: readonly Rank[];
   readonly fifteensPoints: number;
   readonly pairsPoints: number;
   readonly runsPoints: number;
   readonly flushesPoints: number;
   readonly nobsPoints: number;
+  readonly sortOrder: SortOrder;
   readonly totalPoints: number;
 }
 
 export function CutResultRow({
   cuts,
-  sortOrder,
   fifteensPoints,
   pairsPoints,
   runsPoints,
   flushesPoints,
   nobsPoints,
+  sortOrder,
   totalPoints,
 }: CutResultRowProps) {
-  const sortedCuts = [...cuts].sort((first, second) => {
-    const firstRank = typeof first === "number" ? first : first.rank;
-    const secondRank = typeof second === "number" ? second : second.rank;
-    if (firstRank !== secondRank) {
-      return sortOrder === SortOrder.Ascending
-        ? firstRank - secondRank
-        : secondRank - firstRank;
-    }
-    // If ranks are same, one might be a card and one a rank (shouldn't happen with my grouping)
-    // Or both cards with different suits.
-    if (typeof first !== "number" && typeof second !== "number") {
-      return first.suit.localeCompare(second.suit);
-    }
-    return 0;
-  });
+  const sortedCuts =
+    sortOrder === SortOrder.Ascending
+      ? [...cuts].sort((first, second) => first - second)
+      : [...cuts].sort((first, second) => second - first);
 
   return (
     <div className={classes.cutResultRow}>
       <div className={classes.cutsColumn}>
-        {sortedCuts.map((item) => {
-          if (typeof item === "number") {
-            return (
-              <CardLabel
-                key={item}
-                rank={item}
-              />
-            );
-          }
-          return (
-            <CardLabel
-              key={`${item.rank}-${item.suit}`}
-              rank={item.rank}
-              suit={item.suit}
-            />
-          );
-        })}
+        {sortedCuts.map((rank) => (
+          <CardLabel
+            key={rank}
+            rank={rank}
+          />
+        ))}
       </div>
-      {[
-        { label: "fifteens", points: fifteensPoints },
-        { label: "pairs", points: pairsPoints },
-        { label: "runs", points: runsPoints },
-        { label: "flushes", points: flushesPoints },
-        { label: "nobs", points: nobsPoints },
-      ].map((cat) => (
-        <div
-          className={classes.pointsColumn}
-          key={cat.label}
-        >
-          {cat.points === 0 ? "—" : cat.points}
-        </div>
-      ))}
+      <PointsCell points={fifteensPoints} />
+      <PointsCell points={pairsPoints} />
+      <PointsCell points={runsPoints} />
+      <PointsCell points={flushesPoints} />
+      <PointsCell points={nobsPoints} />
       <div className={classes.totalColumn}>{totalPoints}</div>
     </div>
   );

@@ -69,8 +69,7 @@ const CARDS_PER_HAND = 4;
 const CARDS_PER_HAND_WITH_CUT = 5;
 
 const isUnique = (cards: readonly Card[]) =>
-  new Set(cards.map((card) => `${card.rank}-${card.suit}`)).size ===
-  cards.length;
+  new Set(cards).size === cards.length;
 
 const getHandAndCut = (keep: readonly Card[]) => {
   const hand = keep.slice(0, CARDS_PER_HAND);
@@ -130,6 +129,6 @@ export const handPoints = (keep: readonly Card[]): HandPoints => {
     nobs,
     pairs,
     runs,
-    total: pairs + fifteens + runs + flushes + nobs,
+    total: pairs + fifteens + runs,
   };
 };

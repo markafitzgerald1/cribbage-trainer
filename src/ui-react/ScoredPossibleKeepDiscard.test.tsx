@@ -92,7 +92,7 @@ describe("calculation component", () => {
       expect(texts).toStrictEqual([
         expect.stringMatching(
           new RegExp(
-            `${scenario.keepString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}.*\\(${scenario.discardString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}\\)`,
+            `${scenario.keepString}.*\\(${scenario.discardString}\\)`,
             "u",
           ),
         ),

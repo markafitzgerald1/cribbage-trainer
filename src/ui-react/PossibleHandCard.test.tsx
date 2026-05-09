@@ -16,13 +16,10 @@ describe("possible hand card component", () => {
     "renders a <span> with %s",
     (card) => {
       const spanElement = render(
-        <PossibleHandCard
-          rank={card.rank}
-          suit={card.suit}
-        />,
+        <PossibleHandCard rank={card.rank} />,
       ).container.querySelector("span");
 
-      expect(spanElement!.textContent).toBe(`${card.rankLabel}${card.suit}`);
+      expect(spanElement!.textContent).toBe(card.rankLabel);
     },
   );
 });

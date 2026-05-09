@@ -1,20 +1,15 @@
 import * as classes from "./CardLabel.module.css";
-import { CARD_LABELS, Rank, Suit } from "../game/Card";
+import { CARD_LABELS, Rank } from "../game/Card";
 import { getTenClass } from "./getTenClass";
 
 export interface CardLabelProps {
   readonly rank: Rank;
-  readonly suit?: Suit | undefined;
 }
 
-export function CardLabel({ rank, suit }: CardLabelProps) {
-  const isRed = suit === Suit.HEARTS || suit === Suit.DIAMONDS;
-  const suitClass = isRed ? classes.redSuit : classes.blackSuit;
-
+export function CardLabel({ rank }: CardLabelProps) {
   return (
     <div
-      className={[classes.cardLabel, getTenClass(rank, classes.ten), suitClass]
-        .filter(Boolean)
+      className={[classes.cardLabel, getTenClass(rank, classes.ten)]
         .join(" ")
         .trim()}
     >
@@ -22,12 +17,6 @@ export function CardLabel({ rank, suit }: CardLabelProps) {
         // eslint-disable-next-line security/detect-object-injection
         CARD_LABELS[rank]
       }
-      {suit ? <span className={classes.suit}>{suit}</span> : null}
     </div>
   );
 }
-
-CardLabel.defaultProps = {
-  // eslint-disable-next-line no-undefined
-  suit: undefined,
-};

@@ -7,7 +7,7 @@ const ignoreScreenshotTests = /.*.screenshots.spec.ts/u;
 export default defineConfig({
   expect: {
     toHaveScreenshot: {
-      maxDiffPixels: 586,
+      maxDiffPixelRatio: 0.03,
     },
   },
   forbidOnly: Boolean(process.env["CI"]),

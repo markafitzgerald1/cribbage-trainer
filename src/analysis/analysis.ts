@@ -35,9 +35,7 @@ export const allScoredKeepDiscardsByExpectedScoreDescending = <T extends Card>(
       );
       return {
         ...toCutBreakdown(cutAdded),
-        discard: [...keepDiscard.discard].sort(
-          (left, right) => right.rank - left.rank,
-        ),
+        discard: keepDiscard.discard,
         expectedHandPoints: expectedHandPoints(
           keepDiscard.keep,
           keepDiscard.discard,
