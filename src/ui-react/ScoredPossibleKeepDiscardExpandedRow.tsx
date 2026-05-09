@@ -1,5 +1,4 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
-import { type Card, type Rank } from "../game/Card";
 import { type MinimalCard, groupCutsByResults } from "./groupCutsByResults";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CutResultRow } from "./CutResultRow";
@@ -14,36 +13,12 @@ export interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProp
   readonly sortOrder: SortOrder;
 }
 
-function groupCuts(
-  cuts: readonly Card[],
-  cutCountsRemaining: readonly number[],
-): (Rank | Card)[] {
-  const groups = new Map<Rank, Card[]>();
-  for (const card of cuts) {
-    const group = groups.get(card.rank) ?? [];
-    group.push(card);
-    groups.set(card.rank, group);
-  }
-
-  const result: (Rank | Card)[] = [];
-  for (const [rank, group] of groups) {
-    // eslint-disable-next-line security/detect-object-injection
-    if (group.length === cutCountsRemaining[rank]) {
-      result.push(rank);
-    } else {
-      result.push(...group);
-    }
-  }
-  return result;
-}
-
 export function ScoredPossibleKeepDiscardExpandedRow({
   avgCutAdded15s,
   avgCutAddedPairs,
   avgCutAddedRuns,
   avgCutAddedFlushes,
   avgCutAddedNobs,
-  cutCountsRemaining,
   fifteensContributions,
   pairsContributions,
   runsContributions,
@@ -118,9 +93,13 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           <div className={classes.cutResultsList}>
             {cutResults.map((result) => (
               <CutResultRow
-                cuts={groupCuts(result.cuts, cutCountsRemaining)}
+                cuts={result.cuts}
                 key={result.cuts
-                  .map((card) => `${card.rank}${card.suit}`)
+                  .map((item) =>
+                    typeof item === "number"
+                      ? item
+                      : `${item.rank}${item.suit}`,
+                  )
                   .join(",")}
                 sortOrder={sortOrder}
                 totalPoints={result.totalPoints}

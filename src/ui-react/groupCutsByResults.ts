@@ -8,7 +8,7 @@ export interface MinimalCard {
 
 export interface CutResult {
   readonly cutCount: number;
-  readonly cuts: readonly Card[];
+  readonly cuts: readonly (Card | Rank)[];
   readonly fifteensPoints: number;
   readonly pairsPoints: number;
   readonly runsPoints: number;
@@ -88,6 +88,38 @@ function sortByTotalPointsDescending(results: CutResult[]): void {
   });
 }
 
+function getRemainingByRank(
+  availableCards: readonly Card[],
+): Map<Rank, number> {
+  const remainingByRank = new Map<Rank, number>();
+  for (const card of availableCards) {
+    remainingByRank.set(card.rank, (remainingByRank.get(card.rank) ?? 0) + 1);
+  }
+  return remainingByRank;
+}
+
+function processCutsForGroup(
+  cards: readonly Card[],
+  remainingByRank: Map<Rank, number>,
+): (Card | Rank)[] {
+  const processedCuts: (Card | Rank)[] = [];
+  const cardsByRank = new Map<Rank, Card[]>();
+  for (const card of cards) {
+    const group = cardsByRank.get(card.rank) ?? [];
+    group.push(card);
+    cardsByRank.set(card.rank, group);
+  }
+
+  for (const [rank, cardsOfRank] of cardsByRank) {
+    if (cardsOfRank.length === (remainingByRank.get(rank) as number)) {
+      processedCuts.push(rank);
+    } else {
+      processedCuts.push(...cardsOfRank);
+    }
+  }
+  return processedCuts;
+}
+
 export function groupCutsByResults(
   contributions: CutContributions,
 ): CutResult[] {
@@ -110,6 +142,7 @@ export function groupCutsByResults(
       ),
   );
 
+  const remainingByRank = getRemainingByRank(availableCards);
   const groupMap = groupCardsByPointCombination(availableCards, maps);
 
   const results: CutResult[] = [];
@@ -121,9 +154,10 @@ export function groupCutsByResults(
     const runsPoints = Number(runsString);
     const flushesPoints = Number(flushesString);
     const nobsPoints = Number(nobsString);
+
     results.push({
       cutCount: cards.length,
-      cuts: cards,
+      cuts: processCutsForGroup(cards, remainingByRank),
       fifteensPoints,
       flushesPoints,
       nobsPoints,

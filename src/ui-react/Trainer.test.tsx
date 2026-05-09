@@ -13,45 +13,73 @@ import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 import { act } from "react";
 
+const mathRandom = Math.random;
+
+const renderTrainer = () =>
+  render(
+    <Trainer
+      generateRandomNumber={mathRandom}
+      loadGoogleAnalytics={jest.fn()}
+    />,
+  );
+
+const calculationsHeaderName = "Hand";
+
+const clickIndices = (
+  getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],
+  indices: number[],
+  user: UserEvent,
+) =>
+  Promise.all(
+    indices.map((index) => user.click(getAllByRole("checkbox")[index]!)),
+  );
+
+const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
+  await act(() => user.click(checkbox));
+};
+
+const expectCalculationsAfterClicks = async (
+  cardIndices: number[],
+  calculationsExpected: boolean,
+) => {
+  const user = userEvent.setup();
+  const { getAllByRole, queryByRole } = renderTrainer();
+
+  await act(() => clickIndices(getAllByRole, cardIndices, user));
+
+  expect(
+    Boolean(queryByRole("columnheader", { name: calculationsHeaderName })),
+  ).toBe(calculationsExpected);
+};
+
+const handTextToComparableCards = (
+  initialDealtHand: string,
+): ComparableCard[] => {
+  const regex = /(?<rankLabel>10|[A2-9JQK])(?<suit>[♣♦♥♠])/gu;
+  const matches = Array.from(initialDealtHand.matchAll(regex));
+
+  return matches.map((match, index) => {
+    const { rankLabel, suit } = match.groups!;
+
+    return {
+      dealOrder: index,
+      rank: CARD_LABELS.indexOf(rankLabel!) as Rank,
+      suit: suit as Suit,
+    };
+  });
+};
+
+function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
+  return container.querySelector(
+    `input[value='${Object.keys(SortOrder).find((key) => SortOrder[key as keyof typeof SortOrder] === sortOrder)}']`,
+  )!;
+}
+
+const ANALYTICS_CONSENT = "analyticsConsent";
+
+const clearAnalyticsConsent = () => localStorage.removeItem(ANALYTICS_CONSENT);
+
 describe("trainer component", () => {
-  const mathRandom = Math.random;
-
-  const renderTrainer = () =>
-    render(
-      <Trainer
-        generateRandomNumber={mathRandom}
-        loadGoogleAnalytics={jest.fn()}
-      />,
-    );
-
-  const calculationsHeaderName = "Hand";
-
-  const clickIndices = (
-    getAllByRole: (
-      role: ByRoleMatcher,
-      options?: ByRoleOptions,
-    ) => HTMLElement[],
-    indices: number[],
-    user: UserEvent,
-  ) =>
-    Promise.all(
-      indices.map((index) => user.click(getAllByRole("checkbox")[index]!)),
-    );
-
-  const expectCalculationsAfterClicks = async (
-    cardIndices: number[],
-    calculationsExpected: boolean,
-  ) => {
-    const user = userEvent.setup();
-    const { getAllByRole, queryByRole } = renderTrainer();
-
-    await act(() => clickIndices(getAllByRole, cardIndices, user));
-
-    expect(
-      Boolean(queryByRole("columnheader", { name: calculationsHeaderName })),
-    ).toBe(calculationsExpected);
-  };
-
   it("initially contains a sort in descending order radio input", () => {
     expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();
   });
@@ -72,29 +100,6 @@ describe("trainer component", () => {
     const moreThanTwo = 3;
     await expectCalculationsAfterClicks([...Array(moreThanTwo).keys()], false);
   });
-
-  const handTextToComparableCards = (
-    initialDealtHand: string,
-  ): ComparableCard[] => {
-    const regex = /(?<rankLabel>10|[A2-9JQK])(?<suit>[♣♦♥♠])/gu;
-    const matches = Array.from(initialDealtHand.matchAll(regex));
-
-    return matches.map((match, index) => {
-      const { rankLabel, suit } = match.groups!;
-
-      return {
-        dealOrder: index,
-        rank: CARD_LABELS.indexOf(rankLabel!) as Rank,
-        suit: suit as Suit,
-      };
-    });
-  };
-
-  function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
-    return container.querySelector(
-      `input[value='${Object.keys(SortOrder).find((key) => SortOrder[key as keyof typeof SortOrder] === sortOrder)}']`,
-    )!;
-  }
 
   it.each([SortOrder.Ascending, SortOrder.Descending])(
     "re-sorts the dealt hand when the sort order is changed to %s",
@@ -118,11 +123,6 @@ describe("trainer component", () => {
       );
     },
   );
-
-  const ANALYTICS_CONSENT = "analyticsConsent";
-
-  const clearAnalyticsConsent = () =>
-    localStorage.removeItem(ANALYTICS_CONSENT);
 
   it.each([
     [true, "Accept"],
@@ -181,20 +181,18 @@ describe("trainer component", () => {
   });
 
   it("toggles card selection", async () => {
-    /* jscpd:ignore-start */
     const user = userEvent.setup();
     const { getAllByRole } = renderTrainer();
     const firstCheckbox = getAllByRole("checkbox")[0]!;
 
     expect(firstCheckbox).toBeChecked();
 
-    await act(() => user.click(firstCheckbox));
+    await toggleCard(firstCheckbox, user);
 
     expect(firstCheckbox).not.toBeChecked();
 
-    await act(() => user.click(firstCheckbox));
+    await toggleCard(firstCheckbox, user);
 
     expect(firstCheckbox).toBeChecked();
-    /* jscpd:ignore-end */
   });
 });
