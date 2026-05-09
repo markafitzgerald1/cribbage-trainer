@@ -1,10 +1,32 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
-import { type MinimalCard, groupCutsByResults } from "./groupCutsByResults";
+import {
+  type CutResult,
+  type MinimalCard,
+  groupCutsByResults,
+} from "./groupCutsByResults";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
 
 const DECIMAL_PLACES = 2;
+
+function getCutResultKey(result: CutResult): string {
+  const cutsKey = result.cuts
+    .map((item) =>
+      typeof item === "number" ? item : `${item.rank}${item.suit}`,
+    )
+    .join(",");
+
+  return [
+    cutsKey,
+    result.fifteensPoints,
+    result.pairsPoints,
+    result.runsPoints,
+    result.flushesPoints,
+    result.nobsPoints,
+    result.totalPoints,
+  ].join(":");
+}
 
 export interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
   readonly keep: readonly MinimalCard[];
@@ -99,13 +121,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
                 cuts={result.cuts}
                 fifteensPoints={result.fifteensPoints}
                 flushesPoints={result.flushesPoints}
-                key={result.cuts
-                  .map((item) =>
-                    typeof item === "number"
-                      ? item
-                      : `${item.rank}${item.suit}`,
-                  )
-                  .join(",")}
+                key={getCutResultKey(result)}
                 nobsPoints={result.nobsPoints}
                 pairsPoints={result.pairsPoints}
                 runsPoints={result.runsPoints}

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { CARDS, type Card } from "../game/Card";
+import { CARDS, type Card, Rank, parseCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
 import { groupCutsByResults } from "./groupCutsByResults";
@@ -12,6 +12,8 @@ const CARD_COUNT_FOR_SINGLE = 3;
 const TWO_PAIR_POINTS = 4;
 const THREE_OF_KIND_POINTS = 6;
 const FIFTEEN_POINTS = 2;
+const THREE_POINTS = 3;
+const FOUR_POINTS = 4;
 const DOUBLE_FIFTEEN_POINTS = 4;
 const EIGHT_POINTS = 8;
 const TWELVE_POINTS = 12;
@@ -361,6 +363,36 @@ describe("groupCutsByResults", () => {
 
     expect(result).toMatchObject(
       expectedGroups as unknown as Record<string, unknown>[],
+    );
+  });
+
+  it("merges same-rank split-score cards within their scoring group", () => {
+    const result = groupCutsByResults({
+      discard: [],
+      fifteens: [
+        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JC"), 4),
+        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JS"), 3),
+        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JH"), 3),
+        makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JD"), 3),
+      ],
+      flushes: [],
+      keep: [],
+      nobs: [],
+      pairs: [],
+      runs: [],
+    });
+
+    expect(result).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          cuts: [parseCard("JC")],
+          totalPoints: FOUR_POINTS,
+        }),
+        expect.objectContaining({
+          cuts: [Rank.JACK],
+          totalPoints: THREE_POINTS,
+        }),
+      ]),
     );
   });
 });

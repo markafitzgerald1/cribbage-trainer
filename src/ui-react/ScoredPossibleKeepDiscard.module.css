@@ -20,8 +20,13 @@
 .expanded-row td {
   padding: 4px 8px;
   border-bottom: 1px solid rgb(255 255 255 / 20%);
+  background-color: #0f5132;
   color: #fff;
   white-space: normal;
+}
+
+.expanded-row :global(.black-suit) {
+  color: #fff;
 }
 
 .expanded-row :global(.red-suit) {
@@ -119,7 +124,7 @@
   grid-template-columns: 3fr 1fr 1fr 1fr 1fr 1fr 1fr;
   gap: 4px;
   padding: 2px 0;
-  background-color: rgb(255 255 255 / 5%);
+  background-color: #0f5132;
   border-radius: 4px;
   font-family: var(--text-font-family);
   font-weight: 600;

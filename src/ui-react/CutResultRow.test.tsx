@@ -1,6 +1,6 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
-import { Rank, parseCard } from "../game/Card";
+import { type Card, Rank, parseCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
@@ -11,6 +11,32 @@ const SIX_POINTS = 6;
 
 const CUTS_COLUMN_SELECTOR = '[class*="cutsColumn"]';
 const CARD_LABEL_SELECTOR = '[class*="cardLabel"]';
+const MUTED_SELECTOR = '[class*="muted"]';
+
+interface RenderCutResultRowOptions {
+  readonly cuts?: readonly (Rank | Card)[];
+  readonly pairsPoints?: number;
+  readonly sortOrder?: SortOrder;
+}
+
+function renderCutResultRow({
+  cuts = [Rank.FIVE],
+  pairsPoints = 0,
+  sortOrder = SortOrder.Ascending,
+}: RenderCutResultRowOptions = {}) {
+  return render(
+    <CutResultRow
+      cuts={cuts}
+      fifteensPoints={0}
+      flushesPoints={0}
+      nobsPoints={0}
+      pairsPoints={pairsPoints}
+      runsPoints={0}
+      sortOrder={sortOrder}
+      totalPoints={SIX_POINTS}
+    />,
+  );
+}
 
 function getCutLabelTexts(renderResult: ReturnType<typeof render>): string[] {
   const cutsColumn = renderResult.container.querySelector(CUTS_COLUMN_SELECTOR);
@@ -54,19 +80,19 @@ describe("cutResultRow", () => {
       sortOrder: SortOrder.Ascending,
     },
   ])("renders cuts in $name", ({ cuts, expected, sortOrder }) => {
-    const renderResult = render(
-      <CutResultRow
-        cuts={cuts}
-        fifteensPoints={0}
-        flushesPoints={0}
-        nobsPoints={0}
-        pairsPoints={0}
-        runsPoints={0}
-        sortOrder={sortOrder}
-        totalPoints={SIX_POINTS}
-      />,
-    );
+    const renderResult = renderCutResultRow({ cuts, sortOrder });
 
     expect(getCutLabelTexts(renderResult)).toStrictEqual(expected);
+  });
+
+  it("renders zero point categories as dimmed dashes", () => {
+    const renderResult = renderCutResultRow({ pairsPoints: SIX_POINTS });
+
+    const mutedDashes = renderResult.container.querySelectorAll(MUTED_SELECTOR);
+
+    expect(mutedDashes).toHaveLength(4);
+    expect(
+      Array.from(mutedDashes).map((dash) => dash.textContent),
+    ).toStrictEqual(["—", "—", "—", "—"]);
   });
 });

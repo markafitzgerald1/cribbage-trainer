@@ -98,6 +98,13 @@ function getRemainingByRank(
   return remainingByRank;
 }
 
+function shouldRenderRankOnly(
+  cardsOfRank: readonly Card[],
+  remainingOfRank: number,
+): boolean {
+  return cardsOfRank.length > 1 || cardsOfRank.length === remainingOfRank;
+}
+
 function processCutsForGroup(
   cards: readonly Card[],
   remainingByRank: Map<Rank, number>,
@@ -112,10 +119,8 @@ function processCutsForGroup(
 
   for (const [rank, cardsOfRank] of cardsByRank) {
     const [firstCardOfRank] = cardsOfRank;
-    if (
-      cardsOfRank.length > 1 ||
-      cardsOfRank.length === (remainingByRank.get(rank) as number)
-    ) {
+    const remainingOfRank = remainingByRank.get(rank) as number;
+    if (shouldRenderRankOnly(cardsOfRank, remainingOfRank)) {
       processedCuts.push(rank);
     } else {
       processedCuts.push(firstCardOfRank as Card);

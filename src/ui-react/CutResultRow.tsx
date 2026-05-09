@@ -24,6 +24,9 @@ export function CutResultRow({
   nobsPoints,
   totalPoints,
 }: CutResultRowProps) {
+  const renderPoints = (points: number) =>
+    points === 0 ? <span className={classes.muted}>—</span> : points;
+
   const sortedCuts = [...cuts].sort((first, second) => {
     const firstRank = typeof first === "number" ? first : first.rank;
     const secondRank = typeof second === "number" ? second : second.rank;
@@ -39,6 +42,16 @@ export function CutResultRow({
     }
     return 0;
   });
+  const cutKeyCounts = new Map<string, number>();
+  const getCutKey = (item: Rank | Card): string => {
+    const baseKey =
+      typeof item === "number"
+        ? `rank-${item}`
+        : `card-${item.rank}-${item.suit}`;
+    const count = cutKeyCounts.get(baseKey) ?? 0;
+    cutKeyCounts.set(baseKey, count + 1);
+    return `${baseKey}-${count}`;
+  };
 
   return (
     <div className={classes.cutResultRow}>
@@ -47,14 +60,14 @@ export function CutResultRow({
           if (typeof item === "number") {
             return (
               <CardLabel
-                key={item}
+                key={getCutKey(item)}
                 rank={item}
               />
             );
           }
           return (
             <CardLabel
-              key={`${item.rank}-${item.suit}`}
+              key={getCutKey(item)}
               rank={item.rank}
               suit={item.suit}
             />
@@ -72,7 +85,7 @@ export function CutResultRow({
           className={classes.pointsColumn}
           key={cat.label}
         >
-          {cat.points === 0 ? "—" : cat.points}
+          {renderPoints(cat.points)}
         </div>
       ))}
       <div className={classes.totalColumn}>{totalPoints}</div>

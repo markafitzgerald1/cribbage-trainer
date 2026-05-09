@@ -20,7 +20,11 @@
 }
 
 .suit {
+  display: inline-block;
   font-size: 0.6em;
-  margin-left: 0.1em;
-  vertical-align: top;
+  line-height: 1;
+  margin-left: 0.02em;
+  position: relative;
+  top: -0.18em;
+  left: -0.08em;
 }
