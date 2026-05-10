@@ -32,7 +32,12 @@
 .generic-cut {
   color: #a8d5ba;
   min-width: 0;
-  opacity: 0.5;
+  opacity: 0.7;
+}
+
+.generic-cut :global(.black-suit),
+.generic-cut :global(.red-suit) {
+  color: #a8d5ba;
 }
 
 .specific-cut {
@@ -40,6 +45,14 @@
   font-weight: 700;
   min-width: 0;
   opacity: 1;
+}
+
+.specific-cut :global(.black-suit) {
+  color: #ffffff;
+}
+
+.specific-cut :global(.red-suit) {
+  color: #ff9999;
 }
 
 .points-column {
@@ -62,9 +75,9 @@
 @media (orientation: portrait) {
   .cut-result-row {
     grid-template-columns:
-      minmax(3.8em, 2.05fr) minmax(2.2em, 0.78fr) minmax(2.8em, 0.9fr)
-      minmax(2.6em, 0.85fr) minmax(3.8em, 1.2fr) minmax(2.8em, 0.9fr)
-      minmax(2.8em, 0.9fr);
+      minmax(3.2em, 1.75fr) minmax(2em, 0.7fr) minmax(2.6em, 0.82fr)
+      minmax(2.5em, 0.78fr) minmax(4.25em, 1.28fr) minmax(3.1em, 0.92fr)
+      minmax(2.8em, 0.86fr);
     gap: 3px;
   }
 }

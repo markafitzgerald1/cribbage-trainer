@@ -102,7 +102,7 @@ function shouldRenderRankOnly(
   cardsOfRank: readonly Card[],
   remainingOfRank: number,
 ): boolean {
-  return cardsOfRank.length === remainingOfRank;
+  return cardsOfRank.length > 1 || cardsOfRank.length === remainingOfRank;
 }
 
 function processCutsForGroup(

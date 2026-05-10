@@ -20,7 +20,7 @@
 }
 
 .expanded-row :global(.red-suit) {
-  color: #ff4d4d !important;
+  color: #ff9999 !important;
 }
 
 .expanded-row :global(.points-column),
@@ -32,6 +32,10 @@
   color: #a8d5ba !important;
 }
 
+.expanded-row :global(.generic-cut) {
+  opacity: 0.7 !important;
+}
+
 .expanded-row :global(.cut-cards-column),
 .expanded-row :global(.cut-cards-column *) {
   color: #a8d5ba !important;
@@ -39,10 +43,16 @@
 
 .expanded-row :global(.cut-cards-column .specific-cut) {
   color: #ffffff !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+
+.expanded-row :global(.cut-cards-column .specific-cut .black-suit) {
+  color: #ffffff !important;
 }
 
 .expanded-row :global(.cut-cards-column .specific-cut .red-suit) {
-  color: #ff4d4d !important;
+  color: #ff9999 !important;
 }
 
 @media (orientation: landscape) {
@@ -132,12 +142,16 @@
 }
 
 @media (orientation: portrait) {
+  .breakdown-header {
+    font-size: 0.82em;
+  }
+
   .breakdown-header,
   .breakdown-summary {
     grid-template-columns:
-      minmax(3.8em, 2.05fr) minmax(2.2em, 0.78fr) minmax(2.8em, 0.9fr)
-      minmax(2.6em, 0.85fr) minmax(3.8em, 1.2fr) minmax(2.8em, 0.9fr)
-      minmax(2.8em, 0.9fr);
+      minmax(3.2em, 1.75fr) minmax(2em, 0.7fr) minmax(2.6em, 0.82fr)
+      minmax(2.5em, 0.78fr) minmax(4.25em, 1.28fr) minmax(3.1em, 0.92fr)
+      minmax(2.8em, 0.86fr);
     gap: 3px;
   }
 }

@@ -387,7 +387,7 @@ describe("groupCutsByResults", () => {
     );
   });
 
-  it("keeps suits when same-rank cards are split across score tiers", () => {
+  it("uses rank shorthand when multiple same-rank cards share a score tier", () => {
     const result = groupFifteensOnly([
       makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JC"), 4),
       makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JS"), 3),
@@ -399,12 +399,7 @@ describe("groupCutsByResults", () => {
       expect.objectContaining(cutGroup([parseCard("JC")], FOUR_POINTS)),
     );
     expect(result).toContainEqual(
-      expect.objectContaining(
-        cutGroup(
-          [parseCard("JD"), parseCard("JH"), parseCard("JS")],
-          THREE_POINTS,
-        ),
-      ),
+      expect.objectContaining(cutGroup([Rank.JACK], THREE_POINTS)),
     );
   });
 
