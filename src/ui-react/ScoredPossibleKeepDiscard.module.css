@@ -66,4 +66,8 @@
   .scored-possible-keep-discard {
     font-size: var(--medium-text-font-size-portrait);
   }
+
+  .scored-possible-keep-discard td:first-child {
+    font-size: 0.68em;
+  }
 }

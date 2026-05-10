@@ -1,20 +1,51 @@
 @import url("./vars.css");
 
 .card {
-  display: inline-block;
+  align-items: baseline;
+  box-sizing: border-box;
+  display: inline-flex;
+  justify-content: center;
   border: var(--card-border);
   background-color: var(--card-background-color);
   margin: 0.08em;
-  text-align: center;
   border-width: var(--clickable-border-width);
   border-radius: var(--clickable-border-radius);
   color: black;
   font-weight: bold;
-  width: 0.65em;
   font-family: var(--card-font-family);
-  padding: 0.1em;
+  line-height: 1;
+  padding: 0.08em 0.1em 0.1em;
+  white-space: nowrap;
+  width: 1.22em;
 }
 
-.card div {
-  padding-left: 0.1em;
+.card > div {
+  align-items: baseline;
+  display: inline-flex;
+  min-height: auto;
+  padding: 0;
+  position: static;
+  width: auto;
+}
+
+.card.card > div > span + span {
+  display: inline-block;
+  flex-shrink: 0;
+  font-size: 0.58em;
+  line-height: 1;
+  margin-left: 0.08em;
+  position: static;
+}
+
+.card.card > div > span:first-child {
+  margin-left: 0;
+  margin-right: 0;
+  transform: none;
+  transform-origin: left bottom;
+  white-space: nowrap;
+}
+
+.card.card > div[class*="ten"] > span:first-child {
+  margin-right: -0.28em;
+  transform: scaleX(0.55);
 }
