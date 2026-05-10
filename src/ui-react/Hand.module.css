@@ -1,7 +1,10 @@
 @import url("./vars.css");
 
 .figure {
+  box-sizing: border-box;
   margin: 0.7em 0 0;
+  min-width: 0;
+  width: 100%;
 }
 
 .figcaption {
@@ -25,7 +28,10 @@
 .hand {
   display: flex;
   gap: 0.5em;
+  justify-content: space-between;
   padding: 0;
   margin-top: 0.7em;
   margin-bottom: 0;
+  min-width: 0;
+  width: 100%;
 }
