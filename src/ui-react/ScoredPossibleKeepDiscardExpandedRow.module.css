@@ -68,11 +68,13 @@
 }
 
 .breakdown-container {
+  box-sizing: border-box;
   color: #ffffff;
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  width: 100%;
 }
 
 .breakdown-header {
@@ -95,10 +97,11 @@
 }
 
 .category-header {
-  text-align: right;
+  text-align: center;
 }
 
-.total-header {
+.total-header,
+.breakdown-header > div:last-child {
   text-align: right;
 }
 
@@ -123,7 +126,7 @@
 }
 
 .summary-value {
-  text-align: right;
+  text-align: center;
   color: #ffffff;
 }
 
@@ -141,7 +144,19 @@
   flex-direction: column;
 }
 
+.expanded-row :global(.points-column) {
+  text-align: center;
+}
+
+.expanded-row :global(.total-column) {
+  text-align: right;
+}
+
 @media (orientation: portrait) {
+  .breakdown-container {
+    padding-right: 0.35em;
+  }
+
   .breakdown-header {
     font-size: 0.82em;
   }
@@ -149,10 +164,16 @@
   .breakdown-header,
   .breakdown-summary {
     grid-template-columns:
-      minmax(3.2em, 1.75fr) minmax(2em, 0.7fr) minmax(2.6em, 0.82fr)
-      minmax(2.5em, 0.78fr) minmax(4.25em, 1.28fr) minmax(3.1em, 0.92fr)
-      minmax(2.8em, 0.86fr);
+      minmax(3.6em, 1.25fr) minmax(2.5em, 0.9fr) minmax(2.5em, 0.9fr)
+      minmax(2.5em, 0.9fr) minmax(3.8em, 1.2fr) minmax(2.9em, 1fr)
+      minmax(2.9em, 1fr);
     gap: 3px;
+  }
+
+  .breakdown-header,
+  .breakdown-summary,
+  .cut-results-list {
+    font-size: 0.9em;
   }
 }
 

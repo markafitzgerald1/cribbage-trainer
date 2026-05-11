@@ -75,9 +75,9 @@
 @media (orientation: portrait) {
   .cut-result-row {
     grid-template-columns:
-      minmax(3.2em, 1.75fr) minmax(2em, 0.7fr) minmax(2.6em, 0.82fr)
-      minmax(2.5em, 0.78fr) minmax(4.25em, 1.28fr) minmax(3.1em, 0.92fr)
-      minmax(2.8em, 0.86fr);
+      minmax(3.6em, 1.25fr) minmax(2.5em, 0.9fr) minmax(2.5em, 0.9fr)
+      minmax(2.5em, 0.9fr) minmax(3.8em, 1.2fr) minmax(2.9em, 1fr)
+      minmax(2.9em, 1fr);
     gap: 3px;
   }
 }

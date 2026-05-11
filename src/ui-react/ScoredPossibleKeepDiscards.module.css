@@ -70,20 +70,20 @@
 
 @media (orientation: portrait) {
   .scored-possible-keep-discards th:first-child {
-    width: 46%;
+    width: 44%;
   }
 
   .scored-possible-keep-discards th:nth-child(2) {
-    width: 16%;
+    width: 19%;
   }
 
   .scored-possible-keep-discards th:nth-child(3) {
     padding-left: 0.5em;
-    width: 19%;
+    width: 18.5%;
   }
 
   .scored-possible-keep-discards th:nth-child(4) {
-    width: 19%;
+    width: 18.5%;
   }
 }
 

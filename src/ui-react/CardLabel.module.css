@@ -37,15 +37,17 @@
 }
 
 .hand-card-label {
-  display: block;
+  align-items: center;
+  display: flex;
+  justify-content: center;
   min-height: 1.18em;
-  padding: 0 0.32em 0.18em 0;
+  padding: 0 0.08em 0.08em;
   position: relative;
   width: 100%;
 }
 
 .hand-card-label .rank {
-  transform: translateX(0.05em);
+  transform: none;
 }
 
 .hand-card-label.ten {
@@ -55,9 +57,10 @@
 }
 
 .hand-card-label.ten .rank {
-  margin-left: -0.3em;
-  margin-right: -0.2em;
-  transform: translateX(0.05em) scaleX(0.5);
+  margin-left: 0;
+  margin-right: 0;
+  transform: scaleX(0.5);
+  transform-origin: center bottom;
 }
 
 .red-suit {
@@ -82,4 +85,12 @@
   margin-left: 0;
   position: absolute;
   right: -0.05em;
+}
+
+@media (orientation: portrait) {
+  .hand-card-label .suit {
+    bottom: 0.04em;
+    font-size: 0.42em;
+    right: 0.02em;
+  }
 }

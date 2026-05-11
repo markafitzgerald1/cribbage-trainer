@@ -5,11 +5,13 @@
 }
 
 .hand-card {
-  display: block;
+  align-items: center;
   padding: 0.16em 0.16em 0.22em;
   border: var(--card-border);
   background-color: var(--card-background-color);
   cursor: pointer;
+  display: flex;
+  justify-content: center;
   margin-top: 0;
   margin-bottom: 0.4em;
   font-weight: bold;
@@ -31,11 +33,17 @@
 
 @media (orientation: portrait) {
   .hand-card {
-    font-size: clamp(2.1rem, 10.9vw, 3.05rem);
+    font-size: clamp(2.1rem, 11.6vw, 7rem);
   }
 
   .hand-card input[type="checkbox"] {
-    width: 3vw;
+    width: clamp(0.8rem, 3vw, 1.4rem);
+  }
+}
+
+@media (orientation: portrait) and (width <= 600px) {
+  .hand-card {
+    font-size: clamp(2.1rem, 10.7vw, 3.05rem);
   }
 }
 

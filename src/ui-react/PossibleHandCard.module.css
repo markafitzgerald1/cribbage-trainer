@@ -41,11 +41,19 @@
   margin-left: 0;
   margin-right: 0;
   transform: none;
-  transform-origin: left bottom;
+  transform-origin: center bottom;
   white-space: nowrap;
 }
 
+.card.card > div[class*="ten"] > span + span {
+  margin-left: 0.04em;
+}
+
 .card.card > div[class*="ten"] > span:first-child {
-  margin-right: -0.28em;
+  inline-size: 0.62em;
+  margin-left: 0;
+  margin-right: 0;
+  overflow: visible;
   transform: scaleX(0.55);
+  transform-origin: left bottom;
 }
