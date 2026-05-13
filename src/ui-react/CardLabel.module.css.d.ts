@@ -7,5 +7,6 @@ declare const classes: {
   readonly redSuit: string;
   readonly blackSuit: string;
   readonly suit: string;
+  readonly suitText: string;
 };
 export = classes;

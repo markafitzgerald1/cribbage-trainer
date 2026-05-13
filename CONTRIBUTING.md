@@ -29,13 +29,21 @@
 
 ## Handling visual regression test screenshot differences
 
-When the Playwright e2e (end to end) fail due to screenshot differences, compare
-expected and actual screenshots via `npx --no-install playwright show-report` to
-determine if the changes are visually acceptable. If acceptable, regenerate the
-expected screenshots in Docker:
+When the Playwright e2e (end to end) tests fail due to screenshot differences,
+compare expected and actual screenshots via
+`npx --no-install playwright show-report` to determine if the changes are
+visually acceptable. If acceptable, regenerate the expected screenshots in
+Docker:
 
 ```sh
-npm run docker:build-and-test-all -- -- --update-snapshots
+npm run docker:update-screenshots
+```
+
+After screenshots are regenerated, rerun the full Docker suite without update
+flags:
+
+```sh
+npm run docker:build-and-test-all
 ```
 
 ## Husky/hooks

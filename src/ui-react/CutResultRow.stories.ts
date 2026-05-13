@@ -1,5 +1,4 @@
 import "./vars.css";
-import { type Card, Rank } from "../game/Card";
 import {
   type Meta,
   SORT_ORDER_NAMES,
@@ -7,6 +6,7 @@ import {
   type StoryObj,
   createArgTypes,
 } from "./stories.common";
+import { Rank, Suit, createCard } from "../game/Card";
 import { CutResultRow } from "./CutResultRow";
 
 const FOUR_POINTS = 4;
@@ -97,8 +97,8 @@ export const SameRankCuts: Story = {
     ...SHARED_BASE_ARGS,
     ...ZERO_POINTS,
     cuts: [
-      { rank: Rank.FIVE, suit: "H" } as unknown as Card,
-      { rank: Rank.FIVE, suit: "D" } as unknown as Card,
+      createCard(Rank.FIVE, Suit.HEARTS),
+      createCard(Rank.FIVE, Suit.DIAMONDS),
     ],
     fifteensPoints: 2,
     pairsPoints: 2,

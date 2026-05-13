@@ -14,9 +14,9 @@
   font-weight: bold;
   font-family: var(--card-font-family);
   line-height: 1;
-  padding: 0.08em 0.1em 0.1em;
+  padding: 0.08em 0.08em 0.1em;
   white-space: nowrap;
-  width: 1.22em;
+  width: 1.26em;
 }
 
 .card > div {
@@ -25,15 +25,16 @@
   min-height: auto;
   padding: 0;
   position: static;
+  transform: translateX(-0.06em);
   width: auto;
 }
 
-.card.card > div > span + span {
+.card.card > div > span:nth-child(2) {
   display: inline-block;
   flex-shrink: 0;
-  font-size: 0.58em;
+  font-size: 0.5em;
   line-height: 1;
-  margin-left: 0.08em;
+  margin-left: 0.02em;
   position: static;
 }
 
@@ -45,7 +46,7 @@
   white-space: nowrap;
 }
 
-.card.card > div[class*="ten"] > span + span {
+.card.card > div[class*="ten"] > span:nth-child(2) {
   margin-left: 0.04em;
 }
 

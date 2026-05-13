@@ -41,13 +41,13 @@
   display: flex;
   justify-content: center;
   min-height: 1.18em;
-  padding: 0 0.08em 0.08em;
+  padding: 0 0.2em 0.16em 0.08em;
   position: relative;
   width: 100%;
 }
 
 .hand-card-label .rank {
-  transform: none;
+  transform: translateX(0.04em);
 }
 
 .hand-card-label.ten {
@@ -59,7 +59,7 @@
 .hand-card-label.ten .rank {
   margin-left: 0;
   margin-right: 0;
-  transform: scaleX(0.5);
+  transform: translateX(0.04em) scaleX(0.5);
   transform-origin: center bottom;
 }
 
@@ -74,23 +74,44 @@
 .suit {
   display: block;
   font-size: 0.65em;
+  inline-size: 0.65em;
   line-height: 1;
   position: static;
   margin-left: 0.05em;
 }
 
+.suit svg {
+  block-size: 1em;
+  display: block;
+  fill: currentcolor;
+  inline-size: 1em;
+}
+
+.suit-text {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
 .hand-card-label .suit {
-  bottom: 0.1em;
-  font-size: 0.6em;
+  bottom: 0.02em;
+  font-size: 0.36em;
   margin-left: 0;
   position: absolute;
-  right: -0.05em;
+  right: 0.02em;
 }
 
 @media (orientation: portrait) {
+  .hand-card-label .rank {
+    font-size: 1.08em;
+  }
+
   .hand-card-label .suit {
-    bottom: 0.04em;
-    font-size: 0.42em;
+    bottom: 0.02em;
+    font-size: 0.36em;
     right: 0.02em;
   }
 }
