@@ -122,5 +122,13 @@ export const parseCard = (card: string): Card => {
   return createCard(rank as Rank, parseSuit(suitChar));
 };
 
-export const parseHand = (hand: string): Card[] =>
-  hand.split(",").map(parseCard);
+const getPhysicalCardKey = (card: Card) => `${card.rank}-${card.suit}`;
+
+export const parseHand = (hand: string): Card[] => {
+  const cards = hand.split(",").map(parseCard);
+  const cardKeys = cards.map(getPhysicalCardKey);
+  if (new Set(cardKeys).size !== cardKeys.length) {
+    throw new Error(`Duplicate card in hand: ${hand}`);
+  }
+  return cards;
+};

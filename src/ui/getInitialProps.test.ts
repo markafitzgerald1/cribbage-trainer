@@ -15,6 +15,18 @@ describe("getInitialProps", () => {
     expect(props.initialCards?.[0]?.rankLabel).toBe("A");
   });
 
+  it("returns null initialCards when hand param is malformed", () => {
+    const props = getInitialProps("?hand=AH,ZZ");
+
+    expect(props.initialCards).toBeNull();
+  });
+
+  it("returns null initialCards when hand param has duplicate cards", () => {
+    const props = getInitialProps("?hand=AH,AH,2H,3H,4H,5H");
+
+    expect(props.initialCards).toBeNull();
+  });
+
   it("returns null seed when no seed param is present", () => {
     const props = getInitialProps("");
 

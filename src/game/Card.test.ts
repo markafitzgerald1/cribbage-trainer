@@ -81,4 +81,10 @@ describe("parseHand", () => {
     expect(hand[0]!.rankLabel).toBe("A");
     expect(hand[1]!.suit).toBe(Suit.SPADES);
   });
+
+  it("throws on duplicate physical cards", () => {
+    expect(() => parseHand("AH,AH,2H")).toThrow(
+      "Duplicate card in hand: AH,AH,2H",
+    );
+  });
 });
