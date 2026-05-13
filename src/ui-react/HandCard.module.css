@@ -35,18 +35,14 @@
 
 @media (orientation: portrait) {
   .hand-card {
+    box-sizing: border-box;
     font-size: clamp(2.1rem, 11.6vw, 7rem);
+    width: 100%;
   }
 
   .hand-card input[type="checkbox"] {
     block-size: clamp(0.62rem, 2.4vw, 0.95rem);
     inline-size: clamp(0.62rem, 2.4vw, 0.95rem);
-  }
-}
-
-@media (orientation: portrait) and (width <= 600px) {
-  .hand-card {
-    font-size: clamp(2.1rem, 10.7vw, 3.05rem);
   }
 }
 

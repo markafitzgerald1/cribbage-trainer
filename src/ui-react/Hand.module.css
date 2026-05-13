@@ -41,12 +41,5 @@
     display: grid;
     gap: clamp(0.24em, 1.25vw, 0.44em);
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    justify-items: center;
-  }
-}
-
-@media (orientation: portrait) and (width <= 600px) {
-  .hand {
-    gap: clamp(0.44em, 2.6vw, 0.8em);
   }
 }

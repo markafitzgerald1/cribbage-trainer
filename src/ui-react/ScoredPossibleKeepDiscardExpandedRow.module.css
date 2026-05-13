@@ -125,6 +125,18 @@
   color: rgb(255 255 255 / 70%);
 }
 
+.expand-indicator {
+  display: inline-block;
+  margin-left: 0.25em;
+  color: rgb(255 255 255 / 65%);
+  transform: rotate(0deg);
+  transition: transform 120ms ease-in-out;
+}
+
+.expand-indicator-expanded {
+  transform: rotate(90deg);
+}
+
 .summary-value {
   text-align: center;
   color: #ffffff;
@@ -137,6 +149,13 @@
 
 .muted {
   opacity: 0.5;
+}
+
+.not-applicable {
+  color: rgb(255 255 255 / 56%);
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .cut-results-list {

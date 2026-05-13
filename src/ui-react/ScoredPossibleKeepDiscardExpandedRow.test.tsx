@@ -4,14 +4,16 @@ import {
   ScoredPossibleKeepDiscardExpandedRow,
   type ScoredPossibleKeepDiscardExpandedRowProps,
 } from "./ScoredPossibleKeepDiscardExpandedRow";
-import { describe, expect, it, jest } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { getAllByCardText, getByCardText } from "./test-utils";
-import { render, screen } from "@testing-library/react";
 import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
 
 const MUTED_SELECTOR = '[class*="muted"]';
 const SUMMARY_SELECTOR = '[class*="breakdownSummary"]';
+const CUT_RESULTS_SELECTOR = '[class*="cutResultsList"]';
+const STARTER_AVG_TEXT = /^Starter avg/u;
 
 function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
   const summary = container.querySelector(SUMMARY_SELECTOR)!;
@@ -20,6 +22,10 @@ function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
     summary.querySelectorAll(MUTED_SELECTOR),
     (dash) => dash.textContent,
   );
+}
+
+function expandStarterDetails() {
+  fireEvent.click(screen.getByText(STARTER_AVG_TEXT));
 }
 
 describe("scoredPossibleKeepDiscardExpandedRow", () => {
@@ -43,8 +49,15 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       overrides.cutCountsRemaining ?? Array.from({ length: 13 }, () => 4);
     const fifteens = overrides.fifteensContributions ?? [];
     const flushes = overrides.flushesContributions ?? [];
+    const handPointsBreakdown = overrides.handPointsBreakdown ?? {
+      fifteens: 2,
+      flushes: 0,
+      nobs: 0,
+      pairs: 2,
+      runs: 0,
+      total: 4,
+    };
     const nobs = overrides.nobsContributions ?? [];
-    const onRowClick = overrides.onRowClick ?? jest.fn();
     const pairs = overrides.pairsContributions ?? [];
     const runs = overrides.runsContributions ?? [];
     const order = overrides.sortOrder ?? SortOrder.Ascending;
@@ -65,9 +78,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
             discard={discard}
             fifteensContributions={fifteens}
             flushesContributions={flushes}
+            handPointsBreakdown={handPointsBreakdown}
             keep={keep}
             nobsContributions={nobs}
-            onRowClick={onRowClick}
             pairsContributions={pairs}
             runsContributions={runs}
             sortOrder={order}
@@ -76,13 +89,20 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       </table>,
     );
   };
+  const renderExpandedStarterDetails = (
+    overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+  ) => {
+    renderRow(overrides);
+    expandStarterDetails();
+  };
 
   it("should render cut results when they exist to satisfy 100% coverage", () => {
-    renderRow({ fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS });
+    renderExpandedStarterDetails({
+      fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
+    });
 
     // Verify that the breakdown summary is rendered
     expect(screen.getByText("0.50")).toBeTruthy();
-
     // Verify that the CutResultRow is rendered for the 5 rank
     expect(getByCardText(screen, "5♠")).toBeTruthy();
   });
@@ -94,6 +114,14 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       avgCutAddedNobs: 0,
       avgCutAddedPairs: 0,
       avgCutAddedRuns: 0,
+      handPointsBreakdown: {
+        fifteens: 0,
+        flushes: 0,
+        nobs: 0,
+        pairs: 0,
+        runs: 0,
+        total: 0,
+      },
     });
 
     expect(getSummaryMutedTexts(container)).toStrictEqual([
@@ -102,8 +130,8 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       "—",
       "—",
       "—",
-      "—",
     ]);
+    expect(screen.getByText("X")).toBeTruthy();
   });
 
   it("should render cut results in descending order", () => {
@@ -113,7 +141,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       createContribution(Rank.FOUR, 2),
     ];
 
-    renderRow({
+    renderExpandedStarterDetails({
       fifteensContributions,
       sortOrder: SortOrder.Descending,
     });
@@ -137,7 +165,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     // Different count than Rank.FIVE
     customCounts[Rank.SIX] = 2;
 
-    renderRow({
+    renderExpandedStarterDetails({
       cutCountsRemaining: customCounts,
       fifteensContributions,
       pairsContributions,
@@ -150,18 +178,25 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     expect(getAllByCardText(screen, "6♠")).toHaveLength(1);
     // "10" appears 3 times: 15sPoints column, totalPoints column, and rank 10 card label
     expect(screen.getAllByText("10")).toHaveLength(3);
-    // "2" appears 5 times:
+
+    const cutResults = document.querySelector(CUT_RESULTS_SELECTOR)!;
+
+    // "2" appears 7 times in the starter detail:
     // - rank 5 row: 15sPoints (2) and totalPoints (2)
     // - rank 6 row: pairsPoints (2) and totalPoints (2)
-    // - rank 2 card label ("2")
-    expect(screen.getAllByText("2")).toHaveLength(5);
+    // - rank 2 card label wrappers and text node
+    expect(
+      Array.from(cutResults.querySelectorAll("*")).filter(
+        (element) => element.textContent === "2",
+      ),
+    ).toHaveLength(7);
   });
 
   it("should cover remaining branches in groupCutsByResults", () => {
     const cutCountsRemaining = Array.from({ length: 13 }, () => 4);
     cutCountsRemaining[Rank.KING] = 0;
 
-    renderRow({
+    renderExpandedStarterDetails({
       cutCountsRemaining,
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
     });
@@ -175,7 +210,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     // Mix zero and non-zero point results
     const fifteensContributions = [createContribution(Rank.FIVE, 2)];
 
-    renderRow({
+    renderExpandedStarterDetails({
       fifteensContributions,
       sortOrder: SortOrder.Descending,
     });
@@ -185,11 +220,23 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     // Verify that zero point rows (like rank 4) are sorted after
     // CardLabel for '5' should be before CardLabel for '4'
     const fiveLabel = getByCardText(screen, "5♠");
-    const fourLabel = screen.getByText("4");
+    const fourLabel = screen
+      .getAllByText("4")
+      .find((element) => element.className.includes("rank"))!;
 
     // DOCUMENT_POSITION_FOLLOWING is 4
     const FOLLOWING = 4;
 
     expect(fiveLabel.compareDocumentPosition(fourLabel)).toBe(FOLLOWING);
+  });
+
+  it("should keep starter specifics collapsed until the nested expansion opens", () => {
+    renderRow({ fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS });
+
+    expect(screen.queryByText("5♠")).toBeNull();
+
+    expandStarterDetails();
+
+    expect(getByCardText(screen, "5♠")).toBeTruthy();
   });
 });

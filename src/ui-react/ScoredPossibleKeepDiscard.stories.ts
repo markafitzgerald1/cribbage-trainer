@@ -59,12 +59,14 @@ const createStory = ({
   isHighlighted = false,
 }: CreateStoryOptions): Story => {
   const cutAdded = expectedCutAddedPoints(keep, discard);
+  const points = handPoints(keep);
   return {
     args: {
       ...toCutBreakdown(cutAdded),
       discard: discard.map(toComparableCard),
       expectedHandPoints: expectedHandPoints(keep, discard).total,
-      handPoints: handPoints(keep).total,
+      handPoints: points.total,
+      handPointsBreakdown: points,
       isHighlighted,
       keep: keep.map(toComparableCard),
       rowIndex: 0,
