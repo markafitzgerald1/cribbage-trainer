@@ -43,3 +43,10 @@
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
+
+@media (orientation: landscape) {
+  .hand {
+    gap: 0.56vw;
+    justify-content: flex-start;
+  }
+}
