@@ -86,4 +86,8 @@
   .scored-possible-keep-discard td:first-child {
     font-size: 0.84em;
   }
+
+  .scored-possible-keep-discard td:nth-child(n + 2) {
+    font-size: 0.86em;
+  }
 }

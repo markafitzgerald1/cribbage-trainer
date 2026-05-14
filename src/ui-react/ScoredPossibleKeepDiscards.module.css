@@ -116,7 +116,7 @@
   }
 
   .scored-possible-keep-discards th {
-    font-size: var(--medium-text-font-size-portrait);
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.86);
   }
 }
 
