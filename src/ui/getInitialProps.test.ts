@@ -27,6 +27,15 @@ describe("getInitialProps", () => {
     expect(props.initialCards).toBeNull();
   });
 
+  it.each([
+    ["too few", "AH,2H,3H,4H,5H"],
+    ["too many", "AH,2H,3H,4H,5H,6H,7H"],
+  ])("returns null initialCards when hand param has %s cards", (_, hand) => {
+    const props = getInitialProps(`?hand=${hand}`);
+
+    expect(props.initialCards).toBeNull();
+  });
+
   it("returns null seed when no seed param is present", () => {
     const props = getInitialProps("");
 

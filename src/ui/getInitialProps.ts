@@ -1,3 +1,4 @@
+import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { parseHand } from "../game/Card";
 
 const parseInitialCards = (handParam: string | null) => {
@@ -5,7 +6,8 @@ const parseInitialCards = (handParam: string | null) => {
     return null;
   }
   try {
-    return parseHand(handParam);
+    const cards = parseHand(handParam);
+    return cards.length === CARDS_PER_DEALT_HAND ? cards : null;
   } catch {
     return null;
   }
