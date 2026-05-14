@@ -35,8 +35,6 @@ export function CutResultRow({
         ? firstRank - secondRank
         : secondRank - firstRank;
     }
-    // If ranks are same, one might be a card and one a rank (shouldn't happen with my grouping)
-    // Or both cards with different suits.
     if (typeof first !== "number" && typeof second !== "number") {
       return first.suit.localeCompare(second.suit);
     }

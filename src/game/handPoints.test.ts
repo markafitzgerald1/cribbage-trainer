@@ -1,4 +1,4 @@
-import { type Card, CARDS as card } from "./Card";
+import { type Card, CARDS as card, parseCard } from "./Card";
 import { HAND_POINTS, type HandPoints, handPoints } from "./handPoints";
 import { describe, expect, it } from "@jest/globals";
 import { parseCards } from "./parseCards.common";
@@ -18,6 +18,9 @@ const expectTypePoints = (
   type: keyof HandPoints,
   expectedPoints: number,
 ) => expect(handPoints(keep)[type]).toBe(expectedPoints);
+
+const parsePhysicalCards = (cards: string): readonly Card[] =>
+  cards.split(",").map(parseCard);
 
 describe("handPoints", () => {
   describe("pairs", () => {
@@ -313,16 +316,21 @@ describe("handPoints", () => {
     });
 
     it("jack in hand but wrong suit for cut card", () => {
-      // Jack is Hearts (rank 10, index 10, 10%4=2)
-      // 5 is Clubs (rank 4, index 4, 4%4=0)
-      expect(handPoints(parseCards("J,2,3,4,5")).nobs).toBe(1);
+      const handWithHeartJackAndClubCut = parsePhysicalCards("JH,2C,3D,4S,5C");
+
+      expect(handPoints(handWithHeartJackAndClubCut).nobs).toBe(0);
     });
 
     it("jack in hand with matching suit for cut card", () => {
-      const points = handPoints(parseCards("J,2,3,4,7"));
+      const handWithHeartJackAndHeartCut = parsePhysicalCards("JH,2C,3D,4S,7H");
+      const threeCardRunPoints = 3 * HAND_POINTS.RUN_PER_CARD;
+      const expectedTotal =
+        HAND_POINTS.FIFTEEN_TWO + threeCardRunPoints + HAND_POINTS.NOBS;
+
+      const points = handPoints(handWithHeartJackAndHeartCut);
 
       expect(points.nobs).toBe(HAND_POINTS.NOBS);
-      expect(points.total).toBe(11);
+      expect(points.total).toBe(expectedTotal);
     });
   });
 });

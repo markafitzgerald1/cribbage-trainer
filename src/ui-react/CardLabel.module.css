@@ -64,11 +64,11 @@
 }
 
 .red-suit {
-  color: #c41e3a;
+  color: var(--card-red-suit-color, #c41e3a);
 }
 
 .black-suit {
-  color: #222;
+  color: var(--card-black-suit-color, #222);
 }
 
 .suit {

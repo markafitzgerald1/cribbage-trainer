@@ -1,8 +1,14 @@
 @import url("./vars.css");
 
-/* stylelint-disable color-hex-length -- Expanded row contrast spec requires #ffffff. */
-
 .expanded-row {
+  --card-black-suit-color: #fff;
+  --card-red-suit-color: #f99;
+  --cut-result-generic-color: #a8d5ba;
+  --cut-result-generic-opacity: 0.7;
+  --cut-result-red-suit-color: #f99;
+  --cut-result-specific-color: #fff;
+  --cut-result-text-color: #fff;
+
   cursor: pointer;
   font-family: var(--text-font-family);
 }
@@ -11,48 +17,8 @@
   padding: 4px 8px;
   border-bottom: 1px solid rgb(255 255 255 / 20%);
   background-color: #0f5132;
-  color: #ffffff;
+  color: #fff;
   white-space: normal;
-}
-
-.expanded-row :global(.black-suit) {
-  color: #ffffff !important;
-}
-
-.expanded-row :global(.red-suit) {
-  color: #ff9999 !important;
-}
-
-.expanded-row :global(.points-column),
-.expanded-row :global(.total-column) {
-  color: #ffffff !important;
-}
-
-.expanded-row :global(.generic-cut .black-suit) {
-  color: #a8d5ba !important;
-}
-
-.expanded-row :global(.generic-cut) {
-  opacity: 0.7 !important;
-}
-
-.expanded-row :global(.cut-cards-column),
-.expanded-row :global(.cut-cards-column *) {
-  color: #a8d5ba !important;
-}
-
-.expanded-row :global(.cut-cards-column .specific-cut) {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  opacity: 1 !important;
-}
-
-.expanded-row :global(.cut-cards-column .specific-cut .black-suit) {
-  color: #ffffff !important;
-}
-
-.expanded-row :global(.cut-cards-column .specific-cut .red-suit) {
-  color: #ff9999 !important;
 }
 
 @media (orientation: landscape) {
@@ -69,7 +35,7 @@
 
 .breakdown-container {
   box-sizing: border-box;
-  color: #ffffff;
+  color: #fff;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -117,7 +83,7 @@
   border-radius: 4px;
   font-family: var(--text-font-family);
   font-weight: 600;
-  color: #ffffff;
+  color: #fff;
 }
 
 .summary-label {
@@ -139,12 +105,12 @@
 
 .summary-value {
   text-align: center;
-  color: #ffffff;
+  color: #fff;
 }
 
 .summary-total {
   text-align: right;
-  color: #ffffff;
+  color: #fff;
 }
 
 .muted {
@@ -195,5 +161,3 @@
     font-size: 0.9em;
   }
 }
-
-/* stylelint-enable color-hex-length */

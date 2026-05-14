@@ -34,7 +34,6 @@ describe("card label component", () => {
     "%s has the 'ten' CSS class if it is a ten",
     (dealtCardRank) => {
       const { suit } = CARDS[dealtCardRank]!;
-      // GetByText is no longer used here as we use getByCardText helper
 
       expect(
         getByCardText(
@@ -58,9 +57,11 @@ describe("card label component", () => {
       );
 
       expect(
-        getByCardText(result, `${CARD_LABELS[CARDS.ACE.rank]}${suit}`),
+        getByCardText(
+          result,
+          `${CARD_LABELS[CARDS.ACE.rank]}${suit}`,
+        ).querySelector("path"),
       ).toBeTruthy();
-      expect(result.container.querySelector("path")).toBeTruthy();
     },
   );
 

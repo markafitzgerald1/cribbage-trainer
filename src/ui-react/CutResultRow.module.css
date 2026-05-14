@@ -1,8 +1,12 @@
 @import url("./vars.css");
 
-/* stylelint-disable color-hex-length -- Specific starter contrast spec requires #ffffff. */
-
 .cut-result-row {
+  --cut-result-generic-color: #a8d5ba;
+  --cut-result-generic-opacity: 0.7;
+  --cut-result-red-suit-color: #f99;
+  --cut-result-specific-color: #fff;
+  --cut-result-text-color: var(--text-color);
+
   display: grid;
   grid-template-columns:
     minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
@@ -19,7 +23,7 @@
 }
 
 .cuts-column {
-  color: #a8d5ba;
+  color: var(--cut-result-generic-color);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -30,42 +34,42 @@
 }
 
 .generic-cut {
-  color: #a8d5ba;
+  color: var(--cut-result-generic-color);
   min-width: 0;
-  opacity: 0.7;
+  opacity: var(--cut-result-generic-opacity);
 }
 
 .generic-cut :global(.black-suit),
 .generic-cut :global(.red-suit) {
-  color: #a8d5ba;
+  color: var(--cut-result-generic-color);
 }
 
 .specific-cut {
-  color: #ffffff;
+  color: var(--cut-result-specific-color);
   font-weight: 700;
   min-width: 0;
   opacity: 1;
 }
 
 .specific-cut :global(.black-suit) {
-  color: #ffffff;
+  color: var(--cut-result-specific-color);
 }
 
 .specific-cut :global(.red-suit) {
-  color: #ff9999;
+  color: var(--cut-result-red-suit-color);
 }
 
 .points-column {
   text-align: right;
   font-size: 0.9em;
-  color: var(--text-color);
+  color: var(--cut-result-text-color);
 }
 
 .total-column {
   text-align: right;
   font-family: var(--text-font-family);
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--cut-result-text-color);
 }
 
 .muted {
@@ -81,5 +85,3 @@
     gap: 3px;
   }
 }
-
-/* stylelint-enable color-hex-length */
