@@ -13,13 +13,23 @@ const TWO_PAIR_POINTS = 4;
 const THREE_OF_KIND_POINTS = 6;
 const FIFTEEN_POINTS = 2;
 const DOUBLE_FIFTEEN_POINTS = 4;
-const EIGHT_POINTS = 8;
-const TWELVE_POINTS = 12;
+const FOUR_CARD_FLUSH_POINTS = 4;
+const NOBS_POINTS = 1;
+const EIGHT_RUN_POINTS = 8;
+const TWELVE_RUN_POINTS = 12;
 
-const THREE_POINTS = 3;
-const FOUR_POINTS = 4;
+const FIFTEEN_AND_PAIR_POINTS = FIFTEEN_POINTS + TWO_PAIR_POINTS;
+const FIFTEEN_PAIR_AND_RUN_POINTS =
+  FIFTEEN_POINTS + DOUBLE_FIFTEEN_POINTS + THREE_OF_KIND_POINTS;
 const ALL_RANKS_CUT_COUNT = 52;
 const TOTAL_RANKS = 13;
+
+const ONE_CUT = 1;
+const TWO_CUTS = 2;
+const THREE_CUTS = 3;
+const ZERO_POINT_CUTS_AFTER_ONE_CUT = ALL_RANKS_CUT_COUNT - ONE_CUT;
+const ZERO_POINT_CUTS_AFTER_TWO_CUTS = ALL_RANKS_CUT_COUNT - TWO_CUTS;
+const ZERO_POINT_CUTS_AFTER_THREE_CUTS = ALL_RANKS_CUT_COUNT - THREE_CUTS;
 
 const createCutCounts = (
   overrides: Record<number, number> = {},
@@ -40,6 +50,15 @@ const makeContribution = (
   cutCard,
   points,
 });
+
+const makeContributions = (
+  count: number,
+  cardLabels: readonly string[],
+  points: number,
+): readonly CutContribution[] =>
+  cardLabels.map((cardLabel) =>
+    makeContribution(count, parseCard(cardLabel), points),
+  );
 
 function getContributions(
   contributions: readonly CutContribution[] | undefined,
@@ -128,14 +147,14 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: 2,
+          cutCount: TWO_CUTS,
           cuts: expect.any(Array),
           fifteensPoints: FIFTEEN_POINTS,
           pairsPoints: TWO_PAIR_POINTS,
           runsPoints: 0,
-          totalPoints: FIFTEEN_POINTS + TWO_PAIR_POINTS,
+          totalPoints: FIFTEEN_AND_PAIR_POINTS,
         },
-        { cutCount: 50, totalPoints: 0 },
+        { cutCount: ZERO_POINT_CUTS_AFTER_TWO_CUTS, totalPoints: 0 },
       ],
     ],
     [
@@ -157,7 +176,7 @@ describe("groupCutsByResults", () => {
       [
         { totalPoints: DOUBLE_FIFTEEN_POINTS },
         { totalPoints: FIFTEEN_POINTS },
-        { cutCount: 50, totalPoints: 0 },
+        { cutCount: ZERO_POINT_CUTS_AFTER_TWO_CUTS, totalPoints: 0 },
       ],
     ],
     [
@@ -182,15 +201,15 @@ describe("groupCutsByResults", () => {
           makeContribution(
             CARD_COUNT_FOR_THREE_OF_A_KIND,
             CARDS.ACE,
-            TWELVE_POINTS,
+            TWELVE_RUN_POINTS,
           ),
         ],
       },
       [
-        { totalPoints: TWELVE_POINTS },
+        { totalPoints: TWELVE_RUN_POINTS },
         { totalPoints: TWO_PAIR_POINTS },
         { totalPoints: FIFTEEN_POINTS },
-        { cutCount: 49, totalPoints: 0 },
+        { cutCount: ZERO_POINT_CUTS_AFTER_THREE_CUTS, totalPoints: 0 },
       ],
     ],
     [
@@ -201,19 +220,19 @@ describe("groupCutsByResults", () => {
           makeContribution(
             CARD_COUNT_FOR_UNIQUE_RANK,
             CARDS.KING,
-            EIGHT_POINTS,
+            EIGHT_RUN_POINTS,
           ),
         ],
       },
       [
         {
-          cutCount: 1,
+          cutCount: ONE_CUT,
           fifteensPoints: 0,
           pairsPoints: 0,
-          runsPoints: EIGHT_POINTS,
-          totalPoints: EIGHT_POINTS,
+          runsPoints: EIGHT_RUN_POINTS,
+          totalPoints: EIGHT_RUN_POINTS,
         },
-        { cutCount: 51, totalPoints: 0 },
+        { cutCount: ZERO_POINT_CUTS_AFTER_ONE_CUT, totalPoints: 0 },
       ],
     ],
     [
@@ -229,7 +248,10 @@ describe("groupCutsByResults", () => {
           ),
         ],
       },
-      [{ cutCount: 2 }, { cutCount: 50, totalPoints: 0 }],
+      [
+        { cutCount: TWO_CUTS },
+        { cutCount: ZERO_POINT_CUTS_AFTER_TWO_CUTS, totalPoints: 0 },
+      ],
     ],
     [
       "sorts by cut count when points are equal and groups are separate plus zero-point group",
@@ -249,11 +271,11 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: 1,
+          cutCount: ONE_CUT,
           totalPoints: DOUBLE_FIFTEEN_POINTS,
         },
-        { cutCount: 1, totalPoints: DOUBLE_FIFTEEN_POINTS },
-        { cutCount: 50, totalPoints: 0 },
+        { cutCount: ONE_CUT, totalPoints: DOUBLE_FIFTEEN_POINTS },
+        { cutCount: ZERO_POINT_CUTS_AFTER_TWO_CUTS, totalPoints: 0 },
       ],
     ],
     [
@@ -270,13 +292,13 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: 1,
+          cutCount: ONE_CUT,
           fifteensPoints: 0,
           pairsPoints: THREE_OF_KIND_POINTS,
           runsPoints: 0,
           totalPoints: THREE_OF_KIND_POINTS,
         },
-        { cutCount: 51, totalPoints: 0 },
+        { cutCount: ZERO_POINT_CUTS_AFTER_ONE_CUT, totalPoints: 0 },
       ],
     ],
     [
@@ -307,13 +329,13 @@ describe("groupCutsByResults", () => {
       },
       [
         {
-          cutCount: 1,
+          cutCount: ONE_CUT,
           fifteensPoints: FIFTEEN_POINTS,
           pairsPoints: DOUBLE_FIFTEEN_POINTS,
           runsPoints: THREE_OF_KIND_POINTS,
-          totalPoints: TWELVE_POINTS,
+          totalPoints: FIFTEEN_PAIR_AND_RUN_POINTS,
         },
-        { cutCount: 51, totalPoints: 0 },
+        { cutCount: ZERO_POINT_CUTS_AFTER_ONE_CUT, totalPoints: 0 },
       ],
     ],
     [
@@ -324,7 +346,7 @@ describe("groupCutsByResults", () => {
           5: CARD_COUNT_FOR_PAIR,
         }),
       },
-      [{ cutCount: 52, totalPoints: 0 }],
+      [{ cutCount: ALL_RANKS_CUT_COUNT, totalPoints: 0 }],
     ],
     [
       "treats undefined values in cutCountsRemaining as zero",
@@ -334,29 +356,37 @@ describe("groupCutsByResults", () => {
           CARD_COUNT_FOR_UNIQUE_RANK,
         ],
       },
-      [{ cutCount: 52, totalPoints: 0 }],
+      [{ cutCount: ALL_RANKS_CUT_COUNT, totalPoints: 0 }],
     ],
     [
       "handles flushes and nobs correctly",
       {
         cutCountsRemaining: ALL_FOUR_REMAINING,
-        flushes: [makeContribution(CARD_COUNT_FOR_SINGLE, CARDS.FIVE, 4)],
-        nobs: [makeContribution(CARD_COUNT_FOR_SINGLE, CARDS.JACK, 1)],
+        flushes: [
+          makeContribution(
+            CARD_COUNT_FOR_SINGLE,
+            CARDS.FIVE,
+            FOUR_CARD_FLUSH_POINTS,
+          ),
+        ],
+        nobs: [
+          makeContribution(CARD_COUNT_FOR_SINGLE, CARDS.JACK, NOBS_POINTS),
+        ],
       },
       [
         {
-          cutCount: 1,
-          flushesPoints: 4,
+          cutCount: ONE_CUT,
+          flushesPoints: FOUR_CARD_FLUSH_POINTS,
           nobsPoints: 0,
-          totalPoints: 4,
+          totalPoints: FOUR_CARD_FLUSH_POINTS,
         },
         {
-          cutCount: 1,
+          cutCount: ONE_CUT,
           flushesPoints: 0,
-          nobsPoints: 1,
-          totalPoints: 1,
+          nobsPoints: NOBS_POINTS,
+          totalPoints: NOBS_POINTS,
         },
-        { cutCount: 50, totalPoints: 0 },
+        { cutCount: ZERO_POINT_CUTS_AFTER_TWO_CUTS, totalPoints: 0 },
       ],
     ],
   ] as const)("%s", (_, args, expectedGroups) => {
@@ -390,30 +420,39 @@ describe("groupCutsByResults", () => {
 
   it("uses rank shorthand when multiple same-rank cards share a score tier", () => {
     const result = groupFifteensOnly([
-      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JC"), 4),
-      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JS"), 3),
-      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JH"), 3),
-      makeContribution(CARD_COUNT_FOR_THREE_OF_A_KIND, parseCard("JD"), 3),
+      makeContribution(
+        CARD_COUNT_FOR_THREE_OF_A_KIND,
+        parseCard("JC"),
+        DOUBLE_FIFTEEN_POINTS,
+      ),
+      ...makeContributions(
+        CARD_COUNT_FOR_THREE_OF_A_KIND,
+        ["JS", "JH", "JD"],
+        FIFTEEN_POINTS,
+      ),
     ]);
 
     expect(result).toContainEqual(
-      expect.objectContaining(cutGroup([parseCard("JC")], FOUR_POINTS)),
+      expect.objectContaining(
+        cutGroup([parseCard("JC")], DOUBLE_FIFTEEN_POINTS),
+      ),
     );
     expect(result).toContainEqual(
-      expect.objectContaining(cutGroup([Rank.JACK], THREE_POINTS)),
+      expect.objectContaining(cutGroup([Rank.JACK], FIFTEEN_POINTS)),
     );
   });
 
   it("renders a rank only when all remaining cards of that rank share a score tier", () => {
-    const result = groupFifteensOnly([
-      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8C"), 1),
-      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8D"), 1),
-      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8H"), 1),
-      makeContribution(CARD_COUNT_FOR_UNIQUE_RANK, parseCard("8S"), 1),
-    ]);
+    const result = groupFifteensOnly(
+      makeContributions(
+        CARD_COUNT_FOR_UNIQUE_RANK,
+        ["8C", "8D", "8H", "8S"],
+        FIFTEEN_POINTS,
+      ),
+    );
 
     expect(result).toContainEqual(
-      expect.objectContaining(cutGroup([Rank.EIGHT], 1)),
+      expect.objectContaining(cutGroup([Rank.EIGHT], FIFTEEN_POINTS)),
     );
   });
 });
