@@ -142,16 +142,10 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       totalPoints={result.totalPoints}
     />
   );
-  const renderBreakdownValue = (
-    cat: Category,
-    decimalPlaces: number,
-    rowLabel: string,
-  ) => (
+  const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
     <div
       className={
-        cat.label === "Total" && rowLabel !== "Hand"
-          ? classes.summaryTotal
-          : classes.summaryValue
+        cat.label === "Total" ? classes.summaryTotal : classes.summaryValue
       }
       key={cat.label}
     >
@@ -179,9 +173,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   ) => (
     <div className={classes.breakdownSummary}>
       {renderLabel(label)}
-      {rowCategories.map((cat) =>
-        renderBreakdownValue(cat, decimalPlaces, label),
-      )}
+      {rowCategories.map((cat) => renderBreakdownValue(cat, decimalPlaces))}
     </div>
   );
 

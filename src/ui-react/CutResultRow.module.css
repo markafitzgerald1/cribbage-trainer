@@ -9,9 +9,9 @@
 
   display: grid;
   grid-template-columns:
-    minmax(0, 27.5fr) minmax(0, 9.8fr) minmax(0, 9.8fr)
-    minmax(0, 9.8fr) minmax(0, 13.3fr) minmax(0, 9.8fr)
-    minmax(0, 20fr);
+    minmax(0, 30fr) minmax(0, 10fr) minmax(0, 10fr)
+    minmax(0, 10fr) minmax(0, 15fr) minmax(0, 12fr)
+    minmax(0, 13fr);
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -80,9 +80,10 @@
 @media (orientation: portrait) {
   .cut-result-row {
     grid-template-columns:
-      minmax(3.6em, 16.7fr) minmax(2.5em, 12fr) minmax(2.5em, 12fr)
-      minmax(2.5em, 12fr) minmax(3.8em, 16fr) minmax(2.9em, 13.3fr)
-      minmax(2.9em, 18fr);
+      minmax(3em, 28fr) minmax(2.5em, 11fr)
+      minmax(2.5em, 11fr) minmax(2.5em, 11fr)
+      minmax(3.8em, 14fr) minmax(2.9em, 12fr)
+      minmax(2.9em, 13fr);
     gap: 3px;
   }
 }

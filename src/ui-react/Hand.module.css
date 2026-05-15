@@ -27,7 +27,7 @@
 
 .hand {
   display: flex;
-  gap: 0.5em;
+  gap: 0.8em;
   justify-content: space-between;
   padding: 0;
   margin-top: 0.7em;
@@ -39,14 +39,14 @@
 @media (orientation: portrait) {
   .hand {
     display: grid;
-    gap: clamp(0.24em, 1.25vw, 0.44em);
+    gap: clamp(0.42em, 2vw, 0.7em);
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 
 @media (orientation: landscape) {
   .hand {
-    gap: 0.56vw;
+    gap: 0.96vw;
     justify-content: flex-start;
   }
 }

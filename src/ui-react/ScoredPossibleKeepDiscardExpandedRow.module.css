@@ -48,9 +48,9 @@
 .breakdown-header {
   display: grid;
   grid-template-columns:
-    minmax(0, 27.5fr) minmax(0, 9.8fr) minmax(0, 9.8fr)
-    minmax(0, 9.8fr) minmax(0, 13.3fr) minmax(0, 9.8fr)
-    minmax(0, 20fr);
+    minmax(0, 30fr) minmax(0, 10fr) minmax(0, 10fr)
+    minmax(0, 10fr) minmax(0, 15fr) minmax(0, 12fr)
+    minmax(0, 13fr);
   gap: 8px;
   min-width: 0;
   padding-bottom: 2px;
@@ -70,15 +70,15 @@
 }
 
 .breakdown-header > div:last-child {
-  text-align: right;
+  text-align: center;
 }
 
 .breakdown-summary {
   display: grid;
   grid-template-columns:
-    minmax(0, 27.5fr) minmax(0, 9.8fr) minmax(0, 9.8fr)
-    minmax(0, 9.8fr) minmax(0, 13.3fr) minmax(0, 9.8fr)
-    minmax(0, 20fr);
+    minmax(0, 30fr) minmax(0, 10fr) minmax(0, 10fr)
+    minmax(0, 10fr) minmax(0, 15fr) minmax(0, 12fr)
+    minmax(0, 13fr);
   gap: 8px;
   min-width: 0;
   padding: 2px 0;
@@ -112,7 +112,7 @@
 }
 
 .summary-total {
-  text-align: right;
+  text-align: center;
   color: #fff;
 }
 
@@ -137,7 +137,7 @@
 }
 
 .expanded-row :global(.total-column) {
-  text-align: right;
+  text-align: center;
 }
 
 @media (orientation: portrait) {
@@ -148,9 +148,10 @@
   .breakdown-header,
   .breakdown-summary {
     grid-template-columns:
-      minmax(3.6em, 16.7fr) minmax(2.5em, 12fr) minmax(2.5em, 12fr)
-      minmax(2.5em, 12fr) minmax(3.8em, 16fr) minmax(2.9em, 13.3fr)
-      minmax(2.9em, 18fr);
+      minmax(3em, 28fr) minmax(2.5em, 11fr)
+      minmax(2.5em, 11fr) minmax(2.5em, 11fr)
+      minmax(3.8em, 14fr) minmax(2.9em, 12fr)
+      minmax(2.9em, 13fr);
     gap: 3px;
   }
 
