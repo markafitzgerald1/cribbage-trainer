@@ -14,7 +14,7 @@
 }
 
 .expanded-row td {
-  padding: 4px 8px;
+  padding: 4px 1px 2px;
   border-bottom: 1px solid rgb(255 255 255 / 20%);
   background-color: #0f5132;
   color: #fff;
@@ -40,14 +40,17 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
   width: 100%;
 }
 
 .breakdown-header {
   display: grid;
   grid-template-columns:
-    minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
-    minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+    minmax(0, 27.5fr) minmax(0, 9.8fr) minmax(0, 9.8fr)
+    minmax(0, 9.8fr) minmax(0, 13.3fr) minmax(0, 9.8fr)
+    minmax(0, 20fr);
   gap: 8px;
   min-width: 0;
   padding-bottom: 2px;
@@ -67,14 +70,15 @@
 }
 
 .breakdown-header > div:last-child {
-  text-align: center;
+  text-align: right;
 }
 
 .breakdown-summary {
   display: grid;
   grid-template-columns:
-    minmax(0, 2.8fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)
-    minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+    minmax(0, 27.5fr) minmax(0, 9.8fr) minmax(0, 9.8fr)
+    minmax(0, 9.8fr) minmax(0, 13.3fr) minmax(0, 9.8fr)
+    minmax(0, 20fr);
   gap: 8px;
   min-width: 0;
   padding: 2px 0;
@@ -108,7 +112,7 @@
 }
 
 .summary-total {
-  text-align: center;
+  text-align: right;
   color: #fff;
 }
 
@@ -137,10 +141,6 @@
 }
 
 @media (orientation: portrait) {
-  .breakdown-container {
-    padding-right: 0.35em;
-  }
-
   .breakdown-header {
     font-size: 0.82em;
   }
@@ -148,9 +148,9 @@
   .breakdown-header,
   .breakdown-summary {
     grid-template-columns:
-      minmax(3.6em, 1.25fr) minmax(2.5em, 0.9fr) minmax(2.5em, 0.9fr)
-      minmax(2.5em, 0.9fr) minmax(3.8em, 1.2fr) minmax(2.9em, 1fr)
-      minmax(2.9em, 1fr);
+      minmax(3.6em, 16.7fr) minmax(2.5em, 12fr) minmax(2.5em, 12fr)
+      minmax(2.5em, 12fr) minmax(3.8em, 16fr) minmax(2.9em, 13.3fr)
+      minmax(2.9em, 18fr);
     gap: 3px;
   }
 
