@@ -66,9 +66,8 @@
   text-align: center;
 }
 
-.total-header,
 .breakdown-header > div:last-child {
-  text-align: right;
+  text-align: center;
 }
 
 .breakdown-summary {
