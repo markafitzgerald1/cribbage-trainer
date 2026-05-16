@@ -153,20 +153,26 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       {renderCategoryValue(cat, decimalPlaces)}
     </div>
   );
-  const renderLabel = (label: string) => (
-    <div className={classes.summaryLabel}>
-      {label}
-      {label === "Starter avg" ? (
-        <span
-          className={`${classes.expandIndicator} ${
-            areCutDetailsExpanded ? classes.expandIndicatorExpanded : ""
-          }`}
-        >
-          ▸
-        </span>
-      ) : null}
-    </div>
-  );
+  const renderLabel = (label: string) => {
+    if (label === "Starter avg") {
+      return (
+        <div className={classes.summaryLabel}>
+          Starter{" "}
+          <span className={classes.noWrap}>
+            avg
+            <span
+              className={`${classes.expandIndicator} ${
+                areCutDetailsExpanded ? classes.expandIndicatorExpanded : ""
+              }`}
+            >
+              ▸
+            </span>
+          </span>
+        </div>
+      );
+    }
+    return <div className={classes.summaryLabel}>{label}</div>;
+  };
   const renderBreakdownRow = (
     label: string,
     rowCategories: readonly Category[],

@@ -92,6 +92,9 @@
 .summary-label {
   text-align: left;
   color: rgb(255 255 255 / 70%);
+}
+
+.no-wrap {
   white-space: nowrap;
 }
 

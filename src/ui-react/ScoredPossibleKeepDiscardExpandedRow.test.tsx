@@ -13,7 +13,6 @@ import { getAllByCardText } from "./test-utils";
 const MUTED_SELECTOR = '[class*="muted"]';
 const SUMMARY_SELECTOR = '[class*="breakdownSummary"]';
 const CUT_RESULTS_SELECTOR = '[class*="cutResultsList"]';
-const STARTER_AVG_TEXT = /^Starter avg/u;
 
 function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
   const summary = container.querySelector(SUMMARY_SELECTOR)!;
@@ -25,7 +24,7 @@ function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
 }
 
 function expandStarterDetails() {
-  fireEvent.click(screen.getByText(STARTER_AVG_TEXT));
+  fireEvent.click(screen.getByText(/Starter/u));
 }
 
 function expectCardLabelRendered(label: string): void {

@@ -9,6 +9,7 @@ export const expandIndicatorExpanded: string;
 export const expandedRow: string;
 export const muted: string;
 export const notApplicable: string;
+export const noWrap: string;
 export const summaryLabel: string;
 export const summaryTotal: string;
 export const summaryValue: string;

@@ -144,7 +144,7 @@ describe("calculation component", () => {
     fireEvent.click(getExpandedRow());
 
     expect(isExpanded()).toBe(true);
-    expect(screen.getAllByText(/^Starter avg/u)).toHaveLength(1);
+    expect(screen.getAllByText(/Starter/u)).toHaveLength(1);
 
     fireEvent.click(getMainRow());
 
