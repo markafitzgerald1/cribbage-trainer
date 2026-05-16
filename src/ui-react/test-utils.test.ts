@@ -1,76 +1,51 @@
 import { type TestContainerGet, getByCardText } from "./test-utils";
 import { describe, expect, it } from "@jest/globals";
 
+type MatcherFn = (text: string, element: Element | null) => boolean;
+
+function makeElement(
+  tagName: string,
+  classList: { contains: (c: string) => boolean },
+  textContent: string | null = "",
+): Element {
+  return { classList, tagName, textContent } as unknown as Element;
+}
+
+function assertMatcherReturnsFalse(
+  invokeWith: (matcherFn: MatcherFn) => boolean,
+): void {
+  let captured = true;
+  const container: TestContainerGet = {
+    getByText: (matcher) => {
+      const matcherFn = matcher as MatcherFn;
+      captured = invokeWith(matcherFn);
+      return {} as HTMLElement;
+    },
+  };
+
+  getByCardText(container, "5");
+
+  expect(captured).toBe(false);
+}
+
 describe("test-utils", () => {
   it("createMatcher should return false for null element", () => {
-    const container: TestContainerGet = {
-      getByText: (matcher) => {
-        const matcherFn = matcher as (
-          text: string,
-          element: Element | null,
-        ) => boolean;
-
-        const result = matcherFn("", null);
-
-        expect(result).toBe(false);
-
-        return {} as HTMLElement;
-      },
-    };
-
-    getByCardText(container, "5");
-
-    expect(true).toBe(true);
+    assertMatcherReturnsFalse((fn) => fn("", null));
   });
 
   it("getByCardText should handle elements with no text content", () => {
-    const container: TestContainerGet = {
-      getByText: (matcher) => {
-        const matcherFn = matcher as (
-          text: string,
-          element: Element | null,
-        ) => boolean;
+    const element = makeElement(
+      "DIV",
+      { contains: (className) => className === "mock-cardLabel" },
+      null,
+    );
 
-        const result = matcherFn("", {
-          classList: {
-            contains: (className: string) => className === "mock-cardLabel",
-          },
-          tagName: "DIV",
-          textContent: null,
-        } as unknown as Element);
-
-        expect(result).toBe(false);
-
-        return {} as HTMLElement;
-      },
-    };
-
-    getByCardText(container, "5");
-
-    expect(true).toBe(true);
+    assertMatcherReturnsFalse((fn) => fn("", element));
   });
 
   it("getByCardText should handle non-DIV elements", () => {
-    const container: TestContainerGet = {
-      getByText: (matcher) => {
-        const matcherFn = matcher as (
-          text: string,
-          element: Element | null,
-        ) => boolean;
+    const element = makeElement("SPAN", { contains: () => true });
 
-        const result = matcherFn("", {
-          classList: { contains: () => true },
-          tagName: "SPAN",
-        } as unknown as Element);
-
-        expect(result).toBe(false);
-
-        return {} as HTMLElement;
-      },
-    };
-
-    getByCardText(container, "5");
-
-    expect(true).toBe(true);
+    assertMatcherReturnsFalse((fn) => fn("", element));
   });
 });

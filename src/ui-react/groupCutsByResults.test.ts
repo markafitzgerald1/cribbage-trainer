@@ -1,8 +1,5 @@
 import { CARDS, type Card, Rank, Suit, parseCard } from "../game/Card";
-import {
-  type GroupedCut,
-  groupCutsByResults,
-} from "./groupCutsByResults";
+import { type GroupedCut, groupCutsByResults } from "./groupCutsByResults";
 import { describe, expect, it } from "@jest/globals";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
 
@@ -89,6 +86,16 @@ function cutGroup(
   totalPoints: number,
 ): Pick<ReturnType<typeof groupCutsByResults>[number], "cuts" | "totalPoints"> {
   return { cuts, totalPoints };
+}
+
+function containsCutGroup(
+  result: ReturnType<typeof groupCutsByResults>,
+  cuts: readonly GroupedCut[],
+  totalPoints: number,
+): void {
+  expect(result).toContainEqual(
+    expect.objectContaining(cutGroup(cuts, totalPoints)),
+  );
 }
 
 interface TestArgs {
@@ -419,8 +426,8 @@ describe("groupCutsByResults", () => {
     );
   });
 
-  it("does not use rank shorthand when some cards of the same rank have different scores", () => {
-    const result = groupFifteensOnly([
+  it("groups cuts by rank when scores differ; uses rank shorthand when all share a tier", () => {
+    const splitResult = groupFifteensOnly([
       makeContribution(
         CARD_COUNT_FOR_THREE_OF_A_KIND,
         parseCard("JC"),
@@ -433,7 +440,7 @@ describe("groupCutsByResults", () => {
       ),
     ]);
 
-    expect(result).toContainEqual(
+    expect(splitResult).toContainEqual(
       expect.objectContaining(
         cutGroup(
           [
@@ -447,24 +454,20 @@ describe("groupCutsByResults", () => {
         ),
       ),
     );
-    expect(result).toContainEqual(
-      expect.objectContaining(
-        cutGroup(
-          [
-            {
-              isAllRemaining: false,
-              rank: Rank.JACK,
-              suits: [Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES],
-            },
-          ],
-          FIFTEEN_POINTS,
-        ),
-      ),
-    );
-  });
 
-  it("renders a rank only when all remaining cards of that rank share a score tier", () => {
-    const result = groupFifteensOnly(
+    containsCutGroup(
+      splitResult,
+      [
+        {
+          isAllRemaining: false,
+          rank: Rank.JACK,
+          suits: [Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES],
+        },
+      ],
+      FIFTEEN_POINTS,
+    );
+
+    const allSameTierResult = groupFifteensOnly(
       makeContributions(
         CARD_COUNT_FOR_UNIQUE_RANK,
         ["8C", "8D", "8H", "8S"],
@@ -472,19 +475,16 @@ describe("groupCutsByResults", () => {
       ),
     );
 
-    expect(result).toContainEqual(
-      expect.objectContaining(
-        cutGroup(
-          [
-            {
-              isAllRemaining: true,
-              rank: Rank.EIGHT,
-              suits: [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES],
-            },
-          ],
-          FIFTEEN_POINTS,
-        ),
-      ),
+    containsCutGroup(
+      allSameTierResult,
+      [
+        {
+          isAllRemaining: true,
+          rank: Rank.EIGHT,
+          suits: [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES],
+        },
+      ],
+      FIFTEEN_POINTS,
     );
   });
 });

@@ -8,5 +8,9 @@ declare const classes: {
   readonly blackSuit: string;
   readonly suit: string;
   readonly suitText: string;
+  readonly suitsWrapper: string;
+  readonly grouped: string;
+  readonly groupedParenthesisOpen: string;
+  readonly groupedParenthesisClose: string;
 };
 export = classes;

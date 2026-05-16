@@ -3,17 +3,18 @@ import {
   type SelectorMatcherOptions,
 } from "@testing-library/react";
 
-const createMatcher = (text: string) => (_: string, element: Element | null) => {
-  if (
-    element?.tagName.toUpperCase() !== "DIV" ||
-    !element?.classList.contains("mock-cardLabel")
-  ) {
-    return false;
-  }
-  const content = element.textContent?.replace(/\s+/gu, "") || "";
-  const target = text.replace(/\s+/gu, "");
-  return content.includes(target);
-};
+const createMatcher =
+  (text: string) => (_: string, element: Element | null) => {
+    if (
+      element?.tagName.toUpperCase() !== "DIV" ||
+      !element?.classList.contains("mock-cardLabel")
+    ) {
+      return false;
+    }
+    const content = element.textContent?.replace(/\s+/gu, "") || "";
+    const target = text.replace(/\s+/gu, "");
+    return content.includes(target);
+  };
 
 export interface TestContainerGet {
   getByText(id: Matcher, options?: SelectorMatcherOptions): HTMLElement;

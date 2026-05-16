@@ -34,7 +34,7 @@ describe("card label component", () => {
     "%s has the 'ten' CSS class if it is a ten",
     (dealtCardRank) => {
       const result = renderLabelComponent(dealtCardRank);
-      const rankElement = result.getByText(CARD_LABELS[dealtCardRank]);
+      const rankElement = result.getByText(CARD_LABELS[dealtCardRank]!);
 
       expect(rankElement.className.split(" ").includes(classes.ten)).toBe(
         dealtCardRank === CARDS.TEN.rank,

@@ -35,7 +35,7 @@
   display: flex;
   justify-content: center;
   min-height: 1.18em;
-  padding: 0 0.14em 0.16em 0.14em;
+  padding: 0 0.14em 0.16em;
   position: relative;
   width: 100%;
 }

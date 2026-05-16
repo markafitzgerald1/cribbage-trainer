@@ -1,6 +1,6 @@
+import * as classes from "./CardLabel.module.css";
 import { CARD_LABELS, Rank, Suit } from "../game/Card";
 import { getTenClass } from "./getTenClass";
-import * as classes from "./CardLabel.module.css";
 
 const CLUBS_SVG_PATH =
   "M50 4c-14 0-25 11-25 25 0 7 3 13 8 17-5-4-12-6-19-6C6 40 0 50 0 61c0 14 10 24 24 24 9 0 16-5 20-13 0 9-5 17-16 22v4h44v-4c-11-5-16-13-16-22 4 8 11 13 20 13 14 0 24-10 24-24 0-11-6-21-14-21-7 0-14 2-19 6 5-4 8-10 8-17C75 15 64 4 50 4Z";
@@ -10,27 +10,22 @@ const HEARTS_SVG_PATH =
 const SPADES_SVG_PATH =
   "M50 5 12 42C4 50 1 58 3 67c2 13 12 21 25 21 8 0 15-4 19-10-1 7-5 12-11 16v4h28v-4c-6-4-10-9-11-16 4 6 11 10 19 10 13 0 23-8 25-21 2-9-1-17-9-25L50 5Z";
 
-const SUIT_ICONS: Record<Suit, JSX.Element> = {
-  [Suit.CLUBS]: (
-    <svg aria-hidden="true" viewBox="0 0 100 100">
-      <path d={CLUBS_SVG_PATH} />
+function renderSuitIcon(path: string) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 100 100"
+    >
+      <path d={path} />
     </svg>
-  ),
-  [Suit.DIAMONDS]: (
-    <svg aria-hidden="true" viewBox="0 0 100 100">
-      <path d={DIAMONDS_SVG_PATH} />
-    </svg>
-  ),
-  [Suit.HEARTS]: (
-    <svg aria-hidden="true" viewBox="0 0 100 100">
-      <path d={HEARTS_SVG_PATH} />
-    </svg>
-  ),
-  [Suit.SPADES]: (
-    <svg aria-hidden="true" viewBox="0 0 100 100">
-      <path d={SPADES_SVG_PATH} />
-    </svg>
-  ),
+  );
+}
+
+const SUIT_PATHS: Record<Suit, string> = {
+  [Suit.CLUBS]: CLUBS_SVG_PATH,
+  [Suit.DIAMONDS]: DIAMONDS_SVG_PATH,
+  [Suit.HEARTS]: HEARTS_SVG_PATH,
+  [Suit.SPADES]: SPADES_SVG_PATH,
 };
 
 export interface CardLabelProps {
@@ -53,10 +48,14 @@ export function CardLabel({
 
   const allSuitsRed =
     normalizedSuits.length > 0 &&
-    normalizedSuits.every((suitItem) => suitItem === Suit.DIAMONDS || suitItem === Suit.HEARTS);
+    normalizedSuits.every(
+      (suitItem) => suitItem === Suit.DIAMONDS || suitItem === Suit.HEARTS,
+    );
   const allSuitsBlack =
     normalizedSuits.length > 0 &&
-    normalizedSuits.every((suitItem) => suitItem === Suit.CLUBS || suitItem === Suit.SPADES);
+    normalizedSuits.every(
+      (suitItem) => suitItem === Suit.CLUBS || suitItem === Suit.SPADES,
+    );
   let colorClass = "";
   if (allSuitsRed) {
     colorClass = classes.redSuit;
@@ -76,17 +75,23 @@ export function CardLabel({
         .join(" ")
         .trim()}
     >
-      {normalizedRanks.map((rankItem, rankIndex) => (
-        <span
-          className={[classes.rank, getTenClass(rankItem, classes.ten)]
-            .filter(Boolean)
-            .join(" ")}
-          key={`${rankItem}-${rankIndex}`}
-        >
-          {CARD_LABELS[rankItem]}
-          {rankIndex < normalizedRanks.length - 1 ? " " : ""}
-        </span>
-      ))}
+      {normalizedRanks.map((rankItem) => {
+        // eslint-disable-next-line security/detect-object-injection
+        const cardLabel = CARD_LABELS[rankItem];
+        const isNotLast =
+          normalizedRanks.indexOf(rankItem) < normalizedRanks.length - 1;
+        return (
+          <span
+            className={[classes.rank, getTenClass(rankItem, classes.ten)]
+              .filter(Boolean)
+              .join(" ")}
+            key={rankItem}
+          >
+            {cardLabel}
+            {isNotLast ? " " : ""}
+          </span>
+        );
+      })}
       {normalizedSuits.length > 1 && (
         <span className={classes.groupedParenthesisOpen}> (</span>
       )}
@@ -99,9 +104,11 @@ export function CardLabel({
           .join(" ")}
       >
         {normalizedSuits.map((currentSuit) => {
-          const isRed = currentSuit === Suit.DIAMONDS || currentSuit === Suit.HEARTS;
-          const suitIcon = SUIT_ICONS[currentSuit];
-          if (!suitIcon) {
+          const isRed =
+            currentSuit === Suit.DIAMONDS || currentSuit === Suit.HEARTS;
+          // eslint-disable-next-line security/detect-object-injection
+          const suitPath = SUIT_PATHS[currentSuit];
+          if (!suitPath) {
             throw new Error(`Unknown suit: ${currentSuit}`);
           }
           return (
@@ -113,7 +120,7 @@ export function CardLabel({
               key={currentSuit}
             >
               <span className={classes.suitText}>{currentSuit}</span>
-              {suitIcon}
+              {renderSuitIcon(suitPath)}
             </span>
           );
         })}
@@ -127,4 +134,12 @@ export function CardLabel({
 
 CardLabel.defaultProps = {
   isHandCard: false,
+  // eslint-disable-next-line no-undefined
+  rank: undefined,
+  // eslint-disable-next-line no-undefined
+  ranks: undefined,
+  // eslint-disable-next-line no-undefined
+  suit: undefined,
+  // eslint-disable-next-line no-undefined
+  suits: undefined,
 };

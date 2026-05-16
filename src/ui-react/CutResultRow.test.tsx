@@ -21,8 +21,16 @@ interface RenderCutResultRowOptions {
   readonly totalPoints?: number;
 }
 
+function rankCut(rank: Rank): GroupedCut {
+  return { isAllRemaining: true, rank, suits: [] };
+}
+
+function suitedCut(rank: Rank, suit: Suit): GroupedCut {
+  return { isAllRemaining: false, rank, suits: [suit] };
+}
+
 function renderCutResultRow({
-  cuts = [{ isAllRemaining: true, rank: Rank.FIVE, suits: [] }],
+  cuts = [rankCut(Rank.FIVE)],
   pairsPoints = 0,
   sortOrder = SortOrder.Ascending,
   totalPoints = SIX_POINTS,
@@ -61,10 +69,10 @@ describe("cutResultRow", () => {
   it.each([
     {
       cuts: [
-        { isAllRemaining: true, rank: Rank.KING, suits: [] },
-        { isAllRemaining: true, rank: Rank.QUEEN, suits: [] },
-        { isAllRemaining: true, rank: Rank.JACK, suits: [] },
-        { isAllRemaining: true, rank: Rank.TEN, suits: [] },
+        rankCut(Rank.KING),
+        rankCut(Rank.QUEEN),
+        rankCut(Rank.JACK),
+        rankCut(Rank.TEN),
       ],
       expected: ["10 J Q K"],
       name: "ascending order when sortOrder is Ascending",
@@ -72,10 +80,10 @@ describe("cutResultRow", () => {
     },
     {
       cuts: [
-        { isAllRemaining: true, rank: Rank.TEN, suits: [] },
-        { isAllRemaining: true, rank: Rank.JACK, suits: [] },
-        { isAllRemaining: true, rank: Rank.QUEEN, suits: [] },
-        { isAllRemaining: true, rank: Rank.KING, suits: [] },
+        rankCut(Rank.TEN),
+        rankCut(Rank.JACK),
+        rankCut(Rank.QUEEN),
+        rankCut(Rank.KING),
       ],
       expected: ["K Q J 10"],
       name: "descending order when sortOrder is Descending",
@@ -83,41 +91,26 @@ describe("cutResultRow", () => {
     },
     {
       cuts: [
-        { isAllRemaining: true, rank: Rank.ACE, suits: [] },
-        { isAllRemaining: true, rank: Rank.TWO, suits: [] },
-        { isAllRemaining: true, rank: Rank.THREE, suits: [] },
-        { isAllRemaining: true, rank: Rank.FOUR, suits: [] },
-        { isAllRemaining: true, rank: Rank.FIVE, suits: [] },
+        rankCut(Rank.ACE),
+        rankCut(Rank.TWO),
+        rankCut(Rank.THREE),
+        rankCut(Rank.FOUR),
+        rankCut(Rank.FIVE),
       ],
       expected: ["5 4 3 2 A"],
       name: "descending order when sortOrder is DealOrder",
       sortOrder: SortOrder.DealOrder,
     },
     {
-      cuts: [
-        { isAllRemaining: true, rank: Rank.ACE, suits: [] },
-        {
-          isAllRemaining: false,
-          rank: Rank.ACE,
-          suits: [Suit.SPADES],
-        },
-      ],
+      cuts: [rankCut(Rank.ACE), suitedCut(Rank.ACE, Suit.SPADES)],
       expected: ["A", "A♠"],
       name: "mixed rank and card with same rank",
       sortOrder: SortOrder.Ascending,
     },
     {
       cuts: [
-        {
-          isAllRemaining: false,
-          rank: Rank.ACE,
-          suits: [Suit.SPADES],
-        },
-        {
-          isAllRemaining: false,
-          rank: Rank.ACE,
-          suits: [Suit.HEARTS],
-        },
+        suitedCut(Rank.ACE, Suit.SPADES),
+        suitedCut(Rank.ACE, Suit.HEARTS),
       ],
       expected: ["A♠", "A♥"],
       name: "cards with same rank but different suits (not grouped)",

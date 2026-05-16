@@ -28,6 +28,10 @@ function expandStarterDetails() {
   fireEvent.click(screen.getByText(STARTER_AVG_TEXT));
 }
 
+function expectCardLabelRendered(label: string): void {
+  expect(getAllByCardText(screen, label).length).toBeGreaterThan(0);
+}
+
 describe("scoredPossibleKeepDiscardExpandedRow", () => {
   const createContribution = (rank: Rank, points: number) => ({
     count: 4,
@@ -101,11 +105,11 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
     });
 
-    // Verify that the breakdown summary is rendered
+    // Verify the breakdown summary and CutResultRow for rank 5 are rendered.
+    // All 4 fives share the same score, so they are grouped as rank-only "5".
     expect(screen.getByText("0.50")).toBeTruthy();
-    // Verify that the CutResultRow is rendered for the 5 rank
-    // Since all 4 fives share the same score, they are grouped as rank-only "5"
-    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
+
+    expectCardLabelRendered("5");
   });
 
   it("renders zero summary averages as dimmed dashes", () => {
@@ -148,8 +152,8 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     });
 
     // Verify that both ranks are rendered (collapsed to rank-only)
-    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
-    expect(getAllByCardText(screen, "4").length).toBeGreaterThan(0);
+    expectCardLabelRendered("5");
+    expectCardLabelRendered("4");
   });
 
   it("should render multiple cut results sorted by points and count", () => {
@@ -176,10 +180,11 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     const cutResults = document.querySelector(CUT_RESULTS_SELECTOR)!;
 
     // Verify rendering (collapsed to rank-only)
-    expect(getAllByCardText(screen, "4").length).toBeGreaterThan(0);
-    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
-    expect(getAllByCardText(screen, "6").length).toBeGreaterThan(0);
-    // "10" appears 3 times: 15sPoints column, totalPoints column, and rank 10 label in zero-point group
+    expectCardLabelRendered("4");
+    expectCardLabelRendered("5");
+    expectCardLabelRendered("6");
+
+    // "10" appears 3 times: 15sPoints column, totalPoints, and rank 10 label.
     expect(screen.getAllByText("10")).toHaveLength(3);
 
     // "2" appears several times in the starter detail:
@@ -215,9 +220,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
     });
 
-    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
+    expectCardLabelRendered("5");
     // King should be rendered as "K" (possibly grouped with others)
-    expect(getAllByCardText(screen, "K").length).toBeGreaterThan(0);
+    expectCardLabelRendered("K");
   });
 
   it("should cover zero point sorting branches", () => {
@@ -229,7 +234,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       sortOrder: SortOrder.Descending,
     });
 
-    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
+    expectCardLabelRendered("5");
 
     // Verify that zero point rows (like rank 4) are sorted after
     // CardLabel for '5' should be before CardLabel for '4'
@@ -249,6 +254,6 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
 
     expandStarterDetails();
 
-    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
+    expectCardLabelRendered("5");
   });
 });
