@@ -7,7 +7,7 @@
   justify-content: center;
   font-family: var(--card-font-family);
   min-height: 1.18em;
-  padding: 0 0.2em;
+  padding: 0 0.1em;
   position: relative;
   text-align: center;
   width: max-content;
@@ -102,7 +102,7 @@
 }
 
 .grouped-parenthesis-open {
-  margin-left: 0.15em;
+  margin-left: 0.1em;
   margin-right: -0.25em;
 }
 
