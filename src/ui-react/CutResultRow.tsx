@@ -1,8 +1,8 @@
 import * as classes from "./CutResultRow.module.css";
 import { type Rank, type Suit } from "../game/Card";
-import { SortOrder } from "../ui/SortOrder";
 import { CardLabel } from "./CardLabel";
 import { type GroupedCut } from "./groupCutsByResults";
+import { SortOrder } from "../ui/SortOrder";
 
 interface CutResultRowProps {
   readonly cuts: readonly GroupedCut[];

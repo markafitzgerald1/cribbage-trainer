@@ -1,9 +1,9 @@
-import { describe, expect, it } from "@jest/globals";
 import { CARDS, type Card, Rank, Suit, parseCard } from "../game/Card";
 import {
   type GroupedCut,
   groupCutsByResults,
 } from "./groupCutsByResults";
+import { describe, expect, it } from "@jest/globals";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
 
 const CARD_COUNT_FOR_UNIQUE_RANK = 4;

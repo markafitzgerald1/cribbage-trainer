@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
-import { describe, expect, it } from "@jest/globals";
-import { render } from "@testing-library/react";
 import { Rank, Suit } from "../game/Card";
-import { SortOrder } from "../ui/SortOrder";
+import { describe, expect, it } from "@jest/globals";
 import { CutResultRow } from "./CutResultRow";
 import { type GroupedCut } from "./groupCutsByResults";
+import { SortOrder } from "../ui/SortOrder";
+import { render } from "@testing-library/react";
 /* jscpd:ignore-end */
 
 const SIX_POINTS = 6;

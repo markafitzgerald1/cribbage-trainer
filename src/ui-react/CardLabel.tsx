@@ -1,6 +1,6 @@
-import * as classes from "./CardLabel.module.css";
 import { CARD_LABELS, Rank, Suit } from "../game/Card";
 import { getTenClass } from "./getTenClass";
+import * as classes from "./CardLabel.module.css";
 
 const CLUBS_SVG_PATH =
   "M50 4c-14 0-25 11-25 25 0 7 3 13 8 17-5-4-12-6-19-6C6 40 0 50 0 61c0 14 10 24 24 24 9 0 16-5 20-13 0 9-5 17-16 22v4h44v-4c-11-5-16-13-16-22 4 8 11 13 20 13 14 0 24-10 24-24 0-11-6-21-14-21-7 0-14 2-19 6 5-4 8-10 8-17C75 15 64 4 50 4Z";
@@ -124,3 +124,7 @@ export function CardLabel({
     </div>
   );
 }
+
+CardLabel.defaultProps = {
+  isHandCard: false,
+};
