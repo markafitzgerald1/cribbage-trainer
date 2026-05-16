@@ -33,16 +33,12 @@ describe("card label component", () => {
   it.each([CARDS.TEN.rank, CARDS.FOUR.rank])(
     "%s has the 'ten' CSS class if it is a ten",
     (dealtCardRank) => {
-      const { suit } = CARDS[dealtCardRank]!;
+      const result = renderLabelComponent(dealtCardRank);
+      const rankElement = result.getByText(CARD_LABELS[dealtCardRank]);
 
-      expect(
-        getByCardText(
-          renderLabelComponent(dealtCardRank),
-          `${CARD_LABELS[dealtCardRank]}${suit}`,
-        )
-          .className.split(" ")
-          .includes(classes.ten),
-      ).toBe(dealtCardRank === CARDS.TEN.rank);
+      expect(rankElement.className.split(" ").includes(classes.ten)).toBe(
+        dealtCardRank === CARDS.TEN.rank,
+      );
     },
   );
 
@@ -56,14 +52,25 @@ describe("card label component", () => {
         />,
       );
 
-      expect(
-        getByCardText(
-          result,
-          `${CARD_LABELS[CARDS.ACE.rank]}${suit}`,
-        ).querySelector("path"),
-      ).toBeTruthy();
+      const suitElement = result.getByText(suit);
+
+      expect(suitElement.parentElement?.querySelector("svg")).toBeTruthy();
     },
   );
+
+  it("renders multiple ranks and multiple suits", () => {
+    const result = render(
+      <CardLabel
+        ranks={[Rank.KING, Rank.TEN]}
+        suits={[Suit.CLUBS, Suit.DIAMONDS]}
+      />,
+    );
+
+    expect(result.getByText("K")).toBeTruthy();
+    expect(result.getByText("10")).toBeTruthy();
+    expect(result.getByText(Suit.CLUBS)).toBeTruthy();
+    expect(result.getByText(Suit.DIAMONDS)).toBeTruthy();
+  });
 
   it("throws for an unexpected suit", () => {
     expect(() =>
@@ -74,5 +81,12 @@ describe("card label component", () => {
         />,
       ),
     ).toThrow("Unknown suit: unexpected");
+  });
+
+  it("renders empty when no ranks or suits provided", () => {
+    const result = render(<CardLabel />);
+    const cardLabel = result.container.querySelector(`.${classes.cardLabel}`);
+
+    expect(cardLabel?.textContent).toBe("");
   });
 });

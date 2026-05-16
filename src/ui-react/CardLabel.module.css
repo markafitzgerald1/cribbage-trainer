@@ -3,33 +3,27 @@
 .card-label {
   box-sizing: border-box;
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: center;
   font-family: var(--card-font-family);
   min-height: 1.18em;
-  padding: 0 0.32em 0.22em 0.02em;
+  padding: 0 0.2em;
   position: relative;
-  text-align: left;
+  text-align: center;
   width: max-content;
-}
-
-.ten {
-  margin-left: 0;
-  margin-right: 0;
-  transform: none;
 }
 
 .rank {
   display: inline-block;
   line-height: 1;
-  transform: translateX(-0.04em);
   white-space: nowrap;
 }
 
-.ten .rank {
+.rank.ten {
   display: inline-block;
-  margin-left: -0.3em;
-  margin-right: -0.2em;
   transform: scaleX(0.5);
+  transform-origin: left center;
+  margin-right: -0.5em;
 }
 
 .rank-only {
@@ -41,26 +35,21 @@
   display: flex;
   justify-content: center;
   min-height: 1.18em;
-  padding: 0 0.2em 0.16em 0.08em;
+  padding: 0 0.14em 0.16em 0.14em;
   position: relative;
   width: 100%;
 }
 
 .hand-card-label .rank {
-  transform: translateX(0.04em);
-}
-
-.hand-card-label.ten {
-  margin-left: 0;
-  margin-right: 0;
   transform: none;
 }
 
-.hand-card-label.ten .rank {
+.hand-card-label .rank.ten {
   margin-left: 0;
   margin-right: 0;
-  transform: translateX(0.04em) scaleX(0.5);
+  transform: scaleX(0.5);
   transform-origin: center bottom;
+  letter-spacing: normal;
 }
 
 .red-suit {
@@ -72,12 +61,12 @@
 }
 
 .suit {
-  display: block;
+  display: inline-block;
   font-size: 0.65em;
-  inline-size: 0.65em;
+  inline-size: 1em;
   line-height: 1;
   position: static;
-  margin-left: 0.05em;
+  vertical-align: baseline;
 }
 
 .suit svg {
@@ -96,12 +85,38 @@
   white-space: nowrap;
 }
 
+.suits-wrapper {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.05em;
+  margin-left: 0.04em;
+}
+
+.suits-wrapper.grouped {
+  margin: 0;
+}
+
+.hand-card-label .suits-wrapper {
+  margin: 0;
+  width: 0;
+}
+
+.grouped-parenthesis-open {
+  margin-left: 0.15em;
+  margin-right: -0.25em;
+}
+
+.grouped-parenthesis-close {
+  margin-left: -0.15em;
+}
+
 .hand-card-label .suit {
-  bottom: 0.02em;
+  bottom: -0.15em;
   font-size: 0.36em;
+  inline-size: 0.65em;
   margin-left: 0;
   position: absolute;
-  right: 0.02em;
+  right: 0.04em;
 }
 
 @media (orientation: portrait) {
@@ -110,8 +125,9 @@
   }
 
   .hand-card-label .suit {
-    bottom: 0.02em;
+    bottom: -0.15em;
     font-size: 0.36em;
-    right: 0.02em;
+    inline-size: 0.65em;
+    right: 0.04em;
   }
 }

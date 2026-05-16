@@ -1,7 +1,7 @@
 @import url("./vars.css");
 
 .card {
-  align-items: baseline;
+  align-items: center;
   box-sizing: border-box;
   display: inline-flex;
   justify-content: center;
@@ -14,47 +14,20 @@
   font-weight: bold;
   font-family: var(--card-font-family);
   line-height: 1;
-  padding: 0.08em 0.08em 0.1em;
+  padding: 0.08em 0 0.08em 0.06em;
   white-space: nowrap;
-  width: 1.26em;
+  width: 1.62em;
 }
 
 .card > div {
-  align-items: baseline;
+  align-items: center;
   display: inline-flex;
+  justify-content: center;
   min-height: auto;
   padding: 0;
   position: static;
-  transform: translateX(-0.06em);
-  width: auto;
+  width: 100%;
 }
 
-.card.card > div > span:nth-child(2) {
-  display: inline-block;
-  flex-shrink: 0;
-  font-size: 0.5em;
-  line-height: 1;
-  margin-left: 0.02em;
-  position: static;
-}
+/* Remove all hacky overrides since base components are now fixed */
 
-.card.card > div > span:first-child {
-  margin-left: 0;
-  margin-right: 0;
-  transform: none;
-  transform-origin: center bottom;
-  white-space: nowrap;
-}
-
-.card.card > div[class*="ten"] > span:nth-child(2) {
-  margin-left: 0.04em;
-}
-
-.card.card > div[class*="ten"] > span:first-child {
-  inline-size: 0.62em;
-  margin-left: 0;
-  margin-right: 0;
-  overflow: visible;
-  transform: scaleX(0.55);
-  transform-origin: left bottom;
-}

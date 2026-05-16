@@ -10,73 +10,117 @@ const HEARTS_SVG_PATH =
 const SPADES_SVG_PATH =
   "M50 5 12 42C4 50 1 58 3 67c2 13 12 21 25 21 8 0 15-4 19-10-1 7-5 12-11 16v4h28v-4c-6-4-10-9-11-16 4 6 11 10 19 10 13 0 23-8 25-21 2-9-1-17-9-25L50 5Z";
 
+const SUIT_ICONS: Record<Suit, JSX.Element> = {
+  [Suit.CLUBS]: (
+    <svg aria-hidden="true" viewBox="0 0 100 100">
+      <path d={CLUBS_SVG_PATH} />
+    </svg>
+  ),
+  [Suit.DIAMONDS]: (
+    <svg aria-hidden="true" viewBox="0 0 100 100">
+      <path d={DIAMONDS_SVG_PATH} />
+    </svg>
+  ),
+  [Suit.HEARTS]: (
+    <svg aria-hidden="true" viewBox="0 0 100 100">
+      <path d={HEARTS_SVG_PATH} />
+    </svg>
+  ),
+  [Suit.SPADES]: (
+    <svg aria-hidden="true" viewBox="0 0 100 100">
+      <path d={SPADES_SVG_PATH} />
+    </svg>
+  ),
+};
+
 export interface CardLabelProps {
   readonly isHandCard?: boolean;
-  readonly rank: Rank;
+  readonly rank?: Rank | undefined;
+  readonly ranks?: readonly Rank[] | undefined;
   readonly suit?: Suit | undefined;
+  readonly suits?: readonly Suit[] | undefined;
 }
 
-function renderSuitIcon(suit: Suit) {
-  const renderIcon = (pathData: string) => (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 100 100"
-    >
-      <path d={pathData} />
-    </svg>
-  );
+export function CardLabel({
+  isHandCard = false,
+  rank,
+  ranks,
+  suit,
+  suits,
+}: CardLabelProps) {
+  const normalizedRanks = ranks ?? (typeof rank === "undefined" ? [] : [rank]);
+  const normalizedSuits = suits ?? (typeof suit === "undefined" ? [] : [suit]);
 
-  switch (suit) {
-    case Suit.CLUBS:
-      return renderIcon(CLUBS_SVG_PATH);
-    case Suit.DIAMONDS:
-      return renderIcon(DIAMONDS_SVG_PATH);
-    case Suit.HEARTS:
-      return renderIcon(HEARTS_SVG_PATH);
-    case Suit.SPADES:
-      return renderIcon(SPADES_SVG_PATH);
-    default:
-      throw new Error(`Unknown suit: ${String(suit)}`);
+  const allSuitsRed =
+    normalizedSuits.length > 0 &&
+    normalizedSuits.every((suitItem) => suitItem === Suit.DIAMONDS || suitItem === Suit.HEARTS);
+  const allSuitsBlack =
+    normalizedSuits.length > 0 &&
+    normalizedSuits.every((suitItem) => suitItem === Suit.CLUBS || suitItem === Suit.SPADES);
+  let colorClass = "";
+  if (allSuitsRed) {
+    colorClass = classes.redSuit;
+  } else if (allSuitsBlack) {
+    colorClass = classes.blackSuit;
   }
-}
-
-export function CardLabel({ isHandCard, rank, suit }: CardLabelProps) {
-  const isRed = suit === Suit.HEARTS || suit === Suit.DIAMONDS;
-  const suitClass = isRed ? classes.redSuit : classes.blackSuit;
-  const suitColorClass = isRed ? "red-suit" : "black-suit";
 
   return (
     <div
       className={[
         classes.cardLabel,
-        getTenClass(rank, classes.ten),
-        suitClass,
-        suitColorClass,
-        !suit && classes.rankOnly,
+        colorClass,
+        normalizedSuits.length === 0 && classes.rankOnly,
         isHandCard && classes.handCardLabel,
       ]
         .filter(Boolean)
         .join(" ")
         .trim()}
     >
-      <span className={classes.rank}>
-        {
-          // eslint-disable-next-line security/detect-object-injection
-          CARD_LABELS[rank]
-        }
+      {normalizedRanks.map((rankItem, rankIndex) => (
+        <span
+          className={[classes.rank, getTenClass(rankItem, classes.ten)]
+            .filter(Boolean)
+            .join(" ")}
+          key={`${rankItem}-${rankIndex}`}
+        >
+          {CARD_LABELS[rankItem]}
+          {rankIndex < normalizedRanks.length - 1 ? " " : ""}
+        </span>
+      ))}
+      {normalizedSuits.length > 1 && (
+        <span className={classes.groupedParenthesisOpen}> (</span>
+      )}
+      <span
+        className={[
+          classes.suitsWrapper,
+          normalizedSuits.length > 1 && classes.grouped,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {normalizedSuits.map((currentSuit) => {
+          const isRed = currentSuit === Suit.DIAMONDS || currentSuit === Suit.HEARTS;
+          const suitIcon = SUIT_ICONS[currentSuit];
+          if (!suitIcon) {
+            throw new Error(`Unknown suit: ${currentSuit}`);
+          }
+          return (
+            <span
+              className={[
+                classes.suit,
+                isRed ? classes.redSuit : classes.blackSuit,
+              ].join(" ")}
+              key={currentSuit}
+            >
+              <span className={classes.suitText}>{currentSuit}</span>
+              {suitIcon}
+            </span>
+          );
+        })}
       </span>
-      {suit ? (
-        <>
-          <span className={classes.suit}>{renderSuitIcon(suit)}</span>
-          <span className={classes.suitText}>{suit}</span>
-        </>
-      ) : null}
+      {normalizedSuits.length > 1 && (
+        <span className={classes.groupedParenthesisClose}>)</span>
+      )}
     </div>
   );
 }
-
-CardLabel.defaultProps = {
-  isHandCard: false,
-  // eslint-disable-next-line no-undefined
-  suit: undefined,
-};

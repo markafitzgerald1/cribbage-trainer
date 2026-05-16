@@ -22,10 +22,11 @@ interface Category {
 
 function getCutResultKey(result: CutResult): string {
   const cutsKey = result.cuts
-    .map((item) =>
-      typeof item === "number" ? item : `${item.rank}${item.suit}`,
+    .map(
+      (item) =>
+        `${item.rank}:${item.isAllRemaining ? "all" : item.suits.join(",")}`,
     )
-    .join(",");
+    .join("|");
 
   return [
     cutsKey,

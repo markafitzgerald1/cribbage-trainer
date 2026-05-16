@@ -1,9 +1,10 @@
-/* jscpd:ignore-start */
-import { CARDS, type Card, Rank, parseCard } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
+import { CARDS, type Card, Rank, Suit, parseCard } from "../game/Card";
+import {
+  type GroupedCut,
+  groupCutsByResults,
+} from "./groupCutsByResults";
 import type { CutContribution } from "../game/expectedCutAddedPoints";
-import { groupCutsByResults } from "./groupCutsByResults";
-/* jscpd:ignore-end */
 
 const CARD_COUNT_FOR_UNIQUE_RANK = 4;
 const CARD_COUNT_FOR_THREE_OF_A_KIND = 1;
@@ -84,7 +85,7 @@ function groupFifteensOnly(
 }
 
 function cutGroup(
-  cuts: readonly (Card | Rank)[],
+  cuts: readonly GroupedCut[],
   totalPoints: number,
 ): Pick<ReturnType<typeof groupCutsByResults>[number], "cuts" | "totalPoints"> {
   return { cuts, totalPoints };
@@ -418,7 +419,7 @@ describe("groupCutsByResults", () => {
     );
   });
 
-  it("uses rank shorthand when multiple same-rank cards share a score tier", () => {
+  it("does not use rank shorthand when some cards of the same rank have different scores", () => {
     const result = groupFifteensOnly([
       makeContribution(
         CARD_COUNT_FOR_THREE_OF_A_KIND,
@@ -434,11 +435,31 @@ describe("groupCutsByResults", () => {
 
     expect(result).toContainEqual(
       expect.objectContaining(
-        cutGroup([parseCard("JC")], DOUBLE_FIFTEEN_POINTS),
+        cutGroup(
+          [
+            {
+              isAllRemaining: false,
+              rank: Rank.JACK,
+              suits: [Suit.CLUBS],
+            },
+          ],
+          DOUBLE_FIFTEEN_POINTS,
+        ),
       ),
     );
     expect(result).toContainEqual(
-      expect.objectContaining(cutGroup([Rank.JACK], FIFTEEN_POINTS)),
+      expect.objectContaining(
+        cutGroup(
+          [
+            {
+              isAllRemaining: false,
+              rank: Rank.JACK,
+              suits: [Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES],
+            },
+          ],
+          FIFTEEN_POINTS,
+        ),
+      ),
     );
   });
 
@@ -452,7 +473,18 @@ describe("groupCutsByResults", () => {
     );
 
     expect(result).toContainEqual(
-      expect.objectContaining(cutGroup([Rank.EIGHT], FIFTEEN_POINTS)),
+      expect.objectContaining(
+        cutGroup(
+          [
+            {
+              isAllRemaining: true,
+              rank: Rank.EIGHT,
+              suits: [Suit.CLUBS, Suit.DIAMONDS, Suit.HEARTS, Suit.SPADES],
+            },
+          ],
+          FIFTEEN_POINTS,
+        ),
+      ),
     );
   });
 });

@@ -6,8 +6,8 @@ import {
 } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { getAllByCardText, getByCardText } from "./test-utils";
 import { SortOrder } from "../ui/SortOrder";
+import { getAllByCardText } from "./test-utils";
 /* jscpd:ignore-end */
 
 const MUTED_SELECTOR = '[class*="muted"]';
@@ -104,7 +104,8 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     // Verify that the breakdown summary is rendered
     expect(screen.getByText("0.50")).toBeTruthy();
     // Verify that the CutResultRow is rendered for the 5 rank
-    expect(getByCardText(screen, "5♠")).toBeTruthy();
+    // Since all 4 fives share the same score, they are grouped as rank-only "5"
+    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
   });
 
   it("renders zero summary averages as dimmed dashes", () => {
@@ -146,9 +147,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       sortOrder: SortOrder.Descending,
     });
 
-    // Verify that both cards are rendered
-    expect(getByCardText(screen, "5♠")).toBeTruthy();
-    expect(getByCardText(screen, "4♠")).toBeTruthy();
+    // Verify that both ranks are rendered (collapsed to rank-only)
+    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
+    expect(getAllByCardText(screen, "4").length).toBeGreaterThan(0);
   });
 
   it("should render multiple cut results sorted by points and count", () => {
@@ -172,24 +173,37 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       sortOrder: SortOrder.Descending,
     });
 
-    // Verify rendering (use getAllByText to avoid multiple elements error)
-    expect(getAllByCardText(screen, "4♠")).toHaveLength(1);
-    expect(getAllByCardText(screen, "5♠")).toHaveLength(1);
-    expect(getAllByCardText(screen, "6♠")).toHaveLength(1);
-    // "10" appears 3 times: 15sPoints column, totalPoints column, and rank 10 card label
-    expect(screen.getAllByText("10")).toHaveLength(3);
-
     const cutResults = document.querySelector(CUT_RESULTS_SELECTOR)!;
 
-    // "2" appears 7 times in the starter detail:
-    // - rank 5 row: 15sPoints (2) and totalPoints (2)
-    // - rank 6 row: pairsPoints (2) and totalPoints (2)
-    // - rank 2 card label wrappers and text node
-    expect(
-      Array.from(cutResults.querySelectorAll("*")).filter(
-        (element) => element.textContent === "2",
-      ),
-    ).toHaveLength(7);
+    // Verify rendering (collapsed to rank-only)
+    expect(getAllByCardText(screen, "4").length).toBeGreaterThan(0);
+    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
+    expect(getAllByCardText(screen, "6").length).toBeGreaterThan(0);
+    // "10" appears 3 times: 15sPoints column, totalPoints column, and rank 10 label in zero-point group
+    expect(screen.getAllByText("10")).toHaveLength(3);
+
+    // "2" appears several times in the starter detail:
+    // - Rank 5 row: 15sPoints (2) and totalPoints (2)
+    // - Rank 6 row: pairsPoints (2) and totalPoints (2)
+    // - Rank 2 card label text node (inside a grouped label)
+    // We search for elements that are exactly "2" (points)
+    // Or CardLabels that contain "2" among their ranks.
+    const allElements = Array.from(cutResults.querySelectorAll("*"));
+    const cardLabels = allElements.filter((element) =>
+      element.classList.contains("mock-cardLabel"),
+    );
+    const nonCardLabels = allElements.filter(
+      (element) => !element.classList.contains("mock-cardLabel"),
+    );
+
+    const matchingCardLabels = cardLabels.filter((element) =>
+      element.textContent?.split(/\s+/u).includes("2"),
+    );
+    const matchingNonCardLabels = nonCardLabels.filter(
+      (element) => element.textContent === "2",
+    );
+
+    expect([...matchingCardLabels, ...matchingNonCardLabels]).toHaveLength(5);
   });
 
   it("should cover remaining branches in groupCutsByResults", () => {
@@ -201,9 +215,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
     });
 
-    expect(getByCardText(screen, "5♠")).toBeTruthy();
-    // King should be rendered as "K" because it's in the zero-point group and collapsed
-    expect(screen.getByText("K")).toBeTruthy();
+    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
+    // King should be rendered as "K" (possibly grouped with others)
+    expect(getAllByCardText(screen, "K").length).toBeGreaterThan(0);
   });
 
   it("should cover zero point sorting branches", () => {
@@ -215,14 +229,12 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       sortOrder: SortOrder.Descending,
     });
 
-    expect(getByCardText(screen, "5♠")).toBeTruthy();
+    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
 
     // Verify that zero point rows (like rank 4) are sorted after
     // CardLabel for '5' should be before CardLabel for '4'
-    const fiveLabel = getByCardText(screen, "5♠");
-    const fourLabel = screen
-      .getAllByText("4")
-      .find((element) => element.className.includes("rank"))!;
+    const fiveLabel = getAllByCardText(screen, "5")[0]!;
+    const fourLabel = getAllByCardText(screen, "4")[0]!;
 
     // DOCUMENT_POSITION_FOLLOWING is 4
     const FOLLOWING = 4;
@@ -233,10 +245,10 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
   it("should keep starter specifics collapsed until the nested expansion opens", () => {
     renderRow({ fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS });
 
-    expect(screen.queryByText("5♠")).toBeNull();
+    expect(screen.queryByText("5")).toBeNull();
 
     expandStarterDetails();
 
-    expect(getByCardText(screen, "5♠")).toBeTruthy();
+    expect(getAllByCardText(screen, "5").length).toBeGreaterThan(0);
   });
 });

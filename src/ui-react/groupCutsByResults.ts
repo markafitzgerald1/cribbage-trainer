@@ -6,9 +6,15 @@ export interface MinimalCard {
   readonly suit?: Suit | undefined;
 }
 
+export interface GroupedCut {
+  readonly isAllRemaining: boolean;
+  readonly rank: Rank;
+  readonly suits: readonly Suit[];
+}
+
 export interface CutResult {
   readonly cutCount: number;
-  readonly cuts: readonly (Card | Rank)[];
+  readonly cuts: readonly GroupedCut[];
   readonly fifteensPoints: number;
   readonly pairsPoints: number;
   readonly runsPoints: number;
@@ -98,18 +104,10 @@ function getRemainingByRank(
   return remainingByRank;
 }
 
-function shouldRenderRankOnly(
-  cardsOfRank: readonly Card[],
-  remainingOfRank: number,
-): boolean {
-  return cardsOfRank.length > 1 || cardsOfRank.length === remainingOfRank;
-}
-
 function processCutsForGroup(
   cards: readonly Card[],
   remainingByRank: Map<Rank, number>,
-): (Card | Rank)[] {
-  const processedCuts: (Card | Rank)[] = [];
+): GroupedCut[] {
   const cardsByRank = new Map<Rank, Card[]>();
   for (const card of cards) {
     const group = cardsByRank.get(card.rank) ?? [];
@@ -117,13 +115,14 @@ function processCutsForGroup(
     cardsByRank.set(card.rank, group);
   }
 
+  const processedCuts: GroupedCut[] = [];
   for (const [rank, cardsOfRank] of cardsByRank) {
     const remainingOfRank = remainingByRank.get(rank) as number;
-    if (shouldRenderRankOnly(cardsOfRank, remainingOfRank)) {
-      processedCuts.push(rank);
-    } else {
-      processedCuts.push(...cardsOfRank);
-    }
+    processedCuts.push({
+      isAllRemaining: cardsOfRank.length === remainingOfRank,
+      rank,
+      suits: cardsOfRank.map((card) => card.suit),
+    });
   }
   return processedCuts;
 }

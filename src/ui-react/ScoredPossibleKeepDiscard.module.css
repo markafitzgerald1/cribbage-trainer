@@ -23,20 +23,19 @@
 }
 
 .scored-possible-keep-discard td:nth-child(3) {
-  padding-left: 1em;
+  padding-left: 0.5em;
   padding-right: 0.25em;
 }
 
 .hand-discard-cell {
   display: inline-flex;
   align-items: baseline;
-  column-gap: 0.22em;
+  column-gap: 0.12em;
 }
 
 .discard-group {
   display: inline-flex;
   align-items: baseline;
-  column-gap: 0.08em;
 }
 
 .cut-points-cell {
