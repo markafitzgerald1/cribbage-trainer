@@ -1,3 +1,4 @@
+import { expect, fireEvent, within } from "storybook/test";
 import type { Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 
@@ -26,3 +27,25 @@ export const toDealtCards = (
     rankLabel: card.rankLabel,
     suit: card.suit,
   }));
+
+export const playToggle = async (
+  { canvasElement }: { readonly canvasElement: HTMLElement },
+  { toggleStarterDetails = false } = {},
+) => {
+  const canvas = within(canvasElement);
+  const table = await canvas.findByRole("table");
+  const rows = await within(table).findAllByRole("row");
+  const row = rows.length === 1 ? rows[0] : rows[1];
+  if (row) {
+    await fireEvent.click(row);
+  }
+
+  await expect(await canvas.findByText(/Starter/u)).toBeVisible();
+
+  if (toggleStarterDetails) {
+    const starterAvgLabel = await canvas.findByText(/Starter/u);
+    await fireEvent.click(starterAvgLabel);
+
+    await expect(await canvas.findByText("Points")).toBeVisible();
+  }
+};

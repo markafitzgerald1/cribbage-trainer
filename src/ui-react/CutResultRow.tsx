@@ -1,45 +1,130 @@
 import * as classes from "./CutResultRow.module.css";
+import { type Rank, type Suit } from "../game/Card";
 import { CardLabel } from "./CardLabel";
-import { PointsCell } from "./PointsCell";
-import type { Rank } from "../game/Card";
+import { type GroupedCut } from "./groupCutsByResults";
 import { SortOrder } from "../ui/SortOrder";
 
 interface CutResultRowProps {
-  readonly cuts: readonly Rank[];
+  readonly cuts: readonly GroupedCut[];
+  readonly sortOrder: SortOrder;
   readonly fifteensPoints: number;
   readonly pairsPoints: number;
   readonly runsPoints: number;
-  readonly sortOrder: SortOrder;
+  readonly flushesPoints: number;
+  readonly nobsPoints: number;
   readonly totalPoints: number;
+}
+
+interface VisualGroup {
+  readonly ranks: Rank[];
+  readonly suits: readonly Suit[];
+  readonly isAllRemaining: boolean;
+  readonly key: string;
+}
+
+const LAST_ARRAY_ITEM_OFFSET = 1;
+
+function mergeCutsByRank(cuts: readonly GroupedCut[]): GroupedCut[] {
+  const mergedCutsByRank = new Map<
+    Rank,
+    { suits: Set<Suit>; isAllRemaining: boolean }
+  >();
+  for (const cut of cuts) {
+    const existing = mergedCutsByRank.get(cut.rank);
+    if (existing) {
+      for (const suit of cut.suits) {
+        existing.suits.add(suit);
+      }
+      existing.isAllRemaining ||= cut.isAllRemaining;
+    } else {
+      mergedCutsByRank.set(cut.rank, {
+        isAllRemaining: cut.isAllRemaining,
+        suits: new Set(cut.suits),
+      });
+    }
+  }
+
+  return Array.from(mergedCutsByRank.entries()).map(([rank, data]) => ({
+    isAllRemaining: data.isAllRemaining,
+    rank,
+    suits: Array.from(data.suits),
+  }));
 }
 
 export function CutResultRow({
   cuts,
+  sortOrder,
   fifteensPoints,
   pairsPoints,
   runsPoints,
-  sortOrder,
+  flushesPoints,
+  nobsPoints,
   totalPoints,
 }: CutResultRowProps) {
-  const sortedCuts =
+  const renderPoints = (points: number) =>
+    points === 0 ? <span className={classes.muted}>—</span> : points;
+
+  const mergedCuts = mergeCutsByRank(cuts);
+
+  const sortedCuts = mergedCuts.sort((first, second) =>
     sortOrder === SortOrder.Ascending
-      ? [...cuts].sort((first, second) => first - second)
-      : [...cuts].sort((first, second) => second - first);
+      ? first.rank - second.rank
+      : second.rank - first.rank,
+  );
+
+  const visualGroups: VisualGroup[] = [];
+  for (const cut of sortedCuts) {
+    const suitKey = cut.isAllRemaining
+      ? "all"
+      : [...cut.suits].sort().join(",");
+    const existing = visualGroups[visualGroups.length - LAST_ARRAY_ITEM_OFFSET];
+
+    if (existing?.key === suitKey) {
+      existing.ranks.push(cut.rank);
+    } else {
+      visualGroups.push({
+        isAllRemaining: cut.isAllRemaining,
+        key: suitKey,
+        ranks: [cut.rank],
+        suits: cut.isAllRemaining ? [] : cut.suits,
+      });
+    }
+  }
+
+  const renderGroup = (group: VisualGroup) => (
+    <span
+      className={`${classes.genericCut} generic-cut`}
+      key={group.key + group.ranks.join("-")}
+    >
+      <CardLabel
+        ranks={group.ranks}
+        suits={group.suits}
+      />
+    </span>
+  );
 
   return (
     <div className={classes.cutResultRow}>
-      <div className={classes.cutsColumn}>
-        {sortedCuts.map((rank) => (
-          <CardLabel
-            key={rank}
-            rank={rank}
-          />
-        ))}
+      <div className={`${classes.cutsColumn} cut-cards-column`}>
+        {visualGroups.map((group) => renderGroup(group))}
       </div>
-      <PointsCell points={fifteensPoints} />
-      <PointsCell points={pairsPoints} />
-      <PointsCell points={runsPoints} />
-      <div className={classes.totalColumn}>{totalPoints}</div>
+      {[
+        { label: "fifteens", points: fifteensPoints },
+        { label: "pairs", points: pairsPoints },
+        { label: "runs", points: runsPoints },
+        { label: "flushes", points: flushesPoints },
+        { label: "nobs", points: nobsPoints },
+      ].map((cat) => (
+        <div
+          className={`${classes.pointsColumn} points-column`}
+          key={cat.label}
+        >
+          {renderPoints(cat.points)}
+        </div>
+      ))}
+      <div className={`${classes.totalColumn} total-column`}>
+        {renderPoints(totalPoints)}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
-import { CARDS, RANK_NAMES, type Rank } from "../game/Card";
+import { CARDS, RANK_NAMES, type Rank, Suit } from "../game/Card";
 import { type Meta, type StoryObj, createArgTypes } from "./stories.common";
-/* jscpd:ignore-end */
 import { PossibleHandCard } from "./PossibleHandCard";
+/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("rank", RANK_NAMES),
@@ -17,13 +17,13 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const createStory = (rank: Rank): Story => ({
-  args: { rank },
+const createStory = (rank: Rank, suit: Suit): Story => ({
+  args: { rank, suit },
 });
 
-export const Two = createStory(CARDS.TWO.rank);
-export const Three = createStory(CARDS.THREE.rank);
-export const Seven = createStory(CARDS.SEVEN.rank);
-export const Jack = createStory(CARDS.JACK.rank);
-export const Queen = createStory(CARDS.QUEEN.rank);
-export const King = createStory(CARDS.KING.rank);
+export const TwoOfClubs = createStory(CARDS.TWO.rank, Suit.CLUBS);
+export const ThreeOfDiamonds = createStory(CARDS.THREE.rank, Suit.DIAMONDS);
+export const SevenOfHearts = createStory(CARDS.SEVEN.rank, Suit.HEARTS);
+export const JackOfSpades = createStory(CARDS.JACK.rank, Suit.SPADES);
+export const QueenOfHearts = createStory(CARDS.QUEEN.rank, Suit.HEARTS);
+export const KingOfClubs = createStory(CARDS.KING.rank, Suit.CLUBS);

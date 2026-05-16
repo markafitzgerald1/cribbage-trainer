@@ -111,6 +111,11 @@
 - Add/adjust tests alongside code changes.
 - For visual changes, update Playwright snapshots when the new visuals are correct.
 - Keep README and docs in sync when changing workflows or commands.
+- When posting GitHub issue, PR, or review-thread comments on behalf of a human,
+  agents must attribute the comment to the agent unless the human explicitly
+  reviewed and approved the exact text before posting. Prefer a short prefix such
+  as `Codex:` or `Codex / GPT-5:` so readers can distinguish delegated agent
+  comments from human-authored comments.
 
 ## Commit messages
 

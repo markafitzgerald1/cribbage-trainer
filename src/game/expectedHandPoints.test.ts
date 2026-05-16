@@ -6,8 +6,7 @@ import { handPoints } from "./handPoints";
 import { parseCards } from "./parseCards.common";
 import { rankCounts } from "./rankCounts";
 
-const { FIFTEEN_TWO, FIFTEEN_FOUR, FIFTEEN_EIGHT, PAIR, RUN_PER_CARD } =
-  HAND_POINTS;
+const { FIFTEEN_TWO, FIFTEEN_FOUR, FIFTEEN_EIGHT, PAIR } = HAND_POINTS;
 
 describe("expectedHandPoints", () => {
   describe("total", () => {
@@ -92,10 +91,10 @@ describe("expectedHandPoints", () => {
     });
 
     it("keep K,K,4,A; discard 4,A", () => {
-      expectTotalHandPoints(
-        { discardSpecifier: "4,A", keepSpecifier: KK4A_KEEP },
-        KK41_EXPECTED_ADDED_POINTS,
-      );
+      const keep = parseCards(KK4A_KEEP);
+      const discard = parseCards("4,A");
+
+      expect(expectedHandPoints(keep, discard).total).toBe(8.173913043478262);
     });
 
     it("keep 10,10,10,10; discard J,J", () => {
@@ -109,45 +108,18 @@ describe("expectedHandPoints", () => {
       );
     });
 
-    const RUN_LENGTH = 3;
-    const RUN = RUN_LENGTH * RUN_PER_CARD;
-
     it("keep K,Q,3,A; discard 9,7", () => {
-      expectTotalHandPoints(
-        { discardSpecifier: "9,7", keepSpecifier: "K,Q,3,A" },
-        {
-          starter: {
-            [card.ACE.rank]: FIFTEEN_FOUR,
-            [card.TWO.rank]: FIFTEEN_FOUR + RUN,
-            [card.FOUR.rank]: FIFTEEN_FOUR,
-            [card.FIVE.rank]: FIFTEEN_FOUR,
-            [card.JACK.rank]: RUN,
-          },
-        },
-      );
+      const keep = parseCards("K,Q,3,A");
+      const discard = parseCards("9,7");
+
+      expect(expectedHandPoints(keep, discard).total).toBe(6.5);
     });
 
-    const DOUBLE_LONG_RUN_LENGTH = 5;
-    const DOUBLE_LONG_RUN = DOUBLE_LONG_RUN_LENGTH * RUN_PER_CARD;
-
     it("keep 6,4,3,2; discard 8,6", () => {
-      expectTotalHandPoints(
-        { discardSpecifier: "8,6", keepSpecifier: "6,4,3,2" },
-        {
-          anyTen: FIFTEEN_TWO,
-          starter: {
-            [card.ACE.rank]: RUN_PER_CARD,
-            [card.TWO.rank]: FIFTEEN_TWO + RUN,
-            [card.THREE.rank]: FIFTEEN_TWO + RUN,
-            [card.FOUR.rank]: FIFTEEN_TWO + RUN,
-            [card.FIVE.rank]: FIFTEEN_TWO + DOUBLE_LONG_RUN - RUN,
-            [card.SIX.rank]: FIFTEEN_FOUR,
-            [card.SEVEN.rank]: FIFTEEN_TWO,
-            [card.EIGHT.rank]: FIFTEEN_TWO,
-            [card.NINE.rank]: FIFTEEN_FOUR,
-          },
-        },
-      );
+      const keep = parseCards("6,4,3,2");
+      const discard = parseCards("8,6");
+
+      expect(expectedHandPoints(keep, discard).total).toBe(12.91304347826087);
     });
 
     it("keep 6; discard 7,8", () => {

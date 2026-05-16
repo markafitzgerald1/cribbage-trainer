@@ -1,20 +1,30 @@
 @import url("./vars.css");
 
 .card {
-  display: inline-block;
+  align-items: center;
+  box-sizing: border-box;
+  display: inline-flex;
+  justify-content: center;
   border: var(--card-border);
   background-color: var(--card-background-color);
   margin: 0.08em;
-  text-align: center;
   border-width: var(--clickable-border-width);
   border-radius: var(--clickable-border-radius);
   color: black;
   font-weight: bold;
-  width: 0.65em;
   font-family: var(--card-font-family);
-  padding: 0.1em;
+  line-height: 1;
+  padding: 0.08em 0 0.08em 0.06em;
+  white-space: nowrap;
+  width: 1.62em;
 }
 
-.card div {
-  padding-left: 0.1em;
+.card > div {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: auto;
+  padding: 0;
+  position: static;
+  width: 100%;
 }

@@ -6,10 +6,10 @@ import {
   type StoryObj,
   createArgTypes,
 } from "./stories.common";
+import { Rank, Suit } from "../game/Card";
 import { CutResultRow } from "./CutResultRow";
-import { Rank } from "../game/Card";
+import { type GroupedCut } from "./groupCutsByResults";
 
-const TWO_POINTS = 2;
 const FOUR_POINTS = 4;
 const SIX_POINTS = 6;
 const TEN_POINTS = 10;
@@ -27,22 +27,43 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const MULTIPLE_CUTS = [Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING];
-const MULTIPLE_CUTS_SHARED_ARGS = {
-  cuts: MULTIPLE_CUTS,
-  fifteensPoints: TWO_POINTS,
-  pairsPoints: FOUR_POINTS,
+const SHARED_BASE_ARGS = {
+  sortOrder: SortOrder.Descending,
+} as const;
+
+const ZERO_POINTS = {
+  fifteensPoints: 0,
+  flushesPoints: 0,
+  nobsPoints: 0,
+  pairsPoints: 0,
   runsPoints: 0,
+};
+
+function makeRankCut(rank: Rank): GroupedCut {
+  return { isAllRemaining: true, rank, suits: [] };
+}
+
+const MULTIPLE_CUTS: readonly GroupedCut[] = [
+  Rank.TEN,
+  Rank.JACK,
+  Rank.QUEEN,
+  Rank.KING,
+].map(makeRankCut);
+
+const MULTIPLE_CUTS_SHARED_ARGS = {
+  ...SHARED_BASE_ARGS,
+  ...ZERO_POINTS,
+  cuts: MULTIPLE_CUTS,
   totalPoints: SIX_POINTS,
 };
 
 export const SingleCut: Story = {
   args: {
-    cuts: [Rank.FIVE],
-    fifteensPoints: FOUR_POINTS,
-    pairsPoints: 0,
-    runsPoints: 0,
-    sortOrder: SortOrder.Descending,
+    ...SHARED_BASE_ARGS,
+    ...ZERO_POINTS,
+    cuts: [makeRankCut(Rank.FIVE)],
+    fifteensPoints: 2,
+    pairsPoints: 2,
     totalPoints: FOUR_POINTS,
   },
 };
@@ -50,7 +71,6 @@ export const SingleCut: Story = {
 export const MultipleCutsDescending: Story = {
   args: {
     ...MULTIPLE_CUTS_SHARED_ARGS,
-    sortOrder: SortOrder.Descending,
   },
 };
 
@@ -63,22 +83,47 @@ export const MultipleCutsAscending: Story = {
 
 export const AllCategories: Story = {
   args: {
-    cuts: [Rank.ACE],
-    fifteensPoints: TWO_POINTS,
-    pairsPoints: TWO_POINTS,
-    runsPoints: SIX_POINTS,
-    sortOrder: SortOrder.Descending,
+    ...SHARED_BASE_ARGS,
+    cuts: [makeRankCut(Rank.ACE)],
+    fifteensPoints: 2,
+    flushesPoints: 4,
+    nobsPoints: 1,
+    pairsPoints: 0,
+    runsPoints: 3,
     totalPoints: TEN_POINTS,
   },
 };
 
 export const NoPoints: Story = {
   args: {
-    cuts: [Rank.KING],
-    fifteensPoints: 0,
-    pairsPoints: 0,
-    runsPoints: 0,
-    sortOrder: SortOrder.Descending,
+    ...SHARED_BASE_ARGS,
+    ...ZERO_POINTS,
+    cuts: [makeRankCut(Rank.KING)],
     totalPoints: 0,
+  },
+};
+
+const FIVE_FIFTEEN_AND_PAIRS_ARGS = {
+  ...SHARED_BASE_ARGS,
+  ...ZERO_POINTS,
+  fifteensPoints: 2,
+  pairsPoints: 2,
+  totalPoints: FOUR_POINTS,
+} as const;
+
+export const SameRankCuts: Story = {
+  args: {
+    ...FIVE_FIFTEEN_AND_PAIRS_ARGS,
+    cuts: [
+      { isAllRemaining: false, rank: Rank.FIVE, suits: [Suit.HEARTS] },
+      { isAllRemaining: false, rank: Rank.FIVE, suits: [Suit.DIAMONDS] },
+    ],
+  },
+};
+
+export const MultipleSameRankRanks: Story = {
+  args: {
+    ...FIVE_FIFTEEN_AND_PAIRS_ARGS,
+    cuts: [makeRankCut(Rank.FIVE), makeRankCut(Rank.FIVE)],
   },
 };

@@ -3,6 +3,7 @@ import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
 import { useCallback, useState } from "react";
 import type { BreakdownProps } from "./BreakdownProps";
 import type { ComparableCard } from "../ui/sortCards";
+import type { HandPoints } from "../game/handPoints";
 import { PossibleHand } from "./PossibleHand";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
@@ -11,6 +12,7 @@ interface ScoredPossibleKeepDiscardProps extends BreakdownProps {
   readonly keep: readonly ComparableCard[];
   readonly discard: readonly ComparableCard[];
   readonly handPoints: number;
+  readonly handPointsBreakdown: HandPoints;
   readonly expectedHandPoints: number;
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
@@ -24,6 +26,7 @@ export function ScoredPossibleKeepDiscard({
   keep,
   discard,
   handPoints,
+  handPointsBreakdown,
   expectedHandPoints,
   avgCutAdded15s,
   avgCutAddedPairs,
@@ -54,6 +57,22 @@ export function ScoredPossibleKeepDiscard({
     rowIndex % ROW_STRIPE_DIVISOR === 0
       ? parentClasses.oddRow
       : parentClasses.evenRow;
+  const renderHandDiscardCell = () => (
+    <span className={classes.handDiscardCell}>
+      <PossibleHand
+        dealtCards={keep}
+        sortOrder={sortOrder}
+      />
+      <span className={classes.discardGroup}>
+        (
+        <PossibleHand
+          dealtCards={discard}
+          sortOrder={sortOrder}
+        />
+        )
+      </span>
+    </span>
+  );
 
   return (
     <>
@@ -63,25 +82,18 @@ export function ScoredPossibleKeepDiscard({
         } ${classes.clickable}`}
         onClick={handleRowClick}
       >
-        <td>
-          <PossibleHand
-            dealtCards={keep}
-            sortOrder={sortOrder}
-          />{" "}
-          (
-          <PossibleHand
-            dealtCards={discard}
-            sortOrder={sortOrder}
-          />
-          )
-        </td>
+        <td>{renderHandDiscardCell()}</td>
         <td>{handPoints}</td>
         <td>
-          {diff}
-          <span
-            className={`${classes.expandIndicator} ${isExpanded ? classes.expandIndicatorExpanded : ""}`}
-          >
-            ▸
+          <span className={classes.cutPointsCell}>
+            <span>{diff}</span>
+            <span
+              className={`${classes.expandIndicator} ${
+                isExpanded ? classes.expandIndicatorExpanded : ""
+              }`}
+            >
+              ▸
+            </span>
           </span>
         </td>
         <td>{total}</td>
@@ -94,10 +106,12 @@ export function ScoredPossibleKeepDiscard({
           avgCutAddedPairs={avgCutAddedPairs}
           avgCutAddedRuns={avgCutAddedRuns}
           cutCountsRemaining={cutCountsRemaining}
+          discard={discard}
           fifteensContributions={fifteensContributions}
           flushesContributions={flushesContributions}
+          handPointsBreakdown={handPointsBreakdown}
+          keep={keep}
           nobsContributions={nobsContributions}
-          onRowClick={handleRowClick}
           pairsContributions={pairsContributions}
           runsContributions={runsContributions}
           sortOrder={sortOrder}

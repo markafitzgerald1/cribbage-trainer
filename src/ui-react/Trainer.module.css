@@ -1,15 +1,23 @@
 .dynamic-ui {
-  height: 100%;
-  padding: 0.7em;
   box-sizing: border-box;
+  height: 100%;
+  margin-inline: auto;
+  min-width: 0;
+  padding: 0.7em;
+  width: 100%;
 }
 
 @media (orientation: portrait) {
   .dynamic-ui {
     display: grid;
     grid-template-rows: auto 1fr auto;
-    grid-template-columns: 100%;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.5em;
+  }
+
+  .dynamic-ui > * {
+    min-width: 0;
+    width: 100%;
   }
 
   .dynamic-ui > :first-child {

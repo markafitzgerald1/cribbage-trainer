@@ -1,4 +1,4 @@
-import { CARD_LABELS, type Card, CARDS as card } from "./Card";
+import { CARD_LABELS, type Card, DECK } from "./Card";
 
 const NOT_FOUND_INDEX = -1;
 
@@ -7,6 +7,7 @@ export const parseCards = (keepSpecifier: string): Card[] => {
     return [];
   }
 
+  const usedCards: Card[] = [];
   return keepSpecifier.split(",").map((rank) => {
     const cardIndex = CARD_LABELS.indexOf(rank);
     if (cardIndex === NOT_FOUND_INDEX) {
@@ -14,7 +15,17 @@ export const parseCards = (keepSpecifier: string): Card[] => {
         `Invalid card rank encountered in test specifier: '${rank}'`,
       );
     }
-    // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
-    return card[cardIndex]!;
+    const cardToUse = DECK.find(
+      (deckCard) =>
+        deckCard.rank === cardIndex &&
+        !usedCards.some(
+          (used) => used.rank === deckCard.rank && used.suit === deckCard.suit,
+        ),
+    );
+    if (!cardToUse) {
+      throw new Error(`Too many cards of rank '${rank}' requested`);
+    }
+    usedCards.push(cardToUse);
+    return cardToUse;
   });
 };

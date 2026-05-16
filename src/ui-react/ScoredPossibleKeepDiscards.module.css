@@ -1,8 +1,6 @@
 @import url("./vars.css");
 
 .scored-possible-keep-discards {
-  margin: 0;
-  width: 100%;
   box-sizing: border-box;
   color: var(--text-color);
   font-family: var(--text-font-family);
@@ -10,6 +8,9 @@
   flex-direction: column;
   height: 100%;
   gap: 10px;
+  margin: 0;
+  min-width: 0;
+  width: 100%;
 }
 
 .scored-possible-keep-discards figcaption {
@@ -18,17 +19,21 @@
 }
 
 .table-container {
-  padding-left: 0;
-  margin: 0;
-  overflow: auto;
+  box-sizing: border-box;
   flex-grow: 1;
+  margin: 0;
   max-width: 100%;
+  min-width: 0;
+  overflow: auto;
+  padding-left: 0;
+  width: 100%;
 }
 
 .scored-possible-keep-discards table {
-  width: 100%;
   border-collapse: collapse;
+  min-width: 100%;
   table-layout: fixed;
+  width: 100%;
 }
 
 .scored-possible-keep-discards tbody tr.odd-row {
@@ -51,12 +56,12 @@
 }
 
 .scored-possible-keep-discards th:first-child {
-  width: 40%;
+  width: 55%;
   text-align: left;
 }
 
 .scored-possible-keep-discards th:nth-child(n + 2) {
-  width: 20%;
+  width: 15%;
 }
 
 .scored-possible-keep-discards th:nth-child(3) {
@@ -64,8 +69,21 @@
 }
 
 @media (orientation: portrait) {
+  .scored-possible-keep-discards th:first-child {
+    width: 63%;
+  }
+
+  .scored-possible-keep-discards th:nth-child(2) {
+    width: 11%;
+  }
+
   .scored-possible-keep-discards th:nth-child(3) {
     padding-left: 0.5em;
+    width: 12%;
+  }
+
+  .scored-possible-keep-discards th:nth-child(4) {
+    width: 14%;
   }
 }
 
@@ -98,7 +116,7 @@
   }
 
   .scored-possible-keep-discards th {
-    font-size: var(--medium-text-font-size-portrait);
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.86);
   }
 }
 

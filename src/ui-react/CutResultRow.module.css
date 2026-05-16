@@ -1,10 +1,20 @@
 @import url("./vars.css");
 
 .cut-result-row {
+  --cut-result-generic-color: #a8d5ba;
+  --cut-result-generic-opacity: 0.7;
+  --cut-result-red-suit-color: #f99;
+  --cut-result-specific-color: #fff;
+  --cut-result-text-color: var(--text-color);
+
   display: grid;
-  grid-template-columns: 3fr 1fr 1fr 1fr 1fr;
+  grid-template-columns:
+    minmax(0, 30fr) minmax(0, 10fr) minmax(0, 10fr)
+    minmax(0, 10fr) minmax(0, 15fr) minmax(0, 12fr)
+    minmax(0, 13fr);
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  min-width: 0;
   padding: 2px 0;
   border-bottom: 1px solid rgb(255 255 255 / 5%);
 }
@@ -14,25 +24,67 @@
 }
 
 .cuts-column {
+  color: var(--cut-result-generic-color);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 2px;
+  font-size: 0.9em;
+  line-height: 1.05;
+  min-width: 0;
+}
+
+.generic-cut {
+  color: var(--cut-result-generic-color);
+  min-width: 0;
+  opacity: var(--cut-result-generic-opacity);
+}
+
+.generic-cut :global(.black-suit),
+.generic-cut :global(.red-suit) {
+  color: var(--cut-result-generic-color);
+}
+
+.specific-cut {
+  color: var(--cut-result-specific-color);
+  font-weight: 700;
+  min-width: 0;
+  opacity: 1;
+}
+
+.specific-cut :global(.black-suit) {
+  color: var(--cut-result-specific-color);
+}
+
+.specific-cut :global(.red-suit) {
+  color: var(--cut-result-red-suit-color);
 }
 
 .points-column {
   text-align: right;
+  font-family: var(--text-font-family);
   font-size: 0.9em;
-  color: var(--text-color);
+  color: var(--cut-result-text-color);
 }
 
 .total-column {
   text-align: right;
   font-family: var(--text-font-family);
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--cut-result-text-color);
 }
 
 .muted {
-  color: rgb(255 255 255 / 30%);
+  opacity: 0.5;
+}
+
+@media (orientation: portrait) {
+  .cut-result-row {
+    grid-template-columns:
+      minmax(3em, 28fr) minmax(2.5em, 11fr)
+      minmax(2.5em, 11fr) minmax(2.5em, 11fr)
+      minmax(3.8em, 14fr) minmax(2.9em, 12fr)
+      minmax(2.9em, 13fr);
+    gap: 3px;
+  }
 }

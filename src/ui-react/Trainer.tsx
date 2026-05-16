@@ -1,6 +1,9 @@
 import * as classes from "./Trainer.module.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
+
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
+import { type Card } from "../game/Card";
+import type { DealtCard } from "../game/DealtCard";
 import { InteractiveHand } from "./InteractiveHand";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
@@ -10,6 +13,7 @@ import { discardIsComplete } from "../game/discardIsComplete";
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
   readonly loadGoogleAnalytics: (consented: boolean | null) => void;
+  readonly initialCards?: Card[] | null;
 }
 
 export const analyticsConsentKey = "analyticsConsent";
@@ -25,12 +29,22 @@ const getStoredConsent = (): boolean | null => {
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
+  initialCards = null,
 }: TrainerProps) {
   const dealHandWithGenerator = useCallback(
     () => dealHand(generator),
     [generator],
   );
-  const [dealtCards, setDealtCards] = useState(dealHandWithGenerator);
+  const [dealtCards, setDealtCards] = useState<DealtCard[]>(() => {
+    if (initialCards) {
+      return initialCards.map((card, index) => ({
+        ...card,
+        dealOrder: index,
+        kept: true,
+      }));
+    }
+    return dealHandWithGenerator();
+  });
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
   const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
@@ -84,3 +98,7 @@ export function Trainer({
     </div>
   );
 }
+
+Trainer.defaultProps = {
+  initialCards: null,
+};

@@ -6,13 +6,13 @@ import {
   SortOrder,
   type StoryObj,
   createArgTypes,
+  playToggle,
 } from "./stories.common";
 /* jscpd:ignore-end */
 import {
   expectedCutAddedPoints,
   toCutBreakdown,
 } from "../game/expectedCutAddedPoints";
-import { fireEvent, within } from "storybook/test";
 import type { ComparableCard } from "../ui/sortCards";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { createElement } from "react";
@@ -43,6 +43,7 @@ type Story = StoryObj<typeof meta>;
 const toComparableCard = (card: Card, index: number): ComparableCard => ({
   dealOrder: index,
   rank: card.rank,
+  suit: card.suit,
 });
 
 interface CreateStoryOptions {
@@ -59,12 +60,14 @@ const createStory = ({
   isHighlighted = false,
 }: CreateStoryOptions): Story => {
   const cutAdded = expectedCutAddedPoints(keep, discard);
+  const points = handPoints(keep);
   return {
     args: {
       ...toCutBreakdown(cutAdded),
       discard: discard.map(toComparableCard),
       expectedHandPoints: expectedHandPoints(keep, discard).total,
-      handPoints: handPoints(keep).total,
+      handPoints: points.total,
+      handPointsBreakdown: points,
       isHighlighted,
       keep: keep.map(toComparableCard),
       rowIndex: 0,
@@ -106,9 +109,10 @@ export const FiveFiveAceJackDiscardFourSevenSortedInDealOrder: Story =
 
 export const ExpandedRow: Story = {
   ...JackSixFiveFourDiscardKingQueenSortedDescendingHighlighted,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const row = canvas.getByRole("row");
-    await fireEvent.click(row);
-  },
+  play: playToggle,
+};
+
+export const DoubleExpandedRow: Story = {
+  ...ExpandedRow,
+  play: (context) => playToggle(context, { toggleStarterDetails: true }),
 };

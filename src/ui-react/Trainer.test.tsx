@@ -5,7 +5,7 @@ import {
   render,
   screen,
 } from "@testing-library/react";
-import { CARD_LABELS, Rank } from "../game/Card";
+import { CARD_LABELS, Rank, type Suit, parseHand } from "../game/Card";
 import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
@@ -13,45 +13,73 @@ import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 import { act } from "react";
 
+const mathRandom = Math.random;
+
+const renderTrainer = () =>
+  render(
+    <Trainer
+      generateRandomNumber={mathRandom}
+      loadGoogleAnalytics={jest.fn()}
+    />,
+  );
+
+const calculationsHeaderName = "Hand";
+
+const clickIndices = (
+  getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],
+  indices: number[],
+  user: UserEvent,
+) =>
+  Promise.all(
+    indices.map((index) => user.click(getAllByRole("checkbox")[index]!)),
+  );
+
+const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
+  await act(() => user.click(checkbox));
+};
+
+const expectCalculationsAfterClicks = async (
+  cardIndices: number[],
+  calculationsExpected: boolean,
+) => {
+  const user = userEvent.setup();
+  const { getAllByRole, queryByRole } = renderTrainer();
+
+  await act(() => clickIndices(getAllByRole, cardIndices, user));
+
+  expect(
+    Boolean(queryByRole("columnheader", { name: calculationsHeaderName })),
+  ).toBe(calculationsExpected);
+};
+
+const handTextToComparableCards = (
+  initialDealtHand: string,
+): ComparableCard[] => {
+  const regex = /(?<rankLabel>10|[A2-9JQK])(?<suit>[♣♦♥♠])/gu;
+  const matches = Array.from(initialDealtHand.matchAll(regex));
+
+  return matches.map((match, index) => {
+    const { rankLabel, suit } = match.groups!;
+
+    return {
+      dealOrder: index,
+      rank: CARD_LABELS.indexOf(rankLabel!) as Rank,
+      suit: suit as Suit,
+    };
+  });
+};
+
+function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
+  return container.querySelector(
+    `input[value='${Object.keys(SortOrder).find((key) => SortOrder[key as keyof typeof SortOrder] === sortOrder)}']`,
+  )!;
+}
+
+const ANALYTICS_CONSENT = "analyticsConsent";
+
+const clearAnalyticsConsent = () => localStorage.removeItem(ANALYTICS_CONSENT);
+
 describe("trainer component", () => {
-  const mathRandom = Math.random;
-
-  const renderTrainer = () =>
-    render(
-      <Trainer
-        generateRandomNumber={mathRandom}
-        loadGoogleAnalytics={jest.fn()}
-      />,
-    );
-
-  const calculationsHeaderName = "Hand";
-
-  const clickIndices = (
-    getAllByRole: (
-      role: ByRoleMatcher,
-      options?: ByRoleOptions,
-    ) => HTMLElement[],
-    indices: number[],
-    user: UserEvent,
-  ) =>
-    Promise.all(
-      indices.map((index) => user.click(getAllByRole("checkbox")[index]!)),
-    );
-
-  const expectCalculationsAfterClicks = async (
-    cardIndices: number[],
-    calculationsExpected: boolean,
-  ) => {
-    const user = userEvent.setup();
-    const { getAllByRole, queryByRole } = renderTrainer();
-
-    await act(() => clickIndices(getAllByRole, cardIndices, user));
-
-    expect(
-      Boolean(queryByRole("columnheader", { name: calculationsHeaderName })),
-    ).toBe(calculationsExpected);
-  };
-
   it("initially contains a sort in descending order radio input", () => {
     expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();
   });
@@ -73,26 +101,6 @@ describe("trainer component", () => {
     await expectCalculationsAfterClicks([...Array(moreThanTwo).keys()], false);
   });
 
-  const handTextToComparableCards = (
-    initialDealtHand: string,
-  ): ComparableCard[] => {
-    const initialDealtHandRanks = initialDealtHand
-      .replace(/10/gu, "T")
-      .split("")
-      .map((cardLabel) => (cardLabel === "T" ? "10" : cardLabel))
-      .map((cardLabel, dealOrder) => ({
-        dealOrder,
-        rank: CARD_LABELS.indexOf(cardLabel) as Rank,
-      }));
-    return initialDealtHandRanks;
-  };
-
-  function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
-    return container.querySelector(
-      `input[value='${Object.keys(SortOrder).find((key) => SortOrder[key as keyof typeof SortOrder] === sortOrder)}']`,
-    )!;
-  }
-
   it.each([SortOrder.Ascending, SortOrder.Descending])(
     "re-sorts the dealt hand when the sort order is changed to %s",
     async (newSortOrder) => {
@@ -104,7 +112,7 @@ describe("trainer component", () => {
         handTextToComparableCards(container.querySelector("ul")!.textContent),
         newSortOrder,
       )
-        .map((dealtCard) => CARD_LABELS[dealtCard.rank])
+        .map((dealtCard) => `${CARD_LABELS[dealtCard.rank]}${dealtCard.suit}`)
         .join("");
       const newSortInput = getSortInput(container, newSortOrder);
 
@@ -115,11 +123,6 @@ describe("trainer component", () => {
       );
     },
   );
-
-  const ANALYTICS_CONSENT = "analyticsConsent";
-
-  const clearAnalyticsConsent = () =>
-    localStorage.removeItem(ANALYTICS_CONSENT);
 
   it.each([
     [true, "Accept"],
@@ -162,5 +165,34 @@ describe("trainer component", () => {
     expect(container.querySelector("ul")!.textContent).not.toBe(
       initialDealtHand,
     );
+  });
+
+  it("renders the specified initialCards", () => {
+    const initialCards = parseHand("AH,2H,3H,4H,5H,6H");
+    const { container } = render(
+      <Trainer
+        generateRandomNumber={mathRandom}
+        initialCards={initialCards}
+        loadGoogleAnalytics={jest.fn()}
+      />,
+    );
+
+    expect(container.querySelector("ul")!.textContent).toBe("6♥5♥4♥3♥2♥A♥");
+  });
+
+  it("toggles card selection", async () => {
+    const user = userEvent.setup();
+    const { getAllByRole } = renderTrainer();
+    const firstCheckbox = getAllByRole("checkbox")[0]!;
+
+    expect(firstCheckbox).toBeChecked();
+
+    await toggleCard(firstCheckbox, user);
+
+    expect(firstCheckbox).not.toBeChecked();
+
+    await toggleCard(firstCheckbox, user);
+
+    expect(firstCheckbox).toBeChecked();
   });
 });
