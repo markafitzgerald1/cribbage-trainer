@@ -103,8 +103,8 @@ describe("cutResultRow", () => {
     },
     {
       cuts: [rankCut(Rank.ACE), suitedCut(Rank.ACE, Suit.SPADES)],
-      expected: ["A", "A♠"],
-      name: "mixed rank and card with same rank",
+      expected: ["A"],
+      name: "mixed rank and card with same rank (merged)",
       sortOrder: SortOrder.Ascending,
     },
     {
@@ -112,8 +112,8 @@ describe("cutResultRow", () => {
         suitedCut(Rank.ACE, Suit.SPADES),
         suitedCut(Rank.ACE, Suit.HEARTS),
       ],
-      expected: ["A♠", "A♥"],
-      name: "cards with same rank but different suits (not grouped)",
+      expected: ["A (♠♥)"],
+      name: "cards with same rank but different suits (now grouped)",
       sortOrder: SortOrder.Ascending,
     },
     {

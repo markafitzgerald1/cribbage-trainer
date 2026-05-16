@@ -43,6 +43,7 @@ type Story = StoryObj<typeof meta>;
 const toComparableCard = (card: Card, index: number): ComparableCard => ({
   dealOrder: index,
   rank: card.rank,
+  suit: card.suit,
 });
 
 interface CreateStoryOptions {

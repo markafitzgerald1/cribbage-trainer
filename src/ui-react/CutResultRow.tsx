@@ -22,6 +22,33 @@ interface VisualGroup {
   readonly key: string;
 }
 
+function mergeCutsByRank(cuts: readonly GroupedCut[]): GroupedCut[] {
+  const mergedCutsByRank = new Map<
+    Rank,
+    { suits: Set<Suit>; isAllRemaining: boolean }
+  >();
+  for (const cut of cuts) {
+    const existing = mergedCutsByRank.get(cut.rank);
+    if (existing) {
+      for (const suit of cut.suits) {
+        existing.suits.add(suit);
+      }
+      existing.isAllRemaining ||= cut.isAllRemaining;
+    } else {
+      mergedCutsByRank.set(cut.rank, {
+        isAllRemaining: cut.isAllRemaining,
+        suits: new Set(cut.suits),
+      });
+    }
+  }
+
+  return Array.from(mergedCutsByRank.entries()).map(([rank, data]) => ({
+    isAllRemaining: data.isAllRemaining,
+    rank,
+    suits: Array.from(data.suits),
+  }));
+}
+
 export function CutResultRow({
   cuts,
   sortOrder,
@@ -35,14 +62,13 @@ export function CutResultRow({
   const renderPoints = (points: number) =>
     points === 0 ? <span className={classes.muted}>—</span> : points;
 
-  const sortedCuts = [...cuts].sort((first, second) => {
-    if (first.rank !== second.rank) {
-      return sortOrder === SortOrder.Ascending
-        ? first.rank - second.rank
-        : second.rank - first.rank;
-    }
-    return 0;
-  });
+  const mergedCuts = mergeCutsByRank(cuts);
+
+  const sortedCuts = mergedCuts.sort((first, second) =>
+    sortOrder === SortOrder.Ascending
+      ? first.rank - second.rank
+      : second.rank - first.rank,
+  );
 
   const groupsBySuitKey = new Map<string, VisualGroup>();
   for (const cut of sortedCuts) {

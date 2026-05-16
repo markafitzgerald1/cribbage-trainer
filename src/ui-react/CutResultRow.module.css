@@ -62,6 +62,7 @@
 
 .points-column {
   text-align: right;
+  font-family: var(--text-font-family);
   font-size: 0.9em;
   color: var(--cut-result-text-color);
 }
