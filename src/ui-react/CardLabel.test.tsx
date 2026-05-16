@@ -70,6 +70,19 @@ describe("card label component", () => {
     expect(result.getByText("10")).toBeTruthy();
     expect(result.getByText(Suit.CLUBS)).toBeTruthy();
     expect(result.getByText(Suit.DIAMONDS)).toBeTruthy();
+    expect(result.container.textContent).toContain("(");
+  });
+
+  it("uses parentheses for a single suit when multiple ranks are provided", () => {
+    const { container } = render(
+      <CardLabel
+        ranks={[Rank.SIX, Rank.FOUR]}
+        suit={Suit.HEARTS}
+      />,
+    );
+
+    expect(container.textContent).toContain("(");
+    expect(container.textContent).toContain(")");
   });
 
   it("throws for an unexpected suit", () => {

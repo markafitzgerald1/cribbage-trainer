@@ -63,6 +63,10 @@ export function CardLabel({
     colorClass = classes.blackSuit;
   }
 
+  const isGrouped =
+    normalizedSuits.length > 0 &&
+    (normalizedSuits.length > 1 || normalizedRanks.length > 1);
+
   return (
     <div
       className={[
@@ -92,14 +96,11 @@ export function CardLabel({
           </span>
         );
       })}
-      {normalizedSuits.length > 1 && (
+      {isGrouped ? (
         <span className={classes.groupedParenthesisOpen}> (</span>
-      )}
+      ) : null}
       <span
-        className={[
-          classes.suitsWrapper,
-          normalizedSuits.length > 1 && classes.grouped,
-        ]
+        className={[classes.suitsWrapper, isGrouped && classes.grouped]
           .filter(Boolean)
           .join(" ")}
       >
@@ -125,9 +126,9 @@ export function CardLabel({
           );
         })}
       </span>
-      {normalizedSuits.length > 1 && (
+      {isGrouped ? (
         <span className={classes.groupedParenthesisClose}>)</span>
-      )}
+      ) : null}
     </div>
   );
 }
