@@ -1,4 +1,8 @@
 version: 2
+multi-ecosystem-groups:
+  playwright-sync:
+    schedule:
+      interval: "weekly"
 updates:
   - package-ecosystem: "npm"
     directory: "/"
@@ -16,7 +20,22 @@ updates:
     ignore:
       - dependency-name: "eslint"
         versions: [">=10.0.0 <=10.3.0"]
+      - dependency-name: "playwright"
+      - dependency-name: "@playwright/test"
+  - package-ecosystem: "npm"
+    directory: "/"
+    multi-ecosystem-group: "playwright-sync"
+    allow:
+      - dependency-name: "playwright"
+      - dependency-name: "@playwright/test"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "mcr.microsoft.com/playwright"
+  - package-ecosystem: "docker"
+    directory: "/"
+    multi-ecosystem-group: "playwright-sync"
+    allow:
+      - dependency-name: "mcr.microsoft.com/playwright"
