@@ -115,10 +115,11 @@ export const parseSuit = (suitChar: string): Suit => {
 export const parseCard = (card: string): Card => {
   const suitChar = card.slice(card.length - 1);
   const rankLabel = card.slice(0, card.length - 1);
-  if (!CARD_LABELS.includes(rankLabel)) {
+  const normalizedRankLabel = rankLabel.toUpperCase();
+  if (!CARD_LABELS.includes(normalizedRankLabel)) {
     throw new Error(`Invalid rank label: ${rankLabel}`);
   }
-  const rank = CARD_LABELS.indexOf(rankLabel);
+  const rank = CARD_LABELS.indexOf(normalizedRankLabel);
   return createCard(rank as Rank, parseSuit(suitChar));
 };
 

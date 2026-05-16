@@ -133,6 +133,16 @@ describe("cutResultRow", () => {
       name: "ranks sharing the same suits are grouped",
       sortOrder: SortOrder.Ascending,
     },
+    {
+      cuts: [
+        rankCut(Rank.KING),
+        suitedCut(Rank.QUEEN, Suit.HEARTS),
+        rankCut(Rank.JACK),
+      ],
+      expected: ["K", "Q♥", "J"],
+      name: "non-adjacent ranks sharing the same suits remain separated",
+      sortOrder: SortOrder.Descending,
+    },
   ])("renders cuts in $name", ({ cuts, expected, sortOrder }) => {
     const renderResult = renderCutResultRow({ cuts, sortOrder });
 

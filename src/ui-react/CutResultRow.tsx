@@ -22,6 +22,8 @@ interface VisualGroup {
   readonly key: string;
 }
 
+const LAST_ARRAY_ITEM_OFFSET = 1;
+
 function mergeCutsByRank(cuts: readonly GroupedCut[]): GroupedCut[] {
   const mergedCutsByRank = new Map<
     Rank,
@@ -70,17 +72,17 @@ export function CutResultRow({
       : second.rank - first.rank,
   );
 
-  const groupsBySuitKey = new Map<string, VisualGroup>();
+  const visualGroups: VisualGroup[] = [];
   for (const cut of sortedCuts) {
     const suitKey = cut.isAllRemaining
       ? "all"
       : [...cut.suits].sort().join(",");
-    const existing = groupsBySuitKey.get(suitKey);
+    const existing = visualGroups[visualGroups.length - LAST_ARRAY_ITEM_OFFSET];
 
-    if (existing) {
+    if (existing?.key === suitKey) {
       existing.ranks.push(cut.rank);
     } else {
-      groupsBySuitKey.set(suitKey, {
+      visualGroups.push({
         isAllRemaining: cut.isAllRemaining,
         key: suitKey,
         ranks: [cut.rank],
@@ -88,7 +90,6 @@ export function CutResultRow({
       });
     }
   }
-  const visualGroups = Array.from(groupsBySuitKey.values());
 
   const renderGroup = (group: VisualGroup) => (
     <span

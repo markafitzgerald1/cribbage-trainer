@@ -11,6 +11,10 @@ import {
 } from "./Card";
 import { describe, expect, it } from "@jest/globals";
 
+const LOWERCASE_KING_OF_HEARTS = ["k", "h"].join("");
+const LOWERCASE_QUEEN_OF_SPADES = ["q", "s"].join("");
+const LOWERCASE_TEN_OF_DIAMONDS = "10d";
+
 describe.each(CARD_RANKS)("createCard %p", (rank) => {
   it(`rank is ${rank}`, () => {
     expect(createCard(rank, "♠").rank).toBe(rank);
@@ -54,18 +58,15 @@ describe("parseSuit", () => {
 });
 
 describe("parseCard", () => {
-  it("parses KH", () => {
-    const card = parseCard("KH");
+  it.each([
+    ["KH", "K", Suit.HEARTS],
+    [LOWERCASE_KING_OF_HEARTS, "K", Suit.HEARTS],
+    ["10D", "10", Suit.DIAMONDS],
+  ])("parses %p", (cardLabel, expectedRankLabel, expectedSuit) => {
+    const card = parseCard(cardLabel);
 
-    expect(card.rankLabel).toBe("K");
-    expect(card.suit).toBe(Suit.HEARTS);
-  });
-
-  it("parses 10D", () => {
-    const card = parseCard("10D");
-
-    expect(card.rankLabel).toBe("10");
-    expect(card.suit).toBe(Suit.DIAMONDS);
+    expect(card.rankLabel).toBe(expectedRankLabel);
+    expect(card.suit).toBe(expectedSuit);
   });
 
   it("throws on invalid rank", () => {
@@ -80,6 +81,23 @@ describe("parseHand", () => {
     expect(hand).toHaveLength(3);
     expect(hand[0]!.rankLabel).toBe("A");
     expect(hand[1]!.suit).toBe(Suit.SPADES);
+  });
+
+  it("parses lowercase face ranks in comma separated hands", () => {
+    const hand = parseHand(
+      [
+        LOWERCASE_KING_OF_HEARTS,
+        LOWERCASE_QUEEN_OF_SPADES,
+        LOWERCASE_TEN_OF_DIAMONDS,
+      ].join(","),
+    );
+
+    expect(hand.map((card) => card.rankLabel)).toStrictEqual(["K", "Q", "10"]);
+    expect(hand.map((card) => card.suit)).toStrictEqual([
+      Suit.HEARTS,
+      Suit.SPADES,
+      Suit.DIAMONDS,
+    ]);
   });
 
   it("throws on duplicate physical cards", () => {
