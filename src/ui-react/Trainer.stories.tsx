@@ -3,6 +3,7 @@ import {
   SORT_ORDER_NAMES,
   SortOrder,
   createArgTypes,
+  playToggle,
 } from "./stories.common";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
@@ -113,6 +114,23 @@ export const DiscardShowsScoredPossibilities = {
       within(canvasElement).getByRole("columnheader", { name: "Cut" }),
     ).toBeVisible();
   },
+};
+
+const playTrainerToggle =
+  (toggleStarterDetails = false) =>
+  async (context: { canvasElement: HTMLElement }) => {
+    await DiscardShowsScoredPossibilities.play(context);
+    await playToggle(context, { toggleStarterDetails });
+  };
+
+export const Expanded = {
+  ...DiscardShowsScoredPossibilities,
+  play: playTrainerToggle(),
+};
+
+export const DoubleExpanded = {
+  ...DiscardShowsScoredPossibilities,
+  play: playTrainerToggle(true),
 };
 
 const createPlay =

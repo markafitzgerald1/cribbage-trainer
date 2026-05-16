@@ -5,6 +5,7 @@ import {
   SortOrder,
   type StoryObj,
   createArgTypes,
+  playToggle,
   toDealtCards,
 } from "./stories.common";
 /* jscpd:ignore-end */
@@ -49,3 +50,13 @@ export const JackSixFiveFourKingQueenSortedDealOrder: Story = createStory(
   dealtCards,
   SortOrder.DealOrder,
 );
+
+export const Expanded: Story = {
+  ...JackSixFiveFourKingQueenSortedDescending,
+  play: playToggle,
+};
+
+export const DoubleExpanded: Story = {
+  ...Expanded,
+  play: (context) => playToggle(context, { toggleStarterDetails: true }),
+};
