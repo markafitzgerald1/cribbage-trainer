@@ -19,6 +19,7 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const keep = dealtHand.slice(0, CARDS_PER_KEPT_HAND);
   const discard = dealtHand.slice(CARDS_PER_KEPT_HAND);
   const points = handPoints(keep).total;
+  const pointsBreakdown = handPoints(keep);
   const expectedPoints = expectedHandPoints(keep, discard).total;
   const cutAdded = expectedCutAddedPoints(keep, discard);
   const keepString = handToSortedString(keep, sortOrder);
@@ -32,6 +33,7 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
     keep,
     keepString,
     points,
+    pointsBreakdown,
     sortOrder,
   };
 }
@@ -55,6 +57,7 @@ function renderComponentWithScenario(
           fifteensContributions={scenario.cutAdded.fifteensContributions}
           flushesContributions={scenario.cutAdded.flushesContributions}
           handPoints={scenario.points}
+          handPointsBreakdown={scenario.pointsBreakdown}
           isHighlighted={isHighlighted}
           keep={scenario.keep}
           nobsContributions={scenario.cutAdded.nobsContributions}
@@ -92,7 +95,7 @@ describe("calculation component", () => {
       expect(texts).toStrictEqual([
         expect.stringMatching(
           new RegExp(
-            `${scenario.keepString}.*\\(${scenario.discardString}\\)`,
+            `${scenario.keepString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}.*\\(${scenario.discardString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}\\)`,
             "u",
           ),
         ),
@@ -127,7 +130,7 @@ describe("calculation component", () => {
     expect(isExpanded()).toBe(false);
   });
 
-  it("should collapse expansion when clicking the expanded row", () => {
+  it("should drill into starter details when clicking the expanded row", () => {
     const scenario = setupScenario("Ascending");
     renderComponentWithScenario(scenario);
     const getMainRow = () => screen.getAllByRole("row")[0] as HTMLElement;
@@ -139,6 +142,11 @@ describe("calculation component", () => {
     expect(isExpanded()).toBe(true);
 
     fireEvent.click(getExpandedRow());
+
+    expect(isExpanded()).toBe(true);
+    expect(screen.getAllByText(/Starter/u)).toHaveLength(1);
+
+    fireEvent.click(getMainRow());
 
     expect(isExpanded()).toBe(false);
   });

@@ -15,6 +15,7 @@ export function PossibleHand({ dealtCards, sortOrder }: PossibleHandProps) {
         <PossibleHandCard
           key={dealtCard.dealOrder}
           rank={dealtCard.rank}
+          suit={dealtCard.suit}
         />
       ))}
     </span>

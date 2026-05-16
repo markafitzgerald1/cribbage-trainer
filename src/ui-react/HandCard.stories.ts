@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
-import { CARDS, RANK_NAMES, type Rank } from "../game/Card";
+import { CARDS, RANK_NAMES, type Rank, Suit } from "../game/Card";
 import { type Meta, type StoryObj, createArgTypes } from "./stories.common";
-/* jscpd:ignore-end */
 import { HandCard } from "./HandCard";
+/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("rank", RANK_NAMES),
@@ -17,12 +17,25 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const createStory = (dealOrderIndex: number, kept: boolean, rank: Rank) => ({
+interface CreateStoryOptions {
+  dealOrderIndex: number;
+  kept: boolean;
+  rank: Rank;
+  suit: Suit;
+}
+
+const createStory = ({
+  dealOrderIndex,
+  kept,
+  rank,
+  suit,
+}: CreateStoryOptions) => ({
   args: {
     dealOrderIndex,
     kept,
     onChange: () => null,
     rank,
+    suit,
   },
 });
 
@@ -35,33 +48,39 @@ const DEAL_ORDER_INDEX = {
   THIRD: 2,
 };
 
-export const DiscardedFirstCardAce: Story = createStory(
-  DEAL_ORDER_INDEX.FIRST,
-  false,
-  CARDS.ACE.rank,
-);
-export const KeptSecondCardFive: Story = createStory(
-  DEAL_ORDER_INDEX.SECOND,
-  true,
-  CARDS.FIVE.rank,
-);
-export const KeptThirdCardNine: Story = createStory(
-  DEAL_ORDER_INDEX.THIRD,
-  true,
-  CARDS.NINE.rank,
-);
-export const KeptFourthCardTen: Story = createStory(
-  DEAL_ORDER_INDEX.FOURTH,
-  true,
-  CARDS.TEN.rank,
-);
-export const KeptFifthCardJack: Story = createStory(
-  DEAL_ORDER_INDEX.FIFTH,
-  true,
-  CARDS.JACK.rank,
-);
-export const DiscardedFifthCardKing: Story = createStory(
-  DEAL_ORDER_INDEX.SIXTH,
-  false,
-  CARDS.KING.rank,
-);
+export const DiscardedFirstCardAceHearts: Story = createStory({
+  dealOrderIndex: DEAL_ORDER_INDEX.FIRST,
+  kept: false,
+  rank: CARDS.ACE.rank,
+  suit: Suit.HEARTS,
+});
+export const KeptSecondCardFiveDiamonds: Story = createStory({
+  dealOrderIndex: DEAL_ORDER_INDEX.SECOND,
+  kept: true,
+  rank: CARDS.FIVE.rank,
+  suit: Suit.DIAMONDS,
+});
+export const KeptThirdCardNineClubs: Story = createStory({
+  dealOrderIndex: DEAL_ORDER_INDEX.THIRD,
+  kept: true,
+  rank: CARDS.NINE.rank,
+  suit: Suit.CLUBS,
+});
+export const KeptFourthCardTenSpades: Story = createStory({
+  dealOrderIndex: DEAL_ORDER_INDEX.FOURTH,
+  kept: true,
+  rank: CARDS.TEN.rank,
+  suit: Suit.SPADES,
+});
+export const KeptFifthCardJackHearts: Story = createStory({
+  dealOrderIndex: DEAL_ORDER_INDEX.FIFTH,
+  kept: true,
+  rank: CARDS.JACK.rank,
+  suit: Suit.HEARTS,
+});
+export const DiscardedSixthCardKingDiamonds: Story = createStory({
+  dealOrderIndex: DEAL_ORDER_INDEX.SIXTH,
+  kept: false,
+  rank: CARDS.KING.rank,
+  suit: Suit.DIAMONDS,
+});

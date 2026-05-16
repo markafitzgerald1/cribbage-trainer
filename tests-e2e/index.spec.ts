@@ -17,13 +17,12 @@ test(`HTML charset '${expectedCharset}' is specified`, async ({ page }) => {
   expect(await page.$(`meta[charset="${expectedCharset}"]`)).not.toBeNull();
 });
 
-test("double tap zoom disabled to speed up mobile onclick handling", async ({
-  page,
-}) => {
+test("standard mobile viewport is specified", async ({ page }) => {
   await page.goto("/");
-  expect(
-    await page.$('meta[name="viewport"][content="width=device-width"]'),
-  ).not.toBeNull();
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    "width=device-width, initial-scale=1",
+  );
 });
 
 const expectedTitle = "Cribbage Trainer";
@@ -38,12 +37,12 @@ test("a .css file is linked", async ({ page }) => {
   expect(await page.$('link[rel="stylesheet"][href$=".css"]')).not.toBeNull();
 });
 
-const constantSeedQuery = "?seed=1";
+const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H";
 
 test("pre-cut hand points show after select of two discards", async ({
   page,
 }) => {
-  await renderThenSelectTwoDiscards(page, constantSeedQuery);
+  await renderThenSelectTwoDiscards(page, constantHandQuery);
 
   await expect(
     page.getByRole("columnheader", { exact: true, name: "Hand" }),

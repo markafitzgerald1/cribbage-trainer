@@ -41,6 +41,7 @@ const createStory = (
       dealOrder: index,
       kept: predicate(card.rank),
       rank: card.rank,
+      suit: card.suit,
     })),
     onChange: () => null,
     sortOrder,

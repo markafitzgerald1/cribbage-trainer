@@ -28,6 +28,7 @@ const createStory = (dealtCards: Card[], sortOrder: SortOrder): Story => ({
     dealtCards: dealtCards.map((card, index) => ({
       dealOrder: index,
       rank: card.rank,
+      suit: card.suit,
     })),
     sortOrder,
   },

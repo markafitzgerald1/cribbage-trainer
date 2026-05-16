@@ -93,3 +93,43 @@ export const CARDS: Cards = {
   ...RANKED_CARDS,
   ...NAMED_CARDS,
 };
+
+export const parseSuit = (suitChar: string): Suit => {
+  switch (suitChar.toUpperCase()) {
+    case "C":
+      return Suit.CLUBS;
+    case "D":
+      return Suit.DIAMONDS;
+    case "H":
+      return Suit.HEARTS;
+    case "S":
+      return Suit.SPADES;
+    default:
+      if (Object.values(Suit).includes(suitChar as Suit)) {
+        return suitChar as Suit;
+      }
+      throw new Error(`Invalid suit character: ${suitChar}`);
+  }
+};
+
+export const parseCard = (card: string): Card => {
+  const suitChar = card.slice(card.length - 1);
+  const rankLabel = card.slice(0, card.length - 1);
+  const normalizedRankLabel = rankLabel.toUpperCase();
+  if (!CARD_LABELS.includes(normalizedRankLabel)) {
+    throw new Error(`Invalid rank label: ${rankLabel}`);
+  }
+  const rank = CARD_LABELS.indexOf(normalizedRankLabel);
+  return createCard(rank as Rank, parseSuit(suitChar));
+};
+
+const getPhysicalCardKey = (card: Card) => `${card.rank}-${card.suit}`;
+
+export const parseHand = (hand: string): Card[] => {
+  const cards = hand.split(",").map(parseCard);
+  const cardKeys = cards.map(getPhysicalCardKey);
+  if (new Set(cardKeys).size !== cardKeys.length) {
+    throw new Error(`Duplicate card in hand: ${hand}`);
+  }
+  return cards;
+};

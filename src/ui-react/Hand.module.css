@@ -1,7 +1,10 @@
 @import url("./vars.css");
 
 .figure {
+  box-sizing: border-box;
   margin: 0.7em 0 0;
+  min-width: 0;
+  width: 100%;
 }
 
 .figcaption {
@@ -24,8 +27,26 @@
 
 .hand {
   display: flex;
-  gap: 0.5em;
+  gap: 0.8em;
+  justify-content: space-between;
   padding: 0;
   margin-top: 0.7em;
   margin-bottom: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (orientation: portrait) {
+  .hand {
+    display: grid;
+    gap: clamp(0.42em, 2vw, 0.7em);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+@media (orientation: landscape) {
+  .hand {
+    gap: 0.96vw;
+    justify-content: flex-start;
+  }
 }

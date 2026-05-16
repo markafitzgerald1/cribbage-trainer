@@ -1,15 +1,24 @@
 import * as classes from "./PossibleHandCard.module.css";
+import { Rank, Suit } from "../game/Card";
 import { CardLabel } from "./CardLabel";
-import { Rank } from "../game/Card";
 
 interface PossibleHandCardProps {
   readonly rank: Rank;
+  readonly suit?: Suit | undefined;
 }
 
-export function PossibleHandCard({ rank }: PossibleHandCardProps) {
+export function PossibleHandCard({ rank, suit }: PossibleHandCardProps) {
   return (
     <span className={`${classes.card}`}>
-      <CardLabel rank={rank} />
+      <CardLabel
+        rank={rank}
+        suit={suit}
+      />
     </span>
   );
 }
+
+PossibleHandCard.defaultProps = {
+  // eslint-disable-next-line no-undefined
+  suit: undefined,
+};

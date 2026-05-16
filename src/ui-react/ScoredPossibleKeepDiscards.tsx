@@ -3,6 +3,7 @@ import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { allScoredKeepDiscardsByExpectedScoreDescending } from "../analysis/analysis";
+import { handPoints } from "../game/handPoints";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly dealtCards: readonly DealtCard[];
@@ -83,6 +84,7 @@ export function ScoredPossibleKeepDiscards({
             fifteensContributions={scoredKeepDiscard.fifteensContributions}
             flushesContributions={scoredKeepDiscard.flushesContributions}
             handPoints={scoredKeepDiscard.handPoints}
+            handPointsBreakdown={handPoints(scoredKeepDiscard.keep)}
             isHighlighted={scoredKeepDiscard.keep.every((card) => card.kept)}
             keep={scoredKeepDiscard.keep}
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
