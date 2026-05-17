@@ -7,6 +7,7 @@ import {
 } from "./stories.common";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
+import { Suit } from "../game/Card";
 import { createGenerator } from "../game/randomNumberGenerator";
 
 const SEED = "1";
@@ -160,4 +161,20 @@ export const SortHandInDealOrder = {
 
 export const SortHandInAscendingOrder = {
   play: createPlay(SortOrder.Ascending),
+};
+
+export const WithInitialCards = {
+  args: {
+    initialCards: [
+      { rank: 0, suit: Suit.SPADES },
+      { rank: 1, suit: Suit.HEARTS },
+      { rank: 2, suit: Suit.DIAMONDS },
+      { rank: 3, suit: Suit.CLUBS },
+      { rank: 4, suit: Suit.SPADES },
+      { rank: 5, suit: Suit.HEARTS },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent("Hand");
+  },
 };
