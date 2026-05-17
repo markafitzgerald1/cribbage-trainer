@@ -87,10 +87,11 @@
   reduce code duplication.
 - Ensure all pull request review comments are resolved in GitHub after addressing
   and responding to them.
-- To find PR review threads without individual review URLs, use the GitHub
-  connector's PR review-thread listing for the repository and PR number. Inspect
-  `is_resolved` and `is_outdated` before deciding whether a thread still needs
-  code, a reply, or resolution.
+- To find PR review threads without individual review URLs, use any available
+  GitHub integration or the `gh` CLI for the repository and PR number. Prefer
+  thread-aware review data over flat PR comments, and inspect resolved/outdated
+  state before deciding whether a thread still needs code, a reply, or
+  resolution.
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
