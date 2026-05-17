@@ -174,7 +174,7 @@ export const WithInitialCards = {
       { rank: 5, suit: Suit.HEARTS },
     ],
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     await expect(canvasElement).toHaveTextContent("Hand");
   },
 };
