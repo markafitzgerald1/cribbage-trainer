@@ -21,7 +21,7 @@ updates:
           - "*"
     ignore:
       - dependency-name: "eslint"
-        versions: [">=10.0.0 <=10.3.0"]
+        versions: [">=10.0.0 <=10.4.0"]
       - dependency-name: "playwright"
       - dependency-name: "@playwright/test"
 
