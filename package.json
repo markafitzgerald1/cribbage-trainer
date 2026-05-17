@@ -41,6 +41,7 @@
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@eslint/compat": "^2.1.0",
+    "@eslint/eslintrc": "^3.3.5",
     "@jest/globals": "^30.4.1",
     "@playwright/test": "^1.60.0",
     "@storybook/addon-docs": "^10.4.0",

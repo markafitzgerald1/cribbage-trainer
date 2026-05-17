@@ -78,7 +78,7 @@
 - Prefer small, focused commits; summarize why changes are needed.
 - Only comment on the "why" behind code; strongly prefer meaningful test names,
   function names, and variable names to comments in code. Do not add redundant
-  comments explaining self-evident code (e.g., in e2e tests).
+  comments explaining self-evident code.
 - Extract duplicated object literals (like `{ exact: true }`) into variables to
   reduce code duplication.
 - Ensure all pull request review comments are resolved in GitHub after addressing

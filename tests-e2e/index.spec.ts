@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { type Locator, type Page, expect, test } from "@playwright/test";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
 const expectedHtmlLanguage = "en";
@@ -38,6 +38,29 @@ test("a .css file is linked", async ({ page }) => {
 });
 
 const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H";
+const selectedDiscardRowText = "K♥Q♠10♦9♣(6♠5♥)";
+const exactTextMatch = { exact: true };
+const expectedBreakdownLabels = [
+  "15s",
+  "Pairs",
+  "Runs",
+  "Flushes",
+  "Nobs",
+  "Total",
+] as const;
+
+const getSelectedDiscardRow = (page: Page) =>
+  page
+    .locator('tr[class*="highlighted"]')
+    .filter({ hasText: selectedDiscardRowText });
+
+const expectBreakdownLabelsVisible = async (tbody: Locator) => {
+  await Promise.all(
+    expectedBreakdownLabels.map(async (label) => {
+      await expect(tbody.getByText(label, exactTextMatch)).toBeVisible();
+    }),
+  );
+};
 
 test("pre-cut hand points show after select of two discards", async ({
   page,
@@ -60,20 +83,12 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   await page.getByRole("checkbox").nth(indexOf6S).click();
   await page.getByRole("checkbox").nth(indexOf5H).click();
 
-  const row = page.locator("tbody tr").filter({ hasText: "K♥Q♠10♦9♣(6♠5♥)" });
+  const row = getSelectedDiscardRow(page);
   await expect(row).toBeVisible();
 
   await row.click();
 
-  const exactMatch = { exact: true };
-  const partialMatch = { exact: false };
-
-  await expect(page.locator("tbody").getByText("15s", exactMatch)).toBeVisible();
-  await expect(page.locator("tbody").getByText("Pairs", exactMatch)).toBeVisible();
-  await expect(page.locator("tbody").getByText("Runs", exactMatch)).toBeVisible();
-  await expect(page.locator("tbody").getByText("Flush", partialMatch)).toBeVisible();
-  await expect(page.locator("tbody").getByText("Nobs", exactMatch)).toBeVisible();
-  await expect(page.locator("tbody").getByText("Total", exactMatch)).toBeVisible();
+  await expectBreakdownLabelsVisible(page.locator("tbody"));
   await expect(page.getByText("Starter avg")).toBeVisible();
 
   await page.getByText("Starter avg").click();
