@@ -45,22 +45,3 @@ export const ChangeSortOrder = {
   },
 };
 ```
-
-## Review Comment Retrieval
-
-When resolving GitHub PR review feedback, use thread-aware review data instead
-of flat PR comments when possible.
-
-1. Use any available GitHub integration or the `gh` CLI for the repository and
-   PR number.
-2. Prefer review-thread data over flat PR comments.
-3. Check each thread's resolved/outdated state, path, line, and comments.
-4. Treat unresolved, non-outdated threads as the current actionable set.
-5. Reply to addressed comments with an attributed agent prefix.
-6. Resolve the thread only after the fix is committed or clearly present.
-
-For the `gh` CLI, `gh api graphql` can query review thread fields such as
-`isResolved`, `isOutdated`, and nested comments.
-
-Agents should not need individual review URLs once the repository and PR number
-are known.

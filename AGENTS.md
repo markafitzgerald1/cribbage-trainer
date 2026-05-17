@@ -85,18 +85,32 @@
   comments explaining self-evident code.
 - Extract duplicated object literals (like `{ exact: true }`) into variables to
   reduce code duplication.
-- Ensure all pull request review comments are resolved in GitHub after addressing
-  and responding to them.
-- To find PR review threads without individual review URLs, use any available
-  GitHub integration or the `gh` CLI for the repository and PR number. Prefer
-  thread-aware review data over flat PR comments, and inspect resolved/outdated
-  state before deciding whether a thread still needs code, a reply, or
-  resolution.
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
 - Always hard-wrap Markdown text to a maximum of 80 characters per line to
   satisfy strict markdownlint rules.
+
+## GitHub PR Reviews
+
+- When resolving GitHub PR feedback, use thread-aware review data instead of
+  relying only on flat PR comments.
+- To find PR review threads without individual review URLs, use any available
+  GitHub integration or the `gh` CLI for the repository and PR number.
+- With the `gh` CLI, use `gh api graphql` to query review thread fields such as
+  `isResolved`, `isOutdated`, and nested comments.
+- Inspect each thread's resolved/outdated state, path, line, and comments before
+  deciding whether it still needs code, a reply, or resolution.
+- Treat unresolved, non-outdated threads as the current actionable set.
+- When posting GitHub issue, PR, or review-thread comments on behalf of a human,
+  agents must attribute the comment to the agent unless the human explicitly
+  reviewed and approved the exact text before posting. Prefer a short prefix
+  such as `Codex:` or `Codex / GPT-5:` so readers can distinguish delegated
+  agent comments from human-authored comments.
+- Reply to addressed comments with an attributed agent prefix.
+- Resolve pull request review threads after addressing and responding to them.
+- Agents should not need individual review URLs once the repository and PR
+  number are known.
 
 ## Husky/hooks
 
@@ -125,11 +139,6 @@
 - Add/adjust tests alongside code changes.
 - For visual changes, update Playwright snapshots when the new visuals are correct.
 - Keep README and docs in sync when changing workflows or commands.
-- When posting GitHub issue, PR, or review-thread comments on behalf of a human,
-  agents must attribute the comment to the agent unless the human explicitly
-  reviewed and approved the exact text before posting. Prefer a short prefix such
-  as `Codex:` or `Codex / GPT-5:` so readers can distinguish delegated agent
-  comments from human-authored comments.
 
 ## Commit messages
 
