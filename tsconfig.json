@@ -8,6 +8,7 @@
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noPropertyAccessFromIndexSignature": true,
+    "strictNullChecks": true,
     "noUncheckedIndexedAccess": true,
 
     /* Emit */
