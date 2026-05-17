@@ -11,7 +11,6 @@ import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
-import { act } from "react";
 
 const mathRandom = Math.random;
 
@@ -30,12 +29,14 @@ const clickIndices = (
   indices: number[],
   user: UserEvent,
 ) =>
-  Promise.all(
-    indices.map((index) => user.click(getAllByRole("checkbox")[index]!)),
+  indices.reduce(
+    (previousClick, index) =>
+      previousClick.then(() => user.click(getAllByRole("checkbox")[index]!)),
+    Promise.resolve(),
   );
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
-  await act(() => user.click(checkbox));
+  await user.click(checkbox);
 };
 
 const expectCalculationsAfterClicks = async (
@@ -45,7 +46,7 @@ const expectCalculationsAfterClicks = async (
   const user = userEvent.setup();
   const { getAllByRole, queryByRole } = renderTrainer();
 
-  await act(() => clickIndices(getAllByRole, cardIndices, user));
+  await clickIndices(getAllByRole, cardIndices, user);
 
   expect(
     Boolean(queryByRole("columnheader", { name: calculationsHeaderName })),
@@ -107,7 +108,7 @@ describe("trainer component", () => {
       const { container } = renderTrainer();
       const user = userEvent.setup();
       const sortInDealOrderInput = getSortInput(container, SortOrder.DealOrder);
-      await act(() => user.click(sortInDealOrderInput));
+      await user.click(sortInDealOrderInput);
       const expectedSortedCards = sortCards(
         handTextToComparableCards(container.querySelector("ul")!.textContent),
         newSortOrder,
@@ -116,7 +117,7 @@ describe("trainer component", () => {
         .join("");
       const newSortInput = getSortInput(container, newSortOrder);
 
-      await act(() => user.click(newSortInput));
+      await user.click(newSortInput);
 
       expect(container.querySelector("ul")!.textContent).toBe(
         expectedSortedCards,
@@ -128,7 +129,7 @@ describe("trainer component", () => {
     [true, "Accept"],
     [false, "Decline"],
   ])(
-    "persists that analytics acceptance is %s when button %d is clicked",
+    "persists that analytics acceptance is %s when button %s is clicked",
     async (expectedConsent, buttonText) => {
       clearAnalyticsConsent();
       const user = userEvent.setup();
@@ -136,7 +137,7 @@ describe("trainer component", () => {
 
       const button = screen.getByRole("button", { name: buttonText });
 
-      await act(() => user.click(button));
+      await user.click(button);
 
       expect(localStorage.getItem(ANALYTICS_CONSENT)).toBe(
         expectedConsent.toString(),
@@ -160,7 +161,7 @@ describe("trainer component", () => {
     const user = userEvent.setup();
     const initialDealtHand = container.querySelector("ul")!.textContent;
 
-    await act(() => user.click(dealButton));
+    await user.click(dealButton);
 
     expect(container.querySelector("ul")!.textContent).not.toBe(
       initialDealtHand,
