@@ -28,19 +28,19 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     multi-ecosystem-group: "playwright-sync"
-    patterns:
-      - "playwright"
-      - "@playwright/test"
+    allow:
+      - dependency-name: "playwright"
+      - dependency-name: "@playwright/test"
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "daily"
     ignore:
-      - dependency-name: "playwright"
+      - dependency-name: "mcr.microsoft.com/playwright"
 
   - package-ecosystem: "docker"
     directory: "/"
     multi-ecosystem-group: "playwright-sync"
-    patterns:
-      - "playwright"
+    allow:
+      - dependency-name: "mcr.microsoft.com/playwright"
