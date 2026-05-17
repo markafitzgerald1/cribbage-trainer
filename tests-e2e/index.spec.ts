@@ -81,5 +81,5 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   await page.getByText("Starter avg").click();
 
   // Assert that the starter-specific cut details expand and are visible
-  await expect(page.locator("tbody").getByText("Points", { exact: true })).toBeVisible();
+  await expect(page.locator('div[class*="cut-result-row"]').first()).toBeVisible();
 });
