@@ -51,3 +51,35 @@ test("pre-cut hand points show after select of two discards", async ({
     page.getByRole("columnheader", { exact: true, name: "Cut" }),
   ).toBeVisible();
 });
+
+test("semantic e2e suited analysis flow", async ({ page }) => {
+  await page.goto("/?hand=KH,QS,10D,9C,6S,5H");
+
+  // Click the 6S and 5H cards to select them for discard
+  const indexOf6S = 4;
+  const indexOf5H = 5;
+  await page.getByRole("checkbox").nth(indexOf6S).click();
+  await page.getByRole("checkbox").nth(indexOf5H).click();
+
+  // Assert that the expected row correctly renders the suited keep labels (K♥ Q♠ 10♦ 9♣) and discard labels (6♠ 5♥)
+  const row = page.locator("tbody tr").filter({ hasText: "K♥Q♠10♦9♣(6♠5♥)" });
+  await expect(row).toBeVisible();
+
+  // Expand that first result row
+  await row.click();
+
+  // Assert that the breakdown headers are visible in the DOM
+  await expect(page.locator("tbody").getByText("15s", { exact: true })).toBeVisible();
+  await expect(page.locator("tbody").getByText("Pairs", { exact: true })).toBeVisible();
+  await expect(page.locator("tbody").getByText("Runs", { exact: true })).toBeVisible();
+  await expect(page.locator("tbody").getByText("Flush", { exact: false })).toBeVisible();
+  await expect(page.locator("tbody").getByText("Nobs", { exact: true })).toBeVisible();
+  await expect(page.locator("tbody").getByText("Total", { exact: true })).toBeVisible();
+  await expect(page.getByText("Starter avg")).toBeVisible();
+
+  // Click the 'Starter avg' header
+  await page.getByText("Starter avg").click();
+
+  // Assert that the starter-specific cut details expand and are visible
+  await expect(page.locator("tbody").getByText("Points", { exact: true })).toBeVisible();
+});
