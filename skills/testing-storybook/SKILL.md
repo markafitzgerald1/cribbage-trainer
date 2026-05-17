@@ -8,7 +8,7 @@ compatibility: Requires @storybook/react-vite and storybook/test.
 
 **Description:**
 When creating interaction tests in Storybook, ensure that you utilize the proper
-testing library tools provided by `@storybook/test` or `storybook/test`.
+testing library tools provided by `storybook/test`.
 
 **Learnings:**
 

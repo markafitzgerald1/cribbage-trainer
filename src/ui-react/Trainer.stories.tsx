@@ -166,15 +166,16 @@ export const SortHandInAscendingOrder = {
 export const WithInitialCards = {
   args: {
     initialCards: [
-      { rank: 0, suit: Suit.SPADES },
-      { rank: 1, suit: Suit.HEARTS },
-      { rank: 2, suit: Suit.DIAMONDS },
-      { rank: 3, suit: Suit.CLUBS },
-      { rank: 4, suit: Suit.SPADES },
-      { rank: 5, suit: Suit.HEARTS },
+      { count: 1, rank: 0, rankLabel: "A", suit: Suit.SPADES },
+      { count: 2, rank: 1, rankLabel: "2", suit: Suit.HEARTS },
+      { count: 3, rank: 2, rankLabel: "3", suit: Suit.DIAMONDS },
+      { count: 4, rank: 3, rankLabel: "4", suit: Suit.CLUBS },
+      { count: 5, rank: 4, rankLabel: "5", suit: Suit.SPADES },
+      { count: 6, rank: 5, rankLabel: "6", suit: Suit.HEARTS },
     ],
   },
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    await expect(canvasElement).toHaveTextContent("Hand");
+    await expect(canvasElement).toHaveTextContent("A");
+    await expect(canvasElement).toHaveTextContent("2");
   },
 };
