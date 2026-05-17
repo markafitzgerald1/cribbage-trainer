@@ -101,7 +101,10 @@
   `isResolved`, `isOutdated`, and nested comments.
 - Inspect each thread's resolved/outdated state, path, line, and comments before
   deciding whether it still needs code, a reply, or resolution.
-- Treat unresolved, non-outdated threads as the current actionable set.
+- GitHub enforces unresolved review threads as merge blockers in this repo.
+  Treat all unresolved threads as blocking until addressed and resolved.
+  Outdated unresolved threads may already be fixed by newer commits, but they
+  still need a reply and explicit resolution.
 - When posting GitHub issue, PR, or review-thread comments on behalf of a human,
   agents must attribute the comment to the agent unless the human explicitly
   reviewed and approved the exact text before posting. Prefer a short prefix
