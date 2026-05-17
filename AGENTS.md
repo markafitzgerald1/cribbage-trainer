@@ -15,6 +15,8 @@
 - Agents must index and activate any skills found in the `skills/` directory
   before performing complex tasks.
 - Specifically, use the `make-it-green` skill for build validation and CI compliance.
+- For Storybook interaction coverage work, use the
+  `skills/testing-storybook` guidance before adding or changing stories.
 
 ## Setup
 
@@ -37,6 +39,8 @@
 - Unit/logic tests: `npm test` (uses Jest/Vitest as configured).
 - Playwright e2e report viewer: `npx --no-install playwright show-report`.
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
+- Storybook coverage: run `npm run storybook:test:coverage`, then update the
+  Vite `test.coverage.thresholds` block to the exact reported totals.
 
 ## Dependency maintenance
 
@@ -83,6 +87,10 @@
   reduce code duplication.
 - Ensure all pull request review comments are resolved in GitHub after addressing
   and responding to them.
+- To find PR review threads without individual review URLs, use the GitHub
+  connector's PR review-thread listing for the repository and PR number. Inspect
+  `is_resolved` and `is_outdated` before deciding whether a thread still needs
+  code, a reply, or resolution.
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.

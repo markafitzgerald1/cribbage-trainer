@@ -5,9 +5,9 @@ import {
   createArgTypes,
   playToggle,
 } from "./stories.common";
+import { Rank, Suit, createCard } from "../game/Card";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
-import { Suit } from "../game/Card";
 import { createGenerator } from "../game/randomNumberGenerator";
 
 const SEED = "1";
@@ -166,16 +166,19 @@ export const SortHandInAscendingOrder = {
 export const WithInitialCards = {
   args: {
     initialCards: [
-      { count: 1, rank: 0, rankLabel: "A", suit: Suit.SPADES },
-      { count: 2, rank: 1, rankLabel: "2", suit: Suit.HEARTS },
-      { count: 3, rank: 2, rankLabel: "3", suit: Suit.DIAMONDS },
-      { count: 4, rank: 3, rankLabel: "4", suit: Suit.CLUBS },
-      { count: 5, rank: 4, rankLabel: "5", suit: Suit.SPADES },
-      { count: 6, rank: 5, rankLabel: "6", suit: Suit.HEARTS },
+      createCard(Rank.ACE, Suit.SPADES),
+      createCard(Rank.TWO, Suit.HEARTS),
+      createCard(Rank.THREE, Suit.DIAMONDS),
+      createCard(Rank.FOUR, Suit.CLUBS),
+      createCard(Rank.FIVE, Suit.SPADES),
+      createCard(Rank.SIX, Suit.HEARTS),
     ],
   },
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    await expect(canvasElement).toHaveTextContent("A");
-    await expect(canvasElement).toHaveTextContent("2");
+    const handCardLabels = within(canvasElement)
+      .getAllByRole("checkbox")
+      .map((checkbox) => checkbox.closest("label")?.textContent);
+
+    await expect(handCardLabels).toEqual(["6♥", "5♠", "4♣", "3♦", "2♥", "A♠"]);
   },
 };

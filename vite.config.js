@@ -23,6 +23,12 @@ export default {
     cacheDir: path.join(dirname, "node_modules/.vitest"),
     coverage: {
       reportsDirectory: path.join(dirname, "coverage"),
+      thresholds: {
+        branches: 86.48,
+        functions: 96.47,
+        lines: 93.79,
+        statements: 93.89,
+      },
     },
     projects: [
       {
