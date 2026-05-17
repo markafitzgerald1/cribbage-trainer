@@ -6,3 +6,4 @@ playwright-report/
 storybook-static/
 test-results/
 tsconfig.tsbuildinfo
+.git/

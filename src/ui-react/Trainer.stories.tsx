@@ -5,6 +5,7 @@ import {
   createArgTypes,
   playToggle,
 } from "./stories.common";
+import { Rank, Suit, createCard } from "../game/Card";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { createGenerator } from "../game/randomNumberGenerator";
@@ -160,4 +161,24 @@ export const SortHandInDealOrder = {
 
 export const SortHandInAscendingOrder = {
   play: createPlay(SortOrder.Ascending),
+};
+
+export const WithInitialCards = {
+  args: {
+    initialCards: [
+      createCard(Rank.ACE, Suit.SPADES),
+      createCard(Rank.TWO, Suit.HEARTS),
+      createCard(Rank.THREE, Suit.DIAMONDS),
+      createCard(Rank.FOUR, Suit.CLUBS),
+      createCard(Rank.FIVE, Suit.SPADES),
+      createCard(Rank.SIX, Suit.HEARTS),
+    ],
+  },
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const handCardLabels = within(canvasElement)
+      .getAllByRole("checkbox")
+      .map((checkbox) => checkbox.closest("label")?.textContent);
+
+    await expect(handCardLabels).toEqual(["6♥", "5♠", "4♣", "3♦", "2♥", "A♠"]);
+  },
 };
