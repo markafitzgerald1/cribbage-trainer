@@ -14,3 +14,45 @@
   flex-flow: row nowrap;
   width: 100%;
 }
+
+.role-label {
+  align-items: center;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--text-font-family);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  padding: 0 0.5em;
+  white-space: nowrap;
+}
+
+.role-name {
+  display: block;
+}
+
+.role-context {
+  display: block;
+  opacity: 0.82;
+}
+
+@media (orientation: portrait) {
+  .role-name {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.78);
+  }
+
+  .role-context {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.48);
+  }
+}
+
+@media (orientation: landscape) {
+  .role-name {
+    font-size: calc(var(--medium-text-font-size-landscape) * 0.82);
+  }
+
+  .role-context {
+    font-size: calc(var(--medium-text-font-size-landscape) * 0.54);
+  }
+}

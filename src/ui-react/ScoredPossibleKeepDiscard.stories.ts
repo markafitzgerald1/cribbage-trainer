@@ -46,6 +46,15 @@ const toComparableCard = (card: Card, index: number): ComparableCard => ({
   suit: card.suit,
 });
 
+const cribStarterPoints = [
+  {
+    expectedCribPoints: 1.25,
+    remainingStarterCount: 4,
+    signedExpectedCribPoints: 1.25,
+    starterRank: "K",
+  },
+] as const;
+
 interface CreateStoryOptions {
   readonly discard: readonly Card[];
   readonly isHighlighted?: boolean;
@@ -60,17 +69,20 @@ const createStory = ({
   isHighlighted = false,
 }: CreateStoryOptions): Story => {
   const cutAdded = expectedCutAddedPoints(keep, discard);
+  const handExpectedPoints = expectedHandPoints(keep, discard).total;
   const points = handPoints(keep);
   return {
     args: {
       ...toCutBreakdown(cutAdded),
+      cribStarterPoints,
       discard: discard.map(toComparableCard),
-      expectedHandPoints: expectedHandPoints(keep, discard).total,
-      handPoints: points.total,
+      expectedHandPoints: handExpectedPoints,
+      expectedNetPoints: handExpectedPoints + 1.25,
       handPointsBreakdown: points,
       isHighlighted,
       keep: keep.map(toComparableCard),
       rowIndex: 0,
+      signedExpectedCribPoints: 1.25,
       sortOrder,
     },
   };

@@ -27,10 +27,18 @@
   padding-right: 0.25em;
 }
 
+.score-cell,
+.net-score-cell {
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+
 .hand-discard-cell {
   display: inline-flex;
   align-items: baseline;
   column-gap: 0.12em;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .discard-group {
@@ -38,11 +46,12 @@
   align-items: baseline;
 }
 
-.cut-points-cell {
-  display: inline-flex;
+.net-points-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  justify-content: flex-end;
-  column-gap: 0.12em;
+  column-gap: 0.06em;
+  width: 100%;
 }
 
 .highlighted {
@@ -83,10 +92,10 @@
   }
 
   .scored-possible-keep-discard td:first-child {
-    font-size: 0.84em;
+    font-size: 0.78em;
   }
 
   .scored-possible-keep-discard td:nth-child(n + 2) {
-    font-size: 0.86em;
+    font-size: 0.66em;
   }
 }

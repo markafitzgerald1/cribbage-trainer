@@ -6,14 +6,17 @@ import type { ComparableCard } from "../ui/sortCards";
 import type { HandPoints } from "../game/handPoints";
 import { PossibleHand } from "./PossibleHand";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
+import type { SignedExpectedCribStarterPoints } from "../analysis/analysis";
 import { SortOrder } from "../ui/SortOrder";
 
 interface ScoredPossibleKeepDiscardProps extends BreakdownProps {
   readonly keep: readonly ComparableCard[];
   readonly discard: readonly ComparableCard[];
-  readonly handPoints: number;
+  readonly cribStarterPoints: readonly SignedExpectedCribStarterPoints[];
   readonly handPointsBreakdown: HandPoints;
   readonly expectedHandPoints: number;
+  readonly expectedNetPoints: number;
+  readonly signedExpectedCribPoints: number;
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
   readonly rowIndex: number;
@@ -22,12 +25,20 @@ interface ScoredPossibleKeepDiscardProps extends BreakdownProps {
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const ROW_STRIPE_DIVISOR = 2;
 
+const formatSignedExpectedPoints = (points: number): string => {
+  const formatted = points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
+
+  return points > 0 ? `+${formatted}` : formatted;
+};
+
 export function ScoredPossibleKeepDiscard({
   keep,
   discard,
-  handPoints,
   handPointsBreakdown,
   expectedHandPoints,
+  expectedNetPoints,
+  signedExpectedCribPoints,
+  cribStarterPoints,
   avgCutAdded15s,
   avgCutAddedPairs,
   avgCutAddedRuns,
@@ -49,10 +60,15 @@ export function ScoredPossibleKeepDiscard({
     setIsExpanded((expanded) => !expanded);
   }, []);
 
-  const diff = (expectedHandPoints - handPoints).toFixed(
+  const handExpectedTotal = expectedHandPoints.toFixed(
     EXPECTED_POINTS_FRACTION_DIGITS,
   );
-  const total = expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
+  const cribExpectedTotal = formatSignedExpectedPoints(
+    signedExpectedCribPoints,
+  );
+  const netExpectedTotal = expectedNetPoints.toFixed(
+    EXPECTED_POINTS_FRACTION_DIGITS,
+  );
   const rowStripeClass =
     rowIndex % ROW_STRIPE_DIVISOR === 0
       ? parentClasses.oddRow
@@ -83,10 +99,11 @@ export function ScoredPossibleKeepDiscard({
         onClick={handleRowClick}
       >
         <td>{renderHandDiscardCell()}</td>
-        <td>{handPoints}</td>
-        <td>
-          <span className={classes.cutPointsCell}>
-            <span>{diff}</span>
+        <td className={classes.scoreCell}>{handExpectedTotal}</td>
+        <td className={classes.scoreCell}>{cribExpectedTotal}</td>
+        <td className={classes.netScoreCell}>
+          <span className={classes.netPointsCell}>
+            <span>{netExpectedTotal}</span>
             <span
               className={`${classes.expandIndicator} ${
                 isExpanded ? classes.expandIndicatorExpanded : ""
@@ -96,7 +113,6 @@ export function ScoredPossibleKeepDiscard({
             </span>
           </span>
         </td>
-        <td>{total}</td>
       </tr>
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow
@@ -105,6 +121,7 @@ export function ScoredPossibleKeepDiscard({
           avgCutAddedNobs={avgCutAddedNobs}
           avgCutAddedPairs={avgCutAddedPairs}
           avgCutAddedRuns={avgCutAddedRuns}
+          cribStarterPoints={cribStarterPoints}
           cutCountsRemaining={cutCountsRemaining}
           discard={discard}
           fifteensContributions={fifteensContributions}
@@ -114,6 +131,7 @@ export function ScoredPossibleKeepDiscard({
           nobsContributions={nobsContributions}
           pairsContributions={pairsContributions}
           runsContributions={runsContributions}
+          signedExpectedCribPoints={signedExpectedCribPoints}
           sortOrder={sortOrder}
         />
       ) : null}

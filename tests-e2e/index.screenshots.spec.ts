@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
-const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H";
+const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H&seed=e2e";
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
@@ -52,7 +52,7 @@ const testDoubleExpandedScreenshot = () =>
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
-    await page.locator("text=Starter avg").click();
+    await page.getByRole("button", { name: "Hand starter avg" }).click();
 
     await expect(page).toHaveScreenshot();
   });

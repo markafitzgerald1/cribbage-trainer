@@ -13,6 +13,7 @@
 
     /* Emit */
     "noEmit": true,
+    "resolveJsonModule": true,
     "sourceMap": true,
 
     /* Interop Constraints */

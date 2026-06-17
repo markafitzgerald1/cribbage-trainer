@@ -1,37 +1,81 @@
 import * as classes from "./ScoredPossibleKeepDiscards.module.css";
+import { type MouseEvent, useCallback, useMemo, useState } from "react";
+import {
+  ScoredKeepDiscardSortKey,
+  compareByExpectedScoreThenRankDescending,
+} from "../analysis/compareByExpectedScoreDescending";
+import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
-import { allScoredKeepDiscardsByExpectedScoreDescending } from "../analysis/analysis";
-import { handPoints } from "../game/handPoints";
+import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
 
 export interface ScoredPossibleKeepDiscardsProps {
+  readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
   readonly sortOrder: SortOrder;
 }
 
-const scoringHeaders = [
+const getScoringHeaders = (cribRole: CribRole) =>
+  [
+    {
+      key: ScoredKeepDiscardSortKey.ExpectedHandPoints,
+      label: "E(h)",
+      title: "Sort by expected hand points",
+    },
+    {
+      key: ScoredKeepDiscardSortKey.ExpectedCribPoints,
+      label: "E(c)",
+      title: "Sort by signed expected crib points",
+    },
+    {
+      key: ScoredKeepDiscardSortKey.ExpectedNetPoints,
+      label: cribRole === CribRole.Dealer ? "E(h+c)" : "E(h-c)",
+      title: "Sort by expected hand points plus signed crib points",
+    },
+  ] as const;
+
+const scoreColumns = [
   {
-    key: "hand",
-    label: "Hand",
-    title: "Points in hand before the cut",
+    className: classes.scoreColumn,
+    key: ScoredKeepDiscardSortKey.ExpectedHandPoints,
   },
   {
-    key: "cut",
-    label: "Cut",
-    title: "Expected additional points from the cut",
+    className: classes.scoreColumn,
+    key: ScoredKeepDiscardSortKey.ExpectedCribPoints,
   },
   {
-    key: "total",
-    label: "Total",
-    title: "Total expected hand points",
+    className: classes.netScoreColumn,
+    key: ScoredKeepDiscardSortKey.ExpectedNetPoints,
   },
 ] as const;
 
 export function ScoredPossibleKeepDiscards({
+  cribRole,
   dealtCards,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
+  const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
+    ScoredKeepDiscardSortKey.ExpectedNetPoints,
+  );
+  const scoredKeepDiscardsByNetScore = useMemo(
+    () =>
+      allScoredKeepDiscardsByExpectedNetScoreDescending(dealtCards, cribRole),
+    [cribRole, dealtCards],
+  );
+  const scoredKeepDiscards = useMemo(
+    () =>
+      [...scoredKeepDiscardsByNetScore].sort(
+        compareByExpectedScoreThenRankDescending(scoreSortKey),
+      ),
+    [scoredKeepDiscardsByNetScore, scoreSortKey],
+  );
+  const handleScoreSortClick = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      setScoreSortKey(event.currentTarget.value as ScoredKeepDiscardSortKey);
+    },
+    [],
+  );
   const renderHandHeader = () => (
     <th aria-label="Hand composition">
       <span className={`${classes.headerStack} ${classes.headerStackStart}`}>
@@ -41,13 +85,19 @@ export function ScoredPossibleKeepDiscards({
   );
 
   const renderScoringTableHeader = (
-    header: (typeof scoringHeaders)[number],
+    header: ReturnType<typeof getScoringHeaders>[number],
   ) => (
     <th
+      aria-sort={scoreSortKey === header.key ? "descending" : "none"}
       key={header.key}
       title={header.title}
     >
-      <span className={classes.headerStack}>
+      <button
+        className={classes.headerButton}
+        onClick={handleScoreSortClick}
+        type="button"
+        value={header.key}
+      >
         <span className={classes.headerMain}>{header.label}</span>
         <span
           aria-hidden="true"
@@ -55,7 +105,7 @@ export function ScoredPossibleKeepDiscards({
         >
           pts
         </span>
-      </span>
+      </button>
     </th>
   );
 
@@ -63,41 +113,41 @@ export function ScoredPossibleKeepDiscards({
     <thead>
       <tr>
         {renderHandHeader()}
-        {scoringHeaders.map(renderScoringTableHeader)}
+        {getScoringHeaders(cribRole).map(renderScoringTableHeader)}
       </tr>
     </thead>
   );
 
   const renderScoringTableBody = () => (
     <tbody>
-      {allScoredKeepDiscardsByExpectedScoreDescending(dealtCards).map(
-        (scoredKeepDiscard, index) => (
-          <ScoredPossibleKeepDiscard
-            avgCutAdded15s={scoredKeepDiscard.avgCutAdded15s}
-            avgCutAddedFlushes={scoredKeepDiscard.avgCutAddedFlushes}
-            avgCutAddedNobs={scoredKeepDiscard.avgCutAddedNobs}
-            avgCutAddedPairs={scoredKeepDiscard.avgCutAddedPairs}
-            avgCutAddedRuns={scoredKeepDiscard.avgCutAddedRuns}
-            cutCountsRemaining={scoredKeepDiscard.cutCountsRemaining}
-            discard={scoredKeepDiscard.discard}
-            expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
-            fifteensContributions={scoredKeepDiscard.fifteensContributions}
-            flushesContributions={scoredKeepDiscard.flushesContributions}
-            handPoints={scoredKeepDiscard.handPoints}
-            handPointsBreakdown={handPoints(scoredKeepDiscard.keep)}
-            isHighlighted={scoredKeepDiscard.keep.every((card) => card.kept)}
-            keep={scoredKeepDiscard.keep}
-            key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-              .map((dealtCard) => dealtCard.dealOrder)
-              .join("")}
-            nobsContributions={scoredKeepDiscard.nobsContributions}
-            pairsContributions={scoredKeepDiscard.pairsContributions}
-            rowIndex={index}
-            runsContributions={scoredKeepDiscard.runsContributions}
-            sortOrder={sortOrder}
-          />
-        ),
-      )}
+      {scoredKeepDiscards.map((scoredKeepDiscard, index) => (
+        <ScoredPossibleKeepDiscard
+          avgCutAdded15s={scoredKeepDiscard.avgCutAdded15s}
+          avgCutAddedFlushes={scoredKeepDiscard.avgCutAddedFlushes}
+          avgCutAddedNobs={scoredKeepDiscard.avgCutAddedNobs}
+          avgCutAddedPairs={scoredKeepDiscard.avgCutAddedPairs}
+          avgCutAddedRuns={scoredKeepDiscard.avgCutAddedRuns}
+          cribStarterPoints={scoredKeepDiscard.cribStarterPoints}
+          cutCountsRemaining={scoredKeepDiscard.cutCountsRemaining}
+          discard={scoredKeepDiscard.discard}
+          expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
+          expectedNetPoints={scoredKeepDiscard.expectedNetPoints}
+          fifteensContributions={scoredKeepDiscard.fifteensContributions}
+          flushesContributions={scoredKeepDiscard.flushesContributions}
+          handPointsBreakdown={scoredKeepDiscard.handPointsBreakdown}
+          isHighlighted={scoredKeepDiscard.keep.every((card) => card.kept)}
+          keep={scoredKeepDiscard.keep}
+          key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
+            .map((dealtCard) => dealtCard.dealOrder)
+            .join("")}
+          nobsContributions={scoredKeepDiscard.nobsContributions}
+          pairsContributions={scoredKeepDiscard.pairsContributions}
+          rowIndex={index}
+          runsContributions={scoredKeepDiscard.runsContributions}
+          signedExpectedCribPoints={scoredKeepDiscard.signedExpectedCribPoints}
+          sortOrder={sortOrder}
+        />
+      ))}
     </tbody>
   );
 
@@ -105,6 +155,15 @@ export function ScoredPossibleKeepDiscards({
     <figure className={classes.scoredPossibleKeepDiscards}>
       <div className={classes.tableContainer}>
         <table>
+          <colgroup>
+            <col className={classes.handColumn} />
+            {scoreColumns.map((column) => (
+              <col
+                className={column.className}
+                key={column.key}
+              />
+            ))}
+          </colgroup>
           {renderScoringTableHead()}
           {renderScoringTableBody()}
         </table>

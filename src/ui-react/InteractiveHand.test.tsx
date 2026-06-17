@@ -1,6 +1,7 @@
 import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
+import { CribRole } from "../game/expectedCribPoints";
 import { InteractiveHand } from "./InteractiveHand";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
@@ -19,6 +20,7 @@ describe("sortable hand input component", () => {
     return {
       component: render(
         <InteractiveHand
+          cribRole={CribRole.Dealer}
           dealtCards={handCards}
           onCardChange={onCardChange}
           onDeal={onDeal}

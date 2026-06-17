@@ -34,6 +34,21 @@ export default meta;
 const getButton = (canvasElement: HTMLElement, buttonText: string) =>
   within(canvasElement).getByRole("button", { name: buttonText });
 
+const expectColumnHeaders = async (
+  canvasElement: HTMLElement,
+  columnHeaders: readonly string[],
+) => {
+  await Promise.all(
+    columnHeaders.map(async (columnHeader) =>
+      expect(
+        within(canvasElement).getByRole("columnheader", {
+          name: columnHeader,
+        }),
+      ).toBeVisible(),
+    ),
+  );
+};
+
 export const AnalyticsAccepted = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const acceptButton = getButton(canvasElement, "Accept");
@@ -108,12 +123,7 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expect(
-      within(canvasElement).getByRole("columnheader", { name: "Hand" }),
-    ).toBeVisible();
-    await expect(
-      within(canvasElement).getByRole("columnheader", { name: "Cut" }),
-    ).toBeVisible();
+    await expectColumnHeaders(canvasElement, ["E(h)", "E(c)", "E(h+c)"]);
   },
 };
 

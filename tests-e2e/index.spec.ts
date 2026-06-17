@@ -37,7 +37,7 @@ test("a .css file is linked", async ({ page }) => {
   expect(await page.$('link[rel="stylesheet"][href$=".css"]')).not.toBeNull();
 });
 
-const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H";
+const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H&seed=e2e";
 const selectedDiscardRowText = "K♥Q♠10♦9♣(6♠5♥)";
 const exactTextMatch = { exact: true };
 const expectedBreakdownLabels = [
@@ -67,11 +67,10 @@ test("pre-cut hand points show after select of two discards", async ({
 }) => {
   await renderThenSelectTwoDiscards(page, constantHandQuery);
 
+  await expect(page.getByRole("button", { name: "E(h)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "E(c)" })).toBeVisible();
   await expect(
-    page.getByRole("columnheader", { exact: true, name: "Hand" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("columnheader", { exact: true, name: "Cut" }),
+    page.getByRole("button", { name: /E\(h[+-]c\)/u }),
   ).toBeVisible();
 });
 
@@ -89,9 +88,9 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   await row.click();
 
   await expectBreakdownLabelsVisible(page.locator("tbody"));
-  await expect(page.getByText("Starter avg")).toBeVisible();
+  await expect(page.getByText("Hand starter avg")).toBeVisible();
 
-  await page.getByText("Starter avg").click();
+  await page.getByText("Hand starter avg").click();
 
   await expect(
     page.locator('div[class*="cut-result-row"]').first(),

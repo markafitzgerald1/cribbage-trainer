@@ -4,6 +4,7 @@ import { CARDS_PER_KEPT_HAND } from "../game/facts";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
+import { createElement } from "react";
 import { dealHand } from "../game/dealHand";
 import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { expectedHandPoints } from "../game/expectedHandPoints";
@@ -12,6 +13,15 @@ import { handToSortedString } from "./handToSortedString.test.common";
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const EXPECTED_CELL_COUNT = 4;
+const EXPECTED_CRIB_POINTS = 1.25;
+const CRIB_STARTER_POINTS = [
+  {
+    expectedCribPoints: EXPECTED_CRIB_POINTS,
+    remainingStarterCount: 4,
+    signedExpectedCribPoints: EXPECTED_CRIB_POINTS,
+    starterRank: "A",
+  },
+] as const;
 
 function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const sortOrder = SortOrder[sortOrderName];
@@ -21,6 +31,7 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const points = handPoints(keep).total;
   const pointsBreakdown = handPoints(keep);
   const expectedPoints = expectedHandPoints(keep, discard).total;
+  const expectedNetPoints = expectedPoints + EXPECTED_CRIB_POINTS;
   const cutAdded = expectedCutAddedPoints(keep, discard);
   const keepString = handToSortedString(keep, sortOrder);
   const discardString = handToSortedString(discard, sortOrder);
@@ -29,6 +40,7 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
     cutAdded,
     discard,
     discardString,
+    expectedNetPoints,
     expectedPoints,
     keep,
     keepString,
@@ -41,32 +53,35 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 function renderComponentWithScenario(
   scenario: ReturnType<typeof setupScenario>,
   isHighlighted = false,
+  signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
 ) {
+  const props = {
+    avgCutAdded15s: scenario.cutAdded.avg15s,
+    avgCutAddedFlushes: scenario.cutAdded.avgFlushes,
+    avgCutAddedNobs: scenario.cutAdded.avgNobs,
+    avgCutAddedPairs: scenario.cutAdded.avgPairs,
+    avgCutAddedRuns: scenario.cutAdded.avgRuns,
+    cribStarterPoints: CRIB_STARTER_POINTS,
+    cutCountsRemaining: scenario.cutAdded.cutCountsRemaining,
+    discard: scenario.discard,
+    expectedHandPoints: scenario.expectedPoints,
+    expectedNetPoints: scenario.expectedNetPoints,
+    fifteensContributions: scenario.cutAdded.fifteensContributions,
+    flushesContributions: scenario.cutAdded.flushesContributions,
+    handPointsBreakdown: scenario.pointsBreakdown,
+    isHighlighted,
+    keep: scenario.keep,
+    nobsContributions: scenario.cutAdded.nobsContributions,
+    pairsContributions: scenario.cutAdded.pairsContributions,
+    rowIndex: 0,
+    runsContributions: scenario.cutAdded.runsContributions,
+    signedExpectedCribPoints,
+    sortOrder: scenario.sortOrder,
+  };
+
   return render(
     <table>
-      <tbody>
-        <ScoredPossibleKeepDiscard
-          avgCutAdded15s={scenario.cutAdded.avg15s}
-          avgCutAddedFlushes={scenario.cutAdded.avgFlushes}
-          avgCutAddedNobs={scenario.cutAdded.avgNobs}
-          avgCutAddedPairs={scenario.cutAdded.avgPairs}
-          avgCutAddedRuns={scenario.cutAdded.avgRuns}
-          cutCountsRemaining={scenario.cutAdded.cutCountsRemaining}
-          discard={scenario.discard}
-          expectedHandPoints={scenario.expectedPoints}
-          fifteensContributions={scenario.cutAdded.fifteensContributions}
-          flushesContributions={scenario.cutAdded.flushesContributions}
-          handPoints={scenario.points}
-          handPointsBreakdown={scenario.pointsBreakdown}
-          isHighlighted={isHighlighted}
-          keep={scenario.keep}
-          nobsContributions={scenario.cutAdded.nobsContributions}
-          pairsContributions={scenario.cutAdded.pairsContributions}
-          rowIndex={0}
-          runsContributions={scenario.cutAdded.runsContributions}
-          sortOrder={scenario.sortOrder}
-        />
-      </tbody>
+      <tbody>{createElement(ScoredPossibleKeepDiscard, props)}</tbody>
     </table>,
   );
 }
@@ -77,6 +92,14 @@ const highlightedPresent = (isHighlighted: boolean) => {
   const rowClass = container.querySelector("tr")?.className ?? "";
 
   return rowClass.includes("highlighted");
+};
+
+const firstRenderedRow = () => screen.getAllByRole("row")[0] as HTMLElement;
+
+const hasBreakdownHeader = () => screen.queryByText(/^15s$/u) !== null;
+
+const toggleMainRow = () => {
+  fireEvent.click(firstRenderedRow());
 };
 
 describe("calculation component", () => {
@@ -99,11 +122,11 @@ describe("calculation component", () => {
             "u",
           ),
         ),
-        scenario.points.toString(),
-        `${(scenario.expectedPoints - scenario.points).toFixed(
+        scenario.expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
+        `+${EXPECTED_CRIB_POINTS.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
+        `${scenario.expectedNetPoints.toFixed(
           EXPECTED_POINTS_FRACTION_DIGITS,
         )}▸`,
-        scenario.expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
       ]);
     },
   );
@@ -113,41 +136,44 @@ describe("calculation component", () => {
     expect(highlightedPresent(false)).toBe(false);
   });
 
+  it("renders negative signed crib points without a plus sign", () => {
+    const scenario = setupScenario("Ascending");
+
+    renderComponentWithScenario(scenario, false, -EXPECTED_CRIB_POINTS);
+
+    expect(
+      screen.getByText(`-${EXPECTED_CRIB_POINTS.toFixed(2)}`),
+    ).toBeTruthy();
+  });
+
   it("should expand and collapse when clicked", () => {
     const scenario = setupScenario("Ascending");
     renderComponentWithScenario(scenario);
-    const getRow = () => screen.getAllByRole("row")[0] as HTMLElement;
-    const isExpanded = () => screen.queryByText(/^15s$/u) !== null;
 
-    expect(isExpanded()).toBe(false);
+    expect(hasBreakdownHeader()).toBe(false);
 
-    fireEvent.click(getRow());
+    toggleMainRow();
 
-    expect(isExpanded()).toBe(true);
+    expect(hasBreakdownHeader()).toBe(true);
 
-    fireEvent.click(getRow());
+    toggleMainRow();
 
-    expect(isExpanded()).toBe(false);
+    expect(hasBreakdownHeader()).toBe(false);
   });
 
-  it("should drill into starter details when clicking the expanded row", () => {
+  it("should drill into starter details when clicking the hand starter row", () => {
     const scenario = setupScenario("Ascending");
     renderComponentWithScenario(scenario);
-    const getMainRow = () => screen.getAllByRole("row")[0] as HTMLElement;
-    const getExpandedRow = () => screen.getAllByRole("row")[1] as HTMLElement;
-    const isExpanded = () => screen.queryByText(/^15s$/u) !== null;
 
-    fireEvent.click(getMainRow());
+    toggleMainRow();
 
-    expect(isExpanded()).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /Hand starter/u }));
 
-    fireEvent.click(getExpandedRow());
+    expect(hasBreakdownHeader()).toBe(true);
+    expect(screen.getAllByText(/Hand starter/u)).toHaveLength(1);
 
-    expect(isExpanded()).toBe(true);
-    expect(screen.getAllByText(/Starter/u)).toHaveLength(1);
+    toggleMainRow();
 
-    fireEvent.click(getMainRow());
-
-    expect(isExpanded()).toBe(false);
+    expect(hasBreakdownHeader()).toBe(false);
   });
 });

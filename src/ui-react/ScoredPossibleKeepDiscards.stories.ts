@@ -10,6 +10,7 @@ import {
 } from "./stories.common";
 /* jscpd:ignore-end */
 import { CARDS } from "../game/Card";
+import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 
@@ -28,6 +29,7 @@ type Story = StoryObj<typeof meta>;
 
 const createStory = (dealtCards: DealtCard[], sortOrder: SortOrder): Story => ({
   args: {
+    cribRole: CribRole.Dealer,
     dealtCards,
     sortOrder,
   },

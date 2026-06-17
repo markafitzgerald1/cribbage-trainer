@@ -13,6 +13,20 @@ import { getAllByCardText } from "./test-utils";
 const MUTED_SELECTOR = '[class*="muted"]';
 const SUMMARY_SELECTOR = '[class*="breakdownSummary"]';
 const CUT_RESULTS_SELECTOR = '[class*="cutResultsList"]';
+const CRIB_STARTER_POINTS = [
+  {
+    expectedCribPoints: 4.25,
+    remainingStarterCount: 0,
+    signedExpectedCribPoints: 4.25,
+    starterRank: "A",
+  },
+  {
+    expectedCribPoints: 5.5,
+    remainingStarterCount: 4,
+    signedExpectedCribPoints: -5.5,
+    starterRank: "K",
+  },
+] as const;
 
 function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
   const summary = container.querySelector(SUMMARY_SELECTOR)!;
@@ -24,7 +38,7 @@ function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
 }
 
 function expandStarterDetails() {
-  fireEvent.click(screen.getByText(/Starter/u));
+  fireEvent.click(screen.getByRole("button", { name: /starter/u }));
 }
 
 function expectCardLabelRendered(label: string): void {
@@ -77,6 +91,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
             avgCutAddedNobs={aNobs}
             avgCutAddedPairs={aPairs}
             avgCutAddedRuns={aRuns}
+            cribStarterPoints={
+              overrides.cribStarterPoints ?? CRIB_STARTER_POINTS
+            }
             cutCountsRemaining={counts}
             discard={discard}
             fifteensContributions={fifteens}
@@ -86,6 +103,7 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
             nobsContributions={nobs}
             pairsContributions={pairs}
             runsContributions={runs}
+            signedExpectedCribPoints={overrides.signedExpectedCribPoints ?? 1.5}
             sortOrder={order}
           />
         </tbody>
@@ -229,9 +247,24 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     renderRow({ fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS });
 
     expect(screen.queryByText("5")).toBeNull();
+    expect(screen.getByText("Crib avg")).toBeTruthy();
 
     expandStarterDetails();
 
     expectCardLabelRendered("5");
+  });
+
+  it("renders crib averages as unsigned local crib values", () => {
+    renderRow({
+      signedExpectedCribPoints: -1.5,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Crib avg/u }));
+
+    expect(screen.queryByText("A")).toBeNull();
+    expect(screen.getByText("K")).toBeTruthy();
+    expect(screen.getByText("1.50")).toBeTruthy();
+    expect(screen.getByText("5.50")).toBeTruthy();
+    expect(screen.queryByText("-5.50")).toBeNull();
   });
 });

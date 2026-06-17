@@ -9,20 +9,38 @@ import { CARD_LABELS, Rank, type Suit, parseHand } from "../game/Card";
 import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
+import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 
 const mathRandom = Math.random;
+const CARD_DRAW_RANDOM_VALUE = 0;
+const DEALER_RANDOM_VALUE = 0.49;
+const PONE_RANDOM_VALUE = 0.5;
 
-const renderTrainer = () =>
+const renderTrainerWithGenerator = (generateRandomNumber: () => number) =>
   render(
     <Trainer
-      generateRandomNumber={mathRandom}
+      generateRandomNumber={generateRandomNumber}
       loadGoogleAnalytics={jest.fn()}
     />,
   );
 
-const calculationsHeaderName = "Hand";
+const renderTrainer = () => renderTrainerWithGenerator(mathRandom);
+
+const createSequenceGenerator = (values: number[]) =>
+  jest.fn(() => values.shift() ?? 0);
+
+const repeatedRandomValues = (value: number): number[] =>
+  Array.from({ length: CARDS_PER_DEALT_HAND }, () => value);
+
+const createRoleRandomValues = (roleValues: readonly number[]) =>
+  roleValues.flatMap((roleValue) => [
+    ...repeatedRandomValues(CARD_DRAW_RANDOM_VALUE),
+    roleValue,
+  ]);
+
+const calculationsHeaderName = "E(h)";
 
 const clickIndices = (
   getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],
@@ -80,6 +98,10 @@ const ANALYTICS_CONSENT = "analyticsConsent";
 
 const clearAnalyticsConsent = () => localStorage.removeItem(ANALYTICS_CONSENT);
 
+const isRoleLabelVisible = (roleName: string, roleContext: string) =>
+  Boolean(screen.queryByText(roleName)) &&
+  Boolean(screen.queryByText(roleContext));
+
 describe("trainer component", () => {
   it("initially contains a sort in descending order radio input", () => {
     expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();
@@ -87,6 +109,30 @@ describe("trainer component", () => {
 
   it("contains a dealt hand", () => {
     expect(renderTrainer().queryByText("Hand")).toBeTruthy();
+  });
+
+  it("shows the randomized dealer role", () => {
+    renderTrainerWithGenerator(
+      createSequenceGenerator(createRoleRandomValues([DEALER_RANDOM_VALUE])),
+    );
+
+    expect(isRoleLabelVisible("Dealer", "your crib")).toBe(true);
+  });
+
+  it("randomizes the role on a new deal", async () => {
+    const user = userEvent.setup();
+
+    renderTrainerWithGenerator(
+      createSequenceGenerator(
+        createRoleRandomValues([DEALER_RANDOM_VALUE, PONE_RANDOM_VALUE]),
+      ),
+    );
+
+    expect(isRoleLabelVisible("Dealer", "your crib")).toBe(true);
+
+    await user.click(screen.getByRole("button", { name: "Deal" }));
+
+    expect(isRoleLabelVisible("Pone", "opponent crib")).toBe(true);
   });
 
   it("contains hand points once two cards have been selected", async () => {
