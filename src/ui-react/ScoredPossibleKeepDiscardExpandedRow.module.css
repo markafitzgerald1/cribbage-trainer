@@ -60,9 +60,6 @@
   font-weight: 600;
   font-size: 0.9em;
   color: rgb(255 255 255 / 80%);
-  position: sticky;
-  top: 2.25em;
-  z-index: 2;
 }
 
 .cuts-header {
