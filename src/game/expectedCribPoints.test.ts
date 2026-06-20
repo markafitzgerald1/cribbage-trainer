@@ -24,6 +24,8 @@ const KING_PONE_VALUE = 26;
 const QUEEN_DEALER_VALUE = 12;
 const WEIGHTED_DEALER_TOTAL = 355;
 const SIX_KNOWN_STARTERS = 46;
+const SUITED_RELATION_WEIGHTED_FIVE = (20 + 10 * 2) / 3;
+const SUITED_RELATION_WEIGHTED_TOTAL = 357;
 const DEALER_RANDOM_VALUE = 0.49;
 const PONE_RANDOM_VALUE = 0.5;
 const KNOWN_CARDS = parseHand("AH,AD,AS,AC,2H,3H");
@@ -297,6 +299,23 @@ describe("expectedCribPoints", () => {
         suits: [Suit.HEARTS, Suit.SPADES],
       }),
     ]);
+  });
+
+  it("weights suited starter rank EV from available relation suits", () => {
+    const starterPoints = cribStarterFivePoints(ACE_TWO_SUITED_DISCARD);
+
+    expect(starterPoints?.expectedCribPoints).toBeCloseTo(
+      SUITED_RELATION_WEIGHTED_FIVE,
+    );
+    expect(
+      expectedCribPoints(
+        expectedCribOptions({
+          discard: ACE_TWO_SUITED_DISCARD,
+          knownCards: SUITED_RELATION_KNOWN_CARDS,
+          table: v2Table,
+        }),
+      ),
+    ).toBeCloseTo(SUITED_RELATION_WEIGHTED_TOTAL / SIX_KNOWN_STARTERS);
   });
 
   it("suppresses starter relation rows for same-rank pairs", () => {

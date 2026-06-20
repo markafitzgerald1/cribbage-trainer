@@ -339,6 +339,34 @@ const getStarterSuitRelationPoints = ({
   return relationPoints;
 };
 
+const getRelationWeightedExpectedCribPoints = ({
+  expectedCribPoints,
+  remainingStarterCount,
+  starterSuitRelationPoints,
+}: ExpectedCribStarterPoints): number => {
+  const relationWeight = starterSuitRelationPoints.reduce(
+    (sum, relationPoints) => sum + relationPoints.remainingStarterCount,
+    0,
+  );
+
+  if (
+    starterSuitRelationPoints.length === 0 ||
+    relationWeight !== remainingStarterCount
+  ) {
+    return expectedCribPoints;
+  }
+
+  return (
+    starterSuitRelationPoints.reduce(
+      (sum, relationPoints) =>
+        sum +
+        relationPoints.expectedCribPoints *
+          relationPoints.remainingStarterCount,
+      0,
+    ) / relationWeight
+  );
+};
+
 export const expectedCribPointsByStarterRank = ({
   discard,
   knownCards,
@@ -357,18 +385,24 @@ export const expectedCribPointsByStarterRank = ({
     const knownRankCount = counts.at(rank) as number;
     const bucket = getBucket(buckets, starterRank);
     const remainingSuits = getRemainingStarterSuits(knownCards, starterRank);
-
-    return {
+    const starterSuitRelationPoints = getStarterSuitRelationPoints({
+      bucket,
+      discardSuit,
+      remainingSuits,
+      starterRank,
+    });
+    const starterPoints = {
       expectedCribPoints: getBucketMu(bucket),
       pointBreakdown: getPointBreakdown(bucket),
       remainingStarterCount: SUITS_PER_DECK - knownRankCount,
       starterRank,
-      starterSuitRelationPoints: getStarterSuitRelationPoints({
-        bucket,
-        discardSuit,
-        remainingSuits,
-        starterRank,
-      }),
+      starterSuitRelationPoints,
+    };
+
+    return {
+      ...starterPoints,
+      expectedCribPoints: getRelationWeightedExpectedCribPoints(starterPoints),
+      starterRank,
     };
   });
 };
