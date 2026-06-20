@@ -1,35 +1,100 @@
 /* jscpd:ignore-start */
-import { Rank, createCard } from "../game/Card";
+import { Rank, Suit, createCard } from "../game/Card";
 import {
   ScoredPossibleKeepDiscardExpandedRow,
   type ScoredPossibleKeepDiscardExpandedRowProps,
 } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { getAllByCardText, queryAllByCardText } from "./test-utils";
 import { SortOrder } from "../ui/SortOrder";
-import { getAllByCardText } from "./test-utils";
 /* jscpd:ignore-end */
 
 const MUTED_SELECTOR = '[class*="muted"]';
 const SUMMARY_SELECTOR = '[class*="breakdownSummary"]';
+const SUMMARY_TOTAL_SELECTOR = '[class*="summaryTotal"]';
 const CUT_RESULTS_SELECTOR = '[class*="cutResultsList"]';
+const missingCribPointBreakdown = new Map<string, never>().get("missing");
+const MUTED_CRIB_CATEGORY_COUNT = 5;
+const MUTED_CRIB_CATEGORY_DASHES = Array.from(
+  { length: MUTED_CRIB_CATEGORY_COUNT },
+  () => "—",
+);
 const CRIB_STARTER_POINTS = [
   {
     expectedCribPoints: 4.25,
+    pointBreakdown: missingCribPointBreakdown,
     remainingStarterCount: 0,
     signedExpectedCribPoints: 4.25,
     starterRank: "A",
+    starterSuitRelationPoints: [],
   },
   {
     expectedCribPoints: 5.5,
+    pointBreakdown: {
+      fifteens: 1,
+      flushes: 0.5,
+      nobs: 0.25,
+      pairs: 2,
+      runs: 1.75,
+    },
     remainingStarterCount: 4,
     signedExpectedCribPoints: -5.5,
     starterRank: "K",
+    starterSuitRelationPoints: [],
+  },
+] as const;
+const CRIB_POINT_BREAKDOWN = {
+  fifteens: 0.25,
+  flushes: 0.75,
+  nobs: 0.5,
+  pairs: 1.25,
+  runs: 2,
+} as const;
+const RELATION_CRIB_STARTER_POINTS = [
+  {
+    expectedCribPoints: 5,
+    pointBreakdown: CRIB_POINT_BREAKDOWN,
+    remainingStarterCount: 3,
+    signedExpectedCribPoints: 5,
+    starterRank: "5",
+    starterSuitRelationPoints: [
+      {
+        expectedCribPoints: 6,
+        pointBreakdown: {
+          fifteens: 1,
+          flushes: 0,
+          nobs: 0.25,
+          pairs: 2,
+          runs: 2.75,
+        },
+        relation: "matching_discard_suit",
+        remainingStarterCount: 1,
+        starterRank: "5",
+        suits: [Suit.DIAMONDS],
+      },
+      {
+        expectedCribPoints: 4.5,
+        pointBreakdown: {
+          fifteens: 0.5,
+          flushes: 0,
+          nobs: 0,
+          pairs: 1,
+          runs: 3,
+        },
+        relation: "non_matching_discard_suit",
+        remainingStarterCount: 2,
+        starterRank: "5",
+        suits: [Suit.HEARTS, Suit.SPADES],
+      },
+    ],
   },
 ] as const;
 
 function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
-  const summary = container.querySelector(SUMMARY_SELECTOR)!;
+  const summary = container.matches(SUMMARY_SELECTOR)
+    ? container
+    : container.querySelector(SUMMARY_SELECTOR)!;
 
   return Array.from(
     summary.querySelectorAll(MUTED_SELECTOR),
@@ -39,6 +104,19 @@ function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
 
 function expandStarterDetails() {
   fireEvent.click(screen.getByRole("button", { name: /starter/u }));
+}
+
+function expandCribDetails() {
+  fireEvent.click(screen.getByRole("button", { name: /Crib avg/u }));
+}
+
+function clickSummaryTotal(label: RegExp) {
+  const summaryRow = screen.getByRole("button", { name: label });
+  const summaryTotal = summaryRow.querySelector(SUMMARY_TOTAL_SELECTOR);
+
+  expect(summaryTotal).toBeTruthy();
+
+  fireEvent.click(summaryTotal as HTMLElement);
 }
 
 function expectCardLabelRendered(label: string): void {
@@ -78,6 +156,10 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     const pairs = overrides.pairsContributions ?? [];
     const runs = overrides.runsContributions ?? [];
     const order = overrides.sortOrder ?? SortOrder.Ascending;
+    const expectedCribPointBreakdown =
+      "expectedCribPointBreakdown" in overrides
+        ? overrides.expectedCribPointBreakdown
+        : CRIB_POINT_BREAKDOWN;
 
     const keep = overrides.keep ?? [];
     const discard = overrides.discard ?? [];
@@ -96,6 +178,8 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
             }
             cutCountsRemaining={counts}
             discard={discard}
+            expectedCribPointBreakdown={expectedCribPointBreakdown}
+            expectedCribPoints={overrides.expectedCribPoints ?? 1.5}
             fifteensContributions={fifteens}
             flushesContributions={flushes}
             handPointsBreakdown={handPointsBreakdown}
@@ -103,7 +187,6 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
             nobsContributions={nobs}
             pairsContributions={pairs}
             runsContributions={runs}
-            signedExpectedCribPoints={overrides.signedExpectedCribPoints ?? 1.5}
             sortOrder={order}
           />
         </tbody>
@@ -116,13 +199,19 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     renderRow(overrides);
     expandStarterDetails();
   };
+  const renderExpandedCribDetails = (
+    overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+  ) => {
+    renderRow(overrides);
+    expandCribDetails();
+  };
 
   it("should render cut results when they exist to satisfy 100% coverage", () => {
     renderExpandedStarterDetails({
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
     });
 
-    expect(screen.getByText("0.50")).toBeTruthy();
+    expect(screen.getAllByText("0.50").length).toBeGreaterThan(0);
 
     expectCardLabelRendered("5");
   });
@@ -144,13 +233,9 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
       },
     });
 
-    expect(getSummaryMutedTexts(container)).toStrictEqual([
-      "—",
-      "—",
-      "—",
-      "—",
-      "—",
-    ]);
+    expect(getSummaryMutedTexts(container)).toStrictEqual(
+      MUTED_CRIB_CATEGORY_DASHES,
+    );
     expect(screen.getByText("X")).toBeTruthy();
   });
 
@@ -254,17 +339,94 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     expectCardLabelRendered("5");
   });
 
-  it("renders crib averages as unsigned local crib values", () => {
-    renderRow({
-      signedExpectedCribPoints: -1.5,
-    });
+  it("toggles starter specifics when clicking anywhere in the summary row", () => {
+    renderRow({ fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS });
 
-    fireEvent.click(screen.getByRole("button", { name: /Crib avg/u }));
+    clickSummaryTotal(/Hand starter/u);
+
+    expectCardLabelRendered("5");
+
+    clickSummaryTotal(/Hand starter/u);
+
+    expect(screen.queryByText("5")).toBeNull();
+  });
+
+  it("toggles crib specifics when clicking anywhere in the summary row", () => {
+    renderRow();
+
+    clickSummaryTotal(/Crib avg/u);
+
+    expect(screen.getByText("K")).toBeTruthy();
+
+    clickSummaryTotal(/Crib avg/u);
+
+    expect(screen.queryByText("K")).toBeNull();
+  });
+
+  it("renders crib averages as unsigned local crib values", () => {
+    renderExpandedCribDetails({
+      expectedCribPoints: 1.5,
+    });
 
     expect(screen.queryByText("A")).toBeNull();
     expect(screen.getByText("K")).toBeTruthy();
     expect(screen.getByText("1.50")).toBeTruthy();
     expect(screen.getByText("5.50")).toBeTruthy();
     expect(screen.queryByText("-5.50")).toBeNull();
+  });
+
+  it("renders crib point-type averages from v2 buckets", () => {
+    renderRow({
+      expectedCribPointBreakdown: CRIB_POINT_BREAKDOWN,
+      expectedCribPoints: 4.75,
+    });
+
+    expect(document.body.textContent).toStrictEqual(
+      expect.stringContaining("0.251.252.000.750.504.75"),
+    );
+  });
+
+  it("renders total-only crib details when point buckets are unavailable", () => {
+    renderRow({
+      expectedCribPointBreakdown: missingCribPointBreakdown,
+      expectedCribPoints: 4.75,
+    });
+    const cribSummary = screen
+      .getByText("Crib avg")
+      .closest(SUMMARY_SELECTOR) as HTMLElement;
+
+    expect(screen.getByText("4.75")).toBeTruthy();
+    expect(getSummaryMutedTexts(cribSummary)).toStrictEqual(
+      MUTED_CRIB_CATEGORY_DASHES,
+    );
+  });
+
+  it("renders suited starter relation rows instead of the root rank row", () => {
+    renderExpandedCribDetails({
+      cribStarterPoints: RELATION_CRIB_STARTER_POINTS,
+    });
+
+    expectCardLabelRendered("5♦");
+    expectCardLabelRendered("5 (♥♠)");
+
+    expect(screen.getByText("6.00")).toBeTruthy();
+    expect(screen.getByText("4.50")).toBeTruthy();
+    expect(getAllByCardText(screen, "5")).toHaveLength(2);
+  });
+
+  it("renders ordinary starter rows when relation rows are absent", () => {
+    renderExpandedCribDetails({
+      cribStarterPoints: [
+        {
+          ...RELATION_CRIB_STARTER_POINTS[0],
+          starterSuitRelationPoints: [],
+        },
+      ],
+    });
+
+    expectCardLabelRendered("5");
+
+    expect(queryAllByCardText(screen, "5♦")).toHaveLength(0);
+    expect(screen.getByText("5.00")).toBeTruthy();
   });
 });

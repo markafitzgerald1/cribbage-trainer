@@ -30,7 +30,6 @@
 .score-cell,
 .net-score-cell {
   font-variant-numeric: tabular-nums;
-  overflow: hidden;
 }
 
 .hand-discard-cell {
@@ -96,6 +95,6 @@
   }
 
   .scored-possible-keep-discard td:nth-child(n + 2) {
-    font-size: 0.66em;
+    font-size: 0.78em;
   }
 }

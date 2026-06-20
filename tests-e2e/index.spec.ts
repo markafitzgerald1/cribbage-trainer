@@ -38,7 +38,8 @@ test("a .css file is linked", async ({ page }) => {
 });
 
 const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H&seed=e2e";
-const selectedDiscardRowText = "K♥Q♠10♦9♣(6♠5♥)";
+const suitedAnalysisQuery = "?hand=KH,QS,10D,9C,6S,5S";
+const suitedDiscardRowText = "K♥Q♠10♦9♣(6♠5♠)";
 const exactTextMatch = { exact: true };
 const expectedBreakdownLabels = [
   "15s",
@@ -49,10 +50,10 @@ const expectedBreakdownLabels = [
   "Total",
 ] as const;
 
-const getSelectedDiscardRow = (page: Page) =>
+const getSuitedDiscardRow = (page: Page) =>
   page
     .locator('tr[class*="highlighted"]')
-    .filter({ hasText: selectedDiscardRowText });
+    .filter({ hasText: suitedDiscardRowText });
 
 const expectBreakdownLabelsVisible = async (tbody: Locator) => {
   await Promise.all(
@@ -75,14 +76,14 @@ test("pre-cut hand points show after select of two discards", async ({
 });
 
 test("semantic e2e suited analysis flow", async ({ page }) => {
-  await page.goto("/?hand=KH,QS,10D,9C,6S,5H");
+  await page.goto(`/${suitedAnalysisQuery}`);
 
   const indexOf6S = 4;
-  const indexOf5H = 5;
+  const indexOf5S = 5;
   await page.getByRole("checkbox").nth(indexOf6S).click();
-  await page.getByRole("checkbox").nth(indexOf5H).click();
+  await page.getByRole("checkbox").nth(indexOf5S).click();
 
-  const row = getSelectedDiscardRow(page);
+  const row = getSuitedDiscardRow(page);
   await expect(row).toBeVisible();
 
   await row.click();
@@ -95,4 +96,9 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   await expect(
     page.locator('div[class*="cut-result-row"]').first(),
   ).toBeVisible();
+
+  await page.getByText("Crib avg").click();
+
+  await expect(page.getByText("7♠")).toBeVisible();
+  await expect(page.getByText("7 (♣♦♥)")).toBeVisible();
 });

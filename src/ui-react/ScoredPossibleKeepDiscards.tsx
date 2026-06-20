@@ -130,6 +130,10 @@ export function ScoredPossibleKeepDiscards({
           cribStarterPoints={scoredKeepDiscard.cribStarterPoints}
           cutCountsRemaining={scoredKeepDiscard.cutCountsRemaining}
           discard={scoredKeepDiscard.discard}
+          expectedCribPointBreakdown={
+            scoredKeepDiscard.expectedCribPointBreakdown
+          }
+          expectedCribPoints={scoredKeepDiscard.expectedCribPoints}
           expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
           expectedNetPoints={scoredKeepDiscard.expectedNetPoints}
           fifteensContributions={scoredKeepDiscard.fifteensContributions}

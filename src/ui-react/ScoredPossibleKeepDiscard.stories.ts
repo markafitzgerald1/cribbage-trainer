@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { CARDS, type Card } from "../game/Card";
+import { CARDS, Rank, Suit, createCard } from "../game/Card";
 import {
   type Meta,
   SORT_ORDER_NAMES,
@@ -9,6 +9,7 @@ import {
   playToggle,
 } from "./stories.common";
 /* jscpd:ignore-end */
+import { expect, within } from "storybook/test";
 import {
   expectedCutAddedPoints,
   toCutBreakdown,
@@ -39,8 +40,9 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+type StoryCard = ReturnType<typeof createCard>;
 
-const toComparableCard = (card: Card, index: number): ComparableCard => ({
+const toComparableCard = (card: StoryCard, index: number): ComparableCard => ({
   dealOrder: index,
   rank: card.rank,
   suit: card.suit,
@@ -49,16 +51,69 @@ const toComparableCard = (card: Card, index: number): ComparableCard => ({
 const cribStarterPoints = [
   {
     expectedCribPoints: 1.25,
+    pointBreakdown: new Map<string, never>().get("missing"),
     remainingStarterCount: 4,
     signedExpectedCribPoints: 1.25,
     starterRank: "K",
+    starterSuitRelationPoints: [],
+  },
+] as const;
+const cribPointBreakdown = {
+  fifteens: 0.3,
+  flushes: 0.2,
+  nobs: 0.1,
+  pairs: 0.4,
+  runs: 0.25,
+} as const;
+const suitedCribStarterPoints = [
+  {
+    expectedCribPoints: 4.5,
+    pointBreakdown: cribPointBreakdown,
+    remainingStarterCount: 3,
+    signedExpectedCribPoints: 4.5,
+    starterRank: "5",
+    starterSuitRelationPoints: [
+      {
+        expectedCribPoints: 5.1,
+        pointBreakdown: {
+          fifteens: 1.1,
+          flushes: 0.4,
+          nobs: 0.1,
+          pairs: 0.8,
+          runs: 2.7,
+        },
+        relation: "matching_discard_suit",
+        remainingStarterCount: 1,
+        starterRank: "5",
+        suits: [Suit.DIAMONDS],
+      },
+      {
+        expectedCribPoints: 4.2,
+        pointBreakdown: {
+          fifteens: 0.8,
+          flushes: 0,
+          nobs: 0.2,
+          pairs: 0.7,
+          runs: 2.5,
+        },
+        relation: "non_matching_discard_suit",
+        remainingStarterCount: 2,
+        starterRank: "5",
+        suits: [Suit.HEARTS, Suit.SPADES],
+      },
+    ],
   },
 ] as const;
 
 interface CreateStoryOptions {
-  readonly discard: readonly Card[];
+  readonly cribPoints?: number;
+  readonly cribStarterPoints?:
+    | typeof cribStarterPoints
+    | typeof suitedCribStarterPoints;
+  readonly discard: readonly StoryCard[];
+  readonly expectedCribPointBreakdown?: typeof cribPointBreakdown;
   readonly isHighlighted?: boolean;
-  readonly keep: readonly Card[];
+  readonly keep: readonly StoryCard[];
   readonly sortOrder: SortOrder;
 }
 
@@ -66,6 +121,9 @@ const createStory = ({
   keep,
   discard,
   sortOrder,
+  cribPoints = 1.25,
+  cribStarterPoints: storyCribStarterPoints = cribStarterPoints,
+  expectedCribPointBreakdown,
   isHighlighted = false,
 }: CreateStoryOptions): Story => {
   const cutAdded = expectedCutAddedPoints(keep, discard);
@@ -74,15 +132,17 @@ const createStory = ({
   return {
     args: {
       ...toCutBreakdown(cutAdded),
-      cribStarterPoints,
+      cribStarterPoints: storyCribStarterPoints,
       discard: discard.map(toComparableCard),
+      expectedCribPointBreakdown,
+      expectedCribPoints: cribPoints,
       expectedHandPoints: handExpectedPoints,
-      expectedNetPoints: handExpectedPoints + 1.25,
+      expectedNetPoints: handExpectedPoints + cribPoints,
       handPointsBreakdown: points,
       isHighlighted,
       keep: keep.map(toComparableCard),
       rowIndex: 0,
-      signedExpectedCribPoints: 1.25,
+      signedExpectedCribPoints: cribPoints,
       sortOrder,
     },
   };
@@ -127,4 +187,32 @@ export const ExpandedRow: Story = {
 export const DoubleExpandedRow: Story = {
   ...ExpandedRow,
   play: (context) => playToggle(context, { toggleStarterDetails: true }),
+};
+
+export const SuitedCribDetailsExpanded: Story = createStory({
+  cribPoints: 4.5,
+  cribStarterPoints: suitedCribStarterPoints,
+  discard: [
+    createCard(Rank.ACE, Suit.DIAMONDS),
+    createCard(Rank.TWO, Suit.DIAMONDS),
+  ],
+  expectedCribPointBreakdown: cribPointBreakdown,
+  isHighlighted: true,
+  keep: [
+    createCard(Rank.THREE, Suit.HEARTS),
+    createCard(Rank.FOUR, Suit.SPADES),
+    createCard(Rank.NINE, Suit.CLUBS),
+    createCard(Rank.JACK, Suit.HEARTS),
+  ],
+  sortOrder: SortOrder.Ascending,
+});
+
+SuitedCribDetailsExpanded.play = async (context) => {
+  await playToggle(context, { toggleCribDetails: true });
+
+  const canvas = within(context.canvasElement);
+
+  await expect(await canvas.findByText("5.10")).toBeVisible();
+
+  await expect(await canvas.findByText("4.20")).toBeVisible();
 };

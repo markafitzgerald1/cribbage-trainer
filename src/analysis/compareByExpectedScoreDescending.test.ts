@@ -16,6 +16,9 @@ const NUM_RANKS = 13;
 const ALL_FOUR_REMAINING = Array.from<number>({
   length: NUM_RANKS,
 }).fill(CARDS_PER_RANK);
+const missingExpectedCribPointBreakdown = new Map<string, never>().get(
+  "missing",
+);
 
 describe("compareByExpectedScoreDescending", () => {
   const createHand = (
@@ -30,6 +33,7 @@ describe("compareByExpectedScoreDescending", () => {
     cribStarterPoints: [],
     cutCountsRemaining: ALL_FOUR_REMAINING,
     discard,
+    expectedCribPointBreakdown: missingExpectedCribPointBreakdown,
     expectedCribPoints: 0,
     expectedHandPoints: expectedHandPoints(keep, discard).total,
     expectedNetPoints: expectedHandPoints(keep, discard).total,

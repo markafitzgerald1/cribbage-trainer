@@ -77,15 +77,15 @@
 
 @media (orientation: portrait) {
   .hand-column {
-    width: 58%;
+    width: 53%;
   }
 
   .score-column {
-    width: 12%;
+    width: 14%;
   }
 
   .net-score-column {
-    width: 18%;
+    width: 19%;
   }
 }
 

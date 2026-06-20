@@ -1,6 +1,7 @@
 export const breakdownContainer: string;
 export const breakdownHeader: string;
 export const breakdownSummary: string;
+export const breakdownSummaryButton: string;
 export const categoryHeader: string;
 export const cribStarterList: string;
 export const cutResultsList: string;
@@ -13,7 +14,7 @@ export const notApplicable: string;
 export const noWrap: string;
 export const starterDetailRow: string;
 export const summaryLabel: string;
-export const summaryLabelButton: string;
+export const summaryLabelContent: string;
 export const summaryTotal: string;
 export const summaryValue: string;
 export const totalHeader: string;

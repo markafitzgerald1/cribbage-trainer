@@ -30,7 +30,7 @@ export const toDealtCards = (
 
 export const playToggle = async (
   { canvasElement }: { readonly canvasElement: HTMLElement },
-  { toggleStarterDetails = false } = {},
+  { toggleCribDetails = false, toggleStarterDetails = false } = {},
 ) => {
   const canvas = within(canvasElement);
   const table = await canvas.findByRole("table");
@@ -45,6 +45,13 @@ export const playToggle = async (
   if (toggleStarterDetails) {
     const starterAvgLabel = await canvas.findByText(/Hand starter/u);
     await fireEvent.click(starterAvgLabel);
+
+    await expect(await canvas.findByText("Points")).toBeVisible();
+  }
+
+  if (toggleCribDetails) {
+    const cribAvgLabel = await canvas.findByText(/Crib avg/u);
+    await fireEvent.click(cribAvgLabel);
 
     await expect(await canvas.findByText("Points")).toBeVisible();
   }

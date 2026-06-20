@@ -14,12 +14,15 @@ import { handToSortedString } from "./handToSortedString.test.common";
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const EXPECTED_CELL_COUNT = 4;
 const EXPECTED_CRIB_POINTS = 1.25;
+const missingCribPointBreakdown = new Map<string, never>().get("missing");
 const CRIB_STARTER_POINTS = [
   {
     expectedCribPoints: EXPECTED_CRIB_POINTS,
+    pointBreakdown: missingCribPointBreakdown,
     remainingStarterCount: 4,
     signedExpectedCribPoints: EXPECTED_CRIB_POINTS,
     starterRank: "A",
+    starterSuitRelationPoints: [],
   },
 ] as const;
 
@@ -64,6 +67,8 @@ function renderComponentWithScenario(
     cribStarterPoints: CRIB_STARTER_POINTS,
     cutCountsRemaining: scenario.cutAdded.cutCountsRemaining,
     discard: scenario.discard,
+    expectedCribPointBreakdown: missingCribPointBreakdown,
+    expectedCribPoints: Math.abs(signedExpectedCribPoints),
     expectedHandPoints: scenario.expectedPoints,
     expectedNetPoints: scenario.expectedNetPoints,
     fifteensContributions: scenario.cutAdded.fifteensContributions,

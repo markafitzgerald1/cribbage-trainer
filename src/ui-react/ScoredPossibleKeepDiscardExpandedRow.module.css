@@ -3,8 +3,10 @@
 .expanded-row {
   --card-black-suit-color: #fff;
   --card-red-suit-color: #f99;
-  --cut-result-generic-color: #a8d5ba;
-  --cut-result-generic-opacity: 0.7;
+  --starter-detail-color: #95caac;
+  --starter-detail-red-suit-color: #e8b4b2;
+  --cut-result-generic-color: var(--starter-detail-color);
+  --cut-result-generic-opacity: 1;
   --cut-result-red-suit-color: #f99;
   --cut-result-specific-color: #fff;
   --cut-result-text-color: #fff;
@@ -90,26 +92,46 @@
   color: #fff;
 }
 
+.breakdown-summary-button {
+  appearance: none;
+  background-color: #0f5132;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--text-font-family);
+  font-size: inherit;
+  font-weight: 600;
+  line-height: inherit;
+  margin: 0;
+  padding: 2px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.breakdown-summary-button:hover,
+.breakdown-summary-button:focus-visible {
+  background-color: rgb(255 255 255 / 8%);
+  outline: 1px solid rgb(255 255 255 / 30%);
+  outline-offset: 1px;
+}
+
 .summary-label {
   text-align: left;
   color: rgb(255 255 255 / 70%);
 }
 
-.summary-label-button {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  font-weight: inherit;
-  margin: 0;
-  padding: 0;
-  text-align: left;
+.starter-detail-row .summary-label {
+  color: var(--starter-detail-color);
+  font-size: 0.9em;
 }
 
-.summary-label-button:hover {
+.breakdown-summary-button:hover .summary-label,
+.breakdown-summary-button:focus-visible .summary-label {
   color: #fff;
+}
+
+.summary-label-content {
+  color: inherit;
 }
 
 .no-wrap {
@@ -154,6 +176,11 @@
   flex-direction: column;
 }
 
+.cut-results-list :global(.cut-result-row) {
+  --cut-result-generic-color: var(--starter-detail-color);
+  --cut-result-generic-opacity: 1;
+}
+
 .cut-results-list :global(.total-column) {
   font-weight: 400;
 }
@@ -165,8 +192,17 @@
 }
 
 .starter-detail-row {
-  color: rgb(255 255 255 / 86%);
+  --card-black-suit-color: var(--starter-detail-color);
+  --card-red-suit-color: var(--starter-detail-red-suit-color);
+
+  color: var(--starter-detail-color);
   font-weight: 400;
+}
+
+.starter-detail-row .summary-value,
+.starter-detail-row .summary-total {
+  color: var(--text-color);
+  font-size: 0.9em;
 }
 
 .expanded-row :global(.points-column) {

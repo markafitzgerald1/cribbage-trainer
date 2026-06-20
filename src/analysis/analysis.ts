@@ -1,7 +1,9 @@
 import {
   CribRole,
+  type ExpectedCribPointBreakdown,
   type ExpectedCribPointsTable,
   type ExpectedCribStarterPoints,
+  expectedCribPointBreakdown,
   expectedCribPoints,
   expectedCribPointsByStarterRank,
 } from "../game/expectedCribPoints";
@@ -18,12 +20,13 @@ import { compareByExpectedNetScoreThenRankDescending } from "./compareByExpected
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 
 const expectedCribPointsTable =
-  expectedCribPointsTableData as ExpectedCribPointsTable;
+  expectedCribPointsTableData as unknown as ExpectedCribPointsTable;
 
 export interface ScoredKeepDiscard<T extends Card> extends CutBreakdown {
   keep: readonly T[];
   discard: readonly T[];
   cribStarterPoints: readonly SignedExpectedCribStarterPoints[];
+  expectedCribPointBreakdown: ExpectedCribPointBreakdown | undefined;
   expectedCribPoints: number;
   expectedHandPoints: number;
   expectedNetPoints: number;
@@ -71,18 +74,18 @@ export const allScoredKeepDiscardsByExpectedNetScoreDescending = <
         keepDiscard.discard,
       );
       const cutBreakdown = toCutBreakdown(cutAdded);
-      const cribPoints = expectedCribPoints({
+      const expectedCribOptions = {
         discard: keepDiscard.discard,
         knownCards: cards,
         role: cribRole,
         table,
-      });
-      const cribStarterPoints = expectedCribPointsByStarterRank({
-        discard: keepDiscard.discard,
-        knownCards: cards,
-        role: cribRole,
-        table,
-      }).map((starterPoints) => ({
+      };
+      const cribPoints = expectedCribPoints(expectedCribOptions);
+      const cribPointBreakdown =
+        expectedCribPointBreakdown(expectedCribOptions);
+      const cribStarterPoints = expectedCribPointsByStarterRank(
+        expectedCribOptions,
+      ).map((starterPoints) => ({
         ...starterPoints,
         signedExpectedCribPoints: signCribPoints(
           starterPoints.expectedCribPoints,
@@ -102,6 +105,7 @@ export const allScoredKeepDiscardsByExpectedNetScoreDescending = <
         discard: [...keepDiscard.discard].sort(
           (left, right) => right.rank - left.rank,
         ),
+        expectedCribPointBreakdown: cribPointBreakdown,
         expectedCribPoints: cribPoints,
         expectedHandPoints: handExpectedPoints,
         expectedNetPoints: handExpectedPoints + signedCribPoints,

@@ -1,19 +1,19 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
+import {
+  type ScoredPossibleKeepDiscardCribDetailsProps,
+  ScoredPossibleKeepDiscardExpandedRow,
+} from "./ScoredPossibleKeepDiscardExpandedRow";
 import { useCallback, useState } from "react";
 import type { BreakdownProps } from "./BreakdownProps";
 import type { ComparableCard } from "../ui/sortCards";
-import type { HandPoints } from "../game/handPoints";
 import { PossibleHand } from "./PossibleHand";
-import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
-import type { SignedExpectedCribStarterPoints } from "../analysis/analysis";
 import { SortOrder } from "../ui/SortOrder";
 
-interface ScoredPossibleKeepDiscardProps extends BreakdownProps {
-  readonly keep: readonly ComparableCard[];
-  readonly discard: readonly ComparableCard[];
-  readonly cribStarterPoints: readonly SignedExpectedCribStarterPoints[];
-  readonly handPointsBreakdown: HandPoints;
+interface ScoredPossibleKeepDiscardProps
+  extends
+    BreakdownProps,
+    ScoredPossibleKeepDiscardCribDetailsProps<ComparableCard> {
   readonly expectedHandPoints: number;
   readonly expectedNetPoints: number;
   readonly signedExpectedCribPoints: number;
@@ -35,6 +35,8 @@ export function ScoredPossibleKeepDiscard({
   keep,
   discard,
   handPointsBreakdown,
+  expectedCribPointBreakdown,
+  expectedCribPoints,
   expectedHandPoints,
   expectedNetPoints,
   signedExpectedCribPoints,
@@ -124,6 +126,8 @@ export function ScoredPossibleKeepDiscard({
           cribStarterPoints={cribStarterPoints}
           cutCountsRemaining={cutCountsRemaining}
           discard={discard}
+          expectedCribPointBreakdown={expectedCribPointBreakdown}
+          expectedCribPoints={expectedCribPoints}
           fifteensContributions={fifteensContributions}
           flushesContributions={flushesContributions}
           handPointsBreakdown={handPointsBreakdown}
@@ -131,7 +135,6 @@ export function ScoredPossibleKeepDiscard({
           nobsContributions={nobsContributions}
           pairsContributions={pairsContributions}
           runsContributions={runsContributions}
-          signedExpectedCribPoints={signedExpectedCribPoints}
           sortOrder={sortOrder}
         />
       ) : null}
