@@ -69,6 +69,8 @@ export function ScoredPossibleKeepDiscards({
   const [table, setTable] = useState<ExpectedCribPointsTable | null>(
     loader.getTableSync(),
   );
+  const [loadError, setLoadError] = useState<boolean>(false);
+  const [retryCount, setRetryCount] = useState<number>(0);
 
   useEffect(() => {
     if (!table) {
@@ -76,10 +78,15 @@ export function ScoredPossibleKeepDiscards({
         .loadTable()
         .then(setTable)
         .catch(() => {
-          /* Ignore loading error */
+          setLoadError(true);
         });
     }
-  }, [table]);
+  }, [table, retryCount]);
+
+  const handleRetry = useCallback(() => {
+    setLoadError(false);
+    setRetryCount((prev) => prev + 1);
+  }, []);
 
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     ScoredKeepDiscardSortKey.ExpectedNetPoints,
@@ -108,6 +115,21 @@ export function ScoredPossibleKeepDiscards({
     },
     [],
   );
+
+  if (loadError) {
+    return (
+      <div className={classes.error}>
+        <span>Failed to load analysis.</span>
+        <button
+          className={classes.retryButton}
+          onClick={handleRetry}
+          type="button"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (!table) {
     return <div className={classes.loading}>Loading analysis...</div>;
@@ -157,39 +179,16 @@ export function ScoredPossibleKeepDiscards({
   const renderScoringTableBody = () => (
     <tbody>
       {scoredKeepDiscards.map((scoredKeepDiscard, index) => (
-        /* jscpd:ignore-start */
         <ScoredPossibleKeepDiscard
-          avgCutAdded15s={scoredKeepDiscard.avgCutAdded15s}
-          avgCutAddedFlushes={scoredKeepDiscard.avgCutAddedFlushes}
-          avgCutAddedNobs={scoredKeepDiscard.avgCutAddedNobs}
-          avgCutAddedPairs={scoredKeepDiscard.avgCutAddedPairs}
-          avgCutAddedRuns={scoredKeepDiscard.avgCutAddedRuns}
           cribRole={cribRole}
-          cribStarterPoints={scoredKeepDiscard.cribStarterPoints}
-          cutCountsRemaining={scoredKeepDiscard.cutCountsRemaining}
-          discard={scoredKeepDiscard.discard}
-          expectedCribPointBreakdown={
-            scoredKeepDiscard.expectedCribPointBreakdown
-          }
-          expectedCribPoints={scoredKeepDiscard.expectedCribPoints}
-          expectedHandPoints={scoredKeepDiscard.expectedHandPoints}
-          expectedNetPoints={scoredKeepDiscard.expectedNetPoints}
-          fifteensContributions={scoredKeepDiscard.fifteensContributions}
-          flushesContributions={scoredKeepDiscard.flushesContributions}
-          handPointsBreakdown={scoredKeepDiscard.handPointsBreakdown}
           isHighlighted={scoredKeepDiscard.keep.every((card) => card.kept)}
-          keep={scoredKeepDiscard.keep}
           key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
             .map((dealtCard) => dealtCard.dealOrder)
             .join("")}
-          nobsContributions={scoredKeepDiscard.nobsContributions}
-          pairsContributions={scoredKeepDiscard.pairsContributions}
           rowIndex={index}
-          runsContributions={scoredKeepDiscard.runsContributions}
-          signedExpectedCribPoints={scoredKeepDiscard.signedExpectedCribPoints}
+          scoredKeepDiscard={scoredKeepDiscard}
           sortOrder={sortOrder}
         />
-        /* jscpd:ignore-end */
       ))}
     </tbody>
   );

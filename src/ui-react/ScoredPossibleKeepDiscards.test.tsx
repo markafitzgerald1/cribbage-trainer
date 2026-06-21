@@ -156,7 +156,7 @@ describe("scored possible keep discards component", () => {
     expect(screen.getByRole("table")).toBeTruthy();
   });
 
-  it("handles loading error gracefully", async () => {
+  it("handles loading error gracefully and allows retry", async () => {
     setTableSync(null);
     mockLoadTable.mockRejectedValueOnce(new Error("Fake load error"));
 
@@ -169,10 +169,25 @@ describe("scored possible keep discards component", () => {
     expect(screen.getByText("Loading analysis...")).toBeTruthy();
 
     await waitFor(() => {
-      expect(mockLoadTable).toHaveBeenCalledWith();
+      expect(screen.getByText("Failed to load analysis.")).toBeTruthy();
     });
 
-    expect(mockLoadTable).toHaveBeenCalledWith();
+    const retryButton = screen.getByRole("button", { name: "Retry" });
+
+    // Now mock a successful load for retry
+    mockLoadTable.mockResolvedValueOnce(
+      expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+    );
+
+    // Click retry
+    fireEvent.click(retryButton);
+
+    // Eventually should render content
+    await waitFor(() => {
+      expect(screen.queryByText("Loading analysis...")).toBeNull();
+    });
+
+    expect(screen.getByRole("table")).toBeTruthy();
   });
   /* jscpd:ignore-end */
 });

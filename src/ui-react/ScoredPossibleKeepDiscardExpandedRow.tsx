@@ -1,4 +1,5 @@
 import * as classes from "./ScoredPossibleKeepDiscardExpandedRow.module.css";
+import { type Card, Rank } from "../game/Card";
 import {
   CribRole,
   type ExpectedCribPointBreakdown,
@@ -6,18 +7,14 @@ import {
   STARTER_RANKS,
   type StarterRank,
 } from "../game/expectedCribPoints";
-import {
-  type CutResult,
-  type MinimalCard,
-  groupCutsByResults,
-} from "./groupCutsByResults";
+import { type CutResult, groupCutsByResults } from "./groupCutsByResults";
 import { type ReactNode, useCallback, useState } from "react";
-import type { BreakdownProps } from "./BreakdownProps";
+import type {
+  ScoredKeepDiscard,
+  SignedExpectedCribStarterPoints,
+} from "../analysis/analysis";
 import { CardLabel } from "./CardLabel";
 import { CutResultRow } from "./CutResultRow";
-import type { HandPoints } from "../game/handPoints";
-import type { Rank } from "../game/Card";
-import type { SignedExpectedCribStarterPoints } from "../analysis/analysis";
 import { SortOrder } from "../ui/SortOrder";
 
 const DECIMAL_PLACES = 2;
@@ -136,48 +133,78 @@ function getCutResultKey(result: CutResult): string {
   ].join(":");
 }
 
-export interface ScoredPossibleKeepDiscardCribDetailsProps<
-  T extends MinimalCard,
-> {
-  readonly discard: readonly T[];
-  readonly cribStarterPoints: readonly SignedExpectedCribStarterPoints[];
-  readonly expectedCribPointBreakdown: ExpectedCribPointBreakdown | undefined;
-  readonly expectedCribPoints: number;
-  readonly handPointsBreakdown: HandPoints;
-  readonly keep: readonly T[];
-  readonly cribRole: CribRole;
-}
-
-export interface ScoredPossibleKeepDiscardExpandedRowProps
-  extends
-    BreakdownProps,
-    ScoredPossibleKeepDiscardCribDetailsProps<MinimalCard> {
+export interface ScoredPossibleKeepDiscardExpandedRowProps {
+  readonly scoredKeepDiscard: ScoredKeepDiscard<Card>;
   readonly sortOrder: SortOrder;
+  readonly cribRole: CribRole;
 }
 
 const hasRemainingStarters = (starterPoints: SignedExpectedCribStarterPoints) =>
   starterPoints.remainingStarterCount > 0;
 
+const renderNumericValue = (
+  value: number | undefined,
+  decimalPlaces: number,
+) => {
+  if (typeof value === "undefined") {
+    return <span className={classes.muted}>—</span>;
+  }
+
+  const formatted = value.toFixed(decimalPlaces);
+
+  if (formatted === ZERO_AVERAGE || formatted === "0") {
+    return <span className={classes.muted}>—</span>;
+  }
+
+  return formatted;
+};
+
+const renderCategoryValue = (cat: Category, decimalPlaces: number) =>
+  cat.notApplicable ? (
+    <span
+      className={classes.notApplicable}
+      title="Not applicable before starter"
+    >
+      X
+    </span>
+  ) : (
+    renderNumericValue(cat.value, decimalPlaces)
+  );
+
+const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
+  <div
+    className={
+      cat.label === "Total" ? classes.summaryTotal : classes.summaryValue
+    }
+    key={cat.label}
+  >
+    {renderCategoryValue(cat, decimalPlaces)}
+  </div>
+);
+
 export function ScoredPossibleKeepDiscardExpandedRow({
-  avgCutAdded15s,
-  avgCutAddedPairs,
-  avgCutAddedRuns,
-  avgCutAddedFlushes,
-  avgCutAddedNobs,
-  fifteensContributions,
-  pairsContributions,
-  runsContributions,
-  flushesContributions,
-  nobsContributions,
-  keep,
-  discard,
-  cribStarterPoints,
-  expectedCribPointBreakdown,
-  expectedCribPoints,
-  handPointsBreakdown,
+  scoredKeepDiscard,
   sortOrder,
   cribRole,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
+  const {
+    avgCutAdded15s,
+    avgCutAddedPairs,
+    avgCutAddedRuns,
+    avgCutAddedFlushes,
+    avgCutAddedNobs,
+    fifteensContributions,
+    pairsContributions,
+    runsContributions,
+    flushesContributions,
+    nobsContributions,
+    keep,
+    discard,
+    cribStarterPoints,
+    expectedCribPointBreakdown,
+    expectedCribPoints,
+    handPointsBreakdown,
+  } = scoredKeepDiscard;
   const [areCutDetailsExpanded, setAreCutDetailsExpanded] = useState(false);
   const [areCribDetailsExpanded, setAreCribDetailsExpanded] = useState(false);
   const cutResults = groupCutsByResults({
@@ -224,33 +251,6 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     { label: "Nobs", notApplicable: true, value: handPointsBreakdown.nobs },
     { label: "Total", value: handPointsBreakdown.total },
   ];
-  const renderNumericValue = (
-    value: number | undefined,
-    decimalPlaces: number,
-  ) => {
-    if (typeof value === "undefined") {
-      return <span className={classes.muted}>—</span>;
-    }
-
-    const formatted = value.toFixed(decimalPlaces);
-
-    if (formatted === ZERO_AVERAGE || formatted === "0") {
-      return <span className={classes.muted}>—</span>;
-    }
-
-    return formatted;
-  };
-  const renderCategoryValue = (cat: Category, decimalPlaces: number) =>
-    cat.notApplicable ? (
-      <span
-        className={classes.notApplicable}
-        title="Not applicable before starter"
-      >
-        X
-      </span>
-    ) : (
-      renderNumericValue(cat.value, decimalPlaces)
-    );
   const handleExpandedRowClick = useCallback(() => {
     setAreCutDetailsExpanded((expanded) => !expanded);
   }, []);
@@ -269,16 +269,6 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       sortOrder={sortOrder}
       totalPoints={result.totalPoints}
     />
-  );
-  const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
-    <div
-      className={
-        cat.label === "Total" ? classes.summaryTotal : classes.summaryValue
-      }
-      key={cat.label}
-    >
-      {renderCategoryValue(cat, decimalPlaces)}
-    </div>
   );
   const renderLabel = (label: ReactNode) => {
     if (label === "Hand starter avg") {

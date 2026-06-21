@@ -1,4 +1,6 @@
+/* eslint-disable jest/require-hook */
 /* jscpd:ignore-start */
+import * as loader from "../game/expectedCribPointsTableLoader";
 import {
   type Meta,
   SORT_ORDER_NAMES,
@@ -8,11 +10,34 @@ import {
   playToggle,
   toDealtCards,
 } from "./stories.common";
-/* jscpd:ignore-end */
+import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
+import { vi } from "vitest";
+
+interface MockGlobal {
+  shouldFailLoad?: boolean;
+}
+
+const mockGlobal = globalThis as unknown as MockGlobal;
+
+vi.mock("../game/expectedCribPointsTableLoader", async (importOriginal) => {
+  const original =
+    await importOriginal<
+      typeof import("../game/expectedCribPointsTableLoader")
+    >();
+  return {
+    ...original,
+    loadTable: () => {
+      if (mockGlobal.shouldFailLoad) {
+        return Promise.reject(new Error("Fake load error"));
+      }
+      return original.loadTable();
+    },
+  };
+});
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
@@ -62,3 +87,46 @@ export const DoubleExpanded: Story = {
   ...Expanded,
   play: (context) => playToggle(context, { toggleStarterDetails: true }),
 };
+
+export const SortedByHandPoints: Story = {
+  ...JackSixFiveFourKingQueenSortedDescending,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(
+      async () => {
+        await expect(canvas.queryByText("Loading analysis...")).toBeNull();
+      },
+      { timeout: 5000 },
+    );
+    const headerButton = await canvas.findByRole("button", { name: /E\(h\)/u });
+    await fireEvent.click(headerButton);
+  },
+};
+
+export const LoadError: Story = {
+  ...JackSixFiveFourKingQueenSortedDescending,
+  loaders: [
+    () => {
+      mockGlobal.shouldFailLoad = true;
+      loader.setTableSync(null);
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const retryButton = await canvas.findByRole("button", { name: /Retry/u });
+
+    await expect(retryButton).toBeVisible();
+
+    mockGlobal.shouldFailLoad = false;
+
+    await fireEvent.click(retryButton);
+
+    await waitFor(
+      async () => {
+        await expect(canvas.queryByText("Loading analysis...")).toBeNull();
+      },
+      { timeout: 5000 },
+    );
+  },
+};
+/* jscpd:ignore-end */

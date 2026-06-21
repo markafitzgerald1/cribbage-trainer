@@ -163,3 +163,34 @@
   opacity: 0.8;
   padding: 10px;
 }
+
+.error {
+  align-items: center;
+  color: var(--text-color);
+  display: flex;
+  font-family: var(--text-font-family);
+  gap: 15px;
+  padding: 10px;
+}
+
+.retry-button {
+  background-color: #dc3545;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85em;
+  padding: 4px 10px;
+  transition: background-color var(--transition-duration)
+    var(--transition-timing);
+}
+
+.retry-button:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.retry-button:active {
+  background-color: #bd2130;
+}

@@ -68,13 +68,12 @@ function renderComponentWithScenario(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
   );
 
-  const props = {
+  const scoredKeepDiscard = {
     avgCutAdded15s: scenario.cutAdded.avg15s,
     avgCutAddedFlushes: scenario.cutAdded.avgFlushes,
     avgCutAddedNobs: scenario.cutAdded.avgNobs,
     avgCutAddedPairs: scenario.cutAdded.avgPairs,
     avgCutAddedRuns: scenario.cutAdded.avgRuns,
-    cribRole: CribRole.Dealer,
     cribStarterPoints: CRIB_STARTER_POINTS,
     cutCountsRemaining: scenario.cutAdded.cutCountsRemaining,
     discard: scenario.discard,
@@ -84,14 +83,20 @@ function renderComponentWithScenario(
     expectedNetPoints: scenario.expectedNetPoints,
     fifteensContributions: scenario.cutAdded.fifteensContributions,
     flushesContributions: scenario.cutAdded.flushesContributions,
+    handPoints: scenario.points,
     handPointsBreakdown: scenario.pointsBreakdown,
-    isHighlighted,
     keep: scenario.keep,
     nobsContributions: scenario.cutAdded.nobsContributions,
     pairsContributions: scenario.cutAdded.pairsContributions,
-    rowIndex: 0,
     runsContributions: scenario.cutAdded.runsContributions,
     signedExpectedCribPoints,
+  };
+
+  const props = {
+    cribRole: CribRole.Dealer,
+    isHighlighted,
+    rowIndex: 0,
+    scoredKeepDiscard,
     sortOrder: scenario.sortOrder,
   };
 

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { CARDS, Rank, Suit, createCard } from "../game/Card";
+import { CARDS, type Card, Rank, Suit, createCard } from "../game/Card";
 import {
   type Meta,
   SORT_ORDER_NAMES,
@@ -8,13 +8,11 @@ import {
   createArgTypes,
   playToggle,
 } from "./stories.common";
-/* jscpd:ignore-end */
 import { expect, within } from "storybook/test";
 import {
   expectedCutAddedPoints,
   toCutBreakdown,
 } from "../game/expectedCutAddedPoints";
-import type { ComparableCard } from "../ui/sortCards";
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { createElement } from "react";
@@ -43,10 +41,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 type StoryCard = ReturnType<typeof createCard>;
 
-const toComparableCard = (card: StoryCard, index: number): ComparableCard => ({
+const toDealtCard = (
+  card: StoryCard,
+  index: number,
+): Card & { readonly dealOrder: number } => ({
+  ...card,
   dealOrder: index,
-  rank: card.rank,
-  suit: card.suit,
 });
 
 const cribStarterPoints = [
@@ -132,19 +132,22 @@ const createStory = ({
   const points = handPoints(keep);
   return {
     args: {
-      ...toCutBreakdown(cutAdded),
       cribRole: CribRole.Dealer,
-      cribStarterPoints: storyCribStarterPoints,
-      discard: discard.map(toComparableCard),
-      expectedCribPointBreakdown,
-      expectedCribPoints: cribPoints,
-      expectedHandPoints: handExpectedPoints,
-      expectedNetPoints: handExpectedPoints + cribPoints,
-      handPointsBreakdown: points,
       isHighlighted,
-      keep: keep.map(toComparableCard),
       rowIndex: 0,
-      signedExpectedCribPoints: cribPoints,
+      scoredKeepDiscard: {
+        ...toCutBreakdown(cutAdded),
+        cribStarterPoints: storyCribStarterPoints,
+        discard: discard.map(toDealtCard),
+        expectedCribPointBreakdown,
+        expectedCribPoints: cribPoints,
+        expectedHandPoints: handExpectedPoints,
+        expectedNetPoints: handExpectedPoints + cribPoints,
+        handPoints: points.total,
+        handPointsBreakdown: points,
+        keep: keep.map(toDealtCard),
+        signedExpectedCribPoints: cribPoints,
+      },
       sortOrder,
     },
   };
@@ -218,3 +221,4 @@ SuitedCribDetailsExpanded.play = async (context) => {
 
   await expect(await canvas.findByText("4.20")).toBeVisible();
 };
+/* jscpd:ignore-end */

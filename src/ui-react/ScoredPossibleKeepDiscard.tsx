@@ -1,22 +1,18 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
-import {
-  type ScoredPossibleKeepDiscardCribDetailsProps,
-  ScoredPossibleKeepDiscardExpandedRow,
-} from "./ScoredPossibleKeepDiscardExpandedRow";
 import { useCallback, useState } from "react";
-import type { BreakdownProps } from "./BreakdownProps";
-import type { ComparableCard } from "../ui/sortCards";
+import type { Card } from "../game/Card";
+import { CribRole } from "../game/expectedCribPoints";
 import { PossibleHand } from "./PossibleHand";
+import type { ScoredKeepDiscard } from "../analysis/analysis";
+import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
 
-interface ScoredPossibleKeepDiscardProps
-  extends
-    BreakdownProps,
-    ScoredPossibleKeepDiscardCribDetailsProps<ComparableCard> {
-  readonly expectedHandPoints: number;
-  readonly expectedNetPoints: number;
-  readonly signedExpectedCribPoints: number;
+export interface ScoredPossibleKeepDiscardProps {
+  readonly scoredKeepDiscard: ScoredKeepDiscard<
+    Card & { readonly dealOrder: number }
+  >;
+  readonly cribRole: CribRole;
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
   readonly rowIndex: number;
@@ -32,31 +28,19 @@ const formatSignedExpectedPoints = (points: number): string => {
 };
 
 export function ScoredPossibleKeepDiscard({
-  keep,
-  discard,
-  handPointsBreakdown,
-  expectedCribPointBreakdown,
-  expectedCribPoints,
-  expectedHandPoints,
-  expectedNetPoints,
-  signedExpectedCribPoints,
-  cribStarterPoints,
-  avgCutAdded15s,
-  avgCutAddedPairs,
-  avgCutAddedRuns,
-  avgCutAddedFlushes,
-  avgCutAddedNobs,
-  flushesContributions,
-  nobsContributions,
-  cutCountsRemaining,
-  fifteensContributions,
-  pairsContributions,
-  runsContributions,
+  scoredKeepDiscard,
+  cribRole,
   sortOrder,
   isHighlighted,
   rowIndex,
-  cribRole,
 }: ScoredPossibleKeepDiscardProps) {
+  const {
+    keep,
+    discard,
+    expectedHandPoints,
+    expectedNetPoints,
+    signedExpectedCribPoints,
+  } = scoredKeepDiscard;
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleRowClick = useCallback(() => {
@@ -118,30 +102,12 @@ export function ScoredPossibleKeepDiscard({
         </td>
       </tr>
       {isExpanded ? (
-        /* jscpd:ignore-start */
         <ScoredPossibleKeepDiscardExpandedRow
-          avgCutAdded15s={avgCutAdded15s}
-          avgCutAddedFlushes={avgCutAddedFlushes}
-          avgCutAddedNobs={avgCutAddedNobs}
-          avgCutAddedPairs={avgCutAddedPairs}
-          avgCutAddedRuns={avgCutAddedRuns}
           cribRole={cribRole}
-          cribStarterPoints={cribStarterPoints}
-          cutCountsRemaining={cutCountsRemaining}
-          discard={discard}
-          expectedCribPointBreakdown={expectedCribPointBreakdown}
-          expectedCribPoints={expectedCribPoints}
-          fifteensContributions={fifteensContributions}
-          flushesContributions={flushesContributions}
-          handPointsBreakdown={handPointsBreakdown}
-          keep={keep}
-          nobsContributions={nobsContributions}
-          pairsContributions={pairsContributions}
-          runsContributions={runsContributions}
+          scoredKeepDiscard={scoredKeepDiscard}
           sortOrder={sortOrder}
         />
       ) : null}
-      {/* jscpd:ignore-end */}
     </>
   );
 }

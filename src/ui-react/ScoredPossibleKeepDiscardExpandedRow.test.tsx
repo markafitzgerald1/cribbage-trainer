@@ -1,9 +1,9 @@
 /* jscpd:ignore-start */
+import { type Card, Rank, Suit, createCard } from "../game/Card";
 import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
-import { Rank, Suit, createCard } from "../game/Card";
 import {
   ScoredPossibleKeepDiscardExpandedRow,
   type ScoredPossibleKeepDiscardExpandedRowProps,
@@ -11,6 +11,7 @@ import {
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { getAllByCardText, queryAllByCardText } from "./test-utils";
+import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { SortOrder } from "../ui/SortOrder";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
@@ -137,22 +138,22 @@ const createContribution = (rank: Rank, points: number) => ({
 
 const MOCK_FIFTEENS_CONTRIBUTIONS = [createContribution(Rank.FIVE, 2)];
 
-const DEFAULT_PROPS: Omit<
-  ScoredPossibleKeepDiscardExpandedRowProps,
-  "expectedCribPointBreakdown"
-> = {
+const DEFAULT_SCORED_KEEP_DISCARD: ScoredKeepDiscard<Card> = {
   avgCutAdded15s: 0.5,
   avgCutAddedFlushes: 0,
   avgCutAddedNobs: 0,
   avgCutAddedPairs: 0.1,
   avgCutAddedRuns: 0.2,
-  cribRole: CribRole.Dealer,
   cribStarterPoints: CRIB_STARTER_POINTS,
   cutCountsRemaining: Array.from({ length: 13 }, () => 4),
   discard: [],
+  expectedCribPointBreakdown: missingCribPointBreakdown,
   expectedCribPoints: 1.5,
+  expectedHandPoints: 4.8,
+  expectedNetPoints: 6.3,
   fifteensContributions: [],
   flushesContributions: [],
+  handPoints: 4,
   handPointsBreakdown: {
     fifteens: 2,
     flushes: 0,
@@ -165,63 +166,57 @@ const DEFAULT_PROPS: Omit<
   nobsContributions: [],
   pairsContributions: [],
   runsContributions: [],
-  sortOrder: SortOrder.Ascending,
+  signedExpectedCribPoints: 1.5,
 };
 
+type ScoredPossibleKeepDiscardExpandedRowTestOverrides = Partial<
+  Omit<ScoredPossibleKeepDiscardExpandedRowProps, "scoredKeepDiscard"> &
+    ScoredKeepDiscard<Card>
+>;
+
 const renderRow = (
-  overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+  overrides: ScoredPossibleKeepDiscardExpandedRowTestOverrides = {},
 ) => {
   setTableSync(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
   );
 
-  const props = { ...DEFAULT_PROPS, ...overrides };
+  const cribRole = overrides.cribRole ?? CribRole.Dealer;
+  const sortOrder = overrides.sortOrder ?? SortOrder.Ascending;
 
   const expectedCribPointBreakdown =
     "expectedCribPointBreakdown" in overrides
       ? overrides.expectedCribPointBreakdown
       : CRIB_POINT_BREAKDOWN;
 
-  /* jscpd:ignore-start */
+  const scoredKeepDiscard: ScoredKeepDiscard<Card> = {
+    ...DEFAULT_SCORED_KEEP_DISCARD,
+    ...overrides,
+    expectedCribPointBreakdown,
+  };
+
   return render(
     <table>
       <tbody>
         <ScoredPossibleKeepDiscardExpandedRow
-          avgCutAdded15s={props.avgCutAdded15s}
-          avgCutAddedFlushes={props.avgCutAddedFlushes}
-          avgCutAddedNobs={props.avgCutAddedNobs}
-          avgCutAddedPairs={props.avgCutAddedPairs}
-          avgCutAddedRuns={props.avgCutAddedRuns}
-          cribRole={props.cribRole}
-          cribStarterPoints={props.cribStarterPoints}
-          cutCountsRemaining={props.cutCountsRemaining}
-          discard={props.discard}
-          expectedCribPointBreakdown={expectedCribPointBreakdown}
-          expectedCribPoints={props.expectedCribPoints}
-          fifteensContributions={props.fifteensContributions}
-          flushesContributions={props.flushesContributions}
-          handPointsBreakdown={props.handPointsBreakdown}
-          keep={props.keep}
-          nobsContributions={props.nobsContributions}
-          pairsContributions={props.pairsContributions}
-          runsContributions={props.runsContributions}
-          sortOrder={props.sortOrder}
+          cribRole={cribRole}
+          scoredKeepDiscard={scoredKeepDiscard}
+          sortOrder={sortOrder}
         />
       </tbody>
     </table>,
   );
-  /* jscpd:ignore-end */
 };
 
 const renderExpandedStarterDetails = (
-  overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+  overrides: ScoredPossibleKeepDiscardExpandedRowTestOverrides = {},
 ) => {
   renderRow(overrides);
   expandStarterDetails();
 };
 
 const renderExpandedCribDetails = (
-  overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+  overrides: ScoredPossibleKeepDiscardExpandedRowTestOverrides = {},
 ) => {
   renderRow(overrides);
   expandCribDetails();

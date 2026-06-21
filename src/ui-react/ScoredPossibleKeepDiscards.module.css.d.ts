@@ -11,3 +11,5 @@ export const oddRow: string;
 export const evenRow: string;
 export const scoreColumn: string;
 export const loading: string;
+export const error: string;
+export const retryButton: string;
