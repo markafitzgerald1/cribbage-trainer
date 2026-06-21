@@ -23,4 +23,8 @@ export const renderThenSelectTwoDiscards = async (
     ([, value]) => value === SortOrder.DealOrder,
   )?.[0];
   await page.locator(`label[for="${dealOrderKey}"]`).first().click();
+
+  // Wait for the analysis table to load completely
+  await page.locator('text="Loading analysis..."').waitFor({ state: "hidden" });
+  await page.getByRole("table").waitFor({ state: "visible" });
 };

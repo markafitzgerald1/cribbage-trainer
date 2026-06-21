@@ -38,13 +38,23 @@ const expectColumnHeaders = async (
   canvasElement: HTMLElement,
   columnHeaders: readonly string[],
 ) => {
+  await waitFor(
+    async () => {
+      await expect(
+        within(canvasElement).queryByText("Loading analysis..."),
+      ).toBeNull();
+    },
+    { timeout: 5000 },
+  );
+
   await Promise.all(
-    columnHeaders.map(async (columnHeader) =>
-      expect(
-        within(canvasElement).getByRole("columnheader", {
-          name: columnHeader,
-        }),
-      ).toBeVisible(),
+    columnHeaders.map(
+      async (columnHeader) =>
+        await expect(
+          within(canvasElement).getByRole("columnheader", {
+            name: columnHeader,
+          }),
+        ).toBeVisible(),
     ),
   );
 };
@@ -123,7 +133,13 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expectColumnHeaders(canvasElement, ["E(h)", "E(c)", "E(h+c)"]);
+    await expectColumnHeaders(canvasElement, ["E(h)", "E(c)"]);
+    const netHeader =
+      within(canvasElement).queryByRole("columnheader", { name: "E(h+c)" }) ??
+      within(canvasElement).queryByRole("columnheader", { name: "E(h-c)" });
+
+    await expect(netHeader).not.toBeNull();
+    await expect(netHeader).toBeVisible();
   },
 };
 

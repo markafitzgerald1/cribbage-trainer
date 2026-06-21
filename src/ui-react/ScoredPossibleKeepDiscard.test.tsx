@@ -1,3 +1,7 @@
+import {
+  CribRole,
+  type ExpectedCribPointsTable,
+} from "../game/expectedCribPoints";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
@@ -6,10 +10,12 @@ import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createElement } from "react";
 import { dealHand } from "../game/dealHand";
+import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
+import { setTableSync } from "../game/expectedCribPointsTableLoader";
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const EXPECTED_CELL_COUNT = 4;
@@ -58,12 +64,17 @@ function renderComponentWithScenario(
   isHighlighted = false,
   signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
 ) {
+  setTableSync(
+    expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+  );
+
   const props = {
     avgCutAdded15s: scenario.cutAdded.avg15s,
     avgCutAddedFlushes: scenario.cutAdded.avgFlushes,
     avgCutAddedNobs: scenario.cutAdded.avgNobs,
     avgCutAddedPairs: scenario.cutAdded.avgPairs,
     avgCutAddedRuns: scenario.cutAdded.avgRuns,
+    cribRole: CribRole.Dealer,
     cribStarterPoints: CRIB_STARTER_POINTS,
     cutCountsRemaining: scenario.cutAdded.cutCountsRemaining,
     discard: scenario.discard,

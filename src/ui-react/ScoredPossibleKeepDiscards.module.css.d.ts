@@ -10,3 +10,4 @@ export const netScoreColumn: string;
 export const oddRow: string;
 export const evenRow: string;
 export const scoreColumn: string;
+export const loading: string;

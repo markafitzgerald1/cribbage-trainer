@@ -10,21 +10,29 @@ import { type ComparableCard, sortCards } from "../ui/sortCards";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
+import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
+import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
+import { setTableSync } from "../game/expectedCribPointsTableLoader";
 
 const mathRandom = Math.random;
 const CARD_DRAW_RANDOM_VALUE = 0;
 const DEALER_RANDOM_VALUE = 0.49;
 const PONE_RANDOM_VALUE = 0.5;
 
-const renderTrainerWithGenerator = (generateRandomNumber: () => number) =>
-  render(
+const renderTrainerWithGenerator = (generateRandomNumber: () => number) => {
+  setTableSync(
+    expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+  );
+
+  return render(
     <Trainer
       generateRandomNumber={generateRandomNumber}
       loadGoogleAnalytics={jest.fn()}
     />,
   );
+};
 
 const renderTrainer = () => renderTrainerWithGenerator(mathRandom);
 

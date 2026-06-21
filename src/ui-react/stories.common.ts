@@ -1,4 +1,4 @@
-import { expect, fireEvent, within } from "storybook/test";
+import { expect, fireEvent, waitFor, within } from "storybook/test";
 import type { Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 
@@ -33,6 +33,13 @@ export const playToggle = async (
   { toggleCribDetails = false, toggleStarterDetails = false } = {},
 ) => {
   const canvas = within(canvasElement);
+  await waitFor(
+    async () => {
+      await expect(canvas.queryByText("Loading analysis...")).toBeNull();
+    },
+    { timeout: 5000 },
+  );
+
   const table = await canvas.findByRole("table");
   const rows = await within(table).findAllByRole("row");
   const row = rows.length === 1 ? rows[0] : rows[1];

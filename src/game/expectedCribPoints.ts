@@ -480,10 +480,12 @@ export const expectedCribPointBreakdown = (
 };
 
 export const expectedCribPoints = (opts: ExpectedCribPointsOptions): number => {
-  const buckets = getExpectedCribBuckets(opts);
-
   if (typeof opts.starterRank !== "undefined") {
-    return getBucketMu(getBucket(buckets, toStarterRank(opts.starterRank)));
+    const targetRank = toStarterRank(opts.starterRank);
+    const points = expectedCribPointsByStarterRank(opts).find(
+      (entry) => entry.starterRank === targetRank,
+    );
+    return (points as ExpectedCribStarterPoints).expectedCribPoints;
   }
 
   const totalKnownStarterWeight = DECK_SIZE - opts.knownCards.length;

@@ -1,15 +1,40 @@
 /* jscpd:ignore-start */
+import {
+  CribRole,
+  type ExpectedCribPointsTable,
+} from "../game/expectedCribPoints";
 import { Rank, createCard } from "../game/Card";
-import { describe, expect, it } from "@jest/globals";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, jest } from "@jest/globals";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
-import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
+import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
+import { setTableSync } from "../game/expectedCribPointsTableLoader";
 /* jscpd:ignore-end */
+
+const mockLoadTable = jest.fn(() => {
+  const actualLoader = jest.requireActual<
+    typeof import("../game/expectedCribPointsTableLoader")
+  >("../game/expectedCribPointsTableLoader");
+  return actualLoader.loadTable();
+});
+
+jest.mock<typeof import("../game/expectedCribPointsTableLoader")>(
+  "../game/expectedCribPointsTableLoader",
+  () => {
+    const actual = jest.requireActual<
+      typeof import("../game/expectedCribPointsTableLoader")
+    >("../game/expectedCribPointsTableLoader");
+    return {
+      ...actual,
+      loadTable: () => mockLoadTable(),
+    };
+  },
+);
 
 describe("scored possible keep discards component", () => {
   const mathRandom = Math.random;
@@ -17,14 +42,22 @@ describe("scored possible keep discards component", () => {
   const renderScoredPossibleKeepDiscards = (
     dealtCards: DealtCard[],
     cribRole: CribRole = CribRole.Dealer,
-  ) =>
-    render(
+    preload = true,
+  ) => {
+    if (preload) {
+      setTableSync(
+        expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+      );
+    }
+
+    return render(
       <ScoredPossibleKeepDiscards
         cribRole={cribRole}
         dealtCards={dealtCards}
         sortOrder={SortOrder.Ascending}
       />,
     );
+  };
 
   const dealAndRender = () => {
     const dealtHand = dealHand(mathRandom);
@@ -103,4 +136,43 @@ describe("scored possible keep discards component", () => {
       );
     },
   );
+
+  /* jscpd:ignore-start */
+  it("renders loading state when table is not loaded, then renders content once loaded", async () => {
+    setTableSync(null);
+
+    renderScoredPossibleKeepDiscards(
+      dealHand(mathRandom),
+      CribRole.Dealer,
+      false,
+    );
+
+    expect(screen.getByText("Loading analysis...")).toBeTruthy();
+
+    await waitFor(() => {
+      expect(screen.queryByText("Loading analysis...")).toBeNull();
+    });
+
+    expect(screen.getByRole("table")).toBeTruthy();
+  });
+
+  it("handles loading error gracefully", async () => {
+    setTableSync(null);
+    mockLoadTable.mockRejectedValueOnce(new Error("Fake load error"));
+
+    renderScoredPossibleKeepDiscards(
+      dealHand(mathRandom),
+      CribRole.Dealer,
+      false,
+    );
+
+    expect(screen.getByText("Loading analysis...")).toBeTruthy();
+
+    await waitFor(() => {
+      expect(mockLoadTable).toHaveBeenCalledWith();
+    });
+
+    expect(mockLoadTable).toHaveBeenCalledWith();
+  });
+  /* jscpd:ignore-end */
 });

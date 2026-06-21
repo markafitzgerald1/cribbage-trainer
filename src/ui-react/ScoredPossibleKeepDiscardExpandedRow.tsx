@@ -1,15 +1,16 @@
 import * as classes from "./ScoredPossibleKeepDiscardExpandedRow.module.css";
 import {
-  type CutResult,
-  type MinimalCard,
-  groupCutsByResults,
-} from "./groupCutsByResults";
-import {
+  CribRole,
   type ExpectedCribPointBreakdown,
   type ExpectedCribStarterSuitRelationPoints,
   STARTER_RANKS,
   type StarterRank,
 } from "../game/expectedCribPoints";
+import {
+  type CutResult,
+  type MinimalCard,
+  groupCutsByResults,
+} from "./groupCutsByResults";
 import { type ReactNode, useCallback, useState } from "react";
 import type { BreakdownProps } from "./BreakdownProps";
 import { CardLabel } from "./CardLabel";
@@ -21,6 +22,9 @@ import { SortOrder } from "../ui/SortOrder";
 
 const DECIMAL_PLACES = 2;
 const ZERO_AVERAGE = "0.00";
+const DEALER_MULTIPLIER = 1;
+const PONE_MULTIPLIER = -1;
+const [undefinedVal] = [] as undefined[];
 
 interface Category {
   readonly isMutedHeader?: boolean;
@@ -47,15 +51,49 @@ interface SummaryLabelOptions {
 const createCribCategories = (
   expectedCribPoints: number,
   pointBreakdown: ExpectedCribPointBreakdown | undefined,
-) =>
-  [
-    { label: "15s", value: pointBreakdown?.fifteens },
-    { label: "Pairs", value: pointBreakdown?.pairs },
-    { label: "Runs", value: pointBreakdown?.runs },
-    { label: "Flushes", value: pointBreakdown?.flushes },
-    { label: "Nobs", value: pointBreakdown?.nobs },
-    { label: "Total", value: expectedCribPoints },
+  cribRole: CribRole,
+) => {
+  const multiplier =
+    cribRole === CribRole.Dealer ? DEALER_MULTIPLIER : PONE_MULTIPLIER;
+  return [
+    {
+      label: "15s",
+      value:
+        typeof pointBreakdown?.fifteens === "undefined"
+          ? undefinedVal
+          : pointBreakdown.fifteens * multiplier,
+    },
+    {
+      label: "Pairs",
+      value:
+        typeof pointBreakdown?.pairs === "undefined"
+          ? undefinedVal
+          : pointBreakdown.pairs * multiplier,
+    },
+    {
+      label: "Runs",
+      value:
+        typeof pointBreakdown?.runs === "undefined"
+          ? undefinedVal
+          : pointBreakdown.runs * multiplier,
+    },
+    {
+      label: "Flushes",
+      value:
+        typeof pointBreakdown?.flushes === "undefined"
+          ? undefinedVal
+          : pointBreakdown.flushes * multiplier,
+    },
+    {
+      label: "Nobs",
+      value:
+        typeof pointBreakdown?.nobs === "undefined"
+          ? undefinedVal
+          : pointBreakdown.nobs * multiplier,
+    },
+    { label: "Total", value: expectedCribPoints * multiplier },
   ] as const satisfies readonly Category[];
+};
 
 const starterRankToRank = (starterRank: StarterRank): Rank =>
   STARTER_RANKS.indexOf(starterRank) as Rank;
@@ -107,6 +145,7 @@ export interface ScoredPossibleKeepDiscardCribDetailsProps<
   readonly expectedCribPoints: number;
   readonly handPointsBreakdown: HandPoints;
   readonly keep: readonly T[];
+  readonly cribRole: CribRole;
 }
 
 export interface ScoredPossibleKeepDiscardExpandedRowProps
@@ -137,6 +176,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   expectedCribPoints,
   handPointsBreakdown,
   sortOrder,
+  cribRole,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
   const [areCutDetailsExpanded, setAreCutDetailsExpanded] = useState(false);
   const [areCribDetailsExpanded, setAreCribDetailsExpanded] = useState(false);
@@ -318,7 +358,11 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       decimalPlaces: DECIMAL_PLACES,
       key: starterRank,
       label: <CardLabel rank={starterRankToRank(starterRank)} />,
-      rowCategories: createCribCategories(starterCribPoints, pointBreakdown),
+      rowCategories: createCribCategories(
+        starterCribPoints,
+        pointBreakdown,
+        cribRole,
+      ),
     });
   const renderCribStarterRelationRow = ({
     expectedCribPoints: relationCribPoints,
@@ -337,7 +381,11 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           suits={suits}
         />
       ),
-      rowCategories: createCribCategories(relationCribPoints, pointBreakdown),
+      rowCategories: createCribCategories(
+        relationCribPoints,
+        pointBreakdown,
+        cribRole,
+      ),
     });
   const renderCribStarterRows = (
     starterPoints: SignedExpectedCribStarterPoints,
@@ -397,6 +445,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
             rowCategories: createCribCategories(
               expectedCribPoints,
               expectedCribPointBreakdown,
+              cribRole,
             ),
           })}
           {areCribDetailsExpanded ? (

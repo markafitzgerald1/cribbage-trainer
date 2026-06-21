@@ -228,7 +228,7 @@ describe("expectedCribPoints", () => {
           table: v2Table,
         }),
       ),
-    ).toBe(50);
+    ).toBe(12.5);
   });
 
   it("weights v2 point types from six known cards", () => {

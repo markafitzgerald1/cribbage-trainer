@@ -15,6 +15,7 @@ import {
   toCutBreakdown,
 } from "../game/expectedCutAddedPoints";
 import type { ComparableCard } from "../ui/sortCards";
+import { CribRole } from "../game/expectedCribPoints";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { createElement } from "react";
 import { expectedHandPoints } from "../game/expectedHandPoints";
@@ -132,6 +133,7 @@ const createStory = ({
   return {
     args: {
       ...toCutBreakdown(cutAdded),
+      cribRole: CribRole.Dealer,
       cribStarterPoints: storyCribStarterPoints,
       discard: discard.map(toComparableCard),
       expectedCribPointBreakdown,

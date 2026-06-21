@@ -55,6 +55,7 @@ export function ScoredPossibleKeepDiscard({
   sortOrder,
   isHighlighted,
   rowIndex,
+  cribRole,
 }: ScoredPossibleKeepDiscardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -117,12 +118,14 @@ export function ScoredPossibleKeepDiscard({
         </td>
       </tr>
       {isExpanded ? (
+        /* jscpd:ignore-start */
         <ScoredPossibleKeepDiscardExpandedRow
           avgCutAdded15s={avgCutAdded15s}
           avgCutAddedFlushes={avgCutAddedFlushes}
           avgCutAddedNobs={avgCutAddedNobs}
           avgCutAddedPairs={avgCutAddedPairs}
           avgCutAddedRuns={avgCutAddedRuns}
+          cribRole={cribRole}
           cribStarterPoints={cribStarterPoints}
           cutCountsRemaining={cutCountsRemaining}
           discard={discard}
@@ -138,6 +141,7 @@ export function ScoredPossibleKeepDiscard({
           sortOrder={sortOrder}
         />
       ) : null}
+      {/* jscpd:ignore-end */}
     </>
   );
 }

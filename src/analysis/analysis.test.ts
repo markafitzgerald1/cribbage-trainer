@@ -10,6 +10,10 @@ import {
   allScoredKeepDiscardsByExpectedNetScoreDescending,
 } from "./analysis";
 import { describe, expect, it } from "@jest/globals";
+import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
+
+const expectedCribPointsTable =
+  expectedCribPointsTableData as unknown as ExpectedCribPointsTable;
 
 const { ACE, TWO, THREE, FOUR, FIVE, SIX, EIGHT, TEN, JACK, QUEEN, KING } =
   card;
@@ -75,7 +79,11 @@ function expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
   cards: readonly Card[],
 ): void {
   const actualScoredKeepDiscards = roundExpectedHandPoints(
-    allScoredKeepDiscardsByExpectedNetScoreDescending(cards, CribRole.Dealer),
+    allScoredKeepDiscardsByExpectedNetScoreDescending(
+      cards,
+      CribRole.Dealer,
+      expectedCribPointsTable,
+    ),
   );
 
   const toComparison = (scored: ScoredKeepDiscard<Card>) => ({
@@ -91,16 +99,25 @@ function expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
   expect(actualForComparison).toMatchSnapshot();
 }
 
+/* jscpd:ignore-start */
 describe("allScoredKeepDiscardsByScoreDescending", () => {
   it("should return nothing for an empty deal", () => {
     expect(
-      allScoredKeepDiscardsByExpectedNetScoreDescending([], CribRole.Dealer),
+      allScoredKeepDiscardsByExpectedNetScoreDescending(
+        [],
+        CribRole.Dealer,
+        expectedCribPointsTable,
+      ),
     ).toStrictEqual([]);
   });
 
   it("should return nothing for a one-card deal", () => {
     expect(
-      allScoredKeepDiscardsByExpectedNetScoreDescending([ACE], CribRole.Dealer),
+      allScoredKeepDiscardsByExpectedNetScoreDescending(
+        [ACE],
+        CribRole.Dealer,
+        expectedCribPointsTable,
+      ),
     ).toStrictEqual([]);
   });
 
@@ -108,9 +125,14 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     const cards = [ACE, ACE];
 
     expect(() =>
-      allScoredKeepDiscardsByExpectedNetScoreDescending(cards, CribRole.Dealer),
+      allScoredKeepDiscardsByExpectedNetScoreDescending(
+        cards,
+        CribRole.Dealer,
+        expectedCribPointsTable,
+      ),
     ).toThrow("Duplicate cards exist");
   });
+  /* jscpd:ignore-end */
 
   it("two card deal order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual([ACE, TWO]);

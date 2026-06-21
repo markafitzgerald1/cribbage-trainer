@@ -1,10 +1,20 @@
 import * as classes from "./ScoredPossibleKeepDiscards.module.css";
-import { type MouseEvent, useCallback, useMemo, useState } from "react";
+import * as loader from "../game/expectedCribPointsTableLoader";
+import {
+  CribRole,
+  type ExpectedCribPointsTable,
+} from "../game/expectedCribPoints";
+import {
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   ScoredKeepDiscardSortKey,
   compareByExpectedScoreThenRankDescending,
 } from "../analysis/compareByExpectedScoreDescending";
-import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
@@ -13,6 +23,7 @@ import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/a
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
+
   readonly sortOrder: SortOrder;
 }
 
@@ -55,13 +66,34 @@ export function ScoredPossibleKeepDiscards({
   dealtCards,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
+  const [table, setTable] = useState<ExpectedCribPointsTable | null>(
+    loader.getTableSync(),
+  );
+
+  useEffect(() => {
+    if (!table) {
+      loader
+        .loadTable()
+        .then(setTable)
+        .catch(() => {
+          /* Ignore loading error */
+        });
+    }
+  }, [table]);
+
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
   const scoredKeepDiscardsByNetScore = useMemo(
     () =>
-      allScoredKeepDiscardsByExpectedNetScoreDescending(dealtCards, cribRole),
-    [cribRole, dealtCards],
+      table
+        ? allScoredKeepDiscardsByExpectedNetScoreDescending(
+            dealtCards,
+            cribRole,
+            table,
+          )
+        : [],
+    [cribRole, dealtCards, table],
   );
   const scoredKeepDiscards = useMemo(
     () =>
@@ -76,6 +108,10 @@ export function ScoredPossibleKeepDiscards({
     },
     [],
   );
+
+  if (!table) {
+    return <div className={classes.loading}>Loading analysis...</div>;
+  }
   const renderHandHeader = () => (
     <th aria-label="Hand composition">
       <span className={`${classes.headerStack} ${classes.headerStackStart}`}>
@@ -121,12 +157,14 @@ export function ScoredPossibleKeepDiscards({
   const renderScoringTableBody = () => (
     <tbody>
       {scoredKeepDiscards.map((scoredKeepDiscard, index) => (
+        /* jscpd:ignore-start */
         <ScoredPossibleKeepDiscard
           avgCutAdded15s={scoredKeepDiscard.avgCutAdded15s}
           avgCutAddedFlushes={scoredKeepDiscard.avgCutAddedFlushes}
           avgCutAddedNobs={scoredKeepDiscard.avgCutAddedNobs}
           avgCutAddedPairs={scoredKeepDiscard.avgCutAddedPairs}
           avgCutAddedRuns={scoredKeepDiscard.avgCutAddedRuns}
+          cribRole={cribRole}
           cribStarterPoints={scoredKeepDiscard.cribStarterPoints}
           cutCountsRemaining={scoredKeepDiscard.cutCountsRemaining}
           discard={scoredKeepDiscard.discard}
@@ -151,6 +189,7 @@ export function ScoredPossibleKeepDiscards({
           signedExpectedCribPoints={scoredKeepDiscard.signedExpectedCribPoints}
           sortOrder={sortOrder}
         />
+        /* jscpd:ignore-end */
       ))}
     </tbody>
   );

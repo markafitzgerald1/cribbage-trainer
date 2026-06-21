@@ -17,10 +17,6 @@ import { CARDS_PER_DISCARD } from "../game/facts";
 import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
 import { compareByExpectedNetScoreThenRankDescending } from "./compareByExpectedScoreDescending";
-import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
-
-const expectedCribPointsTable =
-  expectedCribPointsTableData as unknown as ExpectedCribPointsTable;
 
 export interface ScoredKeepDiscard<T extends Card> extends CutBreakdown {
   keep: readonly T[];
@@ -58,7 +54,7 @@ export const allScoredKeepDiscardsByExpectedNetScoreDescending = <
 >(
   cards: readonly T[],
   cribRole: CribRole,
-  table: ExpectedCribPointsTable = expectedCribPointsTable,
+  table: ExpectedCribPointsTable,
 ): ScoredKeepDiscard<T>[] => {
   if (new Set(cards).size !== cards.length) {
     throw new Error("Duplicate cards exist");

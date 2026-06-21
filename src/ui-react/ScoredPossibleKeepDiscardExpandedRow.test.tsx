@@ -1,4 +1,8 @@
 /* jscpd:ignore-start */
+import {
+  CribRole,
+  type ExpectedCribPointsTable,
+} from "../game/expectedCribPoints";
 import { Rank, Suit, createCard } from "../game/Card";
 import {
   ScoredPossibleKeepDiscardExpandedRow,
@@ -8,6 +12,8 @@ import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { getAllByCardText, queryAllByCardText } from "./test-utils";
 import { SortOrder } from "../ui/SortOrder";
+import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
+import { setTableSync } from "../game/expectedCribPointsTableLoader";
 /* jscpd:ignore-end */
 
 const MUTED_SELECTOR = '[class*="muted"]';
@@ -123,89 +129,105 @@ function expectCardLabelRendered(label: string): void {
   expect(getAllByCardText(screen, label).length).toBeGreaterThan(0);
 }
 
+const createContribution = (rank: Rank, points: number) => ({
+  count: 4,
+  cutCard: createCard(rank, "♠"),
+  points,
+});
+
+const MOCK_FIFTEENS_CONTRIBUTIONS = [createContribution(Rank.FIVE, 2)];
+
+const DEFAULT_PROPS: Omit<
+  ScoredPossibleKeepDiscardExpandedRowProps,
+  "expectedCribPointBreakdown"
+> = {
+  avgCutAdded15s: 0.5,
+  avgCutAddedFlushes: 0,
+  avgCutAddedNobs: 0,
+  avgCutAddedPairs: 0.1,
+  avgCutAddedRuns: 0.2,
+  cribRole: CribRole.Dealer,
+  cribStarterPoints: CRIB_STARTER_POINTS,
+  cutCountsRemaining: Array.from({ length: 13 }, () => 4),
+  discard: [],
+  expectedCribPoints: 1.5,
+  fifteensContributions: [],
+  flushesContributions: [],
+  handPointsBreakdown: {
+    fifteens: 2,
+    flushes: 0,
+    nobs: 0,
+    pairs: 2,
+    runs: 0,
+    total: 4,
+  },
+  keep: [],
+  nobsContributions: [],
+  pairsContributions: [],
+  runsContributions: [],
+  sortOrder: SortOrder.Ascending,
+};
+
+const renderRow = (
+  overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+) => {
+  setTableSync(
+    expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+  );
+
+  const props = { ...DEFAULT_PROPS, ...overrides };
+
+  const expectedCribPointBreakdown =
+    "expectedCribPointBreakdown" in overrides
+      ? overrides.expectedCribPointBreakdown
+      : CRIB_POINT_BREAKDOWN;
+
+  /* jscpd:ignore-start */
+  return render(
+    <table>
+      <tbody>
+        <ScoredPossibleKeepDiscardExpandedRow
+          avgCutAdded15s={props.avgCutAdded15s}
+          avgCutAddedFlushes={props.avgCutAddedFlushes}
+          avgCutAddedNobs={props.avgCutAddedNobs}
+          avgCutAddedPairs={props.avgCutAddedPairs}
+          avgCutAddedRuns={props.avgCutAddedRuns}
+          cribRole={props.cribRole}
+          cribStarterPoints={props.cribStarterPoints}
+          cutCountsRemaining={props.cutCountsRemaining}
+          discard={props.discard}
+          expectedCribPointBreakdown={expectedCribPointBreakdown}
+          expectedCribPoints={props.expectedCribPoints}
+          fifteensContributions={props.fifteensContributions}
+          flushesContributions={props.flushesContributions}
+          handPointsBreakdown={props.handPointsBreakdown}
+          keep={props.keep}
+          nobsContributions={props.nobsContributions}
+          pairsContributions={props.pairsContributions}
+          runsContributions={props.runsContributions}
+          sortOrder={props.sortOrder}
+        />
+      </tbody>
+    </table>,
+  );
+  /* jscpd:ignore-end */
+};
+
+const renderExpandedStarterDetails = (
+  overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+) => {
+  renderRow(overrides);
+  expandStarterDetails();
+};
+
+const renderExpandedCribDetails = (
+  overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
+) => {
+  renderRow(overrides);
+  expandCribDetails();
+};
+
 describe("scoredPossibleKeepDiscardExpandedRow", () => {
-  const createContribution = (rank: Rank, points: number) => ({
-    count: 4,
-    cutCard: createCard(rank, "♠"),
-    points,
-  });
-
-  const MOCK_FIFTEENS_CONTRIBUTIONS = [createContribution(Rank.FIVE, 2)];
-
-  const renderRow = (
-    overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
-  ) => {
-    const a15s = overrides.avgCutAdded15s ?? 0.5;
-    const aFlushes = overrides.avgCutAddedFlushes ?? 0;
-    const aNobs = overrides.avgCutAddedNobs ?? 0;
-    const aPairs = overrides.avgCutAddedPairs ?? 0.1;
-    const aRuns = overrides.avgCutAddedRuns ?? 0.2;
-    const counts =
-      overrides.cutCountsRemaining ?? Array.from({ length: 13 }, () => 4);
-    const fifteens = overrides.fifteensContributions ?? [];
-    const flushes = overrides.flushesContributions ?? [];
-    const handPointsBreakdown = overrides.handPointsBreakdown ?? {
-      fifteens: 2,
-      flushes: 0,
-      nobs: 0,
-      pairs: 2,
-      runs: 0,
-      total: 4,
-    };
-    const nobs = overrides.nobsContributions ?? [];
-    const pairs = overrides.pairsContributions ?? [];
-    const runs = overrides.runsContributions ?? [];
-    const order = overrides.sortOrder ?? SortOrder.Ascending;
-    const expectedCribPointBreakdown =
-      "expectedCribPointBreakdown" in overrides
-        ? overrides.expectedCribPointBreakdown
-        : CRIB_POINT_BREAKDOWN;
-
-    const keep = overrides.keep ?? [];
-    const discard = overrides.discard ?? [];
-
-    return render(
-      <table>
-        <tbody>
-          <ScoredPossibleKeepDiscardExpandedRow
-            avgCutAdded15s={a15s}
-            avgCutAddedFlushes={aFlushes}
-            avgCutAddedNobs={aNobs}
-            avgCutAddedPairs={aPairs}
-            avgCutAddedRuns={aRuns}
-            cribStarterPoints={
-              overrides.cribStarterPoints ?? CRIB_STARTER_POINTS
-            }
-            cutCountsRemaining={counts}
-            discard={discard}
-            expectedCribPointBreakdown={expectedCribPointBreakdown}
-            expectedCribPoints={overrides.expectedCribPoints ?? 1.5}
-            fifteensContributions={fifteens}
-            flushesContributions={flushes}
-            handPointsBreakdown={handPointsBreakdown}
-            keep={keep}
-            nobsContributions={nobs}
-            pairsContributions={pairs}
-            runsContributions={runs}
-            sortOrder={order}
-          />
-        </tbody>
-      </table>,
-    );
-  };
-  const renderExpandedStarterDetails = (
-    overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
-  ) => {
-    renderRow(overrides);
-    expandStarterDetails();
-  };
-  const renderExpandedCribDetails = (
-    overrides: Partial<ScoredPossibleKeepDiscardExpandedRowProps> = {},
-  ) => {
-    renderRow(overrides);
-    expandCribDetails();
-  };
-
   it("should render cut results when they exist to satisfy 100% coverage", () => {
     renderExpandedStarterDetails({
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
@@ -428,5 +450,27 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
 
     expect(queryAllByCardText(screen, "5♦")).toHaveLength(0);
     expect(screen.getByText("5.00")).toBeTruthy();
+  });
+
+  it("renders negative signed crib categories under Pone role", () => {
+    renderExpandedCribDetails({
+      cribRole: CribRole.Pone,
+      expectedCribPointBreakdown: CRIB_POINT_BREAKDOWN,
+      expectedCribPoints: 5.5,
+    });
+
+    const expectedValues = [
+      "-5.50",
+      "-0.25",
+      "-0.75",
+      "-0.50",
+      "-1.25",
+      "-2.00",
+    ];
+    for (const val of expectedValues) {
+      expect(screen.getAllByText(val).length).toBeGreaterThan(0);
+    }
+
+    expect(expectedValues).toHaveLength(6);
   });
 });
