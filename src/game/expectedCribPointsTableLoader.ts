@@ -8,10 +8,18 @@ export const loadTable = (): Promise<ExpectedCribPointsTable> => {
     return Promise.resolve(table);
   }
   if (!loadPromise) {
-    loadPromise = import("./expectedCribPointsTable.json").then((module) => {
-      table = module.default as unknown as ExpectedCribPointsTable;
-      return table;
-    });
+    loadPromise = import("./expectedCribPointsTable.json")
+      .then((module) => {
+        table = module.default as unknown as ExpectedCribPointsTable;
+        return table;
+      })
+      .catch(
+        /* istanbul ignore next */
+        (err) => {
+          loadPromise = null;
+          throw err as Error;
+        },
+      );
   }
   return loadPromise;
 };

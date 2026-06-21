@@ -364,4 +364,10 @@ export default [
       "init-declarations": "off",
     },
   },
+  {
+    files: ["**/*.stories.ts*"],
+    rules: {
+      "jest/require-hook": "off",
+    },
+  },
 ];

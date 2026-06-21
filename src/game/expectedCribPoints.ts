@@ -47,7 +47,9 @@ export type ExpectedCribPointsDiscardKey =
 
 type StarterSuitRelation =
   | "matching_discard_suit"
-  | "non_matching_discard_suit";
+  | "non_matching_discard_suit"
+  | "matching_rank_1_suit"
+  | "matching_rank_2_suit";
 
 type ExpectedCribPointStatistics = Partial<
   Record<keyof ExpectedCribPointBreakdown | "total", ExpectedCribStatistic>
@@ -108,7 +110,6 @@ export interface ExpectedCribStarterPoints {
 const missingPointBreakdown = new Map<string, ExpectedCribPointBreakdown>().get(
   "missing",
 );
-const missingSuit = new Map<string, Suit>().get("missing");
 const missingWeightedPointValue = new Map<string, number>().get("missing");
 
 interface PointBreakdownValues {
@@ -234,16 +235,6 @@ export const normalizeDiscardKey = (
   )}_${suitGroup}`;
 };
 
-const getSuitedDifferentRankDiscardSuit = (
-  discard: readonly Card[],
-): Suit | undefined => {
-  const [firstCard, secondCard] = sortDiscardByRank(discard);
-  return firstCard.rank !== secondCard.rank &&
-    firstCard.suit === secondCard.suit
-    ? firstCard.suit
-    : missingSuit;
-};
-
 const getExpectedCribBuckets = ({
   discard,
   role,
@@ -265,28 +256,43 @@ const getRemainingStarterSuits = (
 const getRelationSuits = (
   remainingSuits: readonly Suit[],
   relation: StarterSuitRelation,
-  discardSuit: Suit,
-) =>
-  relation === "matching_discard_suit"
-    ? remainingSuits.filter((suit) => suit === discardSuit)
-    : remainingSuits.filter((suit) => suit !== discardSuit);
+  discard: readonly Card[],
+): readonly Suit[] => {
+  switch (relation) {
+    case "non_matching_discard_suit":
+      return remainingSuits.filter(
+        (suit) => !discard.some((card) => card.suit === suit),
+      );
+    case "matching_discard_suit":
+      return remainingSuits.filter((suit) =>
+        discard.some((card) => card.suit === suit),
+      );
+    case "matching_rank_1_suit": {
+      const [firstCard] = sortDiscardByRank(discard);
+      return remainingSuits.filter((suit) => suit === firstCard.suit);
+    }
+    case "matching_rank_2_suit": {
+      const [, secondCard] = sortDiscardByRank(discard);
+      return remainingSuits.filter((suit) => suit === secondCard.suit);
+    }
+    /* istanbul ignore next */
+    default:
+      return [];
+  }
+};
 
 const getStarterSuitRelationPoints = ({
   bucket,
-  discardSuit,
+  discard,
   remainingSuits,
   starterRank,
 }: {
   readonly bucket: ExpectedCribBucket;
-  readonly discardSuit: Suit | undefined;
+  readonly discard: readonly Card[];
   readonly remainingSuits: readonly Suit[];
   readonly starterRank: StarterRank;
 }): readonly ExpectedCribStarterSuitRelationPoints[] => {
-  if (
-    typeof discardSuit !== "string" ||
-    typeof bucket === "number" ||
-    !bucket.starter_suit_relation
-  ) {
+  if (typeof bucket === "number" || !bucket.starter_suit_relation) {
     return [];
   }
 
@@ -294,9 +300,11 @@ const getStarterSuitRelationPoints = ({
   for (const relation of [
     "matching_discard_suit",
     "non_matching_discard_suit",
+    "matching_rank_1_suit",
+    "matching_rank_2_suit",
   ] as const) {
     const relationBucket = Reflect.get(bucket.starter_suit_relation, relation);
-    const suits = getRelationSuits(remainingSuits, relation, discardSuit);
+    const suits = getRelationSuits(remainingSuits, relation, discard);
 
     if (relationBucket && suits.length > 0) {
       relationPoints.push({
@@ -391,8 +399,6 @@ export const expectedCribPointsByStarterRank = (
 ): ExpectedCribStarterPoints[] => {
   const buckets = getExpectedCribBuckets(opts);
   const counts = rankCounts(opts.knownCards);
-  const discardSuit = getSuitedDifferentRankDiscardSuit(opts.discard);
-
   return CARD_RANKS.map((rank) => {
     const starterRank = rankToStarterRank(rank);
     const bucket = getBucket(buckets, starterRank);
@@ -402,7 +408,7 @@ export const expectedCribPointsByStarterRank = (
     );
     const starterSuitRelationPoints = getStarterSuitRelationPoints({
       bucket,
-      discardSuit,
+      discard: opts.discard,
       remainingSuits,
       starterRank,
     });

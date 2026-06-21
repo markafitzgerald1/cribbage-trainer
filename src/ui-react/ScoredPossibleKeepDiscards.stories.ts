@@ -1,4 +1,3 @@
-/* eslint-disable jest/require-hook */
 /* jscpd:ignore-start */
 import * as loader from "../game/expectedCribPointsTableLoader";
 import {
@@ -16,6 +15,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { vi } from "vitest";
+/* jscpd:ignore-end */
 
 interface MockGlobal {
   shouldFailLoad?: boolean;
@@ -90,6 +90,7 @@ export const DoubleExpanded: Story = {
 
 export const SortedByHandPoints: Story = {
   ...JackSixFiveFourKingQueenSortedDescending,
+  /* jscpd:ignore-start */
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitFor(
@@ -101,6 +102,7 @@ export const SortedByHandPoints: Story = {
     const headerButton = await canvas.findByRole("button", { name: /E\(h\)/u });
     await fireEvent.click(headerButton);
   },
+  /* jscpd:ignore-end */
 };
 
 export const LoadError: Story = {
@@ -111,6 +113,7 @@ export const LoadError: Story = {
       loader.setTableSync(null);
     },
   ],
+  /* jscpd:ignore-start */
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const retryButton = await canvas.findByRole("button", { name: /Retry/u });
@@ -128,5 +131,5 @@ export const LoadError: Story = {
       { timeout: 5000 },
     );
   },
+  /* jscpd:ignore-end */
 };
-/* jscpd:ignore-end */

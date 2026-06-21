@@ -320,10 +320,10 @@ describe("expectedCribPoints", () => {
     ).toBeCloseTo(SUITED_RELATION_WEIGHTED_TOTAL / SIX_KNOWN_STARTERS);
   });
 
-  it("suppresses starter relation rows for same-rank pairs", () => {
+  it("provides starter relation rows for unsuited pairs", () => {
     const starterPoints = cribStarterFivePoints(ACE_ACE_UNSUITED_DISCARD);
 
-    expect(starterPoints?.starterSuitRelationPoints).toStrictEqual([]);
+    expect(starterPoints?.starterSuitRelationPoints.length).toBeGreaterThan(0);
   });
 
   it("returns no point breakdown when relation points are missing a category", () => {
@@ -359,6 +359,39 @@ describe("expectedCribPoints", () => {
 
     expect(starterPoints?.pointBreakdown).toBeUndefined();
   });
+
+  /* jscpd:ignore-start */
+  it("handles matching_rank_1_suit and matching_rank_2_suit correctly", () => {
+    const customTable = {
+      ...v2Table,
+      [ACE_KING_UNSUITED]: {
+        ...v2Table[ACE_KING_UNSUITED],
+        Dealer: {
+          ...v2Table[ACE_KING_UNSUITED].Dealer,
+          "5": {
+            ...createStatistic(50),
+            [STARTER_SUIT_RELATION_FIELD]: {
+              // eslint-disable-next-line camelcase
+              matching_rank_1_suit: createStatistic(30),
+              // eslint-disable-next-line camelcase
+              matching_rank_2_suit: createStatistic(40),
+            },
+          },
+        },
+      },
+    } as unknown as ExpectedCribPointsTable;
+
+    const starterPoints = expectedCribPointsByStarterRank(
+      expectedCribOptions({
+        discard: ACE_KING_DISCARD,
+        knownCards: [],
+        table: customTable,
+      }),
+    ).find((points) => points.starterRank === "5");
+
+    expect(starterPoints?.starterSuitRelationPoints.length).toBeGreaterThan(0);
+  });
+  /* jscpd:ignore-end */
 
   it("uses the known starter bucket directly", () => {
     expect(
