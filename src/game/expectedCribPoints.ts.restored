@@ -2,7 +2,7 @@ import {
   CARD_RANKS,
   type Card,
   INDICES_PER_SUIT,
-  Rank,
+  type Rank,
   SUITS,
   SUITS_PER_DECK,
   type Suit,
@@ -335,27 +335,19 @@ const getRelationWeight = (
     : 0;
 };
 
-const isConditioned = (discard: readonly Card[]) =>
-  discard[0]?.suit !== discard[1]?.suit &&
-  discard.some((card) => card.rank === Rank.JACK);
-
-const getRelationWeightedExpectedCribPoints = (
-  {
-    expectedCribPoints,
-    remainingStarterCount,
-    starterSuitRelationPoints,
-  }: ExpectedCribStarterPoints,
-  discard: readonly Card[],
-): number => {
+const getRelationWeightedExpectedCribPoints = ({
+  expectedCribPoints,
+  remainingStarterCount,
+  starterSuitRelationPoints,
+}: ExpectedCribStarterPoints): number => {
   const weight = getRelationWeight(
     remainingStarterCount,
     starterSuitRelationPoints,
   );
   if (weight === 0) {
-    return isConditioned(discard)
-      ? (missingWeightedPointValue as number)
-      : expectedCribPoints;
+    return expectedCribPoints;
   }
+
   return (
     starterSuitRelationPoints.reduce(
       (sum, rel) => sum + rel.expectedCribPoints * rel.remainingStarterCount,
@@ -364,20 +356,18 @@ const getRelationWeightedExpectedCribPoints = (
   );
 };
 
-const getRelationWeightedPointBreakdown = (
-  {
-    pointBreakdown,
-    remainingStarterCount,
-    starterSuitRelationPoints,
-  }: ExpectedCribStarterPoints,
-  discard: readonly Card[],
-): ExpectedCribPointBreakdown | undefined => {
+const getRelationWeightedPointBreakdown = ({
+  pointBreakdown,
+  remainingStarterCount,
+  starterSuitRelationPoints,
+}: ExpectedCribStarterPoints): ExpectedCribPointBreakdown | undefined => {
   const weight = getRelationWeight(
     remainingStarterCount,
     starterSuitRelationPoints,
   );
-  if (weight === 0)
-    return isConditioned(discard) ? missingPointBreakdown : pointBreakdown;
+  if (weight === 0) {
+    return pointBreakdown;
+  }
 
   if (starterSuitRelationPoints.some((rel) => !rel.pointBreakdown)) {
     return missingPointBreakdown;
@@ -432,14 +422,8 @@ export const expectedCribPointsByStarterRank = (
 
     return {
       ...starterPoints,
-      expectedCribPoints: getRelationWeightedExpectedCribPoints(
-        starterPoints,
-        opts.discard,
-      ),
-      pointBreakdown: getRelationWeightedPointBreakdown(
-        starterPoints,
-        opts.discard,
-      ),
+      expectedCribPoints: getRelationWeightedExpectedCribPoints(starterPoints),
+      pointBreakdown: getRelationWeightedPointBreakdown(starterPoints),
       starterRank,
     };
   });
@@ -470,13 +454,33 @@ const weightedPointValue = (
 export const expectedCribPointBreakdown = (
   opts: Omit<ExpectedCribPointsOptions, "starterRank">,
 ): ExpectedCribPointBreakdown | undefined => {
-  const list = expectedCribPointsByStarterRank(opts);
-  const weight = DECK_SIZE - opts.knownCards.length;
-  const fifteens = weightedPointValue(list, weight, (item) => item.fifteens);
-  const flushes = weightedPointValue(list, weight, (item) => item.flushes);
-  const nobs = weightedPointValue(list, weight, (item) => item.nobs);
-  const pairs = weightedPointValue(list, weight, (item) => item.pairs);
-  const runs = weightedPointValue(list, weight, (item) => item.runs);
+  const totalWeight = DECK_SIZE - opts.knownCards.length;
+  const starterPoints = expectedCribPointsByStarterRank(opts);
+  const fifteens = weightedPointValue(
+    starterPoints,
+    totalWeight,
+    (breakdown) => breakdown.fifteens,
+  );
+  const flushes = weightedPointValue(
+    starterPoints,
+    totalWeight,
+    (breakdown) => breakdown.flushes,
+  );
+  const nobs = weightedPointValue(
+    starterPoints,
+    totalWeight,
+    (breakdown) => breakdown.nobs,
+  );
+  const pairs = weightedPointValue(
+    starterPoints,
+    totalWeight,
+    (breakdown) => breakdown.pairs,
+  );
+  const runs = weightedPointValue(
+    starterPoints,
+    totalWeight,
+    (breakdown) => breakdown.runs,
+  );
 
   return createPointBreakdown({ fifteens, flushes, nobs, pairs, runs });
 };

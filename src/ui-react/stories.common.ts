@@ -63,3 +63,7 @@ export const playToggle = async (
     await expect(await canvas.findByText("Points")).toBeVisible();
   }
 };
+
+export const playDoubleExpanded = (context: {
+  readonly canvasElement: HTMLElement;
+}) => playToggle(context, { toggleStarterDetails: true });

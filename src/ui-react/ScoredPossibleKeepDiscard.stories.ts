@@ -6,6 +6,7 @@ import {
   SortOrder,
   type StoryObj,
   createArgTypes,
+  playDoubleExpanded,
   playToggle,
 } from "./stories.common";
 import { expect, within } from "storybook/test";
@@ -18,6 +19,7 @@ import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { createElement } from "react";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
+/* jscpd:ignore-end */
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
@@ -191,7 +193,7 @@ export const ExpandedRow: Story = {
 
 export const DoubleExpandedRow: Story = {
   ...ExpandedRow,
-  play: (context) => playToggle(context, { toggleStarterDetails: true }),
+  play: playDoubleExpanded,
 };
 
 export const SuitedCribDetailsExpanded: Story = createStory({
@@ -221,4 +223,3 @@ SuitedCribDetailsExpanded.play = async (context) => {
 
   await expect(await canvas.findByText("4.20")).toBeVisible();
 };
-/* jscpd:ignore-end */

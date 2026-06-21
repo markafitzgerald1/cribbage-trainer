@@ -6,6 +6,7 @@ import {
   SortOrder,
   type StoryObj,
   createArgTypes,
+  playDoubleExpanded,
   playToggle,
   toDealtCards,
 } from "./stories.common";
@@ -85,7 +86,7 @@ export const Expanded: Story = {
 
 export const DoubleExpanded: Story = {
   ...Expanded,
-  play: (context) => playToggle(context, { toggleStarterDetails: true }),
+  play: playDoubleExpanded,
 };
 
 export const SortedByHandPoints: Story = {

@@ -137,8 +137,7 @@ describe("scored possible keep discards component", () => {
     },
   );
 
-  /* jscpd:ignore-start */
-  it("renders loading state when table is not loaded, then renders content once loaded", async () => {
+  const renderAndExpectLoading = () => {
     setTableSync(null);
 
     renderScoredPossibleKeepDiscards(
@@ -148,25 +147,25 @@ describe("scored possible keep discards component", () => {
     );
 
     expect(screen.getByText("Loading analysis...")).toBeTruthy();
+  };
 
+  const expectLoaded = async () => {
     await waitFor(() => {
       expect(screen.queryByText("Loading analysis...")).toBeNull();
     });
+    return screen.getByRole("table");
+  };
 
-    expect(screen.getByRole("table")).toBeTruthy();
+  it("renders loading state when table is not loaded, then renders content once loaded", async () => {
+    renderAndExpectLoading();
+
+    await expect(expectLoaded()).resolves.toBeTruthy();
   });
 
   it("handles loading error gracefully and allows retry", async () => {
-    setTableSync(null);
     mockLoadTable.mockRejectedValueOnce(new Error("Fake load error"));
 
-    renderScoredPossibleKeepDiscards(
-      dealHand(mathRandom),
-      CribRole.Dealer,
-      false,
-    );
-
-    expect(screen.getByText("Loading analysis...")).toBeTruthy();
+    renderAndExpectLoading();
 
     await waitFor(() => {
       expect(screen.getByText("Failed to load analysis.")).toBeTruthy();
@@ -183,11 +182,7 @@ describe("scored possible keep discards component", () => {
     fireEvent.click(retryButton);
 
     // Eventually should render content
-    await waitFor(() => {
-      expect(screen.queryByText("Loading analysis...")).toBeNull();
-    });
 
-    expect(screen.getByRole("table")).toBeTruthy();
+    await expect(expectLoaded()).resolves.toBeTruthy();
   });
-  /* jscpd:ignore-end */
 });

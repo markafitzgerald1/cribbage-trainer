@@ -5,6 +5,86 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
   {
     "discard": [
       {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 3.8936170212766,
+    "expectedNetPoints": 7.39946365621162,
+    "handPoints": 2,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 3.50584663493502,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 5.36170212765957,
+    "expectedNetPoints": NaN,
+    "handPoints": 3,
+    "keep": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": NaN,
+  },
+  {
+    "discard": [
+      {
         "count": 4,
         "rank": 3,
         "rankLabel": "4",
@@ -41,86 +121,6 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "signedExpectedCribPoints": 4.72176391164122,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 5.36170212765957,
-    "expectedNetPoints": 9.79877796357787,
-    "handPoints": 3,
-    "keep": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 4.43707583591829,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "expectedHandPoints": 1.46808510638298,
-    "expectedNetPoints": 8.40317047342779,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 6.93508536704482,
   },
   {
     "discard": [
@@ -245,46 +245,6 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
   {
     "discard": [
       {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 3.63829787234043,
-    "expectedNetPoints": 7.44215804713593,
-    "handPoints": 2,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "signedExpectedCribPoints": 3.80386017479551,
-  },
-  {
-    "discard": [
-      {
         "count": 5,
         "rank": 4,
         "rankLabel": "5",
@@ -331,46 +291,6 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♦",
       },
       {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 3.8936170212766,
-    "expectedNetPoints": 7.39946365621162,
-    "handPoints": 2,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 3.50584663493502,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
         "count": 4,
         "rank": 3,
         "rankLabel": "4",
@@ -401,6 +321,86 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "signedExpectedCribPoints": 3.47798845842571,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "expectedHandPoints": 1.46808510638298,
+    "expectedNetPoints": NaN,
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": NaN,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 3.63829787234043,
+    "expectedNetPoints": NaN,
+    "handPoints": 2,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": NaN,
   },
 ]
 `;
@@ -1314,144 +1314,6 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
   {
     "discard": [
       {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 11.41304347826087,
-    "expectedNetPoints": 15.15323473833964,
-    "handPoints": 9,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "signedExpectedCribPoints": 3.74019126007876,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 9.71739130434783,
-    "expectedNetPoints": 14.39228153963292,
-    "handPoints": 7,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 4.6748902352851,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 9.71739130434783,
-    "expectedNetPoints": 13.56595735606627,
-    "handPoints": 7,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 3.84856605171844,
-  },
-  {
-    "discard": [
-      {
         "count": 10,
         "rank": 12,
         "rankLabel": "K",
@@ -1498,6 +1360,29 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
   {
     "discard": [
       {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 9.71739130434783,
+    "expectedNetPoints": NaN,
+    "handPoints": 7,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
         "count": 6,
         "rank": 5,
         "rankLabel": "6",
@@ -1509,29 +1394,6 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "rankLabel": "5",
         "suit": "♣",
       },
-    ],
-    "expectedHandPoints": 5.3695652173913,
-    "expectedNetPoints": 11.8699727163457,
-    "handPoints": 3,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
       {
         "count": 4,
         "rank": 3,
@@ -1539,7 +1401,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.50040749895439,
+    "signedExpectedCribPoints": NaN,
   },
   {
     "discard": [
@@ -1637,52 +1499,6 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
     "discard": [
       {
         "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 6.30434782608696,
-    "expectedNetPoints": 10.13255369194932,
-    "handPoints": 4,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "signedExpectedCribPoints": 3.82820586586237,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
         "rank": 11,
         "rankLabel": "Q",
         "suit": "♠",
@@ -1775,6 +1591,29 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
     "discard": [
       {
         "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "expectedHandPoints": 2.34782608695652,
+    "expectedNetPoints": 8.94216201343943,
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 10,
         "rank": 10,
         "rankLabel": "J",
         "suit": "♥",
@@ -1785,10 +1624,33 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "rankLabel": "6",
         "suit": "♦",
       },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
     ],
-    "expectedHandPoints": 6.47826086956522,
-    "expectedNetPoints": 9.78218828273125,
-    "handPoints": 4,
+    "signedExpectedCribPoints": 6.59433592648291,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 9.71739130434783,
+    "expectedNetPoints": NaN,
+    "handPoints": 7,
     "keep": [
       {
         "count": 10,
@@ -1797,10 +1659,10 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♣",
       },
       {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
       },
       {
         "count": 5,
@@ -1815,7 +1677,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 3.30392741316603,
+    "signedExpectedCribPoints": NaN,
   },
   {
     "discard": [
@@ -1867,98 +1729,6 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
     "discard": [
       {
         "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "expectedHandPoints": 2.34782608695652,
-    "expectedNetPoints": 8.94216201343943,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 6.59433592648291,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "expectedHandPoints": 1.82608695652174,
-    "expectedNetPoints": 8.73073301221653,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 6.90464605569479,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
         "rank": 11,
         "rankLabel": "Q",
         "suit": "♠",
@@ -2001,11 +1771,269 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
     ],
     "signedExpectedCribPoints": 6.55326527521826,
   },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 6.47826086956522,
+    "expectedNetPoints": NaN,
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": NaN,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "expectedHandPoints": 1.82608695652174,
+    "expectedNetPoints": NaN,
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": NaN,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 6.30434782608696,
+    "expectedNetPoints": NaN,
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": NaN,
+  },
+  {
+    "discard": [
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 11.41304347826087,
+    "expectedNetPoints": 15.15323473833964,
+    "handPoints": 9,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.74019126007876,
+  },
+  {
+    "discard": [
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "expectedHandPoints": 5.3695652173913,
+    "expectedNetPoints": 11.8699727163457,
+    "handPoints": 3,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 6.50040749895439,
+  },
 ]
 `;
 
 exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] = `
 [
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 0.73469387755102,
+    "expectedNetPoints": NaN,
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": NaN,
+  },
   {
     "discard": [
       {
@@ -2022,7 +2050,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
       },
     ],
     "expectedHandPoints": 0.12244897959184,
-    "expectedNetPoints": 7.0633931824688,
+    "expectedNetPoints": NaN,
     "handPoints": 0,
     "keep": [
       {
@@ -2032,7 +2060,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.94094420287697,
+    "signedExpectedCribPoints": NaN,
   },
   {
     "discard": [
@@ -2061,34 +2089,6 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
       },
     ],
     "signedExpectedCribPoints": 6.40115425008329,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 0.73469387755102,
-    "expectedNetPoints": 4.52835975955701,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "signedExpectedCribPoints": 3.79366588200599,
   },
 ]
 `;
