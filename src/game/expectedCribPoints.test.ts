@@ -49,6 +49,8 @@ const poneValues = createIndexedStarterBuckets(PONE_MULTIPLIER);
 
 const createStatistic = (mu: number) => ({
   mu,
+  // eslint-disable-next-line id-length
+  n: 0,
   points: {
     fifteens: { mu: mu + 0.1, se: 0 },
     flushes: { mu: mu + 0.4, se: 0 },
@@ -322,6 +324,40 @@ describe("expectedCribPoints", () => {
     const starterPoints = cribStarterFivePoints(ACE_ACE_UNSUITED_DISCARD);
 
     expect(starterPoints?.starterSuitRelationPoints).toStrictEqual([]);
+  });
+
+  it("returns no point breakdown when relation points are missing a category", () => {
+    const customTable = {
+      ...v2Table,
+      [ACE_TWO_SUITED]: {
+        ...v2Table[ACE_TWO_SUITED],
+        Dealer: {
+          ...v2Table[ACE_TWO_SUITED].Dealer,
+          "5": {
+            ...createStatistic(50),
+            [STARTER_SUIT_RELATION_FIELD]: {
+              [MATCHING_DISCARD_SUIT_FIELD]: {
+                mu: 20,
+                // eslint-disable-next-line id-length
+                n: 0,
+                se: 0,
+              },
+              [NON_MATCHING_DISCARD_SUIT_FIELD]: createStatistic(10),
+            },
+          },
+        },
+      },
+    } as unknown as ExpectedCribPointsTable;
+
+    const starterPoints = expectedCribPointsByStarterRank(
+      expectedCribOptions({
+        discard: ACE_TWO_SUITED_DISCARD,
+        knownCards: SUITED_RELATION_KNOWN_CARDS,
+        table: customTable,
+      }),
+    ).find((points) => points.starterRank === "5");
+
+    expect(starterPoints?.pointBreakdown).toBeUndefined();
   });
 
   it("uses the known starter bucket directly", () => {

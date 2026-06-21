@@ -152,11 +152,9 @@ const getRoleBuckets = (
   const discardBuckets = Reflect.get(table, discardKey) as
     | RoleBuckets
     | undefined;
-
   if (!discardBuckets) {
     throw new Error(`Missing expected crib points for ${discardKey}`);
   }
-
   return role === CribRole.Dealer ? discardBuckets.Dealer : discardBuckets.Pone;
 };
 
@@ -167,11 +165,9 @@ const getBucket = (
   const bucket = Reflect.get(buckets, starterRank) as
     | ExpectedCribBucket
     | undefined;
-
   if (typeof bucket !== "number" && typeof bucket !== "object") {
     throw new Error(`Missing expected crib points for starter ${starterRank}`);
   }
-
   return bucket;
 };
 
@@ -183,7 +179,6 @@ const getPointMu = (
   pointType: keyof ExpectedCribPointBreakdown,
 ): number | undefined => {
   const pointBucket = Reflect.get(points, pointType);
-
   return pointBucket?.mu;
 };
 
@@ -193,25 +188,14 @@ const createPointBreakdown = ({
   nobs,
   pairs,
   runs,
-}: PointBreakdownValues): ExpectedCribPointBreakdown | undefined => {
-  if (
-    typeof fifteens !== "number" ||
-    typeof flushes !== "number" ||
-    typeof nobs !== "number" ||
-    typeof pairs !== "number" ||
-    typeof runs !== "number"
-  ) {
-    return missingPointBreakdown;
-  }
-
-  return {
-    fifteens,
-    flushes,
-    nobs,
-    pairs,
-    runs,
-  };
-};
+}: PointBreakdownValues): ExpectedCribPointBreakdown | undefined =>
+  typeof fifteens === "number" &&
+  typeof flushes === "number" &&
+  typeof nobs === "number" &&
+  typeof pairs === "number" &&
+  typeof runs === "number"
+    ? { fifteens, flushes, nobs, pairs, runs }
+    : missingPointBreakdown;
 
 const getPointBreakdown = (
   bucket: ExpectedCribBucket,
@@ -219,14 +203,13 @@ const getPointBreakdown = (
   if (typeof bucket === "number" || !bucket.points) {
     return missingPointBreakdown;
   }
-
-  const fifteens = getPointMu(bucket.points, "fifteens");
-  const flushes = getPointMu(bucket.points, "flushes");
-  const nobs = getPointMu(bucket.points, "nobs");
-  const pairs = getPointMu(bucket.points, "pairs");
-  const runs = getPointMu(bucket.points, "runs");
-
-  return createPointBreakdown({ fifteens, flushes, nobs, pairs, runs });
+  return createPointBreakdown({
+    fifteens: getPointMu(bucket.points, "fifteens"),
+    flushes: getPointMu(bucket.points, "flushes"),
+    nobs: getPointMu(bucket.points, "nobs"),
+    pairs: getPointMu(bucket.points, "pairs"),
+    runs: getPointMu(bucket.points, "runs"),
+  });
 };
 
 const sortDiscardByRank = (discard: readonly Card[]) =>
@@ -255,37 +238,28 @@ const getSuitedDifferentRankDiscardSuit = (
   discard: readonly Card[],
 ): Suit | undefined => {
   const [firstCard, secondCard] = sortDiscardByRank(discard);
-
-  if (
-    firstCard.rank !== secondCard.rank &&
+  return firstCard.rank !== secondCard.rank &&
     firstCard.suit === secondCard.suit
-  ) {
-    return firstCard.suit;
-  }
-
-  return missingSuit;
+    ? firstCard.suit
+    : missingSuit;
 };
 
 const getExpectedCribBuckets = ({
   discard,
   role,
   table,
-}: Pick<ExpectedCribPointsOptions, "discard" | "role" | "table">) => {
-  const discardKey = normalizeDiscardKey(discard);
-
-  return getRoleBuckets(table, discardKey, role);
-};
+}: Pick<ExpectedCribPointsOptions, "discard" | "role" | "table">) =>
+  getRoleBuckets(table, normalizeDiscardKey(discard), role);
 
 const getRemainingStarterSuits = (
   knownCards: readonly Card[],
   starterRank: StarterRank,
 ): readonly Suit[] => {
   const rank = starterRankToRank(starterRank);
-  const knownSuits = new Set(
-    knownCards.filter((card) => card.rank === rank).map((card) => card.suit),
+  const known = new Set(
+    knownCards.filter((cd) => cd.rank === rank).map((cd) => cd.suit),
   );
-
-  return SUITS.filter((suit) => !knownSuits.has(suit));
+  return SUITS.filter((st) => !known.has(st));
 };
 
 const getRelationSuits = (
@@ -320,7 +294,7 @@ const getStarterSuitRelationPoints = ({
   for (const relation of [
     "matching_discard_suit",
     "non_matching_discard_suit",
-  ] as const satisfies readonly StarterSuitRelation[]) {
+  ] as const) {
     const relationBucket = Reflect.get(bucket.starter_suit_relation, relation);
     const suits = getRelationSuits(remainingSuits, relation, discardSuit);
 
@@ -339,52 +313,93 @@ const getStarterSuitRelationPoints = ({
   return relationPoints;
 };
 
+const getRelationWeight = (
+  remainingStarterCount: number,
+  starterSuitRelationPoints: readonly ExpectedCribStarterSuitRelationPoints[],
+): number => {
+  const weight = starterSuitRelationPoints.reduce(
+    (sum, rel) => sum + rel.remainingStarterCount,
+    0,
+  );
+  return starterSuitRelationPoints.length > 0 &&
+    weight === remainingStarterCount
+    ? weight
+    : 0;
+};
+
 const getRelationWeightedExpectedCribPoints = ({
   expectedCribPoints,
   remainingStarterCount,
   starterSuitRelationPoints,
 }: ExpectedCribStarterPoints): number => {
-  const relationWeight = starterSuitRelationPoints.reduce(
-    (sum, relationPoints) => sum + relationPoints.remainingStarterCount,
-    0,
+  const weight = getRelationWeight(
+    remainingStarterCount,
+    starterSuitRelationPoints,
   );
-
-  if (
-    starterSuitRelationPoints.length === 0 ||
-    relationWeight !== remainingStarterCount
-  ) {
+  if (weight === 0) {
     return expectedCribPoints;
   }
 
   return (
     starterSuitRelationPoints.reduce(
-      (sum, relationPoints) =>
-        sum +
-        relationPoints.expectedCribPoints *
-          relationPoints.remainingStarterCount,
+      (sum, rel) => sum + rel.expectedCribPoints * rel.remainingStarterCount,
       0,
-    ) / relationWeight
+    ) / weight
   );
 };
 
-export const expectedCribPointsByStarterRank = ({
-  discard,
-  knownCards,
-  role,
-  table,
-}: Omit<
-  ExpectedCribPointsOptions,
-  "starterRank"
->): ExpectedCribStarterPoints[] => {
-  const buckets = getExpectedCribBuckets({ discard, role, table });
-  const counts = rankCounts(knownCards);
-  const discardSuit = getSuitedDifferentRankDiscardSuit(discard);
+const getRelationWeightedPointBreakdown = ({
+  pointBreakdown,
+  remainingStarterCount,
+  starterSuitRelationPoints,
+}: ExpectedCribStarterPoints): ExpectedCribPointBreakdown | undefined => {
+  const weight = getRelationWeight(
+    remainingStarterCount,
+    starterSuitRelationPoints,
+  );
+  if (weight === 0) {
+    return pointBreakdown;
+  }
+
+  if (starterSuitRelationPoints.some((rel) => !rel.pointBreakdown)) {
+    return missingPointBreakdown;
+  }
+
+  const breakdown = { fifteens: 0, flushes: 0, nobs: 0, pairs: 0, runs: 0 };
+  for (const rel of starterSuitRelationPoints) {
+    const points = rel.pointBreakdown as ExpectedCribPointBreakdown;
+    const relWeight = rel.remainingStarterCount;
+
+    breakdown.fifteens += points.fifteens * relWeight;
+    breakdown.flushes += points.flushes * relWeight;
+    breakdown.nobs += points.nobs * relWeight;
+    breakdown.pairs += points.pairs * relWeight;
+    breakdown.runs += points.runs * relWeight;
+  }
+
+  return createPointBreakdown({
+    fifteens: breakdown.fifteens / weight,
+    flushes: breakdown.flushes / weight,
+    nobs: breakdown.nobs / weight,
+    pairs: breakdown.pairs / weight,
+    runs: breakdown.runs / weight,
+  });
+};
+
+export const expectedCribPointsByStarterRank = (
+  opts: Omit<ExpectedCribPointsOptions, "starterRank">,
+): ExpectedCribStarterPoints[] => {
+  const buckets = getExpectedCribBuckets(opts);
+  const counts = rankCounts(opts.knownCards);
+  const discardSuit = getSuitedDifferentRankDiscardSuit(opts.discard);
 
   return CARD_RANKS.map((rank) => {
     const starterRank = rankToStarterRank(rank);
-    const knownRankCount = counts.at(rank) as number;
     const bucket = getBucket(buckets, starterRank);
-    const remainingSuits = getRemainingStarterSuits(knownCards, starterRank);
+    const remainingSuits = getRemainingStarterSuits(
+      opts.knownCards,
+      starterRank,
+    );
     const starterSuitRelationPoints = getStarterSuitRelationPoints({
       bucket,
       discardSuit,
@@ -394,7 +409,7 @@ export const expectedCribPointsByStarterRank = ({
     const starterPoints = {
       expectedCribPoints: getBucketMu(bucket),
       pointBreakdown: getPointBreakdown(bucket),
-      remainingStarterCount: SUITS_PER_DECK - knownRankCount,
+      remainingStarterCount: SUITS_PER_DECK - (counts.at(rank) as number),
       starterRank,
       starterSuitRelationPoints,
     };
@@ -402,6 +417,7 @@ export const expectedCribPointsByStarterRank = ({
     return {
       ...starterPoints,
       expectedCribPoints: getRelationWeightedExpectedCribPoints(starterPoints),
+      pointBreakdown: getRelationWeightedPointBreakdown(starterPoints),
       starterRank,
     };
   });
@@ -429,75 +445,53 @@ const weightedPointValue = (
   return total / totalKnownStarterWeight;
 };
 
-export const expectedCribPointBreakdown = ({
-  discard,
-  knownCards,
-  role,
-  table,
-}: Omit<ExpectedCribPointsOptions, "starterRank">):
-  | ExpectedCribPointBreakdown
-  | undefined => {
-  const totalKnownStarterWeight = DECK_SIZE - knownCards.length;
-  const starterPoints = expectedCribPointsByStarterRank({
-    discard,
-    knownCards,
-    role,
-    table,
-  });
+export const expectedCribPointBreakdown = (
+  opts: Omit<ExpectedCribPointsOptions, "starterRank">,
+): ExpectedCribPointBreakdown | undefined => {
+  const totalWeight = DECK_SIZE - opts.knownCards.length;
+  const starterPoints = expectedCribPointsByStarterRank(opts);
   const fifteens = weightedPointValue(
     starterPoints,
-    totalKnownStarterWeight,
+    totalWeight,
     (breakdown) => breakdown.fifteens,
   );
   const flushes = weightedPointValue(
     starterPoints,
-    totalKnownStarterWeight,
+    totalWeight,
     (breakdown) => breakdown.flushes,
   );
   const nobs = weightedPointValue(
     starterPoints,
-    totalKnownStarterWeight,
+    totalWeight,
     (breakdown) => breakdown.nobs,
   );
   const pairs = weightedPointValue(
     starterPoints,
-    totalKnownStarterWeight,
+    totalWeight,
     (breakdown) => breakdown.pairs,
   );
   const runs = weightedPointValue(
     starterPoints,
-    totalKnownStarterWeight,
+    totalWeight,
     (breakdown) => breakdown.runs,
   );
 
   return createPointBreakdown({ fifteens, flushes, nobs, pairs, runs });
 };
 
-export const expectedCribPoints = ({
-  discard,
-  knownCards,
-  role,
-  starterRank,
-  table,
-}: ExpectedCribPointsOptions): number => {
-  const buckets = getExpectedCribBuckets({ discard, role, table });
+export const expectedCribPoints = (opts: ExpectedCribPointsOptions): number => {
+  const buckets = getExpectedCribBuckets(opts);
 
-  if (typeof starterRank !== "undefined") {
-    return getBucketMu(getBucket(buckets, toStarterRank(starterRank)));
+  if (typeof opts.starterRank !== "undefined") {
+    return getBucketMu(getBucket(buckets, toStarterRank(opts.starterRank)));
   }
 
-  const totalKnownStarterWeight = DECK_SIZE - knownCards.length;
+  const totalKnownStarterWeight = DECK_SIZE - opts.knownCards.length;
 
   return (
-    expectedCribPointsByStarterRank({
-      discard,
-      knownCards,
-      role,
-      table,
-    }).reduce(
-      (sum, starterPoints) =>
-        sum +
-        starterPoints.expectedCribPoints * starterPoints.remainingStarterCount,
+    expectedCribPointsByStarterRank(opts).reduce(
+      (sum, points) =>
+        sum + points.expectedCribPoints * points.remainingStarterCount,
       0,
     ) / totalKnownStarterWeight
   );
