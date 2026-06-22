@@ -335,26 +335,17 @@ const getRelationWeight = (
     : 0;
 };
 
-const isConditioned = (discard: readonly Card[]) =>
-  discard[0]?.suit !== discard[1]?.suit &&
-  discard.some((card) => card.rank === Rank.JACK);
-
-const getRelationWeightedExpectedCribPoints = (
-  {
-    expectedCribPoints,
-    remainingStarterCount,
-    starterSuitRelationPoints,
-  }: ExpectedCribStarterPoints,
-  discard: readonly Card[],
-): number => {
+const getRelationWeightedExpectedCribPoints = ({
+  expectedCribPoints,
+  remainingStarterCount,
+  starterSuitRelationPoints,
+}: ExpectedCribStarterPoints): number => {
   const weight = getRelationWeight(
     remainingStarterCount,
     starterSuitRelationPoints,
   );
   if (weight === 0) {
-    return isConditioned(discard)
-      ? (missingWeightedPointValue as number)
-      : expectedCribPoints;
+    return expectedCribPoints;
   }
   return (
     starterSuitRelationPoints.reduce(
@@ -364,20 +355,16 @@ const getRelationWeightedExpectedCribPoints = (
   );
 };
 
-const getRelationWeightedPointBreakdown = (
-  {
-    pointBreakdown,
-    remainingStarterCount,
-    starterSuitRelationPoints,
-  }: ExpectedCribStarterPoints,
-  discard: readonly Card[],
-): ExpectedCribPointBreakdown | undefined => {
+const getRelationWeightedPointBreakdown = ({
+  pointBreakdown,
+  remainingStarterCount,
+  starterSuitRelationPoints,
+}: ExpectedCribStarterPoints): ExpectedCribPointBreakdown | undefined => {
   const weight = getRelationWeight(
     remainingStarterCount,
     starterSuitRelationPoints,
   );
-  if (weight === 0)
-    return isConditioned(discard) ? missingPointBreakdown : pointBreakdown;
+  if (weight === 0) return pointBreakdown;
 
   if (starterSuitRelationPoints.some((rel) => !rel.pointBreakdown)) {
     return missingPointBreakdown;
@@ -432,14 +419,8 @@ export const expectedCribPointsByStarterRank = (
 
     return {
       ...starterPoints,
-      expectedCribPoints: getRelationWeightedExpectedCribPoints(
-        starterPoints,
-        opts.discard,
-      ),
-      pointBreakdown: getRelationWeightedPointBreakdown(
-        starterPoints,
-        opts.discard,
-      ),
+      expectedCribPoints: getRelationWeightedExpectedCribPoints(starterPoints),
+      pointBreakdown: getRelationWeightedPointBreakdown(starterPoints),
       starterRank,
     };
   });
