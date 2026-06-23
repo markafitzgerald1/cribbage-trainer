@@ -24,6 +24,11 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
 
+  /**
+   * Loads the crib EV table. Injectable so stories and tests can exercise the
+   * load-failure path without module mocking; defaults to the shared loader.
+   */
+  readonly loadTable?: () => Promise<ExpectedCribPointsTable>;
   readonly sortOrder: SortOrder;
 }
 
@@ -64,6 +69,7 @@ const scoreColumns = [
 export function ScoredPossibleKeepDiscards({
   cribRole,
   dealtCards,
+  loadTable = loader.loadTable,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
   const [table, setTable] = useState<ExpectedCribPointsTable | null>(
@@ -74,14 +80,13 @@ export function ScoredPossibleKeepDiscards({
 
   useEffect(() => {
     if (!table) {
-      loader
-        .loadTable()
+      loadTable()
         .then(setTable)
         .catch(() => {
           setLoadError(true);
         });
     }
-  }, [table, retryCount]);
+  }, [loadTable, table, retryCount]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);
@@ -213,3 +218,7 @@ export function ScoredPossibleKeepDiscards({
     </figure>
   );
 }
+
+ScoredPossibleKeepDiscards.defaultProps = {
+  loadTable: loader.loadTable,
+};

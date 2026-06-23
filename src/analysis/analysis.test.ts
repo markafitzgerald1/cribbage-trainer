@@ -15,6 +15,12 @@ import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 const expectedCribPointsTable =
   expectedCribPointsTableData as unknown as ExpectedCribPointsTable;
 
+const scoreDeal = (
+  cards: readonly Card[],
+  cribRole: CribRole = CribRole.Dealer,
+  table: ExpectedCribPointsTable = expectedCribPointsTable,
+) => allScoredKeepDiscardsByExpectedNetScoreDescending(cards, cribRole, table);
+
 const { ACE, TWO, THREE, FOUR, FIVE, SIX, EIGHT, TEN, JACK, QUEEN, KING } =
   card;
 
@@ -69,7 +75,7 @@ const roundExpectedHandPoints = (
   }));
 
 const getCustomTableFirstResult = (cribRole: CribRole) =>
-  allScoredKeepDiscardsByExpectedNetScoreDescending(
+  scoreDeal(
     parseHand(TEST_HAND),
     cribRole,
     customTable,
@@ -78,13 +84,7 @@ const getCustomTableFirstResult = (cribRole: CribRole) =>
 function expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
   cards: readonly Card[],
 ): void {
-  const actualScoredKeepDiscards = roundExpectedHandPoints(
-    allScoredKeepDiscardsByExpectedNetScoreDescending(
-      cards,
-      CribRole.Dealer,
-      expectedCribPointsTable,
-    ),
-  );
+  const actualScoredKeepDiscards = roundExpectedHandPoints(scoreDeal(cards));
 
   const toComparison = (scored: ScoredKeepDiscard<Card>) => ({
     discard: scored.discard,
@@ -99,40 +99,18 @@ function expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
   expect(actualForComparison).toMatchSnapshot();
 }
 
-/* jscpd:ignore-start */
 describe("allScoredKeepDiscardsByScoreDescending", () => {
   it("should return nothing for an empty deal", () => {
-    expect(
-      allScoredKeepDiscardsByExpectedNetScoreDescending(
-        [],
-        CribRole.Dealer,
-        expectedCribPointsTable,
-      ),
-    ).toStrictEqual([]);
+    expect(scoreDeal([])).toStrictEqual([]);
   });
 
   it("should return nothing for a one-card deal", () => {
-    expect(
-      allScoredKeepDiscardsByExpectedNetScoreDescending(
-        [ACE],
-        CribRole.Dealer,
-        expectedCribPointsTable,
-      ),
-    ).toStrictEqual([]);
+    expect(scoreDeal([ACE])).toStrictEqual([]);
   });
 
   it("two card deal with duplicate cards throws", () => {
-    const cards = [ACE, ACE];
-
-    expect(() =>
-      allScoredKeepDiscardsByExpectedNetScoreDescending(
-        cards,
-        CribRole.Dealer,
-        expectedCribPointsTable,
-      ),
-    ).toThrow("Duplicate cards exist");
+    expect(() => scoreDeal([ACE, ACE])).toThrow("Duplicate cards exist");
   });
-  /* jscpd:ignore-end */
 
   it("two card deal order deal", () => {
     expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual([ACE, TWO]);

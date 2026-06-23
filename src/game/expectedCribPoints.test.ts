@@ -74,6 +74,8 @@ const statisticStarterBuckets = createStatisticStarterBuckets();
 const missingPointBreakdown = new Map<string, never>().get("missing");
 const MATCHING_DISCARD_SUIT_FIELD = "matching_discard_suit";
 const NON_MATCHING_DISCARD_SUIT_FIELD = "non_matching_discard_suit";
+const MATCHING_RANK_1_SUIT_FIELD = "matching_rank_1_suit";
+const MATCHING_RANK_2_SUIT_FIELD = "matching_rank_2_suit";
 const STARTER_SUIT_RELATION_FIELD = "starter_suit_relation";
 const createIncompleteStatisticStarterBuckets = () =>
   Object.fromEntries(
@@ -129,6 +131,24 @@ const v2Table = {
     Pone: statisticStarterBuckets,
   },
 } as unknown as ExpectedCribPointsTable;
+const v2TableWithFiveRelations = (
+  discardKey: keyof typeof v2Table,
+  mu: number,
+  starterSuitRelation: unknown,
+): ExpectedCribPointsTable => ({
+  ...v2Table,
+  [discardKey]: {
+    ...v2Table[discardKey],
+    Dealer: {
+      ...v2Table[discardKey].Dealer,
+      "5": {
+        ...createStatistic(mu),
+        [STARTER_SUIT_RELATION_FIELD]: starterSuitRelation,
+      },
+    },
+  },
+});
+
 const incompleteV2Table = {
   [ACE_KING_UNSUITED]: {
     Dealer: createIncompleteStatisticStarterBuckets(),
@@ -161,14 +181,24 @@ const expectedCribOptions = (
   ...overrides,
 });
 
-const cribStarterFivePoints = (discard: readonly Card[]) =>
+const cribStarterFivePoints = (
+  discard: readonly Card[],
+  cribTable: ExpectedCribPointsTable = v2Table,
+  knownCards: readonly Card[] = SUITED_RELATION_KNOWN_CARDS,
+) =>
   expectedCribPointsByStarterRank(
-    expectedCribOptions({
-      discard,
-      knownCards: SUITED_RELATION_KNOWN_CARDS,
-      table: v2Table,
-    }),
+    expectedCribOptions({ discard, knownCards, table: cribTable }),
   ).find((points) => points.starterRank === "5");
+
+const expectFiveStarterRelationRows = (
+  discard: readonly Card[],
+  cribTable?: ExpectedCribPointsTable,
+  knownCards?: readonly Card[],
+) =>
+  expect(
+    cribStarterFivePoints(discard, cribTable, knownCards)
+      ?.starterSuitRelationPoints.length,
+  ).toBeGreaterThan(0);
 
 describe("expectedCribPoints", () => {
   it("normalizes rank permutations by crib rank order", () => {
@@ -321,77 +351,31 @@ describe("expectedCribPoints", () => {
   });
 
   it("provides starter relation rows for unsuited pairs", () => {
-    const starterPoints = cribStarterFivePoints(ACE_ACE_UNSUITED_DISCARD);
-
-    expect(starterPoints?.starterSuitRelationPoints.length).toBeGreaterThan(0);
+    expectFiveStarterRelationRows(ACE_ACE_UNSUITED_DISCARD);
   });
 
   it("returns no point breakdown when relation points are missing a category", () => {
-    const customTable = {
-      ...v2Table,
-      [ACE_TWO_SUITED]: {
-        ...v2Table[ACE_TWO_SUITED],
-        Dealer: {
-          ...v2Table[ACE_TWO_SUITED].Dealer,
-          "5": {
-            ...createStatistic(50),
-            [STARTER_SUIT_RELATION_FIELD]: {
-              [MATCHING_DISCARD_SUIT_FIELD]: {
-                mu: 20,
-                // eslint-disable-next-line id-length
-                n: 0,
-                se: 0,
-              },
-              [NON_MATCHING_DISCARD_SUIT_FIELD]: createStatistic(10),
-            },
-          },
-        },
-      },
-    } as unknown as ExpectedCribPointsTable;
+    const customTable = v2TableWithFiveRelations(ACE_TWO_SUITED, 50, {
+      [MATCHING_DISCARD_SUIT_FIELD]: { mu: 20 },
+      [NON_MATCHING_DISCARD_SUIT_FIELD]: createStatistic(10),
+    });
 
-    const starterPoints = expectedCribPointsByStarterRank(
-      expectedCribOptions({
-        discard: ACE_TWO_SUITED_DISCARD,
-        knownCards: SUITED_RELATION_KNOWN_CARDS,
-        table: customTable,
-      }),
-    ).find((points) => points.starterRank === "5");
+    const starterPoints = cribStarterFivePoints(
+      ACE_TWO_SUITED_DISCARD,
+      customTable,
+    );
 
     expect(starterPoints?.pointBreakdown).toBeUndefined();
   });
 
-  /* jscpd:ignore-start */
   it("handles matching_rank_1_suit and matching_rank_2_suit correctly", () => {
-    const customTable = {
-      ...v2Table,
-      [ACE_KING_UNSUITED]: {
-        ...v2Table[ACE_KING_UNSUITED],
-        Dealer: {
-          ...v2Table[ACE_KING_UNSUITED].Dealer,
-          "5": {
-            ...createStatistic(50),
-            [STARTER_SUIT_RELATION_FIELD]: {
-              // eslint-disable-next-line camelcase
-              matching_rank_1_suit: createStatistic(30),
-              // eslint-disable-next-line camelcase
-              matching_rank_2_suit: createStatistic(40),
-            },
-          },
-        },
-      },
-    } as unknown as ExpectedCribPointsTable;
+    const customTable = v2TableWithFiveRelations(ACE_KING_UNSUITED, 50, {
+      [MATCHING_RANK_1_SUIT_FIELD]: createStatistic(30),
+      [MATCHING_RANK_2_SUIT_FIELD]: createStatistic(40),
+    });
 
-    const starterPoints = expectedCribPointsByStarterRank(
-      expectedCribOptions({
-        discard: ACE_KING_DISCARD,
-        knownCards: [],
-        table: customTable,
-      }),
-    ).find((points) => points.starterRank === "5");
-
-    expect(starterPoints?.starterSuitRelationPoints.length).toBeGreaterThan(0);
+    expectFiveStarterRelationRows(ACE_KING_DISCARD, customTable, []);
   });
-  /* jscpd:ignore-end */
 
   it("uses the known starter bucket directly", () => {
     expect(

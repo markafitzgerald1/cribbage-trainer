@@ -16,30 +16,23 @@ import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
-import { vi } from "vitest";
 /* jscpd:ignore-end */
 
-interface MockGlobal {
-  shouldFailLoad?: boolean;
-}
+/*
+ * A loader that fails the next call when armed, then delegates to the real
+ * loader. Injected via the `loadTable` prop so the load-failure path can be
+ * shown without module mocking (which depends on the Vitest runtime and breaks
+ * plain Storybook rendering). The story's loader re-arms the flag on each run.
+ */
+let failNextLoad = false;
 
-const mockGlobal = globalThis as unknown as MockGlobal;
-
-vi.mock("../game/expectedCribPointsTableLoader", async (importOriginal) => {
-  const original =
-    await importOriginal<
-      typeof import("../game/expectedCribPointsTableLoader")
-    >();
-  return {
-    ...original,
-    loadTable: () => {
-      if (mockGlobal.shouldFailLoad) {
-        return Promise.reject(new Error("Fake load error"));
-      }
-      return original.loadTable();
-    },
-  };
-});
+const failOnceLoader = (): ReturnType<typeof loader.loadTable> => {
+  if (failNextLoad) {
+    failNextLoad = false;
+    return Promise.reject(new Error("Fake load error"));
+  }
+  return loader.loadTable();
+};
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
@@ -113,9 +106,13 @@ export const SortedByHandPoints: Story = {
 
 export const LoadError: Story = {
   ...JackSixFiveFourKingQueenSortedDescending,
+  args: {
+    ...JackSixFiveFourKingQueenSortedDescending.args,
+    loadTable: failOnceLoader,
+  },
   loaders: [
     () => {
-      mockGlobal.shouldFailLoad = true;
+      failNextLoad = true;
       loader.setTableSync(null);
     },
   ],
@@ -124,8 +121,6 @@ export const LoadError: Story = {
     const retryButton = await canvas.findByRole("button", { name: /Retry/u });
 
     await expect(retryButton).toBeVisible();
-
-    mockGlobal.shouldFailLoad = false;
 
     await fireEvent.click(retryButton);
 

@@ -57,9 +57,11 @@ type ExpectedCribPointStatistics = Partial<
 
 interface ExpectedCribStatistic {
   readonly mu: number;
-  readonly n: number;
+  // The client only reads `mu`; the slim table omits the generation-time
+  // `n`/`se` accumulators, so they are optional here for older raw tables.
+  readonly n?: number;
   readonly points?: ExpectedCribPointStatistics;
-  readonly se: number;
+  readonly se?: number;
   readonly starter_suit_relation?: Partial<
     Record<StarterSuitRelation, ExpectedCribStatistic>
   >;
