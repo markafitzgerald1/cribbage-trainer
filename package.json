@@ -33,7 +33,8 @@
     "start:production-preview": "vite build && vite preview",
     "clean": "rimraf .VSCodeCounter/ coverage/ dist/ playwright-report/ storybook-static/ test-results/ tsconfig.tsbuildinfo",
     "node_modules:clean": "rimraf node_modules/",
-    "deps:update:minor": "npx npm-check-updates --target minor -u && npm install"
+    "deps:update:minor": "npx npm-check-updates --target minor -u && npm install",
+    "table:update": "node scripts/updateExpectedCribPointsTable.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
