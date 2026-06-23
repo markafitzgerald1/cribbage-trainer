@@ -28,23 +28,36 @@ export const toDealtCards = (
     suit: card.suit,
   }));
 
-export const playToggle = async (
-  { canvasElement }: { readonly canvasElement: HTMLElement },
-  { toggleCribDetails = false, toggleStarterDetails = false } = {},
-) => {
-  const canvas = within(canvasElement);
+export const waitForLoadingToDisappear = async (canvas: {
+  readonly queryByText: (text: string | RegExp) => HTMLElement | null;
+}): Promise<void> => {
   await waitFor(
     async () => {
       await expect(canvas.queryByText("Loading analysis...")).toBeNull();
     },
     { timeout: 5000 },
   );
+};
+
+export const playToggle = async (
+  { canvasElement }: { readonly canvasElement: HTMLElement },
+  { toggleCribDetails = false, toggleStarterDetails = false } = {},
+) => {
+  const canvas = within(canvasElement);
+  await waitForLoadingToDisappear(canvas);
 
   const table = await canvas.findByRole("table");
   const rows = await within(table).findAllByRole("row");
   const row = rows.length === 1 ? rows[0] : rows[1];
   if (row) {
-    await fireEvent.click(row);
+    const expandButton = within(row).queryByRole("button", {
+      name: /Expand analysis/u,
+    });
+    if (expandButton) {
+      await fireEvent.click(expandButton);
+    } else {
+      await fireEvent.click(row);
+    }
   }
 
   await expect(await canvas.findByText(/Hand starter/u)).toBeVisible();
@@ -66,4 +79,5 @@ export const playToggle = async (
 
 export const playDoubleExpanded = (context: {
   readonly canvasElement: HTMLElement;
-}) => playToggle(context, { toggleStarterDetails: true });
+}) =>
+  playToggle(context, { toggleCribDetails: true, toggleStarterDetails: true });

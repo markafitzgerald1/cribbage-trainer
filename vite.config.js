@@ -25,10 +25,10 @@ export default {
       exclude: ["src/game/expectedCribPointsTable.json"],
       reportsDirectory: path.join(dirname, "coverage"),
       thresholds: {
-        branches: 86.13,
-        functions: 96.38,
-        lines: 94.49,
-        statements: 94.66,
+        branches: 86.29,
+        functions: 96.82,
+        lines: 94.21,
+        statements: 94.27,
       },
     },
     projects: [

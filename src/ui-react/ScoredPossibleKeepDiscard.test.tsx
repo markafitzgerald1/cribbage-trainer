@@ -167,17 +167,39 @@ describe("calculation component", () => {
     ).toBeTruthy();
   });
 
-  it("should expand and collapse when clicked", () => {
+  const setupAndRender = () => {
     const scenario = setupScenario("Ascending");
     renderComponentWithScenario(scenario);
 
     expect(hasBreakdownHeader()).toBe(false);
+  };
+
+  it("should expand and collapse when clicked", () => {
+    setupAndRender();
 
     toggleMainRow();
 
     expect(hasBreakdownHeader()).toBe(true);
 
     toggleMainRow();
+
+    expect(hasBreakdownHeader()).toBe(false);
+  });
+
+  it("should expand and collapse when the expand button is clicked directly", () => {
+    setupAndRender();
+
+    const expandButton = screen.getByRole("button", {
+      name: /Expand analysis/u,
+    });
+    fireEvent.click(expandButton);
+
+    expect(hasBreakdownHeader()).toBe(true);
+
+    const collapseButton = screen.getByRole("button", {
+      name: /Collapse analysis/u,
+    });
+    fireEvent.click(collapseButton);
 
     expect(hasBreakdownHeader()).toBe(false);
   });

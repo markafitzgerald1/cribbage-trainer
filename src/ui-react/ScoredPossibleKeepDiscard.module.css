@@ -67,6 +67,16 @@
   background-color: rgb(255 255 255 / 15%);
 }
 
+button.expand-indicator {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+}
+
 .expand-indicator {
   display: inline-block;
   flex: 0 0 auto;

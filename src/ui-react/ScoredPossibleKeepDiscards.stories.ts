@@ -9,8 +9,9 @@ import {
   playDoubleExpanded,
   playToggle,
   toDealtCards,
+  waitForLoadingToDisappear,
 } from "./stories.common";
-import { expect, fireEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, within } from "storybook/test";
 import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
@@ -70,10 +71,13 @@ export const JackSixFiveFourKingQueenSortedDescending: Story = createStory(
   dealtCards,
   SortOrder.Descending,
 );
-export const JackSixFiveFourKingQueenSortedAscending: Story = createStory(
-  dealtCards,
-  SortOrder.Ascending,
-);
+export const JackSixFiveFourKingQueenSortedAscending: Story = {
+  ...createStory(dealtCards, SortOrder.Ascending),
+  args: {
+    ...createStory(dealtCards, SortOrder.Ascending).args,
+    cribRole: CribRole.Pone,
+  },
+};
 export const JackSixFiveFourKingQueenSortedDealOrder: Story = createStory(
   dealtCards,
   SortOrder.DealOrder,
@@ -89,21 +93,22 @@ export const DoubleExpanded: Story = {
   play: playDoubleExpanded,
 };
 
+export const DoubleExpandedPone: Story = {
+  ...DoubleExpanded,
+  args: {
+    ...DoubleExpanded.args,
+    cribRole: CribRole.Pone,
+  },
+};
+
 export const SortedByHandPoints: Story = {
   ...JackSixFiveFourKingQueenSortedDescending,
-  /* jscpd:ignore-start */
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await waitFor(
-      async () => {
-        await expect(canvas.queryByText("Loading analysis...")).toBeNull();
-      },
-      { timeout: 5000 },
-    );
+    await waitForLoadingToDisappear(canvas);
     const headerButton = await canvas.findByRole("button", { name: /E\(h\)/u });
     await fireEvent.click(headerButton);
   },
-  /* jscpd:ignore-end */
 };
 
 export const LoadError: Story = {
@@ -114,7 +119,6 @@ export const LoadError: Story = {
       loader.setTableSync(null);
     },
   ],
-  /* jscpd:ignore-start */
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const retryButton = await canvas.findByRole("button", { name: /Retry/u });
@@ -125,12 +129,6 @@ export const LoadError: Story = {
 
     await fireEvent.click(retryButton);
 
-    await waitFor(
-      async () => {
-        await expect(canvas.queryByText("Loading analysis...")).toBeNull();
-      },
-      { timeout: 5000 },
-    );
+    await waitForLoadingToDisappear(canvas);
   },
-  /* jscpd:ignore-end */
 };
