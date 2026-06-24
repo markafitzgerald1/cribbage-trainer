@@ -21,7 +21,7 @@ const DECIMAL_PLACES = 2;
 const ZERO_AVERAGE = "0.00";
 const DEALER_MULTIPLIER = 1;
 const PONE_MULTIPLIER = -1;
-const [undefinedVal] = [] as undefined[];
+const missingCategoryValue = new Map<string, number>().get("missing");
 
 interface Category {
   readonly isMutedHeader?: boolean;
@@ -57,35 +57,35 @@ const createCribCategories = (
       label: "15s",
       value:
         typeof pointBreakdown?.fifteens === "undefined"
-          ? undefinedVal
+          ? missingCategoryValue
           : pointBreakdown.fifteens * multiplier,
     },
     {
       label: "Pairs",
       value:
         typeof pointBreakdown?.pairs === "undefined"
-          ? undefinedVal
+          ? missingCategoryValue
           : pointBreakdown.pairs * multiplier,
     },
     {
       label: "Runs",
       value:
         typeof pointBreakdown?.runs === "undefined"
-          ? undefinedVal
+          ? missingCategoryValue
           : pointBreakdown.runs * multiplier,
     },
     {
       label: "Flushes",
       value:
         typeof pointBreakdown?.flushes === "undefined"
-          ? undefinedVal
+          ? missingCategoryValue
           : pointBreakdown.flushes * multiplier,
     },
     {
       label: "Nobs",
       value:
         typeof pointBreakdown?.nobs === "undefined"
-          ? undefinedVal
+          ? missingCategoryValue
           : pointBreakdown.nobs * multiplier,
     },
     { label: "Total", value: expectedCribPoints * multiplier },
