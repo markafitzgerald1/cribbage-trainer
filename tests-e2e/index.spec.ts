@@ -89,9 +89,9 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   await row.click();
 
   await expectBreakdownLabelsVisible(page.locator("tbody"));
-  await expect(page.getByText("Starter avg")).toBeVisible();
+  await expect(page.getByText("+Cut avg")).toBeVisible();
 
-  await page.getByText("Starter avg").click();
+  await page.getByText("+Cut avg").click();
 
   await expect(
     page.locator('div[class*="cut-result-row"]').first(),

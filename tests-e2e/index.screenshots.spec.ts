@@ -52,7 +52,7 @@ const testDoubleExpandedScreenshot = () =>
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
-    await page.getByRole("button", { name: "Starter avg" }).click();
+    await page.getByRole("button", { name: "+Cut avg" }).click();
 
     await expect(page).toHaveScreenshot();
   });

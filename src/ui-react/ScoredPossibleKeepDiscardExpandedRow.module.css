@@ -132,6 +132,9 @@
 
 .summary-label-content {
   color: inherit;
+
+  /* Keep the label text and its expand indicator together on one line. */
+  white-space: nowrap;
 }
 
 .no-wrap {

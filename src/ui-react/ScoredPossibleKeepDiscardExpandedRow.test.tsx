@@ -110,7 +110,7 @@ function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
 }
 
 function expandStarterDetails() {
-  fireEvent.click(screen.getByRole("button", { name: /Starter avg/u }));
+  fireEvent.click(screen.getByRole("button", { name: /\+Cut avg/u }));
 }
 
 function expandCribDetails() {
@@ -359,11 +359,11 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
   it("toggles starter specifics when clicking anywhere in the summary row", () => {
     renderRow({ fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS });
 
-    clickSummaryTotal(/Starter avg/u);
+    clickSummaryTotal(/\+Cut avg/u);
 
     expectCardLabelRendered("5");
 
-    clickSummaryTotal(/Starter avg/u);
+    clickSummaryTotal(/\+Cut avg/u);
 
     expect(screen.queryByText("5")).toBeNull();
   });

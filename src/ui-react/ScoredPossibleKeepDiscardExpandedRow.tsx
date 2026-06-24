@@ -271,9 +271,9 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     />
   );
   const renderLabel = (label: ReactNode) => {
-    if (label === "Starter avg") {
+    if (label === "+Cut avg") {
       return renderSummaryLabel({
-        content: "Starter avg",
+        content: "+Cut avg",
         isExpanded: areCutDetailsExpanded,
       });
     }
@@ -414,7 +414,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           {renderBreakdownRow({
             ariaExpanded: areCutDetailsExpanded,
             decimalPlaces: DECIMAL_PLACES,
-            label: "Starter avg",
+            label: "+Cut avg",
             onClick: handleExpandedRowClick,
             rowCategories: starterCategories,
           })}
