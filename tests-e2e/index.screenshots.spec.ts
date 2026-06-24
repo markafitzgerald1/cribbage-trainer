@@ -52,7 +52,19 @@ const testDoubleExpandedScreenshot = () =>
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
-    await page.getByRole("button", { name: "Hand starter avg" }).click();
+    await page.getByRole("button", { name: "Starter avg" }).click();
+
+    await expect(page).toHaveScreenshot();
+  });
+
+const testCribExpandedScreenshot = () =>
+  test("crib starter details show after crib avg expansion still visually the same", async ({
+    page,
+  }) => {
+    await renderThenSelectTwoDiscards(page, constantHandQuery, true);
+
+    await page.locator("tbody tr").first().click();
+    await page.getByRole("button", { name: "Crib avg" }).click();
 
     await expect(page).toHaveScreenshot();
   });
@@ -72,6 +84,7 @@ const testScreenshots = () => {
   testScoredPossibilitiesNoExpansionScreenshot();
   testExpandedRowScreenshot();
   testDoubleExpandedScreenshot();
+  testCribExpandedScreenshot();
 };
 
 test.describe("portrait", () => {

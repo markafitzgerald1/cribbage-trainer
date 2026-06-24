@@ -60,10 +60,10 @@ export const playToggle = async (
     }
   }
 
-  await expect(await canvas.findByText(/Hand starter/u)).toBeVisible();
+  await expect(await canvas.findByText(/Starter avg/u)).toBeVisible();
 
   if (toggleStarterDetails) {
-    const starterAvgLabel = await canvas.findByText(/Hand starter/u);
+    const starterAvgLabel = await canvas.findByText(/Starter avg/u);
     await fireEvent.click(starterAvgLabel);
 
     await expect(await canvas.findByText("Points")).toBeVisible();

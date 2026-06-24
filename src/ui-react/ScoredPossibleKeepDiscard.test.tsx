@@ -210,10 +210,10 @@ describe("calculation component", () => {
 
     toggleMainRow();
 
-    fireEvent.click(screen.getByRole("button", { name: /Hand starter/u }));
+    fireEvent.click(screen.getByRole("button", { name: /Starter avg/u }));
 
     expect(hasBreakdownHeader()).toBe(true);
-    expect(screen.getAllByText(/Hand starter/u)).toHaveLength(1);
+    expect(screen.getAllByText(/Starter avg/u)).toHaveLength(1);
 
     toggleMainRow();
 
