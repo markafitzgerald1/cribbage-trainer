@@ -79,14 +79,14 @@ export function ScoredPossibleKeepDiscards({
   const [retryCount, setRetryCount] = useState<number>(0);
 
   useEffect(() => {
-    if (!table) {
+    if (!table && !loadError) {
       loadTable()
         .then(setTable)
         .catch(() => {
           setLoadError(true);
         });
     }
-  }, [loadTable, table, retryCount]);
+  }, [loadError, loadTable, table, retryCount]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);
