@@ -36,7 +36,7 @@
     "deps:update:minor": "npx npm-check-updates --target minor -u && npm install"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.5",
+    "@babel/core": "^7.29.7",
     "@babel/preset-env": "^7.29.5",
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
@@ -92,7 +92,7 @@
     "stylelint": "^17.11.1",
     "stylelint-config-standard": "^40.0.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.13",
+    "vite": "^8.0.16",
     "vitest": "^4.0.16",
     "wait-on": "^9.0.10"
   },
@@ -122,6 +122,14 @@
     }
   },
   "overrides": {
-    "storybook": "$storybook"
+    "storybook": "$storybook",
+    "@vitest/browser": "^4.1.8",
+    "esbuild": "^0.28.1",
+    "form-data": "^4.0.6",
+    "js-yaml": "^4.2.0",
+    "markdown-it": "^14.2.0",
+    "qs": "^6.15.2",
+    "shell-quote": "^1.8.4",
+    "ws": "^8.21.0"
   }
 }
