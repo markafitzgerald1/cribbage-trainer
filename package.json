@@ -123,8 +123,14 @@
     }
   },
   "overrides": {
+    "storybook": "$storybook",
+    "@vitest/browser": "^4.1.8",
+    "esbuild": "^0.28.1",
+    "form-data": "^4.0.6",
     "js-yaml": "^4.2.0",
     "markdown-it": "^14.2.0",
-    "storybook": "$storybook"
+    "qs": "^6.15.2",
+    "shell-quote": "^1.8.4",
+    "ws": "^8.21.0"
   }
 }
