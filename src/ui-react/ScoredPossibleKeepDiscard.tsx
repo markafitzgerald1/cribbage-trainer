@@ -1,19 +1,18 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
 import { useCallback, useState } from "react";
-import type { BreakdownProps } from "./BreakdownProps";
-import type { ComparableCard } from "../ui/sortCards";
-import type { HandPoints } from "../game/handPoints";
+import type { Card } from "../game/Card";
+import { CribRole } from "../game/expectedCribPoints";
 import { PossibleHand } from "./PossibleHand";
+import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
 
-interface ScoredPossibleKeepDiscardProps extends BreakdownProps {
-  readonly keep: readonly ComparableCard[];
-  readonly discard: readonly ComparableCard[];
-  readonly handPoints: number;
-  readonly handPointsBreakdown: HandPoints;
-  readonly expectedHandPoints: number;
+export interface ScoredPossibleKeepDiscardProps {
+  readonly scoredKeepDiscard: ScoredKeepDiscard<
+    Card & { readonly dealOrder: number }
+  >;
+  readonly cribRole: CribRole;
   readonly sortOrder: SortOrder;
   readonly isHighlighted: boolean;
   readonly rowIndex: number;
@@ -22,37 +21,58 @@ interface ScoredPossibleKeepDiscardProps extends BreakdownProps {
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const ROW_STRIPE_DIVISOR = 2;
 
+const formatDiscardLabel = (discard: readonly Card[]): string => {
+  const [firstCard, secondCard] = discard as unknown as readonly [Card, Card];
+  const firstString = `${firstCard.rankLabel}${firstCard.suit}`;
+  const secondString = `${secondCard.rankLabel}${secondCard.suit}`;
+
+  return `${firstString} ${secondString}`;
+};
+
+const formatSignedExpectedPoints = (points: number): string => {
+  const formatted = points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
+
+  return points > 0 ? `+${formatted}` : formatted;
+};
+
 export function ScoredPossibleKeepDiscard({
-  keep,
-  discard,
-  handPoints,
-  handPointsBreakdown,
-  expectedHandPoints,
-  avgCutAdded15s,
-  avgCutAddedPairs,
-  avgCutAddedRuns,
-  avgCutAddedFlushes,
-  avgCutAddedNobs,
-  flushesContributions,
-  nobsContributions,
-  cutCountsRemaining,
-  fifteensContributions,
-  pairsContributions,
-  runsContributions,
+  scoredKeepDiscard,
+  cribRole,
   sortOrder,
   isHighlighted,
   rowIndex,
 }: ScoredPossibleKeepDiscardProps) {
+  const {
+    keep,
+    discard,
+    expectedHandPoints,
+    expectedNetPoints,
+    signedExpectedCribPoints,
+  } = scoredKeepDiscard;
+  const discardLabel = formatDiscardLabel(discard);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleRowClick = useCallback(() => {
     setIsExpanded((expanded) => !expanded);
   }, []);
 
-  const diff = (expectedHandPoints - handPoints).toFixed(
+  const handleExpandButtonClick = useCallback(
+    (event: { readonly stopPropagation: () => void }) => {
+      event.stopPropagation();
+      handleRowClick();
+    },
+    [handleRowClick],
+  );
+
+  const handExpectedTotal = expectedHandPoints.toFixed(
     EXPECTED_POINTS_FRACTION_DIGITS,
   );
-  const total = expectedHandPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
+  const cribExpectedTotal = formatSignedExpectedPoints(
+    signedExpectedCribPoints,
+  );
+  const netExpectedTotal = expectedNetPoints.toFixed(
+    EXPECTED_POINTS_FRACTION_DIGITS,
+  );
   const rowStripeClass =
     rowIndex % ROW_STRIPE_DIVISOR === 0
       ? parentClasses.oddRow
@@ -83,37 +103,33 @@ export function ScoredPossibleKeepDiscard({
         onClick={handleRowClick}
       >
         <td>{renderHandDiscardCell()}</td>
-        <td>{handPoints}</td>
-        <td>
-          <span className={classes.cutPointsCell}>
-            <span>{diff}</span>
-            <span
+        <td className={classes.scoreCell}>{handExpectedTotal}</td>
+        <td className={classes.scoreCell}>{cribExpectedTotal}</td>
+        <td className={classes.netScoreCell}>
+          <span className={classes.netPointsCell}>
+            <span>{netExpectedTotal}</span>
+            <button
+              aria-expanded={isExpanded}
+              aria-label={
+                isExpanded
+                  ? `Collapse analysis for discard ${discardLabel}`
+                  : `Expand analysis for discard ${discardLabel}`
+              }
               className={`${classes.expandIndicator} ${
                 isExpanded ? classes.expandIndicatorExpanded : ""
               }`}
+              onClick={handleExpandButtonClick}
+              type="button"
             >
               ▸
-            </span>
+            </button>
           </span>
         </td>
-        <td>{total}</td>
       </tr>
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow
-          avgCutAdded15s={avgCutAdded15s}
-          avgCutAddedFlushes={avgCutAddedFlushes}
-          avgCutAddedNobs={avgCutAddedNobs}
-          avgCutAddedPairs={avgCutAddedPairs}
-          avgCutAddedRuns={avgCutAddedRuns}
-          cutCountsRemaining={cutCountsRemaining}
-          discard={discard}
-          fifteensContributions={fifteensContributions}
-          flushesContributions={flushesContributions}
-          handPointsBreakdown={handPointsBreakdown}
-          keep={keep}
-          nobsContributions={nobsContributions}
-          pairsContributions={pairsContributions}
-          runsContributions={runsContributions}
+          cribRole={cribRole}
+          scoredKeepDiscard={scoredKeepDiscard}
           sortOrder={sortOrder}
         />
       ) : null}

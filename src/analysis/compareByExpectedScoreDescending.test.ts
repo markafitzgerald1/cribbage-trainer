@@ -1,8 +1,13 @@
 import { CARDS, type Card } from "../game/Card";
+import {
+  ScoredKeepDiscardSortKey,
+  compareByExpectedNetScoreThenRankDescending,
+  compareByExpectedScoreThenRankDescending,
+} from "./compareByExpectedScoreDescending";
 import { describe, expect, it } from "@jest/globals";
 import type { ScoredKeepDiscard } from "./analysis";
-import { compareByExpectedScoreThenRankDescending } from "./compareByExpectedScoreDescending";
 import { expectedHandPoints } from "../game/expectedHandPoints";
+import { handPoints } from "../game/handPoints";
 
 const { ACE, TWO, THREE, FOUR, FIVE, JACK, QUEEN, KING } = CARDS;
 
@@ -11,6 +16,9 @@ const NUM_RANKS = 13;
 const ALL_FOUR_REMAINING = Array.from<number>({
   length: NUM_RANKS,
 }).fill(CARDS_PER_RANK);
+const missingExpectedCribPointBreakdown = new Map<string, never>().get(
+  "missing",
+);
 
 describe("compareByExpectedScoreDescending", () => {
   const createHand = (
@@ -22,27 +30,33 @@ describe("compareByExpectedScoreDescending", () => {
     avgCutAddedNobs: 0,
     avgCutAddedPairs: 0,
     avgCutAddedRuns: 0,
+    cribStarterPoints: [],
     cutCountsRemaining: ALL_FOUR_REMAINING,
     discard,
+    expectedCribPointBreakdown: missingExpectedCribPointBreakdown,
+    expectedCribPoints: 0,
     expectedHandPoints: expectedHandPoints(keep, discard).total,
+    expectedNetPoints: expectedHandPoints(keep, discard).total,
     fifteensContributions: [],
     flushesContributions: [],
     handPoints: 0,
+    handPointsBreakdown: handPoints(keep),
     keep,
     nobsContributions: [],
     pairsContributions: [],
     runsContributions: [],
+    signedExpectedCribPoints: 0,
   });
 
   const expectHandsInDescendingExpectedScoreOrder = (
     hand1: ScoredKeepDiscard<Card>,
     hand2: ScoredKeepDiscard<Card>,
   ) => {
-    expect(compareByExpectedScoreThenRankDescending(hand1, hand2)).toBeLessThan(
-      0,
-    );
     expect(
-      compareByExpectedScoreThenRankDescending(hand2, hand1),
+      compareByExpectedNetScoreThenRankDescending(hand1, hand2),
+    ).toBeLessThan(0);
+    expect(
+      compareByExpectedNetScoreThenRankDescending(hand2, hand1),
     ).toBeGreaterThan(0);
   };
 
@@ -73,6 +87,49 @@ describe("compareByExpectedScoreDescending", () => {
   it("returns 0 for identical expected scores and keeps", () => {
     const hand = createHand([ACE, KING], [THREE, TWO]);
 
-    expect(compareByExpectedScoreThenRankDescending(hand, hand)).toBe(0);
+    expect(compareByExpectedNetScoreThenRankDescending(hand, hand)).toBe(0);
+  });
+
+  it("sorts by the requested expected score before keep-card tie breaker", () => {
+    const hand = {
+      ...createHand([ACE, KING], [THREE, TWO]),
+      expectedHandPoints: 10,
+      expectedNetPoints: 1,
+      signedExpectedCribPoints: 1,
+    };
+    const crib = {
+      ...createHand([ACE, QUEEN], [THREE, TWO]),
+      expectedHandPoints: 1,
+      expectedNetPoints: 1,
+      signedExpectedCribPoints: 10,
+    };
+
+    expect(
+      compareByExpectedScoreThenRankDescending(
+        ScoredKeepDiscardSortKey.ExpectedHandPoints,
+      )(hand, crib),
+    ).toBeLessThan(0);
+    expect(
+      compareByExpectedScoreThenRankDescending(
+        ScoredKeepDiscardSortKey.ExpectedCribPoints,
+      )(hand, crib),
+    ).toBeGreaterThan(0);
+  });
+
+  it("falls back to net score for unexpected sort keys", () => {
+    const lowNetHand = {
+      ...createHand([ACE, KING], [THREE, TWO]),
+      expectedNetPoints: 1,
+    };
+    const highNetHand = {
+      ...createHand([ACE, QUEEN], [THREE, TWO]),
+      expectedNetPoints: 10,
+    };
+
+    expect(
+      compareByExpectedScoreThenRankDescending(
+        "Unexpected" as ScoredKeepDiscardSortKey,
+      )(lowNetHand, highNetHand),
+    ).toBeGreaterThan(0);
   });
 });

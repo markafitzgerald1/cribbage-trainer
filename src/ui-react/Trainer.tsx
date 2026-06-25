@@ -1,4 +1,5 @@
 import * as classes from "./Trainer.module.css";
+import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
@@ -26,6 +27,11 @@ const getStoredConsent = (): boolean | null => {
   return JSON.parse(storedConsent) as boolean;
 };
 
+interface DealState {
+  readonly cribRole: CribRole;
+  readonly dealtCards: DealtCard[];
+}
+
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
@@ -35,16 +41,26 @@ export function Trainer({
     () => dealHand(generator),
     [generator],
   );
-  const [dealtCards, setDealtCards] = useState<DealtCard[]>(() => {
+  const createDealState = useCallback(
+    (cards: DealtCard[]): DealState => ({
+      cribRole: randomCribRole(generator),
+      dealtCards: cards,
+    }),
+    [generator],
+  );
+  const [dealState, setDealState] = useState<DealState>(() => {
     if (initialCards) {
-      return initialCards.map((card, index) => ({
-        ...card,
-        dealOrder: index,
-        kept: true,
-      }));
+      return createDealState(
+        initialCards.map((card, index) => ({
+          ...card,
+          dealOrder: index,
+          kept: true,
+        })),
+      );
     }
-    return dealHandWithGenerator();
+    return createDealState(dealHandWithGenerator());
   });
+  const { cribRole, dealtCards } = dealState;
   const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
   const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
@@ -57,14 +73,17 @@ export function Trainer({
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
-      setDealtCards(newDealtCards);
+      setDealState({
+        cribRole,
+        dealtCards: newDealtCards,
+      });
     },
-    [dealtCards],
+    [cribRole, dealtCards],
   );
 
   const dealNewHand = useCallback(() => {
-    setDealtCards(dealHandWithGenerator);
-  }, [dealHandWithGenerator]);
+    setDealState(createDealState(dealHandWithGenerator()));
+  }, [createDealState, dealHandWithGenerator]);
 
   const setConsented = useCallback((value: boolean) => {
     setAnalyticsConsented(value);
@@ -78,6 +97,7 @@ export function Trainer({
   return (
     <div className={classes.dynamicUi}>
       <InteractiveHand
+        cribRole={cribRole}
         dealtCards={dealtCards}
         onCardChange={toggleKept}
         onDeal={dealNewHand}
@@ -86,6 +106,7 @@ export function Trainer({
       />
       {discardIsComplete(dealtCards) && (
         <ScoredPossibleKeepDiscards
+          cribRole={cribRole}
           dealtCards={dealtCards}
           sortOrder={sortOrder}
         />

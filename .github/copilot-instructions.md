@@ -12,12 +12,14 @@ them.
 
 ## Layout
 
-- `src/game/` — card model and scoring engine.
+- `src/game/` — card model, scoring engine, and crib EV lookup table.
 - `src/analysis/` — keep/discard enumeration and expected-value scoring.
 - `src/ui-react/` — React components and CSS modules; new components get a
   matching `*.stories` file.
 - `src/ui/` — framework-agnostic UI primitives.
 - `tests-e2e/` — Playwright end-to-end and screenshot tests.
+- `src/game/expectedCribPointsTable.json` — vendored artifact from the
+  `simulate-cribbage-games` pipeline; refresh via `npm run table:update`.
 
 ## Validation
 
@@ -35,6 +37,9 @@ local pass is `npm run lint && npm test`.
   line.
 - Keep expected values derived from enumeration/simulation; never add hand-coded
   heuristics or hand-edited scoring/lookup tables.
+- `src/game/expectedCribPointsTable.json` is vendored from
+  `simulate-cribbage-games` (refresh via `npm run table:update`); do not
+  hand-edit or regenerate it here.
 - Match the idioms already in the file you edit (e.g. explicit `undefined`
   defaults with a single-line `no-undefined` disable); TypeScript is strict and
   CSS modules use kebab-case classes.

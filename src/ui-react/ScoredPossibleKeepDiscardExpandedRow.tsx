@@ -1,24 +1,118 @@
 import * as classes from "./ScoredPossibleKeepDiscardExpandedRow.module.css";
+import { type Card, Rank } from "../game/Card";
 import {
-  type CutResult,
-  type MinimalCard,
-  groupCutsByResults,
-} from "./groupCutsByResults";
-import { useCallback, useState } from "react";
-import type { BreakdownProps } from "./BreakdownProps";
+  CribRole,
+  type ExpectedCribPointBreakdown,
+  type ExpectedCribStarterSuitRelationPoints,
+  STARTER_RANKS,
+  type StarterRank,
+} from "../game/expectedCribPoints";
+import { type CutResult, groupCutsByResults } from "./groupCutsByResults";
+import { type ReactNode, useCallback, useState } from "react";
+import type {
+  ScoredKeepDiscard,
+  SignedExpectedCribStarterPoints,
+} from "../analysis/analysis";
+import { CardLabel } from "./CardLabel";
 import { CutResultRow } from "./CutResultRow";
-import type { HandPoints } from "../game/handPoints";
 import { SortOrder } from "../ui/SortOrder";
 
 const DECIMAL_PLACES = 2;
 const ZERO_AVERAGE = "0.00";
+const DEALER_MULTIPLIER = 1;
+const PONE_MULTIPLIER = -1;
+const missingCategoryValue = new Map<string, number>().get("missing");
 
 interface Category {
   readonly isMutedHeader?: boolean;
   readonly label: string;
   readonly notApplicable?: boolean;
-  readonly value: number;
+  readonly value: number | undefined;
 }
+
+interface RenderBreakdownRowOptions {
+  readonly ariaExpanded?: boolean;
+  readonly className?: string;
+  readonly decimalPlaces: number;
+  readonly key?: string;
+  readonly label: ReactNode;
+  readonly onClick?: () => void;
+  readonly rowCategories: readonly Category[];
+}
+
+interface SummaryLabelOptions {
+  readonly content: ReactNode;
+  readonly isExpanded: boolean;
+}
+
+const createCribCategories = (
+  expectedCribPoints: number,
+  pointBreakdown: ExpectedCribPointBreakdown | undefined,
+  cribRole: CribRole,
+) => {
+  const multiplier =
+    cribRole === CribRole.Dealer ? DEALER_MULTIPLIER : PONE_MULTIPLIER;
+  return [
+    {
+      label: "15s",
+      value:
+        typeof pointBreakdown?.fifteens === "undefined"
+          ? missingCategoryValue
+          : pointBreakdown.fifteens * multiplier,
+    },
+    {
+      label: "Pairs",
+      value:
+        typeof pointBreakdown?.pairs === "undefined"
+          ? missingCategoryValue
+          : pointBreakdown.pairs * multiplier,
+    },
+    {
+      label: "Runs",
+      value:
+        typeof pointBreakdown?.runs === "undefined"
+          ? missingCategoryValue
+          : pointBreakdown.runs * multiplier,
+    },
+    {
+      label: "Flushes",
+      value:
+        typeof pointBreakdown?.flushes === "undefined"
+          ? missingCategoryValue
+          : pointBreakdown.flushes * multiplier,
+    },
+    {
+      label: "Nobs",
+      value:
+        typeof pointBreakdown?.nobs === "undefined"
+          ? missingCategoryValue
+          : pointBreakdown.nobs * multiplier,
+    },
+    { label: "Total", value: expectedCribPoints * multiplier },
+  ] as const satisfies readonly Category[];
+};
+
+const starterRankToRank = (starterRank: StarterRank): Rank =>
+  STARTER_RANKS.indexOf(starterRank) as Rank;
+
+const renderExpandIndicator = (isExpanded: boolean) => (
+  <span
+    className={`${classes.expandIndicator} ${
+      isExpanded ? classes.expandIndicatorExpanded : ""
+    }`}
+  >
+    ▸
+  </span>
+);
+
+const renderSummaryLabel = ({ content, isExpanded }: SummaryLabelOptions) => (
+  <div className={classes.summaryLabel}>
+    <span className={classes.summaryLabelContent}>
+      {content}
+      {renderExpandIndicator(isExpanded)}
+    </span>
+  </div>
+);
 
 function getCutResultKey(result: CutResult): string {
   const cutsKey = result.cuts
@@ -39,30 +133,80 @@ function getCutResultKey(result: CutResult): string {
   ].join(":");
 }
 
-export interface ScoredPossibleKeepDiscardExpandedRowProps extends BreakdownProps {
-  readonly keep: readonly MinimalCard[];
-  readonly discard: readonly MinimalCard[];
-  readonly handPointsBreakdown: HandPoints;
+export interface ScoredPossibleKeepDiscardExpandedRowProps {
+  readonly scoredKeepDiscard: ScoredKeepDiscard<Card>;
   readonly sortOrder: SortOrder;
+  readonly cribRole: CribRole;
 }
 
+const hasRemainingStarters = (starterPoints: SignedExpectedCribStarterPoints) =>
+  starterPoints.remainingStarterCount > 0;
+
+const renderNumericValue = (
+  value: number | undefined,
+  decimalPlaces: number,
+) => {
+  if (typeof value === "undefined") {
+    return <span className={classes.muted}>—</span>;
+  }
+
+  const formatted = value.toFixed(decimalPlaces);
+
+  if (formatted === ZERO_AVERAGE || formatted === "0") {
+    return <span className={classes.muted}>—</span>;
+  }
+
+  return formatted;
+};
+
+const renderCategoryValue = (cat: Category, decimalPlaces: number) =>
+  cat.notApplicable ? (
+    <span
+      className={classes.notApplicable}
+      title="Not applicable before starter"
+    >
+      X
+    </span>
+  ) : (
+    renderNumericValue(cat.value, decimalPlaces)
+  );
+
+const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
+  <div
+    className={
+      cat.label === "Total" ? classes.summaryTotal : classes.summaryValue
+    }
+    key={cat.label}
+  >
+    {renderCategoryValue(cat, decimalPlaces)}
+  </div>
+);
+
 export function ScoredPossibleKeepDiscardExpandedRow({
-  avgCutAdded15s,
-  avgCutAddedPairs,
-  avgCutAddedRuns,
-  avgCutAddedFlushes,
-  avgCutAddedNobs,
-  fifteensContributions,
-  pairsContributions,
-  runsContributions,
-  flushesContributions,
-  nobsContributions,
-  keep,
-  discard,
-  handPointsBreakdown,
+  scoredKeepDiscard,
   sortOrder,
+  cribRole,
 }: ScoredPossibleKeepDiscardExpandedRowProps) {
+  const {
+    avgCutAdded15s,
+    avgCutAddedPairs,
+    avgCutAddedRuns,
+    avgCutAddedFlushes,
+    avgCutAddedNobs,
+    fifteensContributions,
+    pairsContributions,
+    runsContributions,
+    flushesContributions,
+    nobsContributions,
+    keep,
+    discard,
+    cribStarterPoints,
+    expectedCribPointBreakdown,
+    expectedCribPoints,
+    handPointsBreakdown,
+  } = scoredKeepDiscard;
   const [areCutDetailsExpanded, setAreCutDetailsExpanded] = useState(false);
+  const [areCribDetailsExpanded, setAreCribDetailsExpanded] = useState(false);
   const cutResults = groupCutsByResults({
     discard,
     fifteens: fifteensContributions,
@@ -107,28 +251,11 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     { label: "Nobs", notApplicable: true, value: handPointsBreakdown.nobs },
     { label: "Total", value: handPointsBreakdown.total },
   ];
-  const renderNumericValue = (value: number, decimalPlaces: number) => {
-    const formatted = value.toFixed(decimalPlaces);
-
-    return formatted === ZERO_AVERAGE || formatted === "0" ? (
-      <span className={classes.muted}>—</span>
-    ) : (
-      formatted
-    );
-  };
-  const renderCategoryValue = (cat: Category, decimalPlaces: number) =>
-    cat.notApplicable ? (
-      <span
-        className={classes.notApplicable}
-        title="Not applicable before starter"
-      >
-        X
-      </span>
-    ) : (
-      renderNumericValue(cat.value, decimalPlaces)
-    );
   const handleExpandedRowClick = useCallback(() => {
     setAreCutDetailsExpanded((expanded) => !expanded);
+  }, []);
+  const handleCribExpandedRowClick = useCallback(() => {
+    setAreCribDetailsExpanded((expanded) => !expanded);
   }, []);
   const renderCutResult = (result: CutResult) => (
     <CutResultRow
@@ -143,46 +270,117 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       totalPoints={result.totalPoints}
     />
   );
-  const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
-    <div
-      className={
-        cat.label === "Total" ? classes.summaryTotal : classes.summaryValue
-      }
-      key={cat.label}
-    >
-      {renderCategoryValue(cat, decimalPlaces)}
-    </div>
-  );
-  const renderLabel = (label: string) => {
-    if (label === "Starter avg") {
-      return (
-        <div className={classes.summaryLabel}>
-          Starter{" "}
-          <span className={classes.noWrap}>
-            avg
-            <span
-              className={`${classes.expandIndicator} ${
-                areCutDetailsExpanded ? classes.expandIndicatorExpanded : ""
-              }`}
-            >
-              ▸
-            </span>
-          </span>
-        </div>
-      );
+  const renderLabel = (label: ReactNode) => {
+    if (label === "+Cut avg") {
+      return renderSummaryLabel({
+        content: "+Cut avg",
+        isExpanded: areCutDetailsExpanded,
+      });
+    }
+    if (label === "Crib avg") {
+      return renderSummaryLabel({
+        content: "Crib avg",
+        isExpanded: areCribDetailsExpanded,
+      });
     }
     return <div className={classes.summaryLabel}>{label}</div>;
   };
-  const renderBreakdownRow = (
-    label: string,
+  const renderBreakdownRowContent = (
+    label: ReactNode,
     rowCategories: readonly Category[],
     decimalPlaces: number,
   ) => (
-    <div className={classes.breakdownSummary}>
+    <>
       {renderLabel(label)}
       {rowCategories.map((cat) => renderBreakdownValue(cat, decimalPlaces))}
-    </div>
+    </>
   );
+  const renderBreakdownRow = ({
+    ariaExpanded,
+    className = "",
+    decimalPlaces,
+    key,
+    label,
+    onClick,
+    rowCategories,
+  }: RenderBreakdownRowOptions) => {
+    const classNames = [
+      classes.breakdownSummary,
+      onClick && classes.breakdownSummaryButton,
+      className,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    if (onClick) {
+      return (
+        <button
+          aria-expanded={ariaExpanded}
+          className={classNames}
+          key={key}
+          onClick={onClick}
+          type="button"
+        >
+          {renderBreakdownRowContent(label, rowCategories, decimalPlaces)}
+        </button>
+      );
+    }
+
+    return (
+      <div
+        className={classNames}
+        key={key}
+      >
+        {renderBreakdownRowContent(label, rowCategories, decimalPlaces)}
+      </div>
+    );
+  };
+  const renderCribStarterRow = ({
+    expectedCribPoints: starterCribPoints,
+    pointBreakdown,
+    starterRank,
+  }: SignedExpectedCribStarterPoints) =>
+    renderBreakdownRow({
+      className: classes.starterDetailRow,
+      decimalPlaces: DECIMAL_PLACES,
+      key: starterRank,
+      label: <CardLabel rank={starterRankToRank(starterRank)} />,
+      rowCategories: createCribCategories(
+        starterCribPoints,
+        pointBreakdown,
+        cribRole,
+      ),
+    });
+  const renderCribStarterRelationRow = ({
+    expectedCribPoints: relationCribPoints,
+    pointBreakdown,
+    relation,
+    starterRank,
+    suits,
+  }: ExpectedCribStarterSuitRelationPoints) =>
+    renderBreakdownRow({
+      className: classes.starterDetailRow,
+      decimalPlaces: DECIMAL_PLACES,
+      key: `${starterRank}:${relation}`,
+      label: (
+        <CardLabel
+          rank={starterRankToRank(starterRank)}
+          suits={suits}
+        />
+      ),
+      rowCategories: createCribCategories(
+        relationCribPoints,
+        pointBreakdown,
+        cribRole,
+      ),
+    });
+  const renderCribStarterRows = (
+    starterPoints: SignedExpectedCribStarterPoints,
+  ) =>
+    starterPoints.starterSuitRelationPoints.length > 0
+      ? starterPoints.starterSuitRelationPoints.map(
+          renderCribStarterRelationRow,
+        )
+      : renderCribStarterRow(starterPoints);
 
   const renderHeader = () => (
     <div className={classes.breakdownHeader}>
@@ -204,18 +402,43 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   );
 
   return (
-    <tr
-      className={classes.expandedRow}
-      onClick={handleExpandedRowClick}
-    >
+    <tr className={classes.expandedRow}>
       <td colSpan={4}>
         <div className={classes.breakdownContainer}>
           {renderHeader()}
-          {renderBreakdownRow("Hand", handCategories, 0)}
-          {renderBreakdownRow("Starter avg", starterCategories, DECIMAL_PLACES)}
+          {renderBreakdownRow({
+            decimalPlaces: 0,
+            label: "Hand",
+            rowCategories: handCategories,
+          })}
+          {renderBreakdownRow({
+            ariaExpanded: areCutDetailsExpanded,
+            decimalPlaces: DECIMAL_PLACES,
+            label: "+Cut avg",
+            onClick: handleExpandedRowClick,
+            rowCategories: starterCategories,
+          })}
           {areCutDetailsExpanded ? (
             <div className={classes.cutResultsList}>
               {cutResults.map(renderCutResult)}
+            </div>
+          ) : null}
+          {renderBreakdownRow({
+            ariaExpanded: areCribDetailsExpanded,
+            decimalPlaces: DECIMAL_PLACES,
+            label: "Crib avg",
+            onClick: handleCribExpandedRowClick,
+            rowCategories: createCribCategories(
+              expectedCribPoints,
+              expectedCribPointBreakdown,
+              cribRole,
+            ),
+          })}
+          {areCribDetailsExpanded ? (
+            <div className={classes.cribStarterList}>
+              {cribStarterPoints
+                .filter(hasRemainingStarters)
+                .map(renderCribStarterRows)}
             </div>
           ) : null}
         </div>

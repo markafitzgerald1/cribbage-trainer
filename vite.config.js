@@ -22,12 +22,13 @@ export default {
     // Keep vitest artifacts (cache, coverage) out of ./src to avoid polluting source tree
     cacheDir: path.join(dirname, "node_modules/.vitest"),
     coverage: {
+      exclude: ["src/game/expectedCribPointsTable.json"],
       reportsDirectory: path.join(dirname, "coverage"),
       thresholds: {
-        branches: 86.48,
-        functions: 96.47,
-        lines: 93.79,
-        statements: 93.89,
+        branches: 87.79,
+        functions: 96.82,
+        lines: 94.59,
+        statements: 94.75,
       },
     },
     projects: [

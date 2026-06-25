@@ -160,6 +160,7 @@ export default [
             "fixup",
             "formatter",
             "func",
+            "globals",
             "goto",
             "gtag",
             "href",
@@ -293,6 +294,31 @@ export default [
       sourceType: "module",
     },
   },
+  {
+    /*
+     * Node build/data scripts run in a trusted local context and inherently do
+     * dynamic property access over generated JSON, so relax the browser-focused
+     * rules that do not apply here.
+     */
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        Buffer: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-magic-numbers": ["off"],
+      camelcase: ["off"],
+      "capitalized-comments": ["off"],
+      "no-continue": ["off"],
+      "security/detect-non-literal-fs-filename": ["off"],
+      "security/detect-object-injection": ["off"],
+      "spellcheck/spell-checker": ["off"],
+    },
+  },
   ...compat.extends("plugin:jest/all").map((config) => ({
     ...config,
     files: ["**/*.test.ts*", "**/*.stories.ts*"],
@@ -316,6 +342,7 @@ export default [
             "expectFifteensPoints",
             "expectRunsPoints",
             "expectTotalPoints",
+            "expectFiveStarterRelationRows",
             "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
             "expectSort",
             "containsCutGroup",
@@ -336,6 +363,7 @@ export default [
           assertFunctionNames: [
             "expect",
             "assertMatcherReturnsFalse",
+            "expectFiveStarterRelationRows",
             "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
             "expectPairsPoints",
             "expectFifteensPoints",
@@ -362,6 +390,12 @@ export default [
     files: ["**/*.d.ts"],
     rules: {
       "init-declarations": "off",
+    },
+  },
+  {
+    files: ["**/*.stories.ts*"],
+    rules: {
+      "jest/require-hook": "off",
     },
   },
 ];

@@ -1,4 +1,4 @@
-import { expect, fireEvent, within } from "storybook/test";
+import { expect, fireEvent, waitFor, within } from "storybook/test";
 import type { Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 
@@ -28,24 +28,56 @@ export const toDealtCards = (
     suit: card.suit,
   }));
 
+export const waitForLoadingToDisappear = async (canvas: {
+  readonly queryByText: (text: string | RegExp) => HTMLElement | null;
+}): Promise<void> => {
+  await waitFor(
+    async () => {
+      await expect(canvas.queryByText("Loading analysis...")).toBeNull();
+    },
+    { timeout: 5000 },
+  );
+};
+
 export const playToggle = async (
   { canvasElement }: { readonly canvasElement: HTMLElement },
-  { toggleStarterDetails = false } = {},
+  { toggleCribDetails = false, toggleStarterDetails = false } = {},
 ) => {
   const canvas = within(canvasElement);
+  await waitForLoadingToDisappear(canvas);
+
   const table = await canvas.findByRole("table");
   const rows = await within(table).findAllByRole("row");
   const row = rows.length === 1 ? rows[0] : rows[1];
   if (row) {
-    await fireEvent.click(row);
+    const expandButton = within(row).queryByRole("button", {
+      name: /Expand analysis/u,
+    });
+    if (expandButton) {
+      await fireEvent.click(expandButton);
+    } else {
+      await fireEvent.click(row);
+    }
   }
 
-  await expect(await canvas.findByText(/Starter/u)).toBeVisible();
+  await expect(await canvas.findByText(/\+Cut avg/u)).toBeVisible();
 
   if (toggleStarterDetails) {
-    const starterAvgLabel = await canvas.findByText(/Starter/u);
+    const starterAvgLabel = await canvas.findByText(/\+Cut avg/u);
     await fireEvent.click(starterAvgLabel);
 
     await expect(await canvas.findByText("Points")).toBeVisible();
   }
+
+  if (toggleCribDetails) {
+    const cribAvgLabel = await canvas.findByText(/Crib avg/u);
+    await fireEvent.click(cribAvgLabel);
+
+    await expect(await canvas.findByText("Points")).toBeVisible();
+  }
 };
+
+export const playDoubleExpanded = (context: {
+  readonly canvasElement: HTMLElement;
+}) =>
+  playToggle(context, { toggleCribDetails: true, toggleStarterDetails: true });

@@ -107,9 +107,10 @@
   still need a reply and explicit resolution.
 - When posting GitHub issue, PR, or review-thread comments on behalf of a human,
   agents must attribute the comment to the agent unless the human explicitly
-  reviewed and approved the exact text before posting. Prefer an explicit
-  model-bearing prefix such as `Codex GPT-5.5 agent:` so readers can
-  distinguish delegated agent comments from human-authored comments.
+  reviewed and approved the exact text before posting. Use an explicit prefix
+  naming the harness, model, and reasoning effort so readers can distinguish
+  delegated agent comments from human-authored ones — for example
+  `Claude Code (Opus 4.8, High effort):` or `Codex GPT-5.5 agent:`.
 - Reply to addressed comments with an attributed agent prefix.
 - Resolve pull request review threads after addressing and responding to them.
 - Agents should not need individual review URLs once the repository and PR
