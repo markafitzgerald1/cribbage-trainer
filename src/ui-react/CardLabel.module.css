@@ -140,10 +140,13 @@
   flex-direction: column;
   gap: 0;
   line-height: 0.92;
+  padding: 0;
+  width: 100%;
 }
 
 .corner-index .suits-wrapper {
-  inline-size: auto;
+  inline-size: 100%;
+  justify-content: center;
   margin: 0;
 }
 
