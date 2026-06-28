@@ -30,26 +30,33 @@ export const EXPECTED_PLAY_CATEGORY_LABELS = [
   "Total",
 ] as const;
 
+// Zip each label with its value so labels stay type-safe (no at(index) cast).
 const toCategories = ({
   pointBreakdown,
   total,
 }: ExpectedPlayPlayerBreakdown): readonly ExpectedPlayBreakdownCategory[] =>
-  [
-    pointBreakdown.fifteens,
-    pointBreakdown.thirtyOnes,
-    pointBreakdown.pairs,
-    pointBreakdown.runs,
-    pointBreakdown.go,
-    pointBreakdown.lastCard,
-    total,
-  ].map((value, index) => ({
-    label: EXPECTED_PLAY_CATEGORY_LABELS.at(index) as string,
-    value,
-  }));
+  (
+    [
+      ["15s", pointBreakdown.fifteens],
+      ["31s", pointBreakdown.thirtyOnes],
+      ["Pairs", pointBreakdown.pairs],
+      ["Runs", pointBreakdown.runs],
+      ["Go", pointBreakdown.go],
+      ["Last", pointBreakdown.lastCard],
+      ["Total", total],
+    ] as const
+  ).map(([label, value]) => ({ label, value }));
 
+/*
+ * The collapsed Play column, net score, and sort all use the table's
+ * role-relative delta (`points.delta`), which can round differently from the
+ * difference of the two rounded seat totals. Use the delta for the row total so
+ * the expanded "You - Opp" total always matches the score it drives.
+ */
 const subtractPlayers = (
   player: ExpectedPlayPlayerBreakdown,
   opponent: ExpectedPlayPlayerBreakdown,
+  delta: number,
 ): ExpectedPlayPlayerBreakdown => ({
   pointBreakdown: {
     fifteens: player.pointBreakdown.fifteens - opponent.pointBreakdown.fifteens,
@@ -60,7 +67,7 @@ const subtractPlayers = (
     thirtyOnes:
       player.pointBreakdown.thirtyOnes - opponent.pointBreakdown.thirtyOnes,
   },
-  total: player.total - opponent.total,
+  total: delta,
 });
 
 export const getExpectedPlayBreakdownRows = (
@@ -74,7 +81,7 @@ export const getExpectedPlayBreakdownRows = (
     { categories: toCategories(points.pone), label: "Pone" },
     { categories: toCategories(points.dealer), label: "Dealer" },
     {
-      categories: toCategories(subtractPlayers(player, opponent)),
+      categories: toCategories(subtractPlayers(player, opponent, points.delta)),
       label: "You - Opp",
     },
   ];

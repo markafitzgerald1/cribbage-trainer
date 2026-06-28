@@ -35,7 +35,11 @@ describe("getExpectedPlayBreakdownRows", () => {
   ])(
     "returns absolute seats and the $role-relative delta",
     ({ expectedDelta, role }) => {
-      const rows = getExpectedPlayBreakdownRows(points, role);
+      // In real usage points.delta is role-relative, so match the role here.
+      const rows = getExpectedPlayBreakdownRows(
+        { ...points, delta: expectedDelta },
+        role,
+      );
 
       expect(rows.map((row) => row.label)).toStrictEqual([
         "Pone",

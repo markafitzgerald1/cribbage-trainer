@@ -156,3 +156,15 @@
   margin: 0;
   position: static;
 }
+
+/* Center the rank glyph in the full card width so it lines up with the
+   full-width centered suit below it. */
+.corner-index .rank {
+  text-align: center;
+  width: 100%;
+}
+
+.corner-index .rank.ten {
+  margin-right: 0;
+  transform-origin: center;
+}

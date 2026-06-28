@@ -40,7 +40,8 @@ export const validateCribTable = (table) => {
   }
   if (Object.keys(table).length !== 170) {
     throw new Error(
-      "Downloaded crib EV table does not contain 169 discard keys",
+      `Downloaded crib EV table has ${Object.keys(table).length} keys; ` +
+        "expected 170 (169 discard keys plus __metadata__)",
     );
   }
 };

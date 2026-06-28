@@ -250,12 +250,15 @@ const renderExpandedCribDetails = (
 
 describe("scoredPossibleKeepDiscardExpandedRow", () => {
   it.each([
-    { expectedDelta: "0.90", role: CribRole.Dealer },
-    { expectedDelta: "-0.90", role: CribRole.Pone },
+    { delta: 0.9, expectedDelta: "0.90", role: CribRole.Dealer },
+    { delta: -0.9, expectedDelta: "-0.90", role: CribRole.Pone },
   ])(
     "renders absolute seat pegging breakdown and $role delta",
-    ({ expectedDelta, role }) => {
-      renderRow({ cribRole: role });
+    ({ delta, expectedDelta, role }) => {
+      renderRow({
+        cribRole: role,
+        expectedPlayPoints: { ...EXPECTED_PLAY_POINTS, delta },
+      });
 
       expect(screen.getByText("Pone")).toBeTruthy();
       expect(screen.getByText("Dealer")).toBeTruthy();
