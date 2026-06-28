@@ -6,7 +6,6 @@ import {
   SortOrder,
   type StoryObj,
   createArgTypes,
-  playDoubleExpanded,
   playToggle,
 } from "./stories.common";
 import { expect, within } from "storybook/test";
@@ -67,6 +66,31 @@ const cribPointBreakdown = {
   nobs: 0.1,
   pairs: 0.4,
   runs: 0.25,
+} as const;
+const expectedPlayPoints = {
+  dealer: {
+    pointBreakdown: {
+      fifteens: 0.4,
+      go: 0.2,
+      lastCard: 0.3,
+      pairs: 0.6,
+      runs: 0.5,
+      thirtyOnes: 0.4,
+    },
+    total: 2.4,
+  },
+  delta: 0.9,
+  pone: {
+    pointBreakdown: {
+      fifteens: 0.2,
+      go: 0.1,
+      lastCard: 0.2,
+      pairs: 0.3,
+      runs: 0.4,
+      thirtyOnes: 0.3,
+    },
+    total: 1.5,
+  },
 } as const;
 const suitedCribStarterPoints = [
   {
@@ -144,7 +168,9 @@ const createStory = ({
         expectedCribPointBreakdown,
         expectedCribPoints: cribPoints,
         expectedHandPoints: handExpectedPoints,
-        expectedNetPoints: handExpectedPoints + cribPoints,
+        expectedNetPoints:
+          handExpectedPoints + cribPoints + expectedPlayPoints.delta,
+        expectedPlayPoints,
         handPoints: points.total,
         handPointsBreakdown: points,
         keep: keep.map(toDealtCard),
@@ -193,7 +219,12 @@ export const ExpandedRow: Story = {
 
 export const DoubleExpandedRow: Story = {
   ...ExpandedRow,
-  play: playDoubleExpanded,
+  play: (context) =>
+    playToggle(context, {
+      toggleCribDetails: true,
+      togglePlayDetails: true,
+      toggleStarterDetails: true,
+    }),
 };
 
 export const SuitedCribDetailsExpanded: Story = createStory({

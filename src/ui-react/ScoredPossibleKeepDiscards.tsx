@@ -1,5 +1,6 @@
 import * as classes from "./ScoredPossibleKeepDiscards.module.css";
-import * as loader from "../game/expectedCribPointsTableLoader";
+import * as cribLoader from "../game/expectedCribPointsTableLoader";
+import * as playLoader from "../game/expectedPlayPointsTableLoader";
 import {
   CribRole,
   type ExpectedCribPointsTable,
@@ -16,6 +17,7 @@ import {
   compareByExpectedScoreThenRankDescending,
 } from "../analysis/compareByExpectedScoreDescending";
 import type { DealtCard } from "../game/DealtCard";
+import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
@@ -28,7 +30,8 @@ export interface ScoredPossibleKeepDiscardsProps {
    * Loads the crib EV table. Injectable so stories and tests can exercise the
    * load-failure path without module mocking; defaults to the shared loader.
    */
-  readonly loadTable?: () => Promise<ExpectedCribPointsTable>;
+  readonly loadCribTable?: () => Promise<ExpectedCribPointsTable>;
+  readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
   readonly sortOrder: SortOrder;
 }
 
@@ -36,18 +39,26 @@ const getScoringHeaders = (cribRole: CribRole) =>
   [
     {
       key: ScoredKeepDiscardSortKey.ExpectedHandPoints,
-      label: "E(h)",
+      label: "Hand",
       title: "Sort by expected hand points",
     },
     {
       key: ScoredKeepDiscardSortKey.ExpectedCribPoints,
-      label: "E(c)",
+      label: "Crib",
       title: "Sort by signed expected crib points",
     },
     {
+      key: ScoredKeepDiscardSortKey.ExpectedPlayPoints,
+      label: "Play",
+      title: "Sort by expected pegging-point difference",
+    },
+    {
       key: ScoredKeepDiscardSortKey.ExpectedNetPoints,
-      label: cribRole === CribRole.Dealer ? "E(h+c)" : "E(h-c)",
-      title: "Sort by expected hand points plus signed crib points",
+      label: "Net",
+      title:
+        cribRole === CribRole.Dealer
+          ? "Sort by E(h + c + Δp)"
+          : "Sort by E(h - c + Δp)",
     },
   ] as const;
 
@@ -61,6 +72,10 @@ const scoreColumns = [
     key: ScoredKeepDiscardSortKey.ExpectedCribPoints,
   },
   {
+    className: classes.playScoreColumn,
+    key: ScoredKeepDiscardSortKey.ExpectedPlayPoints,
+  },
+  {
     className: classes.netScoreColumn,
     key: ScoredKeepDiscardSortKey.ExpectedNetPoints,
   },
@@ -69,24 +84,32 @@ const scoreColumns = [
 export function ScoredPossibleKeepDiscards({
   cribRole,
   dealtCards,
-  loadTable = loader.loadTable,
+  loadCribTable = cribLoader.loadTable,
+  loadPlayTable = playLoader.loadTable,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
-  const [table, setTable] = useState<ExpectedCribPointsTable | null>(
-    loader.getTableSync(),
-  );
+  const [tables, setTables] = useState<{
+    readonly crib: ExpectedCribPointsTable;
+    readonly play: ExpectedPlayPointsTable;
+  } | null>(() => {
+    const crib = cribLoader.getTableSync();
+    const play = playLoader.getTableSync();
+    return crib && play ? { crib, play } : null;
+  });
   const [loadError, setLoadError] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
 
   useEffect(() => {
-    if (!table && !loadError) {
-      loadTable()
-        .then(setTable)
+    if (!tables && !loadError) {
+      Promise.all([loadCribTable(), loadPlayTable()])
+        .then(([crib, play]) => {
+          setTables({ crib, play });
+        })
         .catch(() => {
           setLoadError(true);
         });
     }
-  }, [loadError, loadTable, table, retryCount]);
+  }, [loadCribTable, loadError, loadPlayTable, retryCount, tables]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);
@@ -98,14 +121,14 @@ export function ScoredPossibleKeepDiscards({
   );
   const scoredKeepDiscardsByNetScore = useMemo(
     () =>
-      table
+      tables
         ? allScoredKeepDiscardsByExpectedNetScoreDescending(
             dealtCards,
             cribRole,
-            table,
+            tables,
           )
         : [],
-    [cribRole, dealtCards, table],
+    [cribRole, dealtCards, tables],
   );
   const scoredKeepDiscards = useMemo(
     () =>
@@ -136,13 +159,13 @@ export function ScoredPossibleKeepDiscards({
     );
   }
 
-  if (!table) {
+  if (!tables) {
     return <div className={classes.loading}>Loading analysis...</div>;
   }
   const renderHandHeader = () => (
-    <th aria-label="Hand composition">
+    <th aria-label="Kept hand and discard">
       <span className={`${classes.headerStack} ${classes.headerStackStart}`}>
-        <span className={classes.headerMain}>Hand</span>
+        <span className={classes.headerMain}>Keep (Discard)</span>
       </span>
     </th>
   );
@@ -156,6 +179,7 @@ export function ScoredPossibleKeepDiscards({
       title={header.title}
     >
       <button
+        aria-label={`${header.label}: ${header.title}`}
         className={classes.headerButton}
         onClick={handleScoreSortClick}
         type="button"
@@ -220,5 +244,6 @@ export function ScoredPossibleKeepDiscards({
 }
 
 ScoredPossibleKeepDiscards.defaultProps = {
-  loadTable: loader.loadTable,
+  loadCribTable: cribLoader.loadTable,
+  loadPlayTable: playLoader.loadTable,
 };

@@ -1,11 +1,11 @@
 import { CARDS, type Card } from "../game/Card";
+import { type ScoredKeepDiscard, ZERO_EXPECTED_PLAY_POINTS } from "./analysis";
 import {
   ScoredKeepDiscardSortKey,
   compareByExpectedNetScoreThenRankDescending,
   compareByExpectedScoreThenRankDescending,
 } from "./compareByExpectedScoreDescending";
 import { describe, expect, it } from "@jest/globals";
-import type { ScoredKeepDiscard } from "./analysis";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 
@@ -37,6 +37,7 @@ describe("compareByExpectedScoreDescending", () => {
     expectedCribPoints: 0,
     expectedHandPoints: expectedHandPoints(keep, discard).total,
     expectedNetPoints: expectedHandPoints(keep, discard).total,
+    expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
     fifteensContributions: [],
     flushesContributions: [],
     handPoints: 0,
@@ -103,6 +104,13 @@ describe("compareByExpectedScoreDescending", () => {
       expectedNetPoints: 1,
       signedExpectedCribPoints: 10,
     };
+    const play = {
+      ...createHand([ACE, JACK], [THREE, TWO]),
+      expectedHandPoints: 1,
+      expectedNetPoints: 1,
+      expectedPlayPoints: { ...ZERO_EXPECTED_PLAY_POINTS, delta: 10 },
+      signedExpectedCribPoints: 1,
+    };
 
     expect(
       compareByExpectedScoreThenRankDescending(
@@ -113,6 +121,11 @@ describe("compareByExpectedScoreDescending", () => {
       compareByExpectedScoreThenRankDescending(
         ScoredKeepDiscardSortKey.ExpectedCribPoints,
       )(hand, crib),
+    ).toBeGreaterThan(0);
+    expect(
+      compareByExpectedScoreThenRankDescending(
+        ScoredKeepDiscardSortKey.ExpectedPlayPoints,
+      )(hand, play),
     ).toBeGreaterThan(0);
   });
 

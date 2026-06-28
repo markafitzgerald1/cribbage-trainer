@@ -55,10 +55,10 @@ const getSuitedDiscardRow = (page: Page) =>
     .locator('tr[class*="highlighted"]')
     .filter({ hasText: suitedDiscardRowText });
 
-const expectBreakdownLabelsVisible = async (tbody: Locator) => {
+const expectBreakdownLabelsVisible = async (container: Locator) => {
   await Promise.all(
     expectedBreakdownLabels.map(async (label) => {
-      await expect(tbody.getByText(label, exactTextMatch)).toBeVisible();
+      await expect(container.getByText(label, exactTextMatch)).toBeVisible();
     }),
   );
 };
@@ -68,11 +68,10 @@ test("pre-cut hand points show after select of two discards", async ({
 }) => {
   await renderThenSelectTwoDiscards(page, constantHandQuery);
 
-  await expect(page.getByRole("button", { name: "E(h)" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "E(c)" })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /E\(h[+-]c\)/u }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hand" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Crib" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Net" })).toBeVisible();
 });
 
 test("semantic e2e suited analysis flow", async ({ page }) => {
@@ -88,7 +87,11 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
 
   await row.click();
 
-  await expectBreakdownLabelsVisible(page.locator("tbody"));
+  await expectBreakdownLabelsVisible(
+    page
+      .locator('div[class*="breakdown-header"]')
+      .filter({ hasText: "Points" }),
+  );
   await expect(page.getByText("+Cut avg")).toBeVisible();
 
   await page.getByText("+Cut avg").click();

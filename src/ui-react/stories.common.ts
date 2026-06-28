@@ -39,9 +39,26 @@ export const waitForLoadingToDisappear = async (canvas: {
   );
 };
 
+const clickBreakdownLabel = async (
+  canvas: {
+    readonly findByText: (text: RegExp | string) => Promise<HTMLElement>;
+  },
+  label: RegExp | string,
+  expectedText: RegExp | string,
+) => {
+  const breakdownLabel = await canvas.findByText(label);
+  await fireEvent.click(breakdownLabel);
+
+  await expect(await canvas.findByText(expectedText)).toBeVisible();
+};
+
 export const playToggle = async (
   { canvasElement }: { readonly canvasElement: HTMLElement },
-  { toggleCribDetails = false, toggleStarterDetails = false } = {},
+  {
+    toggleCribDetails = false,
+    togglePlayDetails = false,
+    toggleStarterDetails = false,
+  } = {},
 ) => {
   const canvas = within(canvasElement);
   await waitForLoadingToDisappear(canvas);
@@ -63,17 +80,15 @@ export const playToggle = async (
   await expect(await canvas.findByText(/\+Cut avg/u)).toBeVisible();
 
   if (toggleStarterDetails) {
-    const starterAvgLabel = await canvas.findByText(/\+Cut avg/u);
-    await fireEvent.click(starterAvgLabel);
-
-    await expect(await canvas.findByText("Points")).toBeVisible();
+    await clickBreakdownLabel(canvas, /\+Cut avg/u, "Points");
   }
 
   if (toggleCribDetails) {
-    const cribAvgLabel = await canvas.findByText(/Crib avg/u);
-    await fireEvent.click(cribAvgLabel);
+    await clickBreakdownLabel(canvas, /Crib avg/u, "Points");
+  }
 
-    await expect(await canvas.findByText("Points")).toBeVisible();
+  if (togglePlayDetails) {
+    await clickBreakdownLabel(canvas, /You - Opp/u, /You - Opp/u);
   }
 };
 

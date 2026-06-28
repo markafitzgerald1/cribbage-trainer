@@ -11,6 +11,7 @@ export function PossibleHandCard({ rank, suit }: PossibleHandCardProps) {
   return (
     <span className={`${classes.card}`}>
       <CardLabel
+        cornerIndex
         rank={rank}
         suit={suit}
       />

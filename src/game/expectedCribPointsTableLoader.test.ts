@@ -1,51 +1,69 @@
 import { describe, expect, it } from "@jest/globals";
 import {
-  getTableSync,
-  loadTable,
-  setTableSync,
+  getTableSync as getCribTableSync,
+  loadTable as loadCribTable,
+  setTableSync as setCribTableSync,
 } from "./expectedCribPointsTableLoader";
+import {
+  getTableSync as getPlayTableSync,
+  loadTable as loadPlayTable,
+  setTableSync as setPlayTableSync,
+} from "./expectedPlayPointsTableLoader";
 import { type ExpectedCribPointsTable } from "./expectedCribPoints";
+import { type ExpectedPlayPointsTable } from "./expectedPlayPoints";
+import { type ExpectedPointsTableLoader } from "./expectedPointsTableLoader";
 
-describe("expectedCribPointsTableLoader", () => {
-  it("loads the table asynchronously and caches it", async () => {
-    setTableSync(null);
+interface LoaderTestCase extends ExpectedPointsTableLoader<unknown> {
+  readonly fakeTable: unknown;
+  readonly name: string;
+}
 
-    expect(getTableSync()).toBeNull();
+const LOADER_CASES: readonly LoaderTestCase[] = [
+  {
+    fakeTable: {},
+    getTableSync: getCribTableSync,
+    loadTable: loadCribTable,
+    name: "crib",
+    setTableSync: (table) =>
+      setCribTableSync(table as ExpectedCribPointsTable | null),
+  },
+  {
+    fakeTable: {},
+    getTableSync: getPlayTableSync,
+    loadTable: loadPlayTable,
+    name: "play",
+    setTableSync: (table) =>
+      setPlayTableSync(table as ExpectedPlayPointsTable | null),
+  },
+];
 
-    const loadedTable = await loadTable();
+describe("expected points table loaders", () => {
+  it.each(LOADER_CASES)(
+    "loads, shares, and caches the $name table",
+    async ({ getTableSync, loadTable, setTableSync }) => {
+      setTableSync(null);
 
-    expect(typeof loadedTable).toBe("object");
-    expect(getTableSync()).toBe(loadedTable);
+      expect(getTableSync()).toBeNull();
 
-    // Call again to test the cached if (table) branch
-    const secondLoad = await loadTable();
+      const first = loadTable();
+      const second = loadTable();
+      const sharesPromise = first === second;
+      const loadedTable = await first;
 
-    expect(secondLoad).toBe(loadedTable);
-  });
+      expect(sharesPromise).toBe(true);
+      expect(typeof loadedTable).toBe("object");
+      expect(getTableSync()).toBe(loadedTable);
+      await expect(loadTable()).resolves.toBe(loadedTable);
+    },
+  );
 
-  it("handles concurrent loads without duplicate imports", async () => {
-    setTableSync(null);
+  it.each(LOADER_CASES)(
+    "supports synchronous $name table injection",
+    async ({ fakeTable, getTableSync, loadTable, setTableSync }) => {
+      setTableSync(fakeTable);
 
-    const promise1 = loadTable();
-    const promise2 = loadTable();
-
-    const isSamePromise = promise1 === promise2;
-
-    expect(isSamePromise).toBe(true);
-
-    const result = await promise1;
-
-    expect(typeof result).toBe("object");
-  });
-
-  it("supports setting table synchronously with non-null value", async () => {
-    const fakeTable = {} as ExpectedCribPointsTable;
-    setTableSync(fakeTable);
-
-    expect(getTableSync()).toBe(fakeTable);
-
-    const loaded = await loadTable();
-
-    expect(loaded).toBe(fakeTable);
-  });
+      expect(getTableSync()).toBe(fakeTable);
+      await expect(loadTable()).resolves.toBe(fakeTable);
+    },
+  );
 });

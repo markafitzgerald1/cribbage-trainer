@@ -6,6 +6,7 @@ declare const classes: {
   readonly handCardLabel: string;
   readonly redSuit: string;
   readonly blackSuit: string;
+  readonly cornerIndex: string;
   readonly suit: string;
   readonly suitText: string;
   readonly suitsWrapper: string;

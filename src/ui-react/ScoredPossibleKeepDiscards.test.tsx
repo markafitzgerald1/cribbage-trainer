@@ -9,14 +9,17 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
 import type { DealtCard } from "../game/DealtCard";
+import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
+import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
+import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 /* jscpd:ignore-end */
 
-const mockLoadTable = jest.fn(() => {
+const mockLoadCribTable = jest.fn(() => {
   const actualLoader = jest.requireActual<
     typeof import("../game/expectedCribPointsTableLoader")
   >("../game/expectedCribPointsTableLoader");
@@ -31,7 +34,7 @@ jest.mock<typeof import("../game/expectedCribPointsTableLoader")>(
     >("../game/expectedCribPointsTableLoader");
     return {
       ...actual,
-      loadTable: () => mockLoadTable(),
+      loadTable: () => mockLoadCribTable(),
     };
   },
 );
@@ -47,6 +50,9 @@ describe("scored possible keep discards component", () => {
     if (preload) {
       setTableSync(
         expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+      );
+      setPlayTableSync(
+        expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
       );
     }
 
@@ -110,16 +116,19 @@ describe("scored possible keep discards component", () => {
     expect(highlightedRows).toHaveLength(1);
   });
 
-  it("renders the pone net column as hand minus crib", () => {
+  it("labels the pone net column as hand minus crib plus pegging delta", () => {
     renderScoredPossibleKeepDiscards(dealHand(mathRandom), CribRole.Pone);
 
-    expect(screen.getByRole("button", { name: /E\(h-c\)/u })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /E\(h - c \+ Δp\)/u }),
+    ).toBeTruthy();
   });
 
   it.each([
-    { cellIndex: 1, headerName: /E\(h\)/u },
-    { cellIndex: 2, headerName: /E\(c\)/u },
-    { cellIndex: 3, headerName: /E\(h\+c\)/u },
+    { cellIndex: 1, headerName: /^Hand:/u },
+    { cellIndex: 2, headerName: /^Crib:/u },
+    { cellIndex: 3, headerName: /^Play:/u },
+    { cellIndex: 4, headerName: /E\(h \+ c \+ Δp\)/u },
   ])(
     "sorts rows by $headerName when the score header is clicked",
     ({ cellIndex, headerName }) => {
@@ -139,6 +148,7 @@ describe("scored possible keep discards component", () => {
 
   const renderAndExpectLoading = () => {
     setTableSync(null);
+    setPlayTableSync(null);
 
     renderScoredPossibleKeepDiscards(
       dealHand(mathRandom),
@@ -163,7 +173,7 @@ describe("scored possible keep discards component", () => {
   });
 
   it("handles loading error gracefully and allows retry", async () => {
-    mockLoadTable.mockRejectedValueOnce(new Error("Fake load error"));
+    mockLoadCribTable.mockRejectedValueOnce(new Error("Fake load error"));
 
     renderAndExpectLoading();
 
@@ -174,7 +184,7 @@ describe("scored possible keep discards component", () => {
     const retryButton = screen.getByRole("button", { name: "Retry" });
 
     // Now mock a successful load for retry
-    mockLoadTable.mockResolvedValueOnce(
+    mockLoadCribTable.mockResolvedValueOnce(
       expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
     );
 

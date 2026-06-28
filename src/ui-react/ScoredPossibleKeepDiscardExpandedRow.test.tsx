@@ -9,7 +9,7 @@ import {
   type ScoredPossibleKeepDiscardExpandedRowProps,
 } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { describe, expect, it } from "@jest/globals";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { getAllByCardText, queryAllByCardText } from "./test-utils";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { SortOrder } from "../ui/SortOrder";
@@ -97,6 +97,31 @@ const RELATION_CRIB_STARTER_POINTS = [
     ],
   },
 ] as const;
+const EXPECTED_PLAY_POINTS = {
+  dealer: {
+    pointBreakdown: {
+      fifteens: 0.4,
+      go: 0.2,
+      lastCard: 0.3,
+      pairs: 0.6,
+      runs: 0.5,
+      thirtyOnes: 0.4,
+    },
+    total: 2.4,
+  },
+  delta: 0.9,
+  pone: {
+    pointBreakdown: {
+      fifteens: 0.2,
+      go: 0.1,
+      lastCard: 0.2,
+      pairs: 0.3,
+      runs: 0.4,
+      thirtyOnes: 0.3,
+    },
+    total: 1.5,
+  },
+} as const;
 
 function getSummaryMutedTexts(container: HTMLElement): Array<string | null> {
   const summary = container.matches(SUMMARY_SELECTOR)
@@ -151,6 +176,7 @@ const DEFAULT_SCORED_KEEP_DISCARD: ScoredKeepDiscard<Card> = {
   expectedCribPoints: 1.5,
   expectedHandPoints: 4.8,
   expectedNetPoints: 6.3,
+  expectedPlayPoints: EXPECTED_PLAY_POINTS,
   fifteensContributions: [],
   flushesContributions: [],
   handPoints: 4,
@@ -223,6 +249,25 @@ const renderExpandedCribDetails = (
 };
 
 describe("scoredPossibleKeepDiscardExpandedRow", () => {
+  it.each([
+    { expectedDelta: "0.90", role: CribRole.Dealer },
+    { expectedDelta: "-0.90", role: CribRole.Pone },
+  ])(
+    "renders absolute seat pegging breakdown and $role delta",
+    ({ expectedDelta, role }) => {
+      renderRow({ cribRole: role });
+
+      expect(screen.getByText("Pone")).toBeTruthy();
+      expect(screen.getByText("Dealer")).toBeTruthy();
+      expect(screen.getByText("You - Opp")).toBeTruthy();
+      expect(screen.getByText(expectedDelta)).toBeTruthy();
+
+      clickSummaryTotal(/You - Opp/u);
+
+      expect(screen.queryByText("Pone")).toBeNull();
+    },
+  );
+
   it("should render cut results when they exist to satisfy 100% coverage", () => {
     renderExpandedStarterDetails({
       fifteensContributions: MOCK_FIFTEENS_CONTRIBUTIONS,
@@ -384,10 +429,11 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
     renderExpandedCribDetails({
       expectedCribPoints: 1.5,
     });
+    const cribSummary = screen.getByRole("button", { name: /Crib avg/u });
 
     expect(screen.queryByText("A")).toBeNull();
     expect(screen.getByText("K")).toBeTruthy();
-    expect(screen.getByText("1.50")).toBeTruthy();
+    expect(within(cribSummary).getByText("1.50")).toBeTruthy();
     expect(screen.getByText("5.50")).toBeTruthy();
     expect(screen.queryByText("-5.50")).toBeNull();
   });

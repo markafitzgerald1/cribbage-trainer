@@ -131,3 +131,25 @@
     right: 0.04em;
   }
 }
+
+/* Mini keep/discard card: stack a large rank index over a small centered suit.
+   Unlike a corner-positioned suit (which collides with wide indices like 10 or
+   K on a tight card), a vertical stack keeps the card narrow and never lets the
+   suit overlap the index. */
+.corner-index {
+  flex-direction: column;
+  gap: 0;
+  line-height: 0.92;
+}
+
+.corner-index .suits-wrapper {
+  inline-size: auto;
+  margin: 0;
+}
+
+.corner-index .suit {
+  font-size: 0.46em;
+  inline-size: 1em;
+  margin: 0;
+  position: static;
+}

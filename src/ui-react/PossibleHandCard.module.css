@@ -7,16 +7,22 @@
   justify-content: center;
   border: var(--card-border);
   background-color: var(--card-background-color);
-  margin: 0.08em;
+  margin: 0.05em;
   border-width: var(--clickable-border-width);
   border-radius: var(--clickable-border-radius);
   color: black;
   font-weight: bold;
   font-family: var(--card-font-family);
   line-height: 1;
-  padding: 0.08em 0 0.08em 0.06em;
+  padding: 0.08em 0.02em;
+  position: relative;
   white-space: nowrap;
-  width: 1.62em;
+
+  /* Corner-index layout: the suit is absolutely positioned, so the card only
+     needs to be about as wide as the rank index. Kept tight (well under the
+     old 1.62em inline card) so all six cards, the parentheses and the expand
+     arrow fit one keep/discard row without clipping the closing paren. */
+  width: 1em;
 }
 
 .card > div {
