@@ -1,3 +1,7 @@
+import {
+  type ExpectedPointsTableLoader,
+  createExpectedPointsTableLoader,
+} from "./expectedPointsTableLoader";
 import { describe, expect, it } from "@jest/globals";
 import {
   getTableSync as getCribTableSync,
@@ -11,7 +15,6 @@ import {
 } from "./expectedPlayPointsTableLoader";
 import { type ExpectedCribPointsTable } from "./expectedCribPoints";
 import { type ExpectedPlayPointsTable } from "./expectedPlayPoints";
-import { type ExpectedPointsTableLoader } from "./expectedPointsTableLoader";
 
 interface LoaderTestCase extends ExpectedPointsTableLoader<unknown> {
   readonly fakeTable: unknown;
@@ -36,6 +39,11 @@ const LOADER_CASES: readonly LoaderTestCase[] = [
       setPlayTableSync(table as ExpectedPlayPointsTable | null),
   },
 ];
+
+const createNumberLoader = (loadDefaultTable: () => number) =>
+  createExpectedPointsTableLoader<number>(() =>
+    Promise.resolve({ default: loadDefaultTable() }),
+  );
 
 describe("expected points table loaders", () => {
   it.each(LOADER_CASES)(
@@ -66,4 +74,27 @@ describe("expected points table loaders", () => {
       await expect(loadTable()).resolves.toBe(fakeTable);
     },
   );
+
+  it("caches loaded falsy tables", async () => {
+    let importCount = 0;
+    const loader = createNumberLoader(() => {
+      importCount += 1;
+      return 0;
+    });
+
+    await expect(loader.loadTable()).resolves.toBe(0);
+    await expect(loader.loadTable()).resolves.toBe(0);
+    expect(importCount).toBe(1);
+  });
+
+  it("supports synchronous falsy table injection", async () => {
+    const injectedTable = 0;
+    const loader = createNumberLoader(() => 1);
+
+    loader.setTableSync(injectedTable);
+    const loadedTable = await loader.loadTable();
+
+    expect(loadedTable).toBe(injectedTable);
+    expect(loader.getTableSync()).toBe(injectedTable);
+  });
 });

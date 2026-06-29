@@ -61,6 +61,9 @@ export interface ExpectedPlayPoints {
 
 const COMPONENT_TOLERANCE = 0.001;
 
+const rankToStarterRank = (rank: Card["rank"]): StarterRank =>
+  STARTER_RANKS.at(rank) as StarterRank;
+
 export const normalizePlayHandKey = (
   keep: readonly Card[],
 ): ExpectedPlayPointsHandKey => {
@@ -70,7 +73,7 @@ export const normalizePlayHandKey = (
 
   return [...keep]
     .sort((left, right) => left.rank - right.rank)
-    .map((card) => STARTER_RANKS.at(card.rank))
+    .map((card) => rankToStarterRank(card.rank))
     .join("_") as ExpectedPlayPointsHandKey;
 };
 

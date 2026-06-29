@@ -21,6 +21,7 @@ const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const EXPECTED_CELL_COUNT = 5;
 const EXPECTED_CRIB_POINTS = 1.25;
 const EXPECTED_PLAY_POINTS = 0.75;
+const TINY_NEGATIVE_EXPECTED_PLAY_POINTS = -0.0047;
 const missingCribPointBreakdown = new Map<string, never>().get("missing");
 const CRIB_STARTER_POINTS = [
   {
@@ -32,6 +33,12 @@ const CRIB_STARTER_POINTS = [
     starterSuitRelationPoints: [],
   },
 ] as const;
+
+interface RenderComponentOptions {
+  readonly expectedPlayPoints?: number;
+  readonly isHighlighted?: boolean;
+  readonly signedExpectedCribPoints?: number;
+}
 
 function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const sortOrder = SortOrder[sortOrderName];
@@ -63,12 +70,17 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 
 function renderComponentWithScenario(
   scenario: ReturnType<typeof setupScenario>,
-  isHighlighted = false,
-  signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
+  {
+    expectedPlayPoints = EXPECTED_PLAY_POINTS,
+    isHighlighted = false,
+    signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
+  }: RenderComponentOptions = {},
 ) {
   setTableSync(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
   );
+  const expectedNetPoints =
+    scenario.expectedPoints + signedExpectedCribPoints + expectedPlayPoints;
 
   const scoredKeepDiscard = {
     avgCutAdded15s: scenario.cutAdded.avg15s,
@@ -82,7 +94,7 @@ function renderComponentWithScenario(
     expectedCribPointBreakdown: missingCribPointBreakdown,
     expectedCribPoints: Math.abs(signedExpectedCribPoints),
     expectedHandPoints: scenario.expectedPoints,
-    expectedNetPoints: scenario.expectedNetPoints,
+    expectedNetPoints,
     expectedPlayPoints: {
       dealer: {
         pointBreakdown: {
@@ -95,7 +107,7 @@ function renderComponentWithScenario(
         },
         total: 1.75,
       },
-      delta: EXPECTED_PLAY_POINTS,
+      delta: expectedPlayPoints,
       pone: {
         pointBreakdown: {
           fifteens: 0.1,
@@ -136,7 +148,9 @@ function renderComponentWithScenario(
 
 const highlightedPresent = (isHighlighted: boolean) => {
   const scenario = setupScenario("Ascending");
-  const { container } = renderComponentWithScenario(scenario, isHighlighted);
+  const { container } = renderComponentWithScenario(scenario, {
+    isHighlighted,
+  });
   const rowClass = container.querySelector("tr")?.className ?? "";
 
   return rowClass.includes("highlighted");
@@ -186,11 +200,27 @@ describe("calculation component", () => {
   it("renders negative signed crib points without a plus sign", () => {
     const scenario = setupScenario("Ascending");
 
-    renderComponentWithScenario(scenario, false, -EXPECTED_CRIB_POINTS);
+    renderComponentWithScenario(scenario, {
+      signedExpectedCribPoints: -EXPECTED_CRIB_POINTS,
+    });
 
     expect(
       screen.getByText(`−${EXPECTED_CRIB_POINTS.toFixed(2)}`),
     ).toBeTruthy();
+  });
+
+  it("renders play points that round to zero without a negative sign", () => {
+    const scenario = setupScenario("Ascending");
+
+    renderComponentWithScenario(scenario, {
+      expectedPlayPoints: TINY_NEGATIVE_EXPECTED_PLAY_POINTS,
+    });
+
+    const cells = screen.getAllByRole("cell");
+    const playCellText = String(cells[3]?.textContent);
+
+    expect(playCellText).toBe("0.00");
+    expect(playCellText).not.toBe("−0.00");
   });
 
   const setupAndRender = () => {

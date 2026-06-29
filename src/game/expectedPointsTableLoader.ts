@@ -15,7 +15,7 @@ export const createExpectedPointsTableLoader = <T>(
   let loadPromise: Promise<T> | null = null;
 
   const loadTable = (): Promise<T> => {
-    if (table) {
+    if (table !== null) {
       return Promise.resolve(table);
     }
     if (!loadPromise) {
@@ -39,7 +39,7 @@ export const createExpectedPointsTableLoader = <T>(
 
   const setTableSync = (newTable: T | null): void => {
     table = newTable;
-    loadPromise = newTable ? Promise.resolve(newTable) : null;
+    loadPromise = newTable === null ? null : Promise.resolve(newTable);
   };
 
   return { getTableSync, loadTable, setTableSync };

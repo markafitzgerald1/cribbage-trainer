@@ -26,8 +26,13 @@ const ROW_STRIPE_DIVISOR = 2;
  */
 const MINUS_SIGN = "−";
 
-const toAlignedFixed = (points: number): string =>
-  points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS).replace("-", MINUS_SIGN);
+const toAlignedFixed = (points: number): string => {
+  const roundedPoints = Number(points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
+
+  return roundedPoints
+    .toFixed(EXPECTED_POINTS_FRACTION_DIGITS)
+    .replace("-", MINUS_SIGN);
+};
 
 const formatDiscardLabel = (discard: readonly Card[]): string => {
   const [firstCard, secondCard] = discard as unknown as readonly [Card, Card];
