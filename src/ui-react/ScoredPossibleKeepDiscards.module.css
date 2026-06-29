@@ -80,20 +80,22 @@
 }
 
 @media (orientation: portrait) {
+  /* The small portrait mini-cards do not fill the hand column, so give that
+     slack to the numeric columns: bigger, non-cramped, decimal-aligned scores. */
   .hand-column {
-    width: 46%;
+    width: 38%;
   }
 
   .score-column {
-    width: 13.5%;
+    width: 15.5%;
   }
 
   .play-score-column {
-    width: 13.5%;
+    width: 15.5%;
   }
 
   .net-score-column {
-    width: 13.5%;
+    width: 15.5%;
   }
 }
 
