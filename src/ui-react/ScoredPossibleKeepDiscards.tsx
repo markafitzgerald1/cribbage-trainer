@@ -35,7 +35,7 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly sortOrder: SortOrder;
 }
 
-const getScoringHeaders = (cribRole: CribRole) =>
+const getScoringHeaders = () =>
   [
     {
       key: ScoredKeepDiscardSortKey.ExpectedHandPoints,
@@ -55,10 +55,7 @@ const getScoringHeaders = (cribRole: CribRole) =>
     {
       key: ScoredKeepDiscardSortKey.ExpectedNetPoints,
       label: "Net",
-      title:
-        cribRole === CribRole.Dealer
-          ? "Sort by E(h + c + Δp)"
-          : "Sort by E(h - c + Δp)",
+      title: "Sort by net expected points",
     },
   ] as const;
 
@@ -200,7 +197,7 @@ export function ScoredPossibleKeepDiscards({
     <thead>
       <tr>
         {renderHandHeader()}
-        {getScoringHeaders(cribRole).map(renderScoringTableHeader)}
+        {getScoringHeaders().map(renderScoringTableHeader)}
       </tr>
     </thead>
   );

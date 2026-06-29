@@ -145,8 +145,7 @@
 }
 
 .corner-index .suits-wrapper {
-  inline-size: 100%;
-  justify-content: center;
+  inline-size: auto;
   margin: 0;
 }
 
@@ -157,13 +156,8 @@
   position: static;
 }
 
-/* Center the rank glyph in the full card width so it lines up with the
-   full-width centered suit below it. */
-.corner-index .rank {
-  text-align: center;
-  width: 100%;
-}
-
+/* Center "10" on the same axis as the suit (scale from the centre, no
+   inline-layout margin compensation) so it matches the single-glyph ranks. */
 .corner-index .rank.ten {
   margin-right: 0;
   transform-origin: center;

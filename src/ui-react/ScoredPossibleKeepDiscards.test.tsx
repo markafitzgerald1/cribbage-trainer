@@ -116,11 +116,11 @@ describe("scored possible keep discards component", () => {
     expect(highlightedRows).toHaveLength(1);
   });
 
-  it("labels the pone net column as hand minus crib plus pegging delta", () => {
+  it("labels the net column with the net expected points sort", () => {
     renderScoredPossibleKeepDiscards(dealHand(mathRandom), CribRole.Pone);
 
     expect(
-      screen.getByRole("button", { name: /E\(h - c \+ Δp\)/u }),
+      screen.getByRole("button", { name: "Net: Sort by net expected points" }),
     ).toBeTruthy();
   });
 
@@ -128,7 +128,7 @@ describe("scored possible keep discards component", () => {
     { cellIndex: 1, headerName: /^Hand:/u },
     { cellIndex: 2, headerName: /^Crib:/u },
     { cellIndex: 3, headerName: /^Play:/u },
-    { cellIndex: 4, headerName: /E\(h \+ c \+ Δp\)/u },
+    { cellIndex: 4, headerName: /^Net:/u },
   ])(
     "sorts rows by $headerName when the score header is clicked",
     ({ cellIndex, headerName }) => {

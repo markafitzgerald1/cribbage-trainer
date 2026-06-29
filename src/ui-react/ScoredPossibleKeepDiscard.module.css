@@ -88,6 +88,11 @@ button.expand-indicator {
   .scored-possible-keep-discard {
     font-size: var(--medium-text-font-size-landscape);
   }
+
+  /* Bigger mini-cards in landscape to use the otherwise-empty hand column. */
+  .scored-possible-keep-discard td:first-child {
+    font-size: 1.1em;
+  }
 }
 
 @media (orientation: portrait) {
@@ -100,6 +105,6 @@ button.expand-indicator {
   }
 
   .scored-possible-keep-discard td:nth-child(n + 2) {
-    font-size: 0.78em;
+    font-size: 0.86em;
   }
 }
