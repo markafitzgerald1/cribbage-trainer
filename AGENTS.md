@@ -41,6 +41,12 @@
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 - Storybook coverage: run `npm run storybook:test:coverage`, then update the
   Vite `test.coverage.thresholds` block to the exact reported totals.
+- For focused Jest/debug runs, pass `--coverage=false` when you only need
+  targeted test signal; global coverage thresholds can make otherwise passing
+  `--runTestsByPath` suites exit nonzero.
+- If `npm run docker:build-and-test-all` is interrupted after build, lint, and
+  Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
+  the built image to verify the Playwright tail before reporting final status.
 
 ## Dependency maintenance
 
@@ -74,6 +80,9 @@
   `npm run table:update:play` for only the pegging artifact.
 - The browser may look up and combine the shipped means, but must not perform
   pegging Monte Carlo, game-tree search, or policy improvement.
+- Shared expected-points table loaders use `null` to represent absence. Do not
+  use truthiness checks for cached or injected tables, because generic loader
+  callers may validly load falsy values such as `0`, `""`, or `false`.
 
 ## Visual regression updates
 
@@ -111,6 +120,9 @@
   comments explaining self-evident code.
 - Extract duplicated object literals (like `{ exact: true }`) into variables to
   reduce code duplication.
+- When formatting signed expected values, round to display precision before
+  applying sign or minus-glyph formatting so values that round to zero display
+  as `0.00` instead of negative zero.
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
@@ -125,6 +137,9 @@
   GitHub integration or the `gh` CLI for the repository and PR number.
 - With the `gh` CLI, use `gh api graphql` to query review thread fields such as
   `isResolved`, `isOutdated`, and nested comments.
+- After replying to addressed review threads, use the GraphQL
+  `resolveReviewThread` mutation and then reread thread state to confirm
+  `isResolved: true`.
 - Inspect each thread's resolved/outdated state, path, line, and comments before
   deciding whether it still needs code, a reply, or resolution.
 - GitHub enforces unresolved review threads as merge blockers in this repo.
