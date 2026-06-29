@@ -28,7 +28,6 @@ export default {
       ],
       reportsDirectory: path.join(dirname, "coverage"),
       thresholds: {
-        // Role-agnostic Net sort label dropped a covered ternary branch.
         branches: 87.56,
         functions: 97.09,
         lines: 94.56,
