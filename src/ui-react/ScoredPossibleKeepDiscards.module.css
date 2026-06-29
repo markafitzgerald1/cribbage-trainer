@@ -37,15 +37,19 @@
 }
 
 .hand-column {
-  width: 55%;
+  width: 40%;
 }
 
 .score-column {
-  width: 14%;
+  width: 15%;
+}
+
+.play-score-column {
+  width: 15%;
 }
 
 .net-score-column {
-  width: 17%;
+  width: 15%;
 }
 
 .scored-possible-keep-discards tbody tr.odd-row {
@@ -71,21 +75,28 @@
   text-align: left;
 }
 
-.scored-possible-keep-discards th:nth-child(3) {
+.scored-possible-keep-discards th:nth-child(n + 2) {
   padding-right: 0.5em;
 }
 
 @media (orientation: portrait) {
+  /* The small portrait mini-cards under-fill the hand column, so hand the slack
+     to the numeric columns for roomier, non-cramped scores -- but keep enough
+     hand width that the row's expand arrow is not clipped by its overflow box. */
   .hand-column {
-    width: 53%;
+    width: 42%;
   }
 
   .score-column {
-    width: 14%;
+    width: 14.5%;
+  }
+
+  .play-score-column {
+    width: 14.5%;
   }
 
   .net-score-column {
-    width: 19%;
+    width: 14.5%;
   }
 }
 

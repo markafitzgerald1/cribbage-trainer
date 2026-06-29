@@ -18,8 +18,10 @@ import { handToSortedString } from "./handToSortedString.test.common";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
-const EXPECTED_CELL_COUNT = 4;
+const EXPECTED_CELL_COUNT = 5;
 const EXPECTED_CRIB_POINTS = 1.25;
+const EXPECTED_PLAY_POINTS = 0.75;
+const TINY_NEGATIVE_EXPECTED_PLAY_POINTS = -0.0047;
 const missingCribPointBreakdown = new Map<string, never>().get("missing");
 const CRIB_STARTER_POINTS = [
   {
@@ -32,6 +34,12 @@ const CRIB_STARTER_POINTS = [
   },
 ] as const;
 
+interface RenderComponentOptions {
+  readonly expectedPlayPoints?: number;
+  readonly isHighlighted?: boolean;
+  readonly signedExpectedCribPoints?: number;
+}
+
 function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const sortOrder = SortOrder[sortOrderName];
   const dealtHand = dealHand(Math.random);
@@ -40,7 +48,8 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
   const points = handPoints(keep).total;
   const pointsBreakdown = handPoints(keep);
   const expectedPoints = expectedHandPoints(keep, discard).total;
-  const expectedNetPoints = expectedPoints + EXPECTED_CRIB_POINTS;
+  const expectedNetPoints =
+    expectedPoints + EXPECTED_CRIB_POINTS + EXPECTED_PLAY_POINTS;
   const cutAdded = expectedCutAddedPoints(keep, discard);
   const keepString = handToSortedString(keep, sortOrder);
   const discardString = handToSortedString(discard, sortOrder);
@@ -61,12 +70,17 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 
 function renderComponentWithScenario(
   scenario: ReturnType<typeof setupScenario>,
-  isHighlighted = false,
-  signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
+  {
+    expectedPlayPoints = EXPECTED_PLAY_POINTS,
+    isHighlighted = false,
+    signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
+  }: RenderComponentOptions = {},
 ) {
   setTableSync(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
   );
+  const expectedNetPoints =
+    scenario.expectedPoints + signedExpectedCribPoints + expectedPlayPoints;
 
   const scoredKeepDiscard = {
     avgCutAdded15s: scenario.cutAdded.avg15s,
@@ -80,7 +94,32 @@ function renderComponentWithScenario(
     expectedCribPointBreakdown: missingCribPointBreakdown,
     expectedCribPoints: Math.abs(signedExpectedCribPoints),
     expectedHandPoints: scenario.expectedPoints,
-    expectedNetPoints: scenario.expectedNetPoints,
+    expectedNetPoints,
+    expectedPlayPoints: {
+      dealer: {
+        pointBreakdown: {
+          fifteens: 0.25,
+          go: 0.2,
+          lastCard: 0.15,
+          pairs: 0.5,
+          runs: 0.4,
+          thirtyOnes: 0.25,
+        },
+        total: 1.75,
+      },
+      delta: expectedPlayPoints,
+      pone: {
+        pointBreakdown: {
+          fifteens: 0.1,
+          go: 0.1,
+          lastCard: 0.1,
+          pairs: 0.25,
+          runs: 0.25,
+          thirtyOnes: 0.2,
+        },
+        total: 1,
+      },
+    },
     fifteensContributions: scenario.cutAdded.fifteensContributions,
     flushesContributions: scenario.cutAdded.flushesContributions,
     handPoints: scenario.points,
@@ -109,7 +148,9 @@ function renderComponentWithScenario(
 
 const highlightedPresent = (isHighlighted: boolean) => {
   const scenario = setupScenario("Ascending");
-  const { container } = renderComponentWithScenario(scenario, isHighlighted);
+  const { container } = renderComponentWithScenario(scenario, {
+    isHighlighted,
+  });
   const rowClass = container.querySelector("tr")?.className ?? "";
 
   return rowClass.includes("highlighted");
@@ -117,7 +158,7 @@ const highlightedPresent = (isHighlighted: boolean) => {
 
 const firstRenderedRow = () => screen.getAllByRole("row")[0] as HTMLElement;
 
-const hasBreakdownHeader = () => screen.queryByText(/^15s$/u) !== null;
+const hasBreakdownHeader = () => screen.queryAllByText(/^15s$/u).length > 0;
 
 const toggleMainRow = () => {
   fireEvent.click(firstRenderedRow());
@@ -139,15 +180,14 @@ describe("calculation component", () => {
       expect(texts).toStrictEqual([
         expect.stringMatching(
           new RegExp(
-            `${scenario.keepString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}.*\\(${scenario.discardString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}\\)`,
+            `${scenario.keepString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}.*\\(${scenario.discardString.replace(/[♣♦♥♠]/gu, "[♣♦♥♠]")}\\).*▸`,
             "u",
           ),
         ),
         scenario.expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
         `+${EXPECTED_CRIB_POINTS.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
-        `${scenario.expectedNetPoints.toFixed(
-          EXPECTED_POINTS_FRACTION_DIGITS,
-        )}▸`,
+        `+${EXPECTED_PLAY_POINTS.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
+        scenario.expectedNetPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
       ]);
     },
   );
@@ -160,11 +200,27 @@ describe("calculation component", () => {
   it("renders negative signed crib points without a plus sign", () => {
     const scenario = setupScenario("Ascending");
 
-    renderComponentWithScenario(scenario, false, -EXPECTED_CRIB_POINTS);
+    renderComponentWithScenario(scenario, {
+      signedExpectedCribPoints: -EXPECTED_CRIB_POINTS,
+    });
 
     expect(
-      screen.getByText(`-${EXPECTED_CRIB_POINTS.toFixed(2)}`),
+      screen.getByText(`−${EXPECTED_CRIB_POINTS.toFixed(2)}`),
     ).toBeTruthy();
+  });
+
+  it("renders play points that round to zero without a negative sign", () => {
+    const scenario = setupScenario("Ascending");
+
+    renderComponentWithScenario(scenario, {
+      expectedPlayPoints: TINY_NEGATIVE_EXPECTED_PLAY_POINTS,
+    });
+
+    const cells = screen.getAllByRole("cell");
+    const playCellText = String(cells[3]?.textContent);
+
+    expect(playCellText).toBe("0.00");
+    expect(playCellText).not.toBe("−0.00");
   });
 
   const setupAndRender = () => {

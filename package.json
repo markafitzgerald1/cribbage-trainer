@@ -34,7 +34,9 @@
     "clean": "rimraf .VSCodeCounter/ coverage/ dist/ playwright-report/ storybook-static/ test-results/ tsconfig.tsbuildinfo",
     "node_modules:clean": "rimraf node_modules/",
     "deps:update:minor": "npx npm-check-updates --target minor -u && npm install",
-    "table:update": "node scripts/updateExpectedCribPointsTable.mjs"
+    "table:update": "node scripts/updateExpectedPointsTables.mjs",
+    "table:update:crib": "node scripts/updateExpectedCribPointsTable.mjs",
+    "table:update:play": "node scripts/updateExpectedPlayPointsTable.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

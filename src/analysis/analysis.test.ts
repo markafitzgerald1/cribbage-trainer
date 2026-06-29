@@ -10,16 +10,24 @@ import {
   allScoredKeepDiscardsByExpectedNetScoreDescending,
 } from "./analysis";
 import { describe, expect, it } from "@jest/globals";
+import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
+import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
 
 const expectedCribPointsTable =
   expectedCribPointsTableData as unknown as ExpectedCribPointsTable;
+const expectedPlayPointsTable =
+  expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable;
 
 const scoreDeal = (
   cards: readonly Card[],
   cribRole: CribRole = CribRole.Dealer,
   table: ExpectedCribPointsTable = expectedCribPointsTable,
-) => allScoredKeepDiscardsByExpectedNetScoreDescending(cards, cribRole, table);
+) =>
+  allScoredKeepDiscardsByExpectedNetScoreDescending(cards, cribRole, {
+    crib: table,
+    play: expectedPlayPointsTable,
+  });
 
 const { ACE, TWO, THREE, FOUR, FIVE, SIX, EIGHT, TEN, JACK, QUEEN, KING } =
   card;
@@ -71,6 +79,10 @@ const roundExpectedHandPoints = (
     ...scoredKeepDiscard,
     expectedHandPoints: round(scoredKeepDiscard.expectedHandPoints),
     expectedNetPoints: round(scoredKeepDiscard.expectedNetPoints),
+    expectedPlayPoints: {
+      ...scoredKeepDiscard.expectedPlayPoints,
+      delta: round(scoredKeepDiscard.expectedPlayPoints.delta),
+    },
     signedExpectedCribPoints: round(scoredKeepDiscard.signedExpectedCribPoints),
   }));
 
@@ -90,6 +102,7 @@ function expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual(
     discard: scored.discard,
     expectedHandPoints: scored.expectedHandPoints,
     expectedNetPoints: scored.expectedNetPoints,
+    expectedPlayPoints: scored.expectedPlayPoints,
     handPoints: scored.handPoints,
     keep: scored.keep,
     signedExpectedCribPoints: scored.signedExpectedCribPoints,
@@ -166,7 +179,9 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     expect(result.expectedCribPoints).toBe(DEALER_CRIB_POINTS);
     expect(result.signedExpectedCribPoints).toBe(DEALER_CRIB_POINTS);
     expect(result.expectedNetPoints).toBe(
-      result.expectedHandPoints + DEALER_CRIB_POINTS,
+      result.expectedHandPoints +
+        DEALER_CRIB_POINTS +
+        result.expectedPlayPoints.delta,
     );
   });
 
@@ -176,7 +191,9 @@ describe("allScoredKeepDiscardsByScoreDescending", () => {
     expect(result.expectedCribPoints).toBe(LOW_CRIB_POINTS);
     expect(result.signedExpectedCribPoints).toBe(-LOW_CRIB_POINTS);
     expect(result.expectedNetPoints).toBe(
-      result.expectedHandPoints - LOW_CRIB_POINTS,
+      result.expectedHandPoints -
+        LOW_CRIB_POINTS +
+        result.expectedPlayPoints.delta,
     );
   });
 

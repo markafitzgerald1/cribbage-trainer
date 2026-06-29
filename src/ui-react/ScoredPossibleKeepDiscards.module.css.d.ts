@@ -9,6 +9,7 @@ export const headerUnit: string;
 export const netScoreColumn: string;
 export const oddRow: string;
 export const evenRow: string;
+export const playScoreColumn: string;
 export const scoreColumn: string;
 export const loading: string;
 export const error: string;

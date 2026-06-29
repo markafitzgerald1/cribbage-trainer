@@ -40,7 +40,7 @@
   color: #fff;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
   padding-left: 8px;
   padding-right: 8px;
@@ -69,11 +69,12 @@
 }
 
 .category-header {
-  text-align: center;
+  min-width: 0;
+  text-align: right;
 }
 
 .breakdown-header > div:last-child {
-  text-align: center;
+  text-align: right;
 }
 
 .breakdown-summary {
@@ -84,11 +85,11 @@
     minmax(0, 13fr);
   gap: 8px;
   min-width: 0;
-  padding: 2px 0;
+  padding: 1px 0;
   background-color: #0f5132;
   border-radius: 4px;
   font-family: var(--text-font-family);
-  font-weight: 600;
+  font-weight: 400;
   color: #fff;
 }
 
@@ -100,10 +101,10 @@
   cursor: pointer;
   font-family: var(--text-font-family);
   font-size: inherit;
-  font-weight: 600;
+  font-weight: 400;
   line-height: inherit;
   margin: 0;
-  padding: 2px 0;
+  padding: 1px 0;
   text-align: left;
   width: 100%;
 }
@@ -154,13 +155,17 @@
 }
 
 .summary-value {
-  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
   color: #fff;
+  text-align: right;
 }
 
 .summary-total {
-  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
   color: #fff;
+  text-align: right;
 }
 
 .muted {
@@ -192,6 +197,35 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+}
+
+.play-breakdown {
+  border-top: 1px solid rgb(255 255 255 / 20%);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+  padding-top: 4px;
+}
+
+.play-breakdown-header,
+.play-breakdown-row {
+  display: grid;
+  align-items: baseline;
+  gap: 4px;
+  grid-template-columns:
+    minmax(5.5em, 24fr) minmax(0, 10fr)
+    minmax(0, 10fr) minmax(0, 11fr)
+    minmax(0, 11fr) minmax(0, 10fr)
+    minmax(0, 11fr) minmax(0, 14fr);
+  min-width: 0;
+}
+
+.play-breakdown-header {
+  color: rgb(255 255 255 / 80%);
+  font-size: 0.9em;
+  font-weight: 600;
+  padding: 2px 0;
 }
 
 .starter-detail-row {
@@ -235,5 +269,14 @@
   .breakdown-summary,
   .cut-results-list {
     font-size: 0.9em;
+  }
+
+  .play-breakdown-header,
+  .play-breakdown-row {
+    font-size: 0.82em;
+    gap: 2px;
+    grid-template-columns:
+      minmax(5.2em, 22fr) repeat(6, minmax(2.2em, 11fr))
+      minmax(2.5em, 12fr);
   }
 }

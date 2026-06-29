@@ -5,6 +5,5 @@ export const discardGroup: string;
 export const handDiscardCell: string;
 export const highlighted: string;
 export const netScoreCell: string;
-export const netPointsCell: string;
 export const scoreCell: string;
 export const scoredPossibleKeepDiscard: string;

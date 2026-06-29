@@ -1,3 +1,4 @@
+import { CARDS_PER_DISCARD, CARDS_PER_KEPT_HAND } from "../game/facts";
 import {
   CribRole,
   type ExpectedCribPointBreakdown,
@@ -12,8 +13,12 @@ import {
   expectedCutAddedPoints,
   toCutBreakdown,
 } from "../game/expectedCutAddedPoints";
+import {
+  type ExpectedPlayPoints,
+  type ExpectedPlayPointsTable,
+  expectedPlayPoints,
+} from "../game/expectedPlayPoints";
 import { type HandPoints, handPoints } from "../game/handPoints";
-import { CARDS_PER_DISCARD } from "../game/facts";
 import type { Card } from "../game/Card";
 import { Combination } from "js-combinatorics";
 import { compareByExpectedNetScoreThenRankDescending } from "./compareByExpectedScoreDescending";
@@ -26,6 +31,7 @@ export interface ScoredKeepDiscard<T extends Card> extends CutBreakdown {
   expectedCribPoints: number;
   expectedHandPoints: number;
   expectedNetPoints: number;
+  expectedPlayPoints: ExpectedPlayPoints;
   handPoints: number;
   handPointsBreakdown: HandPoints;
   signedExpectedCribPoints: number;
@@ -33,6 +39,21 @@ export interface ScoredKeepDiscard<T extends Card> extends CutBreakdown {
 
 const signCribPoints = (cribPoints: number, cribRole: CribRole): number =>
   cribRole === CribRole.Dealer ? cribPoints : -cribPoints;
+
+const EMPTY_PLAY_POINT_BREAKDOWN = {
+  fifteens: 0,
+  go: 0,
+  lastCard: 0,
+  pairs: 0,
+  runs: 0,
+  thirtyOnes: 0,
+} as const;
+
+export const ZERO_EXPECTED_PLAY_POINTS: ExpectedPlayPoints = {
+  dealer: { pointBreakdown: EMPTY_PLAY_POINT_BREAKDOWN, total: 0 },
+  delta: 0,
+  pone: { pointBreakdown: EMPTY_PLAY_POINT_BREAKDOWN, total: 0 },
+};
 
 export interface SignedExpectedCribStarterPoints extends ExpectedCribStarterPoints {
   readonly signedExpectedCribPoints: number;
@@ -54,7 +75,10 @@ export const allScoredKeepDiscardsByExpectedNetScoreDescending = <
 >(
   cards: readonly T[],
   cribRole: CribRole,
-  table: ExpectedCribPointsTable,
+  tables: {
+    readonly crib: ExpectedCribPointsTable;
+    readonly play: ExpectedPlayPointsTable;
+  },
 ): ScoredKeepDiscard<T>[] => {
   if (new Set(cards).size !== cards.length) {
     throw new Error("Duplicate cards exist");
@@ -74,7 +98,7 @@ export const allScoredKeepDiscardsByExpectedNetScoreDescending = <
         discard: keepDiscard.discard,
         knownCards: cards,
         role: cribRole,
-        table,
+        table: tables.crib,
       };
       const cribPoints = expectedCribPoints(expectedCribOptions);
       const cribPointBreakdown =
@@ -94,6 +118,14 @@ export const allScoredKeepDiscardsByExpectedNetScoreDescending = <
         cutBreakdown,
         handPointsBreakdown,
       );
+      const playPoints =
+        keepDiscard.keep.length === CARDS_PER_KEPT_HAND
+          ? expectedPlayPoints({
+              keep: keepDiscard.keep,
+              role: cribRole,
+              table: tables.play,
+            })
+          : ZERO_EXPECTED_PLAY_POINTS;
 
       return {
         ...cutBreakdown,
@@ -104,7 +136,9 @@ export const allScoredKeepDiscardsByExpectedNetScoreDescending = <
         expectedCribPointBreakdown: cribPointBreakdown,
         expectedCribPoints: cribPoints,
         expectedHandPoints: handExpectedPoints,
-        expectedNetPoints: handExpectedPoints + signedCribPoints,
+        expectedNetPoints:
+          handExpectedPoints + signedCribPoints + playPoints.delta,
+        expectedPlayPoints: playPoints,
         handPoints: handPointsBreakdown.total,
         handPointsBreakdown,
         keep: keepDiscard.keep,

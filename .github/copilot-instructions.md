@@ -18,7 +18,8 @@ them.
   matching `*.stories` file.
 - `src/ui/` — framework-agnostic UI primitives.
 - `tests-e2e/` — Playwright end-to-end and screenshot tests.
-- `src/game/expectedCribPointsTable.json` — vendored artifact from the
+- `src/game/expectedCribPointsTable.json` and
+  `src/game/expectedPlayPointsTable.json` — vendored artifacts from the
   `simulate-cribbage-games` pipeline; refresh via `npm run table:update`.
 
 ## Validation
@@ -37,9 +38,8 @@ local pass is `npm run lint && npm test`.
   line.
 - Keep expected values derived from enumeration/simulation; never add hand-coded
   heuristics or hand-edited scoring/lookup tables.
-- `src/game/expectedCribPointsTable.json` is vendored from
-  `simulate-cribbage-games` (refresh via `npm run table:update`); do not
-  hand-edit or regenerate it here.
+- Expected-points JSON is vendored from `simulate-cribbage-games` (refresh via
+  `npm run table:update`); do not hand-edit or regenerate it here.
 - Match the idioms already in the file you edit (e.g. explicit `undefined`
   defaults with a single-line `no-undefined` disable); TypeScript is strict and
   CSS modules use kebab-case classes.

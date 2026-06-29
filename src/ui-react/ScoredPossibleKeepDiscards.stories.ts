@@ -1,5 +1,6 @@
 /* jscpd:ignore-start */
-import * as loader from "../game/expectedCribPointsTableLoader";
+import * as cribLoader from "../game/expectedCribPointsTableLoader";
+import * as playLoader from "../game/expectedPlayPointsTableLoader";
 import {
   type Meta,
   SORT_ORDER_NAMES,
@@ -20,18 +21,18 @@ import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 
 /*
  * A loader that fails the next call when armed, then delegates to the real
- * loader. Injected via the `loadTable` prop so the load-failure path can be
+ * loader. Injected via the `loadCribTable` prop so the load-failure path can be
  * shown without module mocking (which depends on the Vitest runtime and breaks
  * plain Storybook rendering). The story's loader re-arms the flag on each run.
  */
 let failNextLoad = false;
 
-const failOnceLoader = (): ReturnType<typeof loader.loadTable> => {
+const failOnceLoader = (): ReturnType<typeof cribLoader.loadTable> => {
   if (failNextLoad) {
     failNextLoad = false;
     return Promise.reject(new Error("Fake load error"));
   }
-  return loader.loadTable();
+  return cribLoader.loadTable();
 };
 
 const meta = {
@@ -99,7 +100,9 @@ export const SortedByHandPoints: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitForLoadingToDisappear(canvas);
-    const headerButton = await canvas.findByRole("button", { name: /E\(h\)/u });
+    const headerButton = await canvas.findByRole("button", {
+      name: /^Hand:/u,
+    });
     await fireEvent.click(headerButton);
   },
 };
@@ -108,12 +111,13 @@ export const LoadError: Story = {
   ...JackSixFiveFourKingQueenSortedDescending,
   args: {
     ...JackSixFiveFourKingQueenSortedDescending.args,
-    loadTable: failOnceLoader,
+    loadCribTable: failOnceLoader,
   },
   loaders: [
     () => {
       failNextLoad = true;
-      loader.setTableSync(null);
+      cribLoader.setTableSync(null);
+      playLoader.setTableSync(null);
     },
   ],
   play: async ({ canvasElement }) => {

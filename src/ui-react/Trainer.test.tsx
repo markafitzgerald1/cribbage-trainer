@@ -48,7 +48,7 @@ const createRoleRandomValues = (roleValues: readonly number[]) =>
     roleValue,
   ]);
 
-const calculationsHeaderName = "E(h)";
+const calculationsHeaderName = "Hand";
 
 const clickIndices = (
   getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],

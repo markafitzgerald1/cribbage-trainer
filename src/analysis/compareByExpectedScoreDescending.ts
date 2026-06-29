@@ -4,6 +4,7 @@ export const ScoredKeepDiscardSortKey = {
   ExpectedCribPoints: "signedExpectedCribPoints",
   ExpectedHandPoints: "expectedHandPoints",
   ExpectedNetPoints: "expectedNetPoints",
+  ExpectedPlayPoints: "expectedPlayPoints.delta",
 } as const;
 
 export type ScoredKeepDiscardSortKey =
@@ -12,6 +13,7 @@ export type ScoredKeepDiscardSortKey =
 interface ComparableScoredKeepDiscard {
   readonly expectedHandPoints: number;
   readonly expectedNetPoints: number;
+  readonly expectedPlayPoints: { readonly delta: number };
   readonly keep: readonly Card[];
   readonly signedExpectedCribPoints: number;
 }
@@ -59,6 +61,8 @@ const getScore = (
       return discardKeep.expectedHandPoints;
     case ScoredKeepDiscardSortKey.ExpectedNetPoints:
       return discardKeep.expectedNetPoints;
+    case ScoredKeepDiscardSortKey.ExpectedPlayPoints:
+      return discardKeep.expectedPlayPoints.delta;
     default:
       return discardKeep.expectedNetPoints;
   }

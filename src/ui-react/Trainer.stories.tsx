@@ -133,13 +133,7 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expectColumnHeaders(canvasElement, ["E(h)", "E(c)"]);
-    const netHeader =
-      within(canvasElement).queryByRole("columnheader", { name: "E(h+c)" }) ??
-      within(canvasElement).queryByRole("columnheader", { name: "E(h-c)" });
-
-    await expect(netHeader).not.toBeNull();
-    await expect(netHeader).toBeVisible();
+    await expectColumnHeaders(canvasElement, ["Hand", "Crib", "Play", "Net"]);
   },
 };
 
