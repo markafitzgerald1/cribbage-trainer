@@ -91,6 +91,50 @@
     `npm run docker:build-and-test-all -- -- --update-snapshots`.
   - In PRs, explicitly note the screenshot updates and ensure expected images
     are updated to match the current actuals (these will be human reviewed).
+  - `npm run docker:update-screenshots` expands to
+    `docker build ... && docker run ... --update-snapshots`. If the build's
+    lint/Storybook-coverage step fails, the `&&` short-circuits and the
+    baselines are silently NOT rewritten. Confirm the build passed (or that
+    `git status` actually shows changed `tests-e2e` images) before assuming the
+    regen took effect.
+
+## Playwright and UI-layout debugging
+
+- `getByRole(role, { name })` matches the accessible name as a
+  **case-insensitive substring**, not an exact string. A header/button label
+  that is a substring of another control's name causes strict-mode collisions
+  (e.g. a sort label containing "crib" also matched the "Crib" button; "Deal" is
+  a substring of "dealer"; "Net"/"Hand"/"Play" likewise collide if reused in
+  prose). Keep visible and aria labels mutually non-substring. Note Testing
+  Library's `getByRole` uses exact/regex matching, so the same name can pass in
+  Jest yet fail the Playwright strict-mode locator.
+- CSS-module class names are hashed at build time, so a `page.evaluate`-injected
+  `<style>` that targets literal selectors like `.hand-column` silently no-ops.
+  To trial layout variants, edit the real `*.module.css` (Vite HMR applies it
+  live) and re-measure — do not inject literal-class overrides.
+- To diagnose numeric-column alignment, measure rendered glyph bounds with a
+  `Range` over the cell (`range.selectNodeContents(td)` then
+  `getBoundingClientRect().right`) and compare a positive vs a negative row; the
+  `td`'s own right edge will not reveal the gap.
+
+## Discard-table layout (portrait)
+
+- The per-row expand arrow (▸) lives inside the hand/discard cell, which is
+  `overflow: hidden`. Narrowing the portrait hand column too far clips the arrow
+  even when the cards still appear to fit. Keep the column wide enough for
+  cards + parens + arrow; verify with
+  `cell.scrollWidth - cell.clientWidth === 0`.
+- Signed expected-points columns rely on the U+2212 minus (digit-width under
+  tabular-nums) so positives and negatives right-align. Do not try to pad
+  positives with a figure space (U+2007) — it is narrower than U+2212 and
+  would also push 2-digit positives wider than the negatives. Instead size the
+  column so the widest signed-negative value fits without overflowing into the
+  gutter: an oversized score font makes 5-glyph negatives bleed a few px past
+  4-glyph positives, breaking decimal alignment (portrait only, where columns
+  are tightest).
+- A phone-width portrait viewport cannot fit enlarged scores alongside six
+  mini-cards, the arrow, and four numeric columns. Meaningful score-size
+  increases need the horizontal-mini-card redesign, not portrait font bumps.
 
 ## Code style and conventions
 
@@ -156,6 +200,10 @@
 - Resolve pull request review threads after addressing and responding to them.
 - Agents should not need individual review URLs once the repository and PR
   number are known.
+- The `gh` binary may not be on PATH inside piped or compound subshells (e.g. a
+  `while` loop fed by a pipe), failing with `gh: command not found`. Use the
+  absolute path (`/opt/homebrew/bin/gh`) and drive loops from a file
+  (`done < file`) rather than a pipe.
 
 ## Husky/hooks
 
