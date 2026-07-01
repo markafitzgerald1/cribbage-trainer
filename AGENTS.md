@@ -165,8 +165,8 @@
 - Extract duplicated object literals (like `{ exact: true }`) into variables to
   reduce code duplication.
 - When formatting signed expected values, round to display precision before
-  applying sign or minus-glyph formatting so values that round to zero display
-  as `0.00` instead of negative zero.
+  applying sign or minus-glyph formatting (whether a leading `+` or `-`), so
+  values that round to zero display as a plain `0.00`, never `+0.00` or `-0.00`.
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
