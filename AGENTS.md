@@ -96,7 +96,7 @@
     lint/Storybook-coverage step fails, the `&&` short-circuits and the
     baselines are silently NOT rewritten. Confirm the build passed (or that
     `git status` actually shows changed `tests-e2e` images) before assuming the
-    regen took effect.
+    regeneration took effect.
 
 ## Playwright and UI-layout debugging
 
