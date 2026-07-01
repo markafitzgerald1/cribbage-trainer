@@ -16,3 +16,14 @@ green build status.
 3. Surgically fix any coverage gaps, linting errors, or build failures.
 4. Iterate on this process without human intervention until the build exits with
    code 0.
+
+**Learnings:**
+
+- For focused Jest checks, use
+  `npm test -- --runTestsByPath ... --coverage=false` when you only need
+  targeted signal; global coverage thresholds can make passing targeted suites
+  exit nonzero.
+- If `npm run docker:build-and-test-all` is interrupted after the Docker image
+  build, lint, and Storybook coverage have passed, rerun
+  `npm run docker:run-e2e-only` to verify the remaining Playwright tail before
+  reporting final validation.
