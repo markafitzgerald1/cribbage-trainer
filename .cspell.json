@@ -25,6 +25,7 @@
     "nums",
     "nvmrc",
     "radiogroup",
+    "regen",
     "rerender",
     "rerenders",
     "rhysd",
@@ -33,6 +34,7 @@
     "stylelint",
     "stylelintignore",
     "stylesheet",
+    "subshells",
     "TJQK",
     "tsbuildinfo",
     "Vite"
