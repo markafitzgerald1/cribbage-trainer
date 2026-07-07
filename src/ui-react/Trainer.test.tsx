@@ -281,6 +281,10 @@ const HAND_PARAM_PATTERN =
 const getSearchParam = (name: string) =>
   new URLSearchParams(window.location.search).get(name);
 
+const resetUrl = () => {
+  window.history.replaceState(null, "", "/");
+};
+
 const renderHydratedTrainer = () => {
   setTableSync(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
@@ -303,8 +307,11 @@ const popStateTo = (search: string) => {
   fireEvent.popState(window);
 };
 
-const resetUrl = () => {
-  window.history.replaceState(null, "", "/");
+const renderTrainerSpyingOnPush = () => {
+  resetUrl();
+  const user = userEvent.setup();
+  const pushStateSpy = jest.spyOn(window.history, "pushState");
+  return { pushStateSpy, renderResult: renderTrainer(), user };
 };
 
 describe("trainer URL state synchronization", () => {
@@ -331,11 +338,9 @@ describe("trainer URL state synchronization", () => {
 
   // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("pushes history when dealing and restores the prior hand on popstate", async () => {
-    resetUrl();
-    const user = userEvent.setup();
-    const pushStateSpy = jest.spyOn(window.history, "pushState");
+    const { pushStateSpy, renderResult, user } = renderTrainerSpyingOnPush();
     try {
-      const { container } = renderTrainer();
+      const { container } = renderResult;
       const initialHandText = getHandText(container);
       const initialSearch = window.location.search;
 
@@ -353,21 +358,31 @@ describe("trainer URL state synchronization", () => {
   });
 
   // eslint-disable-next-line jest/prefer-ending-with-an-expect
-  it("replaces history for an incomplete discard and pushes once the discard completes", async () => {
-    resetUrl();
-    const user = userEvent.setup();
-    const { getAllByRole } = renderTrainer();
-    const pushStateSpy = jest.spyOn(window.history, "pushState");
+  it("pushes history for each discard toggle so Back can undo it", async () => {
+    const { pushStateSpy, renderResult, user } = renderTrainerSpyingOnPush();
     try {
-      await user.click(getAllByRole("checkbox")[0]!);
-
-      expect(pushStateSpy).not.toHaveBeenCalled();
-      expect(getSearchParam("discard")?.split(",")).toHaveLength(1);
-
-      await user.click(getAllByRole("checkbox")[1]!);
+      await user.click(renderResult.getAllByRole("checkbox")[0]!);
 
       expect(pushStateSpy).toHaveBeenCalledTimes(1);
+      expect(getSearchParam("discard")?.split(",")).toHaveLength(1);
+
+      await user.click(renderResult.getAllByRole("checkbox")[1]!);
+
+      expect(pushStateSpy).toHaveBeenCalledTimes(2);
       expect(getSearchParam("discard")?.split(",")).toHaveLength(2);
+    } finally {
+      pushStateSpy.mockRestore();
+    }
+  });
+
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("pushes history when the sort order changes", async () => {
+    const { pushStateSpy, user } = renderTrainerSpyingOnPush();
+    try {
+      await user.click(screen.getByLabelText("Ascending"));
+
+      expect(pushStateSpy).toHaveBeenCalledTimes(1);
+      expect(getSearchParam("sort")).toBe("ascending");
     } finally {
       pushStateSpy.mockRestore();
     }

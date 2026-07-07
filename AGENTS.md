@@ -159,11 +159,14 @@
   keys.
 - URL param values are a public compatibility surface: shared links must keep
   working. Change them only additively and keep parsing backward compatible.
-- History semantics in `Trainer`: `pushState` for meaningful transitions (new
-  deal, discard becoming complete), `replaceState` for minor ones (partial
-  discard toggles, sort changes, initial mount), and a `popstate` listener
-  re-hydrates full state from the URL. The role random draw is skipped only
-  when a valid `role` param is present, preserving seeded-workflow behavior.
+- History semantics in `Trainer`: every user-initiated state change (new
+  deal, each discard toggle, sort change) does a `pushState`, so Back/Forward
+  steps through states undo-style; `replaceState` is used only to normalize
+  the URL on initial mount, and a `popstate` listener re-hydrates full state
+  from the URL. Do not replace-away a state the user could want to Back to:
+  replacing on the first interaction overwrote the only history entry and
+  made Back exit the site. The role random draw is skipped only when a valid
+  `role` param is present, preserving seeded-workflow behavior.
 
 ## Lint gauntlet interplay (agent checklist)
 
@@ -216,7 +219,13 @@
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
 - Always hard-wrap Markdown text to a maximum of 80 characters per line to
-  satisfy strict markdownlint rules.
+  satisfy strict markdownlint rules. This applies only to Markdown files
+  committed to the repository: never hard-wrap GitHub issue/PR bodies or
+  comments — the GitHub UI auto-wraps, and manual line breaks harm
+  readability there.
+- When comparing numbers for readers (e.g. before/after coverage
+  thresholds), label each value and align the comparison (a small table or
+  `name: old → new` lines); never two bare slash-separated lists.
 
 ## GitHub PR Reviews
 

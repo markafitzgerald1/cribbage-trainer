@@ -118,7 +118,7 @@ export function Trainer({
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
-      shouldPushHistory.current = discardIsComplete(newDealtCards);
+      shouldPushHistory.current = true;
       setDealState({
         cribRole,
         dealtCards: newDealtCards,
@@ -131,6 +131,11 @@ export function Trainer({
     shouldPushHistory.current = true;
     setDealState(createDealState(dealHandWithGenerator()));
   }, [createDealState, dealHandWithGenerator]);
+
+  const changeSortOrder = useCallback((newSortOrder: SortOrder) => {
+    shouldPushHistory.current = true;
+    setSortOrder(newSortOrder);
+  }, []);
 
   const setConsented = useCallback((value: boolean) => {
     setAnalyticsConsented(value);
@@ -148,7 +153,7 @@ export function Trainer({
         dealtCards={dealtCards}
         onCardChange={toggleKept}
         onDeal={dealNewHand}
-        onSortOrderChange={setSortOrder}
+        onSortOrderChange={changeSortOrder}
         sortOrder={sortOrder}
       />
       {discardIsComplete(dealtCards) && (
