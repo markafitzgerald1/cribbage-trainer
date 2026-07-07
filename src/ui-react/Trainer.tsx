@@ -1,6 +1,10 @@
 import * as classes from "./Trainer.module.css";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  parseUrlAnalysisState,
+  serializeUrlAnalysisState,
+} from "../ui/urlAnalysisState";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 import { type Card } from "../game/Card";
@@ -10,11 +14,15 @@ import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { toDealtCards } from "../game/toDealtCards";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
   readonly loadGoogleAnalytics: (consented: boolean | null) => void;
   readonly initialCards?: Card[] | null;
+  readonly initialCribRole?: CribRole | null;
+  readonly initialDiscards?: Card[] | null;
+  readonly initialSortOrder?: SortOrder | null;
 }
 
 export const analyticsConsentKey = "analyticsConsent";
@@ -36,6 +44,9 @@ export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
   initialCards = null,
+  initialCribRole = null,
+  initialDiscards = null,
+  initialSortOrder = null,
 }: TrainerProps) {
   const dealHandWithGenerator = useCallback(
     () => dealHand(generator),
@@ -50,22 +61,56 @@ export function Trainer({
   );
   const [dealState, setDealState] = useState<DealState>(() => {
     if (initialCards) {
-      return createDealState(
-        initialCards.map((card, index) => ({
-          ...card,
-          dealOrder: index,
-          kept: true,
-        })),
-      );
+      return {
+        cribRole: initialCribRole ?? randomCribRole(generator),
+        dealtCards: toDealtCards(initialCards, initialDiscards),
+      };
     }
     return createDealState(dealHandWithGenerator());
   });
   const { cribRole, dealtCards } = dealState;
-  const [sortOrder, setSortOrder] = useState<SortOrder>(SortOrder.Descending);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(
+    initialSortOrder ?? SortOrder.Descending,
+  );
   const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
     storedConsentOnFirstRender,
   );
+  const shouldPushHistory = useRef(false);
+
+  useEffect(() => {
+    const url = serializeUrlAnalysisState(window.location.search, {
+      cribRole,
+      dealtCards,
+      sortOrder,
+    });
+    if (shouldPushHistory.current) {
+      window.history.pushState(null, "", url);
+    } else {
+      window.history.replaceState(null, "", url);
+    }
+    shouldPushHistory.current = false;
+  }, [cribRole, dealtCards, sortOrder]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlState = parseUrlAnalysisState(window.location.search);
+      if (urlState.cards) {
+        const { cards, discards } = urlState;
+        setDealState((previous) => ({
+          cribRole: urlState.cribRole ?? previous.cribRole,
+          dealtCards: toDealtCards(cards, discards),
+        }));
+      }
+      if (urlState.sortOrder !== null) {
+        setSortOrder(urlState.sortOrder);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   const toggleKept = useCallback(
     (dealOrderIndex: number) => {
@@ -73,6 +118,7 @@ export function Trainer({
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
+      shouldPushHistory.current = discardIsComplete(newDealtCards);
       setDealState({
         cribRole,
         dealtCards: newDealtCards,
@@ -82,6 +128,7 @@ export function Trainer({
   );
 
   const dealNewHand = useCallback(() => {
+    shouldPushHistory.current = true;
     setDealState(createDealState(dealHandWithGenerator()));
   }, [createDealState, dealHandWithGenerator]);
 
@@ -122,4 +169,7 @@ export function Trainer({
 
 Trainer.defaultProps = {
   initialCards: null,
+  initialCribRole: null,
+  initialDiscards: null,
+  initialSortOrder: null,
 };

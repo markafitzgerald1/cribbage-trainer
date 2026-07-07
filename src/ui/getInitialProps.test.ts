@@ -1,4 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
+import { CribRole } from "../game/expectedCribPoints";
+import { SortOrder } from "./SortOrder";
 import { getInitialProps } from "./getInitialProps";
 
 describe("getInitialProps", () => {
@@ -40,5 +42,23 @@ describe("getInitialProps", () => {
     const props = getInitialProps("");
 
     expect(props.seed).toBeNull();
+  });
+
+  it("returns parsed role, discards, and sort order when present", () => {
+    const props = getInitialProps(
+      "?hand=AH,2H,3H,4H,5H,6H&role=dealer&discard=AH&sort=deal-order",
+    );
+
+    expect(props.initialCribRole).toBe(CribRole.Dealer);
+    expect(props.initialDiscards?.[0]?.rankLabel).toBe("A");
+    expect(props.initialSortOrder).toBe(SortOrder.DealOrder);
+  });
+
+  it("returns null role, discards, and sort order when absent", () => {
+    const props = getInitialProps("?hand=AH,2H,3H,4H,5H,6H");
+
+    expect(props.initialCribRole).toBeNull();
+    expect(props.initialDiscards).toBeNull();
+    expect(props.initialSortOrder).toBeNull();
   });
 });

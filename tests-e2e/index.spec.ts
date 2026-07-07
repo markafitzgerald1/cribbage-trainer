@@ -74,6 +74,35 @@ test("pre-cut hand points show after select of two discards", async ({
   await expect(page.getByRole("button", { name: "Net" })).toBeVisible();
 });
 
+test("deep link hydrates hand, role, discards, and sort order", async ({
+  page,
+}) => {
+  await page.goto(
+    `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&sort=ascending`,
+  );
+
+  await expect(page.getByText("Pone", exactTextMatch)).toBeVisible();
+  await expect(getSuitedDiscardRow(page)).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Ascending" })).toBeChecked();
+});
+
+test("browser back and forward navigate between dealt hands", async ({
+  page,
+}) => {
+  await page.goto(`/${constantHandQuery}`);
+  const hand = page.locator("ul").first();
+  const initialHandText = await hand.innerText();
+
+  await page.getByRole("button", { name: "Deal" }).click();
+  await expect(hand).not.toHaveText(initialHandText);
+
+  await page.goBack();
+  await expect(hand).toHaveText(initialHandText);
+
+  await page.goForward();
+  await expect(hand).not.toHaveText(initialHandText);
+});
+
 test("semantic e2e suited analysis flow", async ({ page }) => {
   await page.goto(`/${suitedAnalysisQuery}`);
 

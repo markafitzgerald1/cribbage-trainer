@@ -5,7 +5,13 @@ import { createGenerator } from "./game/randomNumberGenerator";
 import { getInitialProps } from "./ui/getInitialProps";
 import { handleLoadGoogleAnalytics } from "./ui/handleLoadGoogleAnalytics";
 
-const { initialCards, seed } = getInitialProps(window.location.search);
+const {
+  initialCards,
+  initialCribRole,
+  initialDiscards,
+  initialSortOrder,
+  seed,
+} = getInitialProps(window.location.search);
 
 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
@@ -13,6 +19,9 @@ ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
     <Trainer
       generateRandomNumber={createGenerator(seed)}
       initialCards={initialCards}
+      initialCribRole={initialCribRole}
+      initialDiscards={initialDiscards}
+      initialSortOrder={initialSortOrder}
       loadGoogleAnalytics={handleLoadGoogleAnalytics}
     />
   </StrictMode>,

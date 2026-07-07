@@ -8,6 +8,7 @@ import {
 import { Rank, Suit, createCard } from "../game/Card";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
+import { CribRole } from "../game/expectedCribPoints";
 import { createGenerator } from "../game/randomNumberGenerator";
 
 const SEED = "1";
@@ -126,6 +127,9 @@ export const DealNewHandReplacesCards = {
   },
 };
 
+const expectAnalysisColumnHeaders = (canvasElement: HTMLElement) =>
+  expectColumnHeaders(canvasElement, ["Hand", "Crib", "Play", "Net"]);
+
 export const DiscardShowsScoredPossibilities = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const checkboxes = within(canvasElement).getAllByRole("checkbox");
@@ -133,7 +137,7 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expectColumnHeaders(canvasElement, ["Hand", "Crib", "Play", "Net"]);
+    await expectAnalysisColumnHeaders(canvasElement);
   },
 };
 
@@ -181,6 +185,30 @@ export const SortHandInDealOrder = {
 
 export const SortHandInAscendingOrder = {
   play: createPlay(SortOrder.Ascending),
+};
+
+const SIX_OF_SPADES = createCard(Rank.SIX, Suit.SPADES);
+const FIVE_OF_HEARTS = createCard(Rank.FIVE, Suit.HEARTS);
+
+export const DeepLinkedAnalysisState = {
+  args: {
+    initialCards: [
+      createCard(Rank.KING, Suit.HEARTS),
+      createCard(Rank.QUEEN, Suit.SPADES),
+      createCard(Rank.TEN, Suit.DIAMONDS),
+      createCard(Rank.NINE, Suit.CLUBS),
+      SIX_OF_SPADES,
+      FIVE_OF_HEARTS,
+    ],
+    initialCribRole: CribRole.Pone,
+    initialDiscards: [SIX_OF_SPADES, FIVE_OF_HEARTS],
+    initialSortOrder: SortOrder.DealOrder,
+  },
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    await expect(within(canvasElement).getByText("Pone")).toBeVisible();
+
+    await expectAnalysisColumnHeaders(canvasElement);
+  },
 };
 
 export const WithInitialCards = {
