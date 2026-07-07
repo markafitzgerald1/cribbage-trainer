@@ -60,13 +60,13 @@ export function Trainer({
     [generator],
   );
   const [dealState, setDealState] = useState<DealState>(() => {
-    if (initialCards) {
-      return {
-        cribRole: initialCribRole ?? randomCribRole(generator),
-        dealtCards: toDealtCards(initialCards, initialDiscards),
-      };
-    }
-    return createDealState(dealHandWithGenerator());
+    const dealtCards = initialCards
+      ? toDealtCards(initialCards, initialDiscards)
+      : dealHandWithGenerator();
+    return {
+      cribRole: initialCribRole ?? randomCribRole(generator),
+      dealtCards,
+    };
   });
   const { cribRole, dealtCards } = dealState;
   const [sortOrder, setSortOrder] = useState<SortOrder>(
@@ -94,6 +94,8 @@ export function Trainer({
 
   useEffect(() => {
     const handlePopState = () => {
+      // Navigation must never push, even if a click just set the push flag.
+      shouldPushHistory.current = false;
       const urlState = parseUrlAnalysisState(window.location.search);
       if (urlState.cards) {
         const { cards, discards } = urlState;

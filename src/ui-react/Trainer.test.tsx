@@ -324,6 +324,19 @@ describe("trainer URL state synchronization", () => {
     expect(getSearchParam("sort")).toBe("descending");
   });
 
+  it("hydrates the role for a random deal when only a role is supplied", () => {
+    resetUrl();
+    render(
+      <Trainer
+        generateRandomNumber={mathRandom}
+        initialCribRole={CribRole.Pone}
+        loadGoogleAnalytics={jest.fn()}
+      />,
+    );
+
+    expectPoneRoleVisible();
+  });
+
   it("hydrates role, discards, and sort order from initial props", () => {
     resetUrl();
     renderHydratedTrainer();

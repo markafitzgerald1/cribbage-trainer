@@ -106,8 +106,8 @@ export interface SerializableAnalysisState {
 
 const CARD_LIST_PARAMS: readonly string[] = [HAND_PARAM, DISCARD_PARAM];
 
-// Decode commas only in this module's own card-list params, for shareable
-// URLs, without altering the raw encoding of unrelated params.
+// Decode commas only in this module's own card-list params for shareable
+// URLs. Other params keep URLSearchParams' standard encoding.
 const decodeCardListCommas = (query: string): string =>
   query
     .split("&")

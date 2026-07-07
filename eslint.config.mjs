@@ -21,7 +21,7 @@ const MAX_STATEMENTS = 20;
 
 export default [
   {
-    ignores: ["dist/", "coverage/", "storybook-static/"],
+    ignores: ["dist/", "coverage/", "storybook-static/", ".claude/"],
   },
   ...fixupConfigRules(
     compat.extends(
@@ -147,6 +147,7 @@ export default [
             "charset",
             "checkbox",
             "checkboxes",
+            "claude",
             "columnheader",
             "compat",
             "cpus",
