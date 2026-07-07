@@ -98,17 +98,33 @@ describe("parseUrlAnalysisState", () => {
   });
 });
 
+const dealerStateDiscardingSixFive = (sortOrder: SortOrder) => ({
+  cribRole: CribRole.Dealer,
+  dealtCards: toDealtCards(parseHand(VALID_HAND), parseHand("6S,5H")),
+  sortOrder,
+});
+
 describe("serializeUrlAnalysisState", () => {
   it("serializes hand, role, discards, and sort while preserving other params", () => {
-    const url = serializeUrlAnalysisState("?seed=123", {
-      cribRole: CribRole.Dealer,
-      dealtCards: toDealtCards(parseHand(VALID_HAND), parseHand("6S,5H")),
-      sortOrder: SortOrder.DealOrder,
-    });
+    const url = serializeUrlAnalysisState(
+      "?seed=123",
+      dealerStateDiscardingSixFive(SortOrder.DealOrder),
+    );
 
     expect(url).toBe(
       `?seed=123&hand=${VALID_HAND}&role=dealer&discard=6S,5H&sort=deal-order`,
     );
+  });
+
+  it("keeps encoded commas in unrelated params while decoding card lists", () => {
+    const url = serializeUrlAnalysisState(
+      "?note=a%2Cb",
+      dealerStateDiscardingSixFive(SortOrder.Descending),
+    );
+
+    expect(url).toContain("note=a%2Cb");
+    expect(url).toContain(`hand=${VALID_HAND}`);
+    expect(url).toContain("discard=6S,5H");
   });
 
   it("removes a stale discard param when no cards are discarded", () => {

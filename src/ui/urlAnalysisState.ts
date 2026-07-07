@@ -104,6 +104,20 @@ export interface SerializableAnalysisState {
   readonly sortOrder: SortOrder;
 }
 
+const CARD_LIST_PARAMS: readonly string[] = [HAND_PARAM, DISCARD_PARAM];
+
+// Decode commas only in this module's own card-list params, for shareable
+// URLs, without altering the raw encoding of unrelated params.
+const decodeCardListCommas = (query: string): string =>
+  query
+    .split("&")
+    .map((pair) =>
+      CARD_LIST_PARAMS.some((param) => pair.startsWith(`${param}=`))
+        ? pair.replace(/%2C/gu, ",")
+        : pair,
+    )
+    .join("&");
+
 export const serializeUrlAnalysisState = (
   search: string,
   { cribRole, dealtCards, sortOrder }: SerializableAnalysisState,
@@ -121,5 +135,5 @@ export const serializeUrlAnalysisState = (
     params.delete(DISCARD_PARAM);
   }
   params.set(SORT_PARAM, sortUrlValue(sortOrder));
-  return `?${params.toString().replace(/%2C/gu, ",")}`;
+  return `?${decodeCardListCommas(params.toString())}`;
 };
