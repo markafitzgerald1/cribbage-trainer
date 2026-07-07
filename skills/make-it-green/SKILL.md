@@ -11,8 +11,11 @@ green build status.
 
 **Execution Loop:**
 
-1. Run `npm run docker:build-and-test-all` in the terminal.
-2. Read the terminal output.
+1. Run `npm run docker:build-and-test-all` in the terminal, redirecting to a
+   log file so the exit code is observable (`... > run.log 2>&1; echo $?`).
+   Never pipe the run through `tail`/`grep` — that masks a nonzero exit and
+   the passed-count line can appear below a failed-tests list.
+2. Read the log's test summary (failed list first, then counts).
 3. Surgically fix any coverage gaps, linting errors, or build failures.
 4. Iterate on this process without human intervention until the build exits with
    code 0.
