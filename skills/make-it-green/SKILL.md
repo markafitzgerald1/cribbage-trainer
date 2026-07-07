@@ -27,3 +27,11 @@ green build status.
   build, lint, and Storybook coverage have passed, rerun
   `npm run docker:run-e2e-only` to verify the remaining Playwright tail before
   reporting final validation.
+- Before the slow Docker run, iterate with `npm run lint && npm test` — the
+  lint gauntlet (eslint `--max-warnings 0`, dual spell checkers, jscpd 0%,
+  `jest/no-hooks`, `assertFunctionNames` registration) catches most failures
+  in seconds; see "Lint gauntlet interplay" in `AGENTS.md` for the fixes.
+- After adding or changing Storybook stories, run
+  `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
+  block in `vite.config.js` to the exact reported totals (they are locked
+  as exact values, so drift in either direction fails the build).

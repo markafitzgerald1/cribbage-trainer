@@ -136,7 +136,39 @@
   mini-cards, the arrow, and four numeric columns. Meaningful score-size
   increases need the horizontal-mini-card redesign, not portrait font bumps.
 
-## Code style and conventions
+## URL analysis state (deep linking)
+
+- `src/ui/urlAnalysisState.ts` is the single source of truth for the
+  URL-parameter contract (`hand`, `role`, `discard`, `sort`, `seed`). Its
+  parse functions validate strictly but fail soft (return `null`, never
+  throw), and serialization writes normalized card text (rank label + suit
+  letter) in deal order — never generated object identity or sort-dependent
+  keys.
+- URL param values are a public compatibility surface: shared links must keep
+  working. Change them only additively and keep parsing backward compatible.
+- History semantics in `Trainer`: `pushState` for meaningful transitions (new
+  deal, discard becoming complete), `replaceState` for minor ones (partial
+  discard toggles, sort changes, initial mount), and a `popstate` listener
+  re-hydrates full state from the URL. The role random draw is skipped only
+  when a valid `role` param is present, preserving seeded-workflow behavior.
+
+## Lint gauntlet interplay (agent checklist)
+
+- New technical words must be added to **both** spell checkers: the
+  `spellcheck/spell-checker` `skipWords` list in `eslint.config.mjs` (which
+  runs with `--max-warnings 0`, so warnings fail CI) and `.cspell.json`.
+- `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
+  at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
+  spies (see `index.test.tsx` for the established idiom).
+- Custom `expect*` test helpers must be registered in `eslint.config.mjs`
+  under **both** `jest/expect-expect` and `jest/prefer-ending-with-an-expect`
+  `assertFunctionNames`, or tests using them fail lint.
+- `sort-imports` orders declarations case-sensitively by first imported
+  member (uppercase before lowercase) with multi-member imports before
+  singles; merging a member into an existing import can force reordering.
+- With jscpd at 0%, near-identical test blocks are the most common trip-up:
+  extract tiny helpers (click/render/assert) in test files proactively rather
+  than after the jscpd failure.
 
 - TypeScript/React with Vite; keep types sound.
 - Every React component should have a corresponding Storybook story file
