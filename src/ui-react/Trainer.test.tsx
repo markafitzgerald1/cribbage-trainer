@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import { CARD_LABELS, Rank, type Suit, parseHand } from "../game/Card";
 import { type ComparableCard, sortCards } from "../ui/sortCards";
@@ -402,6 +403,61 @@ describe("trainer URL state synchronization", () => {
       pushStateSpy.mockRestore();
     }
   });
+
+  const expectMergedBackTo = async (
+    backSpy: ReturnType<typeof jest.spyOn>,
+    expectedSearch: string,
+  ) => {
+    expect(backSpy).toHaveBeenCalledTimes(1);
+
+    await waitFor(() => {
+      expect(window.location.search).toBe(expectedSearch);
+    });
+  };
+
+  const withBackSpy = async (
+    run: (
+      backSpy: ReturnType<typeof jest.spyOn>,
+      spied: ReturnType<typeof renderTrainerSpyingOnPush>,
+    ) => Promise<void>,
+  ) => {
+    const spied = renderTrainerSpyingOnPush();
+    const backSpy = jest.spyOn(window.history, "back");
+    try {
+      await run(backSpy, spied);
+    } finally {
+      backSpy.mockRestore();
+      spied.pushStateSpy.mockRestore();
+    }
+  };
+
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("merges an undone discard toggle instead of duplicating the entry", () =>
+    withBackSpy(async (backSpy, { pushStateSpy, renderResult, user }) => {
+      const initialSearch = window.location.search;
+      const firstCheckbox = renderResult.getAllByRole("checkbox")[0]!;
+
+      await user.click(firstCheckbox);
+
+      expect(getSearchParam("discard")).not.toBeNull();
+
+      await user.click(firstCheckbox);
+
+      expect(pushStateSpy).toHaveBeenCalledTimes(1);
+
+      await expectMergedBackTo(backSpy, initialSearch);
+    }));
+
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("merges a wandering mind change back onto the complete discard", () =>
+    withBackSpy(async (backSpy, { renderResult, user }) => {
+      await clickIndices(renderResult.getAllByRole, [0, 1], user);
+      const completeDiscardSearch = window.location.search;
+
+      await clickIndices(renderResult.getAllByRole, [2, 3, 3, 2], user);
+
+      await expectMergedBackTo(backSpy, completeDiscardSearch);
+    }));
 
   // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("pushes history when the sort order changes", async () => {
