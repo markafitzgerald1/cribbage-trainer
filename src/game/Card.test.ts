@@ -5,9 +5,13 @@ import {
   MAXIMUM_CARD_COUNTING_VALUE,
   Suit,
   createCard,
+  isSamePhysicalCard,
   parseCard,
   parseHand,
   parseSuit,
+  serializeCard,
+  serializeHand,
+  suitLetter,
 } from "./Card";
 import { describe, expect, it } from "@jest/globals";
 
@@ -71,6 +75,51 @@ describe("parseCard", () => {
 
   it("throws on invalid rank", () => {
     expect(() => parseCard("XH")).toThrow("Invalid rank label: X");
+  });
+});
+
+describe("suitLetter", () => {
+  it.each([
+    [Suit.CLUBS, "C"],
+    [Suit.DIAMONDS, "D"],
+    [Suit.HEARTS, "H"],
+    [Suit.SPADES, "S"],
+  ])("maps %p to %p", (suit, expectedLetter) => {
+    expect(suitLetter(suit)).toBe(expectedLetter);
+  });
+});
+
+describe("serializeCard", () => {
+  it("round-trips a parsed card back to its normalized text form", () => {
+    expect(serializeCard(parseCard(LOWERCASE_TEN_OF_DIAMONDS))).toBe("10D");
+  });
+});
+
+describe("serializeHand", () => {
+  it("round-trips a parsed hand back to its normalized text form", () => {
+    expect(
+      serializeHand(
+        parseHand(
+          [
+            LOWERCASE_KING_OF_HEARTS,
+            LOWERCASE_QUEEN_OF_SPADES,
+            LOWERCASE_TEN_OF_DIAMONDS,
+          ].join(","),
+        ),
+      ),
+    ).toBe("KH,QS,10D");
+  });
+});
+
+describe("isSamePhysicalCard", () => {
+  it("is true for two cards with equal rank and suit", () => {
+    expect(
+      isSamePhysicalCard(parseCard("KH"), parseCard(LOWERCASE_KING_OF_HEARTS)),
+    ).toBe(true);
+  });
+
+  it("is false for two cards with equal rank but different suits", () => {
+    expect(isSamePhysicalCard(parseCard("KH"), parseCard("KS"))).toBe(false);
   });
 });
 

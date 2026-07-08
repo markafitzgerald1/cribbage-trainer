@@ -7,3 +7,4 @@
 /src/game/expectedCribPointsTable.json
 # Vendored lean play EV table from simulate-cribbage-games; refresh with scripts/updateExpectedPlayPointsTable.mjs.
 /src/game/expectedPlayPointsTable.json
+/.claude/

@@ -100,6 +100,19 @@
 
 ## Playwright and UI-layout debugging
 
+- Never judge a validation run by piping through `| tail` or `| grep`: the
+  pipe masks the command's exit code and a "61 passed" line can sit directly
+  below a failed-tests list. Redirect to a log file, echo `$?`, and read the
+  full summary (or use the shell's pipe-status array).
+- Analysis-row text (e.g. `K♥Q♠10♦9♣(6♠5♠)`) is rendered in the **active
+  sort order**; a deep link or click that sets `sort=ascending` reverses the
+  row text (`9♣10♦Q♠K♥(5♠6♠)`). Don't reuse row-text constants across tests
+  with different sort orders.
+- `locator.innerText()` captures per-element newlines, but `toHaveText()`
+  compares normalized text — comparing one against the other fails even when
+  content matches. Assert against explicit expected strings instead of
+  captured `innerText`.
+
 - `getByRole(role, { name })` matches the accessible name as a
   **case-insensitive substring**, not an exact string. A header/button label
   that is a substring of another control's name causes strict-mode collisions
@@ -136,7 +149,54 @@
   mini-cards, the arrow, and four numeric columns. Meaningful score-size
   increases need the horizontal-mini-card redesign, not portrait font bumps.
 
-## Code style and conventions
+## URL analysis state (deep linking)
+
+- `src/ui/urlAnalysisState.ts` is the single source of truth for the
+  URL-parameter contract (`hand`, `role`, `discard`, `sort`, `seed`). Its
+  parse functions validate strictly but fail soft (return `null`, never
+  throw), and serialization writes normalized card text (rank label + suit
+  letter) in deal order — never generated object identity or sort-dependent
+  keys.
+- URL param values are a public compatibility surface: shared links must keep
+  working. Change them only additively and keep parsing backward compatible.
+- History semantics in `Trainer`: before changing state, interactions check
+  whether the _current_ state is stable (`isStableDiscardState`: zero
+  discards or a complete discard). Stable states are preserved with
+  `pushState`; transient single-card selections are `replaceState`d away, so
+  history only ever holds stable states and Back steps 2 discards → 0 →
+  prior hand. `replaceState` also normalizes the URL on initial mount, and a
+  `popstate` listener re-hydrates full state. Do not replace-away a state
+  the user could want to Back to: replacing on the first interaction
+  overwrote the only history entry and made Back exit the site. The role
+  random draw is skipped only when a valid `role` param is present,
+  preserving seeded-workflow behavior.
+- `discard` values intentionally repeat cards that are also in `hand`:
+  `hand` stays the full six dealt cards so deal order (and deal-order sort)
+  survives, `hand` remains valid standalone if `discard` is dropped, and the
+  subset check turns any drift between the two params into a rejected
+  `discard` instead of a silent error.
+
+## Lint gauntlet interplay (agent checklist)
+
+- Two spell checkers with **different base dictionaries** run in lint:
+  eslint's `spellcheck/spell-checker` (`skipWords` in `eslint.config.mjs`;
+  `--max-warnings 0` makes its warnings fail CI) and cspell (`.cspell.json`,
+  honors `.gitignore`). A new word may trip one, both, or neither — run each
+  checker and add the word only where it is actually flagged.
+- `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
+  at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
+  spies (see `index.test.tsx` for the established idiom).
+- Custom `expect*` test helpers must be registered in `eslint.config.mjs`
+  under **both** `jest/expect-expect` and `jest/prefer-ending-with-an-expect`
+  `assertFunctionNames`, or tests using them fail lint.
+- `sort-imports` orders declarations case-sensitively by first imported
+  member (uppercase before lowercase) with multi-member imports before
+  singles; merging a member into an existing import can force reordering.
+- With jscpd at 0% and `minTokens: 22` (roughly two repeated statements),
+  near-identical test blocks are the most common trip-up: as soon as a
+  setup or assertion pattern of two-plus statements appears twice, extract
+  it into a named helper (e.g. a click-and-assert or render-with-props
+  function) rather than waiting for the jscpd failure.
 
 - TypeScript/React with Vite; keep types sound.
 - Every React component should have a corresponding Storybook story file
@@ -171,7 +231,13 @@
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
 - Always hard-wrap Markdown text to a maximum of 80 characters per line to
-  satisfy strict markdownlint rules.
+  satisfy strict markdownlint rules. This applies only to Markdown files
+  committed to the repository: never hard-wrap GitHub issue/PR bodies or
+  comments — the GitHub UI auto-wraps, and manual line breaks harm
+  readability there.
+- When comparing numbers for readers (e.g. before/after coverage
+  thresholds), label each value and align the comparison (a small table or
+  `name: old → new` lines); never two bare slash-separated lists.
 
 ## GitHub PR Reviews
 

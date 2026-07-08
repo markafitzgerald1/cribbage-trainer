@@ -2,15 +2,19 @@ import "@testing-library/jest-dom";
 import {
   type ByRoleMatcher,
   type ByRoleOptions,
+  fireEvent,
   render,
   screen,
 } from "@testing-library/react";
 import { CARD_LABELS, Rank, type Suit, parseHand } from "../game/Card";
 import { type ComparableCard, sortCards } from "../ui/sortCards";
+import {
+  CribRole,
+  type ExpectedCribPointsTable,
+} from "../game/expectedCribPoints";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
-import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
@@ -110,6 +114,27 @@ const isRoleLabelVisible = (roleName: string, roleContext: string) =>
   Boolean(screen.queryByText(roleName)) &&
   Boolean(screen.queryByText(roleContext));
 
+const expectDealerRoleVisible = () => {
+  expect(isRoleLabelVisible("Dealer", "your crib")).toBe(true);
+};
+
+const expectPoneRoleVisible = () => {
+  expect(isRoleLabelVisible("Pone", "opponent crib")).toBe(true);
+};
+
+const clickDeal = (user: UserEvent) =>
+  user.click(screen.getByRole("button", { name: "Deal" }));
+
+const renderTrainerShowingDealerRole = () =>
+  renderTrainerWithGenerator(
+    createSequenceGenerator(createRoleRandomValues([DEALER_RANDOM_VALUE])),
+  );
+
+const getHandText = (container: HTMLElement) =>
+  container.querySelector("ul")!.textContent;
+
+const SIX_HEARTS_HAND = "AH,2H,3H,4H,5H,6H";
+
 describe("trainer component", () => {
   it("initially contains a sort in descending order radio input", () => {
     expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();
@@ -120,11 +145,9 @@ describe("trainer component", () => {
   });
 
   it("shows the randomized dealer role", () => {
-    renderTrainerWithGenerator(
-      createSequenceGenerator(createRoleRandomValues([DEALER_RANDOM_VALUE])),
-    );
+    renderTrainerShowingDealerRole();
 
-    expect(isRoleLabelVisible("Dealer", "your crib")).toBe(true);
+    expectDealerRoleVisible();
   });
 
   it("randomizes the role on a new deal", async () => {
@@ -136,11 +159,11 @@ describe("trainer component", () => {
       ),
     );
 
-    expect(isRoleLabelVisible("Dealer", "your crib")).toBe(true);
+    expectDealerRoleVisible();
 
-    await user.click(screen.getByRole("button", { name: "Deal" }));
+    await clickDeal(user);
 
-    expect(isRoleLabelVisible("Pone", "opponent crib")).toBe(true);
+    expectPoneRoleVisible();
   });
 
   it("contains hand points once two cards have been selected", async () => {
@@ -223,7 +246,7 @@ describe("trainer component", () => {
   });
 
   it("renders the specified initialCards", () => {
-    const initialCards = parseHand("AH,2H,3H,4H,5H,6H");
+    const initialCards = parseHand(SIX_HEARTS_HAND);
     const { container } = render(
       <Trainer
         generateRandomNumber={mathRandom}
@@ -249,5 +272,186 @@ describe("trainer component", () => {
     await toggleCard(firstCheckbox, user);
 
     expect(firstCheckbox).toBeChecked();
+  });
+});
+
+const HAND_PARAM_PATTERN =
+  /^(?:10|[A2-9JQK])[CDHS](?:,(?:10|[A2-9JQK])[CDHS]){5}$/u;
+
+const getSearchParam = (name: string) =>
+  new URLSearchParams(window.location.search).get(name);
+
+const resetUrl = () => {
+  window.history.replaceState(null, "", "/");
+};
+
+const renderHydratedTrainer = () => {
+  setTableSync(
+    expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+  );
+
+  return render(
+    <Trainer
+      generateRandomNumber={mathRandom}
+      initialCards={parseHand(SIX_HEARTS_HAND)}
+      initialCribRole={CribRole.Pone}
+      initialDiscards={parseHand("AH,2H")}
+      initialSortOrder={SortOrder.DealOrder}
+      loadGoogleAnalytics={jest.fn()}
+    />,
+  );
+};
+
+const popStateTo = (search: string) => {
+  window.history.replaceState(null, "", search);
+  fireEvent.popState(window);
+};
+
+const renderTrainerSpyingOnPush = () => {
+  resetUrl();
+  const user = userEvent.setup();
+  const pushStateSpy = jest.spyOn(window.history, "pushState");
+  return { pushStateSpy, renderResult: renderTrainer(), user };
+};
+
+const expectPushesAndDiscards = (
+  pushStateSpy: unknown,
+  expectedPushes: number,
+  expectedDiscardCount: number,
+) => {
+  expect(pushStateSpy).toHaveBeenCalledTimes(expectedPushes);
+  expect(getSearchParam("discard")?.split(",")).toHaveLength(
+    expectedDiscardCount,
+  );
+};
+
+describe("trainer URL state synchronization", () => {
+  it("writes the full analysis state to the URL on first render", () => {
+    resetUrl();
+    renderTrainer();
+
+    expect(getSearchParam("hand")).toMatch(HAND_PARAM_PATTERN);
+    expect(["dealer", "pone"]).toContain(getSearchParam("role"));
+    expect(getSearchParam("sort")).toBe("descending");
+  });
+
+  it("hydrates the role for a random deal when only a role is supplied", () => {
+    resetUrl();
+    render(
+      <Trainer
+        generateRandomNumber={mathRandom}
+        initialCribRole={CribRole.Pone}
+        loadGoogleAnalytics={jest.fn()}
+      />,
+    );
+
+    expectPoneRoleVisible();
+  });
+
+  it("hydrates role, discards, and sort order from initial props", () => {
+    resetUrl();
+    renderHydratedTrainer();
+
+    expectPoneRoleVisible();
+
+    expect(
+      screen.queryByRole("columnheader", { name: calculationsHeaderName }),
+    ).toBeTruthy();
+    expect(screen.getByLabelText("DealOrder")).toBeChecked();
+  });
+
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("pushes history when dealing and restores the prior hand on popstate", async () => {
+    const { pushStateSpy, renderResult, user } = renderTrainerSpyingOnPush();
+    try {
+      const { container } = renderResult;
+      const initialHandText = getHandText(container);
+      const initialSearch = window.location.search;
+
+      await clickDeal(user);
+
+      expect(pushStateSpy).toHaveBeenCalledTimes(1);
+      expect(window.location.search).not.toBe(initialSearch);
+
+      popStateTo(initialSearch);
+
+      expect(getHandText(container)).toBe(initialHandText);
+    } finally {
+      pushStateSpy.mockRestore();
+    }
+  });
+
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("pushes stable discard states and replaces transient ones", async () => {
+    const { pushStateSpy, renderResult, user } = renderTrainerSpyingOnPush();
+    const clickCheckbox = (index: number) =>
+      user.click(renderResult.getAllByRole("checkbox")[index]!);
+    try {
+      await clickCheckbox(0);
+
+      expectPushesAndDiscards(pushStateSpy, 1, 1);
+
+      await clickCheckbox(1);
+
+      expectPushesAndDiscards(pushStateSpy, 1, 2);
+
+      await clickCheckbox(0);
+
+      expectPushesAndDiscards(pushStateSpy, 2, 1);
+    } finally {
+      pushStateSpy.mockRestore();
+    }
+  });
+
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("pushes history when the sort order changes", async () => {
+    const { pushStateSpy, user } = renderTrainerSpyingOnPush();
+    try {
+      await user.click(screen.getByLabelText("Ascending"));
+
+      expect(pushStateSpy).toHaveBeenCalledTimes(1);
+      expect(getSearchParam("sort")).toBe("ascending");
+    } finally {
+      pushStateSpy.mockRestore();
+    }
+  });
+
+  it("restores sort order from a popstate URL without replacing the hand", () => {
+    resetUrl();
+    renderTrainer();
+    const initialHandParam = getSearchParam("hand");
+
+    popStateTo("?sort=ascending");
+
+    expect(screen.getByLabelText("Ascending")).toBeChecked();
+    expect(getSearchParam("hand")).toBe(initialHandParam);
+  });
+
+  it("restores the role from a popstate URL", () => {
+    resetUrl();
+    renderTrainer();
+
+    popStateTo(`?hand=${SIX_HEARTS_HAND}&role=pone`);
+
+    expectPoneRoleVisible();
+  });
+
+  it("keeps the current role when a popstate URL lacks one", () => {
+    resetUrl();
+    renderTrainerShowingDealerRole();
+
+    popStateTo(`?hand=${SIX_HEARTS_HAND}`);
+
+    expectDealerRoleVisible();
+  });
+
+  it("ignores a popstate URL with an invalid hand", () => {
+    resetUrl();
+    const { container } = renderTrainer();
+    const initialHandText = getHandText(container);
+
+    popStateTo("?hand=XX,YY");
+
+    expect(getHandText(container)).toBe(initialHandText);
   });
 });

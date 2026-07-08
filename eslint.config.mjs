@@ -21,7 +21,7 @@ const MAX_STATEMENTS = 20;
 
 export default [
   {
-    ignores: ["dist/", "coverage/", "storybook-static/"],
+    ignores: ["dist/", "coverage/", "storybook-static/", ".claude/"],
   },
   ...fixupConfigRules(
     compat.extends(
@@ -147,6 +147,7 @@ export default [
             "charset",
             "checkbox",
             "checkboxes",
+            "claude",
             "columnheader",
             "compat",
             "cpus",
@@ -178,6 +179,7 @@ export default [
             "mousedown",
             "msedge",
             "os",
+            "popstate",
             "radiogroup",
             "readonly",
             "pragma",
@@ -185,6 +187,7 @@ export default [
             "rerenders",
             "royale",
             "seedrandom",
+            "Serializable",
             "svg",
             "tbody",
             "tsconfig",
@@ -353,6 +356,10 @@ export default [
             "expectTotalHandPoints",
             "expectHandsInDescendingExpectedScoreOrder",
             "expectPossibleHandRendersSpan",
+            "expectDealerRoleVisible",
+            "expectPoneRoleVisible",
+            "expectHydratedPoneState",
+            "expectPushesAndDiscards",
           ],
         },
       ],
@@ -376,6 +383,10 @@ export default [
             "expectSort",
             "expectHandsInDescendingExpectedScoreOrder",
             "expectTotalHandPoints",
+            "expectDealerRoleVisible",
+            "expectPoneRoleVisible",
+            "expectHydratedPoneState",
+            "expectPushesAndDiscards",
           ],
         },
       ],

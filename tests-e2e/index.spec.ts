@@ -74,6 +74,55 @@ test("pre-cut hand points show after select of two discards", async ({
   await expect(page.getByRole("button", { name: "Net" })).toBeVisible();
 });
 
+const ascendingSuitedDiscardRowText = "9♣10♦Q♠K♥(5♠6♠)";
+
+test("deep link hydrates hand, role, discards, and sort order", async ({
+  page,
+}) => {
+  await page.goto(
+    `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&sort=ascending`,
+  );
+
+  await expect(page.getByText("Pone", exactTextMatch)).toBeVisible();
+  await expect(
+    page
+      .locator('tr[class*="highlighted"]')
+      .filter({ hasText: ascendingSuitedDiscardRowText }),
+  ).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Ascending" })).toBeChecked();
+});
+
+const constantHandText = "K♥Q♠10♦9♣6♠5♥";
+
+test("browser back skips transient discards and steps between dealt hands", async ({
+  page,
+}) => {
+  await page.goto(`/${constantHandQuery}`);
+  const hand = page.locator("ul").first();
+  const firstCheckbox = page.getByRole("checkbox").first();
+
+  await expect(hand).toHaveText(constantHandText);
+
+  await firstCheckbox.click();
+  await expect(page).toHaveURL(/discard=KH/u);
+
+  await page.getByRole("checkbox").nth(1).click();
+  await expect(page).toHaveURL(/discard=KH,QS/u);
+
+  await page.goBack();
+  await expect(page).not.toHaveURL(/discard=/u);
+  await expect(firstCheckbox).toBeChecked();
+
+  await page.getByRole("button", { name: "Deal" }).click();
+  await expect(hand).not.toHaveText(constantHandText);
+
+  await page.goBack();
+  await expect(hand).toHaveText(constantHandText);
+
+  await page.goForward();
+  await expect(hand).not.toHaveText(constantHandText);
+});
+
 test("semantic e2e suited analysis flow", async ({ page }) => {
   await page.goto(`/${suitedAnalysisQuery}`);
 
