@@ -302,6 +302,13 @@
 ## Contribution notes
 
 - Add/adjust tests alongside code changes.
+- In-code comments must document only the non-obvious _why_ — invariants,
+  the rationale for a surprising call, consequences/trade-offs, or guards
+  against "simplifying" an argument that looks redundant. Never restate the
+  _how_/_what_ of the adjacent code; cut any comment that paraphrases the
+  condition or call next to it. The `capitalized-comments` ESLint rule
+  requires every `//` line to start with a capital, so write one full
+  sentence per line.
 - For visual changes, update Playwright snapshots when the new visuals are correct.
 - Keep README and docs in sync when changing workflows or commands.
 - Triage test, CI, and infrastructure issues into the current/active milestone
