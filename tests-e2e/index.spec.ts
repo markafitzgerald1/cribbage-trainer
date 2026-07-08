@@ -141,8 +141,7 @@ test("a discard mind-change does not leave a blank history entry", async ({
   await page.getByRole("button", { name: "Deal" }).click();
   await expect(hand).not.toHaveText(constantHandText);
 
-  // Without merging, the undone toggle would add a duplicate entry.
-  // That duplicate would make this length grow by two.
+  // A leftover duplicate entry would make this length grow by two.
   expect(await page.evaluate(() => window.history.length)).toBe(
     initialHistoryLength + 1,
   );

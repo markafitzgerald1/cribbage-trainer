@@ -41,8 +41,7 @@ interface DealState {
   readonly dealtCards: DealtCard[];
 }
 
-// Pushed entries record the covered entry's URL in history.state.
-// Later settles compare against it to detect convergence.
+// Invariant: previousUrl is the URL of the entry directly beneath this one.
 interface HistoryEntryState {
   readonly previousUrl?: string;
 }
@@ -101,9 +100,8 @@ export function Trainer({
         url,
       );
     } else if (url === getPreviousUrl()) {
-      // The transient state settled back onto the covered entry.
-      // Merging via back() avoids an adjacent duplicate Back no-op.
-      // The abandoned transient survives only as a Forward entry.
+      // Merging avoids an adjacent duplicate that would make Back a no-op.
+      // The abandoned transient entry survives only as a Forward entry.
       window.history.back();
     } else {
       // Keep previousUrl so later settles can still detect convergence.
