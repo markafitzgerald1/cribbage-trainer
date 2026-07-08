@@ -14,6 +14,7 @@ import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
 
 export interface TrainerProps {
@@ -114,30 +115,41 @@ export function Trainer({
     };
   }, []);
 
+  // Preserve the current history entry only when its state is stable.
+  // Transient single-card selections get replaced, so Back skips them.
+  const markHistoryUpdate = useCallback(() => {
+    shouldPushHistory.current = isStableDiscardState(dealtCards);
+  }, [dealtCards]);
+
   const toggleKept = useCallback(
     (dealOrderIndex: number) => {
+      // The array copy shares card objects with the current state.
+      // Snapshot history intent before the kept mutation changes it.
+      markHistoryUpdate();
       const newDealtCards = [...dealtCards];
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
-      shouldPushHistory.current = true;
       setDealState({
         cribRole,
         dealtCards: newDealtCards,
       });
     },
-    [cribRole, dealtCards],
+    [cribRole, dealtCards, markHistoryUpdate],
   );
 
   const dealNewHand = useCallback(() => {
-    shouldPushHistory.current = true;
+    markHistoryUpdate();
     setDealState(createDealState(dealHandWithGenerator()));
-  }, [createDealState, dealHandWithGenerator]);
+  }, [createDealState, dealHandWithGenerator, markHistoryUpdate]);
 
-  const changeSortOrder = useCallback((newSortOrder: SortOrder) => {
-    shouldPushHistory.current = true;
-    setSortOrder(newSortOrder);
-  }, []);
+  const changeSortOrder = useCallback(
+    (newSortOrder: SortOrder) => {
+      markHistoryUpdate();
+      setSortOrder(newSortOrder);
+    },
+    [markHistoryUpdate],
+  );
 
   const setConsented = useCallback((value: boolean) => {
     setAnalyticsConsented(value);

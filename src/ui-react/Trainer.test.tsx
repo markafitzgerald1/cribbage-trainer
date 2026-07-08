@@ -314,6 +314,17 @@ const renderTrainerSpyingOnPush = () => {
   return { pushStateSpy, renderResult: renderTrainer(), user };
 };
 
+const expectPushesAndDiscards = (
+  pushStateSpy: unknown,
+  expectedPushes: number,
+  expectedDiscardCount: number,
+) => {
+  expect(pushStateSpy).toHaveBeenCalledTimes(expectedPushes);
+  expect(getSearchParam("discard")?.split(",")).toHaveLength(
+    expectedDiscardCount,
+  );
+};
+
 describe("trainer URL state synchronization", () => {
   it("writes the full analysis state to the URL on first render", () => {
     resetUrl();
@@ -371,18 +382,22 @@ describe("trainer URL state synchronization", () => {
   });
 
   // eslint-disable-next-line jest/prefer-ending-with-an-expect
-  it("pushes history for each discard toggle so Back can undo it", async () => {
+  it("pushes stable discard states and replaces transient ones", async () => {
     const { pushStateSpy, renderResult, user } = renderTrainerSpyingOnPush();
+    const clickCheckbox = (index: number) =>
+      user.click(renderResult.getAllByRole("checkbox")[index]!);
     try {
-      await user.click(renderResult.getAllByRole("checkbox")[0]!);
+      await clickCheckbox(0);
 
-      expect(pushStateSpy).toHaveBeenCalledTimes(1);
-      expect(getSearchParam("discard")?.split(",")).toHaveLength(1);
+      expectPushesAndDiscards(pushStateSpy, 1, 1);
 
-      await user.click(renderResult.getAllByRole("checkbox")[1]!);
+      await clickCheckbox(1);
 
-      expect(pushStateSpy).toHaveBeenCalledTimes(2);
-      expect(getSearchParam("discard")?.split(",")).toHaveLength(2);
+      expectPushesAndDiscards(pushStateSpy, 1, 2);
+
+      await clickCheckbox(0);
+
+      expectPushesAndDiscards(pushStateSpy, 2, 1);
     } finally {
       pushStateSpy.mockRestore();
     }

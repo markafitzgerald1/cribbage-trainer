@@ -94,7 +94,7 @@ test("deep link hydrates hand, role, discards, and sort order", async ({
 
 const constantHandText = "K♥Q♠10♦9♣6♠5♥";
 
-test("browser back undoes a discard toggle and steps between dealt hands", async ({
+test("browser back skips transient discards and steps between dealt hands", async ({
   page,
 }) => {
   await page.goto(`/${constantHandQuery}`);
@@ -105,6 +105,9 @@ test("browser back undoes a discard toggle and steps between dealt hands", async
 
   await firstCheckbox.click();
   await expect(page).toHaveURL(/discard=KH/u);
+
+  await page.getByRole("checkbox").nth(1).click();
+  await expect(page).toHaveURL(/discard=KH,QS/u);
 
   await page.goBack();
   await expect(page).not.toHaveURL(/discard=/u);

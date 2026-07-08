@@ -36,5 +36,7 @@ green build status.
   in seconds; see "Lint gauntlet interplay" in `AGENTS.md` for the fixes.
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
-  block in `vite.config.js` to the exact reported totals (they are locked
-  as exact values, so drift in either direction fails the build).
+  block in `vite.config.js` to the exact reported totals. Thresholds are
+  minimums (only a drop fails the build); re-locking them to the current
+  totals is a ratchet convention so any future regression fails
+  immediately.

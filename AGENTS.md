@@ -159,20 +159,30 @@
   keys.
 - URL param values are a public compatibility surface: shared links must keep
   working. Change them only additively and keep parsing backward compatible.
-- History semantics in `Trainer`: every user-initiated state change (new
-  deal, each discard toggle, sort change) does a `pushState`, so Back/Forward
-  steps through states undo-style; `replaceState` is used only to normalize
-  the URL on initial mount, and a `popstate` listener re-hydrates full state
-  from the URL. Do not replace-away a state the user could want to Back to:
-  replacing on the first interaction overwrote the only history entry and
-  made Back exit the site. The role random draw is skipped only when a valid
-  `role` param is present, preserving seeded-workflow behavior.
+- History semantics in `Trainer`: before changing state, interactions check
+  whether the _current_ state is stable (`isStableDiscardState`: zero
+  discards or a complete discard). Stable states are preserved with
+  `pushState`; transient single-card selections are `replaceState`d away, so
+  history only ever holds stable states and Back steps 2 discards → 0 →
+  prior hand. `replaceState` also normalizes the URL on initial mount, and a
+  `popstate` listener re-hydrates full state. Do not replace-away a state
+  the user could want to Back to: replacing on the first interaction
+  overwrote the only history entry and made Back exit the site. The role
+  random draw is skipped only when a valid `role` param is present,
+  preserving seeded-workflow behavior.
+- `discard` values intentionally repeat cards that are also in `hand`:
+  `hand` stays the full six dealt cards so deal order (and deal-order sort)
+  survives, `hand` remains valid standalone if `discard` is dropped, and the
+  subset check turns any drift between the two params into a rejected
+  `discard` instead of a silent error.
 
 ## Lint gauntlet interplay (agent checklist)
 
-- New technical words must be added to **both** spell checkers: the
-  `spellcheck/spell-checker` `skipWords` list in `eslint.config.mjs` (which
-  runs with `--max-warnings 0`, so warnings fail CI) and `.cspell.json`.
+- Two spell checkers with **different base dictionaries** run in lint:
+  eslint's `spellcheck/spell-checker` (`skipWords` in `eslint.config.mjs`;
+  `--max-warnings 0` makes its warnings fail CI) and cspell (`.cspell.json`,
+  honors `.gitignore`). A new word may trip one, both, or neither — run each
+  checker and add the word only where it is actually flagged.
 - `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
   at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
   spies (see `index.test.tsx` for the established idiom).
@@ -182,9 +192,11 @@
 - `sort-imports` orders declarations case-sensitively by first imported
   member (uppercase before lowercase) with multi-member imports before
   singles; merging a member into an existing import can force reordering.
-- With jscpd at 0%, near-identical test blocks are the most common trip-up:
-  extract tiny helpers (click/render/assert) in test files proactively rather
-  than after the jscpd failure.
+- With jscpd at 0% and `minTokens: 22` (roughly two repeated statements),
+  near-identical test blocks are the most common trip-up: as soon as a
+  setup or assertion pattern of two-plus statements appears twice, extract
+  it into a named helper (e.g. a click-and-assert or render-with-props
+  function) rather than waiting for the jscpd failure.
 
 - TypeScript/React with Vite; keep types sound.
 - Every React component should have a corresponding Storybook story file
