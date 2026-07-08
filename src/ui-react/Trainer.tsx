@@ -41,6 +41,14 @@ interface DealState {
   readonly dealtCards: DealtCard[];
 }
 
+// Invariant: previousUrl is the URL of the entry directly beneath this one.
+interface HistoryEntryState {
+  readonly previousUrl?: string;
+}
+
+const getPreviousUrl = (): string | undefined =>
+  (window.history.state as HistoryEntryState | null)?.previousUrl;
+
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
@@ -86,9 +94,18 @@ export function Trainer({
       sortOrder,
     });
     if (shouldPushHistory.current) {
-      window.history.pushState(null, "", url);
+      window.history.pushState(
+        { previousUrl: window.location.search },
+        "",
+        url,
+      );
+    } else if (url === getPreviousUrl()) {
+      // Merging avoids an adjacent duplicate that would make Back a no-op.
+      // The abandoned transient entry survives only as a Forward entry.
+      window.history.back();
     } else {
-      window.history.replaceState(null, "", url);
+      // Keep previousUrl so later settles can still detect convergence.
+      window.history.replaceState(window.history.state, "", url);
     }
     shouldPushHistory.current = false;
   }, [cribRole, dealtCards, sortOrder]);

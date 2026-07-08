@@ -123,6 +123,33 @@ test("browser back skips transient discards and steps between dealt hands", asyn
   await expect(hand).not.toHaveText(constantHandText);
 });
 
+test("a discard mind-change does not leave a blank history entry", async ({
+  page,
+}) => {
+  await page.goto(`/${constantHandQuery}`);
+  const hand = page.locator("ul").first();
+  await expect(hand).toHaveText(constantHandText);
+  const initialHistoryLength = await page.evaluate(() => window.history.length);
+  const firstCheckbox = page.getByRole("checkbox").first();
+
+  await firstCheckbox.click();
+  await expect(page).toHaveURL(/discard=KH/u);
+
+  await firstCheckbox.click();
+  await expect(page).not.toHaveURL(/discard=/u);
+
+  await page.getByRole("button", { name: "Deal" }).click();
+  await expect(hand).not.toHaveText(constantHandText);
+
+  // A leftover duplicate entry would make this length grow by two.
+  expect(await page.evaluate(() => window.history.length)).toBe(
+    initialHistoryLength + 1,
+  );
+
+  await page.goBack();
+  await expect(hand).toHaveText(constantHandText);
+});
+
 test("semantic e2e suited analysis flow", async ({ page }) => {
   await page.goto(`/${suitedAnalysisQuery}`);
 

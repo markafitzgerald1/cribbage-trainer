@@ -164,12 +164,18 @@
   discards or a complete discard). Stable states are preserved with
   `pushState`; transient single-card selections are `replaceState`d away, so
   history only ever holds stable states and Back steps 2 discards → 0 →
-  prior hand. `replaceState` also normalizes the URL on initial mount, and a
-  `popstate` listener re-hydrates full state. Do not replace-away a state
-  the user could want to Back to: replacing on the first interaction
-  overwrote the only history entry and made Back exit the site. The role
-  random draw is skipped only when a valid `role` param is present,
-  preserving seeded-workflow behavior.
+  prior hand. Each pushed entry stores the covered entry's URL in
+  `history.state.previousUrl`; when a transient settle converges back onto
+  that URL, `Trainer` calls `history.back()` instead of `replaceState` so a
+  mind-change toggle does not leave an adjacent duplicate entry that turns
+  Back into a no-op (the abandoned transient survives only as a Forward
+  entry). `replaceState` must pass `window.history.state` through — not
+  `null` — so `previousUrl` survives settling. `replaceState` also
+  normalizes the URL on initial mount, and a `popstate` listener re-hydrates
+  full state. Do not replace-away a state the user could want to Back to:
+  replacing on the first interaction overwrote the only history entry and
+  made Back exit the site. The role random draw is skipped only when a valid
+  `role` param is present, preserving seeded-workflow behavior.
 - `discard` values intentionally repeat cards that are also in `hand`:
   `hand` stays the full six dealt cards so deal order (and deal-order sort)
   survives, `hand` remains valid standalone if `discard` is dropped, and the
@@ -296,6 +302,13 @@
 ## Contribution notes
 
 - Add/adjust tests alongside code changes.
+- In-code comments must document only the non-obvious _why_ — invariants,
+  the rationale for a surprising call, consequences/trade-offs, or guards
+  against "simplifying" an argument that looks redundant. Never restate the
+  _how_/_what_ of the adjacent code; cut any comment that paraphrases the
+  condition or call next to it. The `capitalized-comments` ESLint rule
+  requires every `//` line to start with a capital, so write one full
+  sentence per line.
 - For visual changes, update Playwright snapshots when the new visuals are correct.
 - Keep README and docs in sync when changing workflows or commands.
 - Triage test, CI, and infrastructure issues into the current/active milestone

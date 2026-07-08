@@ -43,6 +43,9 @@ local pass is `npm run lint && npm test`.
 - Match the idioms already in the file you edit (e.g. explicit `undefined`
   defaults with a single-line `no-undefined` disable); TypeScript is strict and
   CSS modules use kebab-case classes.
+- Flag in-code comments that restate the how/what of adjacent code; comments
+  should exist only for the non-obvious why (invariants, rationale,
+  trade-offs, regression guards).
 - URL query params (`hand`, `role`, `discard`, `sort`, `seed`) are a public
   compatibility surface owned by `src/ui/urlAnalysisState.ts`: parsing must
   stay strict-but-soft-failing (return `null`, never throw or crash), and
