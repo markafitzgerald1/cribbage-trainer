@@ -12,10 +12,11 @@ import {
   toDealtCards,
   waitForLoadingToDisappear,
 } from "./stories.common";
-import { expect, fireEvent, within } from "storybook/test";
+import { expect, fireEvent, fn, within } from "storybook/test";
 import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 /* jscpd:ignore-end */
 
@@ -52,6 +53,8 @@ const createStory = (dealtCards: DealtCard[], sortOrder: SortOrder): Story => ({
   args: {
     cribRole: CribRole.Dealer,
     dealtCards,
+    onScoreSortKeyChange: fn(),
+    scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints,
     sortOrder,
   },
 });
@@ -97,13 +100,18 @@ export const DoubleExpandedPone: Story = {
 
 export const SortedByHandPoints: Story = {
   ...JackSixFiveFourKingQueenSortedDescending,
+  args: {
+    ...JackSixFiveFourKingQueenSortedDescending.args,
+    scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints,
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await waitForLoadingToDisappear(canvas);
-    const headerButton = await canvas.findByRole("button", {
-      name: /^Hand:/u,
+    const handHeader = await canvas.findByRole("columnheader", {
+      name: /Hand/u,
     });
-    await fireEvent.click(headerButton);
+
+    await expect(handHeader).toHaveAttribute("aria-sort", "descending");
   },
 };
 

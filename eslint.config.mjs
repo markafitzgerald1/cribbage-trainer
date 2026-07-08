@@ -324,10 +324,10 @@ export default [
   },
   ...compat.extends("plugin:jest/all").map((config) => ({
     ...config,
-    files: ["**/*.test.ts*", "**/*.stories.ts*"],
+    files: ["**/*.test.ts*", "**/*.test.common.ts*", "**/*.stories.ts*"],
   })),
   {
-    files: ["**/*.test.ts*", "**/*.stories.ts*"],
+    files: ["**/*.test.ts*", "**/*.test.common.ts*", "**/*.stories.ts*"],
     plugins: {
       jest,
     },

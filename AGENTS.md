@@ -152,11 +152,11 @@
 ## URL analysis state (deep linking)
 
 - `src/ui/urlAnalysisState.ts` is the single source of truth for the
-  URL-parameter contract (`hand`, `role`, `discard`, `sort`, `seed`). Its
-  parse functions validate strictly but fail soft (return `null`, never
-  throw), and serialization writes normalized card text (rank label + suit
-  letter) in deal order — never generated object identity or sort-dependent
-  keys.
+  URL-parameter contract (`hand`, `role`, `discard`, `sort`, `analysis-sort`,
+  `seed`). Its parse functions validate strictly but fail soft (return
+  `null`, never throw), and serialization writes normalized card text (rank
+  label + suit letter) in deal order — never generated object identity or
+  sort-dependent keys.
 - URL param values are a public compatibility surface: shared links must keep
   working. Change them only additively and keep parsing backward compatible.
 - History semantics in `Trainer`: before changing state, interactions check
@@ -164,15 +164,17 @@
   discards or a complete discard). Stable states are preserved with
   `pushState`; transient single-card selections are `replaceState`d away, so
   history only ever holds stable states and Back steps 2 discards → 0 →
-  prior hand. Each pushed entry stores the covered entry's URL in
-  `history.state.previousUrl`; when a transient settle converges back onto
-  that URL, `Trainer` calls `history.back()` instead of `replaceState` so a
-  mind-change toggle does not leave an adjacent duplicate entry that turns
-  Back into a no-op (the abandoned transient survives only as a Forward
-  entry). `replaceState` must pass `window.history.state` through — not
-  `null` — so `previousUrl` survives settling. `replaceState` also
-  normalizes the URL on initial mount, and a `popstate` listener re-hydrates
-  full state. Do not replace-away a state the user could want to Back to:
+  prior hand. Analysis-table sort changes can only happen in a stable
+  (complete-discard) state, so each pushes. Each pushed entry stores the
+  covered entry's URL in `history.state.previousUrl`; when a transient
+  settle converges back onto that URL, `Trainer` calls `history.back()`
+  instead of `replaceState` so a mind-change toggle does not leave an
+  adjacent duplicate entry that turns Back into a no-op (the abandoned
+  transient survives only as a Forward entry). `replaceState` must pass
+  `window.history.state` through — not `null` — so `previousUrl` survives
+  settling. `replaceState` also normalizes the URL on initial mount, and a
+  `popstate` listener re-hydrates full state. Do not replace-away a state
+  the user could want to Back to:
   replacing on the first interaction overwrote the only history entry and
   made Back exit the site. The role random draw is skipped only when a valid
   `role` param is present, preserving seeded-workflow behavior.

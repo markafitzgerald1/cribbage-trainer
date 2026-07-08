@@ -9,6 +9,7 @@ const {
   initialCards,
   initialCribRole,
   initialDiscards,
+  initialScoreSortKey,
   initialSortOrder,
   seed,
 } = getInitialProps(window.location.search);
@@ -21,6 +22,7 @@ ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
       initialCards={initialCards}
       initialCribRole={initialCribRole}
       initialDiscards={initialDiscards}
+      initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
       loadGoogleAnalytics={handleLoadGoogleAnalytics}
     />

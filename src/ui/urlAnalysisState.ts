@@ -7,18 +7,21 @@ import {
 } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { SortOrder } from "./SortOrder";
 
 export const HAND_PARAM = "hand";
 export const ROLE_PARAM = "role";
 export const DISCARD_PARAM = "discard";
 export const SORT_PARAM = "sort";
+export const ANALYSIS_SORT_PARAM = "analysis-sort";
 export const SEED_PARAM = "seed";
 
 export interface UrlAnalysisState {
   readonly cards: Card[] | null;
   readonly cribRole: CribRole | null;
   readonly discards: Card[] | null;
+  readonly scoreSortKey: ScoredKeepDiscardSortKey | null;
   readonly sortOrder: SortOrder | null;
 }
 
@@ -87,6 +90,38 @@ const sortUrlValue = (sortOrder: SortOrder): string => {
   }
 };
 
+const parseAnalysisSortParam = (
+  value: string | null,
+): ScoredKeepDiscardSortKey | null => {
+  switch (value?.toLowerCase()) {
+    case "hand":
+      return ScoredKeepDiscardSortKey.ExpectedHandPoints;
+    case "crib":
+      return ScoredKeepDiscardSortKey.ExpectedCribPoints;
+    case "play":
+      return ScoredKeepDiscardSortKey.ExpectedPlayPoints;
+    case "net":
+      return ScoredKeepDiscardSortKey.ExpectedNetPoints;
+    default:
+      return null;
+  }
+};
+
+const analysisSortUrlValue = (
+  scoreSortKey: ScoredKeepDiscardSortKey,
+): string => {
+  switch (scoreSortKey) {
+    case ScoredKeepDiscardSortKey.ExpectedHandPoints:
+      return "hand";
+    case ScoredKeepDiscardSortKey.ExpectedCribPoints:
+      return "crib";
+    case ScoredKeepDiscardSortKey.ExpectedPlayPoints:
+      return "play";
+    default:
+      return "net";
+  }
+};
+
 export const parseUrlAnalysisState = (search: string): UrlAnalysisState => {
   const params = new URLSearchParams(search);
   const cards = parseHandParam(params.get(HAND_PARAM));
@@ -94,6 +129,7 @@ export const parseUrlAnalysisState = (search: string): UrlAnalysisState => {
     cards,
     cribRole: parseRoleParam(params.get(ROLE_PARAM)),
     discards: parseDiscardParam(params.get(DISCARD_PARAM), cards),
+    scoreSortKey: parseAnalysisSortParam(params.get(ANALYSIS_SORT_PARAM)),
     sortOrder: parseSortParam(params.get(SORT_PARAM)),
   };
 };
@@ -101,6 +137,7 @@ export const parseUrlAnalysisState = (search: string): UrlAnalysisState => {
 export interface SerializableAnalysisState {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
+  readonly scoreSortKey: ScoredKeepDiscardSortKey;
   readonly sortOrder: SortOrder;
 }
 
@@ -120,7 +157,7 @@ const decodeCardListCommas = (query: string): string =>
 
 export const serializeUrlAnalysisState = (
   search: string,
-  { cribRole, dealtCards, sortOrder }: SerializableAnalysisState,
+  { cribRole, dealtCards, scoreSortKey, sortOrder }: SerializableAnalysisState,
 ): string => {
   const params = new URLSearchParams(search);
   const cardsInDealOrder = [...dealtCards].sort(
@@ -135,5 +172,6 @@ export const serializeUrlAnalysisState = (
     params.delete(DISCARD_PARAM);
   }
   params.set(SORT_PARAM, sortUrlValue(sortOrder));
+  params.set(ANALYSIS_SORT_PARAM, analysisSortUrlValue(scoreSortKey));
   return `?${decodeCardListCommas(params.toString())}`;
 };

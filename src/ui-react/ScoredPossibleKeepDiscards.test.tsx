@@ -10,6 +10,7 @@ import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
@@ -42,10 +43,23 @@ jest.mock<typeof import("../game/expectedCribPointsTableLoader")>(
 describe("scored possible keep discards component", () => {
   const mathRandom = Math.random;
 
+  interface RenderOptions {
+    readonly cribRole?: CribRole;
+    readonly onScoreSortKeyChange?: (
+      scoreSortKey: ScoredKeepDiscardSortKey,
+    ) => void;
+    readonly preload?: boolean;
+    readonly scoreSortKey?: ScoredKeepDiscardSortKey;
+  }
+
   const renderScoredPossibleKeepDiscards = (
     dealtCards: DealtCard[],
-    cribRole: CribRole = CribRole.Dealer,
-    preload = true,
+    {
+      cribRole = CribRole.Dealer,
+      onScoreSortKeyChange = jest.fn(),
+      preload = true,
+      scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
+    }: RenderOptions = {},
   ) => {
     if (preload) {
       setTableSync(
@@ -60,6 +74,8 @@ describe("scored possible keep discards component", () => {
       <ScoredPossibleKeepDiscards
         cribRole={cribRole}
         dealtCards={dealtCards}
+        onScoreSortKeyChange={onScoreSortKeyChange}
+        scoreSortKey={scoreSortKey}
         sortOrder={SortOrder.Ascending}
       />,
     );
@@ -117,7 +133,9 @@ describe("scored possible keep discards component", () => {
   });
 
   it("labels the net column with the net expected points sort", () => {
-    renderScoredPossibleKeepDiscards(dealHand(mathRandom), CribRole.Pone);
+    renderScoredPossibleKeepDiscards(dealHand(mathRandom), {
+      cribRole: CribRole.Pone,
+    });
 
     expect(
       screen.getByRole("button", { name: "Net: Sort by net expected points" }),
@@ -125,18 +143,19 @@ describe("scored possible keep discards component", () => {
   });
 
   it.each([
-    { cellIndex: 1, headerName: /^Hand:/u },
-    { cellIndex: 2, headerName: /^Crib:/u },
-    { cellIndex: 3, headerName: /^Play:/u },
-    { cellIndex: 4, headerName: /^Net:/u },
+    { cellIndex: 1, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints },
+    { cellIndex: 2, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedCribPoints },
+    { cellIndex: 3, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedPlayPoints },
+    { cellIndex: 4, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints },
   ])(
-    "sorts rows by $headerName when the score header is clicked",
-    ({ cellIndex, headerName }) => {
+    "sorts rows by the $scoreSortKey score sort key prop",
+    ({ cellIndex, scoreSortKey }) => {
       expect.hasAssertions();
 
-      const { container } = dealAndRender();
-
-      fireEvent.click(screen.getByRole("button", { name: headerName }));
+      const { container } = renderScoredPossibleKeepDiscards(
+        dealHand(mathRandom),
+        { scoreSortKey },
+      );
 
       const values = getColumnValues(container, cellIndex);
 
@@ -146,15 +165,44 @@ describe("scored possible keep discards component", () => {
     },
   );
 
+  it.each([
+    {
+      headerName: /^Hand:/u,
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints,
+    },
+    {
+      headerName: /^Crib:/u,
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedCribPoints,
+    },
+    {
+      headerName: /^Play:/u,
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedPlayPoints,
+    },
+    {
+      headerName: /^Net:/u,
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints,
+    },
+  ])(
+    "notifies the change handler with $scoreSortKey when the $headerName header is clicked",
+    ({ headerName, scoreSortKey }) => {
+      expect.hasAssertions();
+
+      const onScoreSortKeyChange = jest.fn();
+      renderScoredPossibleKeepDiscards(dealHand(mathRandom), {
+        onScoreSortKeyChange,
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: headerName }));
+
+      expect(onScoreSortKeyChange).toHaveBeenCalledWith(scoreSortKey);
+    },
+  );
+
   const renderAndExpectLoading = () => {
     setTableSync(null);
     setPlayTableSync(null);
 
-    renderScoredPossibleKeepDiscards(
-      dealHand(mathRandom),
-      CribRole.Dealer,
-      false,
-    );
+    renderScoredPossibleKeepDiscards(dealHand(mathRandom), { preload: false });
 
     expect(screen.getByText("Loading analysis...")).toBeTruthy();
   };
