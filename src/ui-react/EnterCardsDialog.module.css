@@ -1,0 +1,38 @@
+@import url("./vars.css");
+
+.dialog {
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(24rem, 75vw);
+}
+
+.title {
+  margin: 0;
+  padding-right: 2rem;
+}
+
+.role {
+  display: flex;
+  gap: 1rem;
+}
+
+.selected {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-height: 1.75rem;
+}
+
+.count {
+  font-weight: 700;
+  margin-right: 0.5rem;
+}
+
+.analyze {
+  align-self: center;
+  font-size: 1rem;
+  padding: 0.45rem 1rem;
+}
