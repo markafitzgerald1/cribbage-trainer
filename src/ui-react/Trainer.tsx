@@ -254,7 +254,7 @@ export function Trainer({
       <EnterCardsDialog
         initialCards={dealtCards}
         initialCribRole={cribRole}
-        key={enterCardsDialog.show ? "shown" : "hidden"}
+        key={`${enterCardsDialog.show}-${cribRole}-${serializeHand(dealtCards)}`}
         onClose={enterCardsDialog.handleClose}
         onSubmit={enterCardsDialog.handleSubmit}
         show={enterCardsDialog.show}
