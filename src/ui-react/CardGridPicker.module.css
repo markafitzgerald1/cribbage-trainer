@@ -1,0 +1,30 @@
+@import url("./vars.css");
+
+.grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(4, minmax(3rem, 1fr));
+  grid-template-rows: repeat(13, minmax(2.25rem, auto));
+  gap: 0.25rem;
+}
+
+.card {
+  align-items: center;
+  background: white;
+  border: 1px solid lightgrey;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.card[aria-pressed="true"] {
+  background: color-mix(in srgb, lightgreen 65%, white);
+  border-color: green;
+}
+
+.card:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
