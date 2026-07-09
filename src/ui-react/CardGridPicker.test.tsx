@@ -26,6 +26,31 @@ describe("card grid picker", () => {
     expect(rendered.getAllByRole("button")).toHaveLength(52);
   });
 
+  it("renders suit columns in hand sort order", () => {
+    const { rendered } = renderPicker([]);
+    const cardNames = rendered
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label"));
+
+    expect(cardNames.slice(0, 15)).toStrictEqual([
+      "A♠",
+      "2♠",
+      "3♠",
+      "4♠",
+      "5♠",
+      "6♠",
+      "7♠",
+      "8♠",
+      "9♠",
+      "10♠",
+      "J♠",
+      "Q♠",
+      "K♠",
+      "A♥",
+      "2♥",
+    ]);
+  });
+
   it("reports a selected card for deselection", () => {
     const { onToggle, rendered } = renderPicker([CARDS.ACE]);
 

@@ -1,7 +1,24 @@
 import * as classes from "./CardGridPicker.module.css";
-import { type Card, DECK, isSamePhysicalCard } from "../game/Card";
+import {
+  CARD_RANKS,
+  type Card,
+  Suit,
+  createCard,
+  isSamePhysicalCard,
+} from "../game/Card";
 import { CardLabel } from "./CardLabel";
 import { useCallback } from "react";
+
+const CARD_GRID_SUIT_ORDER = [
+  Suit.SPADES,
+  Suit.HEARTS,
+  Suit.DIAMONDS,
+  Suit.CLUBS,
+] as const;
+
+const CARD_GRID_CARDS = CARD_GRID_SUIT_ORDER.flatMap((suit) =>
+  CARD_RANKS.map((rank) => createCard(rank, suit)),
+);
 
 export interface CardGridPickerProps {
   readonly onToggle: (card: Card) => void;
@@ -17,9 +34,9 @@ export function CardGridPicker({
   const handleToggle = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       const cardIndex = Number(event.currentTarget.value);
-      // Buttons are generated directly from DECK with matching indices.
+      // Buttons are generated directly from CARD_GRID_CARDS with matching indices.
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
-      onToggle(DECK[cardIndex]!);
+      onToggle(CARD_GRID_CARDS[cardIndex]!);
     },
     [onToggle],
   );
@@ -30,7 +47,7 @@ export function CardGridPicker({
       className={classes.grid}
       role="group"
     >
-      {DECK.map((card, cardIndex) => {
+      {CARD_GRID_CARDS.map((card, cardIndex) => {
         const isSelected = selectedCards.some((selectedCard) =>
           isSamePhysicalCard(selectedCard, card),
         );

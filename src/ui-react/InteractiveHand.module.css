@@ -16,8 +16,34 @@
 }
 
 .enter-cards {
+  background-color: color-mix(in srgb, #28a745 55%, white);
+  border: 2px solid #218838;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
   font-family: var(--text-font-family);
+  font-weight: 700;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing);
   white-space: nowrap;
+}
+
+.enter-cards:hover,
+.enter-cards:focus {
+  background-color: #34c754;
+  border-color: #34c754;
+  outline: none;
+}
+
+.enter-cards:focus {
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
+}
+
+.enter-cards:active {
+  background-color: #218838;
+  border-color: #218838;
 }
 
 .deal-actions {
@@ -59,6 +85,12 @@
     width: 100%;
   }
 
+  .enter-cards {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.45);
+    padding: calc(var(--medium-text-font-size-portrait) * 0.22)
+      calc(var(--medium-text-font-size-portrait) * 0.32);
+  }
+
   .role-name {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.95);
   }
@@ -69,6 +101,12 @@
 }
 
 @media (orientation: landscape) {
+  .enter-cards {
+    font-size: calc(var(--medium-text-font-size-landscape) * 0.5);
+    padding: calc(var(--medium-text-font-size-landscape) * 0.2)
+      calc(var(--medium-text-font-size-landscape) * 0.3);
+  }
+
   .role-name {
     font-size: var(--medium-text-font-size-landscape);
   }
