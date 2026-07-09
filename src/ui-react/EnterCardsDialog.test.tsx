@@ -9,6 +9,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { DECK } from "../game/Card";
 import { EnterCardsDialog } from "./EnterCardsDialog";
+import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
 
 const initialCards = DECK.slice(0, 6);
@@ -26,6 +27,7 @@ const renderDialog = (
       onClose={onClose}
       onSubmit={onSubmit}
       show={show}
+      sortOrder={SortOrder.Descending}
     />,
   );
   return { onClose, onSubmit, rendered };
@@ -44,6 +46,7 @@ const rerenderDialog = (rendered: ReturnType<typeof render>, show: boolean) => {
       onClose={jest.fn()}
       onSubmit={jest.fn()}
       show={show}
+      sortOrder={SortOrder.Descending}
     />,
   );
 };
@@ -60,6 +63,14 @@ describe("enter cards dialog", () => {
 
     expect(rendered.getByText("6 of 6")).toBeInTheDocument();
     expect(rendered.getByRole("radio", { name: "Pone" })).toBeChecked();
+  });
+
+  it("displays selected cards in the active sort order", () => {
+    const { rendered } = renderDialog();
+
+    expect(rendered.getByText("6 of 6").parentElement).toHaveTextContent(
+      "6 of 66♣5♣4♣3♣2♣A♣",
+    );
   });
 
   it("disables submission when fewer than six cards are selected", () => {

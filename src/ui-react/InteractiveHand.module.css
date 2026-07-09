@@ -16,8 +16,8 @@
 }
 
 .enter-cards {
-  background-color: color-mix(in srgb, #28a745 55%, white);
-  border: 2px solid #218838;
+  background-color: #197536;
+  border: 2px solid #0f5527;
   border-radius: 10px;
   color: white;
   cursor: pointer;
@@ -32,8 +32,8 @@
 
 .enter-cards:hover,
 .enter-cards:focus {
-  background-color: #34c754;
-  border-color: #34c754;
+  background-color: #238d43;
+  border-color: #238d43;
   outline: none;
 }
 
@@ -42,8 +42,8 @@
 }
 
 .enter-cards:active {
-  background-color: #218838;
-  border-color: #218838;
+  background-color: #0f5527;
+  border-color: #0f5527;
 }
 
 .deal-actions {
@@ -76,19 +76,17 @@
 
 @media (orientation: portrait) {
   .controls {
-    flex-wrap: wrap;
+    gap: 0.25rem;
   }
 
   .deal-actions {
-    justify-content: center;
-    margin-top: 0.35rem;
-    width: 100%;
+    flex-shrink: 0;
+    gap: 0.25rem;
   }
 
   .enter-cards {
-    font-size: calc(var(--medium-text-font-size-portrait) * 0.45);
-    padding: calc(var(--medium-text-font-size-portrait) * 0.22)
-      calc(var(--medium-text-font-size-portrait) * 0.32);
+    font-size: clamp(0.8rem, 2.6vw, 1.25rem);
+    padding: 0.35em 0.5em;
   }
 
   .role-name {
@@ -98,13 +96,22 @@
   .role-context {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.64);
   }
+
+  .role-label {
+    flex-shrink: 1;
+    min-width: 0;
+    padding: 0;
+  }
 }
 
 @media (orientation: landscape) {
   .enter-cards {
-    font-size: calc(var(--medium-text-font-size-landscape) * 0.5);
-    padding: calc(var(--medium-text-font-size-landscape) * 0.2)
-      calc(var(--medium-text-font-size-landscape) * 0.3);
+    font-size: clamp(
+      0.9rem,
+      calc(var(--medium-text-font-size-landscape) * 0.6),
+      1.35rem
+    );
+    padding: 0.35em 0.55em;
   }
 
   .role-name {

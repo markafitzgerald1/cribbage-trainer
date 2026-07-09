@@ -4,6 +4,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import { DECK } from "../game/Card";
 import { EnterCardsDialog } from "./EnterCardsDialog";
+import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
 
 const meta = {
@@ -13,6 +14,7 @@ const meta = {
     onClose: fn(),
     onSubmit: fn(),
     show: true,
+    sortOrder: SortOrder.Descending,
   },
   component: EnterCardsDialog,
   tags: ["autodocs"],

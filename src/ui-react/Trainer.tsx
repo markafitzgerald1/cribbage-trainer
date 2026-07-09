@@ -258,6 +258,7 @@ export function Trainer({
         onClose={enterCardsDialog.handleClose}
         onSubmit={enterCardsDialog.handleSubmit}
         show={enterCardsDialog.show}
+        sortOrder={sortOrder}
       />
       {discardIsComplete(dealtCards) && (
         <ScoredPossibleKeepDiscards

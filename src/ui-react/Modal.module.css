@@ -18,10 +18,11 @@
 
 .content {
   background: color-mix(in srgb, lightgreen 30%, white);
+  box-sizing: border-box;
+  width: min(48.5rem, calc(100% - 2rem));
   padding: var(--spacing);
   border-radius: 5px;
-  max-width: calc(100% - var(--total-spacing));
-  max-height: calc(100% - var(--total-spacing));
+  max-height: calc(100% - 2rem);
   overflow-y: auto;
   position: relative;
   font-family: var(--text-font-family);

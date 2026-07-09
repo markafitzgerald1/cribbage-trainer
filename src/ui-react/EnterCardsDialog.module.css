@@ -6,7 +6,7 @@
   flex-direction: column;
   font-size: 1.2rem;
   gap: 0.9rem;
-  width: min(46rem, 86vw);
+  width: min(46rem, 100%);
 }
 
 .title {
@@ -99,7 +99,7 @@
   .dialog {
     font-size: 1.3rem;
     gap: 1rem;
-    width: min(42rem, 86vw);
+    width: min(42rem, 100%);
   }
 
   .title {

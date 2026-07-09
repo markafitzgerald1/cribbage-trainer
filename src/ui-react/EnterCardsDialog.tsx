@@ -9,6 +9,8 @@ import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { CardGridPicker } from "./CardGridPicker";
 import { CardLabel } from "./CardLabel";
 import Modal from "./Modal";
+import { SortOrder } from "../ui/SortOrder";
+import { sortCards } from "../ui/sortCards";
 
 export interface EnterCardsDialogProps {
   readonly initialCards: readonly Card[];
@@ -16,6 +18,7 @@ export interface EnterCardsDialogProps {
   readonly onClose: () => void;
   readonly onSubmit: (cards: Card[], cribRole: CribRoleType) => void;
   readonly show: boolean;
+  readonly sortOrder: SortOrder;
 }
 
 export function EnterCardsDialog({
@@ -24,6 +27,7 @@ export function EnterCardsDialog({
   onClose,
   onSubmit,
   show,
+  sortOrder,
 }: EnterCardsDialogProps) {
   const [selectedCards, setSelectedCards] = useState<Card[]>([...initialCards]);
   const [cribRole, setCribRole] = useState<CribRoleType>(initialCribRole);
@@ -71,7 +75,10 @@ export function EnterCardsDialog({
       className={classes.selected}
     >
       <span className={classes.count}>{selectedCards.length} of 6</span>
-      {selectedCards.map((card) => (
+      {sortCards(
+        selectedCards.map((card, dealOrder) => ({ ...card, dealOrder })),
+        sortOrder,
+      ).map((card) => (
         <CardLabel
           key={`${card.rank}-${card.suit}`}
           rank={card.rank}
