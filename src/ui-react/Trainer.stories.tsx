@@ -255,3 +255,36 @@ export const WithInitialCards = {
     await expect(handCardLabels).toEqual(["6♥", "5♠", "4♣", "3♦", "2♥", "A♠"]);
   },
 };
+
+const createManualEntryPlay =
+  (replacement?: readonly [string, string]) =>
+  async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement);
+    await fireEvent.click(getButton(canvasElement, "Enter cards"));
+    if (replacement) {
+      await fireEvent.click(
+        canvas.getByRole("button", {
+          name: replacement[0],
+          pressed: true,
+        }),
+      );
+      await fireEvent.click(
+        canvas.getByRole("button", { name: replacement[1] }),
+      );
+    }
+    await fireEvent.click(getButton(canvasElement, "Analyze"));
+
+    await expect(
+      canvas.queryByRole("heading", { name: "Enter cards" }),
+    ).not.toBeInTheDocument();
+  };
+
+export const UnchangedManualEntryCloses = {
+  args: WithInitialCards.args,
+  play: createManualEntryPlay(),
+};
+
+export const ChangedManualEntryApplies = {
+  args: WithInitialCards.args,
+  play: createManualEntryPlay(["A♠", "A♣"]),
+};

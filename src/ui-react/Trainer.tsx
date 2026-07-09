@@ -1,4 +1,5 @@
 import * as classes from "./Trainer.module.css";
+import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
   parseUrlAnalysisState,
@@ -7,7 +8,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
-import { type Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 import { EnterCardsDialog } from "./EnterCardsDialog";
 import { InteractiveHand } from "./InteractiveHand";
@@ -52,7 +52,17 @@ interface HistoryEntryState {
 const getPreviousUrl = (): string | undefined =>
   (window.history.state as HistoryEntryState | null)?.previousUrl;
 
+const isUnchangedEnteredHand = (
+  cards: readonly Card[],
+  cribRole: CribRole,
+  dealState: DealState,
+) =>
+  cribRole === dealState.cribRole &&
+  dealState.dealtCards.every((card) => card.kept) &&
+  serializeHand(cards) === serializeHand(dealState.dealtCards);
+
 const useEnterCardsDialog = (
+  dealState: DealState,
   setDealState: (state: DealState) => void,
   markHistoryUpdate: () => void,
 ) => {
@@ -65,6 +75,10 @@ const useEnterCardsDialog = (
   }, []);
   const handleSubmit = useCallback(
     (cards: Card[], cribRole: CribRole) => {
+      if (isUnchangedEnteredHand(cards, cribRole, dealState)) {
+        setShow(false);
+        return;
+      }
       markHistoryUpdate();
       setDealState({
         cribRole,
@@ -72,7 +86,7 @@ const useEnterCardsDialog = (
       });
       setShow(false);
     },
-    [markHistoryUpdate, setDealState],
+    [dealState, markHistoryUpdate, setDealState],
   );
   return { handleClose, handleOpen, handleSubmit, show };
 };
@@ -173,7 +187,11 @@ export function Trainer({
   const markHistoryUpdate = useCallback(() => {
     shouldPushHistory.current = isStableDiscardState(dealtCards);
   }, [dealtCards]);
-  const enterCardsDialog = useEnterCardsDialog(setDealState, markHistoryUpdate);
+  const enterCardsDialog = useEnterCardsDialog(
+    dealState,
+    setDealState,
+    markHistoryUpdate,
+  );
 
   const toggleKept = useCallback(
     (dealOrderIndex: number) => {

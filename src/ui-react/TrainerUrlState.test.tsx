@@ -233,6 +233,24 @@ describe("trainer URL state synchronization", () => {
     }
   });
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("does not push history for an unchanged manual hand", async () => {
+    const { pushStateSpy, renderResult, user } = renderTrainerSpyingOnPush();
+    try {
+      await user.click(
+        renderResult.getByRole("button", { name: "Enter cards" }),
+      );
+      await user.click(renderResult.getByRole("button", { name: "Analyze" }));
+
+      expect(pushStateSpy).not.toHaveBeenCalled();
+      expect(
+        renderResult.queryByRole("heading", { name: "Enter cards" }),
+      ).not.toBeInTheDocument();
+    } finally {
+      pushStateSpy.mockRestore();
+    }
+  });
+
   const renderDiscardedTrainerSpyingOnPush = async () => {
     const spied = renderTrainerSpyingOnPush();
     await clickIndices(spied.renderResult.getAllByRole, [0, 1], spied.user);
