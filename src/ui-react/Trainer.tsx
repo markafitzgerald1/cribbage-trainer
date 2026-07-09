@@ -10,6 +10,7 @@ import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 import { type Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 import { InteractiveHand } from "./InteractiveHand";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
@@ -23,6 +24,7 @@ export interface TrainerProps {
   readonly initialCards?: Card[] | null;
   readonly initialCribRole?: CribRole | null;
   readonly initialDiscards?: Card[] | null;
+  readonly initialScoreSortKey?: ScoredKeepDiscardSortKey | null;
   readonly initialSortOrder?: SortOrder | null;
 }
 
@@ -55,6 +57,7 @@ export function Trainer({
   initialCards = null,
   initialCribRole = null,
   initialDiscards = null,
+  initialScoreSortKey = null,
   initialSortOrder = null,
 }: TrainerProps) {
   const dealHandWithGenerator = useCallback(
@@ -81,6 +84,9 @@ export function Trainer({
   const [sortOrder, setSortOrder] = useState<SortOrder>(
     initialSortOrder ?? SortOrder.Descending,
   );
+  const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
+    initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
+  );
   const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
     storedConsentOnFirstRender,
@@ -91,6 +97,7 @@ export function Trainer({
     const url = serializeUrlAnalysisState(window.location.search, {
       cribRole,
       dealtCards,
+      scoreSortKey,
       sortOrder,
     });
     if (shouldPushHistory.current) {
@@ -108,7 +115,7 @@ export function Trainer({
       window.history.replaceState(window.history.state, "", url);
     }
     shouldPushHistory.current = false;
-  }, [cribRole, dealtCards, sortOrder]);
+  }, [cribRole, dealtCards, scoreSortKey, sortOrder]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -124,6 +131,9 @@ export function Trainer({
       }
       if (urlState.sortOrder !== null) {
         setSortOrder(urlState.sortOrder);
+      }
+      if (urlState.scoreSortKey !== null) {
+        setScoreSortKey(urlState.scoreSortKey);
       }
     };
     window.addEventListener("popstate", handlePopState);
@@ -168,6 +178,14 @@ export function Trainer({
     [markHistoryUpdate],
   );
 
+  const changeScoreSortKey = useCallback(
+    (newScoreSortKey: ScoredKeepDiscardSortKey) => {
+      markHistoryUpdate();
+      setScoreSortKey(newScoreSortKey);
+    },
+    [markHistoryUpdate],
+  );
+
   const setConsented = useCallback((value: boolean) => {
     setAnalyticsConsented(value);
     localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
@@ -191,6 +209,8 @@ export function Trainer({
         <ScoredPossibleKeepDiscards
           cribRole={cribRole}
           dealtCards={dealtCards}
+          onScoreSortKeyChange={changeScoreSortKey}
+          scoreSortKey={scoreSortKey}
           sortOrder={sortOrder}
         />
       )}
@@ -207,5 +227,6 @@ Trainer.defaultProps = {
   initialCards: null,
   initialCribRole: null,
   initialDiscards: null,
+  initialScoreSortKey: null,
   initialSortOrder: null,
 };

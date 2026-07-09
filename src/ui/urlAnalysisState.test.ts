@@ -6,6 +6,7 @@ import {
 import { describe, expect, it } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { SortOrder } from "./SortOrder";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
@@ -29,10 +30,14 @@ const expectHydratedPoneState = (
 describe("parseUrlAnalysisState", () => {
   it("parses a full valid state", () => {
     const state = parseUrlAnalysisState(
-      `?hand=${VALID_HAND}&role=pone&discard=6S,5H&sort=ascending`,
+      `?hand=${VALID_HAND}&role=pone&discard=6S,5H&sort=ascending&analysis-sort=play`,
     );
 
     expectHydratedPoneState(state, ["6", "5"], SortOrder.Ascending);
+
+    expect(state.scoreSortKey).toBe(
+      ScoredKeepDiscardSortKey.ExpectedPlayPoints,
+    );
   });
 
   it("returns all nulls for an empty search string", () => {
@@ -40,6 +45,7 @@ describe("parseUrlAnalysisState", () => {
       cards: null,
       cribRole: null,
       discards: null,
+      scoreSortKey: null,
       sortOrder: null,
     });
   });
@@ -96,25 +102,63 @@ describe("parseUrlAnalysisState", () => {
   it("returns a null sort order for an unknown sort value", () => {
     expect(parseUrlAnalysisState("?sort=random").sortOrder).toBeNull();
   });
+
+  it.each([
+    ["hand", ScoredKeepDiscardSortKey.ExpectedHandPoints],
+    ["crib", ScoredKeepDiscardSortKey.ExpectedCribPoints],
+    ["play", ScoredKeepDiscardSortKey.ExpectedPlayPoints],
+    ["NET", ScoredKeepDiscardSortKey.ExpectedNetPoints],
+  ])(
+    "parses analysis sort %p case-insensitively",
+    (analysisSort, expectedScoreSortKey) => {
+      expect(
+        parseUrlAnalysisState(`?analysis-sort=${analysisSort}`).scoreSortKey,
+      ).toBe(expectedScoreSortKey);
+    },
+  );
+
+  it("returns a null score sort key for an unknown analysis sort value", () => {
+    expect(
+      parseUrlAnalysisState("?analysis-sort=starter").scoreSortKey,
+    ).toBeNull();
+  });
 });
 
 const dealerStateDiscardingSixFive = (sortOrder: SortOrder) => ({
   cribRole: CribRole.Dealer,
   dealtCards: toDealtCards(parseHand(VALID_HAND), parseHand("6S,5H")),
+  scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints,
   sortOrder,
 });
 
 describe("serializeUrlAnalysisState", () => {
-  it("serializes hand, role, discards, and sort while preserving other params", () => {
+  it("serializes hand, role, discards, and sorts while preserving other params", () => {
     const url = serializeUrlAnalysisState(
       "?seed=123",
       dealerStateDiscardingSixFive(SortOrder.DealOrder),
     );
 
     expect(url).toBe(
-      `?seed=123&hand=${VALID_HAND}&role=dealer&discard=6S,5H&sort=deal-order`,
+      `?seed=123&hand=${VALID_HAND}&role=dealer&discard=6S,5H&sort=deal-order&analysis-sort=net`,
     );
   });
+
+  it.each([
+    [ScoredKeepDiscardSortKey.ExpectedHandPoints, "hand"],
+    [ScoredKeepDiscardSortKey.ExpectedCribPoints, "crib"],
+    [ScoredKeepDiscardSortKey.ExpectedPlayPoints, "play"],
+    [ScoredKeepDiscardSortKey.ExpectedNetPoints, "net"],
+  ])(
+    "serializes score sort key %p as analysis sort %p",
+    (scoreSortKey, expectedAnalysisSort) => {
+      const url = serializeUrlAnalysisState("", {
+        ...dealerStateDiscardingSixFive(SortOrder.Descending),
+        scoreSortKey,
+      });
+
+      expect(url).toContain(`analysis-sort=${expectedAnalysisSort}`);
+    },
+  );
 
   it("keeps encoded commas in unrelated params while decoding card lists", () => {
     const url = serializeUrlAnalysisState(
@@ -131,33 +175,41 @@ describe("serializeUrlAnalysisState", () => {
     const url = serializeUrlAnalysisState("?discard=6S", {
       cribRole: CribRole.Pone,
       dealtCards: toDealtCards(parseHand(VALID_HAND), null),
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints,
       sortOrder: SortOrder.Descending,
     });
 
-    expect(url).toBe(`?hand=${VALID_HAND}&role=pone&sort=descending`);
+    expect(url).toBe(
+      `?hand=${VALID_HAND}&role=pone&sort=descending&analysis-sort=net`,
+    );
   });
 
   it("writes cards in deal order regardless of array order", () => {
     const url = serializeUrlAnalysisState("", {
       cribRole: CribRole.Dealer,
       dealtCards: toDealtCards(parseHand(VALID_HAND), null).reverse(),
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints,
       sortOrder: SortOrder.Ascending,
     });
 
-    expect(url).toBe(`?hand=${VALID_HAND}&role=dealer&sort=ascending`);
+    expect(url).toBe(
+      `?hand=${VALID_HAND}&role=dealer&sort=ascending&analysis-sort=net`,
+    );
   });
 
   it("round-trips through parseUrlAnalysisState", () => {
     const url = serializeUrlAnalysisState("", {
       cribRole: CribRole.Pone,
       dealtCards: toDealtCards(parseHand(VALID_HAND), parseHand("KH")),
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedCribPoints,
       sortOrder: SortOrder.Ascending,
     });
+    const state = parseUrlAnalysisState(url);
 
-    expectHydratedPoneState(
-      parseUrlAnalysisState(url),
-      ["K"],
-      SortOrder.Ascending,
+    expectHydratedPoneState(state, ["K"], SortOrder.Ascending);
+
+    expect(state.scoreSortKey).toBe(
+      ScoredKeepDiscardSortKey.ExpectedCribPoints,
     );
   });
 });

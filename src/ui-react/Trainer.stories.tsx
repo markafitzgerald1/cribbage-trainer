@@ -9,6 +9,7 @@ import { Rank, Suit, createCard } from "../game/Card";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { createGenerator } from "../game/randomNumberGenerator";
 
 const SEED = "1";
@@ -202,12 +203,36 @@ export const DeepLinkedAnalysisState = {
     ],
     initialCribRole: CribRole.Pone,
     initialDiscards: [SIX_OF_SPADES, FIVE_OF_HEARTS],
+    initialScoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints,
     initialSortOrder: SortOrder.DealOrder,
   },
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     await expect(within(canvasElement).getByText("Pone")).toBeVisible();
 
     await expectAnalysisColumnHeaders(canvasElement);
+
+    const handHeader = within(canvasElement).getByRole("columnheader", {
+      name: /Hand/u,
+    });
+
+    await expect(handHeader).toHaveAttribute("aria-sort", "descending");
+  },
+};
+
+export const SortAnalysisByPlayPoints = {
+  play: async (context: { canvasElement: HTMLElement }) => {
+    await DiscardShowsScoredPossibilities.play(context);
+    const playHeaderButton = within(context.canvasElement).getByRole("button", {
+      name: /^Play:/u,
+    });
+
+    await fireEvent.click(playHeaderButton);
+
+    const playHeader = within(context.canvasElement).getByRole("columnheader", {
+      name: /Play/u,
+    });
+
+    await expect(playHeader).toHaveAttribute("aria-sort", "descending");
   },
 };
 

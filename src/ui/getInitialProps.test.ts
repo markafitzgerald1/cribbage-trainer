@@ -1,7 +1,10 @@
+/* jscpd:ignore-start */
 import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { SortOrder } from "./SortOrder";
 import { getInitialProps } from "./getInitialProps";
+/* jscpd:ignore-end */
 
 describe("getInitialProps", () => {
   it("returns null initialCards when no hand param is present", () => {
@@ -44,21 +47,25 @@ describe("getInitialProps", () => {
     expect(props.seed).toBeNull();
   });
 
-  it("returns parsed role, discards, and sort order when present", () => {
+  it("returns parsed role, discards, and sort orders when present", () => {
     const props = getInitialProps(
-      "?hand=AH,2H,3H,4H,5H,6H&role=dealer&discard=AH&sort=deal-order",
+      "?hand=AH,2H,3H,4H,5H,6H&role=dealer&discard=AH&sort=deal-order&analysis-sort=crib",
     );
 
     expect(props.initialCribRole).toBe(CribRole.Dealer);
     expect(props.initialDiscards?.[0]?.rankLabel).toBe("A");
+    expect(props.initialScoreSortKey).toBe(
+      ScoredKeepDiscardSortKey.ExpectedCribPoints,
+    );
     expect(props.initialSortOrder).toBe(SortOrder.DealOrder);
   });
 
-  it("returns null role, discards, and sort order when absent", () => {
+  it("returns null role, discards, and sort orders when absent", () => {
     const props = getInitialProps("?hand=AH,2H,3H,4H,5H,6H");
 
     expect(props.initialCribRole).toBeNull();
     expect(props.initialDiscards).toBeNull();
+    expect(props.initialScoreSortKey).toBeNull();
     expect(props.initialSortOrder).toBeNull();
   });
 });

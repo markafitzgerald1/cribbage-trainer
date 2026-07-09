@@ -46,7 +46,8 @@ local pass is `npm run lint && npm test`.
 - Flag in-code comments that restate the how/what of adjacent code; comments
   should exist only for the non-obvious why (invariants, rationale,
   trade-offs, regression guards).
-- URL query params (`hand`, `role`, `discard`, `sort`, `seed`) are a public
+- URL query params (`hand`, `role`, `discard`, `sort`, `analysis-sort`,
+  `seed`) are a public
   compatibility surface owned by `src/ui/urlAnalysisState.ts`: parsing must
   stay strict-but-soft-failing (return `null`, never throw or crash), and
   changes must keep previously shared links working.

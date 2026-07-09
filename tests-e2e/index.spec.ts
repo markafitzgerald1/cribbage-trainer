@@ -76,11 +76,11 @@ test("pre-cut hand points show after select of two discards", async ({
 
 const ascendingSuitedDiscardRowText = "9♣10♦Q♠K♥(5♠6♠)";
 
-test("deep link hydrates hand, role, discards, and sort order", async ({
+test("deep link hydrates hand, role, discards, sort order, and analysis sort", async ({
   page,
 }) => {
   await page.goto(
-    `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&sort=ascending`,
+    `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&sort=ascending&analysis-sort=hand`,
   );
 
   await expect(page.getByText("Pone", exactTextMatch)).toBeVisible();
@@ -90,6 +90,9 @@ test("deep link hydrates hand, role, discards, and sort order", async ({
       .filter({ hasText: ascendingSuitedDiscardRowText }),
   ).toBeVisible();
   await expect(page.getByRole("radio", { name: "Ascending" })).toBeChecked();
+  await expect(
+    page.getByRole("columnheader", { name: /Hand/u }),
+  ).toHaveAttribute("aria-sort", "descending");
 });
 
 const constantHandText = "K♥Q♠10♦9♣6♠5♥";

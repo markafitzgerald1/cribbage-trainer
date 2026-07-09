@@ -32,6 +32,10 @@ export interface ScoredPossibleKeepDiscardsProps {
    */
   readonly loadCribTable?: () => Promise<ExpectedCribPointsTable>;
   readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
+  readonly onScoreSortKeyChange: (
+    scoreSortKey: ScoredKeepDiscardSortKey,
+  ) => void;
+  readonly scoreSortKey: ScoredKeepDiscardSortKey;
   readonly sortOrder: SortOrder;
 }
 
@@ -83,6 +87,8 @@ export function ScoredPossibleKeepDiscards({
   dealtCards,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
+  onScoreSortKeyChange,
+  scoreSortKey,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
   const [tables, setTables] = useState<{
@@ -113,9 +119,6 @@ export function ScoredPossibleKeepDiscards({
     setRetryCount((prev) => prev + 1);
   }, []);
 
-  const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
-    ScoredKeepDiscardSortKey.ExpectedNetPoints,
-  );
   const scoredKeepDiscardsByNetScore = useMemo(
     () =>
       tables
@@ -136,9 +139,11 @@ export function ScoredPossibleKeepDiscards({
   );
   const handleScoreSortClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
-      setScoreSortKey(event.currentTarget.value as ScoredKeepDiscardSortKey);
+      onScoreSortKeyChange(
+        event.currentTarget.value as ScoredKeepDiscardSortKey,
+      );
     },
-    [],
+    [onScoreSortKeyChange],
   );
 
   if (loadError) {
