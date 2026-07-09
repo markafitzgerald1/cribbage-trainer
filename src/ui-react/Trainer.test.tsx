@@ -21,6 +21,7 @@ import {
 import { describe, expect, it, jest } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
+import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
 /* jscpd:ignore-end */
@@ -70,6 +71,24 @@ const ANALYTICS_CONSENT = "analyticsConsent";
 
 const clearAnalyticsConsent = () => localStorage.removeItem(ANALYTICS_CONSENT);
 
+const setupTrainerUser = () => ({
+  ...renderTrainer(),
+  user: userEvent.setup(),
+});
+
+const openCardEntry = (user: UserEvent) =>
+  user.click(screen.getByRole("button", { name: "Enter cards" }));
+
+const renderTrainerWithInitialHand = () =>
+  render(
+    <Trainer
+      generateRandomNumber={mathRandom}
+      initialCards={parseHand(SIX_HEARTS_HAND)}
+      initialCribRole={CribRole.Dealer}
+      loadGoogleAnalytics={jest.fn()}
+    />,
+  );
+
 describe("trainer component", () => {
   it("initially contains a sort in descending order radio input", () => {
     expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();
@@ -117,8 +136,7 @@ describe("trainer component", () => {
   it.each([SortOrder.Ascending, SortOrder.Descending])(
     "re-sorts the dealt hand when the sort order is changed to %s",
     async (newSortOrder) => {
-      const { container } = renderTrainer();
-      const user = userEvent.setup();
+      const { container, user } = setupTrainerUser();
       const sortInDealOrderInput = getSortInput(container, SortOrder.DealOrder);
       await user.click(sortInDealOrderInput);
       const expectedSortedCards = sortCards(
@@ -168,9 +186,8 @@ describe("trainer component", () => {
   });
 
   it("deals new cards after a 'Deal' button click", async () => {
-    const { container } = renderTrainer();
+    const { container, user } = setupTrainerUser();
     const dealButton = screen.getByRole("button", { name: "Deal" });
-    const user = userEvent.setup();
     const initialDealtHand = container.querySelector("ul")!.textContent;
 
     await user.click(dealButton);
@@ -180,18 +197,55 @@ describe("trainer component", () => {
     );
   });
 
+  it("closes manual entry without changing the hand", async () => {
+    const { container, user } = setupTrainerUser();
+    const initialHand = container.querySelector("ul")!.textContent;
+
+    await openCardEntry(user);
+    await user.click(screen.getByRole("button", { name: "Close modal" }));
+
+    expect(
+      screen.queryByRole("heading", { name: "Enter cards" }),
+    ).not.toBeInTheDocument();
+    expect(container.querySelector("ul")!.textContent).toBe(initialHand);
+  });
+
   it("renders the specified initialCards", () => {
-    const initialCards = parseHand(SIX_HEARTS_HAND);
-    const { container } = render(
-      <Trainer
-        generateRandomNumber={mathRandom}
-        initialCards={initialCards}
-        loadGoogleAnalytics={jest.fn()}
-      />,
-    );
+    const { container } = renderTrainerWithInitialHand();
 
     expect(container.querySelector("ul")!.textContent).toBe("6♥5♥4♥3♥2♥A♥");
   });
+
+  it.each([CribRole.Dealer, CribRole.Pone])(
+    "analyzes a manually entered hand as %s",
+    async (cribRole) => {
+      const user = userEvent.setup();
+      renderTrainerWithInitialHand();
+
+      await openCardEntry(user);
+      await user.click(screen.getByRole("button", { name: "A♥" }));
+      await user.click(screen.getByRole("button", { name: "7♣" }));
+      await user.click(screen.getByRole("radio", { name: cribRole }));
+      await user.click(screen.getByRole("button", { name: "Analyze" }));
+      await clickIndices(
+        (role, options) => screen.getAllByRole(role, options),
+        [0, 1],
+        user,
+      );
+
+      await expect(
+        screen.findByRole("columnheader", {
+          name: calculationsHeaderName,
+        }),
+      ).resolves.toBeInTheDocument();
+      expect(new URLSearchParams(window.location.search).get("hand")).toBe(
+        "2H,3H,4H,5H,6H,7C",
+      );
+      expect(new URLSearchParams(window.location.search).get("role")).toBe(
+        cribRole.toLowerCase(),
+      );
+    },
+  );
 
   it("toggles card selection", async () => {
     const user = userEvent.setup();

@@ -15,6 +15,17 @@
   width: 100%;
 }
 
+.enter-cards {
+  font-family: var(--text-font-family);
+  white-space: nowrap;
+}
+
+.deal-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
 .role-label {
   align-items: center;
   color: var(--text-color);
@@ -38,6 +49,16 @@
 }
 
 @media (orientation: portrait) {
+  .controls {
+    flex-wrap: wrap;
+  }
+
+  .deal-actions {
+    justify-content: center;
+    margin-top: 0.35rem;
+    width: 100%;
+  }
+
   .role-name {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.95);
   }

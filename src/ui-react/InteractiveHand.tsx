@@ -16,6 +16,7 @@ interface InteractiveHandProps {
   readonly sortOrder: SortOrder;
   readonly onSortOrderChange: (sortOrder: SortOrder) => void;
   readonly onDeal: () => void;
+  readonly onEnterCards: () => void;
 }
 
 export function InteractiveHand({
@@ -25,6 +26,7 @@ export function InteractiveHand({
   sortOrder,
   onSortOrderChange,
   onDeal,
+  onEnterCards,
 }: InteractiveHandProps) {
   const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const roleContext =
@@ -41,7 +43,16 @@ export function InteractiveHand({
           <span className={classes.roleName}>{roleName}</span>
           <span className={classes.roleContext}>{roleContext}</span>
         </div>
-        <DealButton onDeal={onDeal} />
+        <div className={classes.dealActions}>
+          <button
+            className={classes.enterCards}
+            onClick={onEnterCards}
+            type="button"
+          >
+            Enter cards
+          </button>
+          <DealButton onDeal={onDeal} />
+        </div>
       </div>
       <Hand
         dealtCards={dealtCards}

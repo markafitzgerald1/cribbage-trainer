@@ -184,3 +184,35 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   await expect(page.getByText("7♠")).toBeVisible();
   await expect(page.getByText("7 (♣♦♥)")).toBeVisible();
 });
+
+test("manually entered pone hand reaches suited analysis", async ({ page }) => {
+  await page.goto("/?seed=manual-entry");
+  await page.getByRole("button", { name: "Enter cards" }).click();
+  const dialog = page
+    .getByRole("heading", { name: "Enter cards" })
+    .locator("..");
+
+  const selectedCards = dialog.getByRole("button", { pressed: true });
+  const dealtCardCount = 6;
+  await Array.from({ length: dealtCardCount }).reduce<Promise<void>>(
+    (click) => click.then(() => selectedCards.first().click()),
+    Promise.resolve(),
+  );
+  await ["K♥", "Q♠", "10♦", "9♣", "6♠", "5♠"].reduce(
+    (click, card) =>
+      click.then(() => dialog.getByRole("button", { name: card }).click()),
+    Promise.resolve(),
+  );
+  await dialog.getByRole("radio", { name: "Pone" }).click();
+  await dialog.getByRole("button", { name: "Analyze" }).click();
+
+  await expect(page).toHaveURL(/hand=KH,QS,10D,9C,6S,5S/u);
+  await expect(page).toHaveURL(/role=pone/u);
+
+  const sixIndex = 4;
+  const fiveIndex = 5;
+  await page.getByRole("checkbox").nth(sixIndex).click();
+  await page.getByRole("checkbox").nth(fiveIndex).click();
+
+  await expect(getSuitedDiscardRow(page)).toBeVisible();
+});

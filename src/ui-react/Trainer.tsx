@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 import { type Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
+import { EnterCardsDialog } from "./EnterCardsDialog";
 import { InteractiveHand } from "./InteractiveHand";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
@@ -50,6 +51,31 @@ interface HistoryEntryState {
 
 const getPreviousUrl = (): string | undefined =>
   (window.history.state as HistoryEntryState | null)?.previousUrl;
+
+const useEnterCardsDialog = (
+  setDealState: (state: DealState) => void,
+  markHistoryUpdate: () => void,
+) => {
+  const [show, setShow] = useState(false);
+  const handleOpen = useCallback(() => {
+    setShow(true);
+  }, []);
+  const handleClose = useCallback(() => {
+    setShow(false);
+  }, []);
+  const handleSubmit = useCallback(
+    (cards: Card[], cribRole: CribRole) => {
+      markHistoryUpdate();
+      setDealState({
+        cribRole,
+        dealtCards: toDealtCards(cards, null),
+      });
+      setShow(false);
+    },
+    [markHistoryUpdate, setDealState],
+  );
+  return { handleClose, handleOpen, handleSubmit, show };
+};
 
 export function Trainer({
   generateRandomNumber: generator,
@@ -147,6 +173,7 @@ export function Trainer({
   const markHistoryUpdate = useCallback(() => {
     shouldPushHistory.current = isStableDiscardState(dealtCards);
   }, [dealtCards]);
+  const enterCardsDialog = useEnterCardsDialog(setDealState, markHistoryUpdate);
 
   const toggleKept = useCallback(
     (dealOrderIndex: number) => {
@@ -202,8 +229,17 @@ export function Trainer({
         dealtCards={dealtCards}
         onCardChange={toggleKept}
         onDeal={dealNewHand}
+        onEnterCards={enterCardsDialog.handleOpen}
         onSortOrderChange={changeSortOrder}
         sortOrder={sortOrder}
+      />
+      <EnterCardsDialog
+        initialCards={dealtCards}
+        initialCribRole={cribRole}
+        key={enterCardsDialog.show ? "shown" : "hidden"}
+        onClose={enterCardsDialog.handleClose}
+        onSubmit={enterCardsDialog.handleSubmit}
+        show={enterCardsDialog.show}
       />
       {discardIsComplete(dealtCards) && (
         <ScoredPossibleKeepDiscards
