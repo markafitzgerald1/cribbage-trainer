@@ -27,25 +27,32 @@
     box-shadow var(--transition-duration) var(--transition-timing);
 }
 
-.card[aria-pressed="true"] {
-  background: color-mix(in srgb, lightgreen 65%, white);
-  border-color: green;
+.card:hover {
+  background: #e4f4e6;
+  border-color: #397a40;
 }
 
-.card:hover,
 .card:focus {
-  background: color-mix(in srgb, lightgreen 45%, white);
-  border-color: green;
+  background: #f7fcf8;
+  border-color: #145a23;
   outline: none;
-}
-
-.card:focus {
-  box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
+  box-shadow: 0 0 0 3px rgb(20 90 35 / 45%);
 }
 
 .card:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.card[aria-pressed="true"] {
+  background: color-mix(in srgb, lightgreen 78%, white);
+  border-color: green;
+}
+
+.card[aria-pressed="true"]:hover,
+.card[aria-pressed="true"]:focus {
+  background: color-mix(in srgb, lightgreen 88%, white);
+  border-color: green;
 }
 
 @media (orientation: portrait) {

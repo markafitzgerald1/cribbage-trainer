@@ -51,6 +51,21 @@ const rerenderDialog = (rendered: ReturnType<typeof render>, show: boolean) => {
   );
 };
 
+const CLOSE_ACTIONS = [
+  {
+    close: (rendered: ReturnType<typeof render>) => {
+      fireEvent.click(rendered.getByRole("button", { name: "Close modal" }));
+    },
+    name: "the close button",
+  },
+  {
+    close: () => {
+      fireEvent.keyDown(document, { key: "Escape" });
+    },
+    name: "Escape",
+  },
+];
+
 describe("enter cards dialog", () => {
   it("does not render when hidden", () => {
     const { rendered } = renderDialog(false);
@@ -95,14 +110,28 @@ describe("enter cards dialog", () => {
     );
   });
 
-  it("calls close without submitting", () => {
-    const { onClose, onSubmit, rendered } = renderDialog();
+  it.each(CLOSE_ACTIONS)(
+    "calls close via $name without submitting",
+    ({ close }) => {
+      const { onClose, onSubmit, rendered } = renderDialog();
 
-    toggleCard(rendered, "A♣");
-    fireEvent.click(rendered.getByRole("button", { name: "Close modal" }));
+      toggleCard(rendered, "A♣");
+      close(rendered);
 
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(onSubmit).not.toHaveBeenCalled();
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(onSubmit).not.toHaveBeenCalled();
+    },
+  );
+
+  it("ignores keys other than Escape", () => {
+    const { onClose, rendered } = renderDialog();
+
+    fireEvent.keyDown(document, { key: "Enter" });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      rendered.getByRole("heading", { name: "Enter cards" }),
+    ).toBeInTheDocument();
   });
 
   it("discards abandoned edits when reopened", () => {

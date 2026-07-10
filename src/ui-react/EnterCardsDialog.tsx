@@ -4,7 +4,7 @@ import {
   CribRole,
   type CribRole as CribRoleType,
 } from "../game/expectedCribPoints";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { CardGridPicker } from "./CardGridPicker";
 import { CardLabel } from "./CardLabel";
@@ -31,6 +31,20 @@ export function EnterCardsDialog({
 }: EnterCardsDialogProps) {
   const [selectedCards, setSelectedCards] = useState<Card[]>([...initialCards]);
   const [cribRole, setCribRole] = useState<CribRoleType>(initialCribRole);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    if (show) {
+      document.addEventListener("keydown", closeOnEscape);
+    }
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [onClose, show]);
 
   const toggleCard = useCallback((card: Card) => {
     setSelectedCards((currentCards) => {

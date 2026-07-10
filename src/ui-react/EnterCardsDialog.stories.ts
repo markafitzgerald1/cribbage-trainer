@@ -29,9 +29,15 @@ export const ReadyToEdit: Story = {};
 export const EditAndAnalyze: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(
-      canvas.getByRole("button", { name: "A♣", pressed: true }),
-    );
+    const selectedAce = canvas.getByRole("button", {
+      name: "A♣",
+      pressed: true,
+    });
+
+    await userEvent.click(selectedAce);
+
+    await expect(selectedAce).toHaveAttribute("aria-pressed", "false");
+
     await userEvent.click(canvas.getByRole("button", { name: "7♣" }));
     await userEvent.click(canvas.getByRole("radio", { name: "Pone" }));
     await userEvent.click(canvas.getByRole("button", { name: "Analyze" }));
@@ -40,5 +46,17 @@ export const EditAndAnalyze: Story = {
       [...DECK.slice(1, 6), DECK[6]],
       CribRole.Pone,
     );
+  },
+};
+
+export const DismissWithEscape: Story = {
+  play: async ({ args }) => {
+    await userEvent.keyboard("x");
+
+    await expect(args.onClose).not.toHaveBeenCalled();
+
+    await userEvent.keyboard("{Escape}");
+
+    await expect(args.onClose).toHaveBeenCalledTimes(1);
   },
 };
