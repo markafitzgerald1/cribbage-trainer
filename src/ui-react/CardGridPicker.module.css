@@ -33,9 +33,12 @@
 }
 
 .card:focus {
+  outline: none;
+}
+
+.card:focus-visible {
   background: #f7fcf8;
   border-color: #145a23;
-  outline: none;
   box-shadow: 0 0 0 3px rgb(20 90 35 / 45%);
 }
 
@@ -50,7 +53,7 @@
 }
 
 .card[aria-pressed="true"]:hover,
-.card[aria-pressed="true"]:focus {
+.card[aria-pressed="true"]:focus-visible {
   background: color-mix(in srgb, lightgreen 88%, white);
   border-color: green;
 }

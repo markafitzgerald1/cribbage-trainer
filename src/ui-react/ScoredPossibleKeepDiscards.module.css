@@ -3,6 +3,7 @@
 .scored-possible-keep-discards {
   box-sizing: border-box;
   color: var(--text-color);
+  container-type: inline-size;
   font-family: var(--text-font-family);
   display: flex;
   flex-direction: column;
@@ -163,7 +164,7 @@
   }
 
   .scored-possible-keep-discards th {
-    font-size: var(--medium-text-font-size-landscape);
+    font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
   }
 }
 

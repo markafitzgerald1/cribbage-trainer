@@ -61,6 +61,19 @@ describe("card grid picker", () => {
     expect(onToggle).toHaveBeenCalledWith(CARDS.ACE);
   });
 
+  it("clears focus after a pointer click", () => {
+    const { rendered } = renderPicker([CARDS.ACE]);
+    const selectedAce = rendered.getByRole("button", {
+      name: "A♣",
+      pressed: true,
+    });
+    selectedAce.focus();
+
+    fireEvent.click(selectedAce, { detail: 1 });
+
+    expect(selectedAce).not.toHaveFocus();
+  });
+
   it("reports an available card for selection", () => {
     const { onToggle, rendered } = renderPicker([]);
 

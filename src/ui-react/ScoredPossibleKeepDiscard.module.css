@@ -86,7 +86,7 @@ button.expand-indicator {
 
 @media (orientation: landscape) {
   .scored-possible-keep-discard {
-    font-size: var(--medium-text-font-size-landscape);
+    font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
   }
 
   /* Bigger mini-cards in landscape to use the otherwise-empty hand column. */

@@ -34,6 +34,9 @@ export function CardGridPicker({
   const handleToggle = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       const cardIndex = Number(event.currentTarget.value);
+      if (event.detail > 0) {
+        event.currentTarget.blur();
+      }
       // Buttons are generated directly from CARD_GRID_CARDS with matching indices.
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       onToggle(CARD_GRID_CARDS[cardIndex]!);
