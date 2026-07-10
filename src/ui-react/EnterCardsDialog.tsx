@@ -65,6 +65,10 @@ export function EnterCardsDialog({
     [],
   );
 
+  const clearSelectedCards = useCallback(() => {
+    setSelectedCards([]);
+  }, []);
+
   const renderRoleInput = () => (
     <fieldset className={classes.role}>
       <legend>Your role</legend>
@@ -106,6 +110,27 @@ export function EnterCardsDialog({
     onSubmit(selectedCards, cribRole);
   }, [cribRole, onSubmit, selectedCards]);
 
+  const renderActions = () => (
+    <div className={classes.actions}>
+      <button
+        className={classes.clear}
+        disabled={selectedCards.length === 0}
+        onClick={clearSelectedCards}
+        type="button"
+      >
+        Clear
+      </button>
+      <button
+        className={classes.analyze}
+        disabled={selectedCards.length !== CARDS_PER_DEALT_HAND}
+        onClick={submit}
+        type="button"
+      >
+        Analyze
+      </button>
+    </div>
+  );
+
   return (
     <Modal
       onClose={onClose}
@@ -115,19 +140,12 @@ export function EnterCardsDialog({
         <h2 className={classes.title}>Enter cards</h2>
         {renderRoleInput()}
         {renderSelectedCards()}
+        {renderActions()}
         <CardGridPicker
           onToggle={toggleCard}
           selectedCards={selectedCards}
           selectionFull={selectedCards.length === CARDS_PER_DEALT_HAND}
         />
-        <button
-          className={classes.analyze}
-          disabled={selectedCards.length !== CARDS_PER_DEALT_HAND}
-          onClick={submit}
-          type="button"
-        >
-          Analyze
-        </button>
       </div>
     </Modal>
   );

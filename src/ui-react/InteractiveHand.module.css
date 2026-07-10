@@ -108,6 +108,24 @@
     min-width: 0;
     padding: 0;
   }
+
+  @container (max-width: 25rem) {
+    .controls {
+      gap: 0.15rem;
+    }
+
+    .deal-actions {
+      gap: 0.15rem;
+    }
+
+    .enter-cards {
+      padding-inline: 0.4em;
+    }
+
+    .role-context {
+      font-size: calc(var(--medium-text-font-size-portrait) * 0.52);
+    }
+  }
 }
 
 @media (orientation: landscape) {

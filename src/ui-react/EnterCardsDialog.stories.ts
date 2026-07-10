@@ -26,6 +26,20 @@ type Story = StoryObj<typeof meta>;
 
 export const ReadyToEdit: Story = {};
 
+export const ClearCards: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(canvas.getByRole("button", { name: "Clear" }));
+
+    await expect(canvas.getByText("0 of 6")).toBeInTheDocument();
+    await expect(canvas.getByRole("button", { name: "Clear" })).toBeDisabled();
+    await expect(
+      canvas.getByRole("button", { name: "Analyze" }),
+    ).toBeDisabled();
+  },
+};
+
 export const EditAndAnalyze: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);

@@ -27,11 +27,6 @@
     box-shadow var(--transition-duration) var(--transition-timing);
 }
 
-.card:hover {
-  background: #e4f4e6;
-  border-color: #397a40;
-}
-
 .card:focus {
   outline: none;
 }

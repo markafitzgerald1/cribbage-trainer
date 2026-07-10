@@ -25,6 +25,23 @@ test("standard mobile viewport is specified", async ({ page }) => {
   );
 });
 
+test("portrait Pone controls stay within the viewport", async ({ page }) => {
+  const portraitViewport = { height: 844, width: 390 };
+  await page.setViewportSize(portraitViewport);
+  await page.goto("/?hand=KH,QS,10D,9C,6S,5H&role=pone");
+
+  const dealBounds = await page
+    .getByRole("button", { name: /^Deal$/u })
+    .boundingBox();
+  if (dealBounds === null) {
+    throw new Error("Deal button bounds are unavailable");
+  }
+
+  expect(dealBounds.x + dealBounds.width).toBeLessThanOrEqual(
+    portraitViewport.width,
+  );
+});
+
 const expectedTitle = "Cribbage Trainer";
 
 test(`has title '${expectedTitle}'`, async ({ page }) => {

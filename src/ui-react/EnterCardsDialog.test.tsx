@@ -88,12 +88,14 @@ describe("enter cards dialog", () => {
     );
   });
 
-  it("disables submission when fewer than six cards are selected", () => {
+  it("clears all selected cards and disables submission", () => {
     const { rendered } = renderDialog();
 
-    toggleCard(rendered, "A♣");
+    fireEvent.click(rendered.getByRole("button", { name: "Clear" }));
 
+    expect(rendered.getByText("0 of 6")).toBeInTheDocument();
     expect(rendered.getByRole("button", { name: "Analyze" })).toBeDisabled();
+    expect(rendered.getByRole("button", { name: "Clear" })).toBeDisabled();
   });
 
   it("submits selected cards in pick order with the selected role", () => {

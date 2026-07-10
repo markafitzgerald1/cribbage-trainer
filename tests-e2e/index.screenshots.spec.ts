@@ -12,6 +12,14 @@ const testInitialRenderScreenshot = () =>
     await expect(page).toHaveScreenshot();
   });
 
+const testEnterCardsDialogScreenshot = () =>
+  test("enter cards dialog still visually the same", async ({ page }) => {
+    await page.goto(`/${constantHandQuery}`);
+    await page.getByRole("button", { name: "Enter cards" }).click();
+
+    await expect(page).toHaveScreenshot();
+  });
+
 const testPrivacyPolicyScreenshot = () =>
   test("privacy policy modal with analysis visible still visually the same", async ({
     page,
@@ -80,6 +88,7 @@ const typicalPhoneViewportSize = {
 
 const testScreenshots = () => {
   testInitialRenderScreenshot();
+  testEnterCardsDialogScreenshot();
   testPrivacyPolicyScreenshot();
   testScoredPossibilitiesNoExpansionScreenshot();
   testExpandedRowScreenshot();
