@@ -73,50 +73,66 @@ test("portrait Pone controls stay within the viewport at an enlarged root font",
   await expectDealButtonWithinPortraitViewport(page, "28px");
 });
 
-const cardAspectRatioAt = async (
+const cardMetricsAt = async (
   page: Page,
   viewport: { height: number; width: number },
 ) => {
   await page.setViewportSize(viewport);
-  const bounds = await requireBoundingBox(
-    page.locator("ul").first().locator("label").first(),
+  const firstCard = page.locator("ul").first().locator("label").first();
+  const cardBounds = await requireBoundingBox(firstCard);
+  const rankBounds = await requireBoundingBox(
+    firstCard.locator('span[class*="rank"]').first(),
   );
-  return bounds.width / bounds.height;
+  return {
+    aspectRatio: cardBounds.width / cardBounds.height,
+    rankFraction: rankBounds.height / cardBounds.height,
+  };
 };
 
-test("stacked-mode card aspect ratio is constant across widths", async ({
+const aspectRatioTolerance = 0.01;
+
+// Rank-height fraction tolerates line-height font-metric pixel rounding.
+const rankFractionTolerance = 0.02;
+
+const expectMatchingCardMetrics = (
+  first: { aspectRatio: number; rankFraction: number },
+  second: { aspectRatio: number; rankFraction: number },
+) => {
+  expect(Math.abs(first.aspectRatio - second.aspectRatio)).toBeLessThanOrEqual(
+    aspectRatioTolerance,
+  );
+  expect(
+    Math.abs(first.rankFraction - second.rankFraction),
+  ).toBeLessThanOrEqual(rankFractionTolerance);
+};
+
+test("stacked-mode card shape and fill are constant across widths", async ({
   page,
 }) => {
   await page.goto(poneHandQuery);
 
-  const phoneRatio = await cardAspectRatioAt(page, phonePortraitViewport);
-  const nearSquareRatio = await cardAspectRatioAt(page, {
+  const phoneMetrics = await cardMetricsAt(page, phonePortraitViewport);
+  const nearSquareMetrics = await cardMetricsAt(page, {
     height: 1100,
     width: 1200,
   });
 
-  const aspectRatioTolerance = 0.01;
-  expect(Math.abs(phoneRatio - nearSquareRatio)).toBeLessThanOrEqual(
-    aspectRatioTolerance,
-  );
+  expectMatchingCardMetrics(phoneMetrics, nearSquareMetrics);
 });
 
-// Rotating a phone must only rescale the cards, never change their shape.
-test("card aspect ratio survives rotation into side-by-side mode", async ({
+// Rotating a phone must only rescale the cards, never change their design.
+test("card shape and fill survive rotation into side-by-side mode", async ({
   page,
 }) => {
   await page.goto(poneHandQuery);
 
-  const portraitRatio = await cardAspectRatioAt(page, phonePortraitViewport);
-  const landscapeRatio = await cardAspectRatioAt(page, {
+  const portraitMetrics = await cardMetricsAt(page, phonePortraitViewport);
+  const landscapeMetrics = await cardMetricsAt(page, {
     height: phonePortraitViewport.width,
     width: phonePortraitViewport.height,
   });
 
-  const aspectRatioTolerance = 0.01;
-  expect(Math.abs(portraitRatio - landscapeRatio)).toBeLessThanOrEqual(
-    aspectRatioTolerance,
-  );
+  expectMatchingCardMetrics(portraitMetrics, landscapeMetrics);
 });
 
 test("landscape Pone Deal button right edge aligns with the last hand card", async ({

@@ -153,16 +153,19 @@
   media queries — they re-create a hybrid band between ratios 1 and 6/5 with
   stacked layout but side-by-side sizing — and never let both blocks match a
   shared boundary value: exactly 6/5 belongs to the side-by-side mode only.
-- The six hand cards hold a constant 5/7 playing-card aspect ratio in both
-  layout modes and at every viewport size — rotating a phone only rescales
-  the cards. Both modes declare `aspect-ratio` on the card box; stacked
-  mode scales the card's font, border, gaps, and checkbox from the hand
-  container's inline size (`cqw`) or `em`, while side-by-side mode holds
-  the card width (which sets the grid column, the Deal-button alignment,
-  and the analysis table's share) and meets the ratio through the height.
-  Do not reintroduce viewport-unit clamps: their fixed caps flatten cards
-  as the window widens (e2e guards compare the ratio across widths and
-  across the rotation boundary).
+- The six hand cards render one card design in both layout modes and at
+  every viewport size — rotating a phone only rescales the cards. The whole
+  card (5/7 `aspect-ratio` box, `em` width, border, checkbox, rank, and
+  suit) is defined once in card-font-relative units in
+  `HandCard.module.css` and `CardLabel.module.css`; each mode sets only the
+  font scale (container-relative `cqw` in stacked mode, `vw` in
+  side-by-side, whose width also sets the grid column, the Deal-button
+  alignment, and the analysis table's share). Do not add per-mode overrides
+  of the card's interior or reintroduce viewport-unit clamps whose fixed
+  caps flatten cards as the window widens; e2e guards compare the card
+  shape and its rank-glyph fill across widths and across the rotation
+  boundary. Form controls do not inherit font size, so the checkbox needs
+  `font-size: inherit` for its `em` sizes to track the card font.
 - Never size nowrap control rows with rem floors. Mobile browsers scale rem
   with the device font-size setting, so rem-floored controls overflow the
   screen edge on real phones while emulators at default font scale look

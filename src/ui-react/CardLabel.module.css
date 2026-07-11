@@ -41,6 +41,7 @@
 }
 
 .hand-card-label .rank {
+  font-size: 1.08em;
   transform: none;
 }
 
@@ -117,19 +118,6 @@
   margin-left: 0;
   position: absolute;
   right: 0.04em;
-}
-
-@media (aspect-ratio < 6 / 5) {
-  .hand-card-label .rank {
-    font-size: 1.08em;
-  }
-
-  .hand-card-label .suit {
-    bottom: -0.15em;
-    font-size: 0.36em;
-    inline-size: 0.65em;
-    right: 0.04em;
-  }
 }
 
 /* Mini keep/discard card: stack a large rank index over a small centered suit.
