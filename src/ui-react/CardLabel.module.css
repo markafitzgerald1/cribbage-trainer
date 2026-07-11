@@ -119,7 +119,7 @@
   right: 0.04em;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .hand-card-label .rank {
     font-size: 1.08em;
   }

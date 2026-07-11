@@ -61,7 +61,7 @@
   font-weight: 700;
   line-height: 1;
   text-align: center;
-  padding: 0 0.5em;
+  padding: 0;
   white-space: nowrap;
 }
 
@@ -74,7 +74,7 @@
   opacity: 0.82;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .interactive-hand {
     container-type: inline-size;
   }
@@ -128,14 +128,22 @@
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
+  /*
+   * Wrapping to two lines ("Enter" over "cards") keeps the controls row
+   * narrower than the six cards below, so the controls never widen the
+   * side-by-side grid column and steal width from the analysis table.
+   */
   .enter-cards {
     font-size: clamp(
       0.9rem,
       calc(var(--medium-text-font-size-landscape) * 0.6),
       1.35rem
     );
+    line-height: 1.15;
     padding: 0.35em 0.55em;
+    white-space: normal;
+    width: min-content;
   }
 
   .role-name {

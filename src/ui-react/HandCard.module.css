@@ -33,7 +33,7 @@
   left: 0.02em;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .hand-card {
     box-sizing: border-box;
     font-size: clamp(2.1rem, 11.6vw, 7rem);
@@ -46,7 +46,7 @@
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .hand-card {
     font-size: 5.8vw;
   }

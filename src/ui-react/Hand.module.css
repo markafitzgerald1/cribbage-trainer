@@ -13,13 +13,13 @@
   font-weight: bold;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .figcaption {
     font-size: var(--medium-text-font-size-portrait);
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .figcaption {
     font-size: var(--medium-text-font-size-landscape);
   }
@@ -36,7 +36,7 @@
   width: 100%;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .hand {
     display: grid;
     gap: clamp(0.42em, 2vw, 0.7em);
@@ -44,14 +44,9 @@
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .hand {
-    /*
-     * Space-between (with the gap as a minimum) keeps the last card's right
-     * edge flush with the column edge, aligning it with the Deal button even
-     * when the wider Pone controls row sets the column width.
-     */
     gap: 0.96vw;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 }

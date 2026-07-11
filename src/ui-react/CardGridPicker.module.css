@@ -53,7 +53,7 @@
   border-color: green;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .grid {
     grid-template-columns: repeat(4, minmax(3.75rem, 1fr));
   }

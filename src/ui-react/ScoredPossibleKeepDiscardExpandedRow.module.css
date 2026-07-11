@@ -23,13 +23,13 @@
   white-space: normal;
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .expanded-row {
     font-size: calc(var(--medium-text-font-size-landscape) * 0.8);
   }
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .expanded-row {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.74);
   }
@@ -250,7 +250,7 @@
   text-align: center;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .breakdown-header {
     font-size: 0.82em;
   }

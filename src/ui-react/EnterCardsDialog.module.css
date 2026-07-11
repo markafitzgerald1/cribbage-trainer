@@ -156,7 +156,7 @@
   opacity: 0.55;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .dialog {
     font-size: 1.3rem;
     gap: 1rem;
