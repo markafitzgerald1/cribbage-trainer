@@ -144,6 +144,29 @@
   `page.addStyleTag({ content: "html { font-size: 28px; }" })` after `goto`
   and assert layout bounds; emulated devices at default font scale will not
   show these overflows.
+- Add a visual regression viewport with the exact width, height, and resulting
+  aspect ratio that exposed a layout bug. Portrait and phone-landscape
+  baselines alone do not cover near-square windows or other breakpoint edges.
+
+## Interaction design and visual-state debugging
+
+- Name an action for its immediate effect, not a later workflow outcome. For
+  example, a dialog button that commits six chosen cards but leaves the user
+  to select two discards is "Use hand", not "Analyze".
+- Preserve native form semantics when styling controls. Keep radio inputs in
+  the accessibility tree and style their adjacent labels as buttons; retain
+  the native role, name, checked state, and `:focus-visible` behavior.
+- When a deselected control still looks selected, inspect state selectors
+  independently before changing React logic: check `aria-pressed`,
+  `:focus-visible`, and `:hover`. An unselected hover style that resembles the
+  selected style can make correct application state appear stale.
+- A declared color transition is insufficient if its endpoints are visually
+  indistinguishable. Review both entering and leaving hover in the rendered UI
+  and use a target color with a perceptible contrast change consistent with
+  peer controls.
+- On short screens, place a modal's primary and secondary actions before a
+  long scrolling picker and keep the action row sticky. Users should see how
+  to complete the dialog without first discovering an off-screen footer.
 
 ## Responsive layout invariants
 
