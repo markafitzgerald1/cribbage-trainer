@@ -7,7 +7,7 @@
   width: 100%;
 }
 
-@media (aspect-ratio <= 6 / 5) {
+@media (aspect-ratio < 6 / 5) {
   .dynamic-ui {
     display: grid;
     grid-template-rows: auto 1fr auto;

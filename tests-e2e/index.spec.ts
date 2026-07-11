@@ -229,6 +229,19 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   await expect(page.getByText("7 (♣♦♥)")).toBeVisible();
 });
 
+test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
+  page,
+}) => {
+  const sixFifthsBoundaryViewport = { height: 1000, width: 1200 };
+  await page.setViewportSize(sixFifthsBoundaryViewport);
+  await renderThenSelectTwoDiscards(page, constantHandQuery);
+
+  const handBounds = await requireBoundingBox(page.locator("figure").first());
+  const tableBounds = await requireBoundingBox(page.getByRole("table"));
+
+  expect(tableBounds.x).toBeGreaterThanOrEqual(rightEdge(handBounds));
+});
+
 test("manually entered pone hand reaches suited analysis", async ({ page }) => {
   await page.goto("/?seed=manual-entry");
   await page.getByRole("button", { name: "Enter cards" }).click();
