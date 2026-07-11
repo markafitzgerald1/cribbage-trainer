@@ -39,7 +39,9 @@
 @media (aspect-ratio < 6 / 5) {
   .hand {
     display: grid;
-    gap: clamp(0.42em, 2vw, 0.7em);
+
+    /* Container-relative gaps keep the card aspect ratio width-invariant. */
+    gap: 2.1cqw;
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }

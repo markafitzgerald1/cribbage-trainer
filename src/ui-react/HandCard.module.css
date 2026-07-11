@@ -34,15 +34,24 @@
 }
 
 @media (aspect-ratio < 6 / 5) {
+  /*
+   * Invariant: the card keeps the standard playing-card aspect ratio at
+   * every stacked-mode width. The declared ratio fixes the box outright,
+   * and the container-relative font (with em-based border and checkbox)
+   * scales the contents in step; viewport clamps whose caps would flatten
+   * wider cards must not reappear here.
+   */
   .hand-card {
+    aspect-ratio: 5 / 7;
+    border-width: 0.022em;
     box-sizing: border-box;
-    font-size: clamp(2.1rem, 11.6vw, 7rem);
+    font-size: 12.3cqw;
     width: 100%;
   }
 
   .hand-card input[type="checkbox"] {
-    block-size: clamp(0.62rem, 2.4vw, 0.95rem);
-    inline-size: clamp(0.62rem, 2.4vw, 0.95rem);
+    block-size: 2.6cqw;
+    inline-size: 2.6cqw;
   }
 }
 

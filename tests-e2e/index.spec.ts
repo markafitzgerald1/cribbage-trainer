@@ -41,14 +41,45 @@ const requireDealButtonBounds = (page: Page) =>
 const rightEdge = (bounds: { width: number; x: number }) =>
   bounds.x + bounds.width;
 
+const phonePortraitViewport = { height: 844, width: 390 };
+
 test("portrait Pone controls stay within the viewport", async ({ page }) => {
-  const portraitViewport = { height: 844, width: 390 };
-  await page.setViewportSize(portraitViewport);
+  await page.setViewportSize(phonePortraitViewport);
   await page.goto(poneHandQuery);
 
   const dealBounds = await requireDealButtonBounds(page);
 
-  expect(rightEdge(dealBounds)).toBeLessThanOrEqual(portraitViewport.width);
+  expect(rightEdge(dealBounds)).toBeLessThanOrEqual(
+    phonePortraitViewport.width,
+  );
+});
+
+const cardAspectRatioAt = async (
+  page: Page,
+  viewport: { height: number; width: number },
+) => {
+  await page.setViewportSize(viewport);
+  const bounds = await requireBoundingBox(
+    page.locator("ul").first().locator("label").first(),
+  );
+  return bounds.width / bounds.height;
+};
+
+test("stacked-mode card aspect ratio is constant across widths", async ({
+  page,
+}) => {
+  await page.goto(poneHandQuery);
+
+  const phoneRatio = await cardAspectRatioAt(page, phonePortraitViewport);
+  const nearSquareRatio = await cardAspectRatioAt(page, {
+    height: 1100,
+    width: 1200,
+  });
+
+  const aspectRatioTolerance = 0.01;
+  expect(Math.abs(phoneRatio - nearSquareRatio)).toBeLessThanOrEqual(
+    aspectRatioTolerance,
+  );
 });
 
 test("landscape Pone Deal button right edge aligns with the last hand card", async ({
