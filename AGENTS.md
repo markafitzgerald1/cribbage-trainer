@@ -365,6 +365,11 @@
 ## Contribution notes
 
 - Add/adjust tests alongside code changes.
+- Capture each session's durable, non-obvious learnings — new invariants,
+  debugging techniques, tooling or review-workflow gotchas — in `AGENTS.md`
+  (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as
+  part of the same PR as the code change, not as a follow-up. When a change
+  set produced no such learnings, say so in the PR description.
 - In-code comments must document only the non-obvious _why_ — invariants,
   the rationale for a surprising call, consequences/trade-offs, or guards
   against "simplifying" an argument that looks redundant. Never restate the
