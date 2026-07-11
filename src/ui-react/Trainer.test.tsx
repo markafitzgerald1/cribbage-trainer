@@ -226,7 +226,7 @@ describe("trainer component", () => {
       await user.click(screen.getByRole("button", { name: "A♥" }));
       await user.click(screen.getByRole("button", { name: "7♣" }));
       await user.click(screen.getByRole("radio", { name: cribRole }));
-      await user.click(screen.getByRole("button", { name: "Analyze" }));
+      await user.click(screen.getByRole("button", { name: "Use hand" }));
       await clickIndices(
         (role, options) => screen.getAllByRole(role, options),
         [0, 1],

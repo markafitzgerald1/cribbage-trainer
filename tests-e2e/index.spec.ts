@@ -221,7 +221,7 @@ test("manually entered pone hand reaches suited analysis", async ({ page }) => {
     Promise.resolve(),
   );
   await dialog.getByRole("radio", { name: "Pone" }).click();
-  await dialog.getByRole("button", { name: "Analyze" }).click();
+  await dialog.getByRole("button", { name: "Use hand" }).click();
 
   await expect(page).toHaveURL(/hand=KH,QS,10D,9C,6S,5S/u);
   await expect(page).toHaveURL(/role=pone/u);

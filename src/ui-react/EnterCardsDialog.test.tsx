@@ -94,7 +94,7 @@ describe("enter cards dialog", () => {
     fireEvent.click(rendered.getByRole("button", { name: "Clear" }));
 
     expect(rendered.getByText("0 of 6")).toBeInTheDocument();
-    expect(rendered.getByRole("button", { name: "Analyze" })).toBeDisabled();
+    expect(rendered.getByRole("button", { name: "Use hand" })).toBeDisabled();
     expect(rendered.getByRole("button", { name: "Clear" })).toBeDisabled();
   });
 
@@ -104,7 +104,7 @@ describe("enter cards dialog", () => {
     toggleCard(rendered, "A♣");
     toggleCard(rendered, "7♣");
     fireEvent.click(rendered.getByRole("radio", { name: "Pone" }));
-    fireEvent.click(rendered.getByRole("button", { name: "Analyze" }));
+    fireEvent.click(rendered.getByRole("button", { name: "Use hand" }));
 
     expect(onSubmit).toHaveBeenCalledWith(
       [...initialCards.slice(1), DECK[6]],

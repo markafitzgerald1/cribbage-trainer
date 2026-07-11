@@ -35,12 +35,12 @@ export const ClearCards: Story = {
     await expect(canvas.getByText("0 of 6")).toBeInTheDocument();
     await expect(canvas.getByRole("button", { name: "Clear" })).toBeDisabled();
     await expect(
-      canvas.getByRole("button", { name: "Analyze" }),
+      canvas.getByRole("button", { name: "Use hand" }),
     ).toBeDisabled();
   },
 };
 
-export const EditAndAnalyze: Story = {
+export const EditAndUseHand: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     const selectedAce = canvas.getByRole("button", {
@@ -54,7 +54,7 @@ export const EditAndAnalyze: Story = {
 
     await userEvent.click(canvas.getByRole("button", { name: "7♣" }));
     await userEvent.click(canvas.getByRole("radio", { name: "Pone" }));
-    await userEvent.click(canvas.getByRole("button", { name: "Analyze" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Use hand" }));
 
     await expect(args.onSubmit).toHaveBeenCalledWith(
       [...DECK.slice(1, 6), DECK[6]],

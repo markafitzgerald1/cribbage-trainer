@@ -33,15 +33,50 @@
 }
 
 .role label {
-  align-items: center;
-  display: flex;
-  font-weight: 700;
-  gap: 0.35rem;
+  cursor: pointer;
+  display: block;
 }
 
 .role input {
-  block-size: 1.05rem;
-  inline-size: 1.05rem;
+  appearance: none;
+  block-size: 1px;
+  inline-size: 1px;
+  opacity: 0;
+  position: absolute;
+}
+
+.role-option {
+  background-color: #e4f4e6;
+  border: 2px solid #397a40;
+  border-radius: 10px;
+  display: block;
+  font-weight: 700;
+  padding: 0.45rem 0.85rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing),
+    color var(--transition-duration) var(--transition-timing);
+}
+
+.role-option:hover {
+  background-color: #c8efcd;
+  border-color: #218838;
+}
+
+.role input:checked + .role-option {
+  background-color: #28a745;
+  border-color: #218838;
+  color: white;
+}
+
+.role input:focus-visible + .role-option {
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+}
+
+.role input:checked + .role-option:hover {
+  background-color: #34c754;
+  border-color: #34c754;
 }
 
 .selected {
@@ -74,7 +109,7 @@
   margin: 0;
 }
 
-.analyze,
+.use-hand,
 .clear {
   background-color: #28a745;
   border: 2px solid #218838;
@@ -96,8 +131,8 @@
   color: #143b18;
 }
 
-.analyze:hover,
-.analyze:focus,
+.use-hand:hover,
+.use-hand:focus,
 .clear:hover,
 .clear:focus {
   background-color: #34c754;
@@ -105,17 +140,17 @@
   outline: none;
 }
 
-.analyze:focus,
+.use-hand:focus,
 .clear:focus {
   box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
 }
 
-.analyze:active {
+.use-hand:active {
   background-color: #218838;
   border-color: #218838;
 }
 
-.analyze:disabled,
+.use-hand:disabled,
 .clear:disabled {
   cursor: not-allowed;
   opacity: 0.55;

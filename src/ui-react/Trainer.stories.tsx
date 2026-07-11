@@ -272,7 +272,7 @@ const createManualEntryPlay =
         canvas.getByRole("button", { name: replacement[1] }),
       );
     }
-    await fireEvent.click(getButton(canvasElement, "Analyze"));
+    await fireEvent.click(getButton(canvasElement, "Use hand"));
 
     await expect(
       canvas.queryByRole("heading", { name: "Enter cards" }),

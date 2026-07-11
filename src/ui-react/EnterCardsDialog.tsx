@@ -81,7 +81,7 @@ export function EnterCardsDialog({
             type="radio"
             value={role}
           />
-          {role}
+          <span className={classes.roleOption}>{role}</span>
         </label>
       ))}
     </fieldset>
@@ -121,12 +121,12 @@ export function EnterCardsDialog({
         Clear
       </button>
       <button
-        className={classes.analyze}
+        className={classes.useHand}
         disabled={selectedCards.length !== CARDS_PER_DEALT_HAND}
         onClick={submit}
         type="button"
       >
-        Analyze
+        Use hand
       </button>
     </div>
   );

@@ -240,7 +240,7 @@ describe("trainer URL state synchronization", () => {
       await user.click(
         renderResult.getByRole("button", { name: "Enter cards" }),
       );
-      await user.click(renderResult.getByRole("button", { name: "Analyze" }));
+      await user.click(renderResult.getByRole("button", { name: "Use hand" }));
 
       expect(pushStateSpy).not.toHaveBeenCalled();
       expect(
@@ -307,7 +307,7 @@ describe("trainer URL state synchronization", () => {
       expect(screen.getByRole("radio", { name: "Pone" })).toBeChecked();
     });
 
-    await user.click(screen.getByRole("button", { name: "Analyze" }));
+    await user.click(screen.getByRole("button", { name: "Use hand" }));
 
     expect(getSearchParam("hand")).toBe(SIX_HEARTS_HAND);
     expect(getSearchParam("role")).toBe("pone");

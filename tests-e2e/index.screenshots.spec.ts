@@ -86,6 +86,11 @@ const typicalPhoneViewportSize = {
   },
 };
 
+const nearSquareLandscapeViewportSize = {
+  height: 900,
+  width: 1000,
+};
+
 const testScreenshots = () => {
   testInitialRenderScreenshot();
   testEnterCardsDialogScreenshot();
@@ -116,4 +121,10 @@ test.describe("landscape", () => {
   });
 
   testScreenshots();
+});
+
+test.describe("near-square landscape", () => {
+  test.use({ viewport: nearSquareLandscapeViewportSize });
+
+  testScoredPossibilitiesNoExpansionScreenshot();
 });
