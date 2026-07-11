@@ -43,15 +43,34 @@ const rightEdge = (bounds: { width: number; x: number }) =>
 
 const phonePortraitViewport = { height: 844, width: 390 };
 
-test("portrait Pone controls stay within the viewport", async ({ page }) => {
+const expectDealButtonWithinPortraitViewport = async (
+  page: Page,
+  rootFontSize?: string,
+) => {
   await page.setViewportSize(phonePortraitViewport);
   await page.goto(poneHandQuery);
+  if (typeof rootFontSize === "string") {
+    await page.addStyleTag({
+      content: `html { font-size: ${rootFontSize}; }`,
+    });
+  }
 
   const dealBounds = await requireDealButtonBounds(page);
 
   expect(rightEdge(dealBounds)).toBeLessThanOrEqual(
     phonePortraitViewport.width,
   );
+};
+
+test("portrait Pone controls stay within the viewport", async ({ page }) => {
+  await expectDealButtonWithinPortraitViewport(page);
+});
+
+// Mobile browsers scale rem with the device font-size accessibility setting.
+test("portrait Pone controls stay within the viewport at an enlarged root font", async ({
+  page,
+}) => {
+  await expectDealButtonWithinPortraitViewport(page, "28px");
 });
 
 const cardAspectRatioAt = async (
