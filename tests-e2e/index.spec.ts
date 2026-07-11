@@ -101,6 +101,24 @@ test("stacked-mode card aspect ratio is constant across widths", async ({
   );
 });
 
+// Rotating a phone must only rescale the cards, never change their shape.
+test("card aspect ratio survives rotation into side-by-side mode", async ({
+  page,
+}) => {
+  await page.goto(poneHandQuery);
+
+  const portraitRatio = await cardAspectRatioAt(page, phonePortraitViewport);
+  const landscapeRatio = await cardAspectRatioAt(page, {
+    height: phonePortraitViewport.width,
+    width: phonePortraitViewport.height,
+  });
+
+  const aspectRatioTolerance = 0.01;
+  expect(Math.abs(portraitRatio - landscapeRatio)).toBeLessThanOrEqual(
+    aspectRatioTolerance,
+  );
+});
+
 test("landscape Pone Deal button right edge aligns with the last hand card", async ({
   page,
 }) => {

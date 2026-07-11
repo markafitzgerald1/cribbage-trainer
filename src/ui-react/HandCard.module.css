@@ -56,8 +56,17 @@
 }
 
 @media (aspect-ratio >= 6 / 5) {
+  /*
+   * Same 5/7 card shape as the stacked layout, so rotating a phone only
+   * rescales the cards. The width keeps the previous footprint (the hand
+   * row sets the side-by-side grid column, the Deal-button alignment, and
+   * the analysis table's share), so the ratio is met through the height.
+   */
   .hand-card {
+    aspect-ratio: 5 / 7;
+    box-sizing: border-box;
     font-size: 5.8vw;
+    width: 1.26em;
   }
 
   .hand-card input[type="checkbox"] {

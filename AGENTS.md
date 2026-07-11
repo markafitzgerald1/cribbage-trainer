@@ -153,13 +153,16 @@
   media queries — they re-create a hybrid band between ratios 1 and 6/5 with
   stacked layout but side-by-side sizing — and never let both blocks match a
   shared boundary value: exactly 6/5 belongs to the side-by-side mode only.
-- In the stacked layout, the six big hand cards hold a constant 5/7
-  playing-card aspect ratio at every viewport width — only their scale
-  changes. The card box declares `aspect-ratio`, and its font, border,
-  gaps, and checkbox scale from the hand container's inline size (`cqw`)
-  or `em`. Do not reintroduce viewport-unit clamps: their fixed caps
-  flatten cards as the window widens (an e2e guard compares the ratio
-  across widths).
+- The six hand cards hold a constant 5/7 playing-card aspect ratio in both
+  layout modes and at every viewport size — rotating a phone only rescales
+  the cards. Both modes declare `aspect-ratio` on the card box; stacked
+  mode scales the card's font, border, gaps, and checkbox from the hand
+  container's inline size (`cqw`) or `em`, while side-by-side mode holds
+  the card width (which sets the grid column, the Deal-button alignment,
+  and the analysis table's share) and meets the ratio through the height.
+  Do not reintroduce viewport-unit clamps: their fixed caps flatten cards
+  as the window widens (e2e guards compare the ratio across widths and
+  across the rotation boundary).
 - Never size nowrap control rows with rem floors. Mobile browsers scale rem
   with the device font-size setting, so rem-floored controls overflow the
   screen edge on real phones while emulators at default font scale look
