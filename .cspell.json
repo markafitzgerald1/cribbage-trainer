@@ -10,6 +10,7 @@
     "cutscolumn",
     "camelcase",
     "discardable",
+    "elif",
     "espree",
     "fieldset",
     "figcaption",
@@ -38,6 +39,7 @@
     "subshells",
     "TJQK",
     "tsbuildinfo",
-    "Vite"
+    "Vite",
+    "worktree"
   ]
 }

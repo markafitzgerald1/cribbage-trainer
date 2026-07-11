@@ -1,0 +1,70 @@
+name: Publish Pages content
+description: >-
+  Applies a scoped mutation (production replace, PR preview publish, or PR
+  preview removal) to the persistent pages-content state branch, then
+  deploys the resulting merged tree to GitHub Pages. The pages-content
+  branch is a git-based cache between ephemeral runners, not the Pages
+  publishing source itself; it stores the production site root plus a
+  pr/<number>/ directory per currently-open preview. A single commit is
+  kept and amended in place on every publish so the branch's history and
+  storage never grow.
+inputs:
+  merge-args:
+    description: >-
+      Arguments passed to scripts/pagesContentMerge.mjs, e.g. "prod dist",
+      "pr 123 dist", or "remove 123". The checkout directory is appended
+      automatically.
+    required: true
+  commit-message:
+    description: Commit message recorded on the pages-content state branch.
+    required: true
+outputs:
+  page_url:
+    description: The root URL of the deployed GitHub Pages site.
+    value: ${{ steps.deploy.outputs.page_url }}
+runs:
+  using: composite
+  steps:
+    - name: Check out persistent Pages content store
+      shell: bash
+      run: |
+        git fetch origin pages-content || true
+        if git show-ref --verify --quiet refs/remotes/origin/pages-content; then
+          git worktree add pages-content-checkout pages-content
+        else
+          git worktree add --detach pages-content-checkout
+          git -C pages-content-checkout checkout --orphan pages-content
+          git -C pages-content-checkout rm -rf --quiet .
+        fi
+
+    - name: Apply content mutation
+      shell: bash
+      run: node scripts/pagesContentMerge.mjs ${{ inputs.merge-args }} pages-content-checkout
+
+    - name: Commit and push the content store
+      shell: bash
+      working-directory: pages-content-checkout
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add --all
+        if git diff --cached --quiet && git rev-parse HEAD > /dev/null 2>&1; then
+          echo "No content changes to publish."
+        elif git rev-parse HEAD > /dev/null 2>&1; then
+          git commit --quiet --amend --message "${{ inputs.commit-message }}"
+          git push --force origin HEAD:pages-content
+        else
+          git commit --quiet --message "${{ inputs.commit-message }}"
+          git push --force origin HEAD:pages-content
+        fi
+
+    - name: Upload GitHub Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: pages-content-checkout/
+
+    - id: deploy
+      name: Deploy GitHub Pages site
+      uses: actions/deploy-pages@v4
+      with:
+        token: ${{ github.token }}

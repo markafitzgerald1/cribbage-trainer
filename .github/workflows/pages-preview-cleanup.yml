@@ -1,0 +1,47 @@
+name: pages-preview-cleanup
+on:
+  pull_request:
+    types: [closed]
+
+# Kept in its own file, separate from
+# npm-build-test-upload-artifact-and-deploy.yml, so editing this cleanup
+# logic can never perturb the on:/if: conditions of the production-critical
+# build-and-test and build-upload-and-deploy jobs there.
+jobs:
+  remove-preview:
+    runs-on: ubuntu-latest
+    # Same-repository, non-Dependabot PRs only: those are the only PRs that
+    # deploy-preview ever publishes a pr/<number>/ directory for.
+    if: |
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+
+    # Shared with build-upload-and-deploy and deploy-preview in the main
+    # workflow so no two Pages-publishing jobs can race on the
+    # pages-content state branch.
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+
+    permissions:
+      contents: write # to push the pages-content state branch
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+
+    environment:
+      name: github-pages-preview
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Remove preview content and deploy
+        uses: ./.github/actions/publish-pages-content
+        with:
+          merge-args: remove ${{ github.event.pull_request.number }}
+          commit-message: Remove pr/${{ github.event.pull_request.number }} preview

@@ -295,6 +295,9 @@ export default [
 
     languageOptions: {
       ecmaVersion: 2022,
+      globals: {
+        process: "readonly",
+      },
       parser: espree,
       sourceType: "module",
     },

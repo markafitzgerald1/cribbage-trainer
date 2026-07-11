@@ -7,7 +7,9 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // More info at: https://storybook.js.org/docs/writing-tests/integrations/vitest-addon
 export default {
-  base: "/cribbage-trainer",
+  // Overridden for PR preview deploys, which publish under
+  // /cribbage-trainer/pr/<number>/ (see .github/workflows).
+  base: process.env.PAGES_BASE_PATH ?? "/cribbage-trainer",
   build: {
     emptyOutDir: true,
     outDir: "../dist",

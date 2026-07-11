@@ -36,7 +36,8 @@
     "deps:update:minor": "npx npm-check-updates --target minor -u && npm install",
     "table:update": "node scripts/updateExpectedPointsTables.mjs",
     "table:update:crib": "node scripts/updateExpectedCribPointsTable.mjs",
-    "table:update:play": "node scripts/updateExpectedPlayPointsTable.mjs"
+    "table:update:play": "node scripts/updateExpectedPlayPointsTable.mjs",
+    "test:pages-content-merge": "node --test scripts/pagesContentMerge.test.mjs"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
