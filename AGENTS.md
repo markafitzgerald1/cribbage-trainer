@@ -129,6 +129,52 @@
   `Range` over the cell (`range.selectNodeContents(td)` then
   `getBoundingClientRect().right`) and compare a positive vs a negative row; the
   `td`'s own right edge will not reveal the gap.
+- The six hand cards are `<label>` elements inside the hand `<ul>` and expose
+  the ARIA role `generic`, not `listitem`; locate them with CSS locators such
+  as `page.locator("ul").first().locator("label")`.
+- When fixing a rendering bug, add a Playwright guard for it and negative-check
+  the guard: stash the fix, confirm the new test fails against the broken CSS,
+  then restore. A guard that was never seen failing proves nothing.
+- eslint's jest rule blocks cover `**/*.test.ts*` and `**/*.stories.ts*` but
+  not `tests-e2e/**/*.spec.ts`, so e2e helpers that wrap `expect` need no
+  `assertFunctionNames` registration (other rules such as `no-undefined`
+  still apply there).
+- To reproduce device font-scaling bugs (e.g. Android Chrome's font-size
+  accessibility setting, which scales rem), inject
+  `page.addStyleTag({ content: "html { font-size: 28px; }" })` after `goto`
+  and assert layout bounds; emulated devices at default font scale will not
+  show these overflows.
+
+## Responsive layout invariants
+
+- Exactly two responsive modes exist, keyed off a single boundary:
+  `@media (aspect-ratio < 6 / 5)` (stacked) and
+  `@media (aspect-ratio >= 6 / 5)` (side-by-side). Never use `orientation`
+  media queries — they re-create a hybrid band between ratios 1 and 6/5 with
+  stacked layout but side-by-side sizing — and never let both blocks match a
+  shared boundary value: exactly 6/5 belongs to the side-by-side mode only.
+- Stacked-mode hand cards hold a constant 5/7 aspect ratio at every width.
+  The card box declares `aspect-ratio`, and its font, border, gaps, and
+  checkbox scale from the hand container's inline size (`cqw`) or `em`. Do
+  not reintroduce viewport-unit clamps: their fixed caps flatten cards as
+  the window widens (an e2e guard compares the ratio across widths).
+- Never size nowrap control rows with rem floors. Mobile browsers scale rem
+  with the device font-size setting, so rem-floored controls overflow the
+  screen edge on real phones while emulators at default font scale look
+  fine (the tell: `cqw`-sized parts fit while rem-floored parts overflow).
+  Stacked-mode controls are sized entirely in container units; an e2e guard
+  asserts they fit the portrait viewport at a 28px root font.
+- `line-height: normal` is not proportional across font sizes (font-metric
+  pixel rounding differs), so pin an explicit line-height wherever an
+  aspect-ratio invariant depends on text height.
+- In side-by-side mode the left grid column is `min-content`-sized by the
+  wider of the controls row and the six cards. The controls must stay
+  narrower than the cards — that is why "Enter cards" wraps to two lines
+  there — or they widen the column, steal width from the analysis table,
+  and make the buttons shift when the role label changes between Dealer and
+  Pone. Do not spread the cards (`justify-content: space-between`) to chase
+  the Deal button's right edge; keep fixed gaps and narrow the controls
+  instead (an e2e guard asserts Deal/last-card alignment).
 
 ## Discard-table layout (portrait)
 
@@ -251,6 +297,13 @@
 
 - When resolving GitHub PR feedback, use thread-aware review data instead of
   relying only on flat PR comments.
+- The Codex GitHub connector reviews the current head when a PR comment says
+  `@codex review` (post it with an agent-attribution prefix). When Codex
+  quota is exhausted it replies "usage limits reached" instead of reviewing.
+- A Copilot review request via the REST `requested_reviewers` endpoint can
+  succeed while the eventual "review" is only a COMMENTED stub saying the
+  requester reached their Copilot quota. Read the review body before
+  claiming a Copilot review happened.
 - To find PR review threads without individual review URLs, use any available
   GitHub integration or the `gh` CLI for the repository and PR number.
 - With the `gh` CLI, use `gh api graphql` to query review thread fields such as
