@@ -84,9 +84,9 @@ button.expand-indicator {
   transform: rotate(90deg);
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .scored-possible-keep-discard {
-    font-size: var(--medium-text-font-size-landscape);
+    font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
   }
 
   /* Bigger mini-cards in landscape to use the otherwise-empty hand column. */
@@ -95,7 +95,7 @@ button.expand-indicator {
   }
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .scored-possible-keep-discard {
     font-size: var(--medium-text-font-size-portrait);
   }

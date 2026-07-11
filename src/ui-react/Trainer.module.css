@@ -7,7 +7,7 @@
   width: 100%;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .dynamic-ui {
     display: grid;
     grid-template-rows: auto 1fr auto;
@@ -34,7 +34,7 @@
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .dynamic-ui {
     display: grid;
     grid-template-columns: min-content 1fr;

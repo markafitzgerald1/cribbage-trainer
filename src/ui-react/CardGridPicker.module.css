@@ -1,0 +1,65 @@
+@import url("./vars.css");
+
+.grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(4, minmax(4.25rem, 1fr));
+  grid-template-rows: repeat(13, minmax(3rem, auto));
+  gap: 0.35rem;
+}
+
+.card {
+  align-items: center;
+  background: color-mix(in srgb, white 82%, lightgreen);
+  border: 2px solid color-mix(in srgb, green 15%, white);
+  border-radius: 0.45rem;
+  color: var(--card-black-suit-color, #222);
+  cursor: pointer;
+  display: flex;
+  font-size: 1.35rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0.35rem 0.5rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing);
+}
+
+.card:focus {
+  outline: none;
+}
+
+.card:focus-visible {
+  background: #f7fcf8;
+  border-color: #145a23;
+  box-shadow: 0 0 0 3px rgb(20 90 35 / 45%);
+}
+
+.card:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.card[aria-pressed="true"] {
+  background: color-mix(in srgb, lightgreen 78%, white);
+  border-color: green;
+}
+
+.card[aria-pressed="true"]:hover,
+.card[aria-pressed="true"]:focus-visible {
+  background: color-mix(in srgb, lightgreen 88%, white);
+  border-color: green;
+}
+
+@media (aspect-ratio < 6 / 5) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(3.75rem, 1fr));
+  }
+
+  .card {
+    font-size: 1.5rem;
+    min-height: 3.15rem;
+  }
+}

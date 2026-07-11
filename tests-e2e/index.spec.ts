@@ -25,6 +25,100 @@ test("standard mobile viewport is specified", async ({ page }) => {
   );
 });
 
+const poneHandQuery = "/?hand=KH,QS,10D,9C,6S,5H&role=pone";
+
+const requireBoundingBox = async (locator: Locator) => {
+  const bounds = await locator.boundingBox();
+  if (bounds === null) {
+    throw new Error("Bounding box is unavailable");
+  }
+  return bounds;
+};
+
+const requireDealButtonBounds = (page: Page) =>
+  requireBoundingBox(page.getByRole("button", { name: /^Deal$/u }));
+
+const rightEdge = (bounds: { width: number; x: number }) =>
+  bounds.x + bounds.width;
+
+const phonePortraitViewport = { height: 844, width: 390 };
+
+const expectDealButtonWithinPortraitViewport = async (
+  page: Page,
+  rootFontSize?: string,
+) => {
+  await page.setViewportSize(phonePortraitViewport);
+  await page.goto(poneHandQuery);
+  if (typeof rootFontSize === "string") {
+    await page.addStyleTag({
+      content: `html { font-size: ${rootFontSize}; }`,
+    });
+  }
+
+  const dealBounds = await requireDealButtonBounds(page);
+
+  expect(rightEdge(dealBounds)).toBeLessThanOrEqual(
+    phonePortraitViewport.width,
+  );
+};
+
+test("portrait Pone controls stay within the viewport", async ({ page }) => {
+  await expectDealButtonWithinPortraitViewport(page);
+});
+
+// Mobile browsers scale rem with the device font-size accessibility setting.
+test("portrait Pone controls stay within the viewport at an enlarged root font", async ({
+  page,
+}) => {
+  await expectDealButtonWithinPortraitViewport(page, "28px");
+});
+
+const cardAspectRatioAt = async (
+  page: Page,
+  viewport: { height: number; width: number },
+) => {
+  await page.setViewportSize(viewport);
+  const bounds = await requireBoundingBox(
+    page.locator("ul").first().locator("label").first(),
+  );
+  return bounds.width / bounds.height;
+};
+
+test("stacked-mode card aspect ratio is constant across widths", async ({
+  page,
+}) => {
+  await page.goto(poneHandQuery);
+
+  const phoneRatio = await cardAspectRatioAt(page, phonePortraitViewport);
+  const nearSquareRatio = await cardAspectRatioAt(page, {
+    height: 1100,
+    width: 1200,
+  });
+
+  const aspectRatioTolerance = 0.01;
+  expect(Math.abs(phoneRatio - nearSquareRatio)).toBeLessThanOrEqual(
+    aspectRatioTolerance,
+  );
+});
+
+test("landscape Pone Deal button right edge aligns with the last hand card", async ({
+  page,
+}) => {
+  const landscapePhoneViewport = { height: 390, width: 844 };
+  await page.setViewportSize(landscapePhoneViewport);
+  await page.goto(poneHandQuery);
+
+  const dealBounds = await requireDealButtonBounds(page);
+  const lastCardBounds = await requireBoundingBox(
+    page.locator("ul").first().locator("label").last(),
+  );
+
+  const alignmentTolerance = 1;
+  expect(
+    Math.abs(rightEdge(dealBounds) - rightEdge(lastCardBounds)),
+  ).toBeLessThanOrEqual(alignmentTolerance);
+});
+
 const expectedTitle = "Cribbage Trainer";
 
 test(`has title '${expectedTitle}'`, async ({ page }) => {
@@ -183,4 +277,49 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
 
   await expect(page.getByText("7♠")).toBeVisible();
   await expect(page.getByText("7 (♣♦♥)")).toBeVisible();
+});
+
+test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
+  page,
+}) => {
+  const sixFifthsBoundaryViewport = { height: 1000, width: 1200 };
+  await page.setViewportSize(sixFifthsBoundaryViewport);
+  await renderThenSelectTwoDiscards(page, constantHandQuery);
+
+  const handBounds = await requireBoundingBox(page.locator("figure").first());
+  const tableBounds = await requireBoundingBox(page.getByRole("table"));
+
+  expect(tableBounds.x).toBeGreaterThanOrEqual(rightEdge(handBounds));
+});
+
+test("manually entered pone hand reaches suited analysis", async ({ page }) => {
+  await page.goto("/?seed=manual-entry");
+  await page.getByRole("button", { name: "Enter cards" }).click();
+  const dialog = page
+    .getByRole("heading", { name: "Enter cards" })
+    .locator("..");
+
+  const selectedCards = dialog.getByRole("button", { pressed: true });
+  const dealtCardCount = 6;
+  await Array.from({ length: dealtCardCount }).reduce<Promise<void>>(
+    (click) => click.then(() => selectedCards.first().click()),
+    Promise.resolve(),
+  );
+  await ["K♥", "Q♠", "10♦", "9♣", "6♠", "5♠"].reduce(
+    (click, card) =>
+      click.then(() => dialog.getByRole("button", { name: card }).click()),
+    Promise.resolve(),
+  );
+  await dialog.getByRole("radio", { name: "Pone" }).click();
+  await dialog.getByRole("button", { name: "Use hand" }).click();
+
+  await expect(page).toHaveURL(/hand=KH,QS,10D,9C,6S,5S/u);
+  await expect(page).toHaveURL(/role=pone/u);
+
+  const sixIndex = 4;
+  const fiveIndex = 5;
+  await page.getByRole("checkbox").nth(sixIndex).click();
+  await page.getByRole("checkbox").nth(fiveIndex).click();
+
+  await expect(getSuitedDiscardRow(page)).toBeVisible();
 });

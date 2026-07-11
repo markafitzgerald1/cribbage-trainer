@@ -233,6 +233,24 @@ describe("trainer URL state synchronization", () => {
     }
   });
 
+  // eslint-disable-next-line jest/prefer-ending-with-an-expect
+  it("does not push history for an unchanged manual hand", async () => {
+    const { pushStateSpy, renderResult, user } = renderTrainerSpyingOnPush();
+    try {
+      await user.click(
+        renderResult.getByRole("button", { name: "Enter cards" }),
+      );
+      await user.click(renderResult.getByRole("button", { name: "Use hand" }));
+
+      expect(pushStateSpy).not.toHaveBeenCalled();
+      expect(
+        renderResult.queryByRole("heading", { name: "Enter cards" }),
+      ).not.toBeInTheDocument();
+    } finally {
+      pushStateSpy.mockRestore();
+    }
+  });
+
   const renderDiscardedTrainerSpyingOnPush = async () => {
     const spied = renderTrainerSpyingOnPush();
     await clickIndices(spied.renderResult.getAllByRole, [0, 1], spied.user);
@@ -272,6 +290,27 @@ describe("trainer URL state synchronization", () => {
       "aria-sort",
       "descending",
     );
+  });
+
+  it("refreshes an open manual-entry draft after popstate", async () => {
+    resetUrl();
+    const user = userEvent.setup();
+    renderTrainer();
+    await user.click(screen.getByRole("button", { name: "Enter cards" }));
+
+    popStateTo(`?hand=${SIX_HEARTS_HAND}&role=pone`);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "A♥", pressed: true }),
+      ).toBeEnabled();
+      expect(screen.getByRole("radio", { name: "Pone" })).toBeChecked();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Use hand" }));
+
+    expect(getSearchParam("hand")).toBe(SIX_HEARTS_HAND);
+    expect(getSearchParam("role")).toBe("pone");
   });
 
   it("restores sort order from a popstate URL without replacing the hand", () => {

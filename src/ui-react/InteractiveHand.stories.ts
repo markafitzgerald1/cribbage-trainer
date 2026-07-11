@@ -39,6 +39,7 @@ function createStory(sortOrder: SortOrder): Story {
       ]),
       onCardChange: () => null,
       onDeal: () => null,
+      onEnterCards: () => null,
       onSortOrderChange: () => null,
       sortOrder,
     },

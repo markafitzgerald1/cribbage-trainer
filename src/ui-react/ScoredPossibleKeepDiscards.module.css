@@ -3,6 +3,7 @@
 .scored-possible-keep-discards {
   box-sizing: border-box;
   color: var(--text-color);
+  container-type: inline-size;
   font-family: var(--text-font-family);
   display: flex;
   flex-direction: column;
@@ -79,7 +80,7 @@
   padding-right: 0.5em;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   /* The small portrait mini-cards under-fill the hand column, so hand the slack
      to the numeric columns for roomier, non-cramped scores -- but keep enough
      hand width that the row's expand arrow is not clipped by its overflow box. */
@@ -147,7 +148,7 @@
   color: #fff;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-portrait);
   }
@@ -157,13 +158,13 @@
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-landscape);
   }
 
   .scored-possible-keep-discards th {
-    font-size: var(--medium-text-font-size-landscape);
+    font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
   }
 }
 
