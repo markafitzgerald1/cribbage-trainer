@@ -185,6 +185,8 @@ export default [
             "pragma",
             "rerender",
             "rerenders",
+            "rescale",
+            "rescales",
             "royale",
             "seedrandom",
             "Serializable",
