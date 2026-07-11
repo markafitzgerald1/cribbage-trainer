@@ -46,7 +46,12 @@
 
 @media (orientation: landscape) {
   .hand {
+    /*
+     * Space-between (with the gap as a minimum) keeps the last card's right
+     * edge flush with the column edge, aligning it with the Deal button even
+     * when the wider Pone controls row sets the column width.
+     */
     gap: 0.96vw;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 }

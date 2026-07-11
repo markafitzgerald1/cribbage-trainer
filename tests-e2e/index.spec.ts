@@ -25,21 +25,48 @@ test("standard mobile viewport is specified", async ({ page }) => {
   );
 });
 
+const poneHandQuery = "/?hand=KH,QS,10D,9C,6S,5H&role=pone";
+
+const requireBoundingBox = async (locator: Locator) => {
+  const bounds = await locator.boundingBox();
+  if (bounds === null) {
+    throw new Error("Bounding box is unavailable");
+  }
+  return bounds;
+};
+
+const requireDealButtonBounds = (page: Page) =>
+  requireBoundingBox(page.getByRole("button", { name: /^Deal$/u }));
+
+const rightEdge = (bounds: { width: number; x: number }) =>
+  bounds.x + bounds.width;
+
 test("portrait Pone controls stay within the viewport", async ({ page }) => {
   const portraitViewport = { height: 844, width: 390 };
   await page.setViewportSize(portraitViewport);
-  await page.goto("/?hand=KH,QS,10D,9C,6S,5H&role=pone");
+  await page.goto(poneHandQuery);
 
-  const dealBounds = await page
-    .getByRole("button", { name: /^Deal$/u })
-    .boundingBox();
-  if (dealBounds === null) {
-    throw new Error("Deal button bounds are unavailable");
-  }
+  const dealBounds = await requireDealButtonBounds(page);
 
-  expect(dealBounds.x + dealBounds.width).toBeLessThanOrEqual(
-    portraitViewport.width,
+  expect(rightEdge(dealBounds)).toBeLessThanOrEqual(portraitViewport.width);
+});
+
+test("landscape Pone Deal button right edge aligns with the last hand card", async ({
+  page,
+}) => {
+  const landscapePhoneViewport = { height: 390, width: 844 };
+  await page.setViewportSize(landscapePhoneViewport);
+  await page.goto(poneHandQuery);
+
+  const dealBounds = await requireDealButtonBounds(page);
+  const lastCardBounds = await requireBoundingBox(
+    page.locator("ul").first().locator("label").last(),
   );
+
+  const alignmentTolerance = 1;
+  expect(
+    Math.abs(rightEdge(dealBounds) - rightEdge(lastCardBounds)),
+  ).toBeLessThanOrEqual(alignmentTolerance);
 });
 
 const expectedTitle = "Cribbage Trainer";
