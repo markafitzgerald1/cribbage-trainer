@@ -427,6 +427,14 @@
   the same run, and `actions/deploy-pages` then always fails with
   "Multiple artifacts named github-pages" — for every attempt on that run.
   Push a new commit (fresh run) instead.
+- A GitHub Actions concurrency group holds one running job plus **one**
+  waiting job; a newer arrival cancels the older waiting one ("higher
+  priority waiting request"), even with `cancel-in-progress: false`.
+  Merging a PR fires `push` and `pull_request: closed` simultaneously, so
+  the close-cleanup job could cancel the merge's own production deploy
+  (this hit the #656 merge and left production one commit stale). Hence
+  cleanup skips merged PRs entirely and the production publish prunes
+  previews for non-open PRs instead (`pagesContentMerge.mjs prune`).
 - Bot logins are spelled differently per GitHub API surface: Dependabot is
   `app/dependabot` in `gh` CLI/GraphQL author fields but `dependabot[bot]`
   in REST/webhook event payloads. Never compare a single literal — the

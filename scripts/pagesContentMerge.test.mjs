@@ -2,6 +2,7 @@ import {
   applyPr,
   applyProd,
   assertDeployable,
+  prunePreviews,
   removePr,
 } from "./pagesContentMerge.mjs";
 import { deepStrictEqual, doesNotThrow, ok, throws } from "node:assert/strict";
@@ -151,6 +152,36 @@ test("assertDeployable rejects a tree without a production root", () => {
   } finally {
     rmSync(checkoutDir, { force: true, recursive: true });
     rmSync(distDir, { force: true, recursive: true });
+  }
+});
+
+test("prunePreviews removes only directories whose PR is not in the open set", () => {
+  const checkoutDir = makeTempDir();
+
+  try {
+    seedCheckout(checkoutDir);
+
+    prunePreviews(checkoutDir, ["7"]);
+
+    ok(previewExists(path.join(checkoutDir, "pr", "7")));
+    ok(!previewExists(path.join(checkoutDir, "pr", "42")));
+    deepStrictEqual(readFile(path.join(checkoutDir, "index.html")), "old prod");
+  } finally {
+    rmSync(checkoutDir, { force: true, recursive: true });
+  }
+});
+
+test("prunePreviews without a pr directory is a no-op, not a throw", () => {
+  const checkoutDir = makeTempDir();
+
+  try {
+    writeFile(path.join(checkoutDir, "index.html"), "old prod");
+
+    prunePreviews(checkoutDir, []);
+
+    deepStrictEqual(readFile(path.join(checkoutDir, "index.html")), "old prod");
+  } finally {
+    rmSync(checkoutDir, { force: true, recursive: true });
   }
 });
 

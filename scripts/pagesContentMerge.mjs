@@ -50,6 +50,30 @@ export function removePr(prNumber, checkoutDir) {
   rmSync(prDirectory(checkoutDir, prNumber), { force: true, recursive: true });
 }
 
+// Merged PRs get no close-event cleanup (that would race the merge's own
+// production deploy in the pages-deploy concurrency group), so the
+// production publish prunes preview directories whose PR is no longer open.
+export function prunePreviews(checkoutDir, openPrNumbers) {
+  const keep = new Set(
+    openPrNumbers.map((prNumber) => {
+      assertValidPrNumber(prNumber);
+
+      return String(prNumber);
+    }),
+  );
+  const prRoot = path.join(checkoutDir, "pr");
+
+  if (!existsSync(prRoot)) {
+    return;
+  }
+
+  for (const entry of readdirSync(prRoot)) {
+    if (!keep.has(entry)) {
+      rmSync(path.join(prRoot, entry), { force: true, recursive: true });
+    }
+  }
+}
+
 // Deploying replaces the entire live Pages site with checkoutDir, so a
 // tree without a production root index.html would take production down
 // (this happened on the pages-content branch's very first preview
@@ -83,10 +107,14 @@ function main(argv) {
     const [checkoutDir] = rest;
 
     assertDeployable(checkoutDir);
+  } else if (command === "prune") {
+    const [checkoutDir, ...openPrNumbers] = rest;
+
+    prunePreviews(checkoutDir, openPrNumbers);
   } else {
     throw new Error(
       `Unknown command: ${command}. Expected "prod", "pr", "remove", ` +
-        `or "assert-deployable".`,
+        `"prune", or "assert-deployable".`,
     );
   }
 }
