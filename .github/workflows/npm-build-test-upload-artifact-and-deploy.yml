@@ -155,9 +155,15 @@ jobs:
             exit 0
           fi
           NUMBER=$(jq -r '.number' <<< "$PR_JSON")
+          # The same bot is app/dependabot in gh CLI/GraphQL output but
+          # dependabot[bot] in REST event payloads; match both spellings.
           AUTHOR=$(jq -r '.author.login' <<< "$PR_JSON")
           CROSS_REPO=$(jq -r '.isCrossRepository' <<< "$PR_JSON")
-          if [ "$CROSS_REPO" = "true" ] || [ "$AUTHOR" = "dependabot[bot]" ]; then
+          case "$AUTHOR" in
+            "dependabot[bot]" | "app/dependabot") DEPENDABOT=true ;;
+            *) DEPENDABOT=false ;;
+          esac
+          if [ "$CROSS_REPO" = "true" ] || [ "$DEPENDABOT" = "true" ]; then
             echo "Pull request #$NUMBER is from a fork or Dependabot; skipping preview deploy."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
