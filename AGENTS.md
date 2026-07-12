@@ -421,6 +421,11 @@
   does not exist. If the guard ever fires, seed production first (deploy
   `main` through the new workflow, or apply the `prod` mutation to the
   branch manually).
+- Never retry a failed Pages deploy with a single-job rerun: rerunning a
+  job that already uploaded a `github-pages` artifact adds a second one to
+  the same run, and `actions/deploy-pages` then always fails with
+  "Multiple artifacts named github-pages" — for every attempt on that run.
+  Push a new commit (fresh run) instead.
 - There are deliberately **two** GitHub Pages environments: `github-pages`
   (production) has a branch policy restricting it to `main` — reusing it for
   previews would silently hang every preview job before any step runs.
