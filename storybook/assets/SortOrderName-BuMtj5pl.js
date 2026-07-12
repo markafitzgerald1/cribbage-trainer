@@ -1,1 +1,0 @@
-import{i as e}from"./preload-helper-CT_b8DTk.js";var t,n=e((()=>{t={DealOrder:0,Descending:1,Ascending:2}})),r,i=e((()=>{n(),r=Object.keys(t).filter(e=>isNaN(Number(e))).map(e=>e),Object.fromEntries(r.map(e=>[e,e.replace(/(?<lastLower>[a-z])(?<nextFirstUpper>[A-Z])/u,`$<lastLower> $<nextFirstUpper>`).toLowerCase()]))}));export{n as i,i as n,t as r,r as t};
