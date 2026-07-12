@@ -381,9 +381,60 @@
 
 - Workflow: .github/workflows/npm-build-test-upload-artifact-and-deploy.yml.
 - On non-main branches: builds Docker test image and runs Playwright e2e via
-  `npm run docker:run-e2e-only`.
+  `npm run docker:run-e2e-only`, then (same workflow) resolves whether an
+  open, same-repository, non-Dependabot PR exists for the branch and, if so,
+  publishes a PR preview.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages.
+
+## PR preview deploys (issue #153)
+
+- Every eligible open PR auto-publishes to
+  `https://markafitzgerald1.github.io/cribbage-trainer/pr/<number>/`, kept
+  current on every push and removed when the PR closes
+  (`.github/workflows/pages-preview-cleanup.yml`, triggered by
+  `pull_request: closed`, kept in its own file so editing cleanup logic can
+  never perturb the production-critical jobs' `on:`/`if:` conditions).
+  "Eligible" means same-repository and not authored by `dependabot[bot]`;
+  fork PRs never reach this at all since `push` never fires in this repo for
+  fork commits. Because previews are `push`-triggered, the branch-creating
+  push always precedes `gh pr create` and skips with "No open pull request
+  found"; the first preview publishes on the first push made _after_ the PR
+  exists (push an empty or follow-up commit if one is needed sooner).
+- The `pages-content` branch is a git-based **cache**, not the Pages
+  publishing source (Pages settings stay `build_type: workflow`). It is
+  fetched-or-created, mutated, and force-pushed as a single amended commit
+  by every publish (`.github/actions/publish-pages-content`), so its history
+  never grows — don't "clean up" this branch or its lack of history; that is
+  intentional. It holds the production site root plus one `pr/<number>/`
+  directory per currently-open preview; the merge/replace/remove logic lives
+  in `scripts/pagesContentMerge.mjs` (tested via `node --test`, not Jest, so
+  it stays outside `src/**` and the 100% Jest coverage threshold).
+- Every publish deploys the **whole** merged tree, so a `pages-content`
+  checkout lacking a root `index.html` must never reach `deploy-pages`: the
+  very first preview publish did exactly that (the branch bootstraps empty
+  and production had never been seeded through this pipeline) and took the
+  production site down. The composite action now runs
+  `pagesContentMerge.mjs assert-deployable` before deploying, `applyProd`
+  preserves the checkout's `.git` worktree pointer (deleting it breaks the
+  commit-and-push step), and the cleanup workflow no-ops when the branch
+  does not exist. If the guard ever fires, seed production first (deploy
+  `main` through the new workflow, or apply the `prod` mutation to the
+  branch manually).
+- Never retry a failed Pages deploy with a single-job rerun: rerunning a
+  job that already uploaded a `github-pages` artifact adds a second one to
+  the same run, and `actions/deploy-pages` then always fails with
+  "Multiple artifacts named github-pages" — for every attempt on that run.
+  Push a new commit (fresh run) instead.
+- There are deliberately **two** GitHub Pages environments: `github-pages`
+  (production) has a branch policy restricting it to `main` — reusing it for
+  previews would silently hang every preview job before any step runs.
+  Preview jobs target the separate, unprotected `github-pages-preview`
+  environment instead, which Actions auto-creates on first use.
+- `vite.config.js`'s `base` reads `PAGES_BASE_PATH` (falling back to
+  `/cribbage-trainer`); preview builds set it to `/cribbage-trainer/pr/<n>`
+  and deliberately skip the `dist/`-caching step used on main, since that
+  cache key hashes only source files, not the base path.
 
 ## Contribution notes
 
