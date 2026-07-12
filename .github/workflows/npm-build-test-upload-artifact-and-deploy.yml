@@ -73,6 +73,7 @@ jobs:
       contents: write # to push the pages-content state branch
       pages: write # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
+      pull-requests: read # to list open PRs when pruning stale previews
 
     # Deploy to the github-pages environment
     environment:
@@ -121,12 +122,32 @@ jobs:
         if: steps.cache-dist.outputs.cache-hit != 'true'
         run: npm run storybook:build
 
+      # Merged PRs get no close-event cleanup (it would race this very
+      # deploy in the pages-deploy concurrency group and GitHub cancels the
+      # older waiting job), so production publishes prune stale previews.
+      - id: open-prs
+        name: List open pull request numbers
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mapfile -t OPEN_PR_NUMBERS < <(
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" \
+              --jq '.[].number'
+          )
+          if ((${#OPEN_PR_NUMBERS[@]} == 0)); then
+            echo "list=none" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=${OPEN_PR_NUMBERS[*]}" >> "$GITHUB_OUTPUT"
+          fi
+
       - id: publish
         name: Publish production content and deploy
         uses: ./.github/actions/publish-pages-content
         with:
           merge-args: prod dist
           commit-message: Publish production content
+          prune-keep-prs: ${{ steps.open-prs.outputs.list }}
 
   resolve-preview-pr:
     runs-on: ubuntu-latest

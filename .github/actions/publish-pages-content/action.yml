@@ -18,6 +18,15 @@ inputs:
   commit-message:
     description: Commit message recorded on the pages-content state branch.
     required: true
+  prune-keep-prs:
+    description: >-
+      When set to "none" or a space-separated list of open PR numbers,
+      preview directories for any other PR are removed before deploying.
+      Used by production publishes, since merged PRs get no close-event
+      cleanup (it would race the merge's own deploy in the pages-deploy
+      concurrency group). Empty (the default) skips pruning.
+    required: false
+    default: ""
 outputs:
   page_url:
     description: The root URL of the deployed GitHub Pages site.
@@ -40,6 +49,18 @@ runs:
     - name: Apply content mutation
       shell: bash
       run: node scripts/pagesContentMerge.mjs ${{ inputs.merge-args }} pages-content-checkout
+
+    - name: Prune previews for PRs that are no longer open
+      if: inputs.prune-keep-prs != ''
+      shell: bash
+      run: |
+        KEEP="${{ inputs.prune-keep-prs }}"
+        if [ "$KEEP" = "none" ]; then
+          KEEP=""
+        fi
+        # Word-splitting KEEP into one argument per PR number is intended.
+        # shellcheck disable=SC2086
+        node scripts/pagesContentMerge.mjs prune pages-content-checkout $KEEP
 
     - name: Refuse to deploy a tree that would take production down
       shell: bash
