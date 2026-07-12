@@ -1,5 +1,10 @@
-import { applyPr, applyProd, removePr } from "./pagesContentMerge.mjs";
-import { deepStrictEqual, ok } from "node:assert/strict";
+import {
+  applyPr,
+  applyProd,
+  assertDeployable,
+  removePr,
+} from "./pagesContentMerge.mjs";
+import { deepStrictEqual, doesNotThrow, ok, throws } from "node:assert/strict";
 import {
   mkdirSync,
   mkdtempSync,
@@ -106,6 +111,46 @@ test("removePr deletes only the closed PR's directory", () => {
     deepStrictEqual(readFile(path.join(checkoutDir, "index.html")), "old prod");
   } finally {
     rmSync(checkoutDir, { force: true, recursive: true });
+  }
+});
+
+test("applyProd preserves the checkout's .git worktree pointer", () => {
+  const checkoutDir = makeTempDir();
+  const distDir = makeTempDir();
+
+  try {
+    seedCheckout(checkoutDir);
+    writeFile(path.join(checkoutDir, ".git"), "gitdir: /somewhere/else");
+    writeFile(path.join(distDir, "index.html"), "new prod");
+
+    applyProd(distDir, checkoutDir);
+
+    deepStrictEqual(
+      readFile(path.join(checkoutDir, ".git")),
+      "gitdir: /somewhere/else",
+    );
+  } finally {
+    rmSync(checkoutDir, { force: true, recursive: true });
+    rmSync(distDir, { force: true, recursive: true });
+  }
+});
+
+test("assertDeployable rejects a tree without a production root", () => {
+  const checkoutDir = makeTempDir();
+  const distDir = makeTempDir();
+
+  try {
+    writeFile(path.join(distDir, "index.html"), "pr-only preview");
+    applyPr(661, distDir, checkoutDir);
+
+    throws(() => assertDeployable(checkoutDir), /no root index\.html/u);
+
+    applyProd(distDir, checkoutDir);
+
+    doesNotThrow(() => assertDeployable(checkoutDir));
+  } finally {
+    rmSync(checkoutDir, { force: true, recursive: true });
+    rmSync(distDir, { force: true, recursive: true });
   }
 });
 

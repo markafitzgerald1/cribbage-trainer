@@ -410,6 +410,17 @@
   directory per currently-open preview; the merge/replace/remove logic lives
   in `scripts/pagesContentMerge.mjs` (tested via `node --test`, not Jest, so
   it stays outside `src/**` and the 100% Jest coverage threshold).
+- Every publish deploys the **whole** merged tree, so a `pages-content`
+  checkout lacking a root `index.html` must never reach `deploy-pages`: the
+  very first preview publish did exactly that (the branch bootstraps empty
+  and production had never been seeded through this pipeline) and took the
+  production site down. The composite action now runs
+  `pagesContentMerge.mjs assert-deployable` before deploying, `applyProd`
+  preserves the checkout's `.git` worktree pointer (deleting it breaks the
+  commit-and-push step), and the cleanup workflow no-ops when the branch
+  does not exist. If the guard ever fires, seed production first (deploy
+  `main` through the new workflow, or apply the `prod` mutation to the
+  branch manually).
 - There are deliberately **two** GitHub Pages environments: `github-pages`
   (production) has a branch policy restricting it to `main` — reusing it for
   previews would silently hang every preview job before any step runs.

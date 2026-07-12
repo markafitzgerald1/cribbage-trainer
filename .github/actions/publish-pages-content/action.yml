@@ -41,6 +41,10 @@ runs:
       shell: bash
       run: node scripts/pagesContentMerge.mjs ${{ inputs.merge-args }} pages-content-checkout
 
+    - name: Refuse to deploy a tree that would take production down
+      shell: bash
+      run: node scripts/pagesContentMerge.mjs assert-deployable pages-content-checkout
+
     - name: Commit and push the content store
       shell: bash
       working-directory: pages-content-checkout

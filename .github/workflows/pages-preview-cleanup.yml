@@ -40,7 +40,20 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
+      # If the content store has never been created there is no preview to
+      # remove, and publishing an empty tree would take production down.
+      - id: store-exists
+        name: Check whether the pages-content store exists
+        run: |
+          if git ls-remote --exit-code --heads origin pages-content > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No pages-content branch; nothing to clean up."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Remove preview content and deploy
+        if: steps.store-exists.outputs.exists == 'true'
         uses: ./.github/actions/publish-pages-content
         with:
           merge-args: remove ${{ github.event.pull_request.number }}
