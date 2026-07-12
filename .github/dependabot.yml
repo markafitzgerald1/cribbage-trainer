@@ -3,13 +3,13 @@ version: 2
 multi-ecosystem-groups:
   playwright-sync:
     schedule:
-      interval: "daily"
+      interval: "weekly"
 
 updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     groups:
       storybook:
         patterns:
@@ -22,6 +22,11 @@ updates:
     ignore:
       - dependency-name: "eslint"
         versions: [">=10.0.0 <=10.4.0"]
+      # Bounded to the current release (not >=7) so the ignore ages out and
+      # prompts a periodic compatibility re-check, matching the eslint entry.
+      # Blocked by @typescript-eslint peer range (ERESOLVE in PR #662).
+      - dependency-name: "typescript"
+        versions: [">=7.0.0 <=7.0.2"]
       - dependency-name: "playwright"
       - dependency-name: "@playwright/test"
 
@@ -35,7 +40,7 @@ updates:
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     ignore:
       - dependency-name: "playwright"
 
