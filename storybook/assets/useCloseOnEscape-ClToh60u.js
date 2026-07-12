@@ -1,0 +1,1 @@
+import{i as e,s as t}from"./preload-helper-BdFrVu1K.js";import{t as n}from"./react-uS7UyY4Q.js";function r(e,t){(0,i.useEffect)(()=>{let n=e=>{e.key===`Escape`&&t()};return e&&document.addEventListener(`keydown`,n),()=>{document.removeEventListener(`keydown`,n)}},[t,e])}var i,a=e((()=>{i=t(n())}));export{r as n,a as t};
