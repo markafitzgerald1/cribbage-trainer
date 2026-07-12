@@ -397,7 +397,10 @@
   never perturb the production-critical jobs' `on:`/`if:` conditions).
   "Eligible" means same-repository and not authored by `dependabot[bot]`;
   fork PRs never reach this at all since `push` never fires in this repo for
-  fork commits.
+  fork commits. Because previews are `push`-triggered, the branch-creating
+  push always precedes `gh pr create` and skips with "No open pull request
+  found"; the first preview publishes on the first push made _after_ the PR
+  exists (push an empty or follow-up commit if one is needed sooner).
 - The `pages-content` branch is a git-based **cache**, not the Pages
   publishing source (Pages settings stay `build_type: workflow`). It is
   fetched-or-created, mutated, and force-pushed as a single amended commit
