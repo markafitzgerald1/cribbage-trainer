@@ -1,0 +1,6 @@
+import{n as e}from"./rolldown-runtime-DkW27tQK.js";import{t}from"./jsx-runtime-DeHZSEgm.js";function n({classes:e,metrics:t}){return(0,r.jsx)(`div`,{className:e.summaryCards,children:t.map(({accessibleValue:t,label:n,value:i})=>{let a=t??null,o=a!==null;return(0,r.jsxs)(`div`,{className:e.summaryCard,children:[(0,r.jsx)(`span`,{className:e.summaryLabel,children:n}),o?(0,r.jsx)(`span`,{"aria-label":a,className:e.summaryValue,role:`note`,children:i}):(0,r.jsx)(`span`,{className:e.summaryValue,children:i})]},n)})})}var r;function i(){return(i=e((()=>{r=t(),n.__docgenInfo={description:``,methods:[],displayName:`DialogSummaryCards`,props:{classes:{required:!0,tsType:{name:`signature`,type:`object`,raw:`{
+  readonly summaryCard: string;
+  readonly summaryCards: string;
+  readonly summaryLabel: string;
+  readonly summaryValue: string;
+}`,signature:{properties:[{key:`summaryCard`,value:{name:`string`,required:!0}},{key:`summaryCards`,value:{name:`string`,required:!0}},{key:`summaryLabel`,value:{name:`string`,required:!0}},{key:`summaryValue`,value:{name:`string`,required:!0}}]}},description:``},metrics:{required:!0,tsType:{name:`unknown`},description:``}}}})))()}export{i as n,n as t};
