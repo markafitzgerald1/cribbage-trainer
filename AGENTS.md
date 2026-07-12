@@ -406,7 +406,8 @@
   fetched-or-created, mutated, and force-pushed as a single amended commit
   by every publish (`.github/actions/publish-pages-content`), so its history
   never grows — don't "clean up" this branch or its lack of history; that is
-  intentional. It holds the production site root plus one `pr/<number>/`
+  intentional, and a repository ruleset ("Protect pages-content from
+  deletion") blocks deleting it. It holds the production site root plus one `pr/<number>/`
   directory per currently-open preview; the merge/replace/remove logic lives
   in `scripts/pagesContentMerge.mjs` (tested via `node --test`, not Jest, so
   it stays outside `src/**` and the 100% Jest coverage threshold).
