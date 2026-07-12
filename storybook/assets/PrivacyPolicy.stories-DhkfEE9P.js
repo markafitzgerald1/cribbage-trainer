@@ -1,0 +1,1 @@
+import{i as e}from"./preload-helper-CT_b8DTk.js";import{n as t,t as n}from"./PrivacyPolicy-D__4gV85.js";var r,i,a;e((()=>{t(),r={component:n,tags:[`autodocs`],title:`PrivacyPolicy`},i={},i.parameters={...i.parameters,docs:{...i.parameters?.docs,source:{originalSource:`{}`,...i.parameters?.docs?.source}}},a=[`Policy`]}))();export{i as Policy,a as __namedExportsOrder,r as default};
