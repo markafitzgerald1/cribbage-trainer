@@ -1,0 +1,6 @@
+import{i as e}from"./preload-helper-BdFrVu1K.js";import{t}from"./jsx-runtime-f3rHp9ZU.js";function n({classes:e,metrics:t}){return(0,r.jsx)(`div`,{className:e.summaryCards,children:t.map(t=>(0,r.jsxs)(`div`,{className:e.summaryCard,children:[(0,r.jsx)(`span`,{className:e.summaryLabel,children:t.label}),(0,r.jsx)(`span`,{className:e.summaryValue,children:t.value})]},t.label))})}var r,i=e((()=>{r=t(),n.__docgenInfo={description:``,methods:[],displayName:`DialogSummaryCards`,props:{classes:{required:!0,tsType:{name:`signature`,type:`object`,raw:`{
+  readonly summaryCard: string;
+  readonly summaryCards: string;
+  readonly summaryLabel: string;
+  readonly summaryValue: string;
+}`,signature:{properties:[{key:`summaryCard`,value:{name:`string`,required:!0}},{key:`summaryCards`,value:{name:`string`,required:!0}},{key:`summaryLabel`,value:{name:`string`,required:!0}},{key:`summaryValue`,value:{name:`string`,required:!0}}]}},description:``},metrics:{required:!0,tsType:{name:`unknown`},description:``}}}}));export{i as n,n as t};
