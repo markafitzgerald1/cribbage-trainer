@@ -144,7 +144,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           BRANCH="${GITHUB_REF#refs/heads/}"
-          PR_JSON=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number,author,isCrossRepository --jq '.[0] // empty')
+          # The --head filter prefix-matches branch names (github/cli#10816),
+          # so select on exact headRefName equality to never publish this
+          # branch's build to a similarly named branch's PR path.
+          PR_LIST=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number,author,isCrossRepository,headRefName)
+          PR_JSON=$(jq --arg branch "$BRANCH" '[.[] | select(.headRefName == $branch)][0] // empty' <<< "$PR_LIST")
           if [ -z "$PR_JSON" ]; then
             echo "No open pull request found for branch $BRANCH; skipping preview deploy."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
@@ -178,6 +182,7 @@ jobs:
       contents: write # to push the pages-content state branch
       pages: write # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
+      pull-requests: read # to recheck the PR is still open before publishing
 
     # A separate, unprotected environment from github-pages: that
     # environment's branch policy permits deployments only from main.
@@ -204,7 +209,24 @@ jobs:
           PAGES_BASE_PATH: /cribbage-trainer/pr/${{ needs.resolve-preview-pr.outputs.number }}
           VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
 
+      # The eligibility check ran before the ~6-minute build-and-test gate;
+      # if the PR closed in that window, publishing would recreate a preview
+      # that the cleanup workflow already removed (or is about to remove).
+      - id: recheck
+        name: Confirm the pull request is still open
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATE=$(gh pr view "${{ needs.resolve-preview-pr.outputs.number }}" --repo "$GITHUB_REPOSITORY" --json state --jq '.state')
+          if [ "$STATE" = "OPEN" ]; then
+            echo "open=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Pull request #${{ needs.resolve-preview-pr.outputs.number }} is $STATE; skipping preview publish."
+            echo "open=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish preview content and deploy
+        if: steps.recheck.outputs.open == 'true'
         uses: ./.github/actions/publish-pages-content
         with:
           merge-args: pr ${{ needs.resolve-preview-pr.outputs.number }} dist
