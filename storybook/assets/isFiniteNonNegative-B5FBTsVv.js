@@ -1,0 +1,1 @@
+import{n as e}from"./rolldown-runtime-sJBDdmOt.js";var t;function n(){return(n=e((()=>{t=e=>typeof e==`number`&&Number.isFinite(e)&&e>=0})))()}export{t as n,n as t};
