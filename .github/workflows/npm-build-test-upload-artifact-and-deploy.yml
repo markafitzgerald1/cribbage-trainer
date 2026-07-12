@@ -130,8 +130,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          LIST=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number --jq '[.[].number] | join(" ")')
-          echo "list=${LIST:-none}" >> "$GITHUB_OUTPUT"
+          mapfile -t OPEN_PR_NUMBERS < <(
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" \
+              --jq '.[].number'
+          )
+          if ((${#OPEN_PR_NUMBERS[@]} == 0)); then
+            echo "list=none" >> "$GITHUB_OUTPUT"
+          else
+            echo "list=${OPEN_PR_NUMBERS[*]}" >> "$GITHUB_OUTPUT"
+          fi
 
       - id: publish
         name: Publish production content and deploy

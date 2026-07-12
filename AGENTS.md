@@ -434,7 +434,10 @@
   the close-cleanup job could cancel the merge's own production deploy
   (this hit the #656 merge and left production one commit stale). Hence
   cleanup skips merged PRs entirely and the production publish prunes
-  previews for non-open PRs instead (`pagesContentMerge.mjs prune`).
+  previews for non-open PRs instead (`pagesContentMerge.mjs prune`). Because
+  that prune is destructive, its open-PR allowlist must use a paginated API
+  query; a finite `gh pr list --limit` can omit a still-open PR and delete its
+  preview.
 - Bot logins are spelled differently per GitHub API surface: Dependabot is
   `app/dependabot` in `gh` CLI/GraphQL author fields but `dependabot[bot]`
   in REST/webhook event payloads. Never compare a single literal — the
