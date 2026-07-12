@@ -125,6 +125,28 @@ export const parseCard = (card: string): Card => {
 
 const getPhysicalCardKey = (card: Card) => `${card.rank}-${card.suit}`;
 
+export const isSamePhysicalCard = (first: Card, second: Card): boolean =>
+  getPhysicalCardKey(first) === getPhysicalCardKey(second);
+
+export const suitLetter = (suit: Suit): string => {
+  switch (suit) {
+    case Suit.CLUBS:
+      return "C";
+    case Suit.DIAMONDS:
+      return "D";
+    case Suit.HEARTS:
+      return "H";
+    default:
+      return "S";
+  }
+};
+
+export const serializeCard = (card: Card): string =>
+  `${card.rankLabel}${suitLetter(card.suit)}`;
+
+export const serializeHand = (cards: readonly Card[]): string =>
+  cards.map(serializeCard).join(",");
+
 export const parseHand = (hand: string): Card[] => {
   const cards = hand.split(",").map(parseCard);
   const cardKeys = cards.map(getPhysicalCardKey);

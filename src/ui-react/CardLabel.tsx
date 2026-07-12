@@ -29,6 +29,7 @@ const SUIT_PATHS: Record<Suit, string> = {
 };
 
 export interface CardLabelProps {
+  readonly cornerIndex?: boolean;
   readonly isHandCard?: boolean;
   readonly rank?: Rank | undefined;
   readonly ranks?: readonly Rank[] | undefined;
@@ -37,6 +38,7 @@ export interface CardLabelProps {
 }
 
 export function CardLabel({
+  cornerIndex = false,
   isHandCard = false,
   rank,
   ranks,
@@ -74,6 +76,7 @@ export function CardLabel({
         colorClass,
         normalizedSuits.length === 0 && classes.rankOnly,
         isHandCard && classes.handCardLabel,
+        cornerIndex && classes.cornerIndex,
       ]
         .filter(Boolean)
         .join(" ")
@@ -134,6 +137,7 @@ export function CardLabel({
 }
 
 CardLabel.defaultProps = {
+  cornerIndex: false,
   isHandCard: false,
   // eslint-disable-next-line no-undefined
   rank: undefined,

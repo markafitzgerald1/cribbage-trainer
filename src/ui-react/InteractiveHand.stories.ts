@@ -9,6 +9,7 @@ import {
 } from "./stories.common";
 /* jscpd:ignore-end */
 import { CARDS } from "../game/Card";
+import { CribRole } from "../game/expectedCribPoints";
 import { InteractiveHand } from "./InteractiveHand";
 
 const meta = {
@@ -27,6 +28,7 @@ type Story = StoryObj<typeof meta>;
 function createStory(sortOrder: SortOrder): Story {
   return {
     args: {
+      cribRole: CribRole.Dealer,
       dealtCards: toDealtCards([
         CARDS.JACK,
         CARDS.FIVE,
@@ -37,6 +39,7 @@ function createStory(sortOrder: SortOrder): Story {
       ]),
       onCardChange: () => null,
       onDeal: () => null,
+      onEnterCards: () => null,
       onSortOrderChange: () => null,
       sortOrder,
     },

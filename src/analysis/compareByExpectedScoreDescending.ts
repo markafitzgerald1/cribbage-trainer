@@ -1,19 +1,31 @@
 import { type Card, SUITS } from "../game/Card";
 
-export const compareByExpectedScoreThenRankDescending = (
+export const ScoredKeepDiscardSortKey = {
+  ExpectedCribPoints: "signedExpectedCribPoints",
+  ExpectedHandPoints: "expectedHandPoints",
+  ExpectedNetPoints: "expectedNetPoints",
+  ExpectedPlayPoints: "expectedPlayPoints.delta",
+} as const;
+
+export type ScoredKeepDiscardSortKey =
+  (typeof ScoredKeepDiscardSortKey)[keyof typeof ScoredKeepDiscardSortKey];
+
+interface ComparableScoredKeepDiscard {
+  readonly expectedHandPoints: number;
+  readonly expectedNetPoints: number;
+  readonly expectedPlayPoints: { readonly delta: number };
+  readonly keep: readonly Card[];
+  readonly signedExpectedCribPoints: number;
+}
+
+const compareByKeepRankDescending = (
   discardKeep1: {
-    readonly expectedHandPoints: number;
     readonly keep: readonly Card[];
   },
   discardKeep2: {
-    readonly expectedHandPoints: number;
     readonly keep: readonly Card[];
   },
 ): number => {
-  if (discardKeep2.expectedHandPoints !== discardKeep1.expectedHandPoints) {
-    return discardKeep2.expectedHandPoints - discardKeep1.expectedHandPoints;
-  }
-
   const minLength = Math.min(
     discardKeep1.keep.length,
     discardKeep2.keep.length,
@@ -37,3 +49,42 @@ export const compareByExpectedScoreThenRankDescending = (
 
   return 0;
 };
+
+const getScore = (
+  discardKeep: ComparableScoredKeepDiscard,
+  sortKey: ScoredKeepDiscardSortKey,
+) => {
+  switch (sortKey) {
+    case ScoredKeepDiscardSortKey.ExpectedCribPoints:
+      return discardKeep.signedExpectedCribPoints;
+    case ScoredKeepDiscardSortKey.ExpectedHandPoints:
+      return discardKeep.expectedHandPoints;
+    case ScoredKeepDiscardSortKey.ExpectedNetPoints:
+      return discardKeep.expectedNetPoints;
+    case ScoredKeepDiscardSortKey.ExpectedPlayPoints:
+      return discardKeep.expectedPlayPoints.delta;
+    default:
+      return discardKeep.expectedNetPoints;
+  }
+};
+
+export const compareByExpectedScoreThenRankDescending =
+  (sortKey: ScoredKeepDiscardSortKey) =>
+  (
+    discardKeep1: ComparableScoredKeepDiscard,
+    discardKeep2: ComparableScoredKeepDiscard,
+  ): number => {
+    const score1 = getScore(discardKeep1, sortKey);
+    const score2 = getScore(discardKeep2, sortKey);
+
+    if (score2 !== score1) {
+      return score2 - score1;
+    }
+
+    return compareByKeepRankDescending(discardKeep1, discardKeep2);
+  };
+
+export const compareByExpectedNetScoreThenRankDescending =
+  compareByExpectedScoreThenRankDescending(
+    ScoredKeepDiscardSortKey.ExpectedNetPoints,
+  );

@@ -1,4 +1,4 @@
-import { expect, fireEvent, within } from "storybook/test";
+import { expect, fireEvent, waitFor, within } from "storybook/test";
 import type { Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 
@@ -28,24 +28,71 @@ export const toDealtCards = (
     suit: card.suit,
   }));
 
+export const waitForLoadingToDisappear = async (canvas: {
+  readonly queryByText: (text: string | RegExp) => HTMLElement | null;
+}): Promise<void> => {
+  await waitFor(
+    async () => {
+      await expect(canvas.queryByText("Loading analysis...")).toBeNull();
+    },
+    { timeout: 5000 },
+  );
+};
+
+const clickBreakdownLabel = async (
+  canvas: {
+    readonly findByText: (text: RegExp | string) => Promise<HTMLElement>;
+  },
+  label: RegExp | string,
+  expectedText: RegExp | string,
+) => {
+  const breakdownLabel = await canvas.findByText(label);
+  await fireEvent.click(breakdownLabel);
+
+  await expect(await canvas.findByText(expectedText)).toBeVisible();
+};
+
 export const playToggle = async (
   { canvasElement }: { readonly canvasElement: HTMLElement },
-  { toggleStarterDetails = false } = {},
+  {
+    toggleCribDetails = false,
+    togglePlayDetails = false,
+    toggleStarterDetails = false,
+  } = {},
 ) => {
   const canvas = within(canvasElement);
+  await waitForLoadingToDisappear(canvas);
+
   const table = await canvas.findByRole("table");
   const rows = await within(table).findAllByRole("row");
   const row = rows.length === 1 ? rows[0] : rows[1];
   if (row) {
-    await fireEvent.click(row);
+    const expandButton = within(row).queryByRole("button", {
+      name: /Expand analysis/u,
+    });
+    if (expandButton) {
+      await fireEvent.click(expandButton);
+    } else {
+      await fireEvent.click(row);
+    }
   }
 
-  await expect(await canvas.findByText(/Starter/u)).toBeVisible();
+  await expect(await canvas.findByText(/\+Cut avg/u)).toBeVisible();
 
   if (toggleStarterDetails) {
-    const starterAvgLabel = await canvas.findByText(/Starter/u);
-    await fireEvent.click(starterAvgLabel);
+    await clickBreakdownLabel(canvas, /\+Cut avg/u, "Points");
+  }
 
-    await expect(await canvas.findByText("Points")).toBeVisible();
+  if (toggleCribDetails) {
+    await clickBreakdownLabel(canvas, /Crib avg/u, "Points");
+  }
+
+  if (togglePlayDetails) {
+    await clickBreakdownLabel(canvas, /You - Opp/u, /You - Opp/u);
   }
 };
+
+export const playDoubleExpanded = (context: {
+  readonly canvasElement: HTMLElement;
+}) =>
+  playToggle(context, { toggleCribDetails: true, toggleStarterDetails: true });

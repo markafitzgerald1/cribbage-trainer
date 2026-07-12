@@ -7,3 +7,5 @@
 /playwright-report/
 /storybook-static/
 /.VSCodeCounter/
+/codex.feedback.*.txt
+/.claude/

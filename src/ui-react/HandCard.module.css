@@ -1,9 +1,13 @@
 @import url("./vars.css");
 
-:root {
-  --card-width: 0.9em;
-}
-
+/*
+ * Invariant: both layout modes render the same card design at different
+ * scales, so a phone rotation only rescales the cards. The box (5/7 ratio,
+ * width, border), checkbox, and label are all defined once in em so their
+ * proportions cannot drift between modes; each mode sets only the font
+ * scale. The 1.212em width matches the stacked grid cell that the 12.3cqw
+ * font and 2.1cqw hand gaps produce, so keep those three values in step.
+ */
 .hand-card {
   align-items: center;
   padding: 0.16em 0.16em 0.22em;
@@ -15,45 +19,41 @@
   margin-top: 0;
   margin-bottom: 0.4em;
   font-weight: bold;
-  font-size: 7.9vw;
   text-align: center;
-  width: var(--card-width);
   position: relative;
   user-select: none;
   font-family: var(--card-font-family);
-  border-width: var(--clickable-border-width);
   border-radius: var(--clickable-border-radius);
+  aspect-ratio: 5 / 7;
+  border-width: 0.022em;
+  box-sizing: border-box;
+  width: 1.212em;
 }
 
 .hand-card input[type="checkbox"] {
-  block-size: 0.18em;
+  block-size: 0.211em;
   position: absolute;
   bottom: 0.02em;
-  inline-size: 0.18em;
+
+  /* Em must track the card font, not the browser's form-control default. */
+  font-size: inherit;
+  inline-size: 0.211em;
   left: 0.02em;
 }
 
-@media (orientation: portrait) {
+/*
+ * Container-relative in stacked mode, viewport-relative in side-by-side;
+ * clamps whose caps would flatten wider cards must not reappear here.
+ */
+@media (aspect-ratio < 6 / 5) {
   .hand-card {
-    box-sizing: border-box;
-    font-size: clamp(2.1rem, 11.6vw, 7rem);
-    width: 100%;
-  }
-
-  .hand-card input[type="checkbox"] {
-    block-size: clamp(0.62rem, 2.4vw, 0.95rem);
-    inline-size: clamp(0.62rem, 2.4vw, 0.95rem);
+    font-size: 12.3cqw;
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .hand-card {
-    font-size: 5.8vw;
-  }
-
-  .hand-card input[type="checkbox"] {
-    block-size: 1.25vw;
-    inline-size: 1.25vw;
+    font-size: 6.02vw;
   }
 }
 

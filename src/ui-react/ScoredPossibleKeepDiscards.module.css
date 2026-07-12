@@ -3,6 +3,7 @@
 .scored-possible-keep-discards {
   box-sizing: border-box;
   color: var(--text-color);
+  container-type: inline-size;
   font-family: var(--text-font-family);
   display: flex;
   flex-direction: column;
@@ -36,6 +37,22 @@
   width: 100%;
 }
 
+.hand-column {
+  width: 40%;
+}
+
+.score-column {
+  width: 15%;
+}
+
+.play-score-column {
+  width: 15%;
+}
+
+.net-score-column {
+  width: 15%;
+}
+
 .scored-possible-keep-discards tbody tr.odd-row {
   background-color: transparent;
 }
@@ -56,34 +73,31 @@
 }
 
 .scored-possible-keep-discards th:first-child {
-  width: 55%;
   text-align: left;
 }
 
 .scored-possible-keep-discards th:nth-child(n + 2) {
-  width: 15%;
-}
-
-.scored-possible-keep-discards th:nth-child(3) {
   padding-right: 0.5em;
 }
 
-@media (orientation: portrait) {
-  .scored-possible-keep-discards th:first-child {
-    width: 63%;
+@media (aspect-ratio < 6 / 5) {
+  /* The small portrait mini-cards under-fill the hand column, so hand the slack
+     to the numeric columns for roomier, non-cramped scores -- but keep enough
+     hand width that the row's expand arrow is not clipped by its overflow box. */
+  .hand-column {
+    width: 42%;
   }
 
-  .scored-possible-keep-discards th:nth-child(2) {
-    width: 11%;
+  .score-column {
+    width: 14.5%;
   }
 
-  .scored-possible-keep-discards th:nth-child(3) {
-    padding-left: 0.5em;
-    width: 12%;
+  .play-score-column {
+    width: 14.5%;
   }
 
-  .scored-possible-keep-discards th:nth-child(4) {
-    width: 14%;
+  .net-score-column {
+    width: 14.5%;
   }
 }
 
@@ -102,6 +116,7 @@
 .header-main {
   font-weight: 700;
   font-size: 1em;
+  white-space: nowrap;
 }
 
 .header-unit {
@@ -110,22 +125,84 @@
   margin-top: 2px;
 }
 
-@media (orientation: portrait) {
+.header-button {
+  align-items: flex-end;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: 0;
+  line-height: 1.1;
+  margin: 0;
+  padding: 0;
+  text-align: right;
+  width: 100%;
+}
+
+.header-button:hover,
+.scored-possible-keep-discards th[aria-sort="descending"] .header-button {
+  color: #fff;
+}
+
+@media (aspect-ratio < 6 / 5) {
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-portrait);
   }
 
   .scored-possible-keep-discards th {
-    font-size: calc(var(--medium-text-font-size-portrait) * 0.86);
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.74);
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-landscape);
   }
 
   .scored-possible-keep-discards th {
-    font-size: var(--medium-text-font-size-landscape);
+    font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
   }
+}
+
+.loading {
+  color: var(--text-color);
+  font-family: var(--text-font-family);
+  font-style: italic;
+  opacity: 0.8;
+  padding: 10px;
+}
+
+.error {
+  align-items: center;
+  color: var(--text-color);
+  display: flex;
+  font-family: var(--text-font-family);
+  gap: 15px;
+  padding: 10px;
+}
+
+.retry-button {
+  background-color: #dc3545;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85em;
+  padding: 4px 10px;
+  transition: background-color var(--transition-duration)
+    var(--transition-timing);
+}
+
+.retry-button:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.retry-button:active {
+  background-color: #bd2130;
 }

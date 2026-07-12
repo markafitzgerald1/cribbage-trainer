@@ -1,6 +1,7 @@
 import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
+import { CribRole } from "../game/expectedCribPoints";
 import { InteractiveHand } from "./InteractiveHand";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
@@ -15,19 +16,23 @@ describe("sortable hand input component", () => {
     const handCards = dealHand(createGenerator());
     const onCardChange = jest.fn();
     const onDeal = jest.fn();
+    const onEnterCards = jest.fn();
     const onSortOrderChange = jest.fn();
     return {
       component: render(
         <InteractiveHand
+          cribRole={CribRole.Dealer}
           dealtCards={handCards}
           onCardChange={onCardChange}
           onDeal={onDeal}
+          onEnterCards={onEnterCards}
           onSortOrderChange={onSortOrderChange}
           sortOrder={initialSortOrder}
         />,
       ),
       handCards,
       onCardChange,
+      onEnterCards,
       onSortOrderChange,
     };
   }
@@ -86,4 +91,17 @@ describe("sortable hand input component", () => {
       expect(onCardChange).toHaveBeenCalledWith(dealOrderIndex);
     },
   );
+
+  it("fires an enter-cards event when its button is clicked", () => {
+    const {
+      component: { getByRole },
+      onEnterCards,
+    } = renderComponent();
+
+    act(() => {
+      getByRole("button", { name: "Enter cards" }).click();
+    });
+
+    expect(onEnterCards).toHaveBeenCalledTimes(1);
+  });
 });

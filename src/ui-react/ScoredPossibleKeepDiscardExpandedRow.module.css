@@ -3,8 +3,10 @@
 .expanded-row {
   --card-black-suit-color: #fff;
   --card-red-suit-color: #f99;
-  --cut-result-generic-color: #a8d5ba;
-  --cut-result-generic-opacity: 0.7;
+  --starter-detail-color: #95caac;
+  --starter-detail-red-suit-color: #e8b4b2;
+  --cut-result-generic-color: var(--starter-detail-color);
+  --cut-result-generic-opacity: 1;
   --cut-result-red-suit-color: #f99;
   --cut-result-specific-color: #fff;
   --cut-result-text-color: #fff;
@@ -21,13 +23,13 @@
   white-space: normal;
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .expanded-row {
     font-size: calc(var(--medium-text-font-size-landscape) * 0.8);
   }
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .expanded-row {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.74);
   }
@@ -38,7 +40,7 @@
   color: #fff;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
   padding-left: 8px;
   padding-right: 8px;
@@ -53,8 +55,9 @@
     minmax(0, 13fr);
   gap: 8px;
   min-width: 0;
-  padding-bottom: 2px;
+  padding: 2px 0;
   border-bottom: 1px solid rgb(255 255 255 / 20%);
+  background-color: #0f5132;
   font-family: var(--text-font-family);
   font-weight: 600;
   font-size: 0.9em;
@@ -66,11 +69,12 @@
 }
 
 .category-header {
-  text-align: center;
+  min-width: 0;
+  text-align: right;
 }
 
 .breakdown-header > div:last-child {
-  text-align: center;
+  text-align: right;
 }
 
 .breakdown-summary {
@@ -81,17 +85,57 @@
     minmax(0, 13fr);
   gap: 8px;
   min-width: 0;
-  padding: 2px 0;
+  padding: 1px 0;
   background-color: #0f5132;
   border-radius: 4px;
   font-family: var(--text-font-family);
-  font-weight: 600;
+  font-weight: 400;
   color: #fff;
+}
+
+.breakdown-summary-button {
+  appearance: none;
+  background-color: #0f5132;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--text-font-family);
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+  margin: 0;
+  padding: 1px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.breakdown-summary-button:hover,
+.breakdown-summary-button:focus-visible {
+  background-color: rgb(255 255 255 / 8%);
+  outline: 1px solid rgb(255 255 255 / 30%);
+  outline-offset: 1px;
 }
 
 .summary-label {
   text-align: left;
   color: rgb(255 255 255 / 70%);
+}
+
+.starter-detail-row .summary-label {
+  color: var(--starter-detail-color);
+  font-size: 0.9em;
+}
+
+.breakdown-summary-button:hover .summary-label,
+.breakdown-summary-button:focus-visible .summary-label {
+  color: #fff;
+}
+
+.summary-label-content {
+  color: inherit;
+
+  /* Keep the label text and its expand indicator together on one line. */
+  white-space: nowrap;
 }
 
 .no-wrap {
@@ -111,13 +155,17 @@
 }
 
 .summary-value {
-  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
   color: #fff;
+  text-align: right;
 }
 
 .summary-total {
-  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
   color: #fff;
+  text-align: right;
 }
 
 .muted {
@@ -136,6 +184,64 @@
   flex-direction: column;
 }
 
+.cut-results-list :global(.cut-result-row) {
+  --cut-result-generic-color: var(--starter-detail-color);
+  --cut-result-generic-opacity: 1;
+}
+
+.cut-results-list :global(.total-column) {
+  font-weight: 400;
+}
+
+.crib-starter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.play-breakdown {
+  border-top: 1px solid rgb(255 255 255 / 20%);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+  padding-top: 4px;
+}
+
+.play-breakdown-header,
+.play-breakdown-row {
+  display: grid;
+  align-items: baseline;
+  gap: 4px;
+  grid-template-columns:
+    minmax(5.5em, 24fr) minmax(0, 10fr)
+    minmax(0, 10fr) minmax(0, 11fr)
+    minmax(0, 11fr) minmax(0, 10fr)
+    minmax(0, 11fr) minmax(0, 14fr);
+  min-width: 0;
+}
+
+.play-breakdown-header {
+  color: rgb(255 255 255 / 80%);
+  font-size: 0.9em;
+  font-weight: 600;
+  padding: 2px 0;
+}
+
+.starter-detail-row {
+  --card-black-suit-color: var(--starter-detail-color);
+  --card-red-suit-color: var(--starter-detail-red-suit-color);
+
+  color: var(--starter-detail-color);
+  font-weight: 400;
+}
+
+.starter-detail-row .summary-value,
+.starter-detail-row .summary-total {
+  color: var(--text-color);
+  font-size: 0.9em;
+}
+
 .expanded-row :global(.points-column) {
   text-align: center;
 }
@@ -144,7 +250,7 @@
   text-align: center;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .breakdown-header {
     font-size: 0.82em;
   }
@@ -163,5 +269,14 @@
   .breakdown-summary,
   .cut-results-list {
     font-size: 0.9em;
+  }
+
+  .play-breakdown-header,
+  .play-breakdown-row {
+    font-size: 0.82em;
+    gap: 2px;
+    grid-template-columns:
+      minmax(5.2em, 22fr) repeat(6, minmax(2.2em, 11fr))
+      minmax(2.5em, 12fr);
   }
 }

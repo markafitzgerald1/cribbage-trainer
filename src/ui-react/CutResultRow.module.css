@@ -78,7 +78,7 @@
   opacity: 0.5;
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .cut-result-row {
     grid-template-columns:
       minmax(3em, 28fr) minmax(2.5em, 11fr)

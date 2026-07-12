@@ -1,13 +1,21 @@
 import { expect, test } from "@playwright/test";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
-const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H";
+const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H&seed=e2e";
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
     page,
   }) => {
     await page.goto(`/${constantHandQuery}`);
+
+    await expect(page).toHaveScreenshot();
+  });
+
+const testEnterCardsDialogScreenshot = () =>
+  test("enter cards dialog still visually the same", async ({ page }) => {
+    await page.goto(`/${constantHandQuery}`);
+    await page.getByRole("button", { name: "Enter cards" }).click();
 
     await expect(page).toHaveScreenshot();
   });
@@ -52,7 +60,19 @@ const testDoubleExpandedScreenshot = () =>
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
-    await page.locator("text=Starter avg").click();
+    await page.getByRole("button", { name: "+Cut avg" }).click();
+
+    await expect(page).toHaveScreenshot();
+  });
+
+const testCribExpandedScreenshot = () =>
+  test("crib starter details show after crib avg expansion still visually the same", async ({
+    page,
+  }) => {
+    await renderThenSelectTwoDiscards(page, constantHandQuery, true);
+
+    await page.locator("tbody tr").first().click();
+    await page.getByRole("button", { name: "Crib avg" }).click();
 
     await expect(page).toHaveScreenshot();
   });
@@ -66,12 +86,19 @@ const typicalPhoneViewportSize = {
   },
 };
 
+const nearSquareLandscapeViewportSize = {
+  height: 900,
+  width: 1000,
+};
+
 const testScreenshots = () => {
   testInitialRenderScreenshot();
+  testEnterCardsDialogScreenshot();
   testPrivacyPolicyScreenshot();
   testScoredPossibilitiesNoExpansionScreenshot();
   testExpandedRowScreenshot();
   testDoubleExpandedScreenshot();
+  testCribExpandedScreenshot();
 };
 
 test.describe("portrait", () => {
@@ -94,4 +121,10 @@ test.describe("landscape", () => {
   });
 
   testScreenshots();
+});
+
+test.describe("near-square landscape", () => {
+  test.use({ viewport: nearSquareLandscapeViewportSize });
+
+  testScoredPossibilitiesNoExpansionScreenshot();
 });

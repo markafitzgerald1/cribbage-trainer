@@ -1,4 +1,8 @@
 import * as classes from "./InteractiveHand.module.css";
+import {
+  CribRole,
+  type CribRole as CribRoleType,
+} from "../game/expectedCribPoints";
 import { DealButton } from "./DealButton";
 import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
@@ -6,20 +10,28 @@ import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
 
 interface InteractiveHandProps {
+  readonly cribRole: CribRoleType;
   readonly dealtCards: readonly DealtCard[];
   readonly onCardChange: (dealOrderIndex: number) => void;
   readonly sortOrder: SortOrder;
   readonly onSortOrderChange: (sortOrder: SortOrder) => void;
   readonly onDeal: () => void;
+  readonly onEnterCards: () => void;
 }
 
 export function InteractiveHand({
+  cribRole,
   dealtCards,
   onCardChange,
   sortOrder,
   onSortOrderChange,
   onDeal,
+  onEnterCards,
 }: InteractiveHandProps) {
+  const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
+  const roleContext =
+    cribRole === CribRole.Dealer ? "your crib" : "opponent crib";
+
   return (
     <div className={classes.interactiveHand}>
       <div className={classes.controls}>
@@ -27,7 +39,20 @@ export function InteractiveHand({
           onChange={onSortOrderChange}
           sortOrder={sortOrder}
         />
-        <DealButton onDeal={onDeal} />
+        <div className={classes.roleLabel}>
+          <span className={classes.roleName}>{roleName}</span>
+          <span className={classes.roleContext}>{roleContext}</span>
+        </div>
+        <div className={classes.dealActions}>
+          <button
+            className={classes.enterCards}
+            onClick={onEnterCards}
+            type="button"
+          >
+            Enter cards
+          </button>
+          <DealButton onDeal={onDeal} />
+        </div>
       </div>
       <Hand
         dealtCards={dealtCards}

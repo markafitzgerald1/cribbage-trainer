@@ -22,27 +22,30 @@
   white-space: nowrap;
 }
 
-.scored-possible-keep-discard td:nth-child(3) {
-  padding-left: 0.5em;
-  padding-right: 0.25em;
+/* Inter-column gutter for the numeric columns so adjacent values never touch
+   (a "-" is narrower than a "+", so equal column widths alone are not enough). */
+.scored-possible-keep-discard td:nth-child(n + 2) {
+  padding-left: 0.1em;
+  padding-right: 0.55em;
+}
+
+.score-cell,
+.net-score-cell {
+  font-variant-numeric: tabular-nums;
 }
 
 .hand-discard-cell {
   display: inline-flex;
-  align-items: baseline;
-  column-gap: 0.12em;
+  align-items: center;
+  column-gap: 0.08em;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .discard-group {
   display: inline-flex;
-  align-items: baseline;
-}
-
-.cut-points-cell {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: flex-end;
-  column-gap: 0.12em;
+  align-items: center;
+  line-height: 1;
 }
 
 .highlighted {
@@ -59,6 +62,16 @@
   background-color: rgb(255 255 255 / 15%);
 }
 
+button.expand-indicator {
+  background: none;
+  border: none;
+  padding: 0 0 0 0.08em;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+}
+
 .expand-indicator {
   display: inline-block;
   flex: 0 0 auto;
@@ -71,22 +84,27 @@
   transform: rotate(90deg);
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .scored-possible-keep-discard {
-    font-size: var(--medium-text-font-size-landscape);
+    font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
+  }
+
+  /* Bigger mini-cards in landscape to use the otherwise-empty hand column. */
+  .scored-possible-keep-discard td:first-child {
+    font-size: 1.1em;
   }
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .scored-possible-keep-discard {
     font-size: var(--medium-text-font-size-portrait);
   }
 
   .scored-possible-keep-discard td:first-child {
-    font-size: 0.84em;
+    font-size: 0.92em;
   }
 
   .scored-possible-keep-discard td:nth-child(n + 2) {
-    font-size: 0.86em;
+    font-size: 0.78em;
   }
 }

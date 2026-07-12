@@ -54,7 +54,7 @@
   box-shadow: 0 3px 5px rgb(0 0 0 / 20%);
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .label {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.8);
   }
@@ -64,7 +64,7 @@
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .label {
     font-size: calc(var(--medium-text-font-size-landscape));
   }

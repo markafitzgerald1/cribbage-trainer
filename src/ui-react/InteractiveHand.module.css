@@ -14,3 +14,149 @@
   flex-flow: row nowrap;
   width: 100%;
 }
+
+.enter-cards {
+  background-color: #197536;
+  border: 2px solid #0f5527;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-family: var(--text-font-family);
+  font-weight: 700;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing);
+  white-space: nowrap;
+}
+
+.enter-cards:hover,
+.enter-cards:focus {
+  background-color: #34c754;
+  border-color: #34c754;
+  outline: none;
+}
+
+.enter-cards:focus {
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
+}
+
+.enter-cards:active {
+  background-color: #0f5527;
+  border-color: #0f5527;
+}
+
+.deal-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.role-label {
+  align-items: center;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--text-font-family);
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.role-name {
+  display: block;
+}
+
+.role-context {
+  display: block;
+  opacity: 0.82;
+}
+
+@media (aspect-ratio < 6 / 5) {
+  .interactive-hand {
+    container-type: inline-size;
+  }
+
+  /*
+   * Invariant: the stacked-mode controls row always fits the viewport. Every
+   * font and gap is container-relative (cqw), never rem, because mobile
+   * browsers scale rem with the device font-size setting and rem floors made
+   * the nowrap controls overflow past the screen edge on such devices.
+   */
+  .controls {
+    --medium-text-font-size-portrait: 5.25cqw;
+
+    gap: 1.1cqw;
+  }
+
+  .deal-actions {
+    flex-shrink: 0;
+    gap: 1.1cqw;
+  }
+
+  .enter-cards {
+    font-size: 3.5cqw;
+    padding: 0.35em 0.5em;
+  }
+
+  .role-name {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.95);
+  }
+
+  .role-context {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.64);
+  }
+
+  .role-label {
+    flex-shrink: 0;
+    min-width: 0;
+    padding: 0;
+  }
+
+  @container (max-width: 400px) {
+    .controls {
+      gap: 0.65cqw;
+    }
+
+    .deal-actions {
+      gap: 0.65cqw;
+    }
+
+    .enter-cards {
+      padding-inline: 0.4em;
+    }
+
+    .role-context {
+      font-size: calc(var(--medium-text-font-size-portrait) * 0.52);
+    }
+  }
+}
+
+@media (aspect-ratio >= 6 / 5) {
+  /*
+   * Wrapping to two lines ("Enter" over "cards") keeps the controls row
+   * narrower than the six cards below, so the controls never widen the
+   * side-by-side grid column and steal width from the analysis table.
+   */
+  .enter-cards {
+    font-size: clamp(
+      0.9rem,
+      calc(var(--medium-text-font-size-landscape) * 0.6),
+      1.35rem
+    );
+    line-height: 1.15;
+    padding: 0.35em 0.55em;
+    white-space: normal;
+    width: min-content;
+  }
+
+  .role-name {
+    font-size: var(--medium-text-font-size-landscape);
+  }
+
+  .role-context {
+    font-size: calc(var(--medium-text-font-size-landscape) * 0.68);
+  }
+}

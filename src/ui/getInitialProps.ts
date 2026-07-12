@@ -1,23 +1,14 @@
-import { CARDS_PER_DEALT_HAND } from "../game/facts";
-import { parseHand } from "../game/Card";
-
-const parseInitialCards = (handParam: string | null) => {
-  if (!handParam) {
-    return null;
-  }
-  try {
-    const cards = parseHand(handParam);
-    return cards.length === CARDS_PER_DEALT_HAND ? cards : null;
-  } catch {
-    return null;
-  }
-};
+import { SEED_PARAM, parseUrlAnalysisState } from "./urlAnalysisState";
 
 export const getInitialProps = (search: string) => {
-  const searchParams = new URLSearchParams(search);
-  const handParam = searchParams.get("hand");
+  const { cards, cribRole, discards, scoreSortKey, sortOrder } =
+    parseUrlAnalysisState(search);
   return {
-    initialCards: parseInitialCards(handParam),
-    seed: searchParams.get("seed"),
+    initialCards: cards,
+    initialCribRole: cribRole,
+    initialDiscards: discards,
+    initialScoreSortKey: scoreSortKey,
+    initialSortOrder: sortOrder,
+    seed: new URLSearchParams(search).get(SEED_PARAM),
   };
 };

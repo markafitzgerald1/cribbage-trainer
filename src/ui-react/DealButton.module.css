@@ -35,7 +35,7 @@
   box-shadow: 0 0 0 2px var(--focus-shadow-color);
 }
 
-@media (orientation: portrait) {
+@media (aspect-ratio < 6 / 5) {
   .deal-button {
     font-size: var(--font-size-portrait);
     padding: calc(
@@ -45,7 +45,7 @@
   }
 }
 
-@media (orientation: landscape) {
+@media (aspect-ratio >= 6 / 5) {
   .deal-button {
     font-size: var(--font-size-landscape);
     padding: calc(

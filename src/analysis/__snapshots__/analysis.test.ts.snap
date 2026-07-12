@@ -18,6 +18,32 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 5.74468085106383,
+    "expectedNetPoints": 10.46644255319149,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 4,
     "keep": [
       {
@@ -39,6 +65,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
+    "signedExpectedCribPoints": 4.72176170212766,
   },
   {
     "discard": [
@@ -56,6 +83,32 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 5.36170212765957,
+    "expectedNetPoints": 9.7936085106383,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 3,
     "keep": [
       {
@@ -77,234 +130,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 3.8936170212766,
-    "handPoints": 2,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 3.8936170212766,
-    "handPoints": 2,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 3.63829787234043,
-    "handPoints": 2,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 3.63829787234043,
-    "handPoints": 2,
-    "keep": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 1.48936170212766,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 1.48936170212766,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-    ],
+    "signedExpectedCribPoints": 4.43190638297872,
   },
   {
     "discard": [
@@ -322,6 +148,32 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1.46808510638298,
+    "expectedNetPoints": 8.39786595744681,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -343,6 +195,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
+    "signedExpectedCribPoints": 6.92978085106383,
   },
   {
     "discard": [
@@ -360,6 +213,32 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1.46808510638298,
+    "expectedNetPoints": 8.0512,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -381,12 +260,462 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
+    "signedExpectedCribPoints": 6.58311489361702,
+  },
+  {
+    "discard": [
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 1.48936170212766,
+    "expectedNetPoints": 7.86046595744681,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+    ],
+    "signedExpectedCribPoints": 6.37110425531915,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 3.8936170212766,
+    "expectedNetPoints": 7.71304893617021,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 2,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 3.81943191489362,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 3.63829787234043,
+    "expectedNetPoints": 7.43697021276596,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 2,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.79867234042553,
+  },
+  {
+    "discard": [
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 1.48936170212766,
+    "expectedNetPoints": 7.40132978723404,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 5.91196808510638,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 3.8936170212766,
+    "expectedNetPoints": 7.39947021276596,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 2,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 3.50585319148936,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 3.63829787234043,
+    "expectedNetPoints": 7.11628510638298,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 2,
+    "keep": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.47798723404255,
   },
 ]
 `;
 
 exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = `
 [
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "expectedHandPoints": 0.54166666666667,
+    "expectedNetPoints": 7.16545416666667,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 8,
+        "rank": 7,
+        "rankLabel": "8",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 6.6237875,
+  },
   {
     "discard": [
       {
@@ -403,6 +732,32 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 3,
+    "expectedNetPoints": 6.53771875,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 2,
     "keep": [
       {
@@ -418,70 +773,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 1.16666666666667,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 8,
-        "rank": 7,
-        "rankLabel": "8",
-        "suit": "♠",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 8,
-        "rank": 7,
-        "rankLabel": "8",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 1,
-    "handPoints": 0,
-    "keep": [
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
+    "signedExpectedCribPoints": 3.53771875,
   },
   {
     "discard": [
@@ -499,6 +791,32 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 0.79166666666667,
+    "expectedNetPoints": 6.191075,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -514,6 +832,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
+    "signedExpectedCribPoints": 5.39940833333333,
   },
   {
     "discard": [
@@ -531,6 +850,32 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 0.54166666666667,
+    "expectedNetPoints": 5.95483958333333,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -546,6 +891,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♦",
       },
     ],
+    "signedExpectedCribPoints": 5.41317291666667,
   },
   {
     "discard": [
@@ -556,13 +902,39 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♦",
       },
       {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
+        "count": 8,
+        "rank": 7,
+        "rankLabel": "8",
+        "suit": "♠",
       },
     ],
-    "expectedHandPoints": 0.54166666666667,
+    "expectedHandPoints": 1,
+    "expectedNetPoints": 4.7220375,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -572,12 +944,72 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♦",
       },
       {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.7220375,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 1.16666666666667,
+    "expectedNetPoints": 4.62856875,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 0,
+    "keep": [
+      {
         "count": 8,
         "rank": 7,
         "rankLabel": "8",
         "suit": "♠",
       },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
     ],
+    "signedExpectedCribPoints": 3.46190208333333,
   },
 ]
 `;
@@ -593,358 +1025,6 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
       {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 11.95652173913044,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 11.95652173913044,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 11.95652173913044,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 11.95652173913044,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 11.60869565217391,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 11.60869565217391,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 11.60869565217391,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 11.60869565217391,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-      {
         "count": 2,
         "rank": 1,
         "rankLabel": "2",
@@ -952,6 +1032,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.08695652173913,
+    "expectedNetPoints": 19.34048260869565,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2605,
+          "go": 0.2998,
+          "lastCard": 0.6301,
+          "pairs": 0.7811,
+          "runs": 1.2903,
+          "thirtyOnes": 0.5142,
+        },
+        "total": 3.7758,
+      },
+      "delta": 1.5164,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3675,
+          "go": 0.0687,
+          "lastCard": 0.3265,
+          "pairs": 0.4943,
+          "runs": 0.8645,
+          "thirtyOnes": 0.1378,
+        },
+        "total": 2.2595,
+      },
+    },
     "handPoints": 8,
     "keep": [
       {
@@ -979,94 +1085,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♥",
       },
     ],
-  },
-  {
-    "discard": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 11.08695652173913,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 11.08695652173913,
-    "handPoints": 8,
-    "keep": [
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♥",
-      },
-      {
-        "count": 1,
-        "rank": 0,
-        "rankLabel": "A",
-        "suit": "♦",
-      },
-      {
-        "count": 2,
-        "rank": 1,
-        "rankLabel": "2",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
+    "signedExpectedCribPoints": 6.73712608695652,
   },
   {
     "discard": [
@@ -1084,6 +1103,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.08695652173913,
+    "expectedNetPoints": 19.34048260869565,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2605,
+          "go": 0.2998,
+          "lastCard": 0.6301,
+          "pairs": 0.7811,
+          "runs": 1.2903,
+          "thirtyOnes": 0.5142,
+        },
+        "total": 3.7758,
+      },
+      "delta": 1.5164,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3675,
+          "go": 0.0687,
+          "lastCard": 0.3265,
+          "pairs": 0.4943,
+          "runs": 0.8645,
+          "thirtyOnes": 0.1378,
+        },
+        "total": 2.2595,
+      },
+    },
     "handPoints": 8,
     "keep": [
       {
@@ -1111,6 +1156,717 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
+    "signedExpectedCribPoints": 6.73712608695652,
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.08695652173913,
+    "expectedNetPoints": 19.26448695652174,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2605,
+          "go": 0.2998,
+          "lastCard": 0.6301,
+          "pairs": 0.7811,
+          "runs": 1.2903,
+          "thirtyOnes": 0.5142,
+        },
+        "total": 3.7758,
+      },
+      "delta": 1.5164,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3675,
+          "go": 0.0687,
+          "lastCard": 0.3265,
+          "pairs": 0.4943,
+          "runs": 0.8645,
+          "thirtyOnes": 0.1378,
+        },
+        "total": 2.2595,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "signedExpectedCribPoints": 6.66113043478261,
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.08695652173913,
+    "expectedNetPoints": 19.26448695652174,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2605,
+          "go": 0.2998,
+          "lastCard": 0.6301,
+          "pairs": 0.7811,
+          "runs": 1.2903,
+          "thirtyOnes": 0.5142,
+        },
+        "total": 3.7758,
+      },
+      "delta": 1.5164,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3675,
+          "go": 0.0687,
+          "lastCard": 0.3265,
+          "pairs": 0.4943,
+          "runs": 0.8645,
+          "thirtyOnes": 0.1378,
+        },
+        "total": 2.2595,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "signedExpectedCribPoints": 6.66113043478261,
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913043,
+    "expectedNetPoints": 17.89929130434782,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2218,
+          "go": 0.2815,
+          "lastCard": 0.6621,
+          "pairs": 0.8229,
+          "runs": 1.4774,
+          "thirtyOnes": 0.5837,
+        },
+        "total": 4.0494,
+      },
+      "delta": 1.8293,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3503,
+          "go": 0.0655,
+          "lastCard": 0.3008,
+          "pairs": 0.52,
+          "runs": 0.8152,
+          "thirtyOnes": 0.1683,
+        },
+        "total": 2.2201,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "signedExpectedCribPoints": 4.11346956521739,
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913043,
+    "expectedNetPoints": 17.89929130434782,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2218,
+          "go": 0.2815,
+          "lastCard": 0.6621,
+          "pairs": 0.8229,
+          "runs": 1.4774,
+          "thirtyOnes": 0.5837,
+        },
+        "total": 4.0494,
+      },
+      "delta": 1.8293,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3503,
+          "go": 0.0655,
+          "lastCard": 0.3008,
+          "pairs": 0.52,
+          "runs": 0.8152,
+          "thirtyOnes": 0.1683,
+        },
+        "total": 2.2201,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "signedExpectedCribPoints": 4.11346956521739,
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913043,
+    "expectedNetPoints": 17.87102173913044,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2218,
+          "go": 0.2815,
+          "lastCard": 0.6621,
+          "pairs": 0.8229,
+          "runs": 1.4774,
+          "thirtyOnes": 0.5837,
+        },
+        "total": 4.0494,
+      },
+      "delta": 1.8293,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3503,
+          "go": 0.0655,
+          "lastCard": 0.3008,
+          "pairs": 0.52,
+          "runs": 0.8152,
+          "thirtyOnes": 0.1683,
+        },
+        "total": 2.2201,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "signedExpectedCribPoints": 4.0852,
+  },
+  {
+    "discard": [
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.95652173913043,
+    "expectedNetPoints": 17.87102173913044,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2218,
+          "go": 0.2815,
+          "lastCard": 0.6621,
+          "pairs": 0.8229,
+          "runs": 1.4774,
+          "thirtyOnes": 0.5837,
+        },
+        "total": 4.0494,
+      },
+      "delta": 1.8293,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3503,
+          "go": 0.0655,
+          "lastCard": 0.3008,
+          "pairs": 0.52,
+          "runs": 0.8152,
+          "thirtyOnes": 0.1683,
+        },
+        "total": 2.2201,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "signedExpectedCribPoints": 4.0852,
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "expectedNetPoints": 17.25286304347826,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2143,
+          "go": 0.3131,
+          "lastCard": 0.6602,
+          "pairs": 0.8069,
+          "runs": 1.4053,
+          "thirtyOnes": 0.5572,
+        },
+        "total": 3.957,
+      },
+      "delta": 1.7705,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3642,
+          "go": 0.0725,
+          "lastCard": 0.3075,
+          "pairs": 0.4743,
+          "runs": 0.7762,
+          "thirtyOnes": 0.1918,
+        },
+        "total": 2.1865,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "signedExpectedCribPoints": 3.87366739130435,
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "expectedNetPoints": 17.25286304347826,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2143,
+          "go": 0.3131,
+          "lastCard": 0.6602,
+          "pairs": 0.8069,
+          "runs": 1.4053,
+          "thirtyOnes": 0.5572,
+        },
+        "total": 3.957,
+      },
+      "delta": 1.7705,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3642,
+          "go": 0.0725,
+          "lastCard": 0.3075,
+          "pairs": 0.4743,
+          "runs": 0.7762,
+          "thirtyOnes": 0.1918,
+        },
+        "total": 2.1865,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "signedExpectedCribPoints": 3.87366739130435,
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "expectedNetPoints": 17.20038695652174,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2143,
+          "go": 0.3131,
+          "lastCard": 0.6602,
+          "pairs": 0.8069,
+          "runs": 1.4053,
+          "thirtyOnes": 0.5572,
+        },
+        "total": 3.957,
+      },
+      "delta": 1.7705,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3642,
+          "go": 0.0725,
+          "lastCard": 0.3075,
+          "pairs": 0.4743,
+          "runs": 0.7762,
+          "thirtyOnes": 0.1918,
+        },
+        "total": 2.1865,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "signedExpectedCribPoints": 3.82119130434783,
+  },
+  {
+    "discard": [
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♦",
+      },
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 11.60869565217391,
+    "expectedNetPoints": 17.20038695652174,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2143,
+          "go": 0.3131,
+          "lastCard": 0.6602,
+          "pairs": 0.8069,
+          "runs": 1.4053,
+          "thirtyOnes": 0.5572,
+        },
+        "total": 3.957,
+      },
+      "delta": 1.7705,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3642,
+          "go": 0.0725,
+          "lastCard": 0.3075,
+          "pairs": 0.4743,
+          "runs": 0.7762,
+          "thirtyOnes": 0.1918,
+        },
+        "total": 2.1865,
+      },
+    },
+    "handPoints": 8,
+    "keep": [
+      {
+        "count": 1,
+        "rank": 0,
+        "rankLabel": "A",
+        "suit": "♦",
+      },
+      {
+        "count": 2,
+        "rank": 1,
+        "rankLabel": "2",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♦",
+      },
+    ],
+    "signedExpectedCribPoints": 3.82119130434783,
   },
   {
     "discard": [
@@ -1128,6 +1884,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 9.73913043478261,
+    "expectedNetPoints": 17.04598260869565,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2129,
+          "go": 0.2938,
+          "lastCard": 0.6735,
+          "pairs": 1.3354,
+          "runs": 1.2486,
+          "thirtyOnes": 0.3822,
+        },
+        "total": 4.1464,
+      },
+      "delta": 2.1758,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.2994,
+          "go": 0.2033,
+          "lastCard": 0.3002,
+          "pairs": 0.3372,
+          "runs": 0.6276,
+          "thirtyOnes": 0.2028,
+        },
+        "total": 1.9705,
+      },
+    },
     "handPoints": 4,
     "keep": [
       {
@@ -1155,6 +1937,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
+    "signedExpectedCribPoints": 5.13105217391304,
   },
   {
     "discard": [
@@ -1172,6 +1955,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 6.95652173913044,
+    "expectedNetPoints": 14.0398347826087,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.1908,
+          "go": 0.4051,
+          "lastCard": 0.6492,
+          "pairs": 1.4,
+          "runs": 0.6688,
+          "thirtyOnes": 0.3312,
+        },
+        "total": 3.6452,
+      },
+      "delta": 1.705,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.4126,
+          "go": 0.0911,
+          "lastCard": 0.3119,
+          "pairs": 0.4125,
+          "runs": 0.5675,
+          "thirtyOnes": 0.1446,
+        },
+        "total": 1.9402,
+      },
+    },
     "handPoints": 4,
     "keep": [
       {
@@ -1199,6 +2008,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
+    "signedExpectedCribPoints": 5.37831304347826,
   },
   {
     "discard": [
@@ -1216,6 +2026,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 6.43478260869565,
+    "expectedNetPoints": 14.02811304347826,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2545,
+          "go": 0.2938,
+          "lastCard": 0.49,
+          "pairs": 1.5894,
+          "runs": 0.6759,
+          "thirtyOnes": 0.558,
+        },
+        "total": 3.8615,
+      },
+      "delta": 1.9699,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.4265,
+          "go": 0.034,
+          "lastCard": 0.4172,
+          "pairs": 0.3935,
+          "runs": 0.5365,
+          "thirtyOnes": 0.084,
+        },
+        "total": 1.8916,
+      },
+    },
     "handPoints": 4,
     "keep": [
       {
@@ -1243,12 +2079,84 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
+    "signedExpectedCribPoints": 5.62343043478261,
   },
 ]
 `;
 
 exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order deal 1`] = `
 [
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 9.71739130434783,
+    "expectedNetPoints": 15.96858260869565,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.7729,
+          "go": 0.3676,
+          "lastCard": 0.9081,
+          "pairs": 0.6626,
+          "runs": 0.8582,
+          "thirtyOnes": 0.448,
+        },
+        "total": 4.0174,
+      },
+      "delta": 1.5558,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.2823,
+          "go": 0.3661,
+          "lastCard": 0.0784,
+          "pairs": 0.8586,
+          "runs": 0.6115,
+          "thirtyOnes": 0.2646,
+        },
+        "total": 2.4615,
+      },
+    },
+    "handPoints": 7,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 4.69539130434783,
+  },
   {
     "discard": [
       {
@@ -1265,6 +2173,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 11.41304347826087,
+    "expectedNetPoints": 15.61494347826087,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.5682,
+          "go": 0.5019,
+          "lastCard": 0.9197,
+          "pairs": 0.3029,
+          "runs": 0.1336,
+          "thirtyOnes": 0.2088,
+        },
+        "total": 2.6351,
+      },
+      "delta": 0.4617,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.4443,
+          "go": 0.6452,
+          "lastCard": 0.0583,
+          "pairs": 0.5485,
+          "runs": 0.1466,
+          "thirtyOnes": 0.3305,
+        },
+        "total": 2.1734,
+      },
+    },
     "handPoints": 9,
     "keep": [
       {
@@ -1292,6 +2226,78 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♣",
       },
     ],
+    "signedExpectedCribPoints": 3.7402,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 9.71739130434783,
+    "expectedNetPoints": 15.04952391304348,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.7369,
+          "go": 0.3744,
+          "lastCard": 0.8959,
+          "pairs": 0.5278,
+          "runs": 0.8502,
+          "thirtyOnes": 0.4617,
+        },
+        "total": 3.8469,
+      },
+      "delta": 1.4625,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3234,
+          "go": 0.3451,
+          "lastCard": 0.0789,
+          "pairs": 0.7437,
+          "runs": 0.6035,
+          "thirtyOnes": 0.2898,
+        },
+        "total": 2.3845,
+      },
+    },
+    "handPoints": 7,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 3.86963260869565,
   },
   {
     "discard": [
@@ -1309,6 +2315,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 9.97826086956522,
+    "expectedNetPoints": 14.90135652173913,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.9086,
+          "go": 0.4008,
+          "lastCard": 0.9202,
+          "pairs": 0.6977,
+          "runs": 0.8805,
+          "thirtyOnes": 0.4132,
+        },
+        "total": 4.2211,
+      },
+      "delta": 1.652,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.2272,
+          "go": 0.3582,
+          "lastCard": 0.0569,
+          "pairs": 0.8732,
+          "runs": 0.7895,
+          "thirtyOnes": 0.264,
+        },
+        "total": 2.5691,
+      },
+    },
     "handPoints": 7,
     "keep": [
       {
@@ -1336,358 +2368,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 9.71739130434783,
-    "handPoints": 7,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 9.71739130434783,
-    "handPoints": 7,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 7,
-    "handPoints": 4,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 6.82608695652174,
-    "handPoints": 4,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 6.73913043478261,
-    "handPoints": 4,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 6.56521739130435,
-    "handPoints": 4,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-    ],
-    "expectedHandPoints": 6.47826086956522,
-    "handPoints": 4,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 6.30434782608696,
-    "handPoints": 4,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 12,
-        "rankLabel": "K",
-        "suit": "♣",
-      },
-      {
-        "count": 10,
-        "rank": 11,
-        "rankLabel": "Q",
-        "suit": "♠",
-      },
-      {
-        "count": 6,
-        "rank": 5,
-        "rankLabel": "6",
-        "suit": "♦",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
+    "signedExpectedCribPoints": 3.27109565217391,
   },
   {
     "discard": [
@@ -1705,6 +2386,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 5.3695652173913,
+    "expectedNetPoints": 11.81567173913044,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.0917,
+          "go": 0.4564,
+          "lastCard": 0.9442,
+          "pairs": 0.4194,
+          "runs": 0.1712,
+          "thirtyOnes": 0.1837,
+        },
+        "total": 2.2666,
+      },
+      "delta": -0.0543,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.4418,
+          "go": 0.7385,
+          "lastCard": 0.0275,
+          "pairs": 0.5675,
+          "runs": 0.2804,
+          "thirtyOnes": 0.2652,
+        },
+        "total": 2.3209,
+      },
+    },
     "handPoints": 3,
     "keep": [
       {
@@ -1732,6 +2439,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
+    "signedExpectedCribPoints": 6.50040652173913,
   },
   {
     "discard": [
@@ -1749,6 +2457,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 5.02173913043478,
+    "expectedNetPoints": 11.42328913043478,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.2318,
+          "go": 0.4097,
+          "lastCard": 0.9012,
+          "pairs": 0.4246,
+          "runs": 0.1445,
+          "thirtyOnes": 0.3926,
+        },
+        "total": 2.5044,
+      },
+      "delta": 0.0622,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.5386,
+          "go": 0.597,
+          "lastCard": 0.0594,
+          "pairs": 0.6135,
+          "runs": 0.1248,
+          "thirtyOnes": 0.5089,
+        },
+        "total": 2.4422,
+      },
+    },
     "handPoints": 3,
     "keep": [
       {
@@ -1776,6 +2510,433 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♦",
       },
     ],
+    "signedExpectedCribPoints": 6.33935,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 6.30434782608696,
+    "expectedNetPoints": 11.25087391304348,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.7545,
+          "go": 0.3418,
+          "lastCard": 0.9338,
+          "pairs": 0.4968,
+          "runs": 0.2943,
+          "thirtyOnes": 0.4852,
+        },
+        "total": 3.3064,
+      },
+      "delta": 1.097,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3752,
+          "go": 0.5277,
+          "lastCard": 0.0402,
+          "pairs": 0.5908,
+          "runs": 0.2972,
+          "thirtyOnes": 0.3783,
+        },
+        "total": 2.2094,
+      },
+    },
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.84952608695652,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 6.56521739130435,
+    "expectedNetPoints": 11.11996956521739,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.7188,
+          "go": 0.3397,
+          "lastCard": 0.9233,
+          "pairs": 0.5972,
+          "runs": 0.3568,
+          "thirtyOnes": 0.4635,
+        },
+        "total": 3.3994,
+      },
+      "delta": 0.9936,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3442,
+          "go": 0.5489,
+          "lastCard": 0.0454,
+          "pairs": 0.7338,
+          "runs": 0.3801,
+          "thirtyOnes": 0.3534,
+        },
+        "total": 2.4058,
+      },
+    },
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.56115217391304,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "expectedHandPoints": 6.82608695652174,
+    "expectedNetPoints": 11.0402152173913,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.5902,
+          "go": 0.3615,
+          "lastCard": 0.9284,
+          "pairs": 0.554,
+          "runs": 0.4143,
+          "thirtyOnes": 0.366,
+        },
+        "total": 3.2143,
+      },
+      "delta": 0.6924,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3892,
+          "go": 0.5723,
+          "lastCard": 0.0416,
+          "pairs": 0.6788,
+          "runs": 0.4902,
+          "thirtyOnes": 0.3498,
+        },
+        "total": 2.5219,
+      },
+    },
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.52172826086957,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 6.73913043478261,
+    "expectedNetPoints": 10.58657391304348,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.626,
+          "go": 0.4195,
+          "lastCard": 0.9302,
+          "pairs": 0.7129,
+          "runs": 0.4034,
+          "thirtyOnes": 0.2697,
+        },
+        "total": 3.3617,
+      },
+      "delta": 0.8554,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.2694,
+          "go": 0.547,
+          "lastCard": 0.0524,
+          "pairs": 0.8472,
+          "runs": 0.5437,
+          "thirtyOnes": 0.2466,
+        },
+        "total": 2.5063,
+      },
+    },
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 2.99204347826087,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 7,
+    "expectedNetPoints": 10.57421956521739,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.5071,
+          "go": 0.3875,
+          "lastCard": 0.9363,
+          "pairs": 0.722,
+          "runs": 0.5189,
+          "thirtyOnes": 0.2278,
+        },
+        "total": 3.2997,
+      },
+      "delta": 0.5495,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3174,
+          "go": 0.5906,
+          "lastCard": 0.0434,
+          "pairs": 0.8645,
+          "runs": 0.6976,
+          "thirtyOnes": 0.2368,
+        },
+        "total": 2.7502,
+      },
+    },
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 3.02471956521739,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 6,
+        "rank": 5,
+        "rankLabel": "6",
+        "suit": "♦",
+      },
+    ],
+    "expectedHandPoints": 6.47826086956522,
+    "expectedNetPoints": 10.37001956521739,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.4208,
+          "go": 0.3844,
+          "lastCard": 0.9332,
+          "pairs": 0.5034,
+          "runs": 0.4509,
+          "thirtyOnes": 0.2789,
+        },
+        "total": 2.9716,
+      },
+      "delta": 0.5668,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.2902,
+          "go": 0.5884,
+          "lastCard": 0.0465,
+          "pairs": 0.6517,
+          "runs": 0.5844,
+          "thirtyOnes": 0.2437,
+        },
+        "total": 2.4048,
+      },
+    },
+    "handPoints": 4,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 12,
+        "rankLabel": "K",
+        "suit": "♣",
+      },
+      {
+        "count": 10,
+        "rank": 11,
+        "rankLabel": "Q",
+        "suit": "♠",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 3.32495869565217,
   },
   {
     "discard": [
@@ -1793,6 +2954,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 2.34782608695652,
+    "expectedNetPoints": 9.98537173913043,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.4555,
+          "go": 0.3779,
+          "lastCard": 0.9427,
+          "pairs": 1.0292,
+          "runs": 0.3782,
+          "thirtyOnes": 0.4208,
+        },
+        "total": 3.6043,
+      },
+      "delta": 1.0432,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3518,
+          "go": 0.5199,
+          "lastCard": 0.0255,
+          "pairs": 1.0342,
+          "runs": 0.3405,
+          "thirtyOnes": 0.2892,
+        },
+        "total": 2.5611,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -1820,6 +3007,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
+    "signedExpectedCribPoints": 6.59434565217391,
   },
   {
     "discard": [
@@ -1837,6 +3025,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 2.08695652173913,
+    "expectedNetPoints": 9.6085347826087,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.4532,
+          "go": 0.3894,
+          "lastCard": 0.9412,
+          "pairs": 0.9597,
+          "runs": 0.3293,
+          "thirtyOnes": 0.4131,
+        },
+        "total": 3.4858,
+      },
+      "delta": 0.9683,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3506,
+          "go": 0.521,
+          "lastCard": 0.0273,
+          "pairs": 1.0062,
+          "runs": 0.3263,
+          "thirtyOnes": 0.2862,
+        },
+        "total": 2.5175,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -1864,6 +3078,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
+    "signedExpectedCribPoints": 6.55327826086957,
   },
   {
     "discard": [
@@ -1881,6 +3096,32 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 1.82608695652174,
+    "expectedNetPoints": 9.5327652173913,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0.434,
+          "go": 0.4184,
+          "lastCard": 0.9491,
+          "pairs": 0.826,
+          "runs": 0.2816,
+          "thirtyOnes": 0.3585,
+        },
+        "total": 3.2675,
+      },
+      "delta": 0.7808,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0.3586,
+          "go": 0.5215,
+          "lastCard": 0.0205,
+          "pairs": 0.9542,
+          "runs": 0.3406,
+          "thirtyOnes": 0.2914,
+        },
+        "total": 2.4868,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -1908,6 +3149,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
+    "signedExpectedCribPoints": 6.92587826086956,
   },
 ]
 `;
@@ -1923,22 +3165,49 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
         "suit": "♥",
       },
       {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "expectedHandPoints": 0.73469387755102,
-    "handPoints": 0,
-    "keep": [
-      {
         "count": 5,
         "rank": 4,
         "rankLabel": "5",
         "suit": "♣",
       },
     ],
+    "expectedHandPoints": 0.12244897959184,
+    "expectedNetPoints": 7.06820816326531,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 6.94575918367347,
   },
   {
     "discard": [
@@ -1956,6 +3225,32 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
       },
     ],
     "expectedHandPoints": 0.24489795918367,
+    "expectedNetPoints": 6.64604285714286,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 0,
     "keep": [
       {
@@ -1965,6 +3260,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
         "suit": "♥",
       },
     ],
+    "signedExpectedCribPoints": 6.40114489795918,
   },
   {
     "discard": [
@@ -1975,22 +3271,49 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
         "suit": "♥",
       },
       {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-    ],
-    "expectedHandPoints": 0.12244897959184,
-    "handPoints": 0,
-    "keep": [
-      {
         "count": 4,
         "rank": 3,
         "rankLabel": "4",
         "suit": "♠",
       },
     ],
+    "expectedHandPoints": 0.73469387755102,
+    "expectedNetPoints": 4.53339387755102,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 0,
+    "keep": [
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+    ],
+    "signedExpectedCribPoints": 3.7987,
   },
 ]
 `;
@@ -2013,8 +3336,35 @@ exports[`allScoredKeepDiscardsByScoreDescending two card deal order deal 1`] = `
       },
     ],
     "expectedHandPoints": 0,
+    "expectedNetPoints": 4.090686,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
     "handPoints": 0,
     "keep": [],
+    "signedExpectedCribPoints": 4.090686,
   },
 ]
 `;

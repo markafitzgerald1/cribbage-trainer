@@ -41,6 +41,7 @@
 }
 
 .hand-card-label .rank {
+  font-size: 1.08em;
   transform: none;
 }
 
@@ -119,15 +120,33 @@
   right: 0.04em;
 }
 
-@media (orientation: portrait) {
-  .hand-card-label .rank {
-    font-size: 1.08em;
-  }
+/* Mini keep/discard card: stack a large rank index over a small centered suit.
+   Unlike a corner-positioned suit (which collides with wide indices like 10 or
+   K on a tight card), a vertical stack keeps the card narrow and never lets the
+   suit overlap the index. */
+.corner-index {
+  flex-direction: column;
+  gap: 0;
+  line-height: 0.92;
+  padding: 0;
+  width: 100%;
+}
 
-  .hand-card-label .suit {
-    bottom: -0.15em;
-    font-size: 0.36em;
-    inline-size: 0.65em;
-    right: 0.04em;
-  }
+.corner-index .suits-wrapper {
+  inline-size: auto;
+  margin: 0;
+}
+
+.corner-index .suit {
+  font-size: 0.46em;
+  inline-size: 1em;
+  margin: 0;
+  position: static;
+}
+
+/* Center "10" on the same axis as the suit (scale from the centre, no
+   inline-layout margin compensation) so it matches the single-glyph ranks. */
+.corner-index .rank.ten {
+  margin-right: 0;
+  transform-origin: center;
 }

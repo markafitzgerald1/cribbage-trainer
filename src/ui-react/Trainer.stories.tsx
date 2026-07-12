@@ -8,6 +8,8 @@ import {
 import { Rank, Suit, createCard } from "../game/Card";
 import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
+import { CribRole } from "../game/expectedCribPoints";
+import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { createGenerator } from "../game/randomNumberGenerator";
 
 const SEED = "1";
@@ -33,6 +35,31 @@ export default meta;
 
 const getButton = (canvasElement: HTMLElement, buttonText: string) =>
   within(canvasElement).getByRole("button", { name: buttonText });
+
+const expectColumnHeaders = async (
+  canvasElement: HTMLElement,
+  columnHeaders: readonly string[],
+) => {
+  await waitFor(
+    async () => {
+      await expect(
+        within(canvasElement).queryByText("Loading analysis..."),
+      ).toBeNull();
+    },
+    { timeout: 5000 },
+  );
+
+  await Promise.all(
+    columnHeaders.map(
+      async (columnHeader) =>
+        await expect(
+          within(canvasElement).getByRole("columnheader", {
+            name: columnHeader,
+          }),
+        ).toBeVisible(),
+    ),
+  );
+};
 
 export const AnalyticsAccepted = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
@@ -101,6 +128,9 @@ export const DealNewHandReplacesCards = {
   },
 };
 
+const expectAnalysisColumnHeaders = (canvasElement: HTMLElement) =>
+  expectColumnHeaders(canvasElement, ["Hand", "Crib", "Play", "Net"]);
+
 export const DiscardShowsScoredPossibilities = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const checkboxes = within(canvasElement).getAllByRole("checkbox");
@@ -108,12 +138,7 @@ export const DiscardShowsScoredPossibilities = {
     await fireEvent.click(checkboxes[0]!);
     await fireEvent.click(checkboxes[1]!);
 
-    await expect(
-      within(canvasElement).getByRole("columnheader", { name: "Hand" }),
-    ).toBeVisible();
-    await expect(
-      within(canvasElement).getByRole("columnheader", { name: "Cut" }),
-    ).toBeVisible();
+    await expectAnalysisColumnHeaders(canvasElement);
   },
 };
 
@@ -163,6 +188,54 @@ export const SortHandInAscendingOrder = {
   play: createPlay(SortOrder.Ascending),
 };
 
+const SIX_OF_SPADES = createCard(Rank.SIX, Suit.SPADES);
+const FIVE_OF_HEARTS = createCard(Rank.FIVE, Suit.HEARTS);
+
+export const DeepLinkedAnalysisState = {
+  args: {
+    initialCards: [
+      createCard(Rank.KING, Suit.HEARTS),
+      createCard(Rank.QUEEN, Suit.SPADES),
+      createCard(Rank.TEN, Suit.DIAMONDS),
+      createCard(Rank.NINE, Suit.CLUBS),
+      SIX_OF_SPADES,
+      FIVE_OF_HEARTS,
+    ],
+    initialCribRole: CribRole.Pone,
+    initialDiscards: [SIX_OF_SPADES, FIVE_OF_HEARTS],
+    initialScoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints,
+    initialSortOrder: SortOrder.DealOrder,
+  },
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    await expect(within(canvasElement).getByText("Pone")).toBeVisible();
+
+    await expectAnalysisColumnHeaders(canvasElement);
+
+    const handHeader = within(canvasElement).getByRole("columnheader", {
+      name: /Hand/u,
+    });
+
+    await expect(handHeader).toHaveAttribute("aria-sort", "descending");
+  },
+};
+
+export const SortAnalysisByPlayPoints = {
+  play: async (context: { canvasElement: HTMLElement }) => {
+    await DiscardShowsScoredPossibilities.play(context);
+    const playHeaderButton = within(context.canvasElement).getByRole("button", {
+      name: /^Play:/u,
+    });
+
+    await fireEvent.click(playHeaderButton);
+
+    const playHeader = within(context.canvasElement).getByRole("columnheader", {
+      name: /Play/u,
+    });
+
+    await expect(playHeader).toHaveAttribute("aria-sort", "descending");
+  },
+};
+
 export const WithInitialCards = {
   args: {
     initialCards: [
@@ -181,4 +254,37 @@ export const WithInitialCards = {
 
     await expect(handCardLabels).toEqual(["6♥", "5♠", "4♣", "3♦", "2♥", "A♠"]);
   },
+};
+
+const createManualEntryPlay =
+  (replacement?: readonly [string, string]) =>
+  async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement);
+    await fireEvent.click(getButton(canvasElement, "Enter cards"));
+    if (replacement) {
+      await fireEvent.click(
+        canvas.getByRole("button", {
+          name: replacement[0],
+          pressed: true,
+        }),
+      );
+      await fireEvent.click(
+        canvas.getByRole("button", { name: replacement[1] }),
+      );
+    }
+    await fireEvent.click(getButton(canvasElement, "Use hand"));
+
+    await expect(
+      canvas.queryByRole("heading", { name: "Enter cards" }),
+    ).not.toBeInTheDocument();
+  };
+
+export const UnchangedManualEntryCloses = {
+  args: WithInitialCards.args,
+  play: createManualEntryPlay(),
+};
+
+export const ChangedManualEntryApplies = {
+  args: WithInitialCards.args,
+  play: createManualEntryPlay(["A♠", "A♣"]),
 };

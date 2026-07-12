@@ -5,10 +5,13 @@
     "actuals",
     "autodocs",
     "cardlabel",
+    "CDHS",
     "Buildx",
     "cutscolumn",
     "camelcase",
     "discardable",
+    "elif",
+    "esac",
     "espree",
     "fieldset",
     "figcaption",
@@ -22,7 +25,9 @@
     "listitem",
     "mousedown",
     "msedge",
+    "nums",
     "nvmrc",
+    "popstate",
     "radiogroup",
     "rerender",
     "rerenders",
@@ -32,8 +37,10 @@
     "stylelint",
     "stylelintignore",
     "stylesheet",
+    "subshells",
     "TJQK",
     "tsbuildinfo",
-    "Vite"
+    "Vite",
+    "worktree"
   ]
 }

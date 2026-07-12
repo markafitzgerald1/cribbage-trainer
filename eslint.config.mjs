@@ -21,7 +21,7 @@ const MAX_STATEMENTS = 20;
 
 export default [
   {
-    ignores: ["dist/", "coverage/", "storybook-static/"],
+    ignores: ["dist/", "coverage/", "storybook-static/", ".claude/"],
   },
   ...fixupConfigRules(
     compat.extends(
@@ -147,6 +147,7 @@ export default [
             "charset",
             "checkbox",
             "checkboxes",
+            "claude",
             "columnheader",
             "compat",
             "cpus",
@@ -160,6 +161,7 @@ export default [
             "fixup",
             "formatter",
             "func",
+            "globals",
             "goto",
             "gtag",
             "href",
@@ -177,13 +179,17 @@ export default [
             "mousedown",
             "msedge",
             "os",
+            "popstate",
             "radiogroup",
             "readonly",
             "pragma",
             "rerender",
             "rerenders",
+            "rescale",
+            "rescales",
             "royale",
             "seedrandom",
+            "Serializable",
             "svg",
             "tbody",
             "tsconfig",
@@ -289,16 +295,44 @@ export default [
 
     languageOptions: {
       ecmaVersion: 2022,
+      globals: {
+        process: "readonly",
+      },
       parser: espree,
       sourceType: "module",
     },
   },
+  {
+    /*
+     * Node build/data scripts run in a trusted local context and inherently do
+     * dynamic property access over generated JSON, so relax the browser-focused
+     * rules that do not apply here.
+     */
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        Buffer: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-magic-numbers": ["off"],
+      camelcase: ["off"],
+      "capitalized-comments": ["off"],
+      "no-continue": ["off"],
+      "security/detect-non-literal-fs-filename": ["off"],
+      "security/detect-object-injection": ["off"],
+      "spellcheck/spell-checker": ["off"],
+    },
+  },
   ...compat.extends("plugin:jest/all").map((config) => ({
     ...config,
-    files: ["**/*.test.ts*", "**/*.stories.ts*"],
+    files: ["**/*.test.ts*", "**/*.test.common.ts*", "**/*.stories.ts*"],
   })),
   {
-    files: ["**/*.test.ts*", "**/*.stories.ts*"],
+    files: ["**/*.test.ts*", "**/*.test.common.ts*", "**/*.stories.ts*"],
     plugins: {
       jest,
     },
@@ -316,6 +350,7 @@ export default [
             "expectFifteensPoints",
             "expectRunsPoints",
             "expectTotalPoints",
+            "expectFiveStarterRelationRows",
             "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
             "expectSort",
             "containsCutGroup",
@@ -326,6 +361,11 @@ export default [
             "expectTotalHandPoints",
             "expectHandsInDescendingExpectedScoreOrder",
             "expectPossibleHandRendersSpan",
+            "expectDealerRoleVisible",
+            "expectPoneRoleVisible",
+            "expectHydratedPoneState",
+            "expectPushesAndDiscards",
+            "expectMergedBackTo",
           ],
         },
       ],
@@ -336,6 +376,7 @@ export default [
           assertFunctionNames: [
             "expect",
             "assertMatcherReturnsFalse",
+            "expectFiveStarterRelationRows",
             "expectAllScoredKeepDiscardsByScoreDescendingToStrictEqual",
             "expectPairsPoints",
             "expectFifteensPoints",
@@ -348,6 +389,11 @@ export default [
             "expectSort",
             "expectHandsInDescendingExpectedScoreOrder",
             "expectTotalHandPoints",
+            "expectDealerRoleVisible",
+            "expectPoneRoleVisible",
+            "expectHydratedPoneState",
+            "expectPushesAndDiscards",
+            "expectMergedBackTo",
           ],
         },
       ],
@@ -362,6 +408,12 @@ export default [
     files: ["**/*.d.ts"],
     rules: {
       "init-declarations": "off",
+    },
+  },
+  {
+    files: ["**/*.stories.ts*"],
+    rules: {
+      "jest/require-hook": "off",
     },
   },
 ];
