@@ -406,7 +406,8 @@
   fetched-or-created, mutated, and force-pushed as a single amended commit
   by every publish (`.github/actions/publish-pages-content`), so its history
   never grows — don't "clean up" this branch or its lack of history; that is
-  intentional. It holds the production site root plus one `pr/<number>/`
+  intentional, and a repository ruleset ("Protect pages-content from
+  deletion") blocks deleting it. It holds the production site root plus one `pr/<number>/`
   directory per currently-open preview; the merge/replace/remove logic lives
   in `scripts/pagesContentMerge.mjs` (tested via `node --test`, not Jest, so
   it stays outside `src/**` and the 100% Jest coverage threshold).
@@ -426,6 +427,11 @@
   the same run, and `actions/deploy-pages` then always fails with
   "Multiple artifacts named github-pages" — for every attempt on that run.
   Push a new commit (fresh run) instead.
+- Bot logins are spelled differently per GitHub API surface: Dependabot is
+  `app/dependabot` in `gh` CLI/GraphQL author fields but `dependabot[bot]`
+  in REST/webhook event payloads. Never compare a single literal — the
+  preview-eligibility check matched only the latter and silently published
+  a preview for a Dependabot PR.
 - There are deliberately **two** GitHub Pages environments: `github-pages`
   (production) has a branch policy restricting it to `main` — reusing it for
   previews would silently hang every preview job before any step runs.
