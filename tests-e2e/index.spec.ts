@@ -1,5 +1,8 @@
 import { type Locator, type Page, expect, test } from "@playwright/test";
-import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
+import {
+  renderThenSelectTwoDiscards,
+  waitForAnalysis,
+} from "./renderThenSelectTwoDiscards";
 
 const expectedHtmlLanguage = "en";
 
@@ -210,6 +213,7 @@ test("deep link hydrates hand, role, discards, sort order, and analysis sort", a
   await page.goto(
     `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&sort=ascending&analysis-sort=hand`,
   );
+  await waitForAnalysis(page);
 
   await expect(page.getByText("Pone", exactTextMatch)).toBeVisible();
   await expect(
@@ -288,6 +292,7 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
   const indexOf5S = 5;
   await page.getByRole("checkbox").nth(indexOf6S).click();
   await page.getByRole("checkbox").nth(indexOf5S).click();
+  await waitForAnalysis(page);
 
   const row = getSuitedDiscardRow(page);
   await expect(row).toBeVisible();
@@ -354,6 +359,7 @@ test("manually entered pone hand reaches suited analysis", async ({ page }) => {
   const fiveIndex = 5;
   await page.getByRole("checkbox").nth(sixIndex).click();
   await page.getByRole("checkbox").nth(fiveIndex).click();
+  await waitForAnalysis(page);
 
   await expect(getSuitedDiscardRow(page)).toBeVisible();
 });

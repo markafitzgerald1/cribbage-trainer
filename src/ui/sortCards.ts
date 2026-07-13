@@ -1,5 +1,5 @@
 import { Rank, Suit } from "../game/Card";
-import { SORT_ORDER_NAMES } from "./SortOrderName";
+import { SORT_ORDER_NAMES, getSortOrderName } from "./SortOrderName";
 import { SortOrder } from "./SortOrder";
 
 export interface ComparableCard {
@@ -36,10 +36,7 @@ export const sortCards = <T extends ComparableCard>(
   dealtCards: readonly T[],
   sortOrder: SortOrder,
 ) => {
-  const sortOrderName = SORT_ORDER_NAMES.find(
-    // eslint-disable-next-line security/detect-object-injection
-    (name) => SortOrder[name] === sortOrder,
-  );
+  const sortOrderName = getSortOrderName(sortOrder);
   if (!sortOrderName) {
     throw new Error(`Invalid sortOrder: ${sortOrder}`);
   }

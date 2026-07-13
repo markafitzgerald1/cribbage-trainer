@@ -7,14 +7,14 @@ import { render } from "@testing-library/react";
 
 describe("possible hand component", () => {
   it("renders a span", () => {
-    expect(
-      render(
-        <PossibleHand
-          dealtCards={[]}
-          sortOrder={SortOrder.Ascending}
-        />,
-      ).container.querySelector("span"),
-    ).toBeTruthy();
+    const { container } = render(
+      <PossibleHand
+        dealtCards={[]}
+        sortOrder={SortOrder.Ascending}
+      />,
+    );
+
+    expect(container.querySelector("span")).toBeTruthy();
   });
 
   const keptHand = "10,A,J,4";

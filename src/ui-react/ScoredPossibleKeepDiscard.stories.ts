@@ -135,8 +135,7 @@ const suitedCribStarterPoints = [
 interface CreateStoryOptions {
   readonly cribPoints?: number;
   readonly cribStarterPoints?:
-    | typeof cribStarterPoints
-    | typeof suitedCribStarterPoints;
+    typeof cribStarterPoints | typeof suitedCribStarterPoints;
   readonly discard: readonly StoryCard[];
   readonly expectedCribPointBreakdown?: typeof cribPointBreakdown;
   readonly isHighlighted?: boolean;

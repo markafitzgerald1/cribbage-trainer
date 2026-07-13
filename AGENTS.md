@@ -64,6 +64,16 @@
   rejects a neutral `extends unknown` constraint. Prefer a named generic
   function expression or declaration, which both Babel generations parse
   consistently without weakening quality gates.
+- Major formatter and duplicate-detector upgrades can change their findings
+  without changing project code. Prettier 3.9 formats some union types
+  differently from 3.8, and each version rejects the other's output, so land
+  the version bump and its mechanical reformatting together. jscpd 5 tokenizes
+  some existing short test patterns differently and can expose clones that
+  jscpd 4 missed; keep the 0% threshold and refactor the shared setup or
+  assertion instead of raising `minTokens` or adding ignores. Its file pattern
+  is relative to each scan path, so keep `.jscpd.json` explicit with
+  `path: ["src"]` and `pattern: "**/*.ts*"`; do not rely on `.gitignore`, which
+  is intentionally absent from the Docker lint layer.
 - Use `npm run deps:update:minor` for routine refreshes; handle larger major
   upgrades separately if they would dominate the change set.
 - When `npm run lint:audit` (better-npm-audit) fails on freshly published
@@ -147,6 +157,10 @@
 - When fixing a rendering bug, add a Playwright guard for it and negative-check
   the guard: stash the fix, confirm the new test fails against the broken CSS,
   then restore. A guard that was never seen failing proves nothing.
+- Analysis tables are lazy-loaded. E2E tests that select a complete discard or
+  hydrate one from a deep link must wait for `Loading analysis...` to become
+  hidden and for the table to become visible before locating a result row;
+  relying on the assertion's default timeout creates WebKit races under load.
 - eslint's jest rule blocks cover `**/*.test.ts*` and `**/*.stories.ts*` but
   not `tests-e2e/**/*.spec.ts`, so e2e helpers that wrap `expect` need no
   `assertFunctionNames` registration (other rules such as `no-undefined`
