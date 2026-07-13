@@ -52,6 +52,11 @@
 
 - Keep dependencies current in PRs: include minor and patch bumps, and take major
   upgrades when they do not overshadow the PR's primary purpose.
+- Dependabot intentionally ignores ESLint 10.0.0 through 10.7.0 because the
+  latest `eslint-plugin-jsx-a11y` release (6.10.2) declares peer support only
+  through ESLint 9. Before changing that range, verify both packages' current
+  registry metadata; do not bypass the peer conflict with
+  `--legacy-peer-deps`.
 - Use `npm run deps:update:minor` for routine refreshes; handle larger major
   upgrades separately if they would dominate the change set.
 - When `npm run lint:audit` (better-npm-audit) fails on freshly published
