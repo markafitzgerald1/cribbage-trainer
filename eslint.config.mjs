@@ -187,6 +187,7 @@ export default [
             "rerenders",
             "rescale",
             "rescales",
+            "rgb",
             "royale",
             "seedrandom",
             "Serializable",

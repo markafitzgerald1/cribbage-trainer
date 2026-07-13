@@ -54,6 +54,12 @@
   margin: 0.5em 0;
 }
 
+.privacy-policy-link {
+  color: black;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 button + button {
   margin-left: 0.5em;
 }

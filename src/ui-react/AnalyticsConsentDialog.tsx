@@ -158,14 +158,10 @@ export function AnalyticsConsentDialog({
 
   const PrivacyPolicyLink = (
     <span
+      className={classes.privacyPolicyLink}
       onClick={displayModal}
       onKeyDown={handleKeyDownEnter}
       role="button"
-      style={{
-        color: "blue",
-        cursor: "pointer",
-        textDecoration: "underline",
-      }}
       tabIndex={0}
     >
       Privacy Policy

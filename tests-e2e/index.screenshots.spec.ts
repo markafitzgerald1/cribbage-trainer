@@ -12,6 +12,16 @@ const testInitialRenderScreenshot = () =>
     await expect(page).toHaveScreenshot();
   });
 
+test("Privacy Policy link has a high-contrast color on the consent surface", async ({
+  page,
+}) => {
+  await page.goto(`/${constantHandQuery}`);
+
+  await expect(
+    page.getByRole("button", { exact: true, name: "Privacy Policy" }),
+  ).toHaveCSS("color", "rgb(0, 0, 0)");
+});
+
 const testEnterCardsDialogScreenshot = () =>
   test("enter cards dialog still visually the same", async ({ page }) => {
     await page.goto(`/${constantHandQuery}`);
