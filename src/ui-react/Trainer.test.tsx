@@ -24,6 +24,7 @@ import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { Trainer } from "./Trainer";
+import { getSortOrderName } from "../ui/SortOrderName";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -63,7 +64,7 @@ const handTextToComparableCards = (
 
 function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
   return container.querySelector(
-    `input[value='${Object.keys(SortOrder).find((key) => SortOrder[key as keyof typeof SortOrder] === sortOrder)}']`,
+    `input[value='${getSortOrderName(sortOrder)}']`,
   )!;
 }
 
@@ -79,15 +80,18 @@ const setupTrainerUser = () => ({
 const openCardEntry = (user: UserEvent) =>
   user.click(screen.getByRole("button", { name: "Enter cards" }));
 
-const renderTrainerWithInitialHand = () =>
-  render(
+const renderTrainerWithInitialHand = () => {
+  const initialCards = parseHand(SIX_HEARTS_HAND);
+
+  return render(
     <Trainer
       generateRandomNumber={mathRandom}
-      initialCards={parseHand(SIX_HEARTS_HAND)}
+      initialCards={initialCards}
       initialCribRole={CribRole.Dealer}
       loadGoogleAnalytics={jest.fn()}
     />,
   );
+};
 
 describe("trainer component", () => {
   it("initially contains a sort in descending order radio input", () => {

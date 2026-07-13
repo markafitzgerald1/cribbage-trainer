@@ -26,19 +26,7 @@ export const randomCribRole = (generateRandomNumber: () => number): CribRole =>
     : CribRole.Pone;
 
 export type StarterRank =
-  | "A"
-  | "2"
-  | "3"
-  | "4"
-  | "5"
-  | "6"
-  | "7"
-  | "8"
-  | "9"
-  | "T"
-  | "J"
-  | "Q"
-  | "K";
+  "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T" | "J" | "Q" | "K";
 
 type DiscardSuitGroup = "Suited" | "Unsuited";
 
@@ -153,8 +141,7 @@ const getRoleBuckets = (
   role: CribRole,
 ) => {
   const discardBuckets = Reflect.get(table, discardKey) as
-    | RoleBuckets
-    | undefined;
+    RoleBuckets | undefined;
   if (!discardBuckets) {
     throw new Error(`Missing expected crib points for ${discardKey}`);
   }
@@ -166,8 +153,7 @@ const getBucket = (
   starterRank: StarterRank,
 ) => {
   const bucket = Reflect.get(buckets, starterRank) as
-    | ExpectedCribBucket
-    | undefined;
+    ExpectedCribBucket | undefined;
   if (typeof bucket !== "number" && typeof bucket !== "object") {
     throw new Error(`Missing expected crib points for starter ${starterRank}`);
   }

@@ -10,12 +10,7 @@ export type ExpectedPlayPointsHandKey =
   `${StarterRank}_${StarterRank}_${StarterRank}_${StarterRank}`;
 
 export type ExpectedPlayPointType =
-  | "fifteen"
-  | "thirty_one"
-  | "pair"
-  | "run"
-  | "go"
-  | "last_card";
+  "fifteen" | "thirty_one" | "pair" | "run" | "go" | "last_card";
 
 export interface ExpectedPlayStatistic {
   readonly mu: number;
@@ -116,8 +111,7 @@ export const expectedPlayPoints = ({
 }): ExpectedPlayPoints => {
   const handKey = normalizePlayHandKey(keep);
   const handBucket = Reflect.get(table, handKey) as
-    | ExpectedPlayHandBucket
-    | undefined;
+    ExpectedPlayHandBucket | undefined;
   if (!handBucket) {
     throw new Error(`Missing expected play points for ${handKey}`);
   }
