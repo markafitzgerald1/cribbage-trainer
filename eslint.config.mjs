@@ -192,6 +192,7 @@ export default [
             "seedrandom",
             "Serializable",
             "svg",
+            "tagline",
             "tbody",
             "tsconfig",
             "tsx",

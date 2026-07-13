@@ -1,13 +1,52 @@
-.dynamic-ui {
+@import url("./vars.css");
+
+.app {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   margin-inline: auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.app-header {
+  color: var(--text-color);
+  font-family: var(--text-font-family);
+  padding: 0.7em 0.7em 0;
+  text-align: center;
+}
+
+.app-title {
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.tagline {
+  margin: 0.2em auto 0;
+  max-width: 40ch;
+  opacity: 0.82;
+}
+
+.dynamic-ui {
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
   min-width: 0;
   padding: 0.7em;
   width: 100%;
 }
 
 @media (aspect-ratio < 6 / 5) {
+  .app-title {
+    font-size: clamp(1.1rem, 6vw, 2rem);
+  }
+
+  .tagline {
+    font-size: clamp(0.7rem, 3.4vw, 1.05rem);
+  }
+
   .dynamic-ui {
     display: grid;
     grid-template-rows: auto 1fr auto;
@@ -35,6 +74,14 @@
 }
 
 @media (aspect-ratio >= 6 / 5) {
+  .app-title {
+    font-size: clamp(1.2rem, 2.6vw, 2.2rem);
+  }
+
+  .tagline {
+    font-size: clamp(0.8rem, 1.5vw, 1.2rem);
+  }
+
   .dynamic-ui {
     display: grid;
     grid-template-columns: min-content 1fr;

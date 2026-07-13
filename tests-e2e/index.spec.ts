@@ -163,6 +163,17 @@ test(`has title '${expectedTitle}'`, async ({ page }) => {
   await expect(page).toHaveTitle(expectedTitle);
 });
 
+test("introduces the app with a heading and purpose tagline", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("heading", { level: 1, name: expectedTitle }),
+  ).toBeVisible();
+  await expect(page.getByText(/expected-score analysis/u)).toBeVisible();
+});
+
 test("a .css file is linked", async ({ page }) => {
   await page.goto("/");
   expect(await page.$('link[rel="stylesheet"][href$=".css"]')).not.toBeNull();
