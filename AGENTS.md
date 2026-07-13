@@ -57,6 +57,13 @@
   through ESLint 9. Before changing that range, verify both packages' current
   registry metadata; do not bypass the peer conflict with
   `--legacy-peer-deps`.
+- With Babel's React and TypeScript presets enabled together, avoid single
+  unconstrained generic arrow functions such as `<T>(...) => ...` in `.ts`
+  files: Babel 8 parses the type parameter as JSX, while the repo's current
+  Prettier removes the TSX-style disambiguating comma from `.ts`, and lint
+  rejects a neutral `extends unknown` constraint. Prefer a named generic
+  function expression or declaration, which both Babel generations parse
+  consistently without weakening quality gates.
 - Use `npm run deps:update:minor` for routine refreshes; handle larger major
   upgrades separately if they would dominate the change set.
 - When `npm run lint:audit` (better-npm-audit) fails on freshly published
