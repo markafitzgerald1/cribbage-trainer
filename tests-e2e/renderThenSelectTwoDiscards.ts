@@ -1,6 +1,11 @@
 import type { Page } from "@playwright/test";
 import { SortOrder } from "../src/ui/SortOrder";
 
+export const waitForAnalysis = async (page: Page) => {
+  await page.locator('text="Loading analysis..."').waitFor({ state: "hidden" });
+  await page.getByRole("table").waitFor({ state: "visible" });
+};
+
 export const renderThenSelectTwoDiscards = async (
   page: Page,
   constantSeedQuery: string,
@@ -24,7 +29,5 @@ export const renderThenSelectTwoDiscards = async (
   )?.[0];
   await page.locator(`label[for="${dealOrderKey}"]`).first().click();
 
-  // Wait for the analysis table to load completely
-  await page.locator('text="Loading analysis..."').waitFor({ state: "hidden" });
-  await page.getByRole("table").waitFor({ state: "visible" });
+  await waitForAnalysis(page);
 };

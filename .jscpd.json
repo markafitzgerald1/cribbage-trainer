@@ -1,5 +1,6 @@
 {
-  "pattern": "src/**/*.ts*",
+  "path": ["src"],
+  "pattern": "**/*.ts*",
   "minLines": 1,
   "minTokens": 22,
   "threshold": 0,

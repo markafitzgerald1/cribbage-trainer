@@ -11,6 +11,7 @@ import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { createGenerator } from "../game/randomNumberGenerator";
+import { getSortOrderName } from "../ui/SortOrderName";
 
 const SEED = "1";
 
@@ -166,10 +167,7 @@ const createPlay =
     const dealOrderRadioButton = radioButtons.find(
       (radioButton) =>
         radioButton.getAttribute("value") ===
-        Object.keys(SortOrder).find(
-          (key) =>
-            SortOrder[key as keyof typeof SortOrder] === radioButtonValue,
-        ),
+        getSortOrderName(radioButtonValue),
     )!;
     const initialCanvasElementTextContent = canvasElement.textContent;
 
