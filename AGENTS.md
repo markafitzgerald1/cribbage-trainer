@@ -108,6 +108,9 @@
 
 ## Visual regression updates
 
+- `tests-e2e/index.screenshots.spec.ts` is ignored by the Firefox, WebKit, and
+  Mobile Safari projects. Keep that file focused on visual baselines; put
+  functional guards that need cross-browser coverage in a non-screenshot spec.
 - When Playwright snapshot diffs are acceptable:
   - Regenerate screenshots in Docker:
     `npm run docker:build-and-test-all -- -- --update-snapshots`.
