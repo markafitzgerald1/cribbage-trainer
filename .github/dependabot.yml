@@ -20,8 +20,11 @@ updates:
         patterns:
           - "*"
     ignore:
+      # Bounded to the current release (not >=10) so the ignore ages out and
+      # prompts a periodic compatibility re-check. Blocked by the latest
+      # eslint-plugin-jsx-a11y peer range, which ends at ESLint 9.
       - dependency-name: "eslint"
-        versions: [">=10.0.0 <=10.4.0"]
+        versions: [">=10.0.0 <=10.7.0"]
       # Bounded to the current release (not >=7) so the ignore ages out and
       # prompts a periodic compatibility re-check, matching the eslint entry.
       # Blocked by @typescript-eslint peer range (ERESOLVE in PR #662).
