@@ -127,9 +127,12 @@
     so every locally generated baseline carries a small cross-arch delta.
     `maxDiffPixels` (`playwright.config.ts`) must therefore sit above that
     noise floor, not below it, or CI flakes on baselines that look correct
-    locally. Anti-alias-heavy shots set the floor — text ghosting through a
-    translucent modal backdrop (the portrait enter-cards dialog) measured
-    ~635px arm64-vs-amd64, so the threshold is 800. Do **not** chase exact
+    locally. The global threshold is 800. Text ghosting through a
+    translucent modal backdrop is far noisier — the portrait enter-cards
+    dialog measured ~635px, then ~1100px once the content behind it shifted —
+    so give that single shot a per-shot `toHaveScreenshot({ maxDiffPixels })`
+    override rather than inflating the global for every opaque shot. Do
+    **not** chase exact
     CI-matching baselines by regenerating under qemu
     (`--platform linux/amd64`): its rendering is a third variant matching
     neither arm64 nor CI's amd64, and the emulated browser is too
