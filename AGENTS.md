@@ -122,6 +122,19 @@
     baselines are silently NOT rewritten. Confirm the build passed (or that
     `git status` actually shows changed `tests-e2e` images) before assuming the
     regeneration took effect.
+  - On an Apple Silicon (arm64) host, Docker runs the test image as arm64,
+    whose text antialiasing differs from CI's native amd64 by a few pixels.
+    Most baselines still land within `maxDiffPixels` (586), but anti-alias-
+    heavy shots — e.g. a translucent modal backdrop with the header ghosting
+    through — can tip just over (the portrait enter-cards dialog missed by
+    ~46px). `docker run --platform linux/amd64` (qemu) does **not** fix this:
+    emulated rendering is a third variant matching neither arm64 nor CI's
+    amd64, and the emulated browser is too slow/flaky for the interaction
+    tests. The reliable fix is to take CI's own render: from the failed
+    `build-and-test` run, `gh run download <id> --name test-results` and copy
+    each `*-actual.png` over its matching `*-linux.png` baseline. Only the
+    shots CI actually failed need replacing; the rest already match within
+    tolerance.
 
 ## Playwright and UI-layout debugging
 
