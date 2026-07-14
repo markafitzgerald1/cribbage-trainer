@@ -7,22 +7,14 @@
   width: 100%;
 }
 
+/* Kept as the figure's accessible name but hidden; the six cards are self-evidently the hand. */
 .figcaption {
-  color: var(--text-color);
-  font-family: var(--text-font-family);
-  font-weight: bold;
-}
-
-@media (aspect-ratio < 6 / 5) {
-  .figcaption {
-    font-size: var(--medium-text-font-size-portrait);
-  }
-}
-
-@media (aspect-ratio >= 6 / 5) {
-  .figcaption {
-    font-size: var(--medium-text-font-size-landscape);
-  }
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
 }
 
 .hand {
@@ -30,7 +22,7 @@
   gap: 0.8em;
   justify-content: space-between;
   padding: 0;
-  margin-top: 0.7em;
+  margin-top: 0;
   margin-bottom: 0;
   min-width: 0;
   width: 100%;

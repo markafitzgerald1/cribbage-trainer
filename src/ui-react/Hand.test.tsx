@@ -32,10 +32,13 @@ describe("hand component", () => {
 
   const caption = "Hand";
 
-  it(`has caption '${caption}'`, () => {
-    expect(
-      dealAndRender(SortOrder.Ascending).queryByText(caption),
-    ).toBeTruthy();
+  it(`has an accessible caption '${caption}'`, () => {
+    const captionElement = dealAndRender(SortOrder.Ascending).queryByText(
+      caption,
+    );
+
+    expect(captionElement).toBeTruthy();
+    expect(captionElement?.tagName).toBe("FIGCAPTION");
   });
 
   it("has a checkbox for each dealt card", () => {
