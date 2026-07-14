@@ -248,6 +248,16 @@
   Pone. Do not spread the cards (`justify-content: space-between`) to chase
   the Deal button's right edge; keep fixed gaps and narrow the controls
   instead (an e2e guard asserts Deal/last-card alignment).
+- The app-title/tagline header sits above the grid, so its height is stolen
+  from the height-tightest side-by-side left column (controls + cards +
+  first-run consent banner). On a short phone-landscape viewport that pushes
+  the consent Accept/Decline off-screen — worst in WebKit, which renders the
+  banner ~27px taller than Chromium, so the screenshot baselines (Chromium
+  and Mobile Chrome only) never catch it. Keep the landscape header compact
+  and shrink the consent banner from its grid cell (`.dynamic-ui >
+:last-child { font-size }`, which its text and `em` padding both track)
+  rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
+  asserts Accept stays within a 844x390 viewport across all browsers.
 
 ## Discard-table layout (portrait)
 

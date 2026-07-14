@@ -84,27 +84,43 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    padding-block: 0.2em 0;
   }
 
   .app-title {
-    font-size: clamp(1.2rem, 2.2vw, 2rem);
+    font-size: clamp(1rem, 1.7vw, 1.5rem);
   }
 
   .tagline {
-    font-size: min(1.5vw, 1.2rem);
+    font-size: min(1.4vw, 1.1rem);
     white-space: nowrap;
   }
 
+  /*
+   * Trim vertical padding so the compact header does not push the left
+   * column's first-run consent controls (Accept/Decline) below a short
+   * phone-landscape viewport. An e2e guard asserts they stay in view.
+   */
   .dynamic-ui {
     display: grid;
     grid-template-columns: min-content 1fr;
     grid-template-rows: 1fr auto;
-    gap: 0.5em;
+    gap: 0.4em;
+    padding-block: 0.25em;
   }
 
   .dynamic-ui > :first-child,
   .dynamic-ui > :last-child {
     grid-column: 1 / 2;
+  }
+
+  /*
+   * Compact the first-run consent banner (last child) in the height-tight
+   * side-by-side column. Its text and em-based padding both track this size,
+   * which WebKit renders tallest, so keep Accept/Decline within the viewport.
+   */
+  .dynamic-ui > :last-child {
+    font-size: 0.8rem;
   }
 
   .dynamic-ui > :nth-child(n + 2):nth-last-child(n + 2) {

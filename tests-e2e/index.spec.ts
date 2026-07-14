@@ -174,6 +174,24 @@ test("introduces the app with a heading and purpose tagline", async ({
   await expect(page.getByText(/expected-score analysis/u)).toBeVisible();
 });
 
+// A short phone-landscape viewport makes the left grid column height-tightest.
+// The header must not push its first-run consent controls out of view there.
+test("first-run consent controls stay within the phone-landscape viewport", async ({
+  page,
+}) => {
+  const landscapePhoneViewport = { height: 390, width: 844 };
+  await page.setViewportSize(landscapePhoneViewport);
+  await page.goto("/");
+
+  const acceptBounds = await requireBoundingBox(
+    page.getByRole("button", { name: "Accept" }),
+  );
+
+  expect(acceptBounds.y + acceptBounds.height).toBeLessThanOrEqual(
+    landscapePhoneViewport.height,
+  );
+});
+
 test("a .css file is linked", async ({ page }) => {
   await page.goto("/");
   expect(await page.$('link[rel="stylesheet"][href$=".css"]')).not.toBeNull();
