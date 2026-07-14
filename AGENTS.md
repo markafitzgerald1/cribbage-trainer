@@ -409,6 +409,9 @@
 ## CI workflow notes
 
 - Workflow: .github/workflows/npm-build-test-upload-artifact-and-deploy.yml.
+  Triggers on `push` and on the `opened` and `reopened` `pull_request`
+  types (the latter so a new PR previews without a second push; see "PR
+  preview deploys").
 - On non-main branches: builds Docker test image and runs Playwright e2e via
   `npm run docker:run-e2e-only`, then (same workflow) resolves whether an
   open, same-repository, non-Dependabot PR exists for the branch and, if so,
@@ -424,12 +427,25 @@
   (`.github/workflows/pages-preview-cleanup.yml`, triggered by
   `pull_request: closed`, kept in its own file so editing cleanup logic can
   never perturb the production-critical jobs' `on:`/`if:` conditions).
-  "Eligible" means same-repository and not authored by `dependabot[bot]`;
-  fork PRs never reach this at all since `push` never fires in this repo for
-  fork commits. Because previews are `push`-triggered, the branch-creating
-  push always precedes `gh pr create` and skips with "No open pull request
-  found"; the first preview publishes on the first push made _after_ the PR
-  exists (push an empty or follow-up commit if one is needed sooner).
+  "Eligible" means same-repository and not authored by `dependabot[bot]`.
+  The workflow triggers on `push` and on the `opened` and `reopened`
+  `pull_request` types, so a fresh PR previews on open without waiting for a
+  second push: a push-only trigger skipped that first build because the
+  branch-creating push always precedes `gh pr create` ("No open pull request
+  found"). Same-repo `push` and `pull_request` events for one branch carry
+  different `github.ref`s (`refs/heads/<branch>` vs `refs/pull/<n>/merge`),
+  so the top-level `concurrency.group` keys on
+  `github.head_ref || github.ref_name` (the branch on both event types) to
+  make the opened run supersede the branch's still-running push run instead
+  of racing it into a duplicate publish. `resolve-preview-pr` resolves the
+  branch the same way (the `refs/heads/` strip yields `refs/pull/<n>/merge`
+  on `pull_request` events). Fork PRs now reach the workflow — `push` still
+  never fires for fork commits, but `pull_request` does — yet they run with a
+  read-only token and no secrets, and `resolve-preview-pr`'s
+  `isCrossRepository` check keeps them `eligible=false` so they never
+  publish. Only `opened` and `reopened` are subscribed, not `synchronize`:
+  in-PR commits already fire `push`, and the branch-keyed concurrency
+  collapses the two into one run.
 - The `pages-content` branch is a git-based **cache**, not the Pages
   publishing source (Pages settings stay `build_type: workflow`). It is
   fetched-or-created, mutated, and force-pushed as a single amended commit

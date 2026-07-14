@@ -1,8 +1,19 @@
 name: npm-build-test-upload-artifact-and-deploy
-on: [push]
+on:
+  push:
+  # Publish a preview the moment a PR opens/reopens: the branch-creating
+  # push always precedes `gh pr create`, so a push-only trigger skips the
+  # first build with "No open pull request found" and leaves a fresh PR
+  # without a preview until the next push.
+  pull_request:
+    types: [opened, reopened]
 
+# Key on the branch (github.ref differs between the push and pull_request
+# events for the same branch: refs/heads/<branch> vs refs/pull/<n>/merge),
+# so a pull_request-opened run supersedes the branch's still-running push
+# run instead of racing it into a duplicate preview publish.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -163,8 +174,12 @@ jobs:
         name: Resolve the open, same-repository, non-Dependabot PR for this branch
         env:
           GH_TOKEN: ${{ github.token }}
+          # github.ref_name is <branch> on push but <n>/merge on
+          # pull_request; github.head_ref is the source branch only on
+          # pull_request events, so this resolves the branch on both.
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: |
-          BRANCH="${GITHUB_REF#refs/heads/}"
+          BRANCH="$BRANCH_NAME"
           # The --head filter prefix-matches branch names (github/cli#10816),
           # so select on exact headRefName equality to never publish this
           # branch's build to a similarly named branch's PR path.
