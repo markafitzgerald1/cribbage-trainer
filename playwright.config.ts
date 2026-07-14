@@ -7,7 +7,9 @@ const ignoreScreenshotTests = /.*.screenshots.spec.ts/u;
 export default defineConfig({
   expect: {
     toHaveScreenshot: {
-      maxDiffPixels: 586,
+      // This threshold sits above the arm64-dev/amd64-CI antialiasing floor.
+      // Text ghosting through a translucent modal set that floor near 635px.
+      maxDiffPixels: 800,
     },
   },
   forbidOnly: Boolean(process.env["CI"]),

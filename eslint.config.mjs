@@ -141,6 +141,9 @@ export default [
         "warn",
         {
           skipWords: [
+            "amd64",
+            "antialiasing",
+            "arm64",
             "autodocs",
             "callee",
             "camelcase",
