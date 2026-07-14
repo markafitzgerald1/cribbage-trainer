@@ -24,8 +24,7 @@
 }
 
 .tagline {
-  margin: 0.2em auto 0;
-  max-width: 40ch;
+  margin: 0.2em 0 0;
   opacity: 0.82;
 }
 
@@ -44,7 +43,7 @@
   }
 
   .tagline {
-    font-size: clamp(0.7rem, 3.4vw, 1.05rem);
+    font-size: min(3.1vw, 1.05rem);
   }
 
   .dynamic-ui {
@@ -74,12 +73,26 @@
 }
 
 @media (aspect-ratio >= 6 / 5) {
+  /*
+   * A single horizontal row (title beside tagline) keeps the header one line
+   * tall so it steals minimal vertical space from the analysis table. Tagline
+   * wrapping below the title is the only fallback when the row cannot fit.
+   */
+  .app-header {
+    align-items: baseline;
+    column-gap: 0.6em;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
   .app-title {
-    font-size: clamp(1.2rem, 2.6vw, 2.2rem);
+    font-size: clamp(1.2rem, 2.2vw, 2rem);
   }
 
   .tagline {
-    font-size: clamp(0.8rem, 1.5vw, 1.2rem);
+    font-size: min(1.5vw, 1.2rem);
+    white-space: nowrap;
   }
 
   .dynamic-ui {
