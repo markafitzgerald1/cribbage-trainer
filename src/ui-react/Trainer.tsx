@@ -241,39 +241,47 @@ export function Trainer({
   }, [analyticsConsented, loadGoogleAnalytics]);
 
   return (
-    <div className={classes.dynamicUi}>
-      <InteractiveHand
-        cribRole={cribRole}
-        dealtCards={dealtCards}
-        onCardChange={toggleKept}
-        onDeal={dealNewHand}
-        onEnterCards={enterCardsDialog.handleOpen}
-        onSortOrderChange={changeSortOrder}
-        sortOrder={sortOrder}
-      />
-      <EnterCardsDialog
-        initialCards={dealtCards}
-        initialCribRole={cribRole}
-        key={`${enterCardsDialog.show}-${cribRole}-${serializeHand(dealtCards)}`}
-        onClose={enterCardsDialog.handleClose}
-        onSubmit={enterCardsDialog.handleSubmit}
-        show={enterCardsDialog.show}
-        sortOrder={sortOrder}
-      />
-      {discardIsComplete(dealtCards) && (
-        <ScoredPossibleKeepDiscards
+    <div className={classes.app}>
+      <header className={classes.appHeader}>
+        <h1 className={classes.appTitle}>Cribbage Trainer</h1>
+        <p className={classes.tagline}>
+          Sharpen your cribbage discards with expected-score analysis.
+        </p>
+      </header>
+      <div className={classes.dynamicUi}>
+        <InteractiveHand
           cribRole={cribRole}
           dealtCards={dealtCards}
-          onScoreSortKeyChange={changeScoreSortKey}
-          scoreSortKey={scoreSortKey}
+          onCardChange={toggleKept}
+          onDeal={dealNewHand}
+          onEnterCards={enterCardsDialog.handleOpen}
+          onSortOrderChange={changeSortOrder}
           sortOrder={sortOrder}
         />
-      )}
-      <AnalyticsConsentDialog
-        consent={analyticsConsented}
-        onChange={setConsented}
-        wasInitiallyConsented={storedConsentOnFirstRender !== null}
-      />
+        <EnterCardsDialog
+          initialCards={dealtCards}
+          initialCribRole={cribRole}
+          key={`${enterCardsDialog.show}-${cribRole}-${serializeHand(dealtCards)}`}
+          onClose={enterCardsDialog.handleClose}
+          onSubmit={enterCardsDialog.handleSubmit}
+          show={enterCardsDialog.show}
+          sortOrder={sortOrder}
+        />
+        {discardIsComplete(dealtCards) && (
+          <ScoredPossibleKeepDiscards
+            cribRole={cribRole}
+            dealtCards={dealtCards}
+            onScoreSortKeyChange={changeScoreSortKey}
+            scoreSortKey={scoreSortKey}
+            sortOrder={sortOrder}
+          />
+        )}
+        <AnalyticsConsentDialog
+          consent={analyticsConsented}
+          onChange={setConsented}
+          wasInitiallyConsented={storedConsentOnFirstRender !== null}
+        />
+      </div>
     </div>
   );
 }

@@ -60,6 +60,12 @@
   text-decoration: underline;
 }
 
-button + button {
+/*
+ * CSS modules scope only class selectors; a bare element selector here is
+ * global. Unscoped, this rule leaked 0.5em onto every adjacent-button pair
+ * in the app (e.g. indenting all but the first card in the card grid).
+ */
+.analytics-consent-dialog button + button,
+.analytics-consent-dialog-fading button + button {
   margin-left: 0.5em;
 }

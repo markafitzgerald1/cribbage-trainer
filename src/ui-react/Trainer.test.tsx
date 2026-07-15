@@ -102,6 +102,15 @@ describe("trainer component", () => {
     expect(renderTrainer().queryByText("Hand")).toBeTruthy();
   });
 
+  it("introduces the app with a title and purpose tagline", () => {
+    renderTrainer();
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Cribbage Trainer" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/expected-score analysis/u)).toBeInTheDocument();
+  });
+
   it("shows the randomized dealer role", () => {
     renderTrainerShowingDealerRole();
 

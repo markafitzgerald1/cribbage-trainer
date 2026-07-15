@@ -17,7 +17,13 @@ const testEnterCardsDialogScreenshot = () =>
     await page.goto(`/${constantHandQuery}`);
     await page.getByRole("button", { name: "Enter cards" }).click();
 
-    await expect(page).toHaveScreenshot();
+    // Capture the opaque modal panel, not the whole page.
+    // The translucent overlay dims the hand showing through the panel margins.
+    // That shown-through background is noisier across arm64/amd64 than the dialog.
+    const modalPanel = page
+      .getByRole("button", { name: "Close modal" })
+      .locator("..");
+    await expect(modalPanel).toHaveScreenshot();
   });
 
 const testPrivacyPolicyScreenshot = () =>

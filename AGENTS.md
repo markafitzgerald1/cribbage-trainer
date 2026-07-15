@@ -122,6 +122,23 @@
     baselines are silently NOT rewritten. Confirm the build passed (or that
     `git status` actually shows changed `tests-e2e` images) before assuming the
     regeneration took effect.
+  - On an Apple Silicon (arm64) host, Docker runs the test image as arm64,
+    whose text antialiasing differs from CI's native amd64 by a few pixels,
+    so every locally generated baseline carries a small cross-arch delta.
+    `maxDiffPixels` (`playwright.config.ts`) must therefore sit above that
+    noise floor, not below it, or CI flakes on baselines that look correct
+    locally. The global threshold is 800. A modal shot is far noisier
+    because `Modal`'s overlay is translucent (`rgb(0 0 0 / 50%)`), so the
+    dimmed hand behind the panel shows through the margins and its
+    antialiasing swings ~1100px across arch. Screenshot the opaque panel
+    itself (`getByRole("button", { name: "Close modal" }).locator("..")`),
+    not the whole `page`, so that incidental show-through is never captured —
+    prefer that over a per-shot `maxDiffPixels` override. Do **not** chase
+    exact CI-matching baselines by regenerating under qemu
+    (`--platform linux/amd64`): its rendering is a third variant matching
+    neither arm64 nor CI's amd64, and the emulated browser is too
+    slow/flaky for the interaction tests. Generate baselines natively on
+    arm64 and let the threshold absorb the delta.
 
 ## Playwright and UI-layout debugging
 
@@ -193,6 +210,14 @@
   indistinguishable. Review both entering and leaving hover in the rendered UI
   and use a target color with a perceptible contrast change consistent with
   peer controls.
+- CSS modules scope only class selectors: a bare element selector in any
+  `*.module.css` (e.g. `button + button`) compiles to a global rule that
+  leaks into every other component. One such rule indented all but the
+  first card-grid button, making the Ace of Spades look wider than its
+  peers. When one element of a repeated set renders offset or sized unlike
+  its siblings, diff `getComputedStyle` margins between siblings first,
+  then hunt for element-only rules in unrelated module files and qualify
+  them with a component class.
 - On short screens, place a modal's primary and secondary actions before a
   long scrolling picker and keep the action row sticky. Users should see how
   to complete the dialog without first discovering an off-screen footer.
@@ -235,6 +260,16 @@
   Pone. Do not spread the cards (`justify-content: space-between`) to chase
   the Deal button's right edge; keep fixed gaps and narrow the controls
   instead (an e2e guard asserts Deal/last-card alignment).
+- The app-title/tagline header sits above the grid, so its height is stolen
+  from the height-tightest side-by-side left column (controls + cards +
+  first-run consent banner). On a short phone-landscape viewport that pushes
+  the consent Accept/Decline off-screen — worst in WebKit, which renders the
+  banner ~27px taller than Chromium, so the screenshot baselines (Chromium
+  and Mobile Chrome only) never catch it. Keep the landscape header compact
+  and shrink the consent banner from its grid cell (`.dynamic-ui >
+:last-child { font-size }`, which its text and `em` padding both track)
+  rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
+  asserts Accept stays within a 844x390 viewport across all browsers.
 
 ## Discard-table layout (portrait)
 
