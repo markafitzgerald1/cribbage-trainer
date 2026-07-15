@@ -11,6 +11,7 @@
     "camelcase",
     "discardable",
     "elif",
+    "ENOSPC",
     "ERESOLVE",
     "esac",
     "espree",
