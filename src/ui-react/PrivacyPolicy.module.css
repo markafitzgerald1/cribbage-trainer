@@ -4,6 +4,7 @@
   font-family: var(--text-font-family);
   color: color-mix(in srgb, black 80%, white);
   background: color-mix(in srgb, lightgreen 30%, white);
+  text-align: left;
 }
 
 .privacy-policy h1 {
