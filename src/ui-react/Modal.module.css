@@ -19,13 +19,20 @@
 .content {
   background: color-mix(in srgb, lightgreen 30%, white);
   box-sizing: border-box;
-  width: min(48.5rem, calc(100% - 2rem));
+  width: min(43em, calc(100% - 2rem));
   padding: var(--spacing);
   border-radius: 5px;
   max-height: calc(100% - 2rem);
   overflow-y: auto;
   position: relative;
   font-family: var(--text-font-family);
+
+  /*
+   * The modal mounts inside the consent banner, which side-by-side mode
+   * shrinks to 0.8rem; pin an explicit size so the reading document never
+   * inherits that compaction regardless of where it is mounted.
+   */
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
 }
 
 .close {

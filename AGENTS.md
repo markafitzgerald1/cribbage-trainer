@@ -47,6 +47,13 @@
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.
+- A Docker build failing with `ENOSPC: no space left on device` (often
+  surfacing mid-way, e.g. during `storybook:test:coverage`) usually means
+  Docker Desktop's build cache has grown unbounded across many local rebuilds,
+  not that the host disk is full. Check `docker system df`; if `Build Cache`
+  reclaimable is many GB, `docker builder prune -af` (safe: only removes
+  unused build layers, not tagged images or anything from other projects)
+  typically frees tens of GB and lets the build proceed.
 
 ## Dependency maintenance
 

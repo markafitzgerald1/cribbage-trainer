@@ -4,6 +4,7 @@
   font-family: var(--text-font-family);
   color: color-mix(in srgb, black 80%, white);
   background: color-mix(in srgb, lightgreen 30%, white);
+  text-align: left;
 }
 
 .privacy-policy h1 {
@@ -33,4 +34,8 @@
 .privacy-policy li {
   margin-bottom: 5px;
   line-height: 1.4;
+}
+
+.privacy-policy a {
+  overflow-wrap: break-word;
 }

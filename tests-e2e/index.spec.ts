@@ -220,6 +220,49 @@ test("Privacy Policy link has a high-contrast color on the consent surface", asy
   ).toHaveCSS("color", "rgb(0, 0, 0)");
 });
 
+const minPrivacyPolicyFontSizePx = 16;
+
+const openPrivacyPolicyModalPanel = async (page: Page) => {
+  await page
+    .getByRole("button", { ...exactTextMatch, name: "Privacy Policy" })
+    .click();
+  const panel = page.getByRole("button", { name: "Close modal" }).locator("..");
+  await expect(panel).toBeVisible();
+  return panel;
+};
+
+const privacyPolicyFontSizePx = async (
+  page: Page,
+  viewport: { height: number; width: number },
+) => {
+  await page.setViewportSize(viewport);
+  await page.goto(`/${constantHandQuery}`);
+  const panel = await openPrivacyPolicyModalPanel(page);
+  const fontSize = await panel.evaluate(
+    (element) => globalThis.getComputedStyle(element).fontSize,
+  );
+  return Number.parseFloat(fontSize);
+};
+
+test("side-by-side privacy policy text scales with the viewport, not the compacted banner", async ({
+  page,
+}) => {
+  const narrowSideBySide = await privacyPolicyFontSizePx(page, {
+    height: 390,
+    width: 844,
+  });
+  const wideSideBySide = await privacyPolicyFontSizePx(page, {
+    height: 900,
+    width: 1600,
+  });
+
+  // Side-by-side mode shrinks the consent banner the modal mounts inside to
+  // 0.8rem (12.8px); the policy reads as a document and must not inherit it.
+  expect(narrowSideBySide).toBeGreaterThanOrEqual(minPrivacyPolicyFontSizePx);
+  // A wider viewport yields larger text, tracking the vw-scaled app chrome.
+  expect(wideSideBySide).toBeGreaterThan(narrowSideBySide);
+});
+
 const getSuitedDiscardRow = (page: Page) =>
   page
     .locator('tr[class*="highlighted"]')
