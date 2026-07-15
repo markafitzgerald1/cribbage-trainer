@@ -210,6 +210,14 @@
   indistinguishable. Review both entering and leaving hover in the rendered UI
   and use a target color with a perceptible contrast change consistent with
   peer controls.
+- CSS modules scope only class selectors: a bare element selector in any
+  `*.module.css` (e.g. `button + button`) compiles to a global rule that
+  leaks into every other component. One such rule indented all but the
+  first card-grid button, making the Ace of Spades look wider than its
+  peers. When one element of a repeated set renders offset or sized unlike
+  its siblings, diff `getComputedStyle` margins between siblings first,
+  then hunt for element-only rules in unrelated module files and qualify
+  them with a component class.
 - On short screens, place a modal's primary and secondary actions before a
   long scrolling picker and keep the action row sticky. Users should see how
   to complete the dialog without first discovering an off-screen footer.

@@ -15,6 +15,10 @@ export const renderThenSelectTwoDiscards = async (
 
   if (acceptAnalytics) {
     await page.locator('button:has-text("Accept")').click();
+    // The consent dialog swaps to its minimal state on a JS timer.
+    // Playwright disables CSS animations, not JS timers, for screenshots.
+    // Waiting out the swap keeps captures from racing the fading message.
+    await page.getByText(/^Thank you!/u).waitFor({ state: "hidden" });
   }
 
   const discardCount = 2;

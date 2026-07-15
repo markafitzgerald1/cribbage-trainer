@@ -370,9 +370,46 @@ test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
   expect(tableBounds.x).toBeGreaterThanOrEqual(rightEdge(handBounds));
 });
 
-test("manually entered pone hand reaches suited analysis", async ({ page }) => {
+const openCardEntryDialog = async (page: Page) => {
   await page.goto("/?seed=manual-entry");
   await page.getByRole("button", { name: "Enter cards" }).click();
+};
+
+// Guards against style leaks singling out the grid's first item.
+// A global sibling-margin rule once indented every card except the Ace of
+// Spades, making it look wider than its peers.
+test("card picker buttons share one width and aligned columns", async ({
+  page,
+}) => {
+  await openCardEntryDialog(page);
+  const cardButtons = page
+    .getByRole("group", { name: "Card choices" })
+    .getByRole("button");
+  const gridCardCount = 52;
+  await expect(cardButtons).toHaveCount(gridCardCount);
+
+  const bounds = await Promise.all(
+    Array.from({ length: gridCardCount }, (_, index) =>
+      requireBoundingBox(cardButtons.nth(index)),
+    ),
+  );
+
+  const widths = bounds.map((box) => box.width);
+  const geometryTolerance = 1;
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(
+    geometryTolerance,
+  );
+
+  // The grid flows column-first with 13 rows, so the first 13 share a column.
+  const rowsPerColumn = 13;
+  const firstColumnLefts = bounds.slice(0, rowsPerColumn).map((box) => box.x);
+  expect(
+    Math.max(...firstColumnLefts) - Math.min(...firstColumnLefts),
+  ).toBeLessThanOrEqual(geometryTolerance);
+});
+
+test("manually entered pone hand reaches suited analysis", async ({ page }) => {
+  await openCardEntryDialog(page);
   const dialog = page
     .getByRole("heading", { name: "Enter cards" })
     .locator("..");

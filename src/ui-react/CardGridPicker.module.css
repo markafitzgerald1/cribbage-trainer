@@ -24,9 +24,8 @@
   padding: 0.35rem 0.5rem;
 
   /*
-   * Button grid items do not fill their track from justify-self alone (only
-   * the first item stretches), leaving the Ace of Spades wider than its peers;
-   * an explicit width makes every card fill its column uniformly.
+   * Fill the grid track explicitly rather than relying on default stretch
+   * alignment, which engines apply inconsistently to form controls.
    */
   width: 100%;
   transition:
