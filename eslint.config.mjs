@@ -206,6 +206,7 @@ export default [
             "utf",
             "vite",
             "vitest",
+            "vw",
             "webkit",
           ],
         },
