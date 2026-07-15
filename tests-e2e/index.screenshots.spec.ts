@@ -3,12 +3,6 @@ import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
 const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H&seed=e2e";
 
-// The enter-cards modal's translucent backdrop ghosts the hand behind it.
-// That antialiasing differs far more across arm64 dev and amd64 CI than
-// Opaque shots do (~1100px vs the global ~635px floor). This one shot gets
-// Extra headroom rather than loosening the global threshold for every shot.
-const translucentBackdropMaxDiffPixels = 1800;
-
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
     page,
@@ -23,9 +17,13 @@ const testEnterCardsDialogScreenshot = () =>
     await page.goto(`/${constantHandQuery}`);
     await page.getByRole("button", { name: "Enter cards" }).click();
 
-    await expect(page).toHaveScreenshot({
-      maxDiffPixels: translucentBackdropMaxDiffPixels,
-    });
+    // Capture the opaque modal panel, not the whole page.
+    // The translucent overlay dims the hand showing through the panel margins.
+    // That shown-through background is noisier across arm64/amd64 than the dialog.
+    const modalPanel = page
+      .getByRole("button", { name: "Close modal" })
+      .locator("..");
+    await expect(modalPanel).toHaveScreenshot();
   });
 
 const testPrivacyPolicyScreenshot = () =>

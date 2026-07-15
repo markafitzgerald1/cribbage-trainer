@@ -13,6 +13,7 @@
   background: color-mix(in srgb, white 82%, lightgreen);
   border: 2px solid color-mix(in srgb, green 15%, white);
   border-radius: 0.45rem;
+  box-sizing: border-box;
   color: var(--card-black-suit-color, #222);
   cursor: pointer;
   display: flex;
@@ -21,6 +22,13 @@
   justify-content: center;
   min-height: 3rem;
   padding: 0.35rem 0.5rem;
+
+  /*
+   * Button grid items do not fill their track from justify-self alone (only
+   * the first item stretches), leaving the Ace of Spades wider than its peers;
+   * an explicit width makes every card fill its column uniformly.
+   */
+  width: 100%;
   transition:
     background-color var(--transition-duration) var(--transition-timing),
     border-color var(--transition-duration) var(--transition-timing),
