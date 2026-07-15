@@ -11,15 +11,16 @@ export const renderThenSelectTwoDiscards = async (
   constantSeedQuery: string,
   acceptAnalytics = false,
 ) => {
-  await page.goto(`/${constantSeedQuery}`);
-
   if (acceptAnalytics) {
-    await page.locator('button:has-text("Accept")').click();
-    // The consent dialog swaps to its minimal state on a JS timer.
-    // Playwright disables CSS animations, not JS timers, for screenshots.
-    // Waiting out the swap keeps captures from racing the fading message.
-    await page.getByText(/^Thank you!/u).waitFor({ state: "hidden" });
+    // Pre-seed stored consent so the banner mounts already collapsed.
+    // Clicking Accept instead starts the dialog's multi-second fade timer.
+    // That slows every screenshot test and races the capture against it.
+    await page.addInitScript(() => {
+      window.localStorage.setItem("analyticsConsent", "true");
+    });
   }
+
+  await page.goto(`/${constantSeedQuery}`);
 
   const discardCount = 2;
   const checkboxes = page.getByRole("checkbox");
