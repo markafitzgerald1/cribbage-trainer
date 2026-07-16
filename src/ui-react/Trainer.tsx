@@ -156,6 +156,7 @@ export function Trainer({
     trackEvent,
     wasDeepLinked: initialCards !== null,
   });
+  const isMergingHistoryEntry = useRef(false);
   const shouldPushHistory = useRef(false);
 
   useEffect(() => {
@@ -174,6 +175,7 @@ export function Trainer({
     } else if (url === getPreviousUrl()) {
       // Merging avoids an adjacent duplicate that would make Back a no-op.
       // The abandoned transient entry survives only as a Forward entry.
+      isMergingHistoryEntry.current = true;
       window.history.back();
     } else {
       // Keep previousUrl so later settles can still detect convergence.
@@ -186,11 +188,16 @@ export function Trainer({
     const handlePopState = () => {
       // Navigation must never push, even if a click just set the push flag.
       shouldPushHistory.current = false;
+      const isInternalMerge = isMergingHistoryEntry.current;
+      isMergingHistoryEntry.current = false;
       const urlState = parseUrlAnalysisState(window.location.search);
       if (urlState.cards) {
         const { cards, discards } = urlState;
         const newDealtCards = toDealtCards(cards, discards);
-        telemetry.reportHistoryNavigation(newDealtCards);
+        // Returning to the covered stable URL is cleanup, not user navigation.
+        if (!isInternalMerge) {
+          telemetry.reportHistoryNavigation(newDealtCards);
+        }
         setDealState((previous) => ({
           cribRole: urlState.cribRole ?? previous.cribRole,
           dealtCards: newDealtCards,

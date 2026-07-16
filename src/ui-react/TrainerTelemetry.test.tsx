@@ -7,8 +7,8 @@ import {
   setCribTable,
 } from "./Trainer.test.common";
 import { type TrainerProps, analyticsConsentKey } from "./Trainer";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, screen } from "@testing-library/react";
 import { ANALYSIS_SETTLE_MS } from "./useDiscardTelemetry";
 import { parseHand } from "../game/Card";
 
@@ -28,7 +28,9 @@ const startTelemetryCapture = (consent: boolean | null) => {
 };
 
 const settle = () => {
-  jest.advanceTimersByTime(ANALYSIS_SETTLE_MS);
+  act(() => {
+    jest.advanceTimersByTime(ANALYSIS_SETTLE_MS);
+  });
 };
 
 const setupTelemetryTrainer = (consent: boolean | null) => {
@@ -118,6 +120,21 @@ describe("trainer telemetry wiring", () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it("keeps a mind-change flicker's analysis interactive and first", () => {
+    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
+    try {
+      clickCheckbox(0);
+      clickCheckbox(1);
+      clickCheckbox(2);
+      clickCheckbox(2);
+      settle();
+    } finally {
+      jest.useRealTimers();
+    }
+
+    expectLastAnalysisShown(trackEvent, true, "interactive");
   });
 
   // eslint-disable-next-line jest/prefer-ending-with-an-expect
