@@ -9,6 +9,8 @@
     "Buildx",
     "cutscolumn",
     "camelcase",
+    "cookieless",
+    "deeplink",
     "discardable",
     "elif",
     "ENOSPC",
@@ -44,6 +46,7 @@
     "subshells",
     "TJQK",
     "tsbuildinfo",
+    "unshown",
     "Vite",
     "worktree"
   ]

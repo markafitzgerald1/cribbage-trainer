@@ -14,14 +14,17 @@ import { InteractiveHand } from "./InteractiveHand";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
+import type { TrackEvent } from "../ui/trackEvent";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
+import { useDiscardTelemetry } from "./useDiscardTelemetry";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
   readonly loadGoogleAnalytics: (consented: boolean | null) => void;
+  readonly trackEvent: TrackEvent;
   readonly initialCards?: Card[] | null;
   readonly initialCribRole?: CribRole | null;
   readonly initialDiscards?: Card[] | null;
@@ -61,6 +64,23 @@ const isUnchangedEnteredHand = (
   dealState.dealtCards.every((card) => card.kept) &&
   serializeHand(cards) === serializeHand(dealState.dealtCards);
 
+const useAnalyticsConsent = (
+  loadGoogleAnalytics: (consented: boolean | null) => void,
+) => {
+  const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
+  const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
+    storedConsentOnFirstRender,
+  );
+  const setConsented = useCallback((value: boolean) => {
+    setAnalyticsConsented(value);
+    localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
+  }, []);
+  useEffect(() => {
+    loadGoogleAnalytics(analyticsConsented);
+  }, [analyticsConsented, loadGoogleAnalytics]);
+  return { analyticsConsented, setConsented, storedConsentOnFirstRender };
+};
+
 const useEnterCardsDialog = (
   dealState: DealState,
   setDealState: (state: DealState) => void,
@@ -94,6 +114,7 @@ const useEnterCardsDialog = (
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
+  trackEvent,
   initialCards = null,
   initialCribRole = null,
   initialDiscards = null,
@@ -127,10 +148,14 @@ export function Trainer({
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
-  const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
-  const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
-    storedConsentOnFirstRender,
-  );
+  const { analyticsConsented, setConsented, storedConsentOnFirstRender } =
+    useAnalyticsConsent(loadGoogleAnalytics);
+  const telemetry = useDiscardTelemetry({
+    consented: analyticsConsented,
+    dealtCards,
+    trackEvent,
+    wasDeepLinked: initialCards !== null,
+  });
   const shouldPushHistory = useRef(false);
 
   useEffect(() => {
@@ -164,9 +189,11 @@ export function Trainer({
       const urlState = parseUrlAnalysisState(window.location.search);
       if (urlState.cards) {
         const { cards, discards } = urlState;
+        const newDealtCards = toDealtCards(cards, discards);
+        telemetry.reportHistoryNavigation(newDealtCards);
         setDealState((previous) => ({
           cribRole: urlState.cribRole ?? previous.cribRole,
-          dealtCards: toDealtCards(cards, discards),
+          dealtCards: newDealtCards,
         }));
       }
       if (urlState.sortOrder !== null) {
@@ -180,16 +207,23 @@ export function Trainer({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, []);
+  }, [telemetry]);
 
   // Preserve the current history entry only when its state is stable.
   // Transient single-card selections get replaced, so Back skips them.
   const markHistoryUpdate = useCallback(() => {
     shouldPushHistory.current = isStableDiscardState(dealtCards);
   }, [dealtCards]);
+  const applyManualHand = useCallback(
+    (state: DealState) => {
+      telemetry.reportHandReplaced(state.dealtCards, "manual");
+      setDealState(state);
+    },
+    [telemetry],
+  );
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
-    setDealState,
+    applyManualHand,
     markHistoryUpdate,
   );
 
@@ -202,18 +236,21 @@ export function Trainer({
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
+      telemetry.reportCardToggled(newDealtCards, newDealtCard.kept);
       setDealState({
         cribRole,
         dealtCards: newDealtCards,
       });
     },
-    [cribRole, dealtCards, markHistoryUpdate],
+    [cribRole, dealtCards, markHistoryUpdate, telemetry],
   );
 
   const dealNewHand = useCallback(() => {
     markHistoryUpdate();
-    setDealState(createDealState(dealHandWithGenerator()));
-  }, [createDealState, dealHandWithGenerator, markHistoryUpdate]);
+    const newDealState = createDealState(dealHandWithGenerator());
+    telemetry.reportHandReplaced(newDealState.dealtCards, "deal");
+    setDealState(newDealState);
+  }, [createDealState, dealHandWithGenerator, markHistoryUpdate, telemetry]);
 
   const changeSortOrder = useCallback(
     (newSortOrder: SortOrder) => {
@@ -230,15 +267,6 @@ export function Trainer({
     },
     [markHistoryUpdate],
   );
-
-  const setConsented = useCallback((value: boolean) => {
-    setAnalyticsConsented(value);
-    localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
-  }, []);
-
-  useEffect(() => {
-    loadGoogleAnalytics(analyticsConsented);
-  }, [analyticsConsented, loadGoogleAnalytics]);
 
   return (
     <div className={classes.app}>

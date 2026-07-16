@@ -13,18 +13,17 @@ import {
   createSequenceGenerator,
   expectDealerRoleVisible,
   expectPoneRoleVisible,
-  mathRandom,
   renderTrainer,
   renderTrainerShowingDealerRole,
   renderTrainerWithGenerator,
+  renderTrainerWithInitialProps,
 } from "./Trainer.test.common";
-import { describe, expect, it, jest } from "@jest/globals";
-import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
-import { Trainer } from "./Trainer";
 import { getSortOrderName } from "../ui/SortOrderName";
+import { screen } from "@testing-library/react";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -80,18 +79,11 @@ const setupTrainerUser = () => ({
 const openCardEntry = (user: UserEvent) =>
   user.click(screen.getByRole("button", { name: "Enter cards" }));
 
-const renderTrainerWithInitialHand = () => {
-  const initialCards = parseHand(SIX_HEARTS_HAND);
-
-  return render(
-    <Trainer
-      generateRandomNumber={mathRandom}
-      initialCards={initialCards}
-      initialCribRole={CribRole.Dealer}
-      loadGoogleAnalytics={jest.fn()}
-    />,
-  );
-};
+const renderTrainerWithInitialHand = () =>
+  renderTrainerWithInitialProps({
+    initialCards: parseHand(SIX_HEARTS_HAND),
+    initialCribRole: CribRole.Dealer,
+  });
 
 describe("trainer component", () => {
   it("initially contains a sort in descending order radio input", () => {

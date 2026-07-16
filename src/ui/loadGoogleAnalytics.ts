@@ -1,20 +1,9 @@
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
-  }
-}
+import { gtag } from "./gtag";
 
 export function loadGoogleAnalytics(
   consented: boolean | null,
   measurementId: string | null,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function gtag(..._args: unknown[]) {
-    // eslint-disable-next-line prefer-rest-params
-    (window.dataLayer as unknown[]).push(arguments);
-  }
-
   if (!window.dataLayer) {
     window.dataLayer = [];
 

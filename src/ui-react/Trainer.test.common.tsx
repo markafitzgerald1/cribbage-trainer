@@ -4,10 +4,10 @@ import {
   render,
   screen,
 } from "@testing-library/react";
+import { Trainer, type TrainerProps } from "./Trainer";
 import { expect, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
-import { Trainer } from "./Trainer";
 import type { UserEvent } from "@testing-library/user-event";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
@@ -25,6 +25,7 @@ export const setCribTable = () => {
 
 export const renderTrainerWithGenerator = (
   generateRandomNumber: () => number,
+  trackEvent: TrainerProps["trackEvent"] = jest.fn(),
 ) => {
   setCribTable();
 
@@ -32,11 +33,45 @@ export const renderTrainerWithGenerator = (
     <Trainer
       generateRandomNumber={generateRandomNumber}
       loadGoogleAnalytics={jest.fn()}
+      trackEvent={trackEvent}
     />,
   );
 };
 
 export const renderTrainer = () => renderTrainerWithGenerator(mathRandom);
+
+type InitialTrainerProps = Partial<
+  Pick<
+    TrainerProps,
+    | "initialCards"
+    | "initialCribRole"
+    | "initialDiscards"
+    | "initialScoreSortKey"
+    | "initialSortOrder"
+    | "trackEvent"
+  >
+>;
+
+export const renderTrainerWithInitialProps = ({
+  initialCards = null,
+  initialCribRole = null,
+  initialDiscards,
+  initialScoreSortKey = null,
+  initialSortOrder = null,
+  trackEvent = jest.fn(),
+}: InitialTrainerProps) =>
+  render(
+    <Trainer
+      generateRandomNumber={mathRandom}
+      initialCards={initialCards}
+      initialCribRole={initialCribRole}
+      initialDiscards={initialDiscards ?? null}
+      initialScoreSortKey={initialScoreSortKey}
+      initialSortOrder={initialSortOrder}
+      loadGoogleAnalytics={jest.fn()}
+      trackEvent={trackEvent}
+    />,
+  );
 
 export const createSequenceGenerator = (values: number[]) =>
   jest.fn(() => values.shift() ?? 0);

@@ -20,6 +20,7 @@ const meta = {
   args: {
     generateRandomNumber: createGenerator(SEED),
     loadGoogleAnalytics: () => null,
+    trackEvent: () => null,
   },
   beforeEach: () => () => {
     localStorage.removeItem(analyticsConsentKey);
@@ -106,6 +107,7 @@ export const StoredConsentGiven = {
   render: ({
     generateRandomNumber,
     loadGoogleAnalytics,
+    trackEvent,
   }: Parameters<typeof Trainer>[0]) => {
     localStorage.setItem(analyticsConsentKey, "true");
 
@@ -113,6 +115,7 @@ export const StoredConsentGiven = {
       <Trainer
         generateRandomNumber={generateRandomNumber}
         loadGoogleAnalytics={loadGoogleAnalytics}
+        trackEvent={trackEvent}
       />
     );
   },
