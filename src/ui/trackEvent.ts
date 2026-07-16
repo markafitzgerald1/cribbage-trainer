@@ -1,5 +1,7 @@
 import { gtag } from "./gtag";
 
+export type AnalysisSource = "deeplink" | "history" | "interactive";
+
 export type TrainerEventName =
   | "analysis_shown"
   | "analysis_unshown"
@@ -13,7 +15,7 @@ export interface TrainerEventParams {
   readonly dealNonce?: string;
   readonly discardCount?: number;
   readonly isFirstAnalysis?: boolean;
-  readonly source?: string;
+  readonly source?: AnalysisSource;
 }
 
 export type TrackEvent = (

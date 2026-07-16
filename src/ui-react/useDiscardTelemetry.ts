@@ -1,4 +1,5 @@
 import {
+  type AnalysisSource,
   type TrackEvent,
   type TrainerEventName,
   type TrainerEventParams,
@@ -7,8 +8,6 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { DealtCard } from "../game/DealtCard";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { serializeHand } from "../game/Card";
-
-export type AnalysisSource = "deeplink" | "history" | "interactive";
 
 export type HandReplacementCause = "deal" | "manual";
 

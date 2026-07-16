@@ -1,3 +1,4 @@
+import type { AnalysisSource, TrainerEventName } from "../ui/trackEvent";
 import {
   SIX_HEARTS_HAND,
   mathRandom,
@@ -9,7 +10,6 @@ import { type TrainerProps, analyticsConsentKey } from "./Trainer";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
 import { ANALYSIS_SETTLE_MS } from "./useDiscardTelemetry";
-import type { TrainerEventName } from "../ui/trackEvent";
 import { parseHand } from "../game/Card";
 
 const setStoredConsent = (consent: boolean | null) => {
@@ -43,7 +43,7 @@ const setupTelemetryTrainer = (consent: boolean | null) => {
 const expectLastAnalysisShown = (
   trackEvent: ReturnType<typeof startTelemetryCapture>,
   isFirstAnalysis: boolean,
-  source: string,
+  source: AnalysisSource,
 ) => {
   expect(trackEvent).toHaveBeenLastCalledWith(true, "analysis_shown", {
     analysisIndex: 1,
