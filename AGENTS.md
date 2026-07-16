@@ -332,6 +332,33 @@
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
 
+## Google Analytics interaction events (issue #250)
+
+- `src/ui/trackEvent.ts` is the only path to `gtag("event", …)`. It gates on
+  `consented === true` because GA consent-mode "denied" still sends cookieless
+  pings, so consent mode alone cannot satisfy "no events when declined or
+  unanswered". It also converts camelCase param keys to snake_case, keeping
+  call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts` pushes
+  `arguments` objects — Google's tag silently ignores plain arrays.
+- `src/ui-react/useDiscardTelemetry.ts` stamps the per-deal `deal_nonce`,
+  1-based `analysis_index`, `is_first_analysis`, and `source`
+  (`interactive`/`deeplink`/`history`) at emit time; GA4 cannot reconstruct
+  "first stable analysis per deal" after the fact, and #665's EV-loss metric
+  keys off the first _interactive_ stable analysis (deep-link and popstate
+  hydrations are never first). `analysis_shown`/`analysis_unshown` settle
+  behind a 500 ms debounce and dedupe on discard identity, so transient
+  flicker and A→flicker→A emit nothing; `card_selected`/`card_unselected`
+  (keep-toggle semantics: un-keeping selects for discard) are immediate. The
+  nonce resets on any hand replacement, while `deal_clicked` fires only for
+  the Deal button. Payloads stay card-free: counts, indices, source, and the
+  nonce only.
+- The telemetry nonce must not consume the injected seeded generator, or
+  seeded deep links would deal different hands.
+- Verifying events end to end needs a real
+  `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: accept consent, then watch the
+  network tab for `/g/collect?…en=<event>` requests (and GA4 Realtime after
+  deploy).
+
 ## Lint gauntlet interplay (agent checklist)
 
 - Two spell checkers with **different base dictionaries** run in lint:
@@ -353,6 +380,19 @@
   setup or assertion pattern of two-plus statements appears twice, extract
   it into a named helper (e.g. a click-and-assert or render-with-props
   function) rather than waiting for the jscpd failure.
+- jscpd normalizes identifiers and literal values, so two blocks whose only
+  differences are variable names or string/number/boolean literals still
+  count as clones — enumerated `<Trainer …={…}>` prop lists in two files, or
+  two tests differing only in hand strings and expected flags, all trip it.
+  Break clones structurally: extract param-builder or scenario helpers,
+  derive prop types with `Partial<Pick<…>>` instead of re-declaring members,
+  merge near-identical tests into `it.each` (object cases with `$name`
+  titles stay within `max-params`), or vary one mid-list expression (e.g. a
+  genuinely needed `?? null`) to split the token run.
+- `react/hook-use-state` rejects `const [x] = useState(init)`. For
+  initialize-once mutable hook state, seed an eager
+  `useRef(create(...))` instead (re-render results are discarded), and keep
+  latest-prop reads for timer callbacks in a ref updated by an effect.
 
 - TypeScript/React with Vite; keep types sound.
 - Every React component should have a corresponding Storybook story file
