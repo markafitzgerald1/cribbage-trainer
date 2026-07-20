@@ -1,5 +1,6 @@
 import {
   type AnalysisSource,
+  type HandStartSource,
   type TrackEvent,
   type TrainerEventName,
   type TrainerEventParams,
@@ -10,8 +11,6 @@ import { discardIsComplete } from "../game/discardIsComplete";
 import { serializeHand } from "../game/Card";
 
 export type HandReplacementCause = "deal" | "manual";
-
-export const ANALYSIS_SETTLE_MS = 500;
 
 const NONCE_RADIX = 36;
 const NONCE_RANDOM_OFFSET = "0.".length;
@@ -31,6 +30,8 @@ interface ShownAnalysis {
 interface DealTelemetryState {
   analysisCount: number;
   readonly dealNonce: string;
+  handStarted: boolean;
+  readonly handStartSource: HandStartSource;
   readonly handKey: string;
   hasInteractiveAnalysis: boolean;
   pendingCards: readonly DealtCard[];
@@ -41,10 +42,13 @@ interface DealTelemetryState {
 const createDealTelemetryState = (
   dealtCards: readonly DealtCard[],
   source: AnalysisSource,
+  handStartSource: HandStartSource,
 ): DealTelemetryState => ({
   analysisCount: 0,
   dealNonce: createDealNonce(),
   handKey: serializeHand(dealtCards),
+  handStartSource,
+  handStarted: false,
   hasInteractiveAnalysis: false,
   pendingCards: dealtCards,
   shown: null,
@@ -73,7 +77,7 @@ export interface DiscardTelemetry {
   readonly reportHistoryNavigation: (dealtCards: readonly DealtCard[]) => void;
 }
 
-// GA4 cannot reconstruct "first stable analysis per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
+// GA4 cannot reconstruct "first analysis exposure per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
 // Only the first render's `dealtCards` is read here; later states arrive through the report methods.
 export const useDiscardTelemetry = ({
   consented,
@@ -85,6 +89,7 @@ export const useDiscardTelemetry = ({
     createDealTelemetryState(
       dealtCards,
       wasDeepLinked ? "deeplink" : "interactive",
+      wasDeepLinked ? "deeplink" : "initial",
     ),
   );
   const latestRef = useRef({ consented, trackEvent });
@@ -98,13 +103,22 @@ export const useDiscardTelemetry = ({
     },
     [],
   );
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clearSettleTimer = useCallback(() => {
-    if (timerRef.current !== null) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-  }, []);
+  const reportHandStarted = useCallback(
+    (state: DealTelemetryState) => {
+      if (state.handStarted || latestRef.current.consented !== true) {
+        return;
+      }
+      state.handStarted = true;
+      emit("hand_started", {
+        dealNonce: state.dealNonce,
+        source: state.handStartSource,
+      });
+    },
+    [emit],
+  );
+  useEffect(() => {
+    reportHandStarted(stateRef.current);
+  }, [consented, reportHandStarted, trackEvent]);
   const closeShownAnalysis = useCallback(
     (state: DealTelemetryState) => {
       if (state.shown) {
@@ -117,43 +131,46 @@ export const useDiscardTelemetry = ({
     },
     [emit],
   );
-  const settle = useCallback(() => {
-    const state = stateRef.current;
-    if (!discardIsComplete(state.pendingCards)) {
-      closeShownAnalysis(state);
-      return;
-    }
-    const discardKey = serializeHand(discardedCards(state.pendingCards));
-    if (state.shown?.discardKey === discardKey) {
-      return;
-    }
-    state.analysisCount += 1;
-    const isFirstAnalysis =
-      state.source === "interactive" && !state.hasInteractiveAnalysis;
-    state.hasInteractiveAnalysis ||= state.source === "interactive";
-    state.shown = { analysisIndex: state.analysisCount, discardKey };
-    emit("analysis_shown", {
-      analysisIndex: state.analysisCount,
-      dealNonce: state.dealNonce,
-      isFirstAnalysis,
-      source: state.source,
-    });
-  }, [closeShownAnalysis, emit]);
-  const scheduleSettle = useCallback(() => {
-    clearSettleTimer();
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      settle();
-    }, ANALYSIS_SETTLE_MS);
-  }, [clearSettleTimer, settle]);
-  const replaceHand = useCallback(
-    (newDealtCards: readonly DealtCard[], source: AnalysisSource) => {
-      clearSettleTimer();
-      closeShownAnalysis(stateRef.current);
-      stateRef.current = createDealTelemetryState(newDealtCards, source);
-      scheduleSettle();
+  const reportAnalysisState = useCallback(
+    (state: DealTelemetryState) => {
+      if (!discardIsComplete(state.pendingCards)) {
+        closeShownAnalysis(state);
+        return;
+      }
+      const discardKey = serializeHand(discardedCards(state.pendingCards));
+      if (state.shown?.discardKey === discardKey) {
+        return;
+      }
+      state.analysisCount += 1;
+      const isFirstAnalysis =
+        state.source === "interactive" && !state.hasInteractiveAnalysis;
+      state.hasInteractiveAnalysis ||= state.source === "interactive";
+      state.shown = { analysisIndex: state.analysisCount, discardKey };
+      emit("analysis_shown", {
+        analysisIndex: state.analysisCount,
+        dealNonce: state.dealNonce,
+        isFirstAnalysis,
+        source: state.source,
+      });
     },
-    [clearSettleTimer, closeShownAnalysis, scheduleSettle],
+    [closeShownAnalysis, emit],
+  );
+  const replaceHand = useCallback(
+    (
+      newDealtCards: readonly DealtCard[],
+      source: AnalysisSource,
+      handStartSource: HandStartSource,
+    ) => {
+      closeShownAnalysis(stateRef.current);
+      const state = createDealTelemetryState(
+        newDealtCards,
+        source,
+        handStartSource,
+      );
+      stateRef.current = state;
+      return state;
+    },
+    [closeShownAnalysis],
   );
   const reportCardToggled = useCallback(
     (newDealtCards: readonly DealtCard[], kept: boolean) => {
@@ -165,18 +182,20 @@ export const useDiscardTelemetry = ({
         dealNonce: state.dealNonce,
         discardCount: discardedCards(newDealtCards).length,
       });
-      scheduleSettle();
+      reportAnalysisState(state);
     },
-    [emit, scheduleSettle],
+    [emit, reportAnalysisState],
   );
   const reportHandReplaced = useCallback(
     (newDealtCards: readonly DealtCard[], cause: HandReplacementCause) => {
-      replaceHand(newDealtCards, "interactive");
+      const state = replaceHand(newDealtCards, "interactive", cause);
       if (cause === "deal") {
-        emit("deal_clicked", { dealNonce: stateRef.current.dealNonce });
+        emit("deal_clicked", { dealNonce: state.dealNonce });
       }
+      reportHandStarted(state);
+      reportAnalysisState(state);
     },
-    [emit, replaceHand],
+    [emit, replaceHand, reportAnalysisState, reportHandStarted],
   );
   const reportHistoryNavigation = useCallback(
     (newDealtCards: readonly DealtCard[]) => {
@@ -185,18 +204,19 @@ export const useDiscardTelemetry = ({
         // Back/Forward within the same deal keeps the deal's nonce.
         state.source = "history";
         state.pendingCards = newDealtCards;
-        scheduleSettle();
+        reportAnalysisState(state);
       } else {
-        replaceHand(newDealtCards, "history");
+        const newState = replaceHand(newDealtCards, "history", "history");
+        reportHandStarted(newState);
+        reportAnalysisState(newState);
       }
     },
-    [replaceHand, scheduleSettle],
+    [replaceHand, reportAnalysisState, reportHandStarted],
   );
   useEffect(() => {
-    // A deep-linked complete discard settles like any other analysis state.
-    scheduleSettle();
-    return clearSettleTimer;
-  }, [clearSettleTimer, scheduleSettle]);
+    // A deep-linked complete discard is reported after its first render.
+    reportAnalysisState(stateRef.current);
+  }, [reportAnalysisState]);
   return useMemo(
     () => ({ reportCardToggled, reportHandReplaced, reportHistoryNavigation }),
     [reportCardToggled, reportHandReplaced, reportHistoryNavigation],

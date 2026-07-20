@@ -1,5 +1,5 @@
-import { ANALYSIS_SETTLE_MS, useDiscardTelemetry } from "./useDiscardTelemetry";
 import type {
+  HandStartSource,
   TrackEvent,
   TrainerEventName,
   TrainerEventParams,
@@ -9,6 +9,7 @@ import type { DealtCard } from "../game/DealtCard";
 import { parseHand } from "../game/Card";
 import { renderHook } from "@testing-library/react";
 import { toDealtCards } from "../game/toDealtCards";
+import { useDiscardTelemetry } from "./useDiscardTelemetry";
 
 const HAND = "AH,2H,3H,4H,5H,6H";
 const OTHER_HAND = "AS,2S,3S,4S,5S,6S";
@@ -27,19 +28,23 @@ const setupTelemetry = ({
   dealtCards = handWithDiscards(HAND, null),
   wasDeepLinked = false,
 }: SetupOptions = {}) => {
-  jest.useFakeTimers();
   const trackEvent = jest.fn<TrackEvent>();
-  const hook = renderHook(() =>
-    useDiscardTelemetry({ consented, dealtCards, trackEvent, wasDeepLinked }),
+  const hook = renderHook(
+    ({ currentConsent }: { readonly currentConsent: boolean | null }) =>
+      useDiscardTelemetry({
+        consented: currentConsent,
+        dealtCards,
+        trackEvent,
+        wasDeepLinked,
+      }),
+    { initialProps: { currentConsent: consented } },
   );
-  const settle = () => {
-    jest.advanceTimersByTime(ANALYSIS_SETTLE_MS);
-  };
   return {
-    settle,
+    rerenderConsent: (currentConsent: boolean | null) => {
+      hook.rerender({ currentConsent });
+    },
     telemetry: hook.result.current,
     trackEvent,
-    unmount: hook.unmount,
   };
 };
 
@@ -50,11 +55,7 @@ const expectTelemetryScene = (
   run: (scene: Scene) => void,
 ) => {
   const scene = setupTelemetry(options);
-  try {
-    run(scene);
-  } finally {
-    jest.useRealTimers();
-  }
+  run(scene);
 };
 
 const eventParams = (scene: Scene, eventName: string) =>
@@ -66,19 +67,19 @@ const shownEvents = (scene: Scene) => eventParams(scene, "analysis_shown");
 
 const unshownEvents = (scene: Scene) => eventParams(scene, "analysis_unshown");
 
+const handStartedEvents = (scene: Scene) => eventParams(scene, "hand_started");
+
 const toggleTo = (scene: Scene, discards: string | null, kept = false) => {
   scene.telemetry.reportCardToggled(handWithDiscards(HAND, discards), kept);
 };
 
 const completeDiscard = (scene: Scene, discards: string) => {
   toggleTo(scene, discards);
-  scene.settle();
 };
 
 const showThenHideAnalysis = (scene: Scene) => {
   completeDiscard(scene, "AH,2H");
   toggleTo(scene, "AH", true);
-  scene.settle();
 };
 
 const replaceHand = (scene: Scene, cause: "deal" | "manual") => {
@@ -87,7 +88,6 @@ const replaceHand = (scene: Scene, cause: "deal" | "manual") => {
 
 const navigateHistory = (scene: Scene, hand: string, discards: string) => {
   scene.telemetry.reportHistoryNavigation(handWithDiscards(hand, discards));
-  scene.settle();
 };
 
 const discardThenNavigate = (
@@ -137,6 +137,30 @@ const expectLastShown = (scene: Scene, expected: object) => {
   expect(shownEvents(scene).at(-1)).toStrictEqual(expected);
 };
 
+const expectTwoInteractiveAnalyses = (scene: Scene) => {
+  expect(shownEvents(scene)).toStrictEqual([
+    shownParams(1, true, "interactive"),
+    shownParams(2, false, "interactive"),
+  ]);
+};
+
+const expectFirstAnalysisUnshown = (scene: Scene) => {
+  expect(unshownEvents(scene)).toStrictEqual([
+    { analysisIndex: 1, dealNonce: expect.any(String) },
+  ]);
+};
+
+const expectLastHandStarted = (
+  scene: Scene,
+  dealNonce: unknown,
+  source: HandStartSource,
+) => {
+  expect(handStartedEvents(scene).at(-1)).toStrictEqual({
+    dealNonce,
+    source,
+  });
+};
+
 const expectNewDealWithoutDealClick = (
   scene: Scene,
   first: TrainerEventParams | undefined,
@@ -181,6 +205,19 @@ const CARD_EVENT_CASES: readonly [
 ];
 
 describe("useDiscardTelemetry", () => {
+  it("starts the initial hand once consent is granted", () => {
+    expectTelemetryScene({ consented: null }, (scene) => {
+      expect(handStartedEvents(scene)).toHaveLength(0);
+
+      scene.rerenderConsent(true);
+      scene.rerenderConsent(true);
+
+      expect(handStartedEvents(scene)).toStrictEqual([
+        { dealNonce: expect.any(String), source: "initial" },
+      ]);
+    });
+  });
+
   it.each(CARD_EVENT_CASES)(
     "emits %s immediately with the resulting discard count",
     (eventName, discardCount, toggles) => {
@@ -200,35 +237,41 @@ describe("useDiscardTelemetry", () => {
       completeDiscard(scene, "AH,3H");
 
       expect(unshownEvents(scene)).toHaveLength(0);
-      expect(shownEvents(scene)).toStrictEqual([
-        shownParams(1, true, "interactive"),
-        shownParams(2, false, "interactive"),
-      ]);
+
+      expectTwoInteractiveAnalyses(scene);
     });
   });
 
-  it("does not re-emit when a flicker returns to the shown discard", () => {
+  it("records a close and reopen when a flicker returns to a discard", () => {
     expectTelemetryScene({}, (scene) => {
       completeDiscard(scene, "2H,4H");
       toggleTo(scene, "2H,4H,5H");
       completeDiscard(scene, "2H,4H");
 
-      expect(shownEvents(scene)).toHaveLength(1);
-      expect(unshownEvents(scene)).toHaveLength(0);
+      expectTwoInteractiveAnalyses(scene);
+      expectFirstAnalysisUnshown(scene);
     });
   });
 
-  it("emits analysis_unshown when the state settles incomplete", () => {
+  it("does not duplicate an analysis that remains shown", () => {
+    expectTelemetryScene({}, (scene) => {
+      ["2H,4H", "2H,4H"].forEach((discards) => {
+        completeDiscard(scene, discards);
+      });
+
+      expect(shownEvents(scene)).toHaveLength(1);
+    });
+  });
+
+  it("emits analysis_unshown when the state becomes incomplete", () => {
     expectTelemetryScene({}, (scene) => {
       showThenHideAnalysis(scene);
 
-      expect(unshownEvents(scene)).toStrictEqual([
-        { analysisIndex: 1, dealNonce: expect.any(String) },
-      ]);
+      expectFirstAnalysisUnshown(scene);
     });
   });
 
-  it("re-indexes the same discard when it settles again after an unshown", () => {
+  it("re-indexes the same discard when it reopens after an unshown", () => {
     expectTelemetryScene({}, (scene) => {
       showThenHideAnalysis(scene);
       completeDiscard(scene, "AH,2H");
@@ -237,11 +280,10 @@ describe("useDiscardTelemetry", () => {
     });
   });
 
-  it("emits nothing when an incomplete state settles with nothing shown", () => {
+  it("emits no analysis event for an incomplete initial state", () => {
     expectTelemetryScene({}, (scene) => {
-      scene.settle();
-
-      expect(scene.trackEvent).not.toHaveBeenCalled();
+      expect(shownEvents(scene)).toHaveLength(0);
+      expect(unshownEvents(scene)).toHaveLength(0);
     });
   });
 
@@ -256,6 +298,8 @@ describe("useDiscardTelemetry", () => {
         { analysisIndex: 1, dealNonce: shown!.dealNonce },
       ]);
       expect(dealt!.dealNonce).not.toBe(shown!.dealNonce);
+
+      expectLastHandStarted(scene, dealt!.dealNonce, "deal");
     });
   });
 
@@ -270,15 +314,18 @@ describe("useDiscardTelemetry", () => {
       const [first, second] = eventParams(scene, "card_selected");
 
       expectNewDealWithoutDealClick(scene, first, second);
+
+      expectLastHandStarted(scene, second!.dealNonce, "manual");
     });
   });
 
   it("keeps the deal nonce for a history move within the same hand", () => {
-    expectHistoryMove([HAND, "4H,6H"], ({ first, second }) => {
+    expectHistoryMove([HAND, "4H,6H"], ({ first, scene, second }) => {
       expect(second).toStrictEqual({
         ...shownParams(2, false, "history"),
         dealNonce: first!.dealNonce,
       });
+      expect(handStartedEvents(scene)).toHaveLength(1);
     });
   });
 
@@ -288,35 +335,30 @@ describe("useDiscardTelemetry", () => {
       expect(second).toStrictEqual(shownParams(1, false, "history"));
 
       expectNewDealWithoutDealClick(scene, first, second);
+
+      expectLastHandStarted(scene, second!.dealNonce, "history");
     });
   });
 
-  it("emits a deep-linked analysis as non-first after mount settles", () => {
+  it("emits a deep-linked analysis as non-first after mount", () => {
     expectTelemetryScene(deepLinkedOptions, (scene) => {
-      scene.settle();
-
       expect(shownEvents(scene)).toStrictEqual([
         shownParams(1, false, "deeplink"),
+      ]);
+      expect(handStartedEvents(scene)).toStrictEqual([
+        {
+          dealNonce: shownEvents(scene)[0]!.dealNonce,
+          source: "deeplink",
+        },
       ]);
     });
   });
 
   it("marks the first interactive analysis after a deep link as first", () => {
     expectTelemetryScene(deepLinkedOptions, (scene) => {
-      scene.settle();
       completeDiscard(scene, "AH,3H");
 
       expectLastShown(scene, shownParams(2, true, "interactive"));
-    });
-  });
-
-  it("stops pending settles on unmount", () => {
-    expectTelemetryScene({}, (scene) => {
-      toggleTo(scene, "AH,6H");
-      scene.unmount();
-      scene.settle();
-
-      expect(shownEvents(scene)).toHaveLength(0);
     });
   });
 

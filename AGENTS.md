@@ -340,18 +340,22 @@
   unanswered". It also converts camelCase param keys to snake_case, keeping
   call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts` pushes
   `arguments` objects — Google's tag silently ignores plain arrays.
-- `src/ui-react/useDiscardTelemetry.ts` stamps the per-deal `deal_nonce`,
+- `src/ui-react/useDiscardTelemetry.ts` stamps the per-hand `deal_nonce`,
   1-based `analysis_index`, `is_first_analysis`, and `source`
   (`interactive`/`deeplink`/`history`) at emit time; GA4 cannot reconstruct
-  "first stable analysis per deal" after the fact, and #665's EV-loss metric
-  keys off the first _interactive_ stable analysis (deep-link and popstate
-  hydrations are never first). `analysis_shown`/`analysis_unshown` settle
-  behind a 500 ms debounce and dedupe on discard identity, so transient
-  flicker and A→flicker→A emit nothing; `card_selected`/`card_unselected`
-  (keep-toggle semantics: un-keeping selects for discard) are immediate. The
-  nonce resets on any hand replacement, while `deal_clicked` fires only for
-  the Deal button. Payloads stay card-free: counts, indices, source, and the
-  nonce only.
+  "first analysis exposure per hand" after the fact, and #665's EV-loss metric
+  keys off the first _interactive_ analysis (deep-link and popstate hydrations
+  are never first). `analysis_shown` fires immediately when a complete discard
+  exposes the answer, and `analysis_unshown` fires immediately when the panel
+  closes; delaying either event would let an answer-influenced choice look
+  unaided. `card_selected`/`card_unselected` (keep-toggle semantics: un-keeping
+  selects for discard) are also immediate.
+- The nonce resets on any hand replacement. Consent-gated `hand_started`
+  records each new telemetry scope, including the initial hand, with its
+  `initial`/`deal`/`manual`/`deeplink`/`history` source; if consent is granted
+  after the initial hand appears, it records the current hand once at that
+  point. `deal_clicked` remains specific to the Deal button. Payloads stay
+  card-free: counts, indices, source, and the nonce only.
 - The telemetry nonce must not consume the injected seeded generator, or
   seeded deep links would deal different hands.
 - Verifying events end to end needs a real

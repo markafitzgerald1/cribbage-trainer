@@ -2,12 +2,16 @@ import { gtag } from "./gtag";
 
 export type AnalysisSource = "deeplink" | "history" | "interactive";
 
+export type HandStartSource =
+  "deal" | "deeplink" | "history" | "initial" | "manual";
+
 export type TrainerEventName =
   | "analysis_shown"
   | "analysis_unshown"
   | "card_selected"
   | "card_unselected"
-  | "deal_clicked";
+  | "deal_clicked"
+  | "hand_started";
 
 // Concrete keys keep every payload card-free by construction: counts, indices, source, and the per-deal nonce only.
 export interface TrainerEventParams {
@@ -15,7 +19,7 @@ export interface TrainerEventParams {
   readonly dealNonce?: string;
   readonly discardCount?: number;
   readonly isFirstAnalysis?: boolean;
-  readonly source?: AnalysisSource;
+  readonly source?: AnalysisSource | HandStartSource;
 }
 
 export type TrackEvent = (

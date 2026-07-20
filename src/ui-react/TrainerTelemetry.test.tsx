@@ -7,9 +7,8 @@ import {
   setCribTable,
 } from "./Trainer.test.common";
 import { type TrainerProps, analyticsConsentKey } from "./Trainer";
-import { act, fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
-import { ANALYSIS_SETTLE_MS } from "./useDiscardTelemetry";
+import { fireEvent, screen } from "@testing-library/react";
 import { parseHand } from "../game/Card";
 
 const setStoredConsent = (consent: boolean | null) => {
@@ -23,14 +22,7 @@ const setStoredConsent = (consent: boolean | null) => {
 const startTelemetryCapture = (consent: boolean | null) => {
   window.history.replaceState(null, "", "/");
   setStoredConsent(consent);
-  jest.useFakeTimers();
   return jest.fn<TrainerProps["trackEvent"]>();
-};
-
-const settle = () => {
-  act(() => {
-    jest.advanceTimersByTime(ANALYSIS_SETTLE_MS);
-  });
 };
 
 const setupTelemetryTrainer = (consent: boolean | null) => {
@@ -44,11 +36,18 @@ const setupTelemetryTrainer = (consent: boolean | null) => {
 
 const expectLastAnalysisShown = (
   trackEvent: ReturnType<typeof startTelemetryCapture>,
-  isFirstAnalysis: boolean,
-  source: AnalysisSource,
+  {
+    analysisIndex = 1,
+    isFirstAnalysis,
+    source,
+  }: {
+    readonly analysisIndex?: number;
+    readonly isFirstAnalysis: boolean;
+    readonly source: AnalysisSource;
+  },
 ) => {
   expect(trackEvent).toHaveBeenLastCalledWith(true, "analysis_shown", {
-    analysisIndex: 1,
+    analysisIndex,
     dealNonce: expect.any(String),
     isFirstAnalysis,
     source,
@@ -62,6 +61,14 @@ interface CardToggleCase {
   readonly eventName: TrainerEventName;
 }
 
+interface AnalysisSequenceCase {
+  readonly afterConsent: readonly number[];
+  readonly beforeConsent: readonly number[];
+  readonly consent: boolean | null;
+  readonly consentAction: () => void;
+  readonly name: string;
+}
+
 const CARD_TOGGLE_CASES: readonly CardToggleCase[] = [
   { clicks: [0], consent: true, discardCount: 1, eventName: "card_selected" },
   {
@@ -72,90 +79,85 @@ const CARD_TOGGLE_CASES: readonly CardToggleCase[] = [
   },
 ];
 
+const acceptAnalyticsConsent = () => {
+  fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+};
+
+const keepStoredConsent = () => null;
+
+const RAPID_ANALYSIS_CASES: readonly AnalysisSequenceCase[] = [
+  {
+    afterConsent: [1, 2],
+    beforeConsent: [0, 1],
+    consent: null,
+    consentAction: acceptAnalyticsConsent,
+    name: "does not reclassify a pre-consent analysis after consent",
+  },
+  {
+    afterConsent: [0, 1, 2, 2],
+    beforeConsent: [],
+    consent: true,
+    consentAction: keepStoredConsent,
+    name: "records the first answer exposure before a rapid mind change",
+  },
+];
+
 describe("trainer telemetry wiring", () => {
-  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it.each(CARD_TOGGLE_CASES)(
     "forwards $eventName to trackEvent with the stored $consent consent",
     ({ clicks, consent, discardCount, eventName }) => {
       const { clickCheckbox, trackEvent } = setupTelemetryTrainer(consent);
-      try {
-        clicks.forEach((index) => {
-          clickCheckbox(index);
-        });
+      clicks.forEach((index) => {
+        clickCheckbox(index);
+      });
 
-        expect(trackEvent).toHaveBeenLastCalledWith(consent, eventName, {
-          dealNonce: expect.any(String),
-          discardCount,
-        });
-      } finally {
-        jest.useRealTimers();
-      }
+      expect(trackEvent).toHaveBeenLastCalledWith(consent, eventName, {
+        dealNonce: expect.any(String),
+        discardCount,
+      });
     },
   );
 
-  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("emits deal_clicked when the Deal button is clicked", () => {
     const { trackEvent } = setupTelemetryTrainer(false);
-    try {
-      fireEvent.click(screen.getByRole("button", { name: "Deal" }));
+    fireEvent.click(screen.getByRole("button", { name: "Deal" }));
 
-      expect(trackEvent).toHaveBeenCalledWith(false, "deal_clicked", {
-        dealNonce: expect.any(String),
+    expect(trackEvent).toHaveBeenCalledWith(false, "deal_clicked", {
+      dealNonce: expect.any(String),
+    });
+  });
+
+  it.each(RAPID_ANALYSIS_CASES)(
+    "$name",
+    ({ afterConsent, beforeConsent, consent, consentAction }) => {
+      const { clickCheckbox, trackEvent } = setupTelemetryTrainer(consent);
+      beforeConsent.forEach(clickCheckbox);
+      consentAction();
+      afterConsent.forEach(clickCheckbox);
+
+      expectLastAnalysisShown(trackEvent, {
+        analysisIndex: 2,
+        isFirstAnalysis: false,
+        source: "interactive",
       });
-    } finally {
-      jest.useRealTimers();
-    }
-  });
+    },
+  );
 
-  // eslint-disable-next-line jest/prefer-ending-with-an-expect
-  it("emits a first interactive analysis with consent granted mid-deal", () => {
-    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(null);
-    try {
-      clickCheckbox(0);
-      clickCheckbox(1);
-      fireEvent.click(screen.getByRole("button", { name: "Accept" }));
-      settle();
-
-      expectLastAnalysisShown(trackEvent, true, "interactive");
-    } finally {
-      jest.useRealTimers();
-    }
-  });
-
-  it("keeps a mind-change flicker's analysis interactive and first", () => {
-    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
-    try {
-      clickCheckbox(0);
-      clickCheckbox(1);
-      clickCheckbox(2);
-      clickCheckbox(2);
-      settle();
-    } finally {
-      jest.useRealTimers();
-    }
-
-    expectLastAnalysisShown(trackEvent, true, "interactive");
-  });
-
-  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("reports a popstate hydration with a history source", () => {
     const { trackEvent } = setupTelemetryTrainer(true);
-    try {
-      window.history.replaceState(
-        null,
-        "",
-        `?hand=${SIX_HEARTS_HAND}&discard=AH,2H`,
-      );
-      fireEvent.popState(window);
-      settle();
+    window.history.replaceState(
+      null,
+      "",
+      `?hand=${SIX_HEARTS_HAND}&discard=AH,2H`,
+    );
+    fireEvent.popState(window);
 
-      expectLastAnalysisShown(trackEvent, false, "history");
-    } finally {
-      jest.useRealTimers();
-    }
+    expectLastAnalysisShown(trackEvent, {
+      isFirstAnalysis: false,
+      source: "history",
+    });
   });
 
-  // eslint-disable-next-line jest/prefer-ending-with-an-expect
   it("reports a deep-linked discard with a deeplink source", () => {
     const trackEvent = startTelemetryCapture(true);
     setCribTable();
@@ -164,12 +166,10 @@ describe("trainer telemetry wiring", () => {
       initialDiscards: parseHand("AH,2H"),
       trackEvent,
     });
-    try {
-      settle();
 
-      expectLastAnalysisShown(trackEvent, false, "deeplink");
-    } finally {
-      jest.useRealTimers();
-    }
+    expectLastAnalysisShown(trackEvent, {
+      isFirstAnalysis: false,
+      source: "deeplink",
+    });
   });
 });
