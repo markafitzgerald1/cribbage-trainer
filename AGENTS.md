@@ -334,12 +334,15 @@
 
 ## Google Analytics interaction events (issue #250)
 
-- `src/ui/trackEvent.ts` is the only path to `gtag("event", …)`. It gates on
-  `consented === true` because GA consent-mode "denied" still sends cookieless
-  pings, so consent mode alone cannot satisfy "no events when declined or
-  unanswered". It also converts camelCase param keys to snake_case, keeping
-  call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts` pushes
-  `arguments` objects — Google's tag silently ignores plain arrays.
+- `src/ui/loadGoogleAnalytics.ts` implements basic consent mode: unanswered or
+  declined consent must not create `dataLayer`, queue Google Analytics
+  commands, inject `gtag.js`, or send any Google request. The first explicit
+  grant queues the denied default followed by the granted update, initializes
+  GA, and injects the tag exactly once. `src/ui/trackEvent.ts` remains the only
+  path to `gtag("event", …)` and independently gates trainer events on
+  `consented === true`. It also converts camelCase param keys to snake_case,
+  keeping call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts`
+  pushes `arguments` objects — Google's tag silently ignores plain arrays.
 - `src/ui-react/useDiscardTelemetry.ts` stamps the per-hand `deal_nonce`,
   1-based `analysis_index`, `is_first_analysis`, and `source`
   (`interactive`/`deeplink`/`history`) at emit time; GA4 cannot reconstruct
@@ -361,7 +364,8 @@
 - Verifying events end to end needs a real
   `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: accept consent, then watch the
   network tab for `/g/collect?…en=<event>` requests (and GA4 Realtime after
-  deploy).
+  deploy). Before consent, the network tab must show no Google Analytics script
+  or collection requests at all.
 
 ## Lint gauntlet interplay (agent checklist)
 

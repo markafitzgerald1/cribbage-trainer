@@ -168,6 +168,7 @@ export default [
             "func",
             "globals",
             "goto",
+            "googletagmanager",
             "gtag",
             "href",
             "jscpd",

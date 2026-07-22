@@ -31,8 +31,8 @@ export type TrackEvent = (
 const toGoogleAnalyticsKey = (key: string) =>
   key.replace(/[A-Z]/gu, (upper) => `_${upper.toLowerCase()}`);
 
-// GA consent-mode "denied" still sends cookieless pings, so consent mode alone cannot satisfy "no events fire unless consented".
-// Every event is therefore gated app-side on an explicit consented === true.
+// Basic consent mode keeps the Google tag unloaded until consent.
+// The app-level gate also prevents trainer events while consent is unanswered or declined.
 export const trackEvent: TrackEvent = (consented, eventName, params) => {
   if (consented !== true) {
     return;

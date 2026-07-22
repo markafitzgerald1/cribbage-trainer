@@ -2,60 +2,53 @@ import { describe, expect, it } from "@jest/globals";
 import { loadGoogleAnalytics } from "./loadGoogleAnalytics";
 
 describe("loadGoogleAnalytics", () => {
-  const clearDataLayerGTagAndScript = () => {
+  const clearGoogleAnalytics = () => {
     delete window.dataLayer;
     delete window.gtag;
-    document.head.querySelectorAll("script").forEach((script) => {
-      script.remove();
-    });
+    document.head
+      .querySelectorAll('script[src*="googletagmanager.com/gtag/js"]')
+      .forEach((script) => {
+        script.remove();
+      });
   };
 
   function dataLayerEntryToArray(entry: unknown): unknown[] {
     return Array.from(entry as IArguments);
   }
 
-  it("sets window.dataLayer if window.dataLayer is not set", () => {
-    clearDataLayerGTagAndScript();
-
-    loadGoogleAnalytics(null, null);
-
-    expect(window.dataLayer).toStrictEqual([]);
-  });
-
-  it("does not set window.dataLayer and gtag if window.dataLayer is set", () => {
-    clearDataLayerGTagAndScript();
-    const originalWindowDataLayer = [Math.random()];
-    window.dataLayer = originalWindowDataLayer;
-
-    loadGoogleAnalytics(null, null);
-
-    expect(window.dataLayer).toStrictEqual(originalWindowDataLayer);
-    expect(window.gtag).toBeUndefined();
-  });
-
   const measurementId = "test-measurement-id";
+  const googleAnalyticsScriptSelector =
+    'script[src*="googletagmanager.com/gtag/js"]';
 
-  it("loads the Google Analytics script and populates its data layer if window.dataLayer not set and measurementId is set", () => {
-    clearDataLayerGTagAndScript();
-    const consentDefaultDataLayerIndex = 2;
+  it.each([
+    ["consent is unanswered", null, measurementId],
+    ["consent is declined", false, measurementId],
+    ["the measurement ID is missing", true, null],
+  ] as const)(
+    "does not initialize Google Analytics when %s",
+    (_scenario, consented, selectedMeasurementId) => {
+      clearGoogleAnalytics();
 
-    loadGoogleAnalytics(null, measurementId);
+      loadGoogleAnalytics(consented, selectedMeasurementId);
 
-    expect(document.head.querySelector("script")!.src).toBe(
-      `https://www.googletagmanager.com/gtag/js?id=${measurementId}`,
-    );
+      expect(window.dataLayer).toBeUndefined();
+      expect(
+        document.head.querySelector(googleAnalyticsScriptSelector),
+      ).toBeNull();
+    },
+  );
 
-    expect(dataLayerEntryToArray(window.dataLayer![0])).toStrictEqual([
-      "js",
-      expect.any(Date),
-    ]);
-    expect(dataLayerEntryToArray(window.dataLayer![1])).toStrictEqual([
-      "config",
-      measurementId,
-    ]);
+  it("initializes Google Analytics after consent is granted", () => {
+    clearGoogleAnalytics();
+
+    loadGoogleAnalytics(true, measurementId);
+
     expect(
-      dataLayerEntryToArray(window.dataLayer![consentDefaultDataLayerIndex]),
-    ).toStrictEqual([
+      document.head.querySelector<HTMLScriptElement>(
+        googleAnalyticsScriptSelector,
+      )!.src,
+    ).toBe(`https://www.googletagmanager.com/gtag/js?id=${measurementId}`);
+    expect(dataLayerEntryToArray(window.dataLayer![0])).toStrictEqual([
       "consent",
       "default",
       {
@@ -63,18 +56,7 @@ describe("loadGoogleAnalytics", () => {
         analytics_storage: "denied",
       },
     ]);
-  });
-
-  it("stores consent grant and measurement ID in the data layer if consented", () => {
-    clearDataLayerGTagAndScript();
-    const consentUpdateDataLayerIndex = 3;
-    const configDataLayerIndex = 4;
-
-    loadGoogleAnalytics(true, measurementId);
-
-    expect(
-      dataLayerEntryToArray(window.dataLayer![consentUpdateDataLayerIndex]),
-    ).toStrictEqual([
+    expect(dataLayerEntryToArray(window.dataLayer![1])).toStrictEqual([
       "consent",
       "update",
       {
@@ -82,8 +64,25 @@ describe("loadGoogleAnalytics", () => {
         analytics_storage: "granted",
       },
     ]);
+    expect(dataLayerEntryToArray(window.dataLayer![2])).toStrictEqual([
+      "js",
+      expect.any(Date),
+    ]);
+    expect(dataLayerEntryToArray(window.dataLayer![3])).toStrictEqual([
+      "config",
+      measurementId,
+    ]);
+  });
+
+  it("initializes Google Analytics only once", () => {
+    clearGoogleAnalytics();
+
+    loadGoogleAnalytics(true, measurementId);
+    loadGoogleAnalytics(true, measurementId);
+
     expect(
-      dataLayerEntryToArray(window.dataLayer![configDataLayerIndex]),
-    ).toStrictEqual(["config", measurementId]);
+      document.head.querySelectorAll(googleAnalyticsScriptSelector),
+    ).toHaveLength(1);
+    expect(window.dataLayer).toHaveLength(4);
   });
 });
