@@ -32,7 +32,7 @@ export interface TrainerProps {
   readonly initialSortOrder?: SortOrder | null;
 }
 
-export const analyticsConsentKey = "analyticsConsent";
+export const analyticsConsentKey = "analyticsConsent-2026-07-23";
 
 const getStoredConsent = (): boolean | null => {
   const storedConsent = localStorage.getItem(analyticsConsentKey);

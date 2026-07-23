@@ -1,4 +1,4 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { loadGoogleAnalytics } from "./loadGoogleAnalytics";
 
 describe("loadGoogleAnalytics", () => {
@@ -18,8 +18,30 @@ describe("loadGoogleAnalytics", () => {
     );
 
   const measurementId = "test-measurement-id";
+
+  const captureConfigEntry = (referrer: string): unknown => {
+    const referrerSpy = jest
+      .spyOn(document, "referrer", "get")
+      .mockReturnValue(referrer);
+
+    try {
+      loadGoogleAnalytics(false, measurementId);
+      const [, , , configEntry] = dataLayerEntriesAsArrays();
+      return configEntry;
+    } finally {
+      referrerSpy.mockRestore();
+      window.history.replaceState(null, "", "/");
+    }
+  };
+
   const googleAnalyticsScriptSelector =
     'script[src*="googletagmanager.com/gtag/js"]';
+  const queryFreePageSettings = {
+    // eslint-disable-next-line camelcase
+    page_location: "http://localhost/",
+    // eslint-disable-next-line camelcase
+    page_referrer: "",
+  };
   const deniedConsentSettings = {
     // eslint-disable-next-line camelcase
     ad_personalization: "denied",
@@ -74,7 +96,7 @@ describe("loadGoogleAnalytics", () => {
         ["consent", "default", deniedConsentSettings],
         ...consentUpdates,
         ["js", expect.any(Date)],
-        ["config", measurementId],
+        ["config", measurementId, queryFreePageSettings],
       ]);
 
       expect(
@@ -102,7 +124,11 @@ describe("loadGoogleAnalytics", () => {
       deniedConsentSettings,
     ]);
     expect(entries[1]).toStrictEqual(["js", expect.any(Date)]);
-    expect(entries[2]).toStrictEqual(["config", measurementId]);
+    expect(entries[2]).toStrictEqual([
+      "config",
+      measurementId,
+      queryFreePageSettings,
+    ]);
     expect(entries.slice(3)).toStrictEqual([
       ["consent", "update", deniedConsentSettings],
       ["consent", "update", grantedAnalyticsConsentSettings],
@@ -110,5 +136,28 @@ describe("loadGoogleAnalytics", () => {
     expect(
       document.head.querySelectorAll(googleAnalyticsScriptSelector),
     ).toHaveLength(1);
+  });
+
+  it("removes card state from denied-consent page and referrer URLs", () => {
+    clearGoogleAnalytics();
+    window.history.replaceState(
+      null,
+      "",
+      "/cribbage-trainer/pr/679/?hand=AS,2H,3D,4C,5D,6H&discard=AS,2H#result",
+    );
+    const configEntry = captureConfigEntry(
+      "https://example.com/cribbage-trainer/?hand=KC,QD&seed=private#cards",
+    );
+
+    expect(configEntry).toStrictEqual([
+      "config",
+      measurementId,
+      {
+        // eslint-disable-next-line camelcase
+        page_location: "http://localhost/cribbage-trainer/pr/679/",
+        // eslint-disable-next-line camelcase
+        page_referrer: "https://example.com/",
+      },
+    ]);
   });
 });

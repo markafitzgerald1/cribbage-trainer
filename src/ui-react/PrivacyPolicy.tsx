@@ -22,9 +22,10 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <p>
       Cribbage Trainer uses Google Analytics in advanced consent mode. Before
       you make a choice, and after you decline analytics cookies, Google
-      Analytics may receive basic measurements without analytics cookies or
-      persistent analytics identifiers. Detailed interaction measurements are
-      sent only after you explicitly accept analytics.
+      Analytics receives limited, cookieless page-view measurements without
+      analytics cookies or persistent analytics identifiers. Google uses these
+      measurements for aggregate behavioral modeling. Detailed interaction
+      measurements are sent only after you explicitly accept analytics.
     </p>
 
     <h2>Information We Collect</h2>
@@ -35,10 +36,14 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <ul>
       <li>
         <strong>Without analytics cookie consent:</strong> Basic cookieless
-        measurements may include the page visited, timestamp, referrer, browser
-        or device information, and consent state. Cribbage Trainer does not send
-        card identities, hand contents, or detailed trainer interactions in this
-        state.
+        measurements may include the site origin and path without URL query
+        parameters or fragments, page title, referring-site origin, timestamp,
+        browser, operating system, device, language, screen resolution, consent
+        state, and approximate location derived from the connection’s IP
+        address. Google necessarily receives the IP address during transmission
+        but states that Google Analytics does not log or store it. Cribbage
+        Trainer does not send card identities, hand contents, URL game state, or
+        detailed trainer interactions in this state.
       </li>
       <li>
         <strong>After accepting analytics:</strong> Google Analytics may use
@@ -62,8 +67,9 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       improve the overall experience of the site. This data helps us understand
       how visitors engage with the site and allows us to optimize content and
       functionality. Before or without consent, Google Analytics operates
-      without analytics cookies. After you accept analytics, it may set cookies
-      in your browser to measure returning visits and site usage.
+      without analytics cookies and uses cookieless measurements to model
+      aggregate activity. After you accept analytics, it may set cookies in your
+      browser to measure returning visits and site usage.
     </p>
     <p>
       For more details on how Google uses the data it collects, please refer to{" "}
@@ -154,6 +160,12 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       We may update our Privacy Policy from time to time. We encourage you to
       review this page periodically for any changes. The date of the last update
       is shown at the top of this Privacy Policy.
+    </p>
+    <p>
+      The July 23, 2026 update introduced advanced consent mode, cookieless
+      basic measurement, and opt-in card-free trainer interaction events.
+      Choices saved under the previous policy are not reused; returning visitors
+      are asked to make a new analytics choice.
     </p>
 
     <h2>Contact Us</h2>

@@ -16,7 +16,7 @@ export const renderThenSelectTwoDiscards = async (
     // Clicking Accept instead starts the dialog's multi-second fade timer.
     // That slows every screenshot test and races the capture against it.
     await page.addInitScript(() => {
-      window.localStorage.setItem("analyticsConsent", "true");
+      window.localStorage.setItem("analyticsConsent-2026-07-23", "true");
     });
   }
 

@@ -185,6 +185,7 @@ export default [
             "mousedown",
             "msedge",
             "os",
+            "pathname",
             "personalization",
             "popstate",
             "radiogroup",

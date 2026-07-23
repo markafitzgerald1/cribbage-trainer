@@ -15,6 +15,27 @@ const getConsentSettings = (analyticsStorage: AnalyticsStorageConsent) => ({
   analytics_storage: analyticsStorage,
 });
 
+const sanitizePageUrl = (url: string): string => {
+  const parsedUrl = new URL(url);
+  return `${parsedUrl.origin}${parsedUrl.pathname}`;
+};
+
+const sanitizeReferrerUrl = (url: string): string => {
+  if (url === "") {
+    return "";
+  }
+
+  return `${new URL(url).origin}/`;
+};
+
+const getPageSettings = () => ({
+  // Never send URL state containing cards, discards, roles, or seeds.
+  // eslint-disable-next-line camelcase
+  page_location: sanitizePageUrl(window.location.href),
+  // eslint-disable-next-line camelcase
+  page_referrer: sanitizeReferrerUrl(document.referrer),
+});
+
 const updateGoogleAnalyticsConsent = (consented: boolean | null) => {
   if (
     consented === null ||
@@ -45,7 +66,7 @@ export function loadGoogleAnalytics(
     gtag("consent", "default", getConsentSettings("denied"));
     updateGoogleAnalyticsConsent(consented);
     gtag("js", new Date());
-    gtag("config", measurementId);
+    gtag("config", measurementId, getPageSettings());
 
     const script = document.createElement("script");
     script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;

@@ -22,6 +22,7 @@ import { describe, expect, it } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
+import { analyticsConsentKey } from "./Trainer";
 import { getSortOrderName } from "../ui/SortOrderName";
 import { screen } from "@testing-library/react";
 /* jscpd:ignore-end */
@@ -67,9 +68,8 @@ function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
   )!;
 }
 
-const ANALYTICS_CONSENT = "analyticsConsent";
-
-const clearAnalyticsConsent = () => localStorage.removeItem(ANALYTICS_CONSENT);
+const clearAnalyticsConsent = () =>
+  localStorage.removeItem(analyticsConsentKey);
 
 const setupTrainerUser = () => ({
   ...renderTrainer(),
@@ -174,20 +174,34 @@ describe("trainer component", () => {
 
       await user.click(button);
 
-      expect(localStorage.getItem(ANALYTICS_CONSENT)).toBe(
+      expect(localStorage.getItem(analyticsConsentKey)).toBe(
         expectedConsent.toString(),
       );
     },
   );
 
   it("initially shows only Privacy Policy link when consent is in local storage", () => {
-    localStorage.setItem(ANALYTICS_CONSENT, "true");
+    localStorage.setItem(analyticsConsentKey, "true");
     const renderResult = renderTrainer();
 
     expect(renderResult.getByText("Privacy Policy")).toBeTruthy();
     expect(
       renderResult.queryByText(/^Thank you! Your consent helps/u),
     ).toBeFalsy();
+  });
+
+  it("requires a new choice after the analytics policy changes", () => {
+    clearAnalyticsConsent();
+    localStorage.setItem("analyticsConsent", "true");
+
+    const renderResult = renderTrainer();
+
+    expect(
+      renderResult.getByRole("button", { name: "Accept" }),
+    ).toBeInTheDocument();
+    expect(
+      renderResult.getByRole("button", { name: "Decline" }),
+    ).toBeInTheDocument();
   });
 
   it("deals new cards after a 'Deal' button click", async () => {
