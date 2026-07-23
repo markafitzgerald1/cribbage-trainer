@@ -208,6 +208,15 @@ describe("trainer component", () => {
     expect(document.cookie).not.toContain("_ga");
   });
 
+  it("removes an analytics cookie rewritten while a declined page loads", () => {
+    localStorage.setItem(analyticsConsentKey, "false");
+    document.cookie = "_ga_TEST=late-session-id; Path=/";
+
+    renderTrainer();
+
+    expect(document.cookie).not.toContain("_ga_TEST");
+  });
+
   it("requires a new choice after the analytics policy changes", () => {
     clearAnalyticsConsent();
     localStorage.setItem("analyticsConsent", "true");

@@ -86,6 +86,11 @@ const useAnalyticsConsent = (
     [analyticsConsented],
   );
   useEffect(() => {
+    if (analyticsConsented === false) {
+      clearGoogleAnalyticsCookies();
+    }
+  }, [analyticsConsented]);
+  useEffect(() => {
     loadGoogleAnalytics(analyticsConsented);
   }, [analyticsConsented, loadGoogleAnalytics]);
   return { analyticsConsented, setConsented, storedConsentOnFirstRender };
