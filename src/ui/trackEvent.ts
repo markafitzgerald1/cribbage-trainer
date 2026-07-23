@@ -31,8 +31,8 @@ export type TrackEvent = (
 const toGoogleAnalyticsKey = (key: string) =>
   key.replace(/[A-Z]/gu, (upper) => `_${upper.toLowerCase()}`);
 
-// Basic consent mode keeps the Google tag unloaded until consent.
-// The app-level gate also prevents trainer events while consent is unanswered or declined.
+// Advanced consent mode permits only Google's cookieless basic measurement until consent.
+// The app-level gate keeps detailed trainer events limited to consenting visitors.
 export const trackEvent: TrackEvent = (consented, eventName, params) => {
   if (consented !== true) {
     return;

@@ -7,7 +7,7 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     ref={ref}
   >
     <h1>Privacy Policy for Cribbage Trainer</h1>
-    <p>Effective Date: September 2, 2024</p>
+    <p>Effective Date: July 23, 2026</p>
     <p>
       At Cribbage Trainer, accessible from{" "}
       <a href="https://markafitzgerald1.github.io/cribbage-trainer/">
@@ -18,28 +18,33 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       by Cribbage Trainer and how we use it.
     </p>
 
-    <h2>Consent to Data Collection</h2>
+    <h2>Analytics Measurement and Consent</h2>
     <p>
-      Cribbage Trainer uses Google Analytics to collect data only after you have
-      provided consent. No analytics data will be collected until you have
-      explicitly agreed to the use of Google Analytics.
+      Cribbage Trainer uses Google Analytics in advanced consent mode. Before
+      you make a choice, and after you decline analytics cookies, Google
+      Analytics may receive basic measurements without analytics cookies or
+      persistent analytics identifiers. Detailed interaction measurements are
+      sent only after you explicitly accept analytics.
     </p>
 
     <h2>Information We Collect</h2>
     <p>
-      Once consent is given, Cribbage Trainer collects certain information
-      through Google Analytics, including:
+      The information sent to Google Analytics depends on your analytics consent
+      choice:
     </p>
     <ul>
       <li>
-        <strong>Usage Data:</strong> Information about how you interact with the
-        site, such as which pages you visit, how long you spend on them, and
-        other behavioral metrics.
+        <strong>Without analytics cookie consent:</strong> Basic cookieless
+        measurements may include the page visited, timestamp, referrer, browser
+        or device information, and consent state. Cribbage Trainer does not send
+        card identities, hand contents, or detailed trainer interactions in this
+        state.
       </li>
       <li>
-        <strong>Device and Browser Information:</strong> Details about the
-        device and browser used to access the website, including IP address,
-        operating system, browser type, and screen resolution.
+        <strong>After accepting analytics:</strong> Google Analytics may use
+        analytics cookies and collect card-free interaction measurements,
+        including when a hand begins, cards are selected or unselected, an
+        analysis is shown or hidden, and the Deal button is used.
       </li>
     </ul>
 
@@ -56,8 +61,9 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       Cribbage Trainer uses Google Analytics to analyze user interactions and
       improve the overall experience of the site. This data helps us understand
       how visitors engage with the site and allows us to optimize content and
-      functionality. Google Analytics may set cookies in your browser to
-      identify returning visitors and enhance your experience.
+      functionality. Before or without consent, Google Analytics operates
+      without analytics cookies. After you accept analytics, it may set cookies
+      in your browser to measure returning visits and site usage.
     </p>
     <p>
       For more details on how Google uses the data it collects, please refer to{" "}
@@ -70,20 +76,20 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <h2>Cookies, Local Storage, and Consent Management</h2>
     <p>
       Cribbage Trainer uses local storage to remember whether you have consented
-      to the use of Google Analytics. This ensures that analytics data is only
-      collected if you have given explicit permission.
+      to analytics cookies and detailed interaction measurement. This allows the
+      site to apply your choice on later visits.
     </p>
     <p>
-      <strong>Functionality and Tracking:</strong> Cookies are primarily used by
-      Google Analytics to help analyze how users interact with the site. These
-      cookies help us aggregate data about site traffic and site interactions to
-      continually improve user experience.
+      <strong>Functionality and Measurement:</strong> Declining prevents Google
+      Analytics from reading or writing analytics cookies, while basic
+      cookieless measurements may continue. Accepting permits analytics cookies
+      and the detailed, card-free interaction measurements described above.
     </p>
     <p>
       You can manage your cookie settings through your browser to receive
       notifications when a cookie is set, or to disable cookies entirely. Note
-      that turning off cookies might affect the functionality provided by Google
-      Analytics.
+      that turning off cookies may reduce the measurements available in Google
+      Analytics but does not prevent you from using Cribbage Trainer.
     </p>
     <p>
       <strong>Managing Preferences:</strong> You can clear local storage and
@@ -99,9 +105,9 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       Google and may change over time as per their policies.
     </p>
     <p>
-      You can manage your consent and delete your data at any time by clearing
-      your browser’s local storage and disabling cookies. Please note that doing
-      so may impact your experience on the website.
+      You can reset the choice stored by Cribbage Trainer and remove analytics
+      cookies by clearing this site’s local storage and cookies. This does not
+      delete measurements that Google Analytics has already received.
     </p>
 
     <h2>Data Sharing</h2>
@@ -118,6 +124,10 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       data:
     </p>
     <ul>
+      <li>
+        You can decline analytics cookies and detailed interaction measurement
+        in the consent prompt.
+      </li>
       <li>
         You can opt out of Google Analytics tracking by using the{" "}
         <a href="https://tools.google.com/dlpage/gaoptout">

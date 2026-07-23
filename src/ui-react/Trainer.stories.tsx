@@ -70,7 +70,7 @@ export const AnalyticsAccepted = {
     await fireEvent.click(acceptButton);
 
     await expect(canvasElement).toHaveTextContent(
-      "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy.",
+      "Thank you! Analytics cookies and card-free interaction measurements help us improve the site. For more details, please see our Privacy Policy.",
     );
   },
 };
@@ -82,7 +82,7 @@ export const AnalyticsDisabled = {
     await fireEvent.click(declineButton);
 
     await expect(canvasElement).toHaveTextContent(
-      "Analytics have been disabled. You can find more information in our Privacy Policy.",
+      "Analytics cookies and detailed interaction measurements have been disabled. Basic cookieless measurement remains active. You can find more information in our Privacy Policy.",
     );
   },
 };

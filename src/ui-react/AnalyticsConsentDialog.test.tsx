@@ -8,7 +8,7 @@ const FADE_DELAY_MS = 5000;
 const FADE_TRANSITION_MS = 800;
 const ANALYTICS_CONSENT = "Analytics Consent";
 const privacyPolicyLinkText = "Privacy Policy";
-const distinctPrivacyPolicyText = "Consent to Data Collection";
+const distinctPrivacyPolicyText = "Analytics Measurement and Consent";
 const ENTER_KEY_CODE = "Enter";
 
 const createMockOnChange = () => jest.fn();
@@ -105,7 +105,7 @@ describe("analytics consent dialog", () => {
   );
 
   it.each<[boolean | null, string]>([
-    [null, "We use cookies and tools like Google Analytics"],
+    [null, "Google Analytics receives basic measurements"],
   ])(
     "shows the correct message when consent is %s",
     (consent: boolean | null, expectedMessage: string) => {
@@ -122,7 +122,7 @@ describe("analytics consent dialog", () => {
 
       expect(getByText(privacyPolicyLinkText)).toBeTruthy();
       expect(queryByText("Thank you")).toBeFalsy();
-      expect(queryByText("Analytics have been disabled")).toBeFalsy();
+      expect(queryByText("Analytics cookies")).toBeFalsy();
     },
   );
 
@@ -219,7 +219,7 @@ describe("analytics consent dialog fade-out behavior", () => {
 
   it.each<[boolean, string]>([
     [true, "Thank you!"],
-    [false, "Analytics have been disabled"],
+    [false, "Analytics cookies and detailed interaction measurements"],
   ])(
     "shows message then fades to Privacy Policy link when consent changes to %s during session",
     (consent, textToDisappear) => {
@@ -286,6 +286,6 @@ describe("analytics consent dialog fade-out behavior", () => {
     modalTest.advancePastFade();
     fireEvent.click(screen.getByText("Privacy Policy"));
 
-    expect(screen.getByText("Consent to Data Collection")).toBeTruthy();
+    expect(screen.getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
 });

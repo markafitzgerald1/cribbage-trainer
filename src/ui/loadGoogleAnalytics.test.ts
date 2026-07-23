@@ -12,77 +12,103 @@ describe("loadGoogleAnalytics", () => {
       });
   };
 
-  function dataLayerEntryToArray(entry: unknown): unknown[] {
-    return Array.from(entry as IArguments);
-  }
+  const dataLayerEntriesAsArrays = (): unknown[][] =>
+    window.dataLayer!.map((entry): unknown[] =>
+      Array.from(entry as ArrayLike<unknown>),
+    );
 
   const measurementId = "test-measurement-id";
   const googleAnalyticsScriptSelector =
     'script[src*="googletagmanager.com/gtag/js"]';
+  const deniedConsentSettings = {
+    // eslint-disable-next-line camelcase
+    ad_personalization: "denied",
+    // eslint-disable-next-line camelcase
+    ad_storage: "denied",
+    // eslint-disable-next-line camelcase
+    ad_user_data: "denied",
+    // eslint-disable-next-line camelcase
+    analytics_storage: "denied",
+  };
+  const grantedAnalyticsConsentSettings = {
+    ...deniedConsentSettings,
+    // eslint-disable-next-line camelcase
+    analytics_storage: "granted",
+  };
+
+  it("does not initialize Google Analytics without a measurement ID", () => {
+    clearGoogleAnalytics();
+
+    loadGoogleAnalytics(null, null);
+
+    expect(window.dataLayer).toBeUndefined();
+    expect(
+      document.head.querySelector(googleAnalyticsScriptSelector),
+    ).toBeNull();
+  });
 
   it.each([
-    ["consent is unanswered", null, measurementId],
-    ["consent is declined", false, measurementId],
-    ["the measurement ID is missing", true, null],
+    {
+      consentUpdates: [],
+      consented: null,
+      scenario: "consent is unanswered",
+    },
+    {
+      consentUpdates: [["consent", "update", deniedConsentSettings]],
+      consented: false,
+      scenario: "consent is declined",
+    },
+    {
+      consentUpdates: [["consent", "update", grantedAnalyticsConsentSettings]],
+      consented: true,
+      scenario: "consent is granted",
+    },
   ] as const)(
-    "does not initialize Google Analytics when %s",
-    (_scenario, consented, selectedMeasurementId) => {
+    "initializes advanced consent mode when $scenario",
+    ({ consented, consentUpdates }) => {
       clearGoogleAnalytics();
 
-      loadGoogleAnalytics(consented, selectedMeasurementId);
+      loadGoogleAnalytics(consented, measurementId);
 
-      expect(window.dataLayer).toBeUndefined();
+      expect(dataLayerEntriesAsArrays()).toStrictEqual([
+        ["consent", "default", deniedConsentSettings],
+        ...consentUpdates,
+        ["js", expect.any(Date)],
+        ["config", measurementId],
+      ]);
+
       expect(
-        document.head.querySelector(googleAnalyticsScriptSelector),
-      ).toBeNull();
+        document.head.querySelector<HTMLScriptElement>(
+          googleAnalyticsScriptSelector,
+        )!.src,
+      ).toBe(`https://www.googletagmanager.com/gtag/js?id=${measurementId}`);
     },
   );
 
-  it("initializes Google Analytics after consent is granted", () => {
+  it("updates changed consent without initializing Google Analytics again", () => {
     clearGoogleAnalytics();
 
+    loadGoogleAnalytics(null, measurementId);
+    loadGoogleAnalytics(false, measurementId);
+    loadGoogleAnalytics(false, measurementId);
+    loadGoogleAnalytics(true, measurementId);
     loadGoogleAnalytics(true, measurementId);
 
-    expect(
-      document.head.querySelector<HTMLScriptElement>(
-        googleAnalyticsScriptSelector,
-      )!.src,
-    ).toBe(`https://www.googletagmanager.com/gtag/js?id=${measurementId}`);
-    expect(dataLayerEntryToArray(window.dataLayer![0])).toStrictEqual([
+    const entries = dataLayerEntriesAsArrays();
+
+    expect(entries[0]).toStrictEqual([
       "consent",
       "default",
-      {
-        // eslint-disable-next-line camelcase
-        analytics_storage: "denied",
-      },
+      deniedConsentSettings,
     ]);
-    expect(dataLayerEntryToArray(window.dataLayer![1])).toStrictEqual([
-      "consent",
-      "update",
-      {
-        // eslint-disable-next-line camelcase
-        analytics_storage: "granted",
-      },
+    expect(entries[1]).toStrictEqual(["js", expect.any(Date)]);
+    expect(entries[2]).toStrictEqual(["config", measurementId]);
+    expect(entries.slice(3)).toStrictEqual([
+      ["consent", "update", deniedConsentSettings],
+      ["consent", "update", grantedAnalyticsConsentSettings],
     ]);
-    expect(dataLayerEntryToArray(window.dataLayer![2])).toStrictEqual([
-      "js",
-      expect.any(Date),
-    ]);
-    expect(dataLayerEntryToArray(window.dataLayer![3])).toStrictEqual([
-      "config",
-      measurementId,
-    ]);
-  });
-
-  it("initializes Google Analytics only once", () => {
-    clearGoogleAnalytics();
-
-    loadGoogleAnalytics(true, measurementId);
-    loadGoogleAnalytics(true, measurementId);
-
     expect(
       document.head.querySelectorAll(googleAnalyticsScriptSelector),
     ).toHaveLength(1);
-    expect(window.dataLayer).toHaveLength(4);
   });
 });

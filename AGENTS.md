@@ -334,12 +334,13 @@
 
 ## Google Analytics interaction events (issue #250)
 
-- `src/ui/loadGoogleAnalytics.ts` implements basic consent mode: unanswered or
-  declined consent must not create `dataLayer`, queue Google Analytics
-  commands, inject `gtag.js`, or send any Google request. The first explicit
-  grant queues the denied default followed by the granted update, initializes
-  GA, and injects the tag exactly once. `src/ui/trackEvent.ts` remains the only
-  path to `gtag("event", …)` and independently gates trainer events on
+- `src/ui/loadGoogleAnalytics.ts` implements advanced consent mode. It must
+  queue denied defaults for analytics storage and all advertising consent types
+  before `js` or `config`, then load the Google tag so unanswered or declined
+  visits send only cookieless basic measurements. A stored choice is queued as
+  an update before `config`; a choice made after load appends one update without
+  reinjecting or reconfiguring the tag. `src/ui/trackEvent.ts` remains the only
+  path to `gtag("event", …)` and independently gates detailed trainer events on
   `consented === true`. It also converts camelCase param keys to snake_case,
   keeping call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts`
   pushes `arguments` objects — Google's tag silently ignores plain arrays.
@@ -362,10 +363,11 @@
 - The telemetry nonce must not consume the injected seeded generator, or
   seeded deep links would deal different hands.
 - Verifying events end to end needs a real
-  `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: accept consent, then watch the
-  network tab for `/g/collect?…en=<event>` requests (and GA4 Realtime after
-  deploy). Before consent, the network tab must show no Google Analytics script
-  or collection requests at all.
+  `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: before consent, verify the tag and a
+  cookieless basic measurement load but no analytics cookie is created; after
+  accepting, verify the consent update precedes detailed `/g/collect` trainer
+  events and an analytics cookie may be created. Declining must leave analytics
+  storage denied and detailed trainer events absent.
 
 ## Lint gauntlet interplay (agent checklist)
 

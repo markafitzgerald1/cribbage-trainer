@@ -6,7 +6,8 @@ describe("privacy policy component", () => {
   it.each([
     "Privacy Policy",
     "cookies",
-    "identify",
+    "cookieless",
+    "identifiers",
     "device",
     "Google Analytics",
   ])("contains the text %s", (substring) => {

@@ -177,16 +177,17 @@ export function AnalyticsConsentDialog({
       case true:
         return (
           <>
-            Thank you! Your consent helps us improve our site using tools like
-            Google Analytics. For more details, please see our{" "}
+            Thank you! Analytics cookies and card-free interaction measurements
+            help us improve the site. For more details, please see our{" "}
             {PrivacyPolicyLink}.
           </>
         );
       case false:
         return (
           <>
-            Analytics have been disabled. You can find more information in our{" "}
-            {PrivacyPolicyLink}.
+            Analytics cookies and detailed interaction measurements have been
+            disabled. Basic cookieless measurement remains active. You can find
+            more information in our {PrivacyPolicyLink}.
           </>
         );
       case null:
@@ -195,9 +196,10 @@ export function AnalyticsConsentDialog({
           <>
             <h2>Analytics Consent</h2>
             <p>
-              We use cookies and tools like Google Analytics to analyze how
-              visitors use our site. This helps us make improvements and tailor
-              the experience. See our {PrivacyPolicyLink} for more details.
+              Google Analytics receives basic measurements without analytics
+              cookies. Accepting also permits analytics cookies and detailed,
+              card-free interaction measurements that help us improve the site.
+              See our {PrivacyPolicyLink} for more details.
             </p>
             <button
               onClick={handleAccept}
