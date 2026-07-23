@@ -133,18 +133,19 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       , although it is not required to use Cribbage Trainer’s own setting.
     </p>
 
-    <h2>Your privacy rights</h2>
+    <h2>Privacy questions and applicable rights</h2>
     <p>
-      Depending on where you live, you may have rights to ask about, access,
+      Depending on applicable law, you may have rights to ask about, access,
       correct, delete, restrict, or object to processing of your personal
-      information, and to withdraw consent. Send a request to the privacy email
-      address above. There is no Cribbage Trainer account or persistent app user
-      ID, so it may not always be possible to associate a Google Analytics
-      record with a particular person. We will explain what can be done in
-      response to a request.
+      information, and to withdraw consent. You can send a request to the
+      privacy email address above. Cribbage Trainer will respond as applicable
+      law requires. There is no Cribbage Trainer account or persistent app user
+      ID, so it may not be possible to verify that a Google Analytics record
+      relates to you or locate it in response to a request.
     </p>
     <p>
-      If a concern is not resolved, you may complain to the{" "}
+      Depending on applicable law, if a concern is not resolved, you may also
+      have the right to complain to the{" "}
       <a href="https://www.priv.gc.ca/en/report-a-concern/">
         Office of the Privacy Commissioner of Canada
       </a>

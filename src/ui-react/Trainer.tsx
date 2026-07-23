@@ -34,13 +34,18 @@ export interface TrainerProps {
 }
 
 export const analyticsConsentKey = "analyticsConsent-2026-07-23";
+const legacyAnalyticsConsentKey = "analyticsConsent";
 
 const getStoredConsent = (): boolean | null => {
   const storedConsent = localStorage.getItem(analyticsConsentKey);
-  if (storedConsent === null) {
-    return null;
+  if (storedConsent === "true") {
+    return true;
   }
-  return JSON.parse(storedConsent) as boolean;
+  if (storedConsent === "false") {
+    return false;
+  }
+  localStorage.removeItem(analyticsConsentKey);
+  return null;
 };
 
 interface DealState {
@@ -68,7 +73,10 @@ const isUnchangedEnteredHand = (
 const useAnalyticsConsent = (
   loadGoogleAnalytics: (consented: boolean | null) => void,
 ) => {
-  const storedConsentOnFirstRender = useMemo(() => getStoredConsent(), []);
+  const storedConsentOnFirstRender = useMemo(() => {
+    localStorage.removeItem(legacyAnalyticsConsentKey);
+    return getStoredConsent();
+  }, []);
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
     storedConsentOnFirstRender,
   );

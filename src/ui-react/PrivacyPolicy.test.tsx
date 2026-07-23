@@ -13,7 +13,7 @@ describe("privacy policy component", () => {
     "international processing",
     "14 months",
     "13 months",
-    "privacy rights",
+    "applicable rights",
     "Office of the Privacy Commissioner of Canada",
     "device",
     "Google Analytics",

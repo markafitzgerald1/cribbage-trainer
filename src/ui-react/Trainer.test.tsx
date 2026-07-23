@@ -229,6 +229,18 @@ describe("trainer component", () => {
     expect(
       renderResult.getByRole("button", { name: "Decline" }),
     ).toBeInTheDocument();
+    expect(localStorage.getItem("analyticsConsent")).toBeNull();
+  });
+
+  it("requires a new choice after removing malformed current consent", () => {
+    localStorage.setItem(analyticsConsentKey, "granted");
+
+    const renderResult = renderTrainer();
+
+    expect(
+      renderResult.getByRole("heading", { name: "Analytics Consent" }),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem(analyticsConsentKey)).toBeNull();
   });
 
   it("deals new cards after a 'Deal' button click", async () => {
