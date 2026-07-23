@@ -334,14 +334,14 @@
 
 ## Google Analytics interaction events (issue #250)
 
-- `src/ui/loadGoogleAnalytics.ts` implements advanced consent mode. It must
-  queue denied defaults for analytics storage and all advertising consent types
-  before `js` or `config`, then load the Google tag so unanswered or declined
-  visits send only cookieless basic measurements. A stored choice is queued as
-  an update before `config`; a choice made after load appends one update without
-  reinjecting or reconfiguring the tag. `src/ui/trackEvent.ts` remains the only
-  path to `gtag("event", …)` and independently gates detailed trainer events on
-  `consented === true`. It also converts camelCase param keys to snake_case,
+- `src/ui/loadGoogleAnalytics.ts` implements basic consent mode. Unanswered or
+  declined consent must leave `dataLayer` undefined, inject no Google script,
+  and send no Google request. Only accepted consent may initialize the tag; it
+  queues denied defaults for analytics storage and all advertising consent
+  types, grants analytics storage only, then queues `js` and the sanitized
+  `config`. `src/ui/trackEvent.ts` remains the only path to
+  `gtag("event", …)` and independently gates trainer events on
+  `consented === true`. It also converts camelCase parameter keys to snake_case,
   keeping call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts`
   pushes `arguments` objects — Google's tag silently ignores plain arrays.
 - `src/ui-react/useDiscardTelemetry.ts` stamps the per-hand `deal_nonce`,
@@ -362,12 +362,13 @@
   card-free: counts, indices, source, and the nonce only.
 - The telemetry nonce must not consume the injected seeded generator, or
   seeded deep links would deal different hands.
-- Verifying events end to end needs a real
-  `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: before consent, verify the tag and a
-  cookieless basic measurement load but no analytics cookie is created; after
-  accepting, verify the consent update precedes detailed `/g/collect` trainer
-  events and an analytics cookie may be created. Declining must leave analytics
-  storage denied and detailed trainer events absent.
+- Analytics Settings must remain available after the first choice. Withdrawal
+  stores `false`, removes visible `_ga*` cookies, and reloads the page so the
+  previously loaded Google runtime is gone. Verifying events end to end needs a
+  real `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: before consent and after decline,
+  verify there is no tag, data layer, Google request, or analytics cookie.
+  After accepting, verify the consent update precedes `/g/collect` trainer
+  events and an analytics cookie may be created.
 
 ## Lint gauntlet interplay (agent checklist)
 

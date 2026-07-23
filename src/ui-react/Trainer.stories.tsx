@@ -82,14 +82,14 @@ export const AnalyticsDisabled = {
     await fireEvent.click(declineButton);
 
     await expect(canvasElement).toHaveTextContent(
-      "Analytics cookies and detailed interaction measurements have been disabled. Basic cookieless measurement remains active. You can find more information in our Privacy Policy.",
+      "Analytics is disabled. Nothing is sent to Google Analytics. You can find more information in our Privacy Policy.",
     );
   },
 };
 
 export const StoredConsentGiven = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    // When consent is already stored, only the Privacy Policy link is shown (no Thank You message)
+    // When consent is already stored, only the persistent settings links are shown.
     // Wait for fade-in animation to complete before checking visibility
     await waitFor(
       async () => {
@@ -103,6 +103,11 @@ export const StoredConsentGiven = {
     await expect(
       within(canvasElement).queryByText("Thank you!"),
     ).not.toBeInTheDocument();
+    await expect(
+      within(canvasElement).getByRole("button", {
+        name: "Analytics Settings",
+      }),
+    ).toBeVisible();
   },
   render: ({
     generateRandomNumber,

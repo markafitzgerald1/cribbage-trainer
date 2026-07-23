@@ -2,7 +2,7 @@ import { gtag } from "./gtag";
 
 type AnalyticsStorageConsent = "denied" | "granted";
 
-const reportedConsent = new WeakMap<unknown[], boolean>();
+const THIRTEEN_MONTHS_IN_SECONDS = 33_696_000;
 
 const getConsentSettings = (analyticsStorage: AnalyticsStorageConsent) => ({
   // eslint-disable-next-line camelcase
@@ -29,6 +29,12 @@ const sanitizeReferrerUrl = (url: string): string => {
 };
 
 const getPageSettings = () => ({
+  // eslint-disable-next-line camelcase
+  allow_google_signals: false,
+  // eslint-disable-next-line camelcase
+  cookie_expires: THIRTEEN_MONTHS_IN_SECONDS,
+  // eslint-disable-next-line camelcase
+  cookie_update: false,
   // Never send URL state containing cards, discards, roles, or seeds.
   // eslint-disable-next-line camelcase
   page_location: sanitizePageUrl(window.location.href),
@@ -36,44 +42,22 @@ const getPageSettings = () => ({
   page_referrer: sanitizeReferrerUrl(document.referrer),
 });
 
-const updateGoogleAnalyticsConsent = (consented: boolean | null) => {
-  if (
-    consented === null ||
-    !window.dataLayer ||
-    reportedConsent.get(window.dataLayer) === consented
-  ) {
-    return;
-  }
-
-  gtag(
-    "consent",
-    "update",
-    getConsentSettings(consented ? "granted" : "denied"),
-  );
-  reportedConsent.set(window.dataLayer, consented);
-};
-
 export function loadGoogleAnalytics(
   consented: boolean | null,
   measurementId: string | null,
 ) {
-  if (!measurementId) {
+  if (consented !== true || !measurementId || window.dataLayer) {
     return;
   }
 
-  if (!window.dataLayer) {
-    window.dataLayer = [];
-    gtag("consent", "default", getConsentSettings("denied"));
-    updateGoogleAnalyticsConsent(consented);
-    gtag("js", new Date());
-    gtag("config", measurementId, getPageSettings());
+  window.dataLayer = [];
+  gtag("consent", "default", getConsentSettings("denied"));
+  gtag("consent", "update", getConsentSettings("granted"));
+  gtag("js", new Date());
+  gtag("config", measurementId, getPageSettings());
 
-    const script = document.createElement("script");
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
-    script.async = true;
-    document.head.appendChild(script);
-    return;
-  }
-
-  updateGoogleAnalyticsConsent(consented);
+  const script = document.createElement("script");
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+  script.async = true;
+  document.head.appendChild(script);
 }

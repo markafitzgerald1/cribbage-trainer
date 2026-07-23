@@ -25,7 +25,7 @@ describe("loadGoogleAnalytics", () => {
       .mockReturnValue(referrer);
 
     try {
-      loadGoogleAnalytics(false, measurementId);
+      loadGoogleAnalytics(true, measurementId);
       const [, , , configEntry] = dataLayerEntriesAsArrays();
       return configEntry;
     } finally {
@@ -37,6 +37,12 @@ describe("loadGoogleAnalytics", () => {
   const googleAnalyticsScriptSelector =
     'script[src*="googletagmanager.com/gtag/js"]';
   const queryFreePageSettings = {
+    // eslint-disable-next-line camelcase
+    allow_google_signals: false,
+    // eslint-disable-next-line camelcase
+    cookie_expires: 33_696_000,
+    // eslint-disable-next-line camelcase
+    cookie_update: false,
     // eslint-disable-next-line camelcase
     page_location: "http://localhost/",
     // eslint-disable-next-line camelcase
@@ -58,87 +64,58 @@ describe("loadGoogleAnalytics", () => {
     analytics_storage: "granted",
   };
 
-  it("does not initialize Google Analytics without a measurement ID", () => {
-    clearGoogleAnalytics();
-
-    loadGoogleAnalytics(null, null);
-
-    expect(window.dataLayer).toBeUndefined();
-    expect(
-      document.head.querySelector(googleAnalyticsScriptSelector),
-    ).toBeNull();
-  });
-
   it.each([
-    {
-      consentUpdates: [],
-      consented: null,
-      scenario: "consent is unanswered",
-    },
-    {
-      consentUpdates: [["consent", "update", deniedConsentSettings]],
-      consented: false,
-      scenario: "consent is declined",
-    },
-    {
-      consentUpdates: [["consent", "update", grantedAnalyticsConsentSettings]],
-      consented: true,
-      scenario: "consent is granted",
-    },
-  ] as const)(
-    "initializes advanced consent mode when $scenario",
-    ({ consented, consentUpdates }) => {
+    { consented: null, measurementId: null },
+    { consented: false, measurementId: null },
+    { consented: true, measurementId: null },
+    { consented: null, measurementId },
+    { consented: false, measurementId },
+  ])(
+    "does not initialize Google Analytics with consent $consented and measurement ID $measurementId",
+    ({ consented, measurementId: currentMeasurementId }) => {
       clearGoogleAnalytics();
 
-      loadGoogleAnalytics(consented, measurementId);
+      loadGoogleAnalytics(consented, currentMeasurementId);
 
-      expect(dataLayerEntriesAsArrays()).toStrictEqual([
-        ["consent", "default", deniedConsentSettings],
-        ...consentUpdates,
-        ["js", expect.any(Date)],
-        ["config", measurementId, queryFreePageSettings],
-      ]);
-
+      expect(window.dataLayer).toBeUndefined();
       expect(
-        document.head.querySelector<HTMLScriptElement>(
-          googleAnalyticsScriptSelector,
-        )!.src,
-      ).toBe(`https://www.googletagmanager.com/gtag/js?id=${measurementId}`);
+        document.head.querySelector(googleAnalyticsScriptSelector),
+      ).toBeNull();
     },
   );
 
-  it("updates changed consent without initializing Google Analytics again", () => {
+  it("initializes basic consent mode only after consent is granted", () => {
     clearGoogleAnalytics();
 
-    loadGoogleAnalytics(null, measurementId);
-    loadGoogleAnalytics(false, measurementId);
-    loadGoogleAnalytics(false, measurementId);
-    loadGoogleAnalytics(true, measurementId);
     loadGoogleAnalytics(true, measurementId);
 
-    const entries = dataLayerEntriesAsArrays();
-
-    expect(entries[0]).toStrictEqual([
-      "consent",
-      "default",
-      deniedConsentSettings,
-    ]);
-    expect(entries[1]).toStrictEqual(["js", expect.any(Date)]);
-    expect(entries[2]).toStrictEqual([
-      "config",
-      measurementId,
-      queryFreePageSettings,
-    ]);
-    expect(entries.slice(3)).toStrictEqual([
-      ["consent", "update", deniedConsentSettings],
+    expect(dataLayerEntriesAsArrays()).toStrictEqual([
+      ["consent", "default", deniedConsentSettings],
       ["consent", "update", grantedAnalyticsConsentSettings],
+      ["js", expect.any(Date)],
+      ["config", measurementId, queryFreePageSettings],
     ]);
+    expect(
+      document.head.querySelector<HTMLScriptElement>(
+        googleAnalyticsScriptSelector,
+      )!.src,
+    ).toBe(`https://www.googletagmanager.com/gtag/js?id=${measurementId}`);
+  });
+
+  it("does not initialize Google Analytics more than once", () => {
+    clearGoogleAnalytics();
+
+    loadGoogleAnalytics(true, measurementId);
+    loadGoogleAnalytics(true, measurementId);
+    loadGoogleAnalytics(false, measurementId);
+
+    expect(dataLayerEntriesAsArrays()).toHaveLength(4);
     expect(
       document.head.querySelectorAll(googleAnalyticsScriptSelector),
     ).toHaveLength(1);
   });
 
-  it("removes card state from denied-consent page and referrer URLs", () => {
+  it("removes card state from consented page and referrer URLs", () => {
     clearGoogleAnalytics();
     window.history.replaceState(
       null,
@@ -153,6 +130,12 @@ describe("loadGoogleAnalytics", () => {
       "config",
       measurementId,
       {
+        // eslint-disable-next-line camelcase
+        allow_google_signals: false,
+        // eslint-disable-next-line camelcase
+        cookie_expires: 33_696_000,
+        // eslint-disable-next-line camelcase
+        cookie_update: false,
         // eslint-disable-next-line camelcase
         page_location: "http://localhost/cribbage-trainer/pr/679/",
         // eslint-disable-next-line camelcase

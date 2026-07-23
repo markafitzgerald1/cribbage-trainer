@@ -18,7 +18,7 @@ import {
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
 } from "./Trainer.test.common";
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
@@ -180,14 +180,32 @@ describe("trainer component", () => {
     },
   );
 
-  it("initially shows only Privacy Policy link when consent is in local storage", () => {
+  it("shows persistent policy and analytics settings links when consent is stored", () => {
     localStorage.setItem(analyticsConsentKey, "true");
     const renderResult = renderTrainer();
 
     expect(renderResult.getByText("Privacy Policy")).toBeTruthy();
+    expect(renderResult.getByText("Analytics Settings")).toBeTruthy();
     expect(
       renderResult.queryByText(/^Thank you! Your consent helps/u),
     ).toBeFalsy();
+  });
+
+  it("withdraws stored analytics consent and removes analytics cookies", async () => {
+    localStorage.setItem(analyticsConsentKey, "true");
+    document.cookie = "_ga=client-id; Path=/";
+    const consoleErrorSpy = jest.spyOn(console, "error").mockReturnValue();
+    const user = userEvent.setup();
+    const renderResult = renderTrainer();
+
+    await user.click(renderResult.getByText("Analytics Settings"));
+    await user.click(
+      renderResult.getByRole("button", { name: "Disable analytics" }),
+    );
+    consoleErrorSpy.mockRestore();
+
+    expect(localStorage.getItem(analyticsConsentKey)).toBe("false");
+    expect(document.cookie).not.toContain("_ga");
   });
 
   it("requires a new choice after the analytics policy changes", () => {

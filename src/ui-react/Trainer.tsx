@@ -15,6 +15,7 @@ import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDesc
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import type { TrackEvent } from "../ui/trackEvent";
+import { clearGoogleAnalyticsCookies } from "../ui/clearGoogleAnalyticsCookies";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { isStableDiscardState } from "../game/isStableDiscardState";
@@ -71,10 +72,19 @@ const useAnalyticsConsent = (
   const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
     storedConsentOnFirstRender,
   );
-  const setConsented = useCallback((value: boolean) => {
-    setAnalyticsConsented(value);
-    localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
-  }, []);
+  const setConsented = useCallback(
+    (value: boolean) => {
+      setAnalyticsConsented(value);
+      localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
+      if (!value) {
+        clearGoogleAnalyticsCookies();
+        if (analyticsConsented) {
+          window.location.reload();
+        }
+      }
+    },
+    [analyticsConsented],
+  );
   useEffect(() => {
     loadGoogleAnalytics(analyticsConsented);
   }, [analyticsConsented, loadGoogleAnalytics]);

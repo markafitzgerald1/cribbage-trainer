@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fireEvent, within } from "storybook/test";
+import { expect, fireEvent, fn, within } from "storybook/test";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 
 const meta = {
@@ -31,7 +31,7 @@ const openPrivacyPolicy = async (canvasElement: HTMLElement) => {
     name: "Privacy Policy",
   });
 
-  await fireEvent.keyDown(privacyLink, { key: "Enter" });
+  await fireEvent.click(privacyLink);
 
   await expect(canvasElement).toHaveTextContent(
     "Privacy Policy for Cribbage Trainer",
@@ -55,7 +55,32 @@ export const ConsentUnknownOrUnspecifiedDialog: Story =
 export const ConsentGivenDialog: Story = createStoryWithConsent(true);
 export const ConsentNotGivenDialog: Story = createStoryWithConsent(false);
 
-export const PrivacyPolicyOpensWithEnter: Story = createPrivacyStory();
+const createSettingsStory = (consent: boolean, actionName: string): Story => ({
+  args: {
+    consent,
+    onChange: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await fireEvent.click(
+      canvas.getByRole("button", { name: "Analytics Settings" }),
+    );
+    await fireEvent.click(canvas.getByText(actionName));
+
+    await expect(args.onChange).toHaveBeenCalledWith(!consent);
+  },
+});
+
+export const ConsentCanBeGranted: Story = createSettingsStory(
+  false,
+  "Allow analytics",
+);
+export const ConsentCanBeWithdrawn: Story = createSettingsStory(
+  true,
+  "Disable analytics",
+);
+
+export const PrivacyPolicyOpens: Story = createPrivacyStory();
 
 export const PrivacyPolicyClosesOnOutsideClick: Story = createPrivacyStory(
   async (canvasElement) => {

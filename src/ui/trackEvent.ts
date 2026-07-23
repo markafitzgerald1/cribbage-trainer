@@ -31,8 +31,7 @@ export type TrackEvent = (
 const toGoogleAnalyticsKey = (key: string) =>
   key.replace(/[A-Z]/gu, (upper) => `_${upper.toLowerCase()}`);
 
-// Advanced consent mode permits only Google's cookieless basic measurement until consent.
-// The app-level gate keeps detailed trainer events limited to consenting visitors.
+// This gate prevents events before Google Analytics loads or after withdrawal.
 export const trackEvent: TrackEvent = (consented, eventName, params) => {
   if (consented !== true) {
     return;
