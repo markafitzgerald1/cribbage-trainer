@@ -122,11 +122,21 @@ export function AnalyticsConsentDialog({
     onChange(false);
   }, [onChange]);
 
-  const displaySettings = useCallback(() => {
-    setIsFadedOut(false);
-    setIsFading(false);
-    setIsSettingsOpen(true);
-  }, []);
+  const settingsActions = useMemo(
+    () => ({
+      handleDismiss: () => {
+        setIsSettingsOpen(false);
+        setIsFadedOut(true);
+        setIsFading(false);
+      },
+      handleDisplay: () => {
+        setIsFadedOut(false);
+        setIsFading(false);
+        setIsSettingsOpen(true);
+      },
+    }),
+    [],
+  );
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -183,7 +193,7 @@ export function AnalyticsConsentDialog({
           <span aria-hidden="true"> · </span>
           <button
             className={classes.privacyPolicyLink}
-            onClick={displaySettings}
+            onClick={settingsActions.handleDisplay}
             type="button"
           >
             Analytics Settings
@@ -215,6 +225,12 @@ export function AnalyticsConsentDialog({
               Allow analytics
             </button>
           )}
+          <button
+            onClick={settingsActions.handleDismiss}
+            type="button"
+          >
+            Close
+          </button>
         </>
       );
     }

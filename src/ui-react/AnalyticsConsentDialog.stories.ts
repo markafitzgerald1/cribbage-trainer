@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fireEvent, fn, within } from "storybook/test";
+import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 
 const meta = {
@@ -55,16 +55,23 @@ export const ConsentUnknownOrUnspecifiedDialog: Story =
 export const ConsentGivenDialog: Story = createStoryWithConsent(true);
 export const ConsentNotGivenDialog: Story = createStoryWithConsent(false);
 
+const openAnalyticsSettings = async (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement);
+  await fireEvent.click(
+    canvas.getByRole("button", { name: "Analytics Settings" }),
+  );
+  return canvas;
+};
+
+const createSettingsArgs = (consent: boolean) => ({
+  consent,
+  onChange: fn(),
+});
+
 const createSettingsStory = (consent: boolean, actionName: string): Story => ({
-  args: {
-    consent,
-    onChange: fn(),
-  },
+  args: createSettingsArgs(consent),
   play: async ({ args, canvasElement }) => {
-    const canvas = within(canvasElement);
-    await fireEvent.click(
-      canvas.getByRole("button", { name: "Analytics Settings" }),
-    );
+    const canvas = await openAnalyticsSettings(canvasElement);
     await fireEvent.click(canvas.getByText(actionName));
 
     await expect(args.onChange).toHaveBeenCalledWith(!consent);
@@ -79,6 +86,28 @@ export const ConsentCanBeWithdrawn: Story = createSettingsStory(
   true,
   "Disable analytics",
 );
+
+export const AnalyticsSettingsCanBeDismissed: Story = {
+  args: createSettingsArgs(true),
+  play: async ({ args, canvasElement }) => {
+    await openAnalyticsSettings(canvasElement);
+    const canvas = within(canvasElement);
+
+    await expect(canvasElement).toHaveTextContent(
+      "Analytics is currently enabled",
+    );
+
+    await fireEvent.click(canvas.getByRole("button", { name: "Close" }));
+
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole("button", { name: "Analytics Settings" }),
+      ).toBeVisible();
+    });
+
+    await expect(args.onChange).not.toHaveBeenCalled();
+  },
+};
 
 export const PrivacyPolicyOpens: Story = createPrivacyStory();
 

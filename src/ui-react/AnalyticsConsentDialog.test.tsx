@@ -312,4 +312,20 @@ describe("analytics consent dialog fade-out behavior", () => {
 
     expect(settingsTest.rendered.getByText("Analytics Settings")).toBeTruthy();
   });
+
+  it.each([true, false])(
+    "dismisses analytics settings without changing stored consent %s",
+    (initialConsent) => {
+      const { getByText, onChange, queryByText } = renderDialog(initialConsent);
+
+      fireEvent.click(getByText(analyticsSettingsLinkText));
+      fireEvent.click(getByText("Close"));
+
+      expect(
+        queryByText("Analytics is currently", { exact: false }),
+      ).toBeFalsy();
+      expect(getByText(analyticsSettingsLinkText)).toBeTruthy();
+      expect(onChange).not.toHaveBeenCalled();
+    },
+  );
 });
