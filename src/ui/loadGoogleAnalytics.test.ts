@@ -1,89 +1,146 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { loadGoogleAnalytics } from "./loadGoogleAnalytics";
 
 describe("loadGoogleAnalytics", () => {
-  const clearDataLayerGTagAndScript = () => {
+  const clearGoogleAnalytics = () => {
     delete window.dataLayer;
     delete window.gtag;
-    document.head.querySelectorAll("script").forEach((script) => {
-      script.remove();
-    });
+    document.head
+      .querySelectorAll('script[src*="googletagmanager.com/gtag/js"]')
+      .forEach((script) => {
+        script.remove();
+      });
   };
 
-  function dataLayerEntryToArray(entry: unknown): unknown[] {
-    return Array.from(entry as IArguments);
-  }
-
-  it("sets window.dataLayer if window.dataLayer is not set", () => {
-    clearDataLayerGTagAndScript();
-
-    loadGoogleAnalytics(null, null);
-
-    expect(window.dataLayer).toStrictEqual([]);
-  });
-
-  it("does not set window.dataLayer and gtag if window.dataLayer is set", () => {
-    clearDataLayerGTagAndScript();
-    const originalWindowDataLayer = [Math.random()];
-    window.dataLayer = originalWindowDataLayer;
-
-    loadGoogleAnalytics(null, null);
-
-    expect(window.dataLayer).toStrictEqual(originalWindowDataLayer);
-    expect(window.gtag).toBeUndefined();
-  });
+  const dataLayerEntriesAsArrays = (): unknown[][] =>
+    window.dataLayer!.map((entry): unknown[] =>
+      Array.from(entry as ArrayLike<unknown>),
+    );
 
   const measurementId = "test-measurement-id";
 
-  it("loads the Google Analytics script and populates its data layer if window.dataLayer not set and measurementId is set", () => {
-    clearDataLayerGTagAndScript();
-    const consentDefaultDataLayerIndex = 2;
+  const captureConfigEntry = (referrer: string): unknown => {
+    const referrerSpy = jest
+      .spyOn(document, "referrer", "get")
+      .mockReturnValue(referrer);
 
-    loadGoogleAnalytics(null, measurementId);
+    try {
+      loadGoogleAnalytics(true, measurementId);
+      const [, , , configEntry] = dataLayerEntriesAsArrays();
+      return configEntry;
+    } finally {
+      referrerSpy.mockRestore();
+      window.history.replaceState(null, "", "/");
+    }
+  };
 
-    expect(document.head.querySelector("script")!.src).toBe(
-      `https://www.googletagmanager.com/gtag/js?id=${measurementId}`,
-    );
+  const googleAnalyticsScriptSelector =
+    'script[src*="googletagmanager.com/gtag/js"]';
+  const queryFreePageSettings = {
+    // eslint-disable-next-line camelcase
+    allow_google_signals: false,
+    // eslint-disable-next-line camelcase
+    cookie_expires: 33_696_000,
+    // eslint-disable-next-line camelcase
+    cookie_update: false,
+    // eslint-disable-next-line camelcase
+    page_location: "http://localhost/",
+    // eslint-disable-next-line camelcase
+    page_referrer: "",
+  };
+  const deniedConsentSettings = {
+    // eslint-disable-next-line camelcase
+    ad_personalization: "denied",
+    // eslint-disable-next-line camelcase
+    ad_storage: "denied",
+    // eslint-disable-next-line camelcase
+    ad_user_data: "denied",
+    // eslint-disable-next-line camelcase
+    analytics_storage: "denied",
+  };
+  const grantedAnalyticsConsentSettings = {
+    ...deniedConsentSettings,
+    // eslint-disable-next-line camelcase
+    analytics_storage: "granted",
+  };
 
-    expect(dataLayerEntryToArray(window.dataLayer![0])).toStrictEqual([
-      "js",
-      expect.any(Date),
-    ]);
-    expect(dataLayerEntryToArray(window.dataLayer![1])).toStrictEqual([
-      "config",
-      measurementId,
-    ]);
-    expect(
-      dataLayerEntryToArray(window.dataLayer![consentDefaultDataLayerIndex]),
-    ).toStrictEqual([
-      "consent",
-      "default",
-      {
-        // eslint-disable-next-line camelcase
-        analytics_storage: "denied",
-      },
-    ]);
-  });
+  it.each([
+    { consented: null, measurementId: null },
+    { consented: false, measurementId: null },
+    { consented: true, measurementId: null },
+    { consented: null, measurementId },
+    { consented: false, measurementId },
+  ])(
+    "does not initialize Google Analytics with consent $consented and measurement ID $measurementId",
+    ({ consented, measurementId: currentMeasurementId }) => {
+      clearGoogleAnalytics();
 
-  it("stores consent grant and measurement ID in the data layer if consented", () => {
-    clearDataLayerGTagAndScript();
-    const consentUpdateDataLayerIndex = 3;
-    const configDataLayerIndex = 4;
+      loadGoogleAnalytics(consented, currentMeasurementId);
+
+      expect(window.dataLayer).toBeUndefined();
+      expect(
+        document.head.querySelector(googleAnalyticsScriptSelector),
+      ).toBeNull();
+    },
+  );
+
+  it("initializes basic consent mode only after consent is granted", () => {
+    clearGoogleAnalytics();
 
     loadGoogleAnalytics(true, measurementId);
 
-    expect(
-      dataLayerEntryToArray(window.dataLayer![consentUpdateDataLayerIndex]),
-    ).toStrictEqual([
-      "consent",
-      "update",
-      {
-        // eslint-disable-next-line camelcase
-        analytics_storage: "granted",
-      },
+    expect(dataLayerEntriesAsArrays()).toStrictEqual([
+      ["consent", "default", deniedConsentSettings],
+      ["consent", "update", grantedAnalyticsConsentSettings],
+      ["js", expect.any(Date)],
+      ["config", measurementId, queryFreePageSettings],
     ]);
     expect(
-      dataLayerEntryToArray(window.dataLayer![configDataLayerIndex]),
-    ).toStrictEqual(["config", measurementId]);
+      document.head.querySelector<HTMLScriptElement>(
+        googleAnalyticsScriptSelector,
+      )!.src,
+    ).toBe(`https://www.googletagmanager.com/gtag/js?id=${measurementId}`);
+  });
+
+  it("does not initialize Google Analytics more than once", () => {
+    clearGoogleAnalytics();
+
+    loadGoogleAnalytics(true, measurementId);
+    loadGoogleAnalytics(true, measurementId);
+    loadGoogleAnalytics(false, measurementId);
+
+    expect(dataLayerEntriesAsArrays()).toHaveLength(4);
+    expect(
+      document.head.querySelectorAll(googleAnalyticsScriptSelector),
+    ).toHaveLength(1);
+  });
+
+  it("removes card state from consented page and referrer URLs", () => {
+    clearGoogleAnalytics();
+    window.history.replaceState(
+      null,
+      "",
+      "/cribbage-trainer/pr/679/?hand=AS,2H,3D,4C,5D,6H&discard=AS,2H#result",
+    );
+    const configEntry = captureConfigEntry(
+      "https://example.com/cribbage-trainer/?hand=KC,QD&seed=private#cards",
+    );
+
+    expect(configEntry).toStrictEqual([
+      "config",
+      measurementId,
+      {
+        // eslint-disable-next-line camelcase
+        allow_google_signals: false,
+        // eslint-disable-next-line camelcase
+        cookie_expires: 33_696_000,
+        // eslint-disable-next-line camelcase
+        cookie_update: false,
+        // eslint-disable-next-line camelcase
+        page_location: "http://localhost/cribbage-trainer/pr/679/",
+        // eslint-disable-next-line camelcase
+        page_referrer: "https://example.com/",
+      },
+    ]);
   });
 });

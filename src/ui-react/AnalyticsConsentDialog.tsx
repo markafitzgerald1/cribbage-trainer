@@ -39,6 +39,7 @@ const FADE_TRANSITION_MS = 800;
 interface FadeState {
   isFading: boolean;
   isFadedOut: boolean;
+  isSettingsOpen: boolean;
 }
 
 interface FadeSetters {
@@ -52,7 +53,11 @@ const useFadeOutTimer = (
   setters: FadeSetters,
 ) => {
   useEffect(() => {
-    if (consent !== null && !fadeState.isFadedOut) {
+    if (
+      consent !== null &&
+      !fadeState.isFadedOut &&
+      !fadeState.isSettingsOpen
+    ) {
       const fadeTimer = setTimeout(() => {
         setters.setIsFading(true);
       }, FADE_DELAY_MS);
@@ -68,7 +73,7 @@ const useFadeOutTimer = (
     return () => {
       // No cleanup needed when consent is null or already faded
     };
-  }, [consent, fadeState.isFadedOut, setters]);
+  }, [consent, fadeState.isFadedOut, fadeState.isSettingsOpen, setters]);
 };
 
 const getDialogClassName = (
@@ -93,6 +98,7 @@ export function AnalyticsConsentDialog({
   wasInitiallyConsented = false,
 }: AnalyticsConsentDialogProps) {
   const [showModal, setShowModal] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFadedOut, setIsFadedOut] = useState(consent !== null);
   const [isFading, setIsFading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -107,12 +113,30 @@ export function AnalyticsConsentDialog({
   }, []);
 
   const handleAccept = useCallback(() => {
+    setIsSettingsOpen(false);
     onChange(true);
   }, [onChange]);
 
   const handleDecline = useCallback(() => {
+    setIsSettingsOpen(false);
     onChange(false);
   }, [onChange]);
+
+  const settingsActions = useMemo(
+    () => ({
+      handleDismiss: () => {
+        setIsSettingsOpen(false);
+        setIsFadedOut(true);
+        setIsFading(false);
+      },
+      handleDisplay: () => {
+        setIsFadedOut(false);
+        setIsFading(false);
+        setIsSettingsOpen(true);
+      },
+    }),
+    [],
+  );
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -145,48 +169,86 @@ export function AnalyticsConsentDialog({
     () => ({ setIsFadedOut, setIsFading }),
     [setIsFadedOut, setIsFading],
   );
-  useFadeOutTimer(consent, { isFadedOut, isFading }, fadeSetters);
-
-  const handleKeyDownEnter = useCallback(
-    (event: React.KeyboardEvent<HTMLSpanElement>) => {
-      if (event.key === "Enter") {
-        displayModal();
-      }
-    },
-    [displayModal],
+  useFadeOutTimer(
+    consent,
+    { isFadedOut, isFading, isSettingsOpen },
+    fadeSetters,
   );
 
   const PrivacyPolicyLink = (
-    <span
+    <button
       className={classes.privacyPolicyLink}
       onClick={displayModal}
-      onKeyDown={handleKeyDownEnter}
-      role="button"
-      tabIndex={0}
+      type="button"
     >
       Privacy Policy
-    </span>
+    </button>
   );
 
   const renderConsentMessage = () => {
     if (isFadedOut) {
-      return PrivacyPolicyLink;
+      return (
+        <div className={classes.preferenceLinks}>
+          {PrivacyPolicyLink}
+          <span aria-hidden="true"> · </span>
+          <button
+            className={classes.privacyPolicyLink}
+            onClick={settingsActions.handleDisplay}
+            type="button"
+          >
+            Analytics Settings
+          </button>
+        </div>
+      );
+    }
+
+    if (isSettingsOpen) {
+      return (
+        <>
+          <h2>Analytics Settings</h2>
+          <p>
+            Analytics is currently {consent ? "enabled" : "disabled"}. You can
+            change that choice at any time.
+          </p>
+          {consent ? (
+            <button
+              onClick={handleDecline}
+              type="button"
+            >
+              Disable analytics
+            </button>
+          ) : (
+            <button
+              onClick={handleAccept}
+              type="button"
+            >
+              Allow analytics
+            </button>
+          )}
+          <button
+            onClick={settingsActions.handleDismiss}
+            type="button"
+          >
+            Close
+          </button>
+        </>
+      );
     }
 
     switch (consent) {
       case true:
         return (
           <>
-            Thank you! Your consent helps us improve our site using tools like
-            Google Analytics. For more details, please see our{" "}
+            Thank you! Analytics cookies and card-free interaction measurements
+            help us improve the site. For more details, please see our{" "}
             {PrivacyPolicyLink}.
           </>
         );
       case false:
         return (
           <>
-            Analytics have been disabled. You can find more information in our{" "}
-            {PrivacyPolicyLink}.
+            Analytics is disabled. Nothing is sent to Google Analytics. You can
+            find more information in our {PrivacyPolicyLink}.
           </>
         );
       case null:
@@ -195,9 +257,9 @@ export function AnalyticsConsentDialog({
           <>
             <h2>Analytics Consent</h2>
             <p>
-              We use cookies and tools like Google Analytics to analyze how
-              visitors use our site. This helps us make improvements and tailor
-              the experience. See our {PrivacyPolicyLink} for more details.
+              Google Analytics remains off unless you accept. Accepting permits
+              analytics cookies and card-free interaction measurements that help
+              us improve the site. See our {PrivacyPolicyLink} for more details.
             </p>
             <button
               onClick={handleAccept}
