@@ -11,9 +11,8 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
 
     <h2>Who is responsible</h2>
     <p>
-      Cribbage Trainer is operated by Mark Fitzgerald, an independent developer
-      based in Ontario, Canada. Mark Fitzgerald is the data controller and the
-      person responsible for privacy.
+      Cribbage Trainer is operated by an independent developer in Canada. The
+      operator is responsible for privacy.
     </p>
     <p>
       Privacy questions and requests can be sent privately to{" "}
@@ -163,10 +162,10 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     </p>
     <p>
       The July 23, 2026 update made analytics entirely opt-in, added persistent
-      Analytics Settings, documented the controller and private contact,
-      clarified legal basis, international processing, retention, and privacy
-      rights, and preserved the card-free telemetry boundary. Choices saved
-      under the earlier policy are not reused.
+      Analytics Settings, documented the operator and private contact, clarified
+      legal basis, international processing, retention, and privacy rights, and
+      preserved the card-free telemetry boundary. Choices saved under the
+      earlier policy are not reused.
     </p>
   </div>
 ));

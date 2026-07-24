@@ -3,11 +3,14 @@ import { PrivacyPolicy } from "./PrivacyPolicy";
 import { render } from "@testing-library/react";
 
 describe("privacy policy component", () => {
+  const renderPolicyText = () =>
+    render(<PrivacyPolicy />).container.textContent?.toLocaleLowerCase();
+
   it.each([
     "Privacy Policy",
     "cookies",
-    "data controller",
-    "Ontario",
+    "independent developer in Canada",
+    "operator is responsible for privacy",
     "mark.a.fitzgerald+cribbage.trainer@gmail.com",
     "legal basis",
     "international processing",
@@ -21,8 +24,13 @@ describe("privacy policy component", () => {
     "screen resolution",
     "URL query",
   ])("contains the text %s", (substring) => {
-    expect(
-      render(<PrivacyPolicy />).container.textContent?.toLocaleLowerCase(),
-    ).toContain(substring.toLocaleLowerCase());
+    expect(renderPolicyText()).toContain(substring.toLocaleLowerCase());
   });
+
+  it.each(["Mark Fitzgerald", "Ontario"])(
+    "does not publish the personal detail %s",
+    (substring) => {
+      expect(renderPolicyText()).not.toContain(substring.toLocaleLowerCase());
+    },
+  );
 });
