@@ -25,6 +25,9 @@ const createDealNonce = () =>
 interface ShownAnalysis {
   readonly analysisIndex: number;
   readonly discardKey: string;
+  // An exposure that consent kept off the wire must also close silently.
+  // Otherwise Google Analytics receives an unshown whose shown it never saw.
+  readonly reported: boolean;
 }
 
 interface DealTelemetryState {
@@ -33,7 +36,6 @@ interface DealTelemetryState {
   handStarted: boolean;
   readonly handStartSource: HandStartSource;
   readonly handKey: string;
-  hasInteractiveAnalysis: boolean;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
   source: AnalysisSource;
@@ -49,7 +51,6 @@ const createDealTelemetryState = (
   handKey: serializeHand(dealtCards),
   handStartSource,
   handStarted: false,
-  hasInteractiveAnalysis: false,
   pendingCards: dealtCards,
   shown: null,
   source,
@@ -100,6 +101,9 @@ export const useDiscardTelemetry = ({
     (eventName: TrainerEventName, params: TrainerEventParams) => {
       const latest = latestRef.current;
       latest.trackEvent(latest.consented, eventName, params);
+      // Consent alone decides what actually reaches Google Analytics.
+      // Callers that pair a later event need to know whether this one was sent.
+      return latest.consented === true;
     },
     [],
   );
@@ -121,13 +125,16 @@ export const useDiscardTelemetry = ({
   }, [consented, reportHandStarted, trackEvent]);
   const closeShownAnalysis = useCallback(
     (state: DealTelemetryState) => {
-      if (state.shown) {
+      if (!state.shown) {
+        return;
+      }
+      if (state.shown.reported) {
         emit("analysis_unshown", {
           analysisIndex: state.shown.analysisIndex,
           dealNonce: state.dealNonce,
         });
-        state.shown = null;
       }
+      state.shown = null;
     },
     [emit],
   );
@@ -142,16 +149,21 @@ export const useDiscardTelemetry = ({
         return;
       }
       state.analysisCount += 1;
+      // Any earlier exposure of this deal's ranked answers ends first-instinct status.
+      // Deep links, history hydration, and pre-consent selections all reveal them.
       const isFirstAnalysis =
-        state.source === "interactive" && !state.hasInteractiveAnalysis;
-      state.hasInteractiveAnalysis ||= state.source === "interactive";
-      state.shown = { analysisIndex: state.analysisCount, discardKey };
-      emit("analysis_shown", {
+        state.source === "interactive" && state.analysisCount === 1;
+      const reported = emit("analysis_shown", {
         analysisIndex: state.analysisCount,
         dealNonce: state.dealNonce,
         isFirstAnalysis,
         source: state.source,
       });
+      state.shown = {
+        analysisIndex: state.analysisCount,
+        discardKey,
+        reported,
+      };
     },
     [closeShownAnalysis, emit],
   );

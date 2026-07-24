@@ -271,15 +271,6 @@ describe("useDiscardTelemetry", () => {
     });
   });
 
-  it("re-indexes the same discard when it reopens after an unshown", () => {
-    expectTelemetryScene({}, (scene) => {
-      showThenHideAnalysis(scene);
-      completeDiscard(scene, "AH,2H");
-
-      expectLastShown(scene, shownParams(2, false, "interactive"));
-    });
-  });
-
   it("emits no analysis event for an incomplete initial state", () => {
     expectTelemetryScene({}, (scene) => {
       expect(shownEvents(scene)).toHaveLength(0);
@@ -354,11 +345,63 @@ describe("useDiscardTelemetry", () => {
     });
   });
 
-  it("marks the first interactive analysis after a deep link as first", () => {
-    expectTelemetryScene(deepLinkedOptions, (scene) => {
-      completeDiscard(scene, "AH,3H");
+  const exposeAnalysisThenConsent = (scene: Scene) => {
+    completeDiscard(scene, "AH,2H");
+    scene.rerenderConsent(true);
+  };
 
-      expectLastShown(scene, shownParams(2, true, "interactive"));
+  // Any earlier exposure of the ranked answers, transmitted or not, leaves the next analysis informed rather than a first instinct.
+  const EARLIER_EXPOSURE_CASES: readonly {
+    readonly expose?: (scene: Scene) => void;
+    readonly name: string;
+    readonly options: SetupOptions;
+    readonly secondDiscard: string;
+  }[] = [
+    {
+      expose: showThenHideAnalysis,
+      name: "an earlier analysis of the hand was closed",
+      options: {},
+      secondDiscard: "AH,2H",
+    },
+    {
+      name: "a deep link already revealed the answers",
+      options: deepLinkedOptions,
+      secondDiscard: "AH,3H",
+    },
+    {
+      expose: exposeAnalysisThenConsent,
+      name: "an exposure preceded consent",
+      options: { consented: null },
+      secondDiscard: "AH,3H",
+    },
+  ];
+
+  it.each(EARLIER_EXPOSURE_CASES)(
+    "indexes the next analysis second and denies first instinct when $name",
+    ({ expose, options, secondDiscard }) => {
+      expectTelemetryScene(options, (scene) => {
+        expose?.(scene);
+        completeDiscard(scene, secondDiscard);
+
+        expectLastShown(scene, shownParams(2, false, "interactive"));
+      });
+    },
+  );
+
+  const consentedEventNames = (scene: Scene) =>
+    scene.trackEvent.mock.calls
+      .filter(([consented]) => consented === true)
+      .map(([, eventName]) => eventName);
+
+  it("never closes an analysis that consent kept off the wire", () => {
+    expectTelemetryScene({ consented: null }, (scene) => {
+      exposeAnalysisThenConsent(scene);
+      toggleTo(scene, "AH", true);
+
+      expect(consentedEventNames(scene)).toStrictEqual([
+        "hand_started",
+        "card_unselected",
+      ]);
     });
   });
 

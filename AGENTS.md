@@ -348,12 +348,27 @@
   1-based `analysis_index`, `is_first_analysis`, and `source`
   (`interactive`/`deeplink`/`history`) at emit time; GA4 cannot reconstruct
   "first analysis exposure per hand" after the fact, and #665's EV-loss metric
-  keys off the first _interactive_ analysis (deep-link and popstate hydrations
-  are never first). `analysis_shown` fires immediately when a complete discard
-  exposes the answer, and `analysis_unshown` fires immediately when the panel
-  closes; delaying either event would let an answer-influenced choice look
-  unaided. `card_selected`/`card_unselected` (keep-toggle semantics: un-keeping
-  selects for discard) are also immediate.
+  keys off `is_first_analysis`. That flag means the _first exposure of this
+  hand's ranked answers was this interactive one_ (`source === "interactive"`
+  and `analysis_index === 1`), not merely the first interactive exposure: a
+  deep link, a history hydration, or a selection made before consent all
+  reveal the full answer key, so any analysis after one of those is informed
+  and must never be counted as first instinct. `analysis_shown` fires
+  immediately when a complete discard exposes the answer, and
+  `analysis_unshown` fires immediately when the panel closes; delaying either
+  event would let an answer-influenced choice look unaided.
+  `card_selected`/`card_unselected` (keep-toggle semantics: un-keeping selects
+  for discard) are also immediate.
+- Telemetry bookkeeping advances even while consent withholds transmission,
+  because an unsent exposure still informs the next choice. Each tracked
+  exposure therefore records whether it actually reached Google Analytics, and
+  `analysis_unshown` is emitted only for an exposure whose `analysis_shown`
+  was sent. Without that pairing, accepting consent mid-hand ships an
+  `analysis_unshown` for an analysis GA4 never saw begin, and unshown counts
+  exceed shown ones. The resulting index gap (the first transmitted
+  `analysis_shown` of such a hand starts at 2) is intentional and honest: it
+  records that an earlier exposure happened without transmitting anything
+  about the pre-consent interaction itself.
 - The nonce resets on any hand replacement. Consent-gated `hand_started`
   records each new telemetry scope, including the initial hand, with its
   `initial`/`deal`/`manual`/`deeplink`/`history` source; if consent is granted
