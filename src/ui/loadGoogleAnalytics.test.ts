@@ -115,6 +115,21 @@ describe("loadGoogleAnalytics", () => {
     ).toHaveLength(1);
   });
 
+  it("initializes alongside a data layer another tag already created", () => {
+    clearGoogleAnalytics();
+    const foreignEntry = { event: "from-another-tag" };
+    window.dataLayer = [foreignEntry];
+    const ownCommandCount = 4;
+
+    loadGoogleAnalytics(true, measurementId);
+
+    expect(window.dataLayer[0]).toBe(foreignEntry);
+    expect(window.dataLayer).toHaveLength(ownCommandCount + 1);
+    expect(
+      document.head.querySelector(googleAnalyticsScriptSelector),
+    ).not.toBeNull();
+  });
+
   it("removes card state from consented page and referrer URLs", () => {
     clearGoogleAnalytics();
     window.history.replaceState(

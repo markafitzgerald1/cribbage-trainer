@@ -3,9 +3,10 @@ import { clearGoogleAnalyticsCookies } from "./clearGoogleAnalyticsCookies";
 
 describe("clearGoogleAnalyticsCookies", () => {
   it("removes Google Analytics cookies without removing unrelated cookies", () => {
+    // The unrelated cookie goes first so both analytics cookies are parsed from a segment carrying the "; " separator's space.
+    document.cookie = "unrelated=value; Path=/";
     document.cookie = "_ga=client-id; Path=/";
     document.cookie = "_ga_TEST=session-id; Path=/";
-    document.cookie = "unrelated=value; Path=/";
 
     clearGoogleAnalyticsCookies();
     const remainingCookies = document.cookie;

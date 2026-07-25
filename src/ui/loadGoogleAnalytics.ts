@@ -42,15 +42,23 @@ const getPageSettings = () => ({
   page_referrer: sanitizeReferrerUrl(document.referrer),
 });
 
+const GOOGLE_TAG_SELECTOR = 'script[src*="googletagmanager.com/gtag/js"]';
+
 export function loadGoogleAnalytics(
   consented: boolean | null,
   measurementId: string | null,
 ) {
-  if (consented !== true || !measurementId || window.dataLayer) {
+  // Our own injected tag is the only sound record of having initialized.
+  // A data layer can belong to an extension or another tag, and treating that as initialized would silently leave accepted consent with no analytics.
+  if (
+    consented !== true ||
+    !measurementId ||
+    document.querySelector(GOOGLE_TAG_SELECTOR)
+  ) {
     return;
   }
 
-  window.dataLayer = [];
+  window.dataLayer ??= [];
   gtag("consent", "default", getConsentSettings("denied"));
   gtag("consent", "update", getConsentSettings("granted"));
   gtag("js", new Date());
