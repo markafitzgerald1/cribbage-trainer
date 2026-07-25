@@ -1,0 +1,7 @@
+{
+  "GHSA-mh99-v99m-4gvg": {
+    "active": true,
+    "expiry": "2026-10-31",
+    "notes": "brace-expansion DoS. The overrides block pins the patched 5.0.8, but the advisory range also covers the 1.x and 2.x lines, which have no patched release. Those reach the tree only through dev tooling (eslint, jest, glob/minimatch, babel-plugin-istanbul): npm ls brace-expansion --omit=dev is empty, so nothing is shipped in the production bundle. ESLint 10 would drop @eslint/config-array's copy but eslint-plugin-jsx-a11y 6.10.2 still declares peer support only through ESLint 9. Expires so the exception ages out and forces a re-check."
+  }
+}
