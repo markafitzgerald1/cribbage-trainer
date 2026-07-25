@@ -387,6 +387,22 @@
   card-free: counts, indices, source, and the nonce only.
 - The telemetry nonce must not consume the injected seeded generator, or
   seeded deep links would deal different hands.
+- The e2e build gets a test measurement ID from `playwright.config.ts`'s
+  `webServer.env`, and `tests-e2e/blockGoogleAnalytics.ts` aborts every
+  request to the Google hosts. Both halves are load-bearing. Without an ID
+  `loadGoogleAnalytics` returns at its `!measurementId` check before reaching
+  the consent check, so a "nothing was sent" assertion passes even when
+  consent gating is completely broken; without the blocking, any test that
+  stores consent would send CI traffic to Google. `analyticsConsent.spec.ts`
+  therefore also asserts the tag _does_ load after Accept, which is what
+  makes its silence assertions meaningful. Negative-check any change here by
+  deleting the `consented !== true` condition and confirming the unanswered
+  and declined tests fail.
+- Jest enforces 100% branch coverage, so an unreachable defensive branch
+  fails the build: `split("=")[0] ?? ""` cannot yield the fallback and cost a
+  Docker run to discover, since `npm test -- --coverage=false` hides it.
+  Prefer formulations with no dead branch (compute `indexOf` and `substring`
+  from the same string) over a nullish fallback that can never fire.
 - Analytics Settings must remain available after the first choice. Withdrawal
   stores `false`, removes visible `_ga*` cookies, and reloads the page so the
   previously loaded Google runtime is gone. Verifying events end to end needs a
