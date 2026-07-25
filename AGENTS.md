@@ -87,7 +87,17 @@
   advisories, prefer pinning patched versions via the package.json `overrides`
   block over `npm audit fix` (which can pull breaking majors and churn the lock
   file). The flagged packages are almost always dev/build dependencies that are
-  not shipped in the production bundle.
+  not shipped in the production bundle; confirm with
+  `npm ls <package> --omit=dev`, which prints an empty tree when nothing
+  ships. When an advisory range covers major lines that have no patched
+  release at all, pin what can be pinned and record the remainder as a
+  `.nsprc` exception with an `expiry`, so the waiver ages out and forces a
+  re-check the way the dependabot `ignore` entries do.
+- The Dockerfile `COPY`s an explicit allowlist of root-level config files, so
+  a newly added one (`.nsprc`, and any future tool config) must be added to
+  that line. Otherwise the file simply does not exist in the lint layer: local
+  `npm run lint` passes while the image build fails on the same task, which
+  looks like a phantom environment difference.
 
 ## Expected crib points table (vendored)
 
