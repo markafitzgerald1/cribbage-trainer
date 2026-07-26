@@ -18,12 +18,25 @@
 }
 
 .sort-order-input span {
-  flex: 1;
   display: flex;
 }
 
+/*
+ * `appearance: none` hides the radio's control but leaves a UA-sized box, and
+ * every engine sizes that box differently (iOS Safari reserves roughly 20px
+ * per radio where Chromium reserves 8px). Taking the input out of flow makes
+ * the controls row's width depend on this stylesheet alone, so the sort
+ * buttons cannot drift apart and push Deal off a phone screen. Clip rather
+ * than `display: none` so the radio keeps its role, name, and checked state.
+ */
 .input {
   appearance: none;
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  margin: 0;
+  overflow: hidden;
+  position: absolute;
 }
 
 .label {
@@ -49,12 +62,23 @@
   transform: scale(1.05);
 }
 
+/* The clipped input cannot show a focus ring, so its label carries one. */
+.input:focus-visible + .label {
+  outline: 2px solid var(--text-color);
+  outline-offset: 2px;
+}
+
 .input[type="radio"]:checked + label {
   background: #81c784;
   box-shadow: 0 3px 5px rgb(0 0 0 / 20%);
 }
 
 @media (aspect-ratio < 6 / 5) {
+  /* Container-relative, never rem: see the controls-row invariant in AGENTS.md. */
+  .sort-order-input {
+    gap: 2cqw;
+  }
+
   .label {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.8);
   }
@@ -62,9 +86,19 @@
   .legend {
     font-size: var(--medium-text-font-size-portrait);
   }
+
+  @container (max-width: 400px) {
+    .sort-order-input {
+      gap: 1.5cqw;
+    }
+  }
 }
 
 @media (aspect-ratio >= 6 / 5) {
+  .sort-order-input {
+    gap: calc(var(--medium-text-font-size-landscape) * 0.4);
+  }
+
   .label {
     font-size: calc(var(--medium-text-font-size-landscape));
   }

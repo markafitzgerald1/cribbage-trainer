@@ -1,5 +1,13 @@
 import { type Locator, type Page, expect, test } from "@playwright/test";
 import {
+  phoneLandscapeViewport,
+  phonePortraitViewport,
+  poneHandQuery,
+  requireBoundingBox,
+  requireDealButtonBounds,
+  rightEdge,
+} from "./layoutMeasurements";
+import {
   renderThenSelectTwoDiscards,
   waitForAnalysis,
 } from "./renderThenSelectTwoDiscards";
@@ -27,24 +35,6 @@ test("standard mobile viewport is specified", async ({ page }) => {
     "width=device-width, initial-scale=1",
   );
 });
-
-const poneHandQuery = "/?hand=KH,QS,10D,9C,6S,5H&role=pone";
-
-const requireBoundingBox = async (locator: Locator) => {
-  const bounds = await locator.boundingBox();
-  if (bounds === null) {
-    throw new Error("Bounding box is unavailable");
-  }
-  return bounds;
-};
-
-const requireDealButtonBounds = (page: Page) =>
-  requireBoundingBox(page.getByRole("button", { name: /^Deal$/u }));
-
-const rightEdge = (bounds: { width: number; x: number }) =>
-  bounds.x + bounds.width;
-
-const phonePortraitViewport = { height: 844, width: 390 };
 
 const expectDealButtonWithinPortraitViewport = async (
   page: Page,
@@ -141,8 +131,7 @@ test("card shape and fill survive rotation into side-by-side mode", async ({
 test("landscape Pone Deal button right edge aligns with the last hand card", async ({
   page,
 }) => {
-  const landscapePhoneViewport = { height: 390, width: 844 };
-  await page.setViewportSize(landscapePhoneViewport);
+  await page.setViewportSize(phoneLandscapeViewport);
   await page.goto(poneHandQuery);
 
   const dealBounds = await requireDealButtonBounds(page);
@@ -179,8 +168,7 @@ test("introduces the app with a heading and purpose tagline", async ({
 test("first-run consent controls stay within the phone-landscape viewport", async ({
   page,
 }) => {
-  const landscapePhoneViewport = { height: 390, width: 844 };
-  await page.setViewportSize(landscapePhoneViewport);
+  await page.setViewportSize(phoneLandscapeViewport);
   await page.goto("/");
 
   const acceptBounds = await requireBoundingBox(
@@ -188,7 +176,7 @@ test("first-run consent controls stay within the phone-landscape viewport", asyn
   );
 
   expect(acceptBounds.y + acceptBounds.height).toBeLessThanOrEqual(
-    landscapePhoneViewport.height,
+    phoneLandscapeViewport.height,
   );
 });
 
