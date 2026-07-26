@@ -48,6 +48,10 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run start:production-preview",
+    // Without an ID the loader short-circuits before its consent check.
+    // A "nothing was sent" assertion would then hold even if that check broke.
+    // This ID is unregistered and the specs block the hosts, so nothing leaves.
+    env: { VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: "G-0000000000" },
     reuseExistingServer: !process.env["CI"],
     url: "http://localhost:4173",
   },

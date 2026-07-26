@@ -1,43 +1,71 @@
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-    gtag?: (...args: unknown[]) => void;
+import { gtag } from "./gtag";
+
+type AnalyticsStorageConsent = "denied" | "granted";
+
+const THIRTEEN_MONTHS_IN_SECONDS = 33_696_000;
+
+const getConsentSettings = (analyticsStorage: AnalyticsStorageConsent) => ({
+  // eslint-disable-next-line camelcase
+  ad_personalization: "denied",
+  // eslint-disable-next-line camelcase
+  ad_storage: "denied",
+  // eslint-disable-next-line camelcase
+  ad_user_data: "denied",
+  // eslint-disable-next-line camelcase
+  analytics_storage: analyticsStorage,
+});
+
+const sanitizePageUrl = (url: string): string => {
+  const parsedUrl = new URL(url);
+  return `${parsedUrl.origin}${parsedUrl.pathname}`;
+};
+
+const sanitizeReferrerUrl = (url: string): string => {
+  if (url === "") {
+    return "";
   }
-}
+
+  return `${new URL(url).origin}/`;
+};
+
+const getPageSettings = () => ({
+  // eslint-disable-next-line camelcase
+  allow_google_signals: false,
+  // eslint-disable-next-line camelcase
+  cookie_expires: THIRTEEN_MONTHS_IN_SECONDS,
+  // eslint-disable-next-line camelcase
+  cookie_update: false,
+  // Never send URL state containing cards, discards, roles, or seeds.
+  // eslint-disable-next-line camelcase
+  page_location: sanitizePageUrl(window.location.href),
+  // eslint-disable-next-line camelcase
+  page_referrer: sanitizeReferrerUrl(document.referrer),
+});
+
+const GOOGLE_TAG_SELECTOR = 'script[src*="googletagmanager.com/gtag/js"]';
 
 export function loadGoogleAnalytics(
   consented: boolean | null,
   measurementId: string | null,
 ) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function gtag(..._args: unknown[]) {
-    // eslint-disable-next-line prefer-rest-params
-    (window.dataLayer as unknown[]).push(arguments);
+  // Our own injected tag is the only sound record of having initialized.
+  // A data layer can belong to an extension or another tag, and treating that as initialized would silently leave accepted consent with no analytics.
+  if (
+    consented !== true ||
+    !measurementId ||
+    document.querySelector(GOOGLE_TAG_SELECTOR)
+  ) {
+    return;
   }
 
-  if (!window.dataLayer) {
-    window.dataLayer = [];
+  window.dataLayer ??= [];
+  gtag("consent", "default", getConsentSettings("denied"));
+  gtag("consent", "update", getConsentSettings("granted"));
+  gtag("js", new Date());
+  gtag("config", measurementId, getPageSettings());
 
-    if (measurementId) {
-      const script = document.createElement("script");
-      script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
-      script.async = true;
-      document.head.appendChild(script);
-
-      gtag("js", new Date());
-      gtag("config", measurementId);
-      gtag("consent", "default", {
-        // eslint-disable-next-line camelcase
-        analytics_storage: "denied",
-      });
-    }
-  }
-
-  if (consented) {
-    gtag("consent", "update", {
-      // eslint-disable-next-line camelcase
-      analytics_storage: "granted",
-    });
-    gtag("config", measurementId);
-  }
+  const script = document.createElement("script");
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
+  script.async = true;
+  document.head.appendChild(script);
 }

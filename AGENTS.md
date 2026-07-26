@@ -87,7 +87,17 @@
   advisories, prefer pinning patched versions via the package.json `overrides`
   block over `npm audit fix` (which can pull breaking majors and churn the lock
   file). The flagged packages are almost always dev/build dependencies that are
-  not shipped in the production bundle.
+  not shipped in the production bundle; confirm with
+  `npm ls <package> --omit=dev`, which prints an empty tree when nothing
+  ships. When an advisory range covers major lines that have no patched
+  release at all, pin what can be pinned and record the remainder as a
+  `.nsprc` exception with an `expiry`, so the waiver ages out and forces a
+  re-check the way the dependabot `ignore` entries do.
+- The Dockerfile `COPY`s an explicit allowlist of root-level config files, so
+  a newly added one (`.nsprc`, and any future tool config) must be added to
+  that line. Otherwise the file simply does not exist in the lint layer: local
+  `npm run lint` passes while the image build fails on the same task, which
+  looks like a phantom environment difference.
 
 ## Expected crib points table (vendored)
 
@@ -332,6 +342,75 @@
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
 
+## Google Analytics interaction events (issue #250)
+
+- `src/ui/loadGoogleAnalytics.ts` implements basic consent mode. Unanswered or
+  declined consent must leave `dataLayer` undefined, inject no Google script,
+  and send no Google request. Only accepted consent may initialize the tag; it
+  queues denied defaults for analytics storage and all advertising consent
+  types, grants analytics storage only, then queues `js` and the sanitized
+  `config`. `src/ui/trackEvent.ts` remains the only path to
+  `gtag("event", …)` and independently gates trainer events on
+  `consented === true`. It also converts camelCase parameter keys to snake_case,
+  keeping call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts`
+  pushes `arguments` objects — Google's tag silently ignores plain arrays.
+- `src/ui-react/useDiscardTelemetry.ts` stamps the per-hand `deal_nonce`,
+  1-based `analysis_index`, `is_first_analysis`, and `source`
+  (`interactive`/`deeplink`/`history`) at emit time; GA4 cannot reconstruct
+  "first analysis exposure per hand" after the fact, and #665's EV-loss metric
+  keys off `is_first_analysis`. That flag means the _first exposure of this
+  hand's ranked answers was this interactive one_ (`source === "interactive"`
+  and `analysis_index === 1`), not merely the first interactive exposure: a
+  deep link, a history hydration, or a selection made before consent all
+  reveal the full answer key, so any analysis after one of those is informed
+  and must never be counted as first instinct. `analysis_shown` fires
+  immediately when a complete discard exposes the answer, and
+  `analysis_unshown` fires immediately when the panel closes; delaying either
+  event would let an answer-influenced choice look unaided.
+  `card_selected`/`card_unselected` (keep-toggle semantics: un-keeping selects
+  for discard) are also immediate.
+- Telemetry bookkeeping advances even while consent withholds transmission,
+  because an unsent exposure still informs the next choice. Each tracked
+  exposure therefore records whether it actually reached Google Analytics, and
+  `analysis_unshown` is emitted only for an exposure whose `analysis_shown`
+  was sent. Without that pairing, accepting consent mid-hand ships an
+  `analysis_unshown` for an analysis GA4 never saw begin, and unshown counts
+  exceed shown ones. The resulting index gap (the first transmitted
+  `analysis_shown` of such a hand starts at 2) is intentional and honest: it
+  records that an earlier exposure happened without transmitting anything
+  about the pre-consent interaction itself.
+- The nonce resets on any hand replacement. Consent-gated `hand_started`
+  records each new telemetry scope, including the initial hand, with its
+  `initial`/`deal`/`manual`/`deeplink`/`history` source; if consent is granted
+  after the initial hand appears, it records the current hand once at that
+  point. `deal_clicked` remains specific to the Deal button. Payloads stay
+  card-free: counts, indices, source, and the nonce only.
+- The telemetry nonce must not consume the injected seeded generator, or
+  seeded deep links would deal different hands.
+- The e2e build gets a test measurement ID from `playwright.config.ts`'s
+  `webServer.env`, and `tests-e2e/blockGoogleAnalytics.ts` aborts every
+  request to the Google hosts. Both halves are load-bearing. Without an ID
+  `loadGoogleAnalytics` returns at its `!measurementId` check before reaching
+  the consent check, so a "nothing was sent" assertion passes even when
+  consent gating is completely broken; without the blocking, any test that
+  stores consent would send CI traffic to Google. `analyticsConsent.spec.ts`
+  therefore also asserts the tag _does_ load after Accept, which is what
+  makes its silence assertions meaningful. Negative-check any change here by
+  deleting the `consented !== true` condition and confirming the unanswered
+  and declined tests fail.
+- Jest enforces 100% branch coverage, so an unreachable defensive branch
+  fails the build: `split("=")[0] ?? ""` cannot yield the fallback and cost a
+  Docker run to discover, since `npm test -- --coverage=false` hides it.
+  Prefer formulations with no dead branch (compute `indexOf` and `substring`
+  from the same string) over a nullish fallback that can never fire.
+- Analytics Settings must remain available after the first choice. Withdrawal
+  stores `false`, removes visible `_ga*` cookies, and reloads the page so the
+  previously loaded Google runtime is gone. Verifying events end to end needs a
+  real `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: before consent and after decline,
+  verify there is no tag, data layer, Google request, or analytics cookie.
+  After accepting, verify the consent update precedes `/g/collect` trainer
+  events and an analytics cookie may be created.
+
 ## Lint gauntlet interplay (agent checklist)
 
 - Two spell checkers with **different base dictionaries** run in lint:
@@ -353,6 +432,19 @@
   setup or assertion pattern of two-plus statements appears twice, extract
   it into a named helper (e.g. a click-and-assert or render-with-props
   function) rather than waiting for the jscpd failure.
+- jscpd normalizes identifiers and literal values, so two blocks whose only
+  differences are variable names or string/number/boolean literals still
+  count as clones — enumerated `<Trainer …={…}>` prop lists in two files, or
+  two tests differing only in hand strings and expected flags, all trip it.
+  Break clones structurally: extract param-builder or scenario helpers,
+  derive prop types with `Partial<Pick<…>>` instead of re-declaring members,
+  merge near-identical tests into `it.each` (object cases with `$name`
+  titles stay within `max-params`), or vary one mid-list expression (e.g. a
+  genuinely needed `?? null`) to split the token run.
+- `react/hook-use-state` rejects `const [x] = useState(init)`. For
+  initialize-once mutable hook state, seed an eager
+  `useRef(create(...))` instead (re-render results are discarded), and keep
+  latest-prop reads for timer callbacks in a ref updated by an effect.
 
 - TypeScript/React with Vite; keep types sound.
 - Every React component should have a corresponding Storybook story file
@@ -386,11 +478,18 @@
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
-- Always hard-wrap Markdown text to a maximum of 80 characters per line to
-  satisfy strict markdownlint rules. This applies only to Markdown files
-  committed to the repository: never hard-wrap GitHub issue/PR bodies or
-  comments — the GitHub UI auto-wraps, and manual line breaks harm
-  readability there.
+- Hard-wrap Markdown to 80 characters per line **only in files committed to
+  this repository** (`AGENTS.md`, `README.md`, `skills/*/SKILL.md`, …), where
+  strict markdownlint rules require it.
+- **Never hard-wrap anything written into the GitHub UI**: issue bodies, PR
+  bodies and descriptions, issue/PR comments, and review-thread replies. Write
+  each paragraph and each list item as one long line and let GitHub wrap it.
+  Manual breaks there render as ragged half-width text that is harder to read
+  and painful to edit. This is the single most repeated agent mistake in this
+  repository, because the 80-column habit carries over from the committed
+  Markdown rule directly above; the two rules apply to disjoint sets of text,
+  so decide which you are writing before the first line. Only commit messages
+  share the wrapped style (72 columns, per the commit convention below).
 - When comparing numbers for readers (e.g. before/after coverage
   thresholds), label each value and align the comparison (a small table or
   `name: old → new` lines); never two bare slash-separated lists.

@@ -7,17 +7,16 @@ import {
   expectDealerRoleVisible,
   expectPoneRoleVisible,
   getHandText,
-  mathRandom,
   renderTrainer,
   renderTrainerShowingDealerRole,
+  renderTrainerWithInitialProps,
   setCribTable,
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { SortOrder } from "../ui/SortOrder";
-import { Trainer } from "./Trainer";
 import { parseHand } from "../game/Card";
 import userEvent from "@testing-library/user-event";
 
@@ -34,17 +33,13 @@ const resetUrl = () => {
 const renderHydratedTrainer = () => {
   setCribTable();
 
-  return render(
-    <Trainer
-      generateRandomNumber={mathRandom}
-      initialCards={parseHand(SIX_HEARTS_HAND)}
-      initialCribRole={CribRole.Pone}
-      initialDiscards={parseHand("AH,2H")}
-      initialScoreSortKey={ScoredKeepDiscardSortKey.ExpectedHandPoints}
-      initialSortOrder={SortOrder.DealOrder}
-      loadGoogleAnalytics={jest.fn()}
-    />,
-  );
+  return renderTrainerWithInitialProps({
+    initialCards: parseHand(SIX_HEARTS_HAND),
+    initialCribRole: CribRole.Pone,
+    initialDiscards: parseHand("AH,2H"),
+    initialScoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints,
+    initialSortOrder: SortOrder.DealOrder,
+  });
 };
 
 const findScoreHeader = (name: RegExp) =>
@@ -86,13 +81,7 @@ describe("trainer URL state synchronization", () => {
 
   it("hydrates the role for a random deal when only a role is supplied", () => {
     resetUrl();
-    render(
-      <Trainer
-        generateRandomNumber={mathRandom}
-        initialCribRole={CribRole.Pone}
-        loadGoogleAnalytics={jest.fn()}
-      />,
-    );
+    renderTrainerWithInitialProps({ initialCribRole: CribRole.Pone });
 
     expectPoneRoleVisible();
   });

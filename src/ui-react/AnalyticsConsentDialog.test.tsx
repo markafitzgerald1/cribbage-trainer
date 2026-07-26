@@ -8,7 +8,8 @@ const FADE_DELAY_MS = 5000;
 const FADE_TRANSITION_MS = 800;
 const ANALYTICS_CONSENT = "Analytics Consent";
 const privacyPolicyLinkText = "Privacy Policy";
-const distinctPrivacyPolicyText = "Consent to Data Collection";
+const analyticsSettingsLinkText = "Analytics Settings";
+const distinctPrivacyPolicyText = "Analytics is optional";
 const ENTER_KEY_CODE = "Enter";
 
 const createMockOnChange = () => jest.fn();
@@ -105,7 +106,7 @@ describe("analytics consent dialog", () => {
   );
 
   it.each<[boolean | null, string]>([
-    [null, "We use cookies and tools like Google Analytics"],
+    [null, "Google Analytics remains off unless you accept"],
   ])(
     "shows the correct message when consent is %s",
     (consent: boolean | null, expectedMessage: string) => {
@@ -115,14 +116,21 @@ describe("analytics consent dialog", () => {
     },
   );
 
-  it.each<[boolean]>([[true], [false]])(
-    "shows only Privacy Policy link when consent is already %s on load",
-    (consent: boolean) => {
-      const { getByText, queryByText } = renderDialog(consent);
+  it.each<[boolean | "unexpected"]>([[true], [false], ["unexpected"]])(
+    "shows only policy and settings links when consent is already %s on load",
+    (consent) => {
+      const { getByText, queryByText } = render(
+        <AnalyticsConsentDialog
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+          consent={consent as any}
+          onChange={jest.fn()}
+        />,
+      );
 
       expect(getByText(privacyPolicyLinkText)).toBeTruthy();
+      expect(getByText(analyticsSettingsLinkText)).toBeTruthy();
       expect(queryByText("Thank you")).toBeFalsy();
-      expect(queryByText("Analytics have been disabled")).toBeFalsy();
+      expect(queryByText("Analytics cookies")).toBeFalsy();
     },
   );
 
@@ -130,17 +138,6 @@ describe("analytics consent dialog", () => {
     const { getByText } = renderDialog();
 
     fireEvent.click(getByText(privacyPolicyLinkText));
-
-    expect(getByText(distinctPrivacyPolicyText)).toBeTruthy();
-  });
-
-  it("shows the modal when Enter is pressed on the Privacy Policy link", () => {
-    const { getByText } = renderDialog();
-
-    fireEvent.keyDown(getByText(privacyPolicyLinkText), {
-      code: ENTER_KEY_CODE,
-      key: ENTER_KEY_CODE,
-    });
 
     expect(getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
@@ -197,18 +194,6 @@ describe("analytics consent dialog", () => {
 
     expect(getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
-
-  it("shows only Privacy Policy link for unexpected consent values", () => {
-    const { getByText } = render(
-      <AnalyticsConsentDialog
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-        consent={"unexpected" as any}
-        onChange={jest.fn()}
-      />,
-    );
-
-    expect(getByText(privacyPolicyLinkText)).toBeTruthy();
-  });
 });
 
 describe("analytics consent dialog fade-out behavior", () => {
@@ -219,7 +204,7 @@ describe("analytics consent dialog fade-out behavior", () => {
 
   it.each<[boolean, string]>([
     [true, "Thank you!"],
-    [false, "Analytics have been disabled"],
+    [false, "Analytics is disabled"],
   ])(
     "shows message then fades to Privacy Policy link when consent changes to %s during session",
     (consent, textToDisappear) => {
@@ -286,6 +271,61 @@ describe("analytics consent dialog fade-out behavior", () => {
     modalTest.advancePastFade();
     fireEvent.click(screen.getByText("Privacy Policy"));
 
-    expect(screen.getByText("Consent to Data Collection")).toBeTruthy();
+    expect(screen.getByText(distinctPrivacyPolicyText)).toBeTruthy();
   });
+
+  it.each([
+    {
+      action: "Disable analytics",
+      currentState: "enabled",
+      expectedConsent: false,
+      initialConsent: true,
+    },
+    {
+      action: "Allow analytics",
+      currentState: "disabled",
+      expectedConsent: true,
+      initialConsent: false,
+    },
+  ])(
+    "allows stored $currentState analytics to be changed",
+    ({ action, currentState, expectedConsent, initialConsent }) => {
+      const { getByText, onChange } = renderDialog(initialConsent);
+
+      fireEvent.click(getByText(analyticsSettingsLinkText));
+
+      expect(
+        getByText(`Analytics is currently ${currentState}`, { exact: false }),
+      ).toBeTruthy();
+
+      fireEvent.click(getByText(action));
+
+      expect(onChange).toHaveBeenCalledWith(expectedConsent);
+    },
+  );
+
+  it("does not fade while analytics settings are open", () => {
+    const settingsTest = setupFadeTest(true);
+
+    fireEvent.click(settingsTest.rendered.getByText(analyticsSettingsLinkText));
+    settingsTest.advancePastFade();
+
+    expect(settingsTest.rendered.getByText("Analytics Settings")).toBeTruthy();
+  });
+
+  it.each([true, false])(
+    "dismisses analytics settings without changing stored consent %s",
+    (initialConsent) => {
+      const { getByText, onChange, queryByText } = renderDialog(initialConsent);
+
+      fireEvent.click(getByText(analyticsSettingsLinkText));
+      fireEvent.click(getByText("Close"));
+
+      expect(
+        queryByText("Analytics is currently", { exact: false }),
+      ).toBeFalsy();
+      expect(getByText(analyticsSettingsLinkText)).toBeTruthy();
+      expect(onChange).not.toHaveBeenCalled();
+    },
+  );
 });

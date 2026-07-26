@@ -20,6 +20,7 @@ const meta = {
   args: {
     generateRandomNumber: createGenerator(SEED),
     loadGoogleAnalytics: () => null,
+    trackEvent: () => null,
   },
   beforeEach: () => () => {
     localStorage.removeItem(analyticsConsentKey);
@@ -69,7 +70,7 @@ export const AnalyticsAccepted = {
     await fireEvent.click(acceptButton);
 
     await expect(canvasElement).toHaveTextContent(
-      "Thank you! Your consent helps us improve our site using tools like Google Analytics. For more details, please see our Privacy Policy.",
+      "Thank you! Analytics cookies and card-free interaction measurements help us improve the site. For more details, please see our Privacy Policy.",
     );
   },
 };
@@ -81,14 +82,14 @@ export const AnalyticsDisabled = {
     await fireEvent.click(declineButton);
 
     await expect(canvasElement).toHaveTextContent(
-      "Analytics have been disabled. You can find more information in our Privacy Policy.",
+      "Analytics is disabled. Nothing is sent to Google Analytics. You can find more information in our Privacy Policy.",
     );
   },
 };
 
 export const StoredConsentGiven = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    // When consent is already stored, only the Privacy Policy link is shown (no Thank You message)
+    // When consent is already stored, only the persistent settings links are shown.
     // Wait for fade-in animation to complete before checking visibility
     await waitFor(
       async () => {
@@ -102,10 +103,16 @@ export const StoredConsentGiven = {
     await expect(
       within(canvasElement).queryByText("Thank you!"),
     ).not.toBeInTheDocument();
+    await expect(
+      within(canvasElement).getByRole("button", {
+        name: "Analytics Settings",
+      }),
+    ).toBeVisible();
   },
   render: ({
     generateRandomNumber,
     loadGoogleAnalytics,
+    trackEvent,
   }: Parameters<typeof Trainer>[0]) => {
     localStorage.setItem(analyticsConsentKey, "true");
 
@@ -113,6 +120,7 @@ export const StoredConsentGiven = {
       <Trainer
         generateRandomNumber={generateRandomNumber}
         loadGoogleAnalytics={loadGoogleAnalytics}
+        trackEvent={trackEvent}
       />
     );
   },

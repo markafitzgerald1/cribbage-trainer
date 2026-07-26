@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { SortOrder } from "../src/ui/SortOrder";
+import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
 
 export const waitForAnalysis = async (page: Page) => {
   await page.locator('text="Loading analysis..."').waitFor({ state: "hidden" });
@@ -11,12 +12,15 @@ export const renderThenSelectTwoDiscards = async (
   constantSeedQuery: string,
   acceptAnalytics = false,
 ) => {
+  // Stored consent loads the real tag against the e2e test measurement ID, so keep those requests inside CI.
+  await blockGoogleAnalytics(page);
+
   if (acceptAnalytics) {
     // Pre-seed stored consent so the banner mounts already collapsed.
     // Clicking Accept instead starts the dialog's multi-second fade timer.
     // That slows every screenshot test and races the capture against it.
     await page.addInitScript(() => {
-      window.localStorage.setItem("analyticsConsent", "true");
+      window.localStorage.setItem("analyticsConsent-2026-07-23", "true");
     });
   }
 

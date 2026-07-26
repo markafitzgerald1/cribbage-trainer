@@ -32,9 +32,7 @@ const testPrivacyPolicyScreenshot = () =>
   }) => {
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
-    await page
-      .locator('span[role="button"]:has-text("Privacy Policy")')
-      .click();
+    await page.getByRole("button", { name: "Privacy Policy" }).click();
 
     await expect(page).toHaveScreenshot();
   });

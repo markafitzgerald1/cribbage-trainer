@@ -13,18 +13,18 @@ import {
   createSequenceGenerator,
   expectDealerRoleVisible,
   expectPoneRoleVisible,
-  mathRandom,
   renderTrainer,
   renderTrainerShowingDealerRole,
   renderTrainerWithGenerator,
+  renderTrainerWithInitialProps,
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
-import { render, screen } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
-import { Trainer } from "./Trainer";
+import { analyticsConsentKey } from "./Trainer";
 import { getSortOrderName } from "../ui/SortOrderName";
+import { screen } from "@testing-library/react";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -68,9 +68,8 @@ function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
   )!;
 }
 
-const ANALYTICS_CONSENT = "analyticsConsent";
-
-const clearAnalyticsConsent = () => localStorage.removeItem(ANALYTICS_CONSENT);
+const clearAnalyticsConsent = () =>
+  localStorage.removeItem(analyticsConsentKey);
 
 const setupTrainerUser = () => ({
   ...renderTrainer(),
@@ -80,18 +79,11 @@ const setupTrainerUser = () => ({
 const openCardEntry = (user: UserEvent) =>
   user.click(screen.getByRole("button", { name: "Enter cards" }));
 
-const renderTrainerWithInitialHand = () => {
-  const initialCards = parseHand(SIX_HEARTS_HAND);
-
-  return render(
-    <Trainer
-      generateRandomNumber={mathRandom}
-      initialCards={initialCards}
-      initialCribRole={CribRole.Dealer}
-      loadGoogleAnalytics={jest.fn()}
-    />,
-  );
-};
+const renderTrainerWithInitialHand = () =>
+  renderTrainerWithInitialProps({
+    initialCards: parseHand(SIX_HEARTS_HAND),
+    initialCribRole: CribRole.Dealer,
+  });
 
 describe("trainer component", () => {
   it("initially contains a sort in descending order radio input", () => {
@@ -182,20 +174,73 @@ describe("trainer component", () => {
 
       await user.click(button);
 
-      expect(localStorage.getItem(ANALYTICS_CONSENT)).toBe(
+      expect(localStorage.getItem(analyticsConsentKey)).toBe(
         expectedConsent.toString(),
       );
     },
   );
 
-  it("initially shows only Privacy Policy link when consent is in local storage", () => {
-    localStorage.setItem(ANALYTICS_CONSENT, "true");
+  it("shows persistent policy and analytics settings links when consent is stored", () => {
+    localStorage.setItem(analyticsConsentKey, "true");
     const renderResult = renderTrainer();
 
     expect(renderResult.getByText("Privacy Policy")).toBeTruthy();
+    expect(renderResult.getByText("Analytics Settings")).toBeTruthy();
     expect(
       renderResult.queryByText(/^Thank you! Your consent helps/u),
     ).toBeFalsy();
+  });
+
+  it("withdraws stored analytics consent and removes analytics cookies", async () => {
+    localStorage.setItem(analyticsConsentKey, "true");
+    document.cookie = "_ga=client-id; Path=/";
+    const consoleErrorSpy = jest.spyOn(console, "error").mockReturnValue();
+    const user = userEvent.setup();
+    const renderResult = renderTrainer();
+
+    await user.click(renderResult.getByText("Analytics Settings"));
+    await user.click(
+      renderResult.getByRole("button", { name: "Disable analytics" }),
+    );
+    consoleErrorSpy.mockRestore();
+
+    expect(localStorage.getItem(analyticsConsentKey)).toBe("false");
+    expect(document.cookie).not.toContain("_ga");
+  });
+
+  it("removes an analytics cookie rewritten while a declined page loads", () => {
+    localStorage.setItem(analyticsConsentKey, "false");
+    document.cookie = "_ga_TEST=late-session-id; Path=/";
+
+    renderTrainer();
+
+    expect(document.cookie).not.toContain("_ga_TEST");
+  });
+
+  it("requires a new choice after the analytics policy changes", () => {
+    clearAnalyticsConsent();
+    localStorage.setItem("analyticsConsent", "true");
+
+    const renderResult = renderTrainer();
+
+    expect(
+      renderResult.getByRole("button", { name: "Accept" }),
+    ).toBeInTheDocument();
+    expect(
+      renderResult.getByRole("button", { name: "Decline" }),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem("analyticsConsent")).toBeNull();
+  });
+
+  it("requires a new choice after removing malformed current consent", () => {
+    localStorage.setItem(analyticsConsentKey, "granted");
+
+    const renderResult = renderTrainer();
+
+    expect(
+      renderResult.getByRole("heading", { name: "Analytics Consent" }),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem(analyticsConsentKey)).toBeNull();
   });
 
   it("deals new cards after a 'Deal' button click", async () => {

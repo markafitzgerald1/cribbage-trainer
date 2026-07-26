@@ -4,6 +4,7 @@ import { Trainer } from "./ui-react/Trainer";
 import { createGenerator } from "./game/randomNumberGenerator";
 import { getInitialProps } from "./ui/getInitialProps";
 import { handleLoadGoogleAnalytics } from "./ui/handleLoadGoogleAnalytics";
+import { trackEvent } from "./ui/trackEvent";
 
 const {
   initialCards,
@@ -25,6 +26,7 @@ ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
       initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
       loadGoogleAnalytics={handleLoadGoogleAnalytics}
+      trackEvent={trackEvent}
     />
   </StrictMode>,
 );
