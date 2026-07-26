@@ -478,11 +478,18 @@
 - Use long-form flags for command-line tools (e.g., `git commit --message` not
   `git commit -m`, `ls --all` not `ls -a`) to improve readability and
   understanding.
-- Always hard-wrap Markdown text to a maximum of 80 characters per line to
-  satisfy strict markdownlint rules. This applies only to Markdown files
-  committed to the repository: never hard-wrap GitHub issue/PR bodies or
-  comments — the GitHub UI auto-wraps, and manual line breaks harm
-  readability there.
+- Hard-wrap Markdown to 80 characters per line **only in files committed to
+  this repository** (`AGENTS.md`, `README.md`, `skills/*/SKILL.md`, …), where
+  strict markdownlint rules require it.
+- **Never hard-wrap anything written into the GitHub UI**: issue bodies, PR
+  bodies and descriptions, issue/PR comments, and review-thread replies. Write
+  each paragraph and each list item as one long line and let GitHub wrap it.
+  Manual breaks there render as ragged half-width text that is harder to read
+  and painful to edit. This is the single most repeated agent mistake in this
+  repository, because the 80-column habit carries over from the committed
+  Markdown rule directly above; the two rules apply to disjoint sets of text,
+  so decide which you are writing before the first line. Only commit messages
+  share the wrapped style (72 columns, per the commit convention below).
 - When comparing numbers for readers (e.g. before/after coverage
   thresholds), label each value and align the comparison (a small table or
   `name: old → new` lines); never two bare slash-separated lists.
