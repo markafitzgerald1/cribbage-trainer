@@ -194,6 +194,7 @@ export default [
             "popstate",
             "radiogroup",
             "readonly",
+            "Rect",
             "pragma",
             "rerender",
             "rerenders",

@@ -1,8 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=Anonymous+Pro&display=swap");
 
+/*
+ * Chrome for Android resolves percentage heights against the large viewport,
+ * so `height: 100%` lays the app out a toolbar taller than the visible area.
+ * The bottom grid row -- the analytics consent controls -- then starts below
+ * the fold, and revealing it by scrolling collapses the toolbar, which grows
+ * the visual viewport and snaps the row back under the re-shown toolbar, so
+ * taps land where the buttons no longer are. `svh` pins the app to the small
+ * viewport: the page never overflows, so the toolbar never collapses, so the
+ * size never changes. `dvh` would instead resize mid-interaction and could
+ * flip the aspect-ratio breakpoint between stacked and side-by-side layouts.
+ */
 html,
 body {
   height: 100%;
+  height: 100svh;
   width: 100%;
   margin: 0;
   background-color: green;

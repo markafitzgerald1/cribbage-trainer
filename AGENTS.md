@@ -287,6 +287,23 @@
 :last-child { font-size }`, which its text and `em` padding both track)
   rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
   asserts Accept stays within a 844x390 viewport across all browsers.
+- Size the app with `svh`, never percentage heights alone. Chrome for Android
+  resolves `html, body { height: 100% }` against the _large_ viewport, so the
+  app lays out a toolbar taller than the visible area; the bottom grid row
+  (the consent controls in both modes) starts below the fold, and scrolling to
+  reveal it collapses the toolbar, which grows the visual viewport and snaps
+  the row back under the re-shown toolbar, so taps land where the buttons no
+  longer are. Firefox for Android sizes against the visible viewport and never
+  shows this. Prefer `svh` over `dvh`: `dvh` re-resolves as the toolbar shows
+  and hides, resizing the app mid-interaction and potentially flipping the
+  aspect-ratio breakpoint between modes.
+- No desktop engine can reproduce a mobile dynamic-toolbar bug, because `100%`,
+  `100svh`, and `100dvh` are all the same number without a toolbar. The e2e
+  guard for one (`neither responsive mode scrolls the document vertically`)
+  therefore cannot be negative-checked and does not prove the fix; it only
+  catches later root overflow from other causes. Verify the fix itself by hand
+  on a physical Android device in Chrome, and say so in the PR rather than
+  implying the suite covers it.
 
 ## Discard-table layout (portrait)
 
