@@ -617,6 +617,20 @@
   push always precedes `gh pr create` and skips with "No open pull request
   found"; the first preview publishes on the first push made _after_ the PR
   exists (push an empty or follow-up commit if one is needed sooner).
+- Order branch work so the PR exists before the push you want previewed.
+  `gh pr create` needs the branch on the remote, so the PR cannot literally
+  come first; instead push the branch as soon as it has one commit (or an
+  empty one), open the PR immediately — `--draft` is fine — and only then
+  push the commits to preview. Pushing a finished branch and opening the PR
+  afterwards always burns a cycle: that push's `resolve-preview-pr` logs "No
+  open pull request found ...; skipping preview deploy" and nothing publishes
+  until the next push.
+- The workflow's top-level concurrency group is
+  `${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`,
+  so any push to a branch cancels that branch's running build. Never push to
+  a PR branch while waiting on its preview or CI result — including a
+  doc-only follow-up commit — or the run producing that result dies and the
+  wait restarts. Land such commits before the run starts, or after it ends.
 - The `pages-content` branch is a git-based **cache**, not the Pages
   publishing source (Pages settings stay `build_type: workflow`). It is
   fetched-or-created, mutated, and force-pushed as a single amended commit
