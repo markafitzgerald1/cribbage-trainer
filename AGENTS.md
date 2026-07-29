@@ -194,6 +194,24 @@
 - When fixing a rendering bug, add a Playwright guard for it and negative-check
   the guard: stash the fix, confirm the new test fails against the broken CSS,
   then restore. A guard that was never seen failing proves nothing.
+- No Playwright project reproduces a phone browser's box model: the `webkit`
+  and `Mobile Safari` projects both run the desktop WebKit build, which
+  differs from iOS Safari. When a bug is engine-specific and no headless
+  browser reproduces it, guard the invariant the fix establishes rather than
+  the broken rendering. The iPhone controls-row overflow became testable
+  everywhere once the fix made spacing stylesheet-declared:
+  `sortControlSpacing.spec.ts`
+  asserts each control wrapper is exactly as wide as its visible button and
+  each rendered gap equals the computed `column-gap`, which fails in every
+  engine if any hidden box returns. Guard the cause, not the symptom.
+- The controls row and the six cards below it are within 3-4% of each other in
+  both modes (measured max-content width of the row versus the hand: 356 vs
+  368 portrait, 392 vs 410 landscape at phone sizes). That is the whole
+  tolerance for cross-engine font and box metrics, so any width the stylesheet
+  does not intend overflows the viewport in stacked mode and widens the
+  `min-content` left column past the cards in side-by-side mode, stranding
+  dead space before the analysis table. Measure the row's max-content width
+  (clone it with `width: max-content`) before adding anything to it.
 - Analysis tables are lazy-loaded. E2E tests that select a complete discard or
   hydrate one from a deep link must wait for `Loading analysis...` to become
   hidden and for the table to become visible before locating a result row;
@@ -219,6 +237,17 @@
 - Preserve native form semantics when styling controls. Keep radio inputs in
   the accessibility tree and style their adjacent labels as buttons; retain
   the native role, name, checked state, and `:focus-visible` behavior.
+- `appearance: none` unstyles a control but leaves it in flow, and what
+  remains is UA-stylesheet dependent: the hidden sort radios reserved 8px
+  each in Chromium, 4px in desktop WebKit, and roughly 20px on a real
+  iPhone. Hide a control that must stay focusable with the absolute-plus-
+  clip pattern (`Hand.module.css`'s `.figcaption`, plus `margin: 0`) so it
+  contributes no layout width anywhere, and space the visible labels with an
+  explicit `gap`. Never let a wrapper's spacing come from a hidden control's
+  box. When you take a control out of flow, move its focus ring to the
+  adjacent label (`.input:focus-visible + .label`) — stylelint's
+  `no-descending-specificity` wants that rule after the plain `.label` and
+  `.label:hover` rules.
 - When a deselected control still looks selected, inspect state selectors
   independently before changing React logic: check `aria-pressed`,
   `:focus-visible`, and `:hover`. An unselected hover style that resembles the
