@@ -124,8 +124,8 @@
   jscpd 4 missed; keep the 0% threshold and refactor the shared setup or
   assertion instead of raising `minTokens` or adding ignores. Its file pattern
   is relative to each scan path, so keep `.jscpd.json` explicit with
-  `path: ["src"]` and `pattern: "**/*.ts*"`; do not rely on `.gitignore`, which
-  is intentionally absent from the Docker lint layer.
+  `path: ["src"]` and `pattern: "**/*.ts*"` rather than relying on `.gitignore`
+  filtering.
 - Use `npm run deps:update:minor` for routine refreshes; handle larger major
   upgrades separately if they would dominate the change set.
 - When `npm run lint:audit` (better-npm-audit) fails on freshly published
@@ -170,11 +170,16 @@
   as required cleanup and drop the entry in the same PR instead of letting
   it ride to its expiry. Leave `.nsprc` in place as `{}` when the last
   exception goes, so the Dockerfile allowlist below stays valid.
-- The Dockerfile `COPY`s an explicit allowlist of root-level config files, so
-  a newly added one (`.nsprc`, and any future tool config) must be added to
-  that line. Otherwise the file simply does not exist in the lint layer: local
-  `npm run lint` passes while the image build fails on the same task, which
-  looks like a phantom environment difference.
+- The Dockerfile builds its lint surface and its test/build surface from
+  different copies. `COPY . .` immediately before `RUN npm run lint` hands lint
+  the entire build context, so no file can be missing from the gate; the
+  earlier allowlisted `COPY`s exist only to keep the `npm test` and
+  `npm run build` layers cacheable, so a new root-level config those two steps
+  need (`babel.config.json`-class, not `.nsprc`-class) still has to join that
+  line. Two placement rules keep this working: lint stays the last step, so the
+  whole-context copy invalidates nothing but the lint layer, and anything
+  `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
+  junk lints inside Docker while never reaching CI.
 
 ## Expected crib points table (vendored)
 
@@ -548,6 +553,16 @@
 
 ## Lint gauntlet interplay (agent checklist)
 
+- Every lint task is glob-driven, so a file the Docker image never received is
+  not an error: it matches nothing and the task still reports success. That is
+  how `tests-e2e/` and `playwright.config.ts` went unchecked for the life of
+  the gate (#703) while all ten tasks printed green. Never infer coverage from
+  a passing run — compare file sets. `cspell '**' --gitignore --verbose` prints
+  an `n/total` line per file, and the image's total must equal a clean
+  checkout's (208 when #703 was fixed). Build that reference checkout with
+  `git archive HEAD | tar --extract --directory <tmp>`, because in a
+  `.claude/worktrees` checkout the parent repo's `.gitignore` makes
+  `--gitignore` skip everything.
 - Two spell checkers with **different base dictionaries** run in lint:
   eslint's `spellcheck/spell-checker` (`skipWords` in `eslint.config.mjs`;
   `--max-warnings 0` makes its warnings fail CI) and cspell (`.cspell.json`,

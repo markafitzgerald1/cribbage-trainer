@@ -23,12 +23,17 @@ COPY .storybook/ ./.storybook/
 # some unknown reason.
 RUN npm run build
 
-RUN npm run lint
-
 RUN npm run storybook:build
 RUN npm run storybook:test:coverage
 
-COPY playwright.config.ts ./
-COPY tests-e2e/ ./tests-e2e/
+# Every linter here globs, so any file the image never received matches
+# nothing and its task still reports success: the allowlist above silently
+# excused tests-e2e/ and playwright.config.ts from all ten of them. Copy the
+# whole context instead of extending that allowlist, so the linted file set
+# equals the working tree's by construction. Lint runs after the Storybook
+# steps so this copy invalidates nothing but the lint layer itself.
+COPY . .
+
+RUN npm run lint
 
 CMD [ "sh", "-c", "npm run test-e2e" ]
