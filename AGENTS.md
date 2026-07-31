@@ -316,6 +316,35 @@
 :last-child { font-size }`, which its text and `em` padding both track)
   rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
   asserts Accept stays within a 844x390 viewport across all browsers.
+- Desktop engines do not model the mobile viewport, in two independent ways,
+  and each has already produced a wrong fix. First, Chrome for Android has a
+  toolbar that shows and hides; no desktop engine does, so `100%`, `100svh`,
+  and `100dvh` all resolve to the same number in every project CI runs, and
+  no headless test can distinguish them. Second, Android Chrome scrolls
+  content that overflows the app box while this repo's fixed-height chain
+  (`html`, `body`, `#trainer`, `.app` all set `height`) does not on desktop:
+  at 839x323 with a 26px root font the consent controls overflow the viewport
+  by 72px and `scrollTo` moves nothing on desktop, yet the same overflow
+  scrolls into view and stays clickable on a Pixel 9a. Treat any emulated
+  measurement of scroll behavior or viewport height as evidence about
+  desktop only. Reproduce on hardware before concluding anything about a
+  phone, and say in the PR which claims rest on emulation.
+- Measure on hardware first before changing the app box's height unit.
+  `100svh` was tried (#701, PR #702) on the theory that Chrome for Android
+  resolves the percentage-height chain against the large viewport, so the
+  bottom grid row — the analytics consent controls — hid under the toolbar.
+  The theory is accurate about Chrome, but `svh` also shrinks the box by
+  roughly the toolbar height: device testing showed controls that were
+  clickable on `main` becoming unreachable in landscape with it applied, and
+  it was reverted. The reported symptom turned out to be resolved by #696's
+  controls-row fix instead. Every automated gate passed on that branch, so a
+  change here is worth exactly as much as its phone test.
+- A guard that passes on the branch introducing the regression is guarding
+  the wrong invariant. The `svh` change shipped with a new e2e assertion that
+  the app root does not render past the viewport; it passed on the broken
+  branch, because `svh` made the box smaller rather than larger. When adding
+  a guard alongside a fix, check it fails for the bug being fixed, not merely
+  that it fails for some sabotage of the code under it.
 
 ## Discard-table layout (portrait)
 
@@ -600,6 +629,20 @@
   push always precedes `gh pr create` and skips with "No open pull request
   found"; the first preview publishes on the first push made _after_ the PR
   exists (push an empty or follow-up commit if one is needed sooner).
+- Order branch work so the PR exists before the push you want previewed.
+  `gh pr create` needs the branch on the remote, so the PR cannot literally
+  come first; instead push the branch as soon as it has one commit (or an
+  empty one), open the PR immediately — `--draft` is fine — and only then
+  push the commits to preview. Pushing a finished branch and opening the PR
+  afterwards always burns a cycle: that push's `resolve-preview-pr` logs "No
+  open pull request found ...; skipping preview deploy" and nothing publishes
+  until the next push.
+- The workflow's top-level concurrency group is
+  `${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`,
+  so any push to a branch cancels that branch's running build. Never push to
+  a PR branch while waiting on its preview or CI result — including a
+  doc-only follow-up commit — or the run producing that result dies and the
+  wait restarts. Land such commits before the run starts, or after it ends.
 - The `pages-content` branch is a git-based **cache**, not the Pages
   publishing source (Pages settings stay `build_type: workflow`). It is
   fetched-or-created, mutated, and force-pushed as a single amended commit
