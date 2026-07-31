@@ -329,14 +329,16 @@
   measurement of scroll behavior or viewport height as evidence about
   desktop only. Reproduce on hardware before concluding anything about a
   phone, and say in the PR which claims rest on emulation.
-- Do not "fix" the app box with `100svh`. It was tried (#701, PR #702) on the
-  theory that Chrome for Android resolves the percentage-height chain against
-  the large viewport, so the bottom grid row — the analytics consent
-  controls — hid under the toolbar. The theory is accurate about Chrome and
-  wrong as a fix: `svh` shrinks the box by roughly the toolbar height, and
-  device testing showed controls that were clickable on `main` becoming
-  unreachable in landscape with it applied. It was reverted. The reported
-  symptom turned out to be resolved by #696's controls-row fix instead.
+- Measure on hardware first before changing the app box's height unit.
+  `100svh` was tried (#701, PR #702) on the theory that Chrome for Android
+  resolves the percentage-height chain against the large viewport, so the
+  bottom grid row — the analytics consent controls — hid under the toolbar.
+  The theory is accurate about Chrome, but `svh` also shrinks the box by
+  roughly the toolbar height: device testing showed controls that were
+  clickable on `main` becoming unreachable in landscape with it applied, and
+  it was reverted. The reported symptom turned out to be resolved by #696's
+  controls-row fix instead. Every automated gate passed on that branch, so a
+  change here is worth exactly as much as its phone test.
 - A guard that passes on the branch introducing the regression is guarding
   the wrong invariant. The `svh` change shipped with a new e2e assertion that
   the app root does not render past the viewport; it passed on the broken
