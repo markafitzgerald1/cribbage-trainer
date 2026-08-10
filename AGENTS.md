@@ -22,10 +22,13 @@
   enabled — it is off by default and `.vscode/` is git-ignored here, so it has
   to be turned on per machine. Without it, VS Code Copilot sees only
   `.github/copilot-instructions.md`.
-- `skills/` is **not** any harness's native skill-discovery path (those are
-  `.claude/skills`, `.codex/skills`, `.github/skills`, and `.agents/skills`),
-  so nothing here is auto-loaded. Read the file named below when its trigger
-  applies; do not expect a skill listing to surface it.
+- `skills/` is **not** any harness's native skill-discovery path, so nothing
+  here is auto-loaded. Those paths are `.claude/skills`, `.github/skills`,
+  and `.agents/skills`, each confirmed against its vendor's own docs; Codex
+  reportedly reads `.codex/skills`, but that one is attested only by
+  third-party guides, so verify it before relying on it. Read the file named
+  below when its trigger applies; do not expect a skill listing to surface
+  it.
   - Before validating a build or chasing CI compliance, read
     `skills/make-it-green/SKILL.md`.
   - Before adding or changing Storybook stories or interaction coverage, read
