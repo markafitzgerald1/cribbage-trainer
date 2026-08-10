@@ -84,9 +84,21 @@
 - Use `npm run deps:update:minor` for routine refreshes; handle larger major
   upgrades separately if they would dominate the change set.
 - When `npm run lint:audit` (better-npm-audit) fails on freshly published
-  advisories, prefer pinning patched versions via the package.json `overrides`
-  block over `npm audit fix` (which can pull breaking majors and churn the lock
-  file). The flagged packages are almost always dev/build dependencies that are
+  advisories, fix them in the package.json `overrides` block and write the
+  entries as **caret ranges** (`^1.1.18`, not `1.1.18`). An exact pin
+  outranks `npm audit fix`, which then cannot repair the tree at all; a
+  caret pin lets a plain `npm audit fix` resolve the advisories and rewrite
+  only `package-lock.json`. Measured on the 2026-07-31 wave: against the
+  exact pins then in place, `npm audit fix` exited 1 and left
+  brace-expansion, fast-uri, and js-yaml vulnerable, and only the unpinned
+  nanoid and postcss moved; with those same pins widened to carets it
+  exited 0 and picked exactly the intended versions, touching no
+  `devDependencies`. Never use `npm audit fix --force`, which took `eslint`
+  to `^10.8.1`, _downgraded_ `stylelint` from `^17.14.0` to `^17.13.0`, and
+  still fixed none of the three. Note that a caret override does not
+  self-heal on `npm install` — only `npm audit fix` or
+  `npm update <package>` re-resolves an existing lock entry.
+- The flagged packages are almost always dev/build dependencies that are
   not shipped in the production bundle; confirm with
   `npm ls <package> --omit=dev`, which prints an empty tree when nothing
   ships. When an advisory range covers major lines that have no patched
@@ -100,14 +112,15 @@
   `legacy`. Read the per-advisory `via[].range` from `npm audit --json`
   rather than the better-npm-audit table, because each range's upper bound
   names the first patched version of that line (`<1.1.18`,
-  `>=2.0.0 <2.1.4`, `>=4.0.0 <5.0.9`) and is therefore exactly the
-  `overrides` pin to write. The 2026-07-31 advisory wave looked like it
-  needed an ESLint or stylelint major and needed no upgrade at all.
-- Exact `overrides` pins never advance on their own, so a `.nsprc` waiver
-  can outlive the gap it covered without anything noticing. The
-  brace-expansion 1.x/2.x waiver was written when 1.1.16 and 2.1.2 were the
-  newest of those lines; 1.1.17 and 2.1.3 shipped three weeks later and the
-  pins stayed put. When better-npm-audit prints "N of the excluded
+  `>=2.0.0 <2.1.4`, `>=4.0.0 <5.0.9`), which is the version to caret in
+  `overrides`. The 2026-07-31 advisory wave looked like it needed an ESLint
+  or stylelint major and needed no upgrade at all.
+- A `.nsprc` waiver can outlive the gap it covered without anything
+  noticing, which is the other reason not to pin exactly. The
+  brace-expansion 1.x/2.x waiver was written when 1.1.16 and 2.1.2 were
+  genuinely the newest of those lines; 1.1.17 and 2.1.3 shipped three weeks
+  later and the exact pins stayed put, so the waiver survived its own
+  obsolescence. When better-npm-audit prints "N of the excluded
   vulnerabilities did not match any of the found vulnerabilities", treat it
   as required cleanup and drop the entry in the same PR instead of letting
   it ride to its expiry. Leave `.nsprc` in place as `{}` when the last
