@@ -93,6 +93,25 @@
   release at all, pin what can be pinned and record the remainder as a
   `.nsprc` exception with an `expiry`, so the waiver ages out and forces a
   re-check the way the dependabot `ignore` entries do.
+- Before concluding that an older major line has no patched release, check
+  its maintenance dist-tag. `npm view <package> version` reports only
+  `latest`, which hides backports: brace-expansion publishes them as
+  `maintenance-v1`/`maintenance-v2`, js-yaml as `v4-legacy`, nanoid as
+  `legacy`. Read the per-advisory `via[].range` from `npm audit --json`
+  rather than the better-npm-audit table, because each range's upper bound
+  names the first patched version of that line (`<1.1.18`,
+  `>=2.0.0 <2.1.4`, `>=4.0.0 <5.0.9`) and is therefore exactly the
+  `overrides` pin to write. The 2026-07-31 advisory wave looked like it
+  needed an ESLint or stylelint major and needed no upgrade at all.
+- Exact `overrides` pins never advance on their own, so a `.nsprc` waiver
+  can outlive the gap it covered without anything noticing. The
+  brace-expansion 1.x/2.x waiver was written when 1.1.16 and 2.1.2 were the
+  newest of those lines; 1.1.17 and 2.1.3 shipped three weeks later and the
+  pins stayed put. When better-npm-audit prints "N of the excluded
+  vulnerabilities did not match any of the found vulnerabilities", treat it
+  as required cleanup and drop the entry in the same PR instead of letting
+  it ride to its expiry. Leave `.nsprc` in place as `{}` when the last
+  exception goes, so the Dockerfile allowlist below stays valid.
 - The Dockerfile `COPY`s an explicit allowlist of root-level config files, so
   a newly added one (`.nsprc`, and any future tool config) must be added to
   that line. Otherwise the file simply does not exist in the lint layer: local
