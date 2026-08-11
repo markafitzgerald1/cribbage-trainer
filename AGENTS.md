@@ -22,13 +22,20 @@
   enabled — it is off by default and `.vscode/` is git-ignored here, so it has
   to be turned on per machine. Without it, VS Code Copilot sees only
   `.github/copilot-instructions.md`.
-- `skills/` is **not** any harness's native skill-discovery path, so nothing
-  here is auto-loaded. Those paths are `.claude/skills`, `.github/skills`,
-  and `.agents/skills`, each confirmed against its vendor's own docs; Codex
-  reportedly reads `.codex/skills`, but that one is attested only by
-  third-party guides, so verify it before relying on it. Read the file named
-  below when its trigger applies; do not expect a skill listing to surface
-  it.
+- The skill files live in `skills/`, and every harness's native discovery
+  path — `.claude/skills`, `.github/skills`, `.agents/skills`, and
+  `.codex/skills` — is a symlink to that one directory. Do not "resolve" the
+  apparent duplication by deleting symlinks or moving the real files into a
+  dot-directory: each symlink is what makes a harness list the skill
+  natively, and the real files stay outside a dot-directory so the lint
+  globs keep covering them (see the next bullet). `.gitignore` excludes
+  `/.claude/*` but re-includes `!/.claude/skills` for exactly this reason.
+  The three non-Codex paths are confirmed against their vendors' own docs;
+  `.codex/skills` is attested only by third-party guides.
+- Read the file named below when its trigger applies rather than waiting for
+  a skill listing to surface it. Symlink-following is not guaranteed in
+  every harness, so these pointers are the floor that works everywhere —
+  they load the same file the native path would.
   - Before validating a build or chasing CI compliance, read
     `skills/make-it-green/SKILL.md`.
   - Before adding or changing Storybook stories or interaction coverage, read
