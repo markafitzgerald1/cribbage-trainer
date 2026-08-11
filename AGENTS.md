@@ -672,6 +672,17 @@
 - If an agent uses `--no-verify` or `HUSKY=0` to bypass local git hooks, it MUST
   execute `npm run docker:build-and-test-all` to explicitly ensure full CI
   compliance before pushing.
+- `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.
+  Git stores the signing choice in `.git/rebase-merge/gpg_sign_opt`, so a
+  rebase begun without it dies at the first replayed commit with "gpg failed
+  to sign the data", and neither `git rebase --continue` nor
+  `git -c commit.gpgsign=false rebase --continue` can rescue it. Abort and
+  restart as `git rebase --no-gpg-sign --onto ...`.
+- Rebasing a stacked branch after its parent PR was **squash**-merged needs
+  `--onto`, not a plain rebase: main carries one new commit whose content
+  matches the parent's several, so git replays those originals and reports
+  conflicts against its own merged result. Replay only the child's commits
+  with `git rebase --no-gpg-sign --onto origin/main <last-parent-commit>`.
 
 ## CI workflow notes
 
