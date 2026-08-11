@@ -73,7 +73,7 @@ test("every skill directory contains a SKILL.md", () => {
       "SKILL.md",
     );
     ok(
-      statSync(skillFile).isFile(),
+      statSync(skillFile, { throwIfNoEntry: false })?.isFile(),
       `${skillDirectory.name} must contain a SKILL.md`,
     );
   }
