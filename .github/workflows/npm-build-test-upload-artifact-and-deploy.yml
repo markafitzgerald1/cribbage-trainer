@@ -23,6 +23,11 @@ jobs:
       - name: Run pages-content merge logic tests
         run: npm run test:pages-content-merge
 
+      # The Dockerfile copies an allowlist that excludes the vendor skill
+      # symlinks, so this guard can only run outside the image.
+      - name: Run skill path symlink tests
+        run: npm run test:skill-paths
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

@@ -32,6 +32,13 @@
   `/.claude/*` but re-includes `!/.claude/skills` for exactly this reason.
   The three non-Codex paths are confirmed against their vendors' own docs;
   `.codex/skills` is attested only by third-party guides.
+- `npm run test:skill-paths` guards that layout: each vendor path must be a
+  relative symlink resolving to `skills/`, `skills/` itself must hold the
+  real files, and every skill directory must contain a `SKILL.md`. Like
+  `test:pages-content-merge` it runs as its own CI step rather than inside
+  the Docker gate, because the Dockerfile's `COPY` allowlist deliberately
+  excludes these dot-paths — so `npm run docker:build-and-test-all` alone
+  will not catch a broken symlink.
 - Read the file named below when its trigger applies rather than waiting for
   a skill listing to surface it. Symlink-following is not guaranteed in
   every harness, so these pointers are the floor that works everywhere —
