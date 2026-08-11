@@ -57,6 +57,17 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 Before making changes, all developers and AI agents must read
 [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
 
+[AGENTS.md](AGENTS.md) is picked up automatically by Codex, Google Antigravity,
+and the GitHub Copilot cloud coding agent, and by Claude Code through
+[CLAUDE.md](CLAUDE.md). Cursor, Windsurf, and Devin read it natively too.
+
+Visual Studio Code is the exception: enable the `chat.useAgentsMdFile` setting
+so Copilot applies [AGENTS.md](AGENTS.md) there. It is off by default, and
+`.vscode/` is git-ignored in this repository, so set it per machine (workspace
+or user settings). Without it, Copilot in VS Code sees only
+`.github/copilot-instructions.md` and none of the conventions in
+[AGENTS.md](AGENTS.md).
+
 ## License & AI Provenance
 
 This project utilizes AI coding assistants in its development. All AI-generated

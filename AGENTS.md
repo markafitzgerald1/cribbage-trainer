@@ -12,11 +12,33 @@
 
 ## Agent Skills & Tools
 
-- Agents must index and activate any skills found in the `skills/` directory
-  before performing complex tasks.
-- Specifically, use the `make-it-green` skill for build validation and CI compliance.
-- For Storybook interaction coverage work, use the
-  `skills/testing-storybook` guidance before adding or changing stories.
+- This file is the shared contract for every harness used here: Codex and
+  Antigravity read `AGENTS.md` directly, Claude Code reaches it through
+  `CLAUDE.md`'s `@AGENTS.md` import, and GitHub Copilot reads it on both the
+  cloud coding agent and in VS Code. Keep the content harness-neutral;
+  anything true of only one tool belongs in that tool's own file
+  (`CLAUDE.md`, `.github/copilot-instructions.md`).
+- VS Code only applies `AGENTS.md` when the `chat.useAgentsMdFile` setting is
+  enabled — it is off by default and `.vscode/` is git-ignored here, so it has
+  to be turned on per machine. Without it, VS Code Copilot sees only
+  `.github/copilot-instructions.md`.
+- `skills/` is **not** any harness's native skill-discovery path, so nothing
+  here is auto-loaded. Those paths are `.claude/skills`, `.github/skills`,
+  and `.agents/skills`, each confirmed against its vendor's own docs; Codex
+  reportedly reads `.codex/skills`, but that one is attested only by
+  third-party guides, so verify it before relying on it. Read the file named
+  below when its trigger applies; do not expect a skill listing to surface
+  it.
+  - Before validating a build or chasing CI compliance, read
+    `skills/make-it-green/SKILL.md`.
+  - Before adding or changing Storybook stories or interaction coverage, read
+    `skills/testing-storybook/SKILL.md`.
+- Keep authored guidance out of dot-directories. The lint gauntlet's globs
+  (`cspell '**'`, `markdownlint .`, `prettier --check .`) silently skip them:
+  a `SKILL.md` with two misspellings is flagged under `skills/` and passes
+  unnoticed under `.agents/skills/`. Relocating docs to a tool-native dot
+  path therefore costs spell and Markdown coverage unless those globs are
+  widened in the same change.
 
 ## Setup
 
