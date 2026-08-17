@@ -7,8 +7,10 @@ compatibility: Requires the gh CLI for PR and workflow inspection.
 # PR preview deploys (issue #153)
 
 **Description:** How per-PR previews are published to GitHub Pages, why the
-production site and the previews share one deployed tree, and the ordering and
-concurrency rules that decide whether a run publishes anything at all.
+production site and the previews share one deployed tree, and what keeps a
+bad publish from taking production down. The branch-ordering, push-timing,
+and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
+`AGENTS.md`.
 
 **Learnings:**
 
@@ -49,11 +51,6 @@ concurrency rules that decide whether a run publishes anything at all.
   does not exist. If the guard ever fires, seed production first (deploy
   `main` through the new workflow, or apply the `prod` mutation to the
   branch manually).
-- Never retry a failed Pages deploy with a single-job rerun: rerunning a
-  job that already uploaded a `github-pages` artifact adds a second one to
-  the same run, and `actions/deploy-pages` then always fails with
-  "Multiple artifacts named github-pages" — for every attempt on that run.
-  Push a new commit (fresh run) instead.
 - A GitHub Actions concurrency group holds one running job plus **one**
   waiting job; a newer arrival cancels the older waiting one ("higher
   priority waiting request"), even with `cancel-in-progress: false`.

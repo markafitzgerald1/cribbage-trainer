@@ -16,13 +16,11 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   through ESLint 9. Before changing that range, verify both packages' current
   registry metadata; do not bypass the peer conflict with
   `--legacy-peer-deps`.
-- With Babel's React and TypeScript presets enabled together, avoid single
-  unconstrained generic arrow functions such as `<T>(...) => ...` in `.ts`
-  files: Babel 8 parses the type parameter as JSX, while the repo's current
-  Prettier removes the TSX-style disambiguating comma from `.ts`, and lint
-  rejects a neutral `extends unknown` constraint. Prefer a named generic
-  function expression or declaration, which both Babel generations parse
-  consistently without weakening quality gates.
+- A Babel major can change how existing `.ts` parses: Babel 8 reads the type
+  parameter of a single unconstrained generic arrow function as JSX. The
+  resulting authoring rule binds every `.ts` file, so it lives in `AGENTS.md`
+  rather than here — expect this class of breakage from a Babel bump even
+  when no source changed.
 - Major formatter and duplicate-detector upgrades can change their findings
   without changing project code. Prettier 3.9 formats some union types
   differently from 3.8, and each version rejects the other's output, so land

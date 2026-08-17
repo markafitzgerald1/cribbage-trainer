@@ -12,10 +12,6 @@ baselines so CI agrees with what was generated locally.
 
 **Playwright and UI-layout debugging:**
 
-- Never judge a validation run by piping through `| tail` or `| grep`: the
-  pipe masks the command's exit code and a "61 passed" line can sit directly
-  below a failed-tests list. Redirect to a log file, echo `$?`, and read the
-  full summary (or use the shell's pipe-status array).
 - Analysis-row text (e.g. `K♥Q♠10♦9♣(6♠5♠)`) is rendered in the **active
   sort order**; a deep link or click that sets `sort=ascending` reverses the
   row text (`9♣10♦Q♠K♥(5♠6♠)`). Don't reuse row-text constants across tests

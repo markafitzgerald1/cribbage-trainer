@@ -117,6 +117,10 @@
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.
+- Never judge a validation run by piping through `| tail` or `| grep`: the
+  pipe masks the command's exit code and a "61 passed" line can sit directly
+  below a failed-tests list. Redirect to a log file, echo `$?`, and read the
+  full summary (or use the shell's pipe-status array).
 - A Docker build failing with `ENOSPC: no space left on device` (often
   surfacing mid-way, e.g. during `storybook:test:coverage`) usually means
   Docker Desktop's build cache has grown unbounded across many local rebuilds,
@@ -154,6 +158,11 @@
 - Name an action for its immediate effect, not a later workflow outcome. For
   example, a dialog button that commits six chosen cards but leaves the user
   to select two discards is "Use hand", not "Analyze".
+- Keep visible and aria labels mutually non-substring across controls, even
+  when only renaming one. Playwright's `getByRole` name match is a
+  case-insensitive substring, so a new label that contains another control's
+  name breaks locators in specs that were never touched (see
+  `skills/testing-e2e/SKILL.md` for the collisions this has already caused).
 - Preserve native form semantics when styling controls. Keep radio inputs in
   the accessibility tree and style their adjacent labels as buttons; retain
   the native role, name, checked state, and `:focus-visible` behavior.
@@ -360,6 +369,11 @@
   merge near-identical tests into `it.each` (object cases with `$name`
   titles stay within `max-params`), or vary one mid-list expression (e.g. a
   genuinely needed `?? null`) to split the token run.
+- Jest enforces 100% branch coverage, so an unreachable defensive branch
+  fails the build: `split("=")[0] ?? ""` cannot yield the fallback and cost a
+  Docker run to discover, since `npm test -- --coverage=false` hides it.
+  Prefer formulations with no dead branch (compute `indexOf` and `substring`
+  from the same string) over a nullish fallback that can never fire.
 - The Dockerfile builds its lint surface and its test/build surface from
   different copies. `COPY . .` immediately before `RUN npm run lint` hands lint
   the entire build context, so no file can be missing from the gate; the
@@ -376,6 +390,12 @@
   latest-prop reads for timer callbacks in a ref updated by an effect.
 
 - TypeScript/React with Vite; keep types sound.
+- Avoid single unconstrained generic arrow functions such as `<T>(...) => ...`
+  in `.ts` files: with Babel's React and TypeScript presets both enabled,
+  Babel 8 parses the type parameter as JSX, the repo's Prettier removes the
+  TSX-style disambiguating comma from `.ts`, and lint rejects a neutral
+  `extends unknown` constraint. Prefer a named generic function expression or
+  declaration, which every Babel generation parses consistently.
 - Every React component should have a corresponding Storybook story file
   (`ComponentName.stories.ts` or `.tsx`).
 - Follow existing ESLint/Prettier configs; avoid introducing non-ASCII unless justified.
@@ -510,6 +530,11 @@
   a PR branch while waiting on its preview or CI result — including a
   doc-only follow-up commit — or the run producing that result dies and the
   wait restarts. Land such commits before the run starts, or after it ends.
+- Never retry a failed Pages deploy with a single-job rerun: rerunning a
+  job that already uploaded a `github-pages` artifact adds a second one to
+  the same run, and `actions/deploy-pages` then always fails with
+  "Multiple artifacts named github-pages" — for every attempt on that run.
+  Push a new commit (fresh run) instead.
 - Preview eligibility, the shared `pages-content` tree, the two Pages
   environments, and the guard that keeps a bad publish from taking production
   down are in `skills/pages-preview/SKILL.md`; read it before editing either
