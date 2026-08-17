@@ -30,8 +30,17 @@
   natively, and the real files stay outside a dot-directory so the lint
   globs keep covering them (see the next bullet). `.gitignore` excludes
   `/.claude/*` but re-includes `!/.claude/skills` for exactly this reason.
-  The three non-Codex paths are confirmed against their vendors' own docs;
-  `.codex/skills` is attested only by third-party guides.
+  All four are confirmed working on hardware: Claude Code, Copilot (CLI,
+  desktop, and VS Code), Antigravity (app and IDE), and Codex (CLI and
+  desktop) each list both repo skills through their symlink, so every
+  harness in use follows one.
+- A skill's `SKILL.md` frontmatter `name` must equal its directory name.
+  Harnesses disagree on which they display — Claude Code and Copilot in VS
+  Code show the directory, while Copilot's CLI and desktop app, Antigravity,
+  and Codex show the frontmatter — so a skill whose two names differ is
+  called different things depending on where the user looks.
+  `testing-storybook` declared `storybook-interaction-testing` and did
+  exactly that. `npm run test:skill-paths` now asserts they match.
 - `npm run test:skill-paths` guards that layout: each vendor path must be a
   relative symlink resolving to `skills/`, `skills/` itself must hold the
   real files, and every skill directory must contain a `SKILL.md`. Like

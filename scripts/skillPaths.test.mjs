@@ -1,5 +1,6 @@
 import {
   lstatSync,
+  readFileSync,
   readdirSync,
   readlinkSync,
   realpathSync,
@@ -75,6 +76,32 @@ test("every skill directory contains a SKILL.md", () => {
     ok(
       statSync(skillFile, { throwIfNoEntry: false })?.isFile(),
       `${skillDirectory.name} must contain a SKILL.md`,
+    );
+  }
+});
+
+/*
+ * Harnesses disagree on which name they display: Claude Code and Copilot in
+ * VS Code show the directory name, while Copilot's CLI and desktop app,
+ * Antigravity, and Codex show the frontmatter one. A skill whose two names
+ * differ is therefore called different things depending on where the user
+ * looks, so require them to match.
+ */
+test("each SKILL.md frontmatter name matches its directory", () => {
+  const skillDirectories = readdirSync(canonicalSkills, {
+    withFileTypes: true,
+  }).filter((entry) => entry.isDirectory());
+  for (const skillDirectory of skillDirectories) {
+    const [, frontmatter] = readFileSync(
+      path.join(canonicalSkills, skillDirectory.name, "SKILL.md"),
+      "utf8",
+    ).split("---");
+    const declaredName = /^name:\s*(?<name>\S+)\s*$/mu.exec(frontmatter ?? "")
+      ?.groups?.name;
+    strictEqual(
+      declaredName,
+      skillDirectory.name,
+      `${skillDirectory.name}/SKILL.md declares name "${declaredName}", which harnesses would show instead of the directory name`,
     );
   }
 });
