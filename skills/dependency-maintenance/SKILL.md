@@ -1,6 +1,6 @@
 ---
 name: dependency-maintenance
-description: Use before bumping dependencies, taking a major upgrade, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, and the Dockerfile COPY rule.
+description: Use before bumping dependencies, taking a major upgrade, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, and the gate-shifting effects of formatter and duplicate-detector majors.
 compatibility: Requires npm and network access to the registry.
 ---
 
@@ -11,8 +11,6 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
 
 **Learnings:**
 
-- Keep dependencies current in PRs: include minor and patch bumps, and take major
-  upgrades when they do not overshadow the PR's primary purpose.
 - Dependabot intentionally ignores ESLint 10.0.0 through 10.7.0 because the
   latest `eslint-plugin-jsx-a11y` release (6.10.2) declares peer support only
   through ESLint 9. Before changing that range, verify both packages' current
@@ -78,14 +76,6 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   vulnerabilities did not match any of the found vulnerabilities", treat it
   as required cleanup and drop the entry in the same PR instead of letting
   it ride to its expiry. Leave `.nsprc` in place as `{}` when the last
-  exception goes, so the Dockerfile allowlist below stays valid.
-- The Dockerfile builds its lint surface and its test/build surface from
-  different copies. `COPY . .` immediately before `RUN npm run lint` hands lint
-  the entire build context, so no file can be missing from the gate; the
-  earlier allowlisted `COPY`s exist only to keep the `npm test` and
-  `npm run build` layers cacheable, so a new root-level config those two steps
-  need (`babel.config.json`-class, not `.nsprc`-class) still has to join that
-  line. Two placement rules keep this working: lint stays the last step, so the
-  whole-context copy invalidates nothing but the lint layer, and anything
-  `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
-  junk lints inside Docker while never reaching CI.
+  exception goes, so the Dockerfile's allowlisted `COPY`s stay valid (see
+  "Lint gauntlet interplay" in `AGENTS.md`, which owns that rule because it
+  also fires for changes that touch no dependency at all).

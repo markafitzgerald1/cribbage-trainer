@@ -354,6 +354,16 @@
   merge near-identical tests into `it.each` (object cases with `$name`
   titles stay within `max-params`), or vary one mid-list expression (e.g. a
   genuinely needed `?? null`) to split the token run.
+- The Dockerfile builds its lint surface and its test/build surface from
+  different copies. `COPY . .` immediately before `RUN npm run lint` hands lint
+  the entire build context, so no file can be missing from the gate; the
+  earlier allowlisted `COPY`s exist only to keep the `npm test` and
+  `npm run build` layers cacheable, so a new root-level config those two steps
+  need (`babel.config.json`-class, not `.nsprc`-class) still has to join that
+  line. Two placement rules keep this working: lint stays the last step, so the
+  whole-context copy invalidates nothing but the lint layer, and anything
+  `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
+  junk lints inside Docker while never reaching CI.
 - `react/hook-use-state` rejects `const [x] = useState(init)`. For
   initialize-once mutable hook state, seed an eager
   `useRef(create(...))` instead (re-render results are discarded), and keep
@@ -480,13 +490,32 @@
   publishes a PR preview.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages.
-- Preview eligibility, the shared `pages-content` tree, and the ordering and
-  concurrency rules that decide whether a run publishes at all are in
-  `skills/pages-preview/SKILL.md`; read it before editing either workflow.
+- Order branch work so the PR exists before the push you want previewed.
+  `gh pr create` needs the branch on the remote, so the PR cannot literally
+  come first; instead push the branch as soon as it has one commit (or an
+  empty one), open the PR immediately — `--draft` is fine — and only then
+  push the commits to preview. Pushing a finished branch and opening the PR
+  afterwards always burns a cycle: that push's `resolve-preview-pr` logs "No
+  open pull request found ...; skipping preview deploy" and nothing publishes
+  until the next push.
+- The workflow's top-level concurrency group is
+  `${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`,
+  so any push to a branch cancels that branch's running build. Never push to
+  a PR branch while waiting on its preview or CI result — including a
+  doc-only follow-up commit — or the run producing that result dies and the
+  wait restarts. Land such commits before the run starts, or after it ends.
+- Preview eligibility, the shared `pages-content` tree, the two Pages
+  environments, and the guard that keeps a bad publish from taking production
+  down are in `skills/pages-preview/SKILL.md`; read it before editing either
+  workflow.
 
 ## Contribution notes
 
 - Add/adjust tests alongside code changes.
+- Keep dependencies current in PRs: include minor and patch bumps, and take major
+  upgrades when they do not overshadow the PR's primary purpose. How to do that
+  safely — audit advisories, caret `overrides`, `.nsprc` waivers — is in
+  `skills/dependency-maintenance/SKILL.md`.
 - Capture each session's durable, non-obvious learnings — new invariants,
   debugging techniques, tooling or review-workflow gotchas — in `AGENTS.md`
   (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as
