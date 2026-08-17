@@ -2,10 +2,16 @@
 
 @AGENTS.md
 
-This file is intentionally a thin wrapper: `AGENTS.md` is the single source
-of truth for agent conventions in this repository. Add new durable learnings
-there (or to `.github/copilot-instructions.md` for review-time guidance and
-`skills/*/SKILL.md` for task-shaped procedures), not here.
+This file is intentionally a thin wrapper, and agent conventions are tiered.
+`AGENTS.md` — imported above, so it is resident in every session — holds the
+invariants an agent can violate without knowing it is in that domain, plus an
+imperative pointer to each task-shaped procedure. Those procedures live in
+`skills/*/SKILL.md` and are read on demand when their stated trigger applies,
+so a session pays for the areas it actually touches. Review-time guidance for
+Copilot lives in `.github/copilot-instructions.md`.
+
+Add new durable learnings to whichever tier matches the learning's trigger —
+never here.
 
 ## Claude-specific notes
 
