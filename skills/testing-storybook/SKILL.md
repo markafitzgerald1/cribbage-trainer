@@ -1,5 +1,5 @@
 ---
-name: storybook-interaction-testing
+name: testing-storybook
 description: Guidance on using Playwright in Storybook test components for interaction testing.
 compatibility: Requires @storybook/react-vite and storybook/test.
 ---

@@ -22,13 +22,36 @@
   enabled — it is off by default and `.vscode/` is git-ignored here, so it has
   to be turned on per machine. Without it, VS Code Copilot sees only
   `.github/copilot-instructions.md`.
-- `skills/` is **not** any harness's native skill-discovery path, so nothing
-  here is auto-loaded. Those paths are `.claude/skills`, `.github/skills`,
-  and `.agents/skills`, each confirmed against its vendor's own docs; Codex
-  reportedly reads `.codex/skills`, but that one is attested only by
-  third-party guides, so verify it before relying on it. Read the file named
-  below when its trigger applies; do not expect a skill listing to surface
-  it.
+- The skill files live in `skills/`, and every harness's native discovery
+  path — `.claude/skills`, `.github/skills`, `.agents/skills`, and
+  `.codex/skills` — is a symlink to that one directory. Do not "resolve" the
+  apparent duplication by deleting symlinks or moving the real files into a
+  dot-directory: each symlink is what makes a harness list the skill
+  natively, and the real files stay outside a dot-directory so the lint
+  globs keep covering them (see the next bullet). `.gitignore` excludes
+  `/.claude/*` but re-includes `!/.claude/skills` for exactly this reason.
+  All four are confirmed working on hardware: Claude Code, Copilot (CLI,
+  desktop, and VS Code), Antigravity (app and IDE), and Codex (CLI and
+  desktop) each list both repo skills through their symlink, so every
+  harness in use follows one.
+- A skill's `SKILL.md` frontmatter `name` must equal its directory name.
+  Harnesses disagree on which they display — Claude Code and Copilot in VS
+  Code show the directory, while Copilot's CLI and desktop app, Antigravity,
+  and Codex show the frontmatter — so a skill whose two names differ is
+  called different things depending on where the user looks.
+  `testing-storybook` declared `storybook-interaction-testing` and did
+  exactly that. `npm run test:skill-paths` now asserts they match.
+- `npm run test:skill-paths` guards that layout: each vendor path must be a
+  relative symlink resolving to `skills/`, `skills/` itself must hold the
+  real files, and every skill directory must contain a `SKILL.md`. Like
+  `test:pages-content-merge` it runs as its own CI step rather than inside
+  the Docker gate, because the Dockerfile's `COPY` allowlist deliberately
+  excludes these dot-paths — so `npm run docker:build-and-test-all` alone
+  will not catch a broken symlink.
+- Read the file named below when its trigger applies rather than waiting for
+  a skill listing to surface it. Symlink-following is not guaranteed in
+  every harness, so these pointers are the floor that works everywhere —
+  they load the same file the native path would.
   - Before validating a build or chasing CI compliance, read
     `skills/make-it-green/SKILL.md`.
   - Before adding or changing Storybook stories or interaction coverage, read
@@ -658,6 +681,17 @@
 - If an agent uses `--no-verify` or `HUSKY=0` to bypass local git hooks, it MUST
   execute `npm run docker:build-and-test-all` to explicitly ensure full CI
   compliance before pushing.
+- `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.
+  Git stores the signing choice in `.git/rebase-merge/gpg_sign_opt`, so a
+  rebase begun without it dies at the first replayed commit with "gpg failed
+  to sign the data", and neither `git rebase --continue` nor
+  `git -c commit.gpgsign=false rebase --continue` can rescue it. Abort and
+  restart as `git rebase --no-gpg-sign --onto ...`.
+- Rebasing a stacked branch after its parent PR was **squash**-merged needs
+  `--onto`, not a plain rebase: main carries one new commit whose content
+  matches the parent's several, so git replays those originals and reports
+  conflicts against its own merged result. Replay only the child's commits
+  with `git rebase --no-gpg-sign --onto origin/main <last-parent-commit>`.
 
 ## CI workflow notes
 

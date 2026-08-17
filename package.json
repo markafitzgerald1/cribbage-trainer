@@ -37,7 +37,8 @@
     "table:update": "node scripts/updateExpectedPointsTables.mjs",
     "table:update:crib": "node scripts/updateExpectedCribPointsTable.mjs",
     "table:update:play": "node scripts/updateExpectedPlayPointsTable.mjs",
-    "test:pages-content-merge": "node --test scripts/pagesContentMerge.test.mjs"
+    "test:pages-content-merge": "node --test scripts/pagesContentMerge.test.mjs",
+    "test:skill-paths": "node --test scripts/skillPaths.test.mjs"
   },
   "devDependencies": {
     "@babel/core": "^8.0.1",
