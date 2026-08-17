@@ -54,7 +54,13 @@
   `skills/` and is loaded on demand, so a session pays for the areas it
   actually touches. Put a new durable learning wherever its trigger is: in a
   skill when the task announces itself (dependency work, e2e, telemetry,
-  Pages), here when it does not.
+  Pages), here when it does not. Decide that per **bullet**, not per
+  section: a task-shaped section still carries rules that bind every PR, and
+  extracting it wholesale buries them behind a trigger the agent who needs
+  them never hits. The Dockerfile copy-surface rule (it fires for any new
+  root-level config, not just dependency work) and the push-timing rules
+  below (they fire for any PR, not just Pages work) were both extracted that
+  way and had to come back.
 - Read the file named below when its trigger applies rather than waiting for
   a skill listing to surface it. Symlink-following is not guaranteed in
   every harness, so these pointers are the floor that works everywhere —
