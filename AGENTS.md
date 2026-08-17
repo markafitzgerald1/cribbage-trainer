@@ -32,7 +32,7 @@
   `/.claude/*` but re-includes `!/.claude/skills` for exactly this reason.
   All four are confirmed working on hardware: Claude Code, Copilot (CLI,
   desktop, and VS Code), Antigravity (app and IDE), and Codex (CLI and
-  desktop) each list both repo skills through their symlink, so every
+  desktop) each list the repo's skills through their symlink, so every
   harness in use follows one.
 - A skill's `SKILL.md` frontmatter `name` must equal its directory name.
   Harnesses disagree on which they display — Claude Code and Copilot in VS
@@ -48,14 +48,33 @@
   the Docker gate, because the Dockerfile's `COPY` allowlist deliberately
   excludes these dot-paths — so `npm run docker:build-and-test-all` alone
   will not catch a broken symlink.
+- This file keeps only what an agent can violate _without knowing it is in
+  that domain_ — build-wide invariants, contribution rules, and the shape of
+  the project. Guidance whose trigger is self-evident from the task lives in
+  `skills/` and is loaded on demand, so a session pays for the areas it
+  actually touches. Put a new durable learning wherever its trigger is: in a
+  skill when the task announces itself (dependency work, e2e, telemetry,
+  Pages), here when it does not.
 - Read the file named below when its trigger applies rather than waiting for
   a skill listing to surface it. Symlink-following is not guaranteed in
   every harness, so these pointers are the floor that works everywhere —
-  they load the same file the native path would.
+  they load the same file the native path would. Read the skill **before**
+  starting the work, not after a gate fails.
   - Before validating a build or chasing CI compliance, read
     `skills/make-it-green/SKILL.md`.
   - Before adding or changing Storybook stories or interaction coverage, read
     `skills/testing-storybook/SKILL.md`.
+  - Before bumping dependencies, taking a major upgrade, or fixing an
+    `npm run lint:audit` advisory, read
+    `skills/dependency-maintenance/SKILL.md`.
+  - Before writing or debugging a Playwright spec, regenerating screenshot
+    baselines, or diagnosing a rendered-layout bug in the browser, read
+    `skills/testing-e2e/SKILL.md`.
+  - Before touching analytics consent, `gtag`, or trainer telemetry, read
+    `skills/analytics-telemetry/SKILL.md`.
+  - Before changing the Pages workflows, the PR preview deploy, the
+    `pages-content` branch, or `scripts/pagesContentMerge.mjs`, read
+    `skills/pages-preview/SKILL.md`.
 - Keep authored guidance out of dot-directories. The lint gauntlet's globs
   (`cspell '**'`, `markdownlint .`, `prettier --check .`) silently skip them:
   a `SKILL.md` with two misspellings is flagged under `skills/` and passes
@@ -100,87 +119,6 @@
   unused build layers, not tagged images or anything from other projects)
   typically frees tens of GB and lets the build proceed.
 
-## Dependency maintenance
-
-- Keep dependencies current in PRs: include minor and patch bumps, and take major
-  upgrades when they do not overshadow the PR's primary purpose.
-- Dependabot intentionally ignores ESLint 10.0.0 through 10.7.0 because the
-  latest `eslint-plugin-jsx-a11y` release (6.10.2) declares peer support only
-  through ESLint 9. Before changing that range, verify both packages' current
-  registry metadata; do not bypass the peer conflict with
-  `--legacy-peer-deps`.
-- With Babel's React and TypeScript presets enabled together, avoid single
-  unconstrained generic arrow functions such as `<T>(...) => ...` in `.ts`
-  files: Babel 8 parses the type parameter as JSX, while the repo's current
-  Prettier removes the TSX-style disambiguating comma from `.ts`, and lint
-  rejects a neutral `extends unknown` constraint. Prefer a named generic
-  function expression or declaration, which both Babel generations parse
-  consistently without weakening quality gates.
-- Major formatter and duplicate-detector upgrades can change their findings
-  without changing project code. Prettier 3.9 formats some union types
-  differently from 3.8, and each version rejects the other's output, so land
-  the version bump and its mechanical reformatting together. jscpd 5 tokenizes
-  some existing short test patterns differently and can expose clones that
-  jscpd 4 missed; keep the 0% threshold and refactor the shared setup or
-  assertion instead of raising `minTokens` or adding ignores. Its file pattern
-  is relative to each scan path, so keep `.jscpd.json` explicit with
-  `path: ["src"]` and `pattern: "**/*.ts*"` rather than relying on `.gitignore`
-  filtering.
-- Use `npm run deps:update:minor` for routine refreshes; handle larger major
-  upgrades separately if they would dominate the change set.
-- When `npm run lint:audit` (better-npm-audit) fails on freshly published
-  advisories, fix them in the package.json `overrides` block and write the
-  entries as **caret ranges** (`^1.1.18`, not `1.1.18`). An exact pin
-  outranks `npm audit fix`, which then cannot repair the tree at all; a
-  caret pin lets a plain `npm audit fix` resolve the advisories and rewrite
-  only `package-lock.json`. Measured on the 2026-07-31 wave: against the
-  exact pins then in place, `npm audit fix` exited 1 and left
-  brace-expansion, fast-uri, and js-yaml vulnerable, and only the unpinned
-  nanoid and postcss moved; with those same pins widened to carets it
-  exited 0 and picked exactly the intended versions, touching no
-  `devDependencies`. Never use `npm audit fix --force`, which took `eslint`
-  to `^10.8.1`, _downgraded_ `stylelint` from `^17.14.0` to `^17.13.0`, and
-  still fixed none of the three. Note that a caret override does not
-  self-heal on `npm install` — only `npm audit fix` or
-  `npm update <package>` re-resolves an existing lock entry.
-- The flagged packages are almost always dev/build dependencies that are
-  not shipped in the production bundle; confirm with
-  `npm ls <package> --omit=dev`, which prints an empty tree when nothing
-  ships. When an advisory range covers major lines that have no patched
-  release at all, pin what can be pinned and record the remainder as a
-  `.nsprc` exception with an `expiry`, so the waiver ages out and forces a
-  re-check the way the dependabot `ignore` entries do.
-- Before concluding that an older major line has no patched release, check
-  its maintenance dist-tag. `npm view <package> version` reports only
-  `latest`, which hides backports: brace-expansion publishes them as
-  `maintenance-v1`/`maintenance-v2`, js-yaml as `v4-legacy`, nanoid as
-  `legacy`. Read the per-advisory `via[].range` from `npm audit --json`
-  rather than the better-npm-audit table, because each range's upper bound
-  names the first patched version of that line (`<1.1.18`,
-  `>=2.0.0 <2.1.4`, `>=4.0.0 <5.0.9`), which is the version to caret in
-  `overrides`. The 2026-07-31 advisory wave looked like it needed an ESLint
-  or stylelint major and needed no upgrade at all.
-- A `.nsprc` waiver can outlive the gap it covered without anything
-  noticing, which is the other reason not to pin exactly. The
-  brace-expansion 1.x/2.x waiver was written when 1.1.16 and 2.1.2 were
-  genuinely the newest of those lines; 1.1.17 and 2.1.3 shipped three weeks
-  later and the exact pins stayed put, so the waiver survived its own
-  obsolescence. When better-npm-audit prints "N of the excluded
-  vulnerabilities did not match any of the found vulnerabilities", treat it
-  as required cleanup and drop the entry in the same PR instead of letting
-  it ride to its expiry. Leave `.nsprc` in place as `{}` when the last
-  exception goes, so the Dockerfile allowlist below stays valid.
-- The Dockerfile builds its lint surface and its test/build surface from
-  different copies. `COPY . .` immediately before `RUN npm run lint` hands lint
-  the entire build context, so no file can be missing from the gate; the
-  earlier allowlisted `COPY`s exist only to keep the `npm test` and
-  `npm run build` layers cacheable, so a new root-level config those two steps
-  need (`babel.config.json`-class, not `.nsprc`-class) still has to join that
-  line. Two placement rules keep this working: lint stays the last step, so the
-  whole-context copy invalidates nothing but the lint layer, and anything
-  `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
-  junk lints inside Docker while never reaching CI.
-
 ## Expected crib points table (vendored)
 
 - `src/game/expectedCribPointsTable.json` is **not authored here**. It is a lean
@@ -204,112 +142,6 @@
 - Shared expected-points table loaders use `null` to represent absence. Do not
   use truthiness checks for cached or injected tables, because generic loader
   callers may validly load falsy values such as `0`, `""`, or `false`.
-
-## Visual regression updates
-
-- `tests-e2e/index.screenshots.spec.ts` is ignored by the Firefox, WebKit, and
-  Mobile Safari projects. Keep that file focused on visual baselines; put
-  functional guards that need cross-browser coverage in a non-screenshot spec.
-- When Playwright snapshot diffs are acceptable:
-  - Regenerate screenshots in Docker:
-    `npm run docker:build-and-test-all -- -- --update-snapshots`.
-  - In PRs, explicitly note the screenshot updates and ensure expected images
-    are updated to match the current actuals (these will be human reviewed).
-  - `npm run docker:update-screenshots` expands to
-    `docker build ... && docker run ... --update-snapshots`. If the build's
-    lint/Storybook-coverage step fails, the `&&` short-circuits and the
-    baselines are silently NOT rewritten. Confirm the build passed (or that
-    `git status` actually shows changed `tests-e2e` images) before assuming the
-    regeneration took effect.
-  - On an Apple Silicon (arm64) host, Docker runs the test image as arm64,
-    whose text antialiasing differs from CI's native amd64 by a few pixels,
-    so every locally generated baseline carries a small cross-arch delta.
-    `maxDiffPixels` (`playwright.config.ts`) must therefore sit above that
-    noise floor, not below it, or CI flakes on baselines that look correct
-    locally. The global threshold is 800. A modal shot is far noisier
-    because `Modal`'s overlay is translucent (`rgb(0 0 0 / 50%)`), so the
-    dimmed hand behind the panel shows through the margins and its
-    antialiasing swings ~1100px across arch. Screenshot the opaque panel
-    itself (`getByRole("button", { name: "Close modal" }).locator("..")`),
-    not the whole `page`, so that incidental show-through is never captured —
-    prefer that over a per-shot `maxDiffPixels` override. Do **not** chase
-    exact CI-matching baselines by regenerating under qemu
-    (`--platform linux/amd64`): its rendering is a third variant matching
-    neither arm64 nor CI's amd64, and the emulated browser is too
-    slow/flaky for the interaction tests. Generate baselines natively on
-    arm64 and let the threshold absorb the delta.
-
-## Playwright and UI-layout debugging
-
-- Never judge a validation run by piping through `| tail` or `| grep`: the
-  pipe masks the command's exit code and a "61 passed" line can sit directly
-  below a failed-tests list. Redirect to a log file, echo `$?`, and read the
-  full summary (or use the shell's pipe-status array).
-- Analysis-row text (e.g. `K♥Q♠10♦9♣(6♠5♠)`) is rendered in the **active
-  sort order**; a deep link or click that sets `sort=ascending` reverses the
-  row text (`9♣10♦Q♠K♥(5♠6♠)`). Don't reuse row-text constants across tests
-  with different sort orders.
-- `locator.innerText()` captures per-element newlines, but `toHaveText()`
-  compares normalized text — comparing one against the other fails even when
-  content matches. Assert against explicit expected strings instead of
-  captured `innerText`.
-
-- `getByRole(role, { name })` matches the accessible name as a
-  **case-insensitive substring**, not an exact string. A header/button label
-  that is a substring of another control's name causes strict-mode collisions
-  (e.g. a sort label containing "crib" also matched the "Crib" button; "Deal" is
-  a substring of "dealer"; "Net"/"Hand"/"Play" likewise collide if reused in
-  prose). Keep visible and aria labels mutually non-substring. Note Testing
-  Library's `getByRole` uses exact/regex matching, so the same name can pass in
-  Jest yet fail the Playwright strict-mode locator.
-- CSS-module class names are hashed at build time, so a `page.evaluate`-injected
-  `<style>` that targets literal selectors like `.hand-column` silently no-ops.
-  To trial layout variants, edit the real `*.module.css` (Vite HMR applies it
-  live) and re-measure — do not inject literal-class overrides.
-- To diagnose numeric-column alignment, measure rendered glyph bounds with a
-  `Range` over the cell (`range.selectNodeContents(td)` then
-  `getBoundingClientRect().right`) and compare a positive vs a negative row; the
-  `td`'s own right edge will not reveal the gap.
-- The six hand cards are `<label>` elements inside the hand `<ul>` and expose
-  the ARIA role `generic`, not `listitem`; locate them with CSS locators such
-  as `page.locator("ul").first().locator("label")`.
-- When fixing a rendering bug, add a Playwright guard for it and negative-check
-  the guard: stash the fix, confirm the new test fails against the broken CSS,
-  then restore. A guard that was never seen failing proves nothing.
-- No Playwright project reproduces a phone browser's box model: the `webkit`
-  and `Mobile Safari` projects both run the desktop WebKit build, which
-  differs from iOS Safari. When a bug is engine-specific and no headless
-  browser reproduces it, guard the invariant the fix establishes rather than
-  the broken rendering. The iPhone controls-row overflow became testable
-  everywhere once the fix made spacing stylesheet-declared:
-  `sortControlSpacing.spec.ts`
-  asserts each control wrapper is exactly as wide as its visible button and
-  each rendered gap equals the computed `column-gap`, which fails in every
-  engine if any hidden box returns. Guard the cause, not the symptom.
-- The controls row and the six cards below it are within 3-4% of each other in
-  both modes (measured max-content width of the row versus the hand: 356 vs
-  368 portrait, 392 vs 410 landscape at phone sizes). That is the whole
-  tolerance for cross-engine font and box metrics, so any width the stylesheet
-  does not intend overflows the viewport in stacked mode and widens the
-  `min-content` left column past the cards in side-by-side mode, stranding
-  dead space before the analysis table. Measure the row's max-content width
-  (clone it with `width: max-content`) before adding anything to it.
-- Analysis tables are lazy-loaded. E2E tests that select a complete discard or
-  hydrate one from a deep link must wait for `Loading analysis...` to become
-  hidden and for the table to become visible before locating a result row;
-  relying on the assertion's default timeout creates WebKit races under load.
-- eslint's jest rule blocks cover `**/*.test.ts*` and `**/*.stories.ts*` but
-  not `tests-e2e/**/*.spec.ts`, so e2e helpers that wrap `expect` need no
-  `assertFunctionNames` registration (other rules such as `no-undefined`
-  still apply there).
-- To reproduce device font-scaling bugs (e.g. Android Chrome's font-size
-  accessibility setting, which scales rem), inject
-  `page.addStyleTag({ content: "html { font-size: 28px; }" })` after `goto`
-  and assert layout bounds; emulated devices at default font scale will not
-  show these overflows.
-- Add a visual regression viewport with the exact width, height, and resulting
-  aspect ratio that exposed a layout bug. Portrait and phone-landscape
-  baselines alone do not cover near-square windows or other breakpoint edges.
 
 ## Interaction design and visual-state debugging
 
@@ -482,75 +314,6 @@
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
 
-## Google Analytics interaction events (issue #250)
-
-- `src/ui/loadGoogleAnalytics.ts` implements basic consent mode. Unanswered or
-  declined consent must leave `dataLayer` undefined, inject no Google script,
-  and send no Google request. Only accepted consent may initialize the tag; it
-  queues denied defaults for analytics storage and all advertising consent
-  types, grants analytics storage only, then queues `js` and the sanitized
-  `config`. `src/ui/trackEvent.ts` remains the only path to
-  `gtag("event", …)` and independently gates trainer events on
-  `consented === true`. It also converts camelCase parameter keys to snake_case,
-  keeping call sites clean under the `camelcase` lint rule. `src/ui/gtag.ts`
-  pushes `arguments` objects — Google's tag silently ignores plain arrays.
-- `src/ui-react/useDiscardTelemetry.ts` stamps the per-hand `deal_nonce`,
-  1-based `analysis_index`, `is_first_analysis`, and `source`
-  (`interactive`/`deeplink`/`history`) at emit time; GA4 cannot reconstruct
-  "first analysis exposure per hand" after the fact, and #665's EV-loss metric
-  keys off `is_first_analysis`. That flag means the _first exposure of this
-  hand's ranked answers was this interactive one_ (`source === "interactive"`
-  and `analysis_index === 1`), not merely the first interactive exposure: a
-  deep link, a history hydration, or a selection made before consent all
-  reveal the full answer key, so any analysis after one of those is informed
-  and must never be counted as first instinct. `analysis_shown` fires
-  immediately when a complete discard exposes the answer, and
-  `analysis_unshown` fires immediately when the panel closes; delaying either
-  event would let an answer-influenced choice look unaided.
-  `card_selected`/`card_unselected` (keep-toggle semantics: un-keeping selects
-  for discard) are also immediate.
-- Telemetry bookkeeping advances even while consent withholds transmission,
-  because an unsent exposure still informs the next choice. Each tracked
-  exposure therefore records whether it actually reached Google Analytics, and
-  `analysis_unshown` is emitted only for an exposure whose `analysis_shown`
-  was sent. Without that pairing, accepting consent mid-hand ships an
-  `analysis_unshown` for an analysis GA4 never saw begin, and unshown counts
-  exceed shown ones. The resulting index gap (the first transmitted
-  `analysis_shown` of such a hand starts at 2) is intentional and honest: it
-  records that an earlier exposure happened without transmitting anything
-  about the pre-consent interaction itself.
-- The nonce resets on any hand replacement. Consent-gated `hand_started`
-  records each new telemetry scope, including the initial hand, with its
-  `initial`/`deal`/`manual`/`deeplink`/`history` source; if consent is granted
-  after the initial hand appears, it records the current hand once at that
-  point. `deal_clicked` remains specific to the Deal button. Payloads stay
-  card-free: counts, indices, source, and the nonce only.
-- The telemetry nonce must not consume the injected seeded generator, or
-  seeded deep links would deal different hands.
-- The e2e build gets a test measurement ID from `playwright.config.ts`'s
-  `webServer.env`, and `tests-e2e/blockGoogleAnalytics.ts` aborts every
-  request to the Google hosts. Both halves are load-bearing. Without an ID
-  `loadGoogleAnalytics` returns at its `!measurementId` check before reaching
-  the consent check, so a "nothing was sent" assertion passes even when
-  consent gating is completely broken; without the blocking, any test that
-  stores consent would send CI traffic to Google. `analyticsConsent.spec.ts`
-  therefore also asserts the tag _does_ load after Accept, which is what
-  makes its silence assertions meaningful. Negative-check any change here by
-  deleting the `consented !== true` condition and confirming the unanswered
-  and declined tests fail.
-- Jest enforces 100% branch coverage, so an unreachable defensive branch
-  fails the build: `split("=")[0] ?? ""` cannot yield the fallback and cost a
-  Docker run to discover, since `npm test -- --coverage=false` hides it.
-  Prefer formulations with no dead branch (compute `indexOf` and `substring`
-  from the same string) over a nullish fallback that can never fire.
-- Analytics Settings must remain available after the first choice. Withdrawal
-  stores `false`, removes visible `_ga*` cookies, and reloads the page so the
-  previously loaded Google runtime is gone. Verifying events end to end needs a
-  real `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`: before consent and after decline,
-  verify there is no tag, data layer, Google request, or analytics cookie.
-  After accepting, verify the consent update precedes `/g/collect` trainer
-  events and an analytics cookie may be created.
-
 ## Lint gauntlet interplay (agent checklist)
 
 - Every lint task is glob-driven, so a file the Docker image never received is
@@ -717,86 +480,9 @@
   publishes a PR preview.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages.
-
-## PR preview deploys (issue #153)
-
-- Every eligible open PR auto-publishes to
-  `https://markafitzgerald1.github.io/cribbage-trainer/pr/<number>/`, kept
-  current on every push and removed when the PR closes
-  (`.github/workflows/pages-preview-cleanup.yml`, triggered by
-  `pull_request: closed`, kept in its own file so editing cleanup logic can
-  never perturb the production-critical jobs' `on:`/`if:` conditions).
-  "Eligible" means same-repository and not authored by `dependabot[bot]`;
-  fork PRs never reach this at all since `push` never fires in this repo for
-  fork commits. Because previews are `push`-triggered, the branch-creating
-  push always precedes `gh pr create` and skips with "No open pull request
-  found"; the first preview publishes on the first push made _after_ the PR
-  exists (push an empty or follow-up commit if one is needed sooner).
-- Order branch work so the PR exists before the push you want previewed.
-  `gh pr create` needs the branch on the remote, so the PR cannot literally
-  come first; instead push the branch as soon as it has one commit (or an
-  empty one), open the PR immediately — `--draft` is fine — and only then
-  push the commits to preview. Pushing a finished branch and opening the PR
-  afterwards always burns a cycle: that push's `resolve-preview-pr` logs "No
-  open pull request found ...; skipping preview deploy" and nothing publishes
-  until the next push.
-- The workflow's top-level concurrency group is
-  `${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`,
-  so any push to a branch cancels that branch's running build. Never push to
-  a PR branch while waiting on its preview or CI result — including a
-  doc-only follow-up commit — or the run producing that result dies and the
-  wait restarts. Land such commits before the run starts, or after it ends.
-- The `pages-content` branch is a git-based **cache**, not the Pages
-  publishing source (Pages settings stay `build_type: workflow`). It is
-  fetched-or-created, mutated, and force-pushed as a single amended commit
-  by every publish (`.github/actions/publish-pages-content`), so its history
-  never grows — don't "clean up" this branch or its lack of history; that is
-  intentional, and a repository ruleset ("Protect pages-content from
-  deletion") blocks deleting it. It holds the production site root plus one `pr/<number>/`
-  directory per currently-open preview; the merge/replace/remove logic lives
-  in `scripts/pagesContentMerge.mjs` (tested via `node --test`, not Jest, so
-  it stays outside `src/**` and the 100% Jest coverage threshold).
-- Every publish deploys the **whole** merged tree, so a `pages-content`
-  checkout lacking a root `index.html` must never reach `deploy-pages`: the
-  very first preview publish did exactly that (the branch bootstraps empty
-  and production had never been seeded through this pipeline) and took the
-  production site down. The composite action now runs
-  `pagesContentMerge.mjs assert-deployable` before deploying, `applyProd`
-  preserves the checkout's `.git` worktree pointer (deleting it breaks the
-  commit-and-push step), and the cleanup workflow no-ops when the branch
-  does not exist. If the guard ever fires, seed production first (deploy
-  `main` through the new workflow, or apply the `prod` mutation to the
-  branch manually).
-- Never retry a failed Pages deploy with a single-job rerun: rerunning a
-  job that already uploaded a `github-pages` artifact adds a second one to
-  the same run, and `actions/deploy-pages` then always fails with
-  "Multiple artifacts named github-pages" — for every attempt on that run.
-  Push a new commit (fresh run) instead.
-- A GitHub Actions concurrency group holds one running job plus **one**
-  waiting job; a newer arrival cancels the older waiting one ("higher
-  priority waiting request"), even with `cancel-in-progress: false`.
-  Merging a PR fires `push` and `pull_request: closed` simultaneously, so
-  the close-cleanup job could cancel the merge's own production deploy
-  (this hit the #656 merge and left production one commit stale). Hence
-  cleanup skips merged PRs entirely and the production publish prunes
-  previews for non-open PRs instead (`pagesContentMerge.mjs prune`). Because
-  that prune is destructive, its open-PR allowlist must use a paginated API
-  query; a finite `gh pr list --limit` can omit a still-open PR and delete its
-  preview.
-- Bot logins are spelled differently per GitHub API surface: Dependabot is
-  `app/dependabot` in `gh` CLI/GraphQL author fields but `dependabot[bot]`
-  in REST/webhook event payloads. Never compare a single literal — the
-  preview-eligibility check matched only the latter and silently published
-  a preview for a Dependabot PR.
-- There are deliberately **two** GitHub Pages environments: `github-pages`
-  (production) has a branch policy restricting it to `main` — reusing it for
-  previews would silently hang every preview job before any step runs.
-  Preview jobs target the separate, unprotected `github-pages-preview`
-  environment instead, which Actions auto-creates on first use.
-- `vite.config.js`'s `base` reads `PAGES_BASE_PATH` (falling back to
-  `/cribbage-trainer`); preview builds set it to `/cribbage-trainer/pr/<n>`
-  and deliberately skip the `dist/`-caching step used on main, since that
-  cache key hashes only source files, not the base path.
+- Preview eligibility, the shared `pages-content` tree, and the ordering and
+  concurrency rules that decide whether a run publishes at all are in
+  `skills/pages-preview/SKILL.md`; read it before editing either workflow.
 
 ## Contribution notes
 
@@ -813,7 +499,9 @@
   condition or call next to it. The `capitalized-comments` ESLint rule
   requires every `//` line to start with a capital, so write one full
   sentence per line.
-- For visual changes, update Playwright snapshots when the new visuals are correct.
+- For visual changes, update Playwright snapshots when the new visuals are
+  correct, following `skills/testing-e2e/SKILL.md` so the regeneration
+  actually lands.
 - Keep README and docs in sync when changing workflows or commands.
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.

@@ -5,10 +5,13 @@ Vite and deployed to GitHub Pages. The scoring engine is derived purely from
 enumeration, simulation, and probability — never hard-coded heuristics or
 hand-edited scoring/lookup tables.
 
-`README.md` (setup), `AGENTS.md` and `CONTRIBUTING.md` (full conventions and
-process), and `skills/*/SKILL.md` (Storybook coverage, CI validation) hold the
-detail. This file is the concise reviewer's summary; prefer those over repeating
-them.
+`README.md` (setup), `AGENTS.md` and `CONTRIBUTING.md` (always-applicable
+conventions and process), and `skills/*/SKILL.md` (task-shaped procedures:
+CI validation, Storybook coverage, dependency and audit work, Playwright and
+screenshot testing, analytics telemetry, Pages previews) hold the detail.
+`AGENTS.md` names the trigger for each skill; read the skill when its trigger
+applies. This file is the concise reviewer's summary; prefer those over
+repeating them.
 
 ## Layout
 
