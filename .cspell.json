@@ -54,6 +54,7 @@
     "tsbuildinfo",
     "unshown",
     "Vite",
-    "worktree"
+    "worktree",
+    "worktrees"
   ]
 }

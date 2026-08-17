@@ -7,3 +7,8 @@ storybook-static/
 test-results/
 tsconfig.tsbuildinfo
 .git/
+# The lint layer copies the whole context, so anything git ignores must be
+# excluded here too, or local-only junk would lint in Docker but not in CI.
+.claude/
+.vscode/
+codex.feedback.*.txt
