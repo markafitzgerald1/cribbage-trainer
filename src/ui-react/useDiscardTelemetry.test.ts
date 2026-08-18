@@ -116,6 +116,10 @@ const shownParams = (
   source,
 });
 
+// A globally unique identifier lets warehouse analysis key on deal_nonce across sessions and devices.
+const UUID_PATTERN =
+  /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/u;
+
 const deepLinkedOptions: SetupOptions = {
   dealtCards: handWithDiscards(HAND, "AH,2H"),
   wasDeepLinked: true,
@@ -215,6 +219,12 @@ describe("useDiscardTelemetry", () => {
       expect(handStartedEvents(scene)).toStrictEqual([
         { dealNonce: expect.any(String), source: "initial" },
       ]);
+    });
+  });
+
+  it("identifies the hand with a random UUID", () => {
+    expectTelemetryScene({}, (scene) => {
+      expect(handStartedEvents(scene)[0]?.dealNonce).toMatch(UUID_PATTERN);
     });
   });
 

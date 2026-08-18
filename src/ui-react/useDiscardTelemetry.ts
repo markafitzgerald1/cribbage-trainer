@@ -12,15 +12,9 @@ import { serializeHand } from "../game/Card";
 
 export type HandReplacementCause = "deal" | "manual";
 
-const NONCE_RADIX = 36;
-const NONCE_RANDOM_OFFSET = "0.".length;
-
-// The nonce only needs uniqueness within one browser session, so wall-clock time plus Math.random suffices.
+// One telemetry hand is identified globally, not merely within a browser session, so warehouse analysis may treat the value as a key.
 // The seeded deal generator must not be consumed here: that would change which hands seeded links deal.
-const createDealNonce = () =>
-  `${Date.now().toString(NONCE_RADIX)}-${Math.random()
-    .toString(NONCE_RADIX)
-    .slice(NONCE_RANDOM_OFFSET)}`;
+const createDealNonce = () => crypto.randomUUID();
 
 interface ShownAnalysis {
   readonly analysisIndex: number;
