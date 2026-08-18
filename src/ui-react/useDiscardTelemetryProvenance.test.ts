@@ -95,6 +95,24 @@ describe("telemetry hand identity and provenance", () => {
     },
     {
       expected: false,
+      name: "a restored hand the user re-entered after the seed dealt it",
+      options: seededOptions,
+      restore: HAND,
+      steps: [
+        [OTHER_HAND, "deal"],
+        [HAND, "manual"],
+        [THIRD_HAND, "deal"],
+      ],
+    },
+    {
+      expected: false,
+      name: "a restored hand this session never created",
+      options: seededOptions,
+      restore: THIRD_HAND,
+      steps: [[OTHER_HAND, "deal"]],
+    },
+    {
+      expected: false,
       name: "a restored hand the seed never dealt",
       options: seededOptions,
       restore: OTHER_HAND,

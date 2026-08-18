@@ -58,14 +58,13 @@ const createDealTelemetryState = (
   source,
 });
 
-// Back or Forward can restore a hand at zero discards, whose next complete discard is still stamped a first instinct, so a restored hand has to carry the provenance it had when this session generated it.
-const rememberSeededHand = (
-  seededHandKeys: Set<string>,
+// Back or Forward can restore a hand at zero discards, whose next complete discard is still stamped a first instinct, so a restored hand has to carry the provenance it had when this session created it.
+// Two scopes can share one key — a seeded deal the user later re-enters by hand — and cards alone cannot tell one such scope from the other, so the most recent classification of a hand wins.
+const rememberHandProvenance = (
+  handProvenance: Map<string, boolean>,
   state: DealTelemetryState,
 ) => {
-  if (state.generatedFromSeed) {
-    seededHandKeys.add(state.handKey);
-  }
+  handProvenance.set(state.handKey, state.generatedFromSeed);
 };
 
 const discardedCards = (dealtCards: readonly DealtCard[]) =>
@@ -109,9 +108,9 @@ export const useDiscardTelemetry = ({
       source: wasDeepLinked ? "deeplink" : "interactive",
     }),
   );
-  const seededHandKeysRef = useRef(new Set<string>());
+  const handProvenanceRef = useRef(new Map<string, boolean>());
   useEffect(() => {
-    rememberSeededHand(seededHandKeysRef.current, stateRef.current);
+    rememberHandProvenance(handProvenanceRef.current, stateRef.current);
   }, []);
   const latestRef = useRef({ consented, trackEvent });
   useEffect(() => {
@@ -193,7 +192,7 @@ export const useDiscardTelemetry = ({
     (newDealtCards: readonly DealtCard[], scope: HandScope) => {
       closeShownAnalysis(stateRef.current);
       const state = createDealTelemetryState(newDealtCards, scope);
-      rememberSeededHand(seededHandKeysRef.current, state);
+      rememberHandProvenance(handProvenanceRef.current, state);
       stateRef.current = state;
       return state;
     },
@@ -246,7 +245,8 @@ export const useDiscardTelemetry = ({
         reportAnalysisState(state);
       } else {
         const newState = replaceHand(newDealtCards, {
-          generatedFromSeed: seededHandKeysRef.current.has(handKey),
+          // A hand this session never created reads as unseeded rather than unknown.
+          generatedFromSeed: handProvenanceRef.current.get(handKey) === true,
           handStartSource: "history",
           source: "history",
         });
