@@ -477,10 +477,14 @@
 - Resolve pull request review threads after addressing and responding to them.
 - Agents should not need individual review URLs once the repository and PR
   number are known.
-- A closing keyword in a PR body cannot be conditioned in prose. "Closes #712
-  only if you consider Tier 1 sufficient" closed #712 on merge, because
-  GitHub acts on the keyword and ignores the qualifier around it. Write
-  `Refs #712` instead, and say the closing decision in words.
+- A closing keyword fires wherever it appears in a PR body or commit
+  message — qualified in prose, inside quotation marks, or offered as an
+  example. Both happened here: #720 wrote one with an "only if" qualifier
+  and closed #712 on merge, then #722 quoted that same phrase to document
+  the trap and closed #712 again. Never put the literal keyword-plus-number
+  string in a PR body or commit message; write the bare number (`#712`) and
+  state the closing decision in words. Quoting it inside a repository file
+  is safe — only PR bodies and commit messages are parsed.
 - The `gh` binary may not be on PATH inside piped or compound subshells (e.g. a
   `while` loop fed by a pipe), failing with `gh: command not found`. Use the
   absolute path (`/opt/homebrew/bin/gh`) and drive loops from a file
