@@ -481,10 +481,14 @@
   message — qualified in prose, inside quotation marks, or offered as an
   example. Both happened here: #720 wrote one with an "only if" qualifier
   and closed #712 on merge, then #722 quoted that same phrase to document
-  the trap and closed #712 again. Never put the literal keyword-plus-number
-  string in a PR body or commit message; write the bare number (`#712`) and
-  state the closing decision in words. Quoting it inside a repository file
-  is safe — only PR bodies and commit messages are parsed.
+  the trap and closed #712 again. Confine it to one position: the **last
+  line of a PR body**, and only when merging that PR closes the issue
+  outright. Anywhere else in a body or commit message — mid-prose, quoted,
+  or shown as an example — write the bare number (`#712`) and state the
+  closing decision in words. When one issue spans several PRs, no PR
+  carries the keyword until the final one, because an earlier merge would
+  close the issue with work still outstanding. Quoting it inside a
+  repository file is safe — only PR bodies and commit messages are parsed.
 - The `gh` binary may not be on PATH inside piped or compound subshells (e.g. a
   `while` loop fed by a pipe), failing with `gh: command not found`. Use the
   absolute path (`/opt/homebrew/bin/gh`) and drive loops from a file
