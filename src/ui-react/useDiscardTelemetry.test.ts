@@ -1,81 +1,30 @@
+/* jscpd:ignore-start */
+import {
+  HAND,
+  OTHER_HAND,
+  type Scene,
+  type SetupOptions,
+  completeDiscard,
+  deepLinkedOptions,
+  eventParams,
+  expectLastShown,
+  expectTelemetryScene,
+  handStartedEvents,
+  handWithDiscards,
+  navigateHistory,
+  replaceHandWith,
+  shownEvents,
+  shownParams,
+  toggleTo,
+  unshownEvents,
+} from "./useDiscardTelemetry.test.common";
 import type {
   HandStartSource,
-  TrackEvent,
   TrainerEventName,
   TrainerEventParams,
 } from "../ui/trackEvent";
-import { describe, expect, it, jest } from "@jest/globals";
-import type { DealtCard } from "../game/DealtCard";
-import { parseHand } from "../game/Card";
-import { renderHook } from "@testing-library/react";
-import { toDealtCards } from "../game/toDealtCards";
-import { useDiscardTelemetry } from "./useDiscardTelemetry";
-
-const HAND = "AH,2H,3H,4H,5H,6H";
-const OTHER_HAND = "AS,2S,3S,4S,5S,6S";
-
-const handWithDiscards = (hand: string, discards: string | null) =>
-  toDealtCards(parseHand(hand), discards ? parseHand(discards) : null);
-
-interface SetupOptions {
-  readonly consented?: boolean | null;
-  readonly dealtCards?: readonly DealtCard[];
-  readonly wasDeepLinked?: boolean;
-}
-
-const setupTelemetry = ({
-  consented = true,
-  dealtCards = handWithDiscards(HAND, null),
-  wasDeepLinked = false,
-}: SetupOptions = {}) => {
-  const trackEvent = jest.fn<TrackEvent>();
-  const hook = renderHook(
-    ({ currentConsent }: { readonly currentConsent: boolean | null }) =>
-      useDiscardTelemetry({
-        consented: currentConsent,
-        dealtCards,
-        trackEvent,
-        wasDeepLinked,
-      }),
-    { initialProps: { currentConsent: consented } },
-  );
-  return {
-    rerenderConsent: (currentConsent: boolean | null) => {
-      hook.rerender({ currentConsent });
-    },
-    telemetry: hook.result.current,
-    trackEvent,
-  };
-};
-
-type Scene = ReturnType<typeof setupTelemetry>;
-
-const expectTelemetryScene = (
-  options: SetupOptions,
-  run: (scene: Scene) => void,
-) => {
-  const scene = setupTelemetry(options);
-  run(scene);
-};
-
-const eventParams = (scene: Scene, eventName: string) =>
-  scene.trackEvent.mock.calls
-    .filter(([, name]) => name === eventName)
-    .map(([, , params]) => params);
-
-const shownEvents = (scene: Scene) => eventParams(scene, "analysis_shown");
-
-const unshownEvents = (scene: Scene) => eventParams(scene, "analysis_unshown");
-
-const handStartedEvents = (scene: Scene) => eventParams(scene, "hand_started");
-
-const toggleTo = (scene: Scene, discards: string | null, kept = false) => {
-  scene.telemetry.reportCardToggled(handWithDiscards(HAND, discards), kept);
-};
-
-const completeDiscard = (scene: Scene, discards: string) => {
-  toggleTo(scene, discards);
-};
+import { describe, expect, it } from "@jest/globals";
+/* jscpd:ignore-end */
 
 const showThenHideAnalysis = (scene: Scene) => {
   completeDiscard(scene, "AH,2H");
@@ -83,11 +32,7 @@ const showThenHideAnalysis = (scene: Scene) => {
 };
 
 const replaceHand = (scene: Scene, cause: "deal" | "manual") => {
-  scene.telemetry.reportHandReplaced(handWithDiscards(OTHER_HAND, null), cause);
-};
-
-const navigateHistory = (scene: Scene, hand: string, discards: string) => {
-  scene.telemetry.reportHistoryNavigation(handWithDiscards(hand, discards));
+  replaceHandWith(scene, OTHER_HAND, cause);
 };
 
 const discardThenNavigate = (
@@ -105,26 +50,6 @@ const cardParams = (discardCount: number) => ({
   discardCount,
 });
 
-const shownParams = (
-  analysisIndex: number,
-  isFirstAnalysis: boolean,
-  source: string,
-) => ({
-  analysisIndex,
-  dealNonce: expect.any(String),
-  isFirstAnalysis,
-  source,
-});
-
-// A globally unique identifier lets warehouse analysis key on deal_nonce across sessions and devices.
-const UUID_PATTERN =
-  /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/u;
-
-const deepLinkedOptions: SetupOptions = {
-  dealtCards: handWithDiscards(HAND, "AH,2H"),
-  wasDeepLinked: true,
-};
-
 const expectCardEvent = (
   scene: Scene,
   eventName: TrainerEventName,
@@ -135,10 +60,6 @@ const expectCardEvent = (
     eventName,
     cardParams(discardCount),
   );
-};
-
-const expectLastShown = (scene: Scene, expected: object) => {
-  expect(shownEvents(scene).at(-1)).toStrictEqual(expected);
 };
 
 const expectTwoInteractiveAnalyses = (scene: Scene) => {
@@ -161,6 +82,7 @@ const expectLastHandStarted = (
 ) => {
   expect(handStartedEvents(scene).at(-1)).toStrictEqual({
     dealNonce,
+    generatedFromSeed: false,
     source,
   });
 };
@@ -217,14 +139,12 @@ describe("useDiscardTelemetry", () => {
       scene.rerenderConsent(true);
 
       expect(handStartedEvents(scene)).toStrictEqual([
-        { dealNonce: expect.any(String), source: "initial" },
+        {
+          dealNonce: expect.any(String),
+          generatedFromSeed: false,
+          source: "initial",
+        },
       ]);
-    });
-  });
-
-  it("identifies the hand with a random UUID", () => {
-    expectTelemetryScene({}, (scene) => {
-      expect(handStartedEvents(scene)[0]?.dealNonce).toMatch(UUID_PATTERN);
     });
   });
 
@@ -349,6 +269,7 @@ describe("useDiscardTelemetry", () => {
       expect(handStartedEvents(scene)).toStrictEqual([
         {
           dealNonce: shownEvents(scene)[0]!.dealNonce,
+          generatedFromSeed: false,
           source: "deeplink",
         },
       ]);

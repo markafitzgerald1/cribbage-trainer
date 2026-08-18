@@ -48,6 +48,7 @@ type InitialTrainerProps = Partial<
     | "initialDiscards"
     | "initialScoreSortKey"
     | "initialSortOrder"
+    | "isSeededSession"
     | "trackEvent"
   >
 >;
@@ -58,6 +59,7 @@ export const renderTrainerWithInitialProps = ({
   initialDiscards,
   initialScoreSortKey = null,
   initialSortOrder = null,
+  isSeededSession = false,
   trackEvent = jest.fn(),
 }: InitialTrainerProps) =>
   render(
@@ -68,6 +70,7 @@ export const renderTrainerWithInitialProps = ({
       initialDiscards={initialDiscards ?? null}
       initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
+      isSeededSession={isSeededSession}
       loadGoogleAnalytics={jest.fn()}
       trackEvent={trackEvent}
     />,

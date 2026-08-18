@@ -24,9 +24,17 @@ interface ShownAnalysis {
   readonly reported: boolean;
 }
 
+// Provenance is fixed when the hand is created, because the URL at emit time no longer says where the cards came from.
+interface HandScope {
+  readonly generatedFromSeed: boolean;
+  readonly handStartSource: HandStartSource;
+  readonly source: AnalysisSource;
+}
+
 interface DealTelemetryState {
   analysisCount: number;
   readonly dealNonce: string;
+  readonly generatedFromSeed: boolean;
   handStarted: boolean;
   readonly handStartSource: HandStartSource;
   readonly handKey: string;
@@ -37,11 +45,11 @@ interface DealTelemetryState {
 
 const createDealTelemetryState = (
   dealtCards: readonly DealtCard[],
-  source: AnalysisSource,
-  handStartSource: HandStartSource,
+  { generatedFromSeed, handStartSource, source }: HandScope,
 ): DealTelemetryState => ({
   analysisCount: 0,
   dealNonce: createDealNonce(),
+  generatedFromSeed,
   handKey: serializeHand(dealtCards),
   handStartSource,
   handStarted: false,
@@ -50,12 +58,24 @@ const createDealTelemetryState = (
   source,
 });
 
+// Back or Forward can restore a hand at zero discards, whose next complete discard is still stamped a first instinct, so a restored hand has to carry the provenance it had when this session generated it.
+const rememberSeededHand = (
+  seededHandKeys: Set<string>,
+  state: DealTelemetryState,
+) => {
+  if (state.generatedFromSeed) {
+    seededHandKeys.add(state.handKey);
+  }
+};
+
 const discardedCards = (dealtCards: readonly DealtCard[]) =>
   dealtCards.filter((dealtCard) => !dealtCard.kept);
 
 export interface DiscardTelemetryProps {
   readonly consented: boolean | null;
   readonly dealtCards: readonly DealtCard[];
+  // Only whether a seed exists crosses into telemetry; the seed value itself never does.
+  readonly isSeededSession: boolean;
   readonly trackEvent: TrackEvent;
   readonly wasDeepLinked: boolean;
 }
@@ -77,16 +97,22 @@ export interface DiscardTelemetry {
 export const useDiscardTelemetry = ({
   consented,
   dealtCards,
+  isSeededSession,
   trackEvent,
   wasDeepLinked,
 }: DiscardTelemetryProps): DiscardTelemetry => {
   const stateRef = useRef(
-    createDealTelemetryState(
-      dealtCards,
-      wasDeepLinked ? "deeplink" : "interactive",
-      wasDeepLinked ? "deeplink" : "initial",
-    ),
+    createDealTelemetryState(dealtCards, {
+      // A deep link supplies its own cards, so the seed did not generate them.
+      generatedFromSeed: isSeededSession && !wasDeepLinked,
+      handStartSource: wasDeepLinked ? "deeplink" : "initial",
+      source: wasDeepLinked ? "deeplink" : "interactive",
+    }),
   );
+  const seededHandKeysRef = useRef(new Set<string>());
+  useEffect(() => {
+    rememberSeededHand(seededHandKeysRef.current, stateRef.current);
+  }, []);
   const latestRef = useRef({ consented, trackEvent });
   useEffect(() => {
     latestRef.current = { consented, trackEvent };
@@ -109,6 +135,7 @@ export const useDiscardTelemetry = ({
       state.handStarted = true;
       emit("hand_started", {
         dealNonce: state.dealNonce,
+        generatedFromSeed: state.generatedFromSeed,
         source: state.handStartSource,
       });
     },
@@ -150,6 +177,7 @@ export const useDiscardTelemetry = ({
       const reported = emit("analysis_shown", {
         analysisIndex: state.analysisCount,
         dealNonce: state.dealNonce,
+        generatedFromSeed: state.generatedFromSeed,
         isFirstAnalysis,
         source: state.source,
       });
@@ -162,17 +190,10 @@ export const useDiscardTelemetry = ({
     [closeShownAnalysis, emit],
   );
   const replaceHand = useCallback(
-    (
-      newDealtCards: readonly DealtCard[],
-      source: AnalysisSource,
-      handStartSource: HandStartSource,
-    ) => {
+    (newDealtCards: readonly DealtCard[], scope: HandScope) => {
       closeShownAnalysis(stateRef.current);
-      const state = createDealTelemetryState(
-        newDealtCards,
-        source,
-        handStartSource,
-      );
+      const state = createDealTelemetryState(newDealtCards, scope);
+      rememberSeededHand(seededHandKeysRef.current, state);
       stateRef.current = state;
       return state;
     },
@@ -194,25 +215,41 @@ export const useDiscardTelemetry = ({
   );
   const reportHandReplaced = useCallback(
     (newDealtCards: readonly DealtCard[], cause: HandReplacementCause) => {
-      const state = replaceHand(newDealtCards, "interactive", cause);
+      const state = replaceHand(newDealtCards, {
+        // A hand the user typed in is theirs, not the seed's, but typing one leaves the seeded generator untouched, so later deals are seed-derived again.
+        generatedFromSeed: cause === "deal" && isSeededSession,
+        handStartSource: cause,
+        source: "interactive",
+      });
       if (cause === "deal") {
         emit("deal_clicked", { dealNonce: state.dealNonce });
       }
       reportHandStarted(state);
       reportAnalysisState(state);
     },
-    [emit, replaceHand, reportAnalysisState, reportHandStarted],
+    [
+      emit,
+      isSeededSession,
+      replaceHand,
+      reportAnalysisState,
+      reportHandStarted,
+    ],
   );
   const reportHistoryNavigation = useCallback(
     (newDealtCards: readonly DealtCard[]) => {
       const state = stateRef.current;
-      if (serializeHand(newDealtCards) === state.handKey) {
+      const handKey = serializeHand(newDealtCards);
+      if (handKey === state.handKey) {
         // Back/Forward within the same deal keeps the deal's nonce.
         state.source = "history";
         state.pendingCards = newDealtCards;
         reportAnalysisState(state);
       } else {
-        const newState = replaceHand(newDealtCards, "history", "history");
+        const newState = replaceHand(newDealtCards, {
+          generatedFromSeed: seededHandKeysRef.current.has(handKey),
+          handStartSource: "history",
+          source: "history",
+        });
         reportHandStarted(newState);
         reportAnalysisState(newState);
       }

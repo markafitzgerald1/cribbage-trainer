@@ -31,6 +31,7 @@ export interface TrainerProps {
   readonly initialDiscards?: Card[] | null;
   readonly initialScoreSortKey?: ScoredKeepDiscardSortKey | null;
   readonly initialSortOrder?: SortOrder | null;
+  readonly isSeededSession?: boolean;
 }
 
 export const analyticsConsentKey = "analyticsConsent-2026-07-23";
@@ -143,6 +144,7 @@ export function Trainer({
   initialDiscards = null,
   initialScoreSortKey = null,
   initialSortOrder = null,
+  isSeededSession = false,
 }: TrainerProps) {
   const dealHandWithGenerator = useCallback(
     () => dealHand(generator),
@@ -176,6 +178,7 @@ export function Trainer({
   const telemetry = useDiscardTelemetry({
     consented: analyticsConsented,
     dealtCards,
+    isSeededSession,
     trackEvent,
     wasDeepLinked: initialCards !== null,
   });
@@ -350,4 +353,5 @@ Trainer.defaultProps = {
   initialDiscards: null,
   initialScoreSortKey: null,
   initialSortOrder: null,
+  isSeededSession: false,
 };

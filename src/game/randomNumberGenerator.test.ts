@@ -1,5 +1,5 @@
+import { createGenerator, isSeededSession } from "./randomNumberGenerator";
 import { describe, expect, it } from "@jest/globals";
-import { createGenerator } from "./randomNumberGenerator";
 
 describe("create", () => {
   it("returns Math.random if no seed is specified", () => {
@@ -19,5 +19,17 @@ describe("create", () => {
     Array.from({ length: randomNumberCount }).forEach(() => {
       expect(generateRandomNumber1()).toStrictEqual(generateRandomNumber2());
     });
+  });
+});
+
+describe("isSeededSession", () => {
+  const SEED_CASES: readonly (readonly [string | null, boolean])[] = [
+    [null, false],
+    ["", false],
+    ["my seed", true],
+  ];
+
+  it.each(SEED_CASES)("classifies seed %p as seeded %p", (seed, expected) => {
+    expect(isSeededSession(seed)).toBe(expected);
   });
 });

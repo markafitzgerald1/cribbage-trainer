@@ -13,11 +13,13 @@ export type TrainerEventName =
   | "deal_clicked"
   | "hand_started";
 
-// Concrete keys keep every payload card-free by construction: counts, indices, source, and the per-deal nonce only.
+// Concrete keys keep every payload card-free by construction: counts, indices, source, provenance, and the per-deal nonce only.
 export interface TrainerEventParams {
   readonly analysisIndex?: number;
   readonly dealNonce?: string;
   readonly discardCount?: number;
+  // Low-cardinality provenance, never the seed itself or anything derived from it.
+  readonly generatedFromSeed?: boolean;
   readonly isFirstAnalysis?: boolean;
   readonly source?: AnalysisSource | HandStartSource;
 }

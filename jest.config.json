@@ -6,6 +6,7 @@
     "!src/game/parseCards.common.ts",
     "!src/ui-react/handToSortedString.test.common.ts",
     "!src/ui-react/Trainer.test.common.tsx",
+    "!src/ui-react/useDiscardTelemetry.test.common.ts",
     "!src/ui-react/*.stories.{ts,tsx}",
     "!src/ui-react/stories.common.ts"
   ],

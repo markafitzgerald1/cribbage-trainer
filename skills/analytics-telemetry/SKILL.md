@@ -48,14 +48,47 @@ mean anything.
   `analysis_shown` of such a hand starts at 2) is intentional and honest: it
   records that an earlier exposure happened without transmitting anything
   about the pre-consent interaction itself.
-- The nonce resets on any hand replacement. Consent-gated `hand_started`
+- The identifier resets on any hand replacement. Consent-gated `hand_started`
   records each new telemetry scope, including the initial hand, with its
   `initial`/`deal`/`manual`/`deeplink`/`history` source; if consent is granted
   after the initial hand appears, it records the current hand once at that
   point. `deal_clicked` remains specific to the Deal button. Payloads stay
-  card-free: counts, indices, source, and the nonce only.
-- The telemetry nonce must not consume the injected seeded generator, or
-  seeded deep links would deal different hands.
+  card-free: counts, indices, source, provenance, and the identifier only.
+- `deal_nonce` is a `crypto.randomUUID()` value and identifies one telemetry
+  hand **globally**, not merely within a browser session, so warehouse
+  analysis may key on it across sessions and devices. The parameter name
+  predates that contract and is kept for schema continuity. `randomUUID` is
+  secure-context only, which every context this app runs in satisfies (HTTPS
+  Pages, `localhost` dev and preview, jsdom's `http://localhost/`), so there
+  is deliberately no fallback branch — one would be unreachable in production
+  under the 100% branch-coverage gate. Serving the app from a plain-`http`
+  LAN address would break it; use a PR preview for device testing.
+- `generated_from_seed` marks hands a seeded session generated, because a
+  seeded sequence can be replayed or memorized and its decisions would bias
+  population skill statistics. The rule: a hand is seed-derived when the
+  session was opened with a non-empty `seed` **and** the injected generator
+  produced its cards — the initial hand when the URL carried no `hand`, and
+  every Deal afterwards. A deep-linked or manually entered hand is not, even
+  while the URL still carries `seed`; neither disturbs the generator, so the
+  next Deal is seed-derived again. Derive it from the hand's lifecycle, never
+  from the URL at emit time. The seed value itself never reaches this layer:
+  `isSeededSession` in `randomNumberGenerator.ts` defines what counts as a
+  seed for both the generator and telemetry, and only that boolean is passed
+  in.
+- History-restored hands look their provenance up in the set of hands this
+  session generated from the seed, rather than being classed unseeded
+  wholesale. Back can land on a zero-discard state whose next complete
+  discard is stamped `analysis_index` 1 with source `interactive` — that is,
+  `is_first_analysis` true — so a restored hand can still enter the
+  first-instinct population and must carry its true provenance.
+- Filtering contract for #665: population performance statistics take only
+  rows with `is_first_analysis` true **and** `generated_from_seed` false.
+  Seeded, deep-linked, manual, and history-restored hands are kept only as
+  separately segmented practice data.
+- Telemetry must not consume the injected seeded generator for identifiers or
+  anything else, or seeded deep links would deal different hands. The hook
+  has no access to it, and a `Trainer` test pins the generator to exactly six
+  card draws plus one crib-role draw per render.
 - The e2e build gets a test measurement ID from `playwright.config.ts`'s
   `webServer.env`, and `tests-e2e/blockGoogleAnalytics.ts` aborts every
   request to the Google hosts. Both halves are load-bearing. Without an ID
