@@ -477,6 +477,10 @@
 - Resolve pull request review threads after addressing and responding to them.
 - Agents should not need individual review URLs once the repository and PR
   number are known.
+- A closing keyword in a PR body cannot be conditioned in prose. "Closes #712
+  only if you consider Tier 1 sufficient" closed #712 on merge, because
+  GitHub acts on the keyword and ignores the qualifier around it. Write
+  `Refs #712` instead, and say the closing decision in words.
 - The `gh` binary may not be on PATH inside piped or compound subshells (e.g. a
   `while` loop fed by a pipe), failing with `gh: command not found`. Use the
   absolute path (`/opt/homebrew/bin/gh`) and drive loops from a file
@@ -552,6 +556,13 @@
   (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as
   part of the same PR as the code change, not as a follow-up. When a change
   set produced no such learnings, say so in the PR description.
+- When a PR touches a domain that lives in `skills/`, state in the
+  description whether the skill was read before the work started and whether
+  it covered what came up. "Did not read it, and here is what that cost" is
+  the most useful answer of the set, so record it plainly rather than as a
+  confession. Progressive disclosure is a bet that a pointer is enough, and
+  these lines are the only evidence the bet is paying: a skill that went
+  unread leaves no other trace, so the gap cannot be reconstructed later.
 - In-code comments must document only the non-obvious _why_ — invariants,
   the rationale for a surprising call, consequences/trade-offs, or guards
   against "simplifying" an argument that looks redundant. Never restate the
