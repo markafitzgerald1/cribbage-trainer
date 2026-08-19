@@ -13,9 +13,9 @@
   yet earned from its own author: stickiness and trust. It does get played
   from time to time, but not often enough to call it sticky, and many of its
   recommendations still get double-checked rather than acted on — the math is
-  trusted, the recommendations are not yet trusted as advice. The objective is
-  voluntary play several times a week even when not testing a change, and
-  acting on what the app says without re-deriving it. Finding, retaining, and
+  trusted, the recommendations only somewhat trusted as advice so far. The
+  objective is voluntary play several times a week even when not testing a
+  change, and acting on what the app says without re-deriving it. Finding, retaining, and
   monetizing users is deliberately deferred until that holds. The loop being
   closed is: play a game, make authentic decisions, identify the decisions
   that cost the most expected value, understand them, practice the weaknesses,
