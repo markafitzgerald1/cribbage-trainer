@@ -1,6 +1,7 @@
 ---
 name: working-an-issue
 description: Use before starting work on a GitHub issue, and when you triage or draft one — the shape an issue should have, the project board, the plan comment, branch and PR shape, what a review guide and testing plan owe a reader, how to request Copilot and verify it, and the Codex review loop that has to run before a human is asked to look.
+compatibility: Requires the gh CLI for issue, PR, review, and project board operations.
 ---
 
 # Working an issue end to end

@@ -640,15 +640,16 @@
   correct, following `skills/testing-e2e/SKILL.md` so the regeneration
   actually lands.
 - Keep README and docs in sync when changing workflows or commands.
-- After editing a long Markdown file here, diff its heading list against the
-  base branch. An edit that splices by index can swallow a whole section
+- After editing any long Markdown file here — `AGENTS.md`, `CLAUDE.md`,
+  `README.md`, a skill — diff that file's heading list against the base
+  branch. An edit that splices by index can swallow a whole section
   heading while every gate stays green: markdownlint, prettier, and cspell all
   check lines rather than structure, and four adversarial review rounds missed
   exactly that on #730 before Copilot caught it.
 
   ```bash
-  diff <(git show origin/main:AGENTS.md | grep '^## ') \
-    <(grep '^## ' AGENTS.md)
+  diff <(git show origin/main:<file> | grep '^## ') \
+    <(grep '^## ' <file>)
   ```
 
 - Triage test, CI, and infrastructure issues into the current/active milestone
