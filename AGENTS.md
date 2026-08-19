@@ -641,15 +641,16 @@
   actually lands.
 - Keep README and docs in sync when changing workflows or commands.
 - After editing any long Markdown file here — `AGENTS.md`, `CLAUDE.md`,
-  `README.md`, a skill — diff that file's heading list against the base
-  branch, at every heading level — a skill's title is level one and README
-  subsections are level three. An edit that splices by index can swallow any
-  of them while every gate stays green, because markdownlint, prettier, and
-  cspell check lines rather than structure; four adversarial review rounds
-  missed exactly that on #730 before Copilot caught it.
+  `README.md`, a skill — diff that file's heading list against the branch it
+  is based on, which is `origin/main` for most work and the parent branch for
+  a stacked PR. Compare every heading level: a skill's title is level one and
+  README subsections are level three. An edit that splices by index can
+  swallow any of them while every gate stays green, because markdownlint,
+  prettier, and cspell check lines rather than structure; four adversarial
+  review rounds missed exactly that on #730 before Copilot caught it.
 
   ```bash
-  diff <(git show origin/main:<file> | grep -E '^#{1,6} ') \
+  diff <(git show <base>:<file> | grep -E '^#{1,6} ') \
     <(grep -E '^#{1,6} ' <file>)
   ```
 
