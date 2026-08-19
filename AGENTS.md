@@ -642,11 +642,11 @@
 - Keep README and docs in sync when changing workflows or commands.
 - After editing any long Markdown file here — `AGENTS.md`, `CLAUDE.md`,
   `README.md`, a skill — diff that file's heading list against the base
-  branch, at every heading level: a skill's title is level one, README
-  subsections are level three, and an edit that splices by index can swallow
-  any of them while every gate stays green: markdownlint, prettier, and cspell all
-  check lines rather than structure, and four adversarial review rounds missed
-  exactly that on #730 before Copilot caught it.
+  branch, at every heading level — a skill's title is level one and README
+  subsections are level three. An edit that splices by index can swallow any
+  of them while every gate stays green, because markdownlint, prettier, and
+  cspell check lines rather than structure; four adversarial review rounds
+  missed exactly that on #730 before Copilot caught it.
 
   ```bash
   diff <(git show origin/main:<file> | grep -E '^#{1,6} ') \
