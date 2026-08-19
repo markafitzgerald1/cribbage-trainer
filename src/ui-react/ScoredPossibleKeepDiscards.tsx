@@ -32,6 +32,12 @@ export interface ScoredPossibleKeepDiscardsProps {
    */
   readonly loadCribTable?: () => Promise<ExpectedCribPointsTable>;
   readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
+
+  /**
+   * Called once the ranked results are actually on screen, which telemetry
+   * needs to tell an answer the user saw from one that never arrived.
+   */
+  readonly onAnalysisRendered?: () => void;
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
@@ -87,6 +93,7 @@ export function ScoredPossibleKeepDiscards({
   dealtCards,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
+  onAnalysisRendered = () => undefined,
   onScoreSortKeyChange,
   scoreSortKey,
   sortOrder,
@@ -113,6 +120,13 @@ export function ScoredPossibleKeepDiscards({
         });
     }
   }, [loadCribTable, loadError, loadPlayTable, retryCount, tables]);
+
+  useEffect(() => {
+    // The loading and failure branches return before the results below, so only a real exposure reports one.
+    if (tables) {
+      onAnalysisRendered();
+    }
+  }, [onAnalysisRendered, tables]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);
@@ -248,4 +262,5 @@ export function ScoredPossibleKeepDiscards({
 ScoredPossibleKeepDiscards.defaultProps = {
   loadCribTable: cribLoader.loadTable,
   loadPlayTable: playLoader.loadTable,
+  onAnalysisRendered: () => undefined,
 };

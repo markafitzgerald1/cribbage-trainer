@@ -43,6 +43,7 @@ interface DealTelemetryState {
   readonly dealNonce: string;
   readonly generatedFromSeed: boolean;
   handStarted: boolean;
+  hasRevealedAnalysis: boolean;
   readonly handStartSource: HandStartSource;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
@@ -58,6 +59,7 @@ const createDealTelemetryState = (
   generatedFromSeed,
   handStartSource,
   handStarted: false,
+  hasRevealedAnalysis: false,
   pendingCards: dealtCards,
   shown: null,
   source,
@@ -84,6 +86,8 @@ export interface DiscardTelemetry {
     dealtCards: readonly DealtCard[],
     cause: HandReplacementCause,
   ) => void;
+  // Reported when ranked results reach the screen, which is what ends first-instinct status.
+  readonly reportAnalysisRendered: () => void;
   readonly reportHistoryNavigation: (
     dealtCards: readonly DealtCard[],
     entry: HistoryHandScope | null,
@@ -166,10 +170,10 @@ export const useDiscardTelemetry = ({
         return;
       }
       state.analysisCount += 1;
-      // Any earlier exposure of this deal's ranked answers ends first-instinct status.
-      // Deep links, history hydration, and pre-consent selections all reveal them.
+      // Only an exposure the user actually saw ends first-instinct status, so an analysis that never loaded leaves the next discard unaided.
+      // Deep links, history hydration, and pre-consent selections all reveal the answers once they render.
       const isFirstAnalysis =
-        state.source === "interactive" && state.analysisCount === 1;
+        state.source === "interactive" && !state.hasRevealedAnalysis;
       const reported = emit("analysis_shown", {
         analysisIndex: state.analysisCount,
         dealNonce: state.dealNonce,
@@ -230,6 +234,9 @@ export const useDiscardTelemetry = ({
       reportHandStarted,
     ],
   );
+  const reportAnalysisRendered = useCallback(() => {
+    stateRef.current.hasRevealedAnalysis = true;
+  }, []);
   const currentHandScope = useCallback(
     (): HistoryHandScope => ({
       generatedFromSeed: stateRef.current.generatedFromSeed,
@@ -265,12 +272,14 @@ export const useDiscardTelemetry = ({
   return useMemo(
     () => ({
       currentHandScope,
+      reportAnalysisRendered,
       reportCardToggled,
       reportHandReplaced,
       reportHistoryNavigation,
     }),
     [
       currentHandScope,
+      reportAnalysisRendered,
       reportCardToggled,
       reportHandReplaced,
       reportHistoryNavigation,

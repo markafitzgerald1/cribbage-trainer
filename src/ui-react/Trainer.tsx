@@ -348,6 +348,7 @@ export function Trainer({
           <ScoredPossibleKeepDiscards
             cribRole={cribRole}
             dealtCards={dealtCards}
+            onAnalysisRendered={telemetry.reportAnalysisRendered}
             onScoreSortKeyChange={changeScoreSortKey}
             scoreSortKey={scoreSortKey}
             sortOrder={sortOrder}
