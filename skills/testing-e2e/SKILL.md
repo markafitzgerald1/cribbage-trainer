@@ -110,3 +110,34 @@ baselines so CI agrees with what was generated locally.
     neither arm64 nor CI's amd64, and the emulated browser is too
     slow/flaky for the interaction tests. Generate baselines natively on
     arm64 and let the threshold absorb the delta.
+  - A cloud session (Claude Code on the web) is a third rendering variant in
+    exactly the sense above, so run e2e there with the pixel comparison
+    switched off, inside the test image:
+
+    ```bash
+    docker run --rm cribbage-trainer-integration-tests \
+      npx playwright test --ignore-snapshots
+    ```
+
+    That is 167 passed and exit 0, against 138 passed and exit 1 when the
+    pixels are compared. The screenshot specs still execute every
+    interaction and locator; only the image comparison is skipped, and CI
+    adjudicates the pixels against baselines it already matches.
+
+  - `--ignore-snapshots` makes a **new** screenshot spec pass vacuously:
+    with no baseline written and no comparison run, a visual guard added in
+    a cloud session goes green while proving nothing. CI adjudicating the
+    pixels covers existing baselines, not new ones. Author a new visual
+    guard on a machine that owns the baselines, or land the spec and treat
+    the first CI run as the only evidence it works.
+  - Do not raise `maxDiffPixels` to make a cloud session's pixels pass, and
+    do not regenerate baselines there. Measured on that host: its glyph
+    antialiasing needs roughly 47,000 against the configured 800, while a
+    real 1%-card-width regression (`1.212em` to `1.2em`) peaks at 23,514px
+    and a card-border thickening (`0.022em` to `0.03em`) at 4,171px — both
+    would sit under the raised threshold and stop being caught. Playwright's
+    per-pixel `threshold` does not rescue it either: at 0.7 the noise is
+    still 23,116px across 13 of 16 shots, because the differing pixels are
+    full text-versus-background swings at glyph edges rather than soft
+    gradients. Baselines regenerated on that host are a fourth variant that
+    CI would reject.
