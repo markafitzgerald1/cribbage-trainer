@@ -9,18 +9,22 @@
   thumb", or subjective weighting in scoring algorithms. All expected values
   must be mathematically derived.
 - Primary branch: `main`; active work often happens on feature branches.
-- **Product direction:** the roadmap is gated on the author playing the app
-  voluntarily, which it does not yet earn — it gets opened while testing
-  changes, not because someone independently wants to improve at cribbage. The
-  objective is "I voluntarily play several times per week even when not
-  testing a change", and finding, retaining, and monetizing users is
-  deliberately deferred until that holds. The loop being closed is: play a
-  game, make authentic decisions, identify the decisions that cost the most
-  expected value, understand them, practice the weaknesses, play again. So the
-  filter for any proposed work is **does this make playing, learning,
-  diagnosing mistakes, or measuring improvement meaningfully better?** If not,
-  it ranks below work that does. Be suspicious in particular of technical work
-  that deepens the simulator without improving that loop: implementation
+- **Product direction:** the roadmap is gated on two things the app has not
+  yet earned from its own author: stickiness and trust. It does get played
+  from time to time, but not often enough to call it sticky, and many of its
+  recommendations still get double-checked rather than acted on — the math is
+  trusted, the recommendations are not yet trusted as advice. The objective is
+  voluntary play several times a week even when not testing a change, and
+  acting on what the app says without re-deriving it. Finding, retaining, and
+  monetizing users is deliberately deferred until that holds. The loop being
+  closed is: play a game, make authentic decisions, identify the decisions
+  that cost the most expected value, understand them, practice the weaknesses,
+  play again. So any proposed work faces two questions: **does this make
+  playing, learning, diagnosing mistakes, or measuring improvement meaningfully
+  better?** and **does it close the trust gap — is a recommendation legible
+  enough to act on without checking it?** Work that answers neither ranks
+  below work that answers either. Be suspicious in particular of technical
+  work that deepens the simulator without improving that loop: implementation
   scalability is treated as mostly solved by tests, guardrails, and agents.
 - This file is the shared contract for every harness used here: Codex and
   Antigravity read `AGENTS.md` directly, Claude Code reaches it through
@@ -451,6 +455,14 @@
   declaring multiple React components in a single file.
 - Never use inline `CSpell:ignore` comments; instead add words to `.cspell.json`.
 - Prefer small, focused commits; summarize why changes are needed.
+- Prefer a long autonomous run to frequent check-ins. Work through review
+  rounds, gate failures, and the follow-up fixes they produce rather than
+  reporting each one and waiting; batch anything you genuinely need answered
+  into one message. Interrupt only when proceeding would be unsafe, or when a
+  wrong assumption would waste the work rather than cost an edit. The time an
+  agent runs unattended is time its human spends on something else, so a
+  question that could have been an assumption plus a note in the PR is more
+  expensive than it looks.
 - Only comment on the "why" behind code; strongly prefer meaningful test names,
   function names, and variable names to comments in code. Do not add redundant
   comments explaining self-evident code.
