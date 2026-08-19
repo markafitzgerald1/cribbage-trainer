@@ -12,7 +12,10 @@ describe("trackEvent", () => {
     (consented) => {
       const dataLayer = setupDataLayer();
 
-      trackEvent(consented, "card_selected", { dealNonce: "nonce" });
+      trackEvent(consented, "card_selected", {
+        dealNonce: "nonce",
+        discardCount: 1,
+      });
 
       expect(dataLayer).toHaveLength(0);
     },
@@ -32,6 +35,7 @@ describe("trackEvent", () => {
     trackEvent(true, "analysis_shown", {
       analysisIndex: 1,
       dealNonce: "nonce",
+      generatedFromSeed: false,
       isFirstAnalysis: true,
       source: "interactive",
     });
@@ -44,6 +48,8 @@ describe("trackEvent", () => {
         analysis_index: 1,
         // eslint-disable-next-line camelcase
         deal_nonce: "nonce",
+        // eslint-disable-next-line camelcase
+        generated_from_seed: false,
         // eslint-disable-next-line camelcase
         is_first_analysis: true,
         source: "interactive",

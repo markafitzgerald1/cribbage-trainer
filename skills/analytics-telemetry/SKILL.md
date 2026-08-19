@@ -85,8 +85,20 @@ mean anything.
   records each new telemetry scope, including the initial hand, with its
   `initial`/`deal`/`manual`/`deeplink`/`history` source; if consent is granted
   after the initial hand appears, it records the current hand once at that
-  point. `deal_clicked` remains specific to the Deal button. Payloads stay
-  card-free: counts, indices, source, provenance, and the identifier only.
+  point. `deal_clicked` remains specific to the Deal button, and is emitted
+  **after** the `hand_started` it belongs to: the event that opens a hand
+  scope should be the first one carrying that scope's identifier, so "first
+  event per hand" is a question about the data rather than about which call
+  site ran first (#689). Payloads stay card-free: counts, indices, source,
+  provenance, and the identifier only.
+- `TrainerEventParams` is keyed by event name, so each event carries exactly
+  its own parameters and `TrainerEventName` is `keyof` that map — a new event
+  cannot be declared without declaring what it sends (#688). This is what
+  makes `hand_started` with an `AnalysisSource`, or `analysis_shown` with a
+  `HandStartSource`, a type error rather than merely wrong; both type-checked
+  before. Anything consuming these events generically — the
+  hook's `emit`, the specs' event accessors — has to stay generic over the
+  name, or it re-widens the contract at the first call site.
 - `deal_nonce` is a `crypto.randomUUID()` value and identifies one telemetry
   hand **globally**, not merely within a browser session, so warehouse
   analysis may key on it across sessions and devices. The parameter name

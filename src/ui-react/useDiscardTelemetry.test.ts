@@ -138,6 +138,25 @@ const CARD_EVENT_CASES: readonly [
   ],
 ];
 
+const ANALYSIS_ON_SCREEN_CASES: readonly {
+  readonly name: string;
+  readonly rendersOnScreen: boolean;
+}[] = [
+  {
+    name: "an analysis on screen ends first instinct for the hand",
+    rendersOnScreen: true,
+  },
+  {
+    name: "an analysis that never reached the screen leaves first instinct available",
+    rendersOnScreen: false,
+  },
+];
+
+const consentedEventNames = (scene: Scene) =>
+  scene.trackEvent.mock.calls
+    .filter(([consented]) => consented === true)
+    .map(([, eventName]) => eventName);
+
 describe("useDiscardTelemetry", () => {
   it("starts the initial hand once consent is granted", () => {
     expectTelemetryScene({ consented: null }, (scene) => {
@@ -168,20 +187,6 @@ describe("useDiscardTelemetry", () => {
       });
     },
   );
-
-  const ANALYSIS_ON_SCREEN_CASES: readonly {
-    readonly name: string;
-    readonly rendersOnScreen: boolean;
-  }[] = [
-    {
-      name: "an analysis on screen ends first instinct for the hand",
-      rendersOnScreen: true,
-    },
-    {
-      name: "an analysis that never reached the screen leaves first instinct available",
-      rendersOnScreen: false,
-    },
-  ];
 
   it.each(ANALYSIS_ON_SCREEN_CASES)("$name", ({ rendersOnScreen }) => {
     expectTelemetryScene({}, (scene) => {
@@ -355,11 +360,6 @@ describe("useDiscardTelemetry", () => {
     },
   );
 
-  const consentedEventNames = (scene: Scene) =>
-    scene.trackEvent.mock.calls
-      .filter(([consented]) => consented === true)
-      .map(([, eventName]) => eventName);
-
   it("never closes an analysis that consent kept off the wire", () => {
     expectTelemetryScene({ consented: null }, (scene) => {
       exposeAnalysisThenConsent(scene);
@@ -368,6 +368,18 @@ describe("useDiscardTelemetry", () => {
       expect(consentedEventNames(scene)).toStrictEqual([
         "hand_started",
         "card_unselected",
+      ]);
+    });
+  });
+
+  it("opens the hand scope before the click that caused it", () => {
+    expectTelemetryScene({}, (scene) => {
+      replaceHand(scene, "deal");
+
+      expect(consentedEventNames(scene)).toStrictEqual([
+        "hand_started",
+        "hand_started",
+        "deal_clicked",
       ]);
     });
   });
