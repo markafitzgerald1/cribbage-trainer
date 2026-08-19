@@ -108,7 +108,8 @@ const allowedParamKeys = (eventName: TrainerEventName): readonly string[] =>
     .filter(([name]) => name === eventName)
     .flatMap(([, keys]) => keys as readonly string[]);
 
-const toGoogleAnalyticsKey = (key: string) =>
+// Exported so a spec can state expected payloads in the keys Google Analytics actually receives, without restating this conversion.
+export const toGoogleAnalyticsKey = (key: string) =>
   key.replace(/[A-Z]/gu, (upper) => `_${upper.toLowerCase()}`);
 
 // This gate prevents events before Google Analytics loads or after withdrawal.
