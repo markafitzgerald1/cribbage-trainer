@@ -37,7 +37,7 @@ export interface ScoredPossibleKeepDiscardsProps {
    * Called once the ranked results are actually on screen, which telemetry
    * needs to tell an answer the user saw from one that never arrived.
    */
-  readonly onAnalysisRendered?: () => void;
+  readonly onAnalysisRendered: () => void;
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
@@ -93,7 +93,7 @@ export function ScoredPossibleKeepDiscards({
   dealtCards,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
-  onAnalysisRendered = () => undefined,
+  onAnalysisRendered,
   onScoreSortKeyChange,
   scoreSortKey,
   sortOrder,
@@ -262,5 +262,4 @@ export function ScoredPossibleKeepDiscards({
 ScoredPossibleKeepDiscards.defaultProps = {
   loadCribTable: cribLoader.loadTable,
   loadPlayTable: playLoader.loadTable,
-  onAnalysisRendered: () => undefined,
 };

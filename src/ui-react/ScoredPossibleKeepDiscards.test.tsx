@@ -45,6 +45,7 @@ describe("scored possible keep discards component", () => {
 
   interface RenderOptions {
     readonly cribRole?: CribRole;
+    readonly onAnalysisRendered?: () => void;
     readonly onScoreSortKeyChange?: (
       scoreSortKey: ScoredKeepDiscardSortKey,
     ) => void;
@@ -56,6 +57,7 @@ describe("scored possible keep discards component", () => {
     dealtCards: DealtCard[],
     {
       cribRole = CribRole.Dealer,
+      onAnalysisRendered = jest.fn(),
       onScoreSortKeyChange = jest.fn(),
       preload = true,
       scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
@@ -74,6 +76,7 @@ describe("scored possible keep discards component", () => {
       <ScoredPossibleKeepDiscards
         cribRole={cribRole}
         dealtCards={dealtCards}
+        onAnalysisRendered={onAnalysisRendered}
         onScoreSortKeyChange={onScoreSortKeyChange}
         scoreSortKey={scoreSortKey}
         sortOrder={SortOrder.Ascending}
@@ -198,13 +201,26 @@ describe("scored possible keep discards component", () => {
     },
   );
 
-  const renderAndExpectLoading = () => {
+  const renderAndExpectLoading = (onAnalysisRendered = jest.fn()) => {
     setTableSync(null);
     setPlayTableSync(null);
 
-    renderScoredPossibleKeepDiscards(dealHand(mathRandom), { preload: false });
+    renderScoredPossibleKeepDiscards(dealHand(mathRandom), {
+      onAnalysisRendered,
+      preload: false,
+    });
 
     expect(screen.getByText("Loading analysis...")).toBeTruthy();
+  };
+
+  const renderFailedLoad = async (onAnalysisRendered = jest.fn()) => {
+    mockLoadCribTable.mockRejectedValueOnce(new Error("Fake load error"));
+
+    renderAndExpectLoading(onAnalysisRendered);
+
+    await waitFor(() => {
+      expect(screen.getByText("Failed to load analysis.")).toBeTruthy();
+    });
   };
 
   const expectLoaded = async () => {
@@ -214,6 +230,29 @@ describe("scored possible keep discards component", () => {
     return screen.getByRole("table");
   };
 
+  it("reports a rendered analysis once the ranked results are on screen", () => {
+    const onAnalysisRendered = jest.fn();
+    renderScoredPossibleKeepDiscards(dealHand(mathRandom), {
+      onAnalysisRendered,
+    });
+
+    expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports no rendered analysis while the tables are still loading", () => {
+    const onAnalysisRendered = jest.fn();
+    renderAndExpectLoading(onAnalysisRendered);
+
+    expect(onAnalysisRendered).not.toHaveBeenCalled();
+  });
+
+  it("reports no rendered analysis when the load fails", async () => {
+    const onAnalysisRendered = jest.fn();
+    await renderFailedLoad(onAnalysisRendered);
+
+    expect(onAnalysisRendered).not.toHaveBeenCalled();
+  });
+
   it("renders loading state when table is not loaded, then renders content once loaded", async () => {
     renderAndExpectLoading();
 
@@ -221,13 +260,7 @@ describe("scored possible keep discards component", () => {
   });
 
   it("handles loading error gracefully and allows retry", async () => {
-    mockLoadCribTable.mockRejectedValueOnce(new Error("Fake load error"));
-
-    renderAndExpectLoading();
-
-    await waitFor(() => {
-      expect(screen.getByText("Failed to load analysis.")).toBeTruthy();
-    });
+    await renderFailedLoad();
 
     const retryButton = screen.getByRole("button", { name: "Retry" });
 

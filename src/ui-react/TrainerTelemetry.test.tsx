@@ -4,7 +4,7 @@ import {
   mathRandom,
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
-  setCribTable,
+  setAnalysisTables,
 } from "./Trainer.test.common";
 import { type TrainerProps, analyticsConsentKey } from "./Trainer";
 import { describe, expect, it, jest } from "@jest/globals";
@@ -33,7 +33,7 @@ const setupInitialPropsTrainer = (
   >,
 ) => {
   const trackEvent = startTelemetryCapture(true);
-  setCribTable();
+  setAnalysisTables();
   renderTrainerWithInitialProps({ ...props, trackEvent });
   return trackEvent;
 };

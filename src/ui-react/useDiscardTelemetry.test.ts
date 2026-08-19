@@ -15,6 +15,7 @@ import {
   handWithDiscards,
   navigateHistory,
   replaceHandWith,
+  revealAnalysis,
   shownEvents,
   shownParams,
   toggleTo,
@@ -30,8 +31,15 @@ import type { HistoryHandScope } from "./useDiscardTelemetry";
 
 const unshownEvents = (scene: Scene) => eventParams(scene, "analysis_unshown");
 
+const revealAnalysisWhen = (scene: Scene, reveal: boolean) => {
+  if (reveal) {
+    revealAnalysis(scene);
+  }
+};
+
 const showThenHideAnalysis = (scene: Scene) => {
   completeDiscard(scene, "AH,2H");
+  revealAnalysis(scene);
   toggleTo(scene, "AH", true);
 };
 
@@ -56,10 +64,13 @@ const expectCardEvent = (
   );
 };
 
-const expectTwoInteractiveAnalyses = (scene: Scene) => {
+const expectTwoInteractiveAnalyses = (
+  scene: Scene,
+  secondIsFirstInstinct = false,
+) => {
   expect(shownEvents(scene)).toStrictEqual([
     shownParams(1, true, "interactive"),
-    shownParams(2, false, "interactive"),
+    shownParams(2, secondIsFirstInstinct, "interactive"),
   ]);
 };
 
@@ -158,20 +169,37 @@ describe("useDiscardTelemetry", () => {
     },
   );
 
-  it("stamps only the first interactive analysis of a deal as first", () => {
+  // Only an analysis that reached the screen ends first instinct: one stuck on Loading, or one that failed, revealed no answers.
+  const REVEAL_CASES: readonly {
+    readonly name: string;
+    readonly reveal: boolean;
+  }[] = [
+    {
+      name: "a rendered analysis ends first instinct for the hand",
+      reveal: true,
+    },
+    {
+      name: "an analysis that never reached the screen leaves it available",
+      reveal: false,
+    },
+  ];
+
+  it.each(REVEAL_CASES)("$name", ({ reveal }) => {
     expectTelemetryScene({}, (scene) => {
       completeDiscard(scene, "AH,2H");
+      revealAnalysisWhen(scene, reveal);
       completeDiscard(scene, "AH,3H");
 
       expect(unshownEvents(scene)).toHaveLength(0);
 
-      expectTwoInteractiveAnalyses(scene);
+      expectTwoInteractiveAnalyses(scene, !reveal);
     });
   });
 
   it("records a close and reopen when a flicker returns to a discard", () => {
     expectTelemetryScene({}, (scene) => {
       completeDiscard(scene, "2H,4H");
+      revealAnalysis(scene);
       toggleTo(scene, "2H,4H,5H");
       completeDiscard(scene, "2H,4H");
 
@@ -285,6 +313,7 @@ describe("useDiscardTelemetry", () => {
 
   const exposeAnalysisThenConsent = (scene: Scene) => {
     completeDiscard(scene, "AH,2H");
+    revealAnalysis(scene);
     scene.rerenderConsent(true);
   };
 
@@ -302,6 +331,7 @@ describe("useDiscardTelemetry", () => {
       secondDiscard: "AH,2H",
     },
     {
+      expose: revealAnalysis,
       name: "a deep link already revealed the answers",
       options: deepLinkedOptions,
       secondDiscard: "AH,3H",

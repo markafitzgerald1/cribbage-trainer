@@ -80,6 +80,11 @@ export const toggleTo = (
   scene.telemetry.reportCardToggled(handWithDiscards(HAND, discards), kept);
 };
 
+// What ScoredPossibleKeepDiscards reports once ranked results are on screen.
+export const revealAnalysis = (scene: Scene) => {
+  scene.telemetry.reportAnalysisRendered();
+};
+
 export const completeDiscard = (scene: Scene, discards: string) => {
   toggleTo(scene, discards);
 };

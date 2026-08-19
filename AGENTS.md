@@ -464,6 +464,14 @@
 - The Codex GitHub connector reviews the current head when a PR comment says
   `@codex review` (post it with an agent-attribution prefix). When Codex
   quota is exhausted it replies "usage limits reached" instead of reviewing.
+- Request that review yourself rather than asking permission first, and keep
+  requesting it: address every finding, re-request on the new head, and repeat
+  until a round reports no issues. The budget here is deliberately large
+  because Codex is the adversarial check on agent work, and successive rounds
+  earn their cost — on #728 the second round found a defect in code the first
+  round had passed, and only the third came back clean. Copilot's low-effort
+  reviews are similarly plentiful; its medium-effort reviews are the scarce
+  resource, so spend those deliberately.
 - A Copilot review request via the REST `requested_reviewers` endpoint can
   succeed while the eventual "review" is only a COMMENTED stub saying the
   requester reached their Copilot quota. Read the review body before
@@ -598,6 +606,17 @@
 - Keep README and docs in sync when changing workflows or commands.
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
+- Move an issue to **In Progress** on the `Cribbage Trainer` project board when
+  you start work on it; merging a PR whose body closes the issue moves it to
+  Done on its own. A board reading Todo while a branch and PR exist misreports
+  what is being worked, and the board is how the state of play is read. It is
+  project 1 for this repository's owner. Read the Status field and its option
+  ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
+  Discovery & Design, Todo, In Progress, Done), find the item id with
+  `gh project item-list 1 --owner <owner> --limit 400 --format json` — the
+  board holds close to 300 items, so the default limit hides most of them —
+  then set it with `gh project item-edit`, passing the item, project, field,
+  and In Progress option ids.
 
 ## Commit messages
 
