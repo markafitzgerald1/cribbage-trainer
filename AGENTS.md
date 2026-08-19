@@ -269,8 +269,8 @@
   the consent Accept/Decline off-screen — worst in WebKit, which renders the
   banner ~27px taller than Chromium, so the screenshot baselines (Chromium
   and Mobile Chrome only) never catch it. Keep the landscape header compact
-  and shrink the consent banner from its grid cell (`.dynamic-ui >
-:last-child { font-size }`, which its text and `em` padding both track)
+  and shrink the consent banner from its grid cell — the `font-size` on
+  `.dynamic-ui > :last-child`, which its text and `em` padding both track —
   rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
   asserts Accept stays within a 844x390 viewport across all browsers.
 - Desktop engines do not model the mobile viewport, in two independent ways,
@@ -641,11 +641,16 @@
   actually lands.
 - Keep README and docs in sync when changing workflows or commands.
 - After editing a long Markdown file here, diff its heading list against the
-  base branch (`diff <(git show origin/main:AGENTS.md | grep '^## ') <(grep
-'^## ' AGENTS.md)`). An edit that splices by index can swallow a whole
-  section heading while every gate stays green: markdownlint, prettier, and
-  cspell all check lines rather than structure, and four adversarial review
-  rounds missed exactly that on #730 before Copilot caught it.
+  base branch. An edit that splices by index can swallow a whole section
+  heading while every gate stays green: markdownlint, prettier, and cspell all
+  check lines rather than structure, and four adversarial review rounds missed
+  exactly that on #730 before Copilot caught it.
+
+  ```bash
+  diff <(git show origin/main:AGENTS.md | grep '^## ') \
+    <(grep '^## ' AGENTS.md)
+  ```
+
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
 

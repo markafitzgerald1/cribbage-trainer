@@ -45,7 +45,7 @@ review mechanics that have each produced a wrong conclusion when guessed at.
   response's own `requested_reviewers` array is empty — Copilot is simply not
   represented there, which is **not** evidence the request failed and must not
   be retried on that basis. Confirm it in
-  `gh api repos/<owner>/<repo>/issues/<n>/timeline`, which shows
+  `gh api --paginate repos/<owner>/<repo>/issues/<n>/timeline`, which shows
   `review_requested` with `requested_reviewer.login == "Copilot"` followed by
   `copilot_work_started`.
 
