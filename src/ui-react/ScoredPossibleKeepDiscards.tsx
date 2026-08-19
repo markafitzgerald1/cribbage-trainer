@@ -123,10 +123,11 @@ export function ScoredPossibleKeepDiscards({
 
   useEffect(() => {
     // The loading and failure branches return before the results below, so only a real exposure reports one.
+    // Keyed on the cards as well as the tables: Back and Forward between two complete discards swap the hand while this stays mounted, and the restored hand's results are on screen just as much as the first hand's were.
     if (tables) {
       onAnalysisRendered();
     }
-  }, [onAnalysisRendered, tables]);
+  }, [dealtCards, onAnalysisRendered, tables]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);

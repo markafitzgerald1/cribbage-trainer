@@ -132,3 +132,5 @@ export const getHandText = (container: HTMLElement) =>
   container.querySelector("ul")!.textContent;
 
 export const SIX_HEARTS_HAND = "AH,2H,3H,4H,5H,6H";
+
+export const SIX_SPADES_HAND = "AS,2S,3S,4S,5S,6S";
