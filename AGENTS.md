@@ -9,6 +9,23 @@
   thumb", or subjective weighting in scoring algorithms. All expected values
   must be mathematically derived.
 - Primary branch: `main`; active work often happens on feature branches.
+- **Product direction:** the roadmap is gated on two things the app has not
+  yet earned from its own author: stickiness and trust. It does get played from
+  time to time, but not often enough to call it sticky, and many of its
+  recommendations still get double-checked rather than acted on — the math is
+  trusted, the recommendations only somewhat trusted as advice so far. The
+  objective is voluntary play several times a week even when not testing a
+  change, and acting on what the app says without re-deriving it. Finding,
+  retaining, and monetizing users is deliberately deferred until that holds. The
+  loop being closed is: play a game, make authentic decisions, identify the
+  decisions that cost the most expected value, understand them, practice the
+  weaknesses, play again. So any proposed work faces two questions: **does this
+  make playing, learning, diagnosing mistakes, or measuring improvement
+  meaningfully better?** and **does it close the trust gap — is a recommendation
+  legible enough to act on without checking it?** Work that answers neither
+  ranks below work that answers either. Be suspicious in particular of technical
+  work that deepens the simulator without improving that loop: implementation
+  scalability is treated as mostly solved by tests, guardrails, and agents.
 
 ## Agent Skills & Tools
 
@@ -76,11 +93,22 @@
   - Before writing or debugging a Playwright spec, regenerating screenshot
     baselines, or diagnosing a rendered-layout bug in the browser, read
     `skills/testing-e2e/SKILL.md`.
+  - Before starting work on an issue, or when you triage or draft one,
+    read `skills/working-an-issue/SKILL.md`.
   - Before touching analytics consent, `gtag`, or trainer telemetry, read
     `skills/analytics-telemetry/SKILL.md`.
   - Before changing the Pages workflows, the PR preview deploy, the
     `pages-content` branch, or `scripts/pagesContentMerge.mjs`, read
     `skills/pages-preview/SKILL.md`.
+- A task that touches another of this author's repositories (for example
+  `simulate-cribbage-games`, which generates the vendored tables below) must
+  begin by reading **that** repository's `AGENTS.md`, and its `skills/` if it
+  has them. Only this repository's contract is auto-loaded, so a sibling's
+  tooling is invisible until read — and it usually already contains the thing
+  you were about to build. A dependency-bump validation harness was written
+  from scratch in `simulate-cribbage-games` before its own
+  `scratch/verify_upgrade.py`, documented in its AGENTS.md, turned up doing
+  the same job better.
 - Keep authored guidance out of dot-directories. The lint gauntlet's globs
   (`cspell '**'`, `markdownlint .`, `prettier --check .`) silently skip them:
   a `SKILL.md` with two misspellings is flagged under `skills/` and passes
@@ -241,8 +269,8 @@
   the consent Accept/Decline off-screen — worst in WebKit, which renders the
   banner ~27px taller than Chromium, so the screenshot baselines (Chromium
   and Mobile Chrome only) never catch it. Keep the landscape header compact
-  and shrink the consent banner from its grid cell (`.dynamic-ui >
-:last-child { font-size }`, which its text and `em` padding both track)
+  and shrink the consent banner from its grid cell — the `font-size` on
+  `.dynamic-ui > :last-child`, which its text and `em` padding both track —
   rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
   asserts Accept stays within a 844x390 viewport across all browsers.
 - Desktop engines do not model the mobile viewport, in two independent ways,
@@ -430,6 +458,14 @@
   declaring multiple React components in a single file.
 - Never use inline `CSpell:ignore` comments; instead add words to `.cspell.json`.
 - Prefer small, focused commits; summarize why changes are needed.
+- Prefer a long autonomous run to frequent check-ins. Work through review
+  rounds, gate failures, and the follow-up fixes they produce rather than
+  reporting each one and waiting; batch anything you genuinely need answered
+  into one message. Interrupt only when proceeding would be unsafe, or when a
+  wrong assumption would waste the work rather than cost an edit. The time an
+  agent runs unattended is time its human spends on something else, so a
+  question that could have been an assumption plus a note in the PR is more
+  expensive than it looks.
 - Only comment on the "why" behind code; strongly prefer meaningful test names,
   function names, and variable names to comments in code. Do not add redundant
   comments explaining self-evident code.
@@ -604,19 +640,22 @@
   correct, following `skills/testing-e2e/SKILL.md` so the regeneration
   actually lands.
 - Keep README and docs in sync when changing workflows or commands.
+- After editing any long Markdown file here — `AGENTS.md`, `CLAUDE.md`,
+  `README.md`, a skill — diff that file's heading list against the branch it
+  is based on, which is `origin/main` for most work and the parent branch for
+  a stacked PR. Compare every heading level: a skill's title is level one and
+  README subsections are level three. An edit that splices by index can
+  swallow any of them while every gate stays green, because markdownlint,
+  prettier, and cspell check lines rather than structure; four adversarial
+  review rounds missed exactly that on #730 before Copilot caught it.
+
+  ```bash
+  diff <(git show <base>:<file> | grep -E '^#{1,6} ') \
+    <(grep -E '^#{1,6} ' <file>)
+  ```
+
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
-- Move an issue to **In Progress** on the `Cribbage Trainer` project board when
-  you start work on it; merging a PR whose body closes the issue moves it to
-  Done on its own. A board reading Todo while a branch and PR exist misreports
-  what is being worked, and the board is how the state of play is read. It is
-  project 1 for this repository's owner. Read the Status field and its option
-  ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
-  Discovery & Design, Todo, In Progress, Done), find the item id with
-  `gh project item-list 1 --owner <owner> --limit 400 --format json` — the
-  board holds close to 300 items, so the default limit hides most of them —
-  then set it with `gh project item-edit`, passing the item, project, field,
-  and In Progress option ids.
 
 ## Commit messages
 
