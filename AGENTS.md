@@ -86,6 +86,8 @@
   - Before writing or debugging a Playwright spec, regenerating screenshot
     baselines, or diagnosing a rendered-layout bug in the browser, read
     `skills/testing-e2e/SKILL.md`.
+  - Before starting work on an issue, read
+    `skills/working-an-issue/SKILL.md`.
   - Before touching analytics consent, `gtag`, or trainer telemetry, read
     `skills/analytics-telemetry/SKILL.md`.
   - Before changing the Pages workflows, the PR preview deploy, the
@@ -592,36 +594,6 @@
   environments, and the guard that keeps a bad publish from taking production
   down are in `skills/pages-preview/SKILL.md`; read it before editing either
   workflow.
-
-## Working an issue
-
-- The expected shape of feature work, in order: post the plan as an attributed
-  comment on the issue before writing code; implement on a
-  `feature/<issue>-<slug>` branch; open a PR whose body carries a human review
-  guide and a manual testing plan; get CI green and a passing Copilot review;
-  then the human decides how much further automated review to run before
-  reviewing it themselves.
-- The review guide is what makes the PR reviewable rather than merely correct:
-  a suggested file reading order, the design decisions that are worth
-  challenging rather than only the ones that worked, and honest flags for
-  anything a reader would want to know and could otherwise miss — a lowered
-  coverage threshold, a test whose environment could not reproduce the case it
-  asserted, an approximation left standing. The point is to spend the human's
-  attention on the subtle fraction, so a guide that only says what changed has
-  not done its job.
-- The manual testing plan states what a human should do in the deployed
-  preview and what they should see. Keep it honest about what automation
-  already covers and what it cannot: anything about a real phone, a real
-  network, or a real Google Analytics stream is not covered by any gate here.
-- Request a Copilot review with
-  `gh api -X POST repos/<owner>/<repo>/pulls/<n>/requested_reviewers -f 'reviewers[]=copilot-pull-request-reviewer[bot]'`;
-  `gh pr edit --add-reviewer copilot` fails to resolve that login. Afterwards
-  `gh pr view <n> --json reviewRequests` still returns `[]` and the REST
-  response's own `requested_reviewers` array is empty — Copilot is simply not
-  represented there, which is **not** evidence the request failed. Confirm it
-  in `gh api repos/<owner>/<repo>/issues/<n>/timeline`, which shows
-  `review_requested` with `requested_reviewer.login == "Copilot"` followed by
-  `copilot_work_started`.
 
 ## Contribution notes
 
