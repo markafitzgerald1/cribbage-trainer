@@ -2,8 +2,7 @@ import {
   type AnalysisSource,
   type HandStartSource,
   type TrackEvent,
-  type TrainerEventName,
-  type TrainerEventParams,
+  type TrainerEvent,
 } from "../ui/trackEvent";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { DealtCard } from "../game/DealtCard";
@@ -103,19 +102,13 @@ const useEventEmitter = (consented: boolean | null, trackEvent: TrackEvent) => {
   useEffect(() => {
     latestRef.current = { consented, trackEvent };
   });
-  const emit = useCallback(
-    <Name extends TrainerEventName>(
-      eventName: Name,
-      params: TrainerEventParams<Name>,
-    ) => {
-      const latest = latestRef.current;
-      latest.trackEvent(latest.consented, eventName, params);
-      // Consent alone decides what actually reaches Google Analytics.
-      // Callers that pair a later event need to know whether this one was sent.
-      return latest.consented === true;
-    },
-    [],
-  );
+  const emit = useCallback((...event: TrainerEvent) => {
+    const latest = latestRef.current;
+    latest.trackEvent(latest.consented, ...event);
+    // Consent alone decides what actually reaches Google Analytics.
+    // Callers that pair a later event need to know whether this one was sent.
+    return latest.consented === true;
+  }, []);
   const hasConsent = useCallback(
     () => latestRef.current.consented === true,
     [],

@@ -1,4 +1,9 @@
 /* jscpd:ignore-start */
+import type {
+  CardToggleEventName,
+  HandStartSource,
+  TrainerEventParams,
+} from "../ui/trackEvent";
 import {
   HAND,
   type HistoryDestination,
@@ -20,11 +25,6 @@ import {
   shownParams,
   toggleTo,
 } from "./useDiscardTelemetry.test.common";
-import type {
-  HandStartSource,
-  TrainerEventName,
-  TrainerEventParams,
-} from "../ui/trackEvent";
 import { describe, expect, it } from "@jest/globals";
 import type { HistoryHandScope } from "./useDiscardTelemetry";
 /* jscpd:ignore-end */
@@ -54,14 +54,15 @@ const cardParams = (discardCount: number) => ({
 
 const expectCardEvent = (
   scene: Scene,
-  eventName: TrainerEventName,
+  eventName: CardToggleEventName,
   discardCount: number,
 ) => {
-  expect(scene.trackEvent).toHaveBeenLastCalledWith(
+  // Compares the recorded call rather than using toHaveBeenLastCalledWith, whose typed arguments cannot accept an event name held in a variable now that name and payload are correlated.
+  expect(scene.trackEvent.mock.calls.at(-1)).toStrictEqual([
     true,
     eventName,
     cardParams(discardCount),
-  );
+  ]);
 };
 
 const expectTwoInteractiveAnalyses = (
@@ -123,7 +124,7 @@ const expectHistoryMove = (
 type ToggleStep = readonly [string | null, boolean];
 
 const CARD_EVENT_CASES: readonly [
-  TrainerEventName,
+  CardToggleEventName,
   number,
   readonly ToggleStep[],
 ][] = [

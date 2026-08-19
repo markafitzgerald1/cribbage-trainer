@@ -37,14 +37,21 @@ interface DiscardCountParams {
 
 export type TrainerEventName = keyof TrainerEventParamsByName;
 
+// The two events a card toggle can produce, named so callers can say which pair they mean.
+export type CardToggleEventName = "card_selected" | "card_unselected";
+
 export type TrainerEventParams<
   Name extends TrainerEventName = TrainerEventName,
 > = TrainerEventParamsByName[Name];
 
-export type TrackEvent = <Name extends TrainerEventName>(
+// A tuple union rather than a generic pair, because a generic infers the name as the whole union whenever a caller holds a widened name, which would re-admit an analysis_shown payload sent under a hand_started name.
+export type TrainerEvent = {
+  [Name in TrainerEventName]: [Name, TrainerEventParams<Name>];
+}[TrainerEventName];
+
+export type TrackEvent = (
   consented: boolean | null,
-  eventName: Name,
-  params: TrainerEventParams<Name>,
+  ...event: TrainerEvent
 ) => void;
 
 const toGoogleAnalyticsKey = (key: string) =>

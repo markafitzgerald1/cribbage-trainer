@@ -96,9 +96,19 @@ mean anything.
   cannot be declared without declaring what it sends (#688). This is what
   makes `hand_started` with an `AnalysisSource`, or `analysis_shown` with a
   `HandStartSource`, a type error rather than merely wrong; both type-checked
-  before. Anything consuming these events generically — the
-  hook's `emit`, the specs' event accessors — has to stay generic over the
-  name, or it re-widens the contract at the first call site.
+  before. The name and its parameters travel as one correlated tuple
+  (`TrainerEvent`), not as a generic pair: a generic infers the name as the
+  whole union whenever a caller holds a widened `TrainerEventName`, which
+  re-admits exactly the mismatch this prevents (Codex caught that on #731).
+  Consumers forward the tuple — the hook's `emit` takes `...event:
+TrainerEvent` — rather than re-declaring a name and a payload separately.
+- A consequence in the specs: `toHaveBeenLastCalledWith` cannot take an event
+  name held in a variable any more, because its typed arguments cannot satisfy
+  a correlated tuple. Compare the recorded call instead
+  (`expect(trackEvent.mock.calls.at(-1)).toStrictEqual([...])`), and type a
+  helper that covers only some events with the narrow union it means, such as
+  `CardToggleEventName`. Both are the contract working: a helper claiming any
+  event name can carry a discard count is claiming something untrue.
 - `deal_nonce` is a `crypto.randomUUID()` value and identifies one telemetry
   hand **globally**, not merely within a browser session, so warehouse
   analysis may key on it across sessions and devices. The parameter name
