@@ -3,9 +3,13 @@ import {
   type HistoryHandScope,
   useDiscardTelemetry,
 } from "./useDiscardTelemetry";
+import type {
+  TrackEvent,
+  TrainerEventName,
+  TrainerEventParams,
+} from "../ui/trackEvent";
 import { expect, jest } from "@jest/globals";
 import type { DealtCard } from "../game/DealtCard";
-import type { TrackEvent } from "../ui/trackEvent";
 import { parseHand } from "../game/Card";
 import { renderHook } from "@testing-library/react";
 import { toDealtCards } from "../game/toDealtCards";
@@ -61,10 +65,27 @@ export const expectTelemetryScene = (
   run(scene);
 };
 
-export const eventParams = (scene: Scene, eventName: string) =>
-  scene.trackEvent.mock.calls
-    .filter(([, name]) => name === eventName)
+type TrackEventCall<Name extends TrainerEventName> = readonly [
+  boolean | null,
+  Name,
+  TrainerEventParams<Name>,
+];
+
+function isCallOf<Name extends TrainerEventName>(
+  call: readonly unknown[],
+  eventName: Name,
+): call is TrackEventCall<Name> {
+  return call[1] === eventName;
+}
+
+export function eventParams<Name extends TrainerEventName>(
+  scene: Scene,
+  eventName: Name,
+): readonly TrainerEventParams<Name>[] {
+  return scene.trackEvent.mock.calls
+    .filter((call) => isCallOf(call, eventName))
     .map(([, , params]) => params);
+}
 
 export const shownEvents = (scene: Scene) =>
   eventParams(scene, "analysis_shown");

@@ -85,8 +85,54 @@ mean anything.
   records each new telemetry scope, including the initial hand, with its
   `initial`/`deal`/`manual`/`deeplink`/`history` source; if consent is granted
   after the initial hand appears, it records the current hand once at that
-  point. `deal_clicked` remains specific to the Deal button. Payloads stay
-  card-free: counts, indices, source, provenance, and the identifier only.
+  point. `deal_clicked` remains specific to the Deal button, and is emitted
+  **after** the `hand_started` it belongs to: the event that opens a hand
+  scope should be the first one carrying that scope's identifier, so "first
+  event per hand" is a question about the data rather than about which call
+  site ran first (#689). Payloads stay card-free: counts, indices, source,
+  provenance, and the identifier only.
+- `TrainerEventParams` is keyed by event name, so each event carries exactly
+  its own parameters and `TrainerEventName` is `keyof` that map — a new event
+  cannot be declared without declaring what it sends (#688). This is what
+  makes `hand_started` with an `AnalysisSource`, or `analysis_shown` with a
+  `HandStartSource`, a type error rather than merely wrong; both type-checked
+  before. The name and its parameters travel as one correlated tuple
+  (`TrainerEvent`), not as a generic pair: a generic infers the name as the
+  whole union whenever a caller holds a widened `TrainerEventName`, which
+  re-admits exactly the mismatch this prevents (Codex caught that on #731).
+  The tuple is `readonly`, or a forwarder could assign a different name to
+  index 0 and pass the pair on; and `trackEvent` takes the tuple apart inside
+  its body rather than naming the parts as parameters, since naming them
+  widens the pair back into independent types. Consumers forward the tuple
+  rather than re-declaring a name and a payload; the hook's `emit` takes it as
+  a rest parameter.
+- Each payload also bans the parameters its event does not carry, as optional
+  `never` fields derived from the union of every parameter key. Structural
+  typing alone would let a larger payload stand in for a smaller one — an
+  `analysis_shown` payload satisfies `deal_clicked`, and `Object.entries`
+  would forward the surplus fields to Google Analytics — and an excess-property
+  check does not catch it, because that only applies to fresh object literals
+  and not to a payload held in a variable (Codex again, on #731).
+- No type survives a payload built from a widened source — a spread of
+  `Record<string, unknown>`, an `Object.assign`, a cast — so `trackEvent`
+  also filters at runtime to the parameters its event declares. That list
+  lives as correlated entries rather than an object keyed by event name,
+  because those names are snake_case and would each need a `camelcase`
+  exemption as literal keys, and it is applied by filtering rather than
+  lookup so a name with no entry sends nothing instead of leaving a branch
+  that can never run under the 100% coverage gate. The card-free payload
+  invariant is now enforced, not merely declared. An event missing from that
+  list would silently send nothing, so a type assertion makes its absence a
+  compile error, and the spec proves its own payload table covers every event
+  by comparing against the exported list rather than a second hand-written
+  one.
+- A consequence in the specs: `toHaveBeenLastCalledWith` cannot take an event
+  name held in a variable any more, because its typed arguments cannot satisfy
+  a correlated tuple. Compare the recorded call instead
+  (`expect(trackEvent.mock.calls.at(-1)).toStrictEqual([...])`), and type a
+  helper that covers only some events with the narrow union it means, such as
+  `CardToggleEventName`. Both are the contract working: a helper claiming any
+  event name can carry a discard count is claiming something untrue.
 - `deal_nonce` is a `crypto.randomUUID()` value and identifies one telemetry
   hand **globally**, not merely within a browser session, so warehouse
   analysis may key on it across sessions and devices. The parameter name

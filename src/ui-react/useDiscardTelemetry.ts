@@ -2,8 +2,7 @@ import {
   type AnalysisSource,
   type HandStartSource,
   type TrackEvent,
-  type TrainerEventName,
-  type TrainerEventParams,
+  type TrainerEvent,
 } from "../ui/trackEvent";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { DealtCard } from "../game/DealtCard";
@@ -97,6 +96,26 @@ export interface DiscardTelemetry {
 
 // GA4 cannot reconstruct "first analysis exposure per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
 // Only the first render's `dealtCards` is read here; later states arrive through the report methods.
+// Timer and interaction callbacks read consent when they fire, not when they were created, so the latest values live in a ref rather than in each callback's closure.
+const useEventEmitter = (consented: boolean | null, trackEvent: TrackEvent) => {
+  const latestRef = useRef({ consented, trackEvent });
+  useEffect(() => {
+    latestRef.current = { consented, trackEvent };
+  });
+  const emit = useCallback((...event: TrainerEvent) => {
+    const latest = latestRef.current;
+    latest.trackEvent(latest.consented, ...event);
+    // Consent alone decides what actually reaches Google Analytics.
+    // Callers that pair a later event need to know whether this one was sent.
+    return latest.consented === true;
+  }, []);
+  const hasConsent = useCallback(
+    () => latestRef.current.consented === true,
+    [],
+  );
+  return { emit, hasConsent };
+};
+
 export const useDiscardTelemetry = ({
   consented,
   dealtCards,
@@ -112,23 +131,10 @@ export const useDiscardTelemetry = ({
       source: wasDeepLinked ? "deeplink" : "interactive",
     }),
   );
-  const latestRef = useRef({ consented, trackEvent });
-  useEffect(() => {
-    latestRef.current = { consented, trackEvent };
-  });
-  const emit = useCallback(
-    (eventName: TrainerEventName, params: TrainerEventParams) => {
-      const latest = latestRef.current;
-      latest.trackEvent(latest.consented, eventName, params);
-      // Consent alone decides what actually reaches Google Analytics.
-      // Callers that pair a later event need to know whether this one was sent.
-      return latest.consented === true;
-    },
-    [],
-  );
+  const { emit, hasConsent } = useEventEmitter(consented, trackEvent);
   const reportHandStarted = useCallback(
     (state: DealTelemetryState) => {
-      if (state.handStarted || latestRef.current.consented !== true) {
+      if (state.handStarted || !hasConsent()) {
         return;
       }
       state.handStarted = true;
@@ -138,7 +144,7 @@ export const useDiscardTelemetry = ({
         source: state.handStartSource,
       });
     },
-    [emit],
+    [emit, hasConsent],
   );
   useEffect(() => {
     reportHandStarted(stateRef.current);
@@ -219,10 +225,11 @@ export const useDiscardTelemetry = ({
         handStartSource: cause,
         source: "interactive",
       });
+      // The event that opens a hand scope is the first one carrying its identifier, so deal_clicked follows the scope it caused rather than preceding it.
+      reportHandStarted(state);
       if (cause === "deal") {
         emit("deal_clicked", { dealNonce: state.dealNonce });
       }
-      reportHandStarted(state);
       reportAnalysisState(state);
     },
     [

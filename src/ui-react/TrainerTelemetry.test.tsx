@@ -1,4 +1,4 @@
-import type { AnalysisSource, TrainerEventName } from "../ui/trackEvent";
+import type { AnalysisSource, CardToggleEventName } from "../ui/trackEvent";
 import {
   SIX_HEARTS_HAND,
   SIX_SPADES_HAND,
@@ -85,7 +85,7 @@ interface CardToggleCase {
   readonly clicks: readonly number[];
   readonly consent: boolean | null;
   readonly discardCount: number;
-  readonly eventName: TrainerEventName;
+  readonly eventName: CardToggleEventName;
 }
 
 interface AnalysisSequenceCase {
@@ -138,10 +138,11 @@ describe("trainer telemetry wiring", () => {
         clickCheckbox(index);
       });
 
-      expect(trackEvent).toHaveBeenLastCalledWith(consent, eventName, {
-        dealNonce: expect.any(String),
-        discardCount,
-      });
+      expect(trackEvent.mock.calls.at(-1)).toStrictEqual([
+        consent,
+        eventName,
+        { dealNonce: expect.any(String), discardCount },
+      ]);
     },
   );
 

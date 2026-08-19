@@ -1,4 +1,9 @@
 /* jscpd:ignore-start */
+import type {
+  CardToggleEventName,
+  HandStartSource,
+  TrainerEventParams,
+} from "../ui/trackEvent";
 import {
   HAND,
   type HistoryDestination,
@@ -20,11 +25,6 @@ import {
   shownParams,
   toggleTo,
 } from "./useDiscardTelemetry.test.common";
-import type {
-  HandStartSource,
-  TrainerEventName,
-  TrainerEventParams,
-} from "../ui/trackEvent";
 import { describe, expect, it } from "@jest/globals";
 import type { HistoryHandScope } from "./useDiscardTelemetry";
 /* jscpd:ignore-end */
@@ -54,14 +54,15 @@ const cardParams = (discardCount: number) => ({
 
 const expectCardEvent = (
   scene: Scene,
-  eventName: TrainerEventName,
+  eventName: CardToggleEventName,
   discardCount: number,
 ) => {
-  expect(scene.trackEvent).toHaveBeenLastCalledWith(
+  // Compares the recorded call rather than using toHaveBeenLastCalledWith, whose typed arguments cannot accept an event name held in a variable now that name and payload are correlated.
+  expect(scene.trackEvent.mock.calls.at(-1)).toStrictEqual([
     true,
     eventName,
     cardParams(discardCount),
-  );
+  ]);
 };
 
 const expectTwoInteractiveAnalyses = (
@@ -92,19 +93,22 @@ const expectLastHandStarted = (
   });
 };
 
+// Typed by the one parameter it reads, since its callers pass whichever event they happened to capture.
+type IdentifiedHand = { readonly dealNonce: string };
+
 const expectNewDealWithoutDealClick = (
   scene: Scene,
-  first: TrainerEventParams | undefined,
-  second: TrainerEventParams | undefined,
+  first: IdentifiedHand | undefined,
+  second: IdentifiedHand | undefined,
 ) => {
   expect(eventParams(scene, "deal_clicked")).toHaveLength(0);
   expect(second!.dealNonce).not.toBe(first!.dealNonce);
 };
 
 interface HistoryMoveEvents {
-  readonly first: TrainerEventParams | undefined;
+  readonly first: TrainerEventParams<"analysis_shown"> | undefined;
   readonly scene: Scene;
-  readonly second: TrainerEventParams | undefined;
+  readonly second: TrainerEventParams<"analysis_shown"> | undefined;
 }
 
 const expectHistoryMove = (
@@ -123,7 +127,7 @@ const expectHistoryMove = (
 type ToggleStep = readonly [string | null, boolean];
 
 const CARD_EVENT_CASES: readonly [
-  TrainerEventName,
+  CardToggleEventName,
   number,
   readonly ToggleStep[],
 ][] = [
@@ -137,6 +141,25 @@ const CARD_EVENT_CASES: readonly [
     ],
   ],
 ];
+
+const ANALYSIS_ON_SCREEN_CASES: readonly {
+  readonly name: string;
+  readonly rendersOnScreen: boolean;
+}[] = [
+  {
+    name: "an analysis on screen ends first instinct for the hand",
+    rendersOnScreen: true,
+  },
+  {
+    name: "an analysis that never reached the screen leaves first instinct available",
+    rendersOnScreen: false,
+  },
+];
+
+const consentedEventNames = (scene: Scene) =>
+  scene.trackEvent.mock.calls
+    .filter(([consented]) => consented === true)
+    .map(([, eventName]) => eventName);
 
 describe("useDiscardTelemetry", () => {
   it("starts the initial hand once consent is granted", () => {
@@ -168,20 +191,6 @@ describe("useDiscardTelemetry", () => {
       });
     },
   );
-
-  const ANALYSIS_ON_SCREEN_CASES: readonly {
-    readonly name: string;
-    readonly rendersOnScreen: boolean;
-  }[] = [
-    {
-      name: "an analysis on screen ends first instinct for the hand",
-      rendersOnScreen: true,
-    },
-    {
-      name: "an analysis that never reached the screen leaves first instinct available",
-      rendersOnScreen: false,
-    },
-  ];
 
   it.each(ANALYSIS_ON_SCREEN_CASES)("$name", ({ rendersOnScreen }) => {
     expectTelemetryScene({}, (scene) => {
@@ -355,11 +364,6 @@ describe("useDiscardTelemetry", () => {
     },
   );
 
-  const consentedEventNames = (scene: Scene) =>
-    scene.trackEvent.mock.calls
-      .filter(([consented]) => consented === true)
-      .map(([, eventName]) => eventName);
-
   it("never closes an analysis that consent kept off the wire", () => {
     expectTelemetryScene({ consented: null }, (scene) => {
       exposeAnalysisThenConsent(scene);
@@ -368,6 +372,18 @@ describe("useDiscardTelemetry", () => {
       expect(consentedEventNames(scene)).toStrictEqual([
         "hand_started",
         "card_unselected",
+      ]);
+    });
+  });
+
+  it("opens the hand scope before the click that caused it", () => {
+    expectTelemetryScene({}, (scene) => {
+      replaceHand(scene, "deal");
+
+      expect(consentedEventNames(scene)).toStrictEqual([
+        "hand_started",
+        "hand_started",
+        "deal_clicked",
       ]);
     });
   });
