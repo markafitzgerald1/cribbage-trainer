@@ -22,6 +22,9 @@ const toExpectedPointsLossBucket = (
         ([, upperBound]) => expectedPointsLoss < upperBound,
       )?.[0] ?? LARGEST_LOSS_BUCKET);
 
+const toDisplayedPoints = (points: number): number =>
+  Number(points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
+
 interface KeptCard {
   readonly kept: boolean;
 }
@@ -59,11 +62,17 @@ export const getDiscardQuality = (
       (scoredKeepDiscard) => scoredKeepDiscard.expectedNetPoints,
     ),
   );
-  // Rounded to the precision the trainer displays before anything is derived from it, so the reported loss, its bucket, and the optimal flag agree with the table the user is looking at.
-  const expectedPointsLoss = Number(
-    (bestExpectedNetPoints - chosen.expectedNetPoints).toFixed(
-      EXPECTED_POINTS_FRACTION_DIGITS,
-    ),
+  /*
+   * Both scores are taken to the precision the trainer displays before they
+   * are compared, so the reported loss is exactly the difference between the
+   * two numbers on screen, and the bucket and optimal flag agree with it.
+   * Subtracting first and rounding after does not do that: 8.006 against
+   * 8.002 is a loss of 0.00 that way, while the table draws 8.01 and 8.00.
+   * The outer rounding only clears the residue of subtracting two decimals.
+   */
+  const expectedPointsLoss = toDisplayedPoints(
+    toDisplayedPoints(bestExpectedNetPoints) -
+      toDisplayedPoints(chosen.expectedNetPoints),
   );
   return {
     expectedPointsLoss,

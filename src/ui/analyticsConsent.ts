@@ -16,8 +16,15 @@ export interface AnalyticsChoice {
   readonly consented: boolean | null;
   // Consent to the decision-quality collection the current policy adds.
   readonly decisionQualityConsented: boolean;
-  // True until the current policy version has been answered, whether or not analytics was answered under an earlier one.
-  readonly needsPolicyChoice: boolean;
+  /*
+   * True only when analytics is on under an answer given to an earlier
+   * policy, which is the one case with something to ask about. An unanswered
+   * browser is asked the whole question instead, and a browser that declined
+   * analytics is asked nothing: the addition lives inside analytics, which is
+   * already off, so there is nothing to disclose and nothing to collect — and
+   * an Accept here would silently turn analytics itself back on.
+   */
+  readonly needsPolicyUpdateChoice: boolean;
 }
 
 const readConsent = (): boolean | null => {
@@ -40,7 +47,8 @@ export const readAnalyticsChoice = (): AnalyticsChoice => {
     decisionQualityConsented:
       consented === true &&
       localStorage.getItem(acceptedPolicyVersionKey) === PRIVACY_POLICY_VERSION,
-    needsPolicyChoice:
+    needsPolicyUpdateChoice:
+      consented === true &&
       localStorage.getItem(answeredPolicyVersionKey) !== PRIVACY_POLICY_VERSION,
   };
 };

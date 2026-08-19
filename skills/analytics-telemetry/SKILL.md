@@ -198,12 +198,17 @@ mean anything.
   `analysis_shown` carries. The bookkeeping is repeated rather than joined
   because the filtering contract above has to be applicable to a single row,
   and #683's export does not exist yet to join against.
-- The loss is rounded to the two decimals the trainer displays **before**
-  the bucket and the optimal flag are derived from it, so all three agree
-  with the table the user is looking at. A choice that trails the best by
-  0.004 reports `0`, bucket `0`, optimal — deliberately, since the two rows
-  are indistinguishable on screen. Changing that rounding changes what
-  "optimal" means in every accumulated row, so it is a schema change.
+- Both scores are taken to the two decimals the trainer displays **before**
+  they are compared, so the reported loss is exactly the difference between
+  the two numbers on screen and the bucket and optimal flag agree with it. A
+  choice the table draws identically to the best reports `0`, bucket `0`,
+  optimal — deliberately, since the rows are indistinguishable on screen.
+  Rounding the difference instead of the scores is not the same rule and is
+  wrong in both directions: 8.006 against 8.002 is a loss of `0.00` that way
+  while the table shows 8.01 and 8.00, and 8.004 against 7.996 is `0.01`
+  while the table shows 8.00 twice (Codex caught this on #732). Changing the
+  rule changes what "optimal" means in every row already collected, so it is
+  a schema change rather than a tweak.
 - `src/analysis/discardQuality.ts` finds the chosen option by its **discard**
   (both of its cards un-kept), never by its keep. Before two cards are
   discarded every option's keep is entirely kept, so a keep match silently
@@ -228,12 +233,29 @@ mean anything.
   the one event gated on the newer acceptance — the hook emits it through
   `trackEvent` with the decision-quality consent in place of the base one,
   so the send path stays the single gate.
+- A browser that **declined** analytics is asked nothing when the policy
+  widens. The addition lives inside analytics, which is already off, so there
+  is nothing to disclose and nothing to collect — and an Accept in the update
+  banner would silently turn analytics itself back on, under copy that
+  promises the current choice is left alone. Only a browser that accepted the
+  earlier policy sees the update, and that rule lives in
+  `readAnalyticsChoice` rather than in the component, so the flag a caller
+  reads is already the question "does this browser owe an answer?" (both
+  Codex and Copilot raised the declined-browser case on #732 — Copilot's
+  point that a flag meaning merely "the version is stale" invites the wrong
+  read is why it moved).
 - Declining the addition must not travel through the dialog's `onChange`.
   That callback is also withdrawal: `onChange(false)` from Analytics
   Settings turns analytics off and reloads the page, whereas declining the
   update has to leave the earlier consent exactly as it was. They are
   separate callbacks for that reason, and the decline is recorded as an
   answer to the current version so the question is not asked again.
+- Enabling analytics from Analytics Settings records acceptance of the
+  **current** policy version, so a user who declined the addition and later
+  turns analytics back on gets it. That is deliberate — the settings panel
+  links the current policy, and the button means the same thing the first-run
+  Accept does — but it means the stored accepted version is a property of the
+  last enable, not a separate switch to be reasoned about independently.
 - Seeding stored consent in an e2e test now means seeding the answered and
   accepted policy versions too (`tests-e2e/renderThenSelectTwoDiscards.ts`).
   Setting only the consent key produces a browser that answered an earlier

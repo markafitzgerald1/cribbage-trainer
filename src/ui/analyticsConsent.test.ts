@@ -13,7 +13,7 @@ import { describe, expect, it } from "@jest/globals";
 const UNANSWERED = {
   consented: null,
   decisionQualityConsented: false,
-  needsPolicyChoice: true,
+  needsPolicyUpdateChoice: false,
 };
 
 // A browser that answered the policy in force before decision-quality collection existed.
@@ -35,7 +35,7 @@ describe("analytics choice storage", () => {
     expect(storeAnalyticsChoice(true)).toStrictEqual({
       consented: true,
       decisionQualityConsented: true,
-      needsPolicyChoice: false,
+      needsPolicyUpdateChoice: false,
     });
     expect(localStorage.getItem(acceptedPolicyVersionKey)).toBe(
       PRIVACY_POLICY_VERSION,
@@ -48,19 +48,39 @@ describe("analytics choice storage", () => {
     expect(storeAnalyticsChoice(false)).toStrictEqual({
       consented: false,
       decisionQualityConsented: false,
-      needsPolicyChoice: false,
+      needsPolicyUpdateChoice: false,
     });
   });
 
-  it("keeps an earlier acceptance while asking about what the policy added", () => {
-    startWithEarlierAcceptance();
+  it.each([
+    {
+      expected: {
+        consented: true,
+        decisionQualityConsented: false,
+        needsPolicyUpdateChoice: true,
+      },
+      name: "accepted",
+      stored: "true",
+    },
+    {
+      // Nothing to ask a browser that collects nothing, and an Accept would turn analytics itself back on.
+      expected: {
+        consented: false,
+        decisionQualityConsented: false,
+        needsPolicyUpdateChoice: false,
+      },
+      name: "declined",
+      stored: "false",
+    },
+  ])(
+    "reads a browser that $name analytics under an earlier policy",
+    ({ expected, stored }) => {
+      clearAnalyticsChoice();
+      localStorage.setItem(analyticsConsentKey, stored);
 
-    expect(readAnalyticsChoice()).toStrictEqual({
-      consented: true,
-      decisionQualityConsented: false,
-      needsPolicyChoice: true,
-    });
-  });
+      expect(readAnalyticsChoice()).toStrictEqual(expected);
+    },
+  );
 
   it("leaves the earlier acceptance untouched when the update is declined", () => {
     startWithEarlierAcceptance();
@@ -68,7 +88,7 @@ describe("analytics choice storage", () => {
     expect(storePolicyUpdateDecline()).toStrictEqual({
       consented: true,
       decisionQualityConsented: false,
-      needsPolicyChoice: false,
+      needsPolicyUpdateChoice: false,
     });
     expect(localStorage.getItem(analyticsConsentKey)).toBe("true");
     expect(localStorage.getItem(acceptedPolicyVersionKey)).toBeNull();

@@ -63,11 +63,11 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
         low-cardinality sources such as interactive, deep link, or history.
       </li>
       <li>
-        For each completed discard, only if you accept the analytics consent
-        update described below: whether the hand was played as dealer or pone,
-        how many expected points the discard gave up against the best-scoring
-        option, that same figure placed in a coarse range, whether the choice
-        was the top-ranked one, and a version number for this list of
+        For each completed discard, and only if your analytics choice was made
+        under this version of the policy: whether the hand was played as dealer
+        or pone, how many expected points the discard gave up against the
+        best-scoring option, that same figure placed in a coarse range, whether
+        the choice was the top-ranked one, and a version number for this list of
         measurements. These are derived from the trainer’s own analysis of your
         hand. The hand itself is not sent, and the figures cannot be used to
         reconstruct it.

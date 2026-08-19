@@ -102,8 +102,6 @@ const useAnalyticsConsent = (
   return {
     choice,
     declinePolicyUpdate,
-    // An unanswered browser is asked the whole question; one that answered an earlier policy is asked only about what this one added.
-    isPolicyUpdate: choice.needsPolicyChoice && analyticsConsented !== null,
     setConsented,
     wasAnsweredOnFirstRender: choiceOnFirstRender.consented !== null,
   };
@@ -180,7 +178,6 @@ export function Trainer({
   const {
     choice,
     declinePolicyUpdate,
-    isPolicyUpdate,
     setConsented,
     wasAnsweredOnFirstRender,
   } = useAnalyticsConsent(loadGoogleAnalytics);
@@ -370,7 +367,7 @@ export function Trainer({
         <AnalyticsConsentDialog
           consent={choice.consented}
           decisionQualityConsented={choice.decisionQualityConsented}
-          isPolicyUpdate={isPolicyUpdate}
+          isPolicyUpdate={choice.needsPolicyUpdateChoice}
           onChange={setConsented}
           onPolicyUpdateDecline={declinePolicyUpdate}
           wasInitiallyConsented={wasAnsweredOnFirstRender}

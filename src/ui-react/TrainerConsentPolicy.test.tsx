@@ -16,9 +16,9 @@ import { fireEvent, screen } from "@testing-library/react";
 const POLICY_UPDATE_HEADING = "Analytics Consent Update";
 
 // A browser that accepted the policy in force before decision-quality collection existed.
-const renderWithEarlierAcceptance = (declineUpdate = false) => {
+const renderWithEarlierChoice = (consent: boolean, declineUpdate = false) => {
   const trackEvent = startTelemetryCapture(null);
-  localStorage.setItem(analyticsConsentKey, "true");
+  localStorage.setItem(analyticsConsentKey, JSON.stringify(consent));
   if (declineUpdate) {
     storePolicyUpdateDecline();
   }
@@ -43,7 +43,7 @@ const scoredConsents = (trackEvent: ReturnType<typeof startTelemetryCapture>) =>
 const scoredConsentsAfterDiscard = ({
   completeDiscard,
   trackEvent,
-}: ReturnType<typeof renderWithEarlierAcceptance>) => {
+}: ReturnType<typeof renderWithEarlierChoice>) => {
   completeDiscard();
   return scoredConsents(trackEvent);
 };
@@ -53,13 +53,13 @@ const cardConsents = (trackEvent: ReturnType<typeof startTelemetryCapture>) =>
 
 describe("analytics policy update", () => {
   it("asks again when the stored choice predates the current policy", () => {
-    renderWithEarlierAcceptance();
+    renderWithEarlierChoice(true);
 
     expect(screen.getByText(POLICY_UPDATE_HEADING)).toBeTruthy();
   });
 
   it("sends decision-quality events once the update is accepted", () => {
-    const trainer = renderWithEarlierAcceptance();
+    const trainer = renderWithEarlierChoice(true);
 
     clickButton("Accept");
 
@@ -68,7 +68,7 @@ describe("analytics policy update", () => {
 
   // The events disclosed by the earlier policy keep flowing under the consent already given to it.
   it("keeps analytics running and the new measurement off when declined", () => {
-    const { completeDiscard, trackEvent } = renderWithEarlierAcceptance();
+    const { completeDiscard, trackEvent } = renderWithEarlierChoice(true);
 
     clickButton("Decline");
     completeDiscard();
@@ -78,14 +78,21 @@ describe("analytics policy update", () => {
     expect(scoredConsents(trackEvent)).toStrictEqual([false]);
   });
 
+  // The addition lives inside analytics, which a declined browser has already refused, and an Accept here would turn analytics itself back on.
+  it("asks a browser that declined analytics nothing", () => {
+    renderWithEarlierChoice(false);
+
+    expect(screen.queryByText(POLICY_UPDATE_HEADING)).toBeNull();
+  });
+
   it("stops asking once the update has been declined", () => {
-    renderWithEarlierAcceptance(true);
+    renderWithEarlierChoice(true, true);
 
     expect(screen.queryByText(POLICY_UPDATE_HEADING)).toBeNull();
   });
 
   it("turns the declined measurement on again from analytics settings", () => {
-    const trainer = renderWithEarlierAcceptance(true);
+    const trainer = renderWithEarlierChoice(true, true);
 
     clickButton("Analytics Settings");
     clickButton("Allow decision-quality measurements");

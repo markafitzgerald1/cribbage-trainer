@@ -14,11 +14,8 @@ const scoredOption = (
   expectedNetPoints,
 });
 
-const qualityOfLoss = (loss: number) =>
-  getDiscardQuality([
-    scoredOption(BEST_EXPECTED_NET_POINTS, false),
-    scoredOption(BEST_EXPECTED_NET_POINTS - loss, true),
-  ]);
+const qualityOf = (best: number, chosen: number) =>
+  getDiscardQuality([scoredOption(best, false), scoredOption(chosen, true)]);
 
 describe("getDiscardQuality", () => {
   it("reports nothing while no option's cards are both discarded", () => {
@@ -31,53 +28,94 @@ describe("getDiscardQuality", () => {
   });
 
   it.each([
-    { bucket: "0", loss: 0, name: "an exactly optimal choice", reported: 0 },
-    { bucket: "0", loss: 0.004, name: "a loss that rounds away", reported: 0 },
     {
+      best: 8,
+      bucket: "0",
+      chosen: 8,
+      name: "an exactly optimal choice",
+      reported: 0,
+    },
+    {
+      best: 8,
+      bucket: "0",
+      chosen: 7.996,
+      name: "a loss that rounds away",
+      reported: 0,
+    },
+    {
+      best: 8,
       bucket: "0-0.5",
-      loss: 0.01,
+      chosen: 7.99,
       name: "the smallest visible loss",
       reported: 0.01,
     },
     {
+      best: 8,
       bucket: "0-0.5",
-      loss: 0.49,
+      chosen: 7.51,
       name: "a loss just under a half point",
       reported: 0.49,
     },
     {
+      best: 8,
       bucket: "0.5-1",
-      loss: 0.5,
+      chosen: 7.5,
       name: "a loss of exactly a half point",
       reported: 0.5,
     },
     {
+      best: 8,
       bucket: "0.5-1",
-      loss: 0.99,
+      chosen: 7.01,
       name: "a loss just under a point",
       reported: 0.99,
     },
-    { bucket: "1-2", loss: 1, name: "a loss of exactly a point", reported: 1 },
     {
+      best: 8,
       bucket: "1-2",
-      loss: 1.99,
+      chosen: 7,
+      name: "a loss of exactly a point",
+      reported: 1,
+    },
+    {
+      best: 8,
+      bucket: "1-2",
+      chosen: 6.01,
       name: "a loss just under two points",
       reported: 1.99,
     },
     {
+      best: 8,
       bucket: "2+",
-      loss: 2,
+      chosen: 6,
       name: "a loss of exactly two points",
       reported: 2,
     },
     {
+      best: 8,
       bucket: "2+",
-      loss: 3.5,
+      chosen: 4.5,
       name: "a loss well past two points",
       reported: 3.5,
     },
-  ])("buckets $name as $bucket", ({ bucket, loss, reported }) => {
-    expect(qualityOfLoss(loss)).toStrictEqual({
+    // Rounding the difference instead of the scores would call these equal, though the table draws 8.01 against 8.00.
+    {
+      best: 8.006,
+      bucket: "0-0.5",
+      chosen: 8.002,
+      name: "scores the table separates by a hundredth",
+      reported: 0.01,
+    },
+    // And it would call these a hundredth apart, though the table draws 8.00 twice.
+    {
+      best: 8.004,
+      bucket: "0",
+      chosen: 7.996,
+      name: "scores the table draws identically",
+      reported: 0,
+    },
+  ])("buckets $name as $bucket", ({ best, bucket, chosen, reported }) => {
+    expect(qualityOf(best, chosen)).toStrictEqual({
       expectedPointsLoss: reported,
       expectedPointsLossBucket: bucket,
       isOptimal: reported === 0,
