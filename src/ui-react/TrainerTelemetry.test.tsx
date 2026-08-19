@@ -156,6 +156,7 @@ describe("trainer telemetry wiring", () => {
       expectedPointsLoss: expect.any(Number),
       expectedPointsLossBucket: expect.any(String),
       generatedFromSeed: false,
+      handStartSource: "initial",
       isFirstAnalysis: true,
       isOptimal: expect.any(Boolean),
       schemaVersion: 1,

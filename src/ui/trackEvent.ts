@@ -30,6 +30,8 @@ interface TrainerEventParamsByName {
     readonly cribRole: CribRole;
     readonly dealNonce: string;
     readonly generatedFromSeed: boolean;
+    // Where the hand itself came from, which `source` does not say: a typed-in hand reaches its first discard as an ordinary interactive one, and only this separates practice from population play.
+    readonly handStartSource: HandStartSource;
     readonly isFirstAnalysis: boolean;
     // Explicit, so an export stays interpretable once these parameters change.
     readonly schemaVersion: number;
@@ -110,6 +112,7 @@ const eventParamKeys = [
       "expectedPointsLoss",
       "expectedPointsLossBucket",
       "generatedFromSeed",
+      "handStartSource",
       "isFirstAnalysis",
       "isOptimal",
       "schemaVersion",

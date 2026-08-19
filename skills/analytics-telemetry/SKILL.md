@@ -180,9 +180,15 @@ mean anything.
   `is_first_analysis` true — so a restored hand can still enter the
   first-instinct population and must carry its true provenance.
 - Filtering contract for #665: population performance statistics take only
-  rows with `is_first_analysis` true **and** `generated_from_seed` false.
-  Seeded, deep-linked, manual, and history-restored hands are kept only as
-  separately segmented practice data.
+  rows with `is_first_analysis` true, `generated_from_seed` false, **and**
+  `hand_start_source` in `initial`/`deal`. Seeded, deep-linked, manual, and
+  history-restored hands are kept only as separately segmented practice data.
+  The first two conditions alone do not express that: a typed-in hand reaches
+  its first discard unaided, unseeded, and interactive, so it is
+  indistinguishable from a dealt one on those two flags — which is why
+  `discard_scored` carries the hand's own provenance and why an
+  `analysis_shown` row can only be segmented by joining `hand_started` on
+  `deal_nonce` (Codex, on #732).
 - Telemetry must not consume the injected seeded generator for identifiers or
   anything else, or seeded deep links would deal different hands. The hook
   has no access to it, and a `Trainer` test pins the generator to exactly six
@@ -216,11 +222,18 @@ mean anything.
   cannot see the difference. It is a shared module because #19/#24 must
   agree with analytics about what a decision cost.
 - The score is attributed to the exposure that revealed it — its
-  `analysis_index` and `is_first_analysis` come from the stored exposure,
-  never from state read at render time — and one exposure scores at most
-  once however often its results re-render. A score reported while no
-  exposure exists is held and emitted when the next one is created: on a
-  first render the child's effect runs before the parent's, so a deep-linked
+  `analysis_index`, `is_first_analysis`, and `source` all come from the stored
+  exposure, never from state read at render time, so the score and the
+  `analysis_shown` it belongs to can never disagree. `source` needs stamping
+  for the same reason the flag does and was missed at first (Codex, on #732):
+  a history move onto the discard already shown keeps the exposure, because
+  its discard key is unchanged, while making the hand history-sourced, so a
+  score rendered afterwards would have called an interactive exposure a
+  history one. Anything else the score reports is fixed for the hand — the
+  nonce, the seed provenance, the hand-start source — and cannot drift. One
+  exposure scores at most once, however often its results re-render. A score
+  reported while no exposure exists is held and emitted when the next one is
+  created: on a first render the child's effect runs before the parent's, so a deep-linked
   complete discard renders its answers before `reportAnalysisState` has
   opened the exposure. Reporting it from the render callback instead would
   put `analysis_shown` ahead of `hand_started`.

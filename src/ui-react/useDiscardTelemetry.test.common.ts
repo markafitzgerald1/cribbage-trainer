@@ -136,6 +136,7 @@ export const scoredParams = (
   cribRole: CribRole.Dealer,
   dealNonce: expect.any(String),
   generatedFromSeed: false,
+  handStartSource: "initial",
   isFirstAnalysis,
   schemaVersion: 1,
   source,

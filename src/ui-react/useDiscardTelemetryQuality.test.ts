@@ -1,9 +1,13 @@
 /* jscpd:ignore-start */
 import {
+  OTHER_HAND,
   type Scene,
   completeDiscard,
+  entryForCurrentHand,
   expectTelemetryScene,
+  navigateHistory,
   renderAnalysisOnScreen,
+  replaceHandWith,
   scoredEvents,
   scoredParams,
   toggleTo,
@@ -21,14 +25,16 @@ const scoreFirstDiscard = (scene: Scene) => {
   renderAnalysisOnScreen(scene);
 };
 
+const lastScore = (scene: Scene) => scoredEvents(scene).at(-1);
+
+const FIRST_INTERACTIVE_SCORE = scoredParams(1, true, "interactive");
+
 describe("useDiscardTelemetry decision quality", () => {
   it("scores the discard the exposure that revealed it belongs to", () => {
     expectTelemetryScene({}, (scene) => {
       scoreFirstDiscard(scene);
 
-      expect(scoredEvents(scene)).toStrictEqual([
-        scoredParams(1, true, "interactive"),
-      ]);
+      expect(scoredEvents(scene)).toStrictEqual([FIRST_INTERACTIVE_SCORE]);
     });
   });
 
@@ -49,7 +55,7 @@ describe("useDiscardTelemetry decision quality", () => {
       toggleTo(scene, "AH,3H");
       renderAnalysisOnScreen(scene);
 
-      expect(scoredEvents(scene).at(-1)).toStrictEqual(
+      expect(lastScore(scene)).toStrictEqual(
         scoredParams(2, false, "interactive"),
       );
     });
@@ -91,12 +97,46 @@ describe("useDiscardTelemetry decision quality", () => {
     );
   });
 
+  /*
+   * A typed-in hand reaches its first discard looking exactly like a dealt
+   * one — unaided, unseeded, interactive — so without the hand's own
+   * provenance the row would join population statistics that the filtering
+   * contract keeps it out of.
+   */
+  it("scores a typed-in hand as the practice data it is", () => {
+    expectTelemetryScene({}, (scene) => {
+      replaceHandWith(scene, OTHER_HAND, "manual");
+      toggleTo(scene, "AH,2H");
+      renderAnalysisOnScreen(scene);
+
+      expect(lastScore(scene)).toStrictEqual({
+        ...FIRST_INTERACTIVE_SCORE,
+        handStartSource: "manual",
+      });
+    });
+  });
+
+  // The exposure and its score are one decision, so a history move onto the discard already shown must not make them disagree about where it came from.
+  it("scores an exposure with the source it was opened under", () => {
+    expectTelemetryScene({}, (scene) => {
+      completeDiscard(scene, "AH,2H");
+      navigateHistory(
+        scene,
+        ["AH,2H,3H,4H,5H,6H", "AH,2H"],
+        entryForCurrentHand(scene),
+      );
+      renderAnalysisOnScreen(scene);
+
+      expect(lastScore(scene)).toStrictEqual(FIRST_INTERACTIVE_SCORE);
+    });
+  });
+
   it("scores a hand the seed generated as seed-derived practice data", () => {
     expectTelemetryScene({ isSeededSession: true }, (scene) => {
       scoreFirstDiscard(scene);
 
-      expect(scoredEvents(scene).at(-1)).toStrictEqual({
-        ...scoredParams(1, true, "interactive"),
+      expect(lastScore(scene)).toStrictEqual({
+        ...FIRST_INTERACTIVE_SCORE,
         generatedFromSeed: true,
       });
     });

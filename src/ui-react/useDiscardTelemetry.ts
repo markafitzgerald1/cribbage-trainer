@@ -31,6 +31,8 @@ interface ShownAnalysis {
   // Stamped from the exposure rather than read again when the answers render, because rendering them is what ends first-instinct status.
   readonly isFirstAnalysis: boolean;
   qualityReported: boolean;
+  // Stamped like the flag above, because the hand's source can change after this exposure opens: a history move onto the same discard keeps the exposure while making the state history-sourced, and the score must not disagree with the analysis_shown it belongs to.
+  readonly source: AnalysisSource;
   // An exposure that consent kept off the wire must also close silently.
   // Otherwise Google Analytics receives an unshown whose shown it never saw.
   readonly reported: boolean;
@@ -216,9 +218,10 @@ export const useDiscardTelemetry = ({
         cribRole,
         dealNonce: state.dealNonce,
         generatedFromSeed: state.generatedFromSeed,
+        handStartSource: state.handStartSource,
         isFirstAnalysis: shown.isFirstAnalysis,
         schemaVersion: DISCARD_SCORED_SCHEMA_VERSION,
-        source: state.source,
+        source: shown.source,
         // Spread from the derivation's own type rather than a widened record, so every quality field still type-checks against the event's payload.
         ...quality,
       });
@@ -255,6 +258,7 @@ export const useDiscardTelemetry = ({
         isFirstAnalysis,
         qualityReported: false,
         reported,
+        source: state.source,
       };
       state.shown = shown;
       const { pendingAnalysis } = state;
