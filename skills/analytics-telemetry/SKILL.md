@@ -44,7 +44,7 @@ mean anything.
   discard exists — deliberately, since delaying it would let an
   answer-influenced choice look unaided — but `ScoredPossibleKeepDiscards`
   reports through `onAnalysisRendered` only once ranked results are on
-  screen, and the flag reads `source === "interactive" && !hasRevealedAnalysis`
+  screen, and the flag reads `source === "interactive" && !hasRenderedAnalysis`
   (#687). An exposure stuck on `Loading analysis...` or ending in
   `Failed to load analysis.` therefore leaves the next discard unaided, which
   is what it was. Ordering is what makes this safe: an exposure is emitted
