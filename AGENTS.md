@@ -9,9 +9,19 @@
   thumb", or subjective weighting in scoring algorithms. All expected values
   must be mathematically derived.
 - Primary branch: `main`; active work often happens on feature branches.
-
-## Agent Skills & Tools
-
+- **Product direction:** the roadmap is gated on the author playing the app
+  voluntarily, which it does not yet earn — it gets opened while testing
+  changes, not because someone independently wants to improve at cribbage. The
+  objective is "I voluntarily play several times per week even when not
+  testing a change", and finding, retaining, and monetizing users is
+  deliberately deferred until that holds. The loop being closed is: play a
+  game, make authentic decisions, identify the decisions that cost the most
+  expected value, understand them, practice the weaknesses, play again. So the
+  filter for any proposed work is **does this make playing, learning,
+  diagnosing mistakes, or measuring improvement meaningfully better?** If not,
+  it ranks below work that does. Be suspicious in particular of technical work
+  that deepens the simulator without improving that loop: implementation
+  scalability is treated as mostly solved by tests, guardrails, and agents.
 - This file is the shared contract for every harness used here: Codex and
   Antigravity read `AGENTS.md` directly, Claude Code reaches it through
   `CLAUDE.md`'s `@AGENTS.md` import, and GitHub Copilot reads it on both the
@@ -81,6 +91,15 @@
   - Before changing the Pages workflows, the PR preview deploy, the
     `pages-content` branch, or `scripts/pagesContentMerge.mjs`, read
     `skills/pages-preview/SKILL.md`.
+- A task that touches another of this author's repositories (for example
+  `simulate-cribbage-games`, which generates the vendored tables below) must
+  begin by reading **that** repository's `AGENTS.md`, and its `skills/` if it
+  has them. Only this repository's contract is auto-loaded, so a sibling's
+  tooling is invisible until read — and it usually already contains the thing
+  you were about to build. A dependency-bump validation harness was written
+  from scratch in `simulate-cribbage-games` before its own
+  `scratch/verify_upgrade.py`, documented in its AGENTS.md, turned up doing
+  the same job better.
 - Keep authored guidance out of dot-directories. The lint gauntlet's globs
   (`cspell '**'`, `markdownlint .`, `prettier --check .`) silently skip them:
   a `SKILL.md` with two misspellings is flagged under `skills/` and passes
@@ -574,6 +593,36 @@
   down are in `skills/pages-preview/SKILL.md`; read it before editing either
   workflow.
 
+## Working an issue
+
+- The expected shape of feature work, in order: post the plan as an attributed
+  comment on the issue before writing code; implement on a
+  `feature/<issue>-<slug>` branch; open a PR whose body carries a human review
+  guide and a manual testing plan; get CI green and a passing Copilot review;
+  then the human decides how much further automated review to run before
+  reviewing it themselves.
+- The review guide is what makes the PR reviewable rather than merely correct:
+  a suggested file reading order, the design decisions that are worth
+  challenging rather than only the ones that worked, and honest flags for
+  anything a reader would want to know and could otherwise miss — a lowered
+  coverage threshold, a test whose environment could not reproduce the case it
+  asserted, an approximation left standing. The point is to spend the human's
+  attention on the subtle fraction, so a guide that only says what changed has
+  not done its job.
+- The manual testing plan states what a human should do in the deployed
+  preview and what they should see. Keep it honest about what automation
+  already covers and what it cannot: anything about a real phone, a real
+  network, or a real Google Analytics stream is not covered by any gate here.
+- Request a Copilot review with
+  `gh api -X POST repos/<owner>/<repo>/pulls/<n>/requested_reviewers -f 'reviewers[]=copilot-pull-request-reviewer[bot]'`;
+  `gh pr edit --add-reviewer copilot` fails to resolve that login. Afterwards
+  `gh pr view <n> --json reviewRequests` still returns `[]` and the REST
+  response's own `requested_reviewers` array is empty — Copilot is simply not
+  represented there, which is **not** evidence the request failed. Confirm it
+  in `gh api repos/<owner>/<repo>/issues/<n>/timeline`, which shows
+  `review_requested` with `requested_reviewer.login == "Copilot"` followed by
+  `copilot_work_started`.
+
 ## Contribution notes
 
 - Add/adjust tests alongside code changes.
@@ -606,6 +655,14 @@
 - Keep README and docs in sync when changing workflows or commands.
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
+- Prefer issues that deliver something a person can see over issues that
+  deliver only an enabling layer. A storage-only or schema-only ticket can be
+  verified through unit tests or devtools but never by using the app, so it
+  banks unverified behavior and defers every real signal to a later ticket.
+  When you triage or draft one, fold the enabling layer into the first ticket
+  that shows something, leaving a follow-up for the richer view. Watch for the
+  inverse smell too: a display ticket that silently assumes a store nobody
+  built.
 - Move an issue to **In Progress** on the `Cribbage Trainer` project board when
   you start work on it; merging a PR whose body closes the issue moves it to
   Done on its own. A board reading Todo while a branch and PR exist misreports
