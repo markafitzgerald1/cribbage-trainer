@@ -6,16 +6,16 @@ import {
   type Scene,
   type SetupOptions,
   completeDiscard,
-  currentEntry,
   deepLinkedOptions,
+  entryForCurrentHand,
   eventParams,
   expectLastShown,
   expectTelemetryScene,
   handStartedEvents,
   handWithDiscards,
   navigateHistory,
+  renderAnalysisOnScreen,
   replaceHandWith,
-  revealAnalysis,
   shownEvents,
   shownParams,
   toggleTo,
@@ -31,15 +31,15 @@ import type { HistoryHandScope } from "./useDiscardTelemetry";
 
 const unshownEvents = (scene: Scene) => eventParams(scene, "analysis_unshown");
 
-const revealAnalysisWhen = (scene: Scene, reveal: boolean) => {
-  if (reveal) {
-    revealAnalysis(scene);
+const renderAnalysisOnScreenIf = (scene: Scene, rendersOnScreen: boolean) => {
+  if (rendersOnScreen) {
+    renderAnalysisOnScreen(scene);
   }
 };
 
 const showThenHideAnalysis = (scene: Scene) => {
   completeDiscard(scene, "AH,2H");
-  revealAnalysis(scene);
+  renderAnalysisOnScreen(scene);
   toggleTo(scene, "AH", true);
 };
 
@@ -169,37 +169,36 @@ describe("useDiscardTelemetry", () => {
     },
   );
 
-  // Only an analysis that reached the screen ends first instinct: one stuck on Loading, or one that failed, revealed no answers.
-  const REVEAL_CASES: readonly {
+  const ANALYSIS_ON_SCREEN_CASES: readonly {
     readonly name: string;
-    readonly reveal: boolean;
+    readonly rendersOnScreen: boolean;
   }[] = [
     {
-      name: "a rendered analysis ends first instinct for the hand",
-      reveal: true,
+      name: "an analysis on screen ends first instinct for the hand",
+      rendersOnScreen: true,
     },
     {
-      name: "an analysis that never reached the screen leaves it available",
-      reveal: false,
+      name: "an analysis that never reached the screen leaves first instinct available",
+      rendersOnScreen: false,
     },
   ];
 
-  it.each(REVEAL_CASES)("$name", ({ reveal }) => {
+  it.each(ANALYSIS_ON_SCREEN_CASES)("$name", ({ rendersOnScreen }) => {
     expectTelemetryScene({}, (scene) => {
       completeDiscard(scene, "AH,2H");
-      revealAnalysisWhen(scene, reveal);
+      renderAnalysisOnScreenIf(scene, rendersOnScreen);
       completeDiscard(scene, "AH,3H");
 
       expect(unshownEvents(scene)).toHaveLength(0);
 
-      expectTwoInteractiveAnalyses(scene, !reveal);
+      expectTwoInteractiveAnalyses(scene, !rendersOnScreen);
     });
   });
 
   it("records a close and reopen when a flicker returns to a discard", () => {
     expectTelemetryScene({}, (scene) => {
       completeDiscard(scene, "2H,4H");
-      revealAnalysis(scene);
+      renderAnalysisOnScreen(scene);
       toggleTo(scene, "2H,4H,5H");
       completeDiscard(scene, "2H,4H");
 
@@ -268,7 +267,7 @@ describe("useDiscardTelemetry", () => {
   it("keeps the deal nonce for a history move within the same hand", () => {
     expectHistoryMove(
       [HAND, "4H,6H"],
-      currentEntry,
+      entryForCurrentHand,
       ({ first, scene, second }) => {
         expect(second).toStrictEqual({
           ...shownParams(2, false, "history"),
@@ -313,7 +312,7 @@ describe("useDiscardTelemetry", () => {
 
   const exposeAnalysisThenConsent = (scene: Scene) => {
     completeDiscard(scene, "AH,2H");
-    revealAnalysis(scene);
+    renderAnalysisOnScreen(scene);
     scene.rerenderConsent(true);
   };
 
@@ -331,7 +330,7 @@ describe("useDiscardTelemetry", () => {
       secondDiscard: "AH,2H",
     },
     {
-      expose: revealAnalysis,
+      expose: renderAnalysisOnScreen,
       name: "a deep link already revealed the answers",
       options: deepLinkedOptions,
       secondDiscard: "AH,3H",

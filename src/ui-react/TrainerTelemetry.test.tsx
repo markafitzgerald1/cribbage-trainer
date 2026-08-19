@@ -71,7 +71,6 @@ const expectLastAnalysisShown = (
   });
 };
 
-// The shape both "an answer was already visible" cases assert: a second exposure, informed by the first.
 const expectSecondAnalysisInformed = (
   trackEvent: ReturnType<typeof startTelemetryCapture>,
 ) => {

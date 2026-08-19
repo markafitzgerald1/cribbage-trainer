@@ -121,13 +121,13 @@ export function ScoredPossibleKeepDiscards({
     }
   }, [loadCribTable, loadError, loadPlayTable, retryCount, tables]);
 
+  const resultsAreOnScreen = tables !== null;
   useEffect(() => {
-    // The loading and failure branches return before the results below, so only a real exposure reports one.
-    // Keyed on the cards as well as the tables: Back and Forward between two complete discards swap the hand while this stays mounted, and the restored hand's results are on screen just as much as the first hand's were.
-    if (tables) {
+    // The cards are a dependency because Back and Forward swap the hand while this component stays mounted.
+    if (resultsAreOnScreen) {
       onAnalysisRendered();
     }
-  }, [dealtCards, onAnalysisRendered, tables]);
+  }, [dealtCards, onAnalysisRendered, resultsAreOnScreen]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);

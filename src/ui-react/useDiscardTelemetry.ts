@@ -43,7 +43,7 @@ interface DealTelemetryState {
   readonly dealNonce: string;
   readonly generatedFromSeed: boolean;
   handStarted: boolean;
-  hasRevealedAnalysis: boolean;
+  hasRenderedAnalysis: boolean;
   readonly handStartSource: HandStartSource;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
@@ -59,7 +59,7 @@ const createDealTelemetryState = (
   generatedFromSeed,
   handStartSource,
   handStarted: false,
-  hasRevealedAnalysis: false,
+  hasRenderedAnalysis: false,
   pendingCards: dealtCards,
   shown: null,
   source,
@@ -86,7 +86,6 @@ export interface DiscardTelemetry {
     dealtCards: readonly DealtCard[],
     cause: HandReplacementCause,
   ) => void;
-  // Reported when ranked results reach the screen, which is what ends first-instinct status.
   readonly reportAnalysisRendered: () => void;
   readonly reportHistoryNavigation: (
     dealtCards: readonly DealtCard[],
@@ -173,7 +172,7 @@ export const useDiscardTelemetry = ({
       // Only an exposure the user actually saw ends first-instinct status, so an analysis that never loaded leaves the next discard unaided.
       // Deep links, history hydration, and pre-consent selections all reveal the answers once they render.
       const isFirstAnalysis =
-        state.source === "interactive" && !state.hasRevealedAnalysis;
+        state.source === "interactive" && !state.hasRenderedAnalysis;
       const reported = emit("analysis_shown", {
         analysisIndex: state.analysisCount,
         dealNonce: state.dealNonce,
@@ -235,7 +234,7 @@ export const useDiscardTelemetry = ({
     ],
   );
   const reportAnalysisRendered = useCallback(() => {
-    stateRef.current.hasRevealedAnalysis = true;
+    stateRef.current.hasRenderedAnalysis = true;
   }, []);
   const currentHandScope = useCallback(
     (): HistoryHandScope => ({
@@ -248,7 +247,6 @@ export const useDiscardTelemetry = ({
     (newDealtCards: readonly DealtCard[], entry: HistoryHandScope | null) => {
       const state = stateRef.current;
       if (entry?.handId === state.dealNonce) {
-        // Back/Forward within the same hand keeps its identifier and analysis count.
         state.source = "history";
         state.pendingCards = newDealtCards;
         reportAnalysisState(state);

@@ -20,7 +20,7 @@ const CARD_DRAW_RANDOM_VALUE = 0;
 export const DEALER_RANDOM_VALUE = 0.49;
 export const PONE_RANDOM_VALUE = 0.5;
 
-// Both tables, because analysis only renders with both, and a rendered analysis is what ends first-instinct status.
+// Analysis renders only with both tables loaded, and only a rendered analysis ends first-instinct status.
 export const setAnalysisTables = () => {
   setCribTableSync(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
