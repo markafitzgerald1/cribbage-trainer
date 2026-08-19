@@ -5,29 +5,46 @@ export type AnalysisSource = "deeplink" | "history" | "interactive";
 export type HandStartSource =
   "deal" | "deeplink" | "history" | "initial" | "manual";
 
-export type TrainerEventName =
-  | "analysis_shown"
-  | "analysis_unshown"
-  | "card_selected"
-  | "card_unselected"
-  | "deal_clicked"
-  | "hand_started";
-
-// Concrete keys keep every payload card-free by construction: counts, indices, source, provenance, and the per-deal nonce only.
-export interface TrainerEventParams {
-  readonly analysisIndex?: number;
-  readonly dealNonce?: string;
-  readonly discardCount?: number;
-  // Low-cardinality provenance, never the seed itself or anything derived from it.
-  readonly generatedFromSeed?: boolean;
-  readonly isFirstAnalysis?: boolean;
-  readonly source?: AnalysisSource | HandStartSource;
+// One entry per event, so a parameter an event does not carry cannot be passed to it.
+// Every payload stays card-free by construction: counts, indices, source, provenance, and the per-hand nonce only.
+interface TrainerEventParamsByName {
+  readonly analysis_shown: {
+    readonly analysisIndex: number;
+    readonly dealNonce: string;
+    // Low-cardinality provenance, never the seed itself or anything derived from it.
+    readonly generatedFromSeed: boolean;
+    readonly isFirstAnalysis: boolean;
+    readonly source: AnalysisSource;
+  };
+  readonly analysis_unshown: {
+    readonly analysisIndex: number;
+    readonly dealNonce: string;
+  };
+  readonly card_selected: DiscardCountParams;
+  readonly card_unselected: DiscardCountParams;
+  readonly deal_clicked: { readonly dealNonce: string };
+  readonly hand_started: {
+    readonly dealNonce: string;
+    readonly generatedFromSeed: boolean;
+    readonly source: HandStartSource;
+  };
 }
 
-export type TrackEvent = (
+interface DiscardCountParams {
+  readonly dealNonce: string;
+  readonly discardCount: number;
+}
+
+export type TrainerEventName = keyof TrainerEventParamsByName;
+
+export type TrainerEventParams<
+  Name extends TrainerEventName = TrainerEventName,
+> = TrainerEventParamsByName[Name];
+
+export type TrackEvent = <Name extends TrainerEventName>(
   consented: boolean | null,
-  eventName: TrainerEventName,
-  params: TrainerEventParams,
+  eventName: Name,
+  params: TrainerEventParams<Name>,
 ) => void;
 
 const toGoogleAnalyticsKey = (key: string) =>
