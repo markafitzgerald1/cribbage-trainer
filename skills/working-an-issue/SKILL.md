@@ -49,6 +49,11 @@ review mechanics that have each produced a wrong conclusion when guessed at.
   `review_requested` with `requested_reviewer.login == "Copilot"` followed by
   `copilot_work_started`.
 
+- Copilot is slow and sometimes silent: it can take several minutes to start,
+  and it can fail to start at all — its review then says so, blaming a missing
+  runner or a timeout. Wait well past the point Codex would have answered
+  before reporting that Copilot has not reviewed, and say which of the two it
+  is: not yet, or reported as failed to start.
 - Read the body of any review that arrives before claiming a review happened.
   Both bots can return a stub instead: Copilot when the requester is out of
   quota, Codex when its usage limits are reached.
