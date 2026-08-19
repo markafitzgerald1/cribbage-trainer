@@ -10,8 +10,12 @@ imperative pointer to each task-shaped procedure. Those procedures live in
 so a session pays for the areas it actually touches. Review-time guidance for
 Copilot lives in `.github/copilot-instructions.md`.
 
-Add new durable learnings to whichever tier matches the learning's trigger —
-never here.
+Add new durable learnings to whichever tier matches the learning's trigger:
+`AGENTS.md` for what binds every session, a skill for what a stated trigger
+loads on demand. What belongs here instead is the narrow set that is true of
+Claude Code alone — its harness, its worktrees, this machine's shell — since
+no other harness reads this file and the shared contract should not carry
+guidance only one tool can use.
 
 ## Claude-specific notes
 

@@ -86,8 +86,8 @@
   - Before writing or debugging a Playwright spec, regenerating screenshot
     baselines, or diagnosing a rendered-layout bug in the browser, read
     `skills/testing-e2e/SKILL.md`.
-  - Before starting work on an issue, read
-    `skills/working-an-issue/SKILL.md`.
+  - Before starting work on an issue, or when you triage or draft one,
+    read `skills/working-an-issue/SKILL.md`.
   - Before touching analytics consent, `gtag`, or trainer telemetry, read
     `skills/analytics-telemetry/SKILL.md`.
   - Before changing the Pages workflows, the PR preview deploy, the
@@ -627,25 +627,6 @@
 - Keep README and docs in sync when changing workflows or commands.
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
-- Prefer issues that deliver something a person can see over issues that
-  deliver only an enabling layer. A storage-only or schema-only ticket can be
-  verified through unit tests or devtools but never by using the app, so it
-  banks unverified behavior and defers every real signal to a later ticket.
-  When you triage or draft one, fold the enabling layer into the first ticket
-  that shows something, leaving a follow-up for the richer view. Watch for the
-  inverse smell too: a display ticket that silently assumes a store nobody
-  built.
-- Move an issue to **In Progress** on the `Cribbage Trainer` project board when
-  you start work on it; merging a PR whose body closes the issue moves it to
-  Done on its own. A board reading Todo while a branch and PR exist misreports
-  what is being worked, and the board is how the state of play is read. It is
-  project 1 for this repository's owner. Read the Status field and its option
-  ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
-  Discovery & Design, Todo, In Progress, Done), find the item id with
-  `gh project item-list 1 --owner <owner> --limit 400 --format json` — the
-  board holds close to 300 items, so the default limit hides most of them —
-  then set it with `gh project item-edit`, passing the item, project, field,
-  and In Progress option ids.
 
 ## Commit messages
 

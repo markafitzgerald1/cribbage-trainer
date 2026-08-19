@@ -1,6 +1,6 @@
 ---
 name: working-an-issue
-description: Use before starting work on a GitHub issue — the plan comment, branch and PR shape, what a review guide and testing plan owe a reader, how to request Copilot and verify it, and the Codex review loop that has to run before a human is asked to look.
+description: Use before starting work on a GitHub issue, and when you triage or draft one — the shape an issue should have, the project board, the plan comment, branch and PR shape, what a review guide and testing plan owe a reader, how to request Copilot and verify it, and the Codex review loop that has to run before a human is asked to look.
 ---
 
 # Working an issue end to end
@@ -11,7 +11,7 @@ review mechanics that have each produced a wrong conclusion when guessed at.
 **Learnings:**
 
 - The order is: post the plan as an attributed comment on the issue **before**
-  writing code; move the issue to In Progress on the project board;
+  writing code; move the issue to In Progress on the board (below);
   implement on a `feature/<issue>-<slug>` branch; push once the branch has one
   commit and open the PR immediately, because the preview only publishes for
   pushes made after the PR exists; open it as a draft if the work is not ready
@@ -50,3 +50,22 @@ repos/<owner>/<repo>/pulls/<n>/requested_reviewers`.
   without asking, iterate to a clean round, reply to and resolve every thread
   — are in `AGENTS.md` under GitHub PR Reviews, because they apply to any PR
   and not only to issue work.
+- Move an issue to **In Progress** on the `Cribbage Trainer` project board when
+  you start work on it; merging a PR whose body closes the issue moves it to
+  Done on its own. A board reading Todo while a branch and PR exist misreports
+  what is being worked, and the board is how the state of play is read. It is
+  project 1 for this repository's owner. Read the Status field and its option
+  ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
+  Discovery & Design, Todo, In Progress, Done), find the item id with
+  `gh project item-list 1 --owner <owner> --limit 400 --format json` — the
+  board holds close to 300 items, so the default limit hides most of them —
+  then set it with `gh project item-edit`, passing the item, project, field,
+  and In Progress option ids.
+- Prefer issues that deliver something a person can see over issues that
+  deliver only an enabling layer. A storage-only or schema-only ticket can be
+  verified through unit tests or devtools but never by using the app, so it
+  banks unverified behavior and defers every real signal to a later ticket.
+  When you triage or draft one, fold the enabling layer into the first ticket
+  that shows something, leaving a follow-up for the richer view. Watch for the
+  inverse smell too: a display ticket that silently assumes a store nobody
+  built.
