@@ -93,19 +93,22 @@ const expectLastHandStarted = (
   });
 };
 
+// Typed by the one parameter it reads, since its callers pass whichever event they happened to capture.
+type IdentifiedHand = { readonly dealNonce: string };
+
 const expectNewDealWithoutDealClick = (
   scene: Scene,
-  first: TrainerEventParams | undefined,
-  second: TrainerEventParams | undefined,
+  first: IdentifiedHand | undefined,
+  second: IdentifiedHand | undefined,
 ) => {
   expect(eventParams(scene, "deal_clicked")).toHaveLength(0);
   expect(second!.dealNonce).not.toBe(first!.dealNonce);
 };
 
 interface HistoryMoveEvents {
-  readonly first: TrainerEventParams | undefined;
+  readonly first: TrainerEventParams<"analysis_shown"> | undefined;
   readonly scene: Scene;
-  readonly second: TrainerEventParams | undefined;
+  readonly second: TrainerEventParams<"analysis_shown"> | undefined;
 }
 
 const expectHistoryMove = (

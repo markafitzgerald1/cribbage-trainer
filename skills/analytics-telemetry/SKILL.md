@@ -106,6 +106,13 @@ mean anything.
   widens the pair back into independent types. Consumers forward the tuple
   rather than re-declaring a name and a payload; the hook's `emit` takes it as
   a rest parameter.
+- Each payload also bans the parameters its event does not carry, as optional
+  `never` fields derived from the union of every parameter key. Structural
+  typing alone would let a larger payload stand in for a smaller one — an
+  `analysis_shown` payload satisfies `deal_clicked`, and `Object.entries`
+  would forward the surplus fields to Google Analytics — and an excess-property
+  check does not catch it, because that only applies to fresh object literals
+  and not to a payload held in a variable (Codex again, on #731).
 - A consequence in the specs: `toHaveBeenLastCalledWith` cannot take an event
   name held in a variable any more, because its typed arguments cannot satisfy
   a correlated tuple. Compare the recorded call instead

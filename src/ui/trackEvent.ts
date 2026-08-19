@@ -40,9 +40,19 @@ export type TrainerEventName = keyof TrainerEventParamsByName;
 // The two events a card toggle can produce, named so callers can say which pair they mean.
 export type CardToggleEventName = "card_selected" | "card_unselected";
 
+// Every parameter any event can carry, derived rather than listed so a new one joins automatically.
+type TrainerEventParamKey = {
+  [Name in TrainerEventName]: keyof TrainerEventParamsByName[Name];
+}[TrainerEventName];
+
+// Structural typing alone would let a payload with surplus fields stand in for a smaller one — an analysis_shown payload satisfies deal_clicked, and Object.entries would forward the surplus to Google Analytics — so every parameter an event does not carry is banned rather than merely absent.
+type WithoutOtherParams<Params> = Params & {
+  readonly [Key in Exclude<TrainerEventParamKey, keyof Params>]?: never;
+};
+
 export type TrainerEventParams<
   Name extends TrainerEventName = TrainerEventName,
-> = TrainerEventParamsByName[Name];
+> = WithoutOtherParams<TrainerEventParamsByName[Name]>;
 
 // A tuple union rather than a generic pair, because a generic infers the name as the whole union whenever a caller holds a widened name, which would re-admit an analysis_shown payload sent under a hand_started name.
 export type TrainerEvent = {
