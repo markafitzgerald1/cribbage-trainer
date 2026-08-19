@@ -58,15 +58,6 @@ const createDealTelemetryState = (
   source,
 });
 
-// Back or Forward can restore a hand at zero discards, whose next complete discard is still stamped a first instinct, so a restored hand has to carry the provenance it had when this session created it.
-// Two scopes can share one key — a seeded deal the user later re-enters by hand — and cards alone cannot tell one such scope from the other, so the most recent classification of a hand wins.
-const rememberHandProvenance = (
-  handProvenance: Map<string, boolean>,
-  state: DealTelemetryState,
-) => {
-  handProvenance.set(state.handKey, state.generatedFromSeed);
-};
-
 const discardedCards = (dealtCards: readonly DealtCard[]) =>
   dealtCards.filter((dealtCard) => !dealtCard.kept);
 
@@ -88,7 +79,12 @@ export interface DiscardTelemetry {
     dealtCards: readonly DealtCard[],
     cause: HandReplacementCause,
   ) => void;
-  readonly reportHistoryNavigation: (dealtCards: readonly DealtCard[]) => void;
+  readonly reportHistoryNavigation: (
+    dealtCards: readonly DealtCard[],
+    entryProvenance: boolean | null,
+  ) => void;
+  // Callers stamp this onto the history entry they write, so a restored entry can state its own provenance.
+  readonly currentHandProvenance: () => boolean;
 }
 
 // GA4 cannot reconstruct "first analysis exposure per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
@@ -108,10 +104,6 @@ export const useDiscardTelemetry = ({
       source: wasDeepLinked ? "deeplink" : "interactive",
     }),
   );
-  const handProvenanceRef = useRef(new Map<string, boolean>());
-  useEffect(() => {
-    rememberHandProvenance(handProvenanceRef.current, stateRef.current);
-  }, []);
   const latestRef = useRef({ consented, trackEvent });
   useEffect(() => {
     latestRef.current = { consented, trackEvent };
@@ -192,7 +184,6 @@ export const useDiscardTelemetry = ({
     (newDealtCards: readonly DealtCard[], scope: HandScope) => {
       closeShownAnalysis(stateRef.current);
       const state = createDealTelemetryState(newDealtCards, scope);
-      rememberHandProvenance(handProvenanceRef.current, state);
       stateRef.current = state;
       return state;
     },
@@ -234,8 +225,12 @@ export const useDiscardTelemetry = ({
       reportHandStarted,
     ],
   );
+  const currentHandProvenance = useCallback(
+    () => stateRef.current.generatedFromSeed,
+    [],
+  );
   const reportHistoryNavigation = useCallback(
-    (newDealtCards: readonly DealtCard[]) => {
+    (newDealtCards: readonly DealtCard[], entryProvenance: boolean | null) => {
       const state = stateRef.current;
       const handKey = serializeHand(newDealtCards);
       if (handKey === state.handKey) {
@@ -245,8 +240,8 @@ export const useDiscardTelemetry = ({
         reportAnalysisState(state);
       } else {
         const newState = replaceHand(newDealtCards, {
-          // A hand this session never created reads as unseeded rather than unknown.
-          generatedFromSeed: handProvenanceRef.current.get(handKey) === true,
+          // An entry written before this document loaded cannot state its provenance, and a seeded session assumes its own seed there, which can only over-exclude.
+          generatedFromSeed: entryProvenance ?? isSeededSession,
           handStartSource: "history",
           source: "history",
         });
@@ -254,14 +249,24 @@ export const useDiscardTelemetry = ({
         reportAnalysisState(newState);
       }
     },
-    [replaceHand, reportAnalysisState, reportHandStarted],
+    [isSeededSession, replaceHand, reportAnalysisState, reportHandStarted],
   );
   useEffect(() => {
     // A deep-linked complete discard is reported after its first render.
     reportAnalysisState(stateRef.current);
   }, [reportAnalysisState]);
   return useMemo(
-    () => ({ reportCardToggled, reportHandReplaced, reportHistoryNavigation }),
-    [reportCardToggled, reportHandReplaced, reportHistoryNavigation],
+    () => ({
+      currentHandProvenance,
+      reportCardToggled,
+      reportHandReplaced,
+      reportHistoryNavigation,
+    }),
+    [
+      currentHandProvenance,
+      reportCardToggled,
+      reportHandReplaced,
+      reportHistoryNavigation,
+    ],
   );
 };

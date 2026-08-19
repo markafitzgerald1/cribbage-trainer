@@ -75,23 +75,24 @@ mean anything.
   `isSeededSession` in `randomNumberGenerator.ts` defines what counts as a
   seed for both the generator and telemetry, and only that boolean is passed
   in.
-- History-restored hands look their provenance up in a session map of hand
-  key to provenance, rather than being classed unseeded wholesale. Back can
-  land on a zero-discard state whose next complete discard is stamped
-  `analysis_index` 1 with source `interactive` — that is, `is_first_analysis`
-  true — so a restored hand can still enter the first-instinct population and
-  must carry its true provenance.
-- That map is written on every hand scope, so the latest classification of a
-  hand wins. It has to be: a user who retypes the hand the seed just dealt
-  creates a second scope with the same cards, and the add-only set this
-  started as reported that restored manual entry as seeded forever after
-  (Codex caught it on PR #728). Cards cannot distinguish two scopes, so one
-  residual case remains — a later seeded deal matching an earlier manually
-  entered hand marks that restored manual entry seeded — and it is left
-  standing because it needs a chance card match rather than a deliberate
-  action, and it errs toward excluding a hand from population statistics.
-  Exact per-entry provenance would mean stamping it into `history.state`
-  beside `previousUrl`.
+- A history-restored hand takes its provenance from the history entry, not
+  from its cards. `Trainer` stamps `generatedFromSeed` into `history.state`
+  beside `previousUrl` on every push and replace, reading the live value from
+  the telemetry hook's `currentHandProvenance()`, and the `popstate` handler
+  passes the restored entry's value back into `reportHistoryNavigation`.
+  Cards cannot carry provenance: a seeded deal and a later hand-entry of the
+  same six cards are two hands under one key, so any card-keyed record
+  answers one of them wrongly. This shipped first as an add-only set of
+  seeded hand keys and reported a re-entered hand as seeded forever after —
+  Codex caught it on PR #728, and retyping the hand you just played is a
+  normal use of the Enter cards dialog, not a chance collision.
+- An entry written before this document loaded records nothing, and a seeded
+  session then assumes its own seed rather than guessing unseeded, which can
+  only over-exclude from population statistics. Never invert that default.
+  Why any of this matters: Back can land on a zero-discard state whose next
+  complete discard is stamped `analysis_index` 1 with source `interactive` —
+  `is_first_analysis` true — so a restored hand can still enter the
+  first-instinct population and must carry its true provenance.
 - Filtering contract for #665: population performance statistics take only
   rows with `is_first_analysis` true **and** `generated_from_seed` false.
   Seeded, deep-linked, manual, and history-restored hands are kept only as

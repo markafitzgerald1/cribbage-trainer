@@ -10,7 +10,6 @@ import { useDiscardTelemetry } from "./useDiscardTelemetry";
 
 export const HAND = "AH,2H,3H,4H,5H,6H";
 export const OTHER_HAND = "AS,2S,3S,4S,5S,6S";
-export const THIRD_HAND = "AD,2D,3D,4D,5D,6D";
 
 export const handWithDiscards = (hand: string, discards: string | null) =>
   toDealtCards(parseHand(hand), discards ? parseHand(discards) : null);
@@ -22,7 +21,7 @@ export interface SetupOptions {
   readonly wasDeepLinked?: boolean;
 }
 
-export const setupTelemetry = ({
+const setupTelemetry = ({
   consented = true,
   dealtCards = handWithDiscards(HAND, null),
   isSeededSession = false,
@@ -67,9 +66,6 @@ export const eventParams = (scene: Scene, eventName: string) =>
 export const shownEvents = (scene: Scene) =>
   eventParams(scene, "analysis_shown");
 
-export const unshownEvents = (scene: Scene) =>
-  eventParams(scene, "analysis_unshown");
-
 export const handStartedEvents = (scene: Scene) =>
   eventParams(scene, "hand_started");
 
@@ -93,15 +89,18 @@ export const replaceHandWith = (
   scene.telemetry.reportHandReplaced(handWithDiscards(hand, null), cause);
 };
 
+export type HistoryDestination = readonly [string, string | null];
+
 export const navigateHistory = (
   scene: Scene,
-  hand: string,
-  discards: string | null,
+  [hand, discards]: HistoryDestination,
+  entryProvenance: boolean | null,
 ) => {
-  scene.telemetry.reportHistoryNavigation(handWithDiscards(hand, discards));
+  scene.telemetry.reportHistoryNavigation(
+    handWithDiscards(hand, discards),
+    entryProvenance,
+  );
 };
-
-export const seededOptions: SetupOptions = { isSeededSession: true };
 
 export const shownParams = (
   analysisIndex: number,

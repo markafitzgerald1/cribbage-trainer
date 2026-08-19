@@ -55,12 +55,17 @@ interface DealState {
 }
 
 // Invariant: previousUrl is the URL of the entry directly beneath this one.
+// Provenance rides on the entry because its cards cannot say where they came from: a seeded deal and a later hand-entry of the same six cards are different hands that share a key.
 interface HistoryEntryState {
+  readonly generatedFromSeed?: boolean;
   readonly previousUrl?: string;
 }
 
+const getHistoryEntryState = (): HistoryEntryState | null =>
+  window.history.state as HistoryEntryState | null;
+
 const getPreviousUrl = (): string | undefined =>
-  (window.history.state as HistoryEntryState | null)?.previousUrl;
+  getHistoryEntryState()?.previousUrl;
 
 const isUnchangedEnteredHand = (
   cards: readonly Card[],
@@ -192,9 +197,10 @@ export function Trainer({
       scoreSortKey,
       sortOrder,
     });
+    const generatedFromSeed = telemetry.currentHandProvenance();
     if (shouldPushHistory.current) {
       window.history.pushState(
-        { previousUrl: window.location.search },
+        { generatedFromSeed, previousUrl: window.location.search },
         "",
         url,
       );
@@ -205,10 +211,14 @@ export function Trainer({
       window.history.back();
     } else {
       // Keep previousUrl so later settles can still detect convergence.
-      window.history.replaceState(window.history.state, "", url);
+      window.history.replaceState(
+        { ...getHistoryEntryState(), generatedFromSeed },
+        "",
+        url,
+      );
     }
     shouldPushHistory.current = false;
-  }, [cribRole, dealtCards, scoreSortKey, sortOrder]);
+  }, [cribRole, dealtCards, scoreSortKey, sortOrder, telemetry]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -222,7 +232,10 @@ export function Trainer({
         const newDealtCards = toDealtCards(cards, discards);
         // Returning to the covered stable URL is cleanup, not user navigation.
         if (!isInternalMerge) {
-          telemetry.reportHistoryNavigation(newDealtCards);
+          telemetry.reportHistoryNavigation(
+            newDealtCards,
+            getHistoryEntryState()?.generatedFromSeed ?? null,
+          );
         }
         setDealState((previous) => ({
           cribRole: urlState.cribRole ?? previous.cribRole,

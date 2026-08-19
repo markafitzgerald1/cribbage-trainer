@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import {
   HAND,
+  type HistoryDestination,
   OTHER_HAND,
   type Scene,
   type SetupOptions,
@@ -16,7 +17,6 @@ import {
   shownEvents,
   shownParams,
   toggleTo,
-  unshownEvents,
 } from "./useDiscardTelemetry.test.common";
 import type {
   HandStartSource,
@@ -25,6 +25,8 @@ import type {
 } from "../ui/trackEvent";
 import { describe, expect, it } from "@jest/globals";
 /* jscpd:ignore-end */
+
+const unshownEvents = (scene: Scene) => eventParams(scene, "analysis_unshown");
 
 const showThenHideAnalysis = (scene: Scene) => {
   completeDiscard(scene, "AH,2H");
@@ -38,10 +40,10 @@ const replaceHand = (scene: Scene, cause: "deal" | "manual") => {
 const discardThenNavigate = (
   scene: Scene,
   discards: string,
-  destination: readonly [string, string],
+  destination: HistoryDestination,
 ) => {
   completeDiscard(scene, discards);
-  navigateHistory(scene, destination[0], destination[1]);
+  navigateHistory(scene, destination, null);
   return shownEvents(scene);
 };
 
@@ -103,7 +105,7 @@ interface HistoryMoveEvents {
 }
 
 const expectHistoryMove = (
-  destination: readonly [string, string],
+  destination: HistoryDestination,
   verify: (events: HistoryMoveEvents) => void,
 ) => {
   expectTelemetryScene({}, (scene) => {

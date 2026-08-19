@@ -1,10 +1,8 @@
 /* jscpd:ignore-start */
 import {
-  HAND,
   OTHER_HAND,
   type Scene,
   type SetupOptions,
-  THIRD_HAND,
   completeDiscard,
   deepLinkedOptions,
   expectLastShown,
@@ -12,7 +10,6 @@ import {
   handStartedEvents,
   navigateHistory,
   replaceHandWith,
-  seededOptions,
   shownParams,
 } from "./useDiscardTelemetry.test.common";
 import { describe, expect, it } from "@jest/globals";
@@ -21,6 +18,10 @@ import { describe, expect, it } from "@jest/globals";
 // A globally unique identifier lets warehouse analysis key on deal_nonce across sessions and devices.
 const UUID_PATTERN =
   /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/u;
+
+const THIRD_HAND = "AD,2D,3D,4D,5D,6D";
+
+const seededOptions: SetupOptions = { isSeededSession: true };
 
 describe("telemetry hand identity and provenance", () => {
   it("identifies the hand with a random UUID", () => {
@@ -42,12 +43,14 @@ describe("telemetry hand identity and provenance", () => {
 
   type HandStep = readonly [string, "deal" | "manual"];
 
-  // Provenance follows the cards, not the URL: a seeded session keeps dealing seeded hands around hands it did not generate, and history restores whatever the hand was when this session created it.
+  // A restored entry states its own provenance, because cards cannot: a seeded deal and a later hand-entry of the same six cards share a key.
+  type HistoryRestore = readonly [string, boolean | null];
+
   const PROVENANCE_CASES: readonly {
     readonly expected: boolean;
     readonly name: string;
     readonly options: SetupOptions;
-    readonly restore?: string;
+    readonly restore?: HistoryRestore;
     readonly steps?: readonly HandStep[];
   }[] = [
     {
@@ -88,51 +91,40 @@ describe("telemetry hand identity and provenance", () => {
     },
     {
       expected: true,
-      name: "a restored hand the seed dealt",
+      name: "a restored entry recorded as seed-dealt",
       options: seededOptions,
-      restore: HAND,
-      steps: [[OTHER_HAND, "deal"]],
+      restore: [OTHER_HAND, true],
     },
     {
       expected: false,
-      name: "a restored hand the user re-entered after the seed dealt it",
+      name: "a restored entry recorded as entered by hand",
       options: seededOptions,
-      restore: HAND,
-      steps: [
-        [OTHER_HAND, "deal"],
-        [HAND, "manual"],
-        [THIRD_HAND, "deal"],
-      ],
+      restore: [OTHER_HAND, false],
+    },
+    {
+      expected: true,
+      name: "a restored entry of a seeded session recording nothing",
+      options: seededOptions,
+      restore: [OTHER_HAND, null],
     },
     {
       expected: false,
-      name: "a restored hand this session never created",
-      options: seededOptions,
-      restore: THIRD_HAND,
-      steps: [[OTHER_HAND, "deal"]],
-    },
-    {
-      expected: false,
-      name: "a restored hand the seed never dealt",
-      options: seededOptions,
-      restore: OTHER_HAND,
-      steps: [
-        [OTHER_HAND, "manual"],
-        [THIRD_HAND, "deal"],
-      ],
+      name: "a restored entry of an unseeded session recording nothing",
+      options: {},
+      restore: [OTHER_HAND, null],
     },
   ];
 
   const buildHandHistory = (
     scene: Scene,
     steps: readonly HandStep[],
-    restore: string | null,
+    restore: HistoryRestore | null,
   ) => {
     steps.forEach(([hand, cause]) => {
       replaceHandWith(scene, hand, cause);
     });
     if (restore !== null) {
-      navigateHistory(scene, restore, null);
+      navigateHistory(scene, [restore[0], null], restore[1]);
     }
   };
 
