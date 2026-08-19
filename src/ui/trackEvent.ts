@@ -46,7 +46,7 @@ export type TrainerEventParams<
 
 // A tuple union rather than a generic pair, because a generic infers the name as the whole union whenever a caller holds a widened name, which would re-admit an analysis_shown payload sent under a hand_started name.
 export type TrainerEvent = {
-  [Name in TrainerEventName]: [Name, TrainerEventParams<Name>];
+  [Name in TrainerEventName]: readonly [Name, TrainerEventParams<Name>];
 }[TrainerEventName];
 
 export type TrackEvent = (
@@ -58,10 +58,12 @@ const toGoogleAnalyticsKey = (key: string) =>
   key.replace(/[A-Z]/gu, (upper) => `_${upper.toLowerCase()}`);
 
 // This gate prevents events before Google Analytics loads or after withdrawal.
-export const trackEvent: TrackEvent = (consented, eventName, params) => {
+export const trackEvent: TrackEvent = (consented, ...event) => {
   if (consented !== true) {
     return;
   }
+  // Taken apart here rather than named as parameters, since naming them widens the pair back into independent name and payload types.
+  const [eventName, params] = event;
   gtag(
     "event",
     eventName,
