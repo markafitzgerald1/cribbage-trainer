@@ -64,6 +64,39 @@ export type TrackEvent = (
   ...event: TrainerEvent
 ) => void;
 
+// The parameters each event may send, enforced at runtime because no type survives a payload built from a widened source: a spread of Record<string, unknown>, an Object.assign, or a cast all defeat the declarations above, and whatever they smuggle in would reach Google Analytics as a real parameter.
+// Entries rather than an object keyed by event name, since those names are snake_case and would each need a camelcase exemption as literal keys.
+type EventParamKeys = {
+  [Name in TrainerEventName]: readonly [
+    Name,
+    readonly (keyof TrainerEventParamsByName[Name])[],
+  ];
+}[TrainerEventName];
+
+const eventParamKeys: readonly EventParamKeys[] = [
+  [
+    "analysis_shown",
+    [
+      "analysisIndex",
+      "dealNonce",
+      "generatedFromSeed",
+      "isFirstAnalysis",
+      "source",
+    ],
+  ],
+  ["analysis_unshown", ["analysisIndex", "dealNonce"]],
+  ["card_selected", ["dealNonce", "discardCount"]],
+  ["card_unselected", ["dealNonce", "discardCount"]],
+  ["deal_clicked", ["dealNonce"]],
+  ["hand_started", ["dealNonce", "generatedFromSeed", "source"]],
+];
+
+// Filtered rather than looked up, so a name with no entry yields nothing to send instead of a branch that can never run.
+const allowedParamKeys = (eventName: TrainerEventName): readonly string[] =>
+  eventParamKeys
+    .filter(([name]) => name === eventName)
+    .flatMap(([, keys]) => keys as readonly string[]);
+
 const toGoogleAnalyticsKey = (key: string) =>
   key.replace(/[A-Z]/gu, (upper) => `_${upper.toLowerCase()}`);
 
@@ -74,14 +107,14 @@ export const trackEvent: TrackEvent = (consented, ...event) => {
   }
   // Taken apart here rather than named as parameters, since naming them widens the pair back into independent name and payload types.
   const [eventName, params] = event;
+  const allowedKeys = allowedParamKeys(eventName);
   gtag(
     "event",
     eventName,
     Object.fromEntries(
-      Object.entries(params).map(([key, value]) => [
-        toGoogleAnalyticsKey(key),
-        value,
-      ]),
+      Object.entries(params)
+        .filter(([key]) => allowedKeys.includes(key))
+        .map(([key, value]) => [toGoogleAnalyticsKey(key), value]),
     ),
   );
 };

@@ -113,6 +113,15 @@ mean anything.
   would forward the surplus fields to Google Analytics — and an excess-property
   check does not catch it, because that only applies to fresh object literals
   and not to a payload held in a variable (Codex again, on #731).
+- No type survives a payload built from a widened source — a spread of
+  `Record<string, unknown>`, an `Object.assign`, a cast — so `trackEvent`
+  also filters at runtime to the parameters its event declares. That list
+  lives as correlated entries rather than an object keyed by event name,
+  because those names are snake_case and would each need a `camelcase`
+  exemption as literal keys, and it is applied by filtering rather than
+  lookup so a name with no entry sends nothing instead of leaving a branch
+  that can never run under the 100% coverage gate. The card-free payload
+  invariant is now enforced, not merely declared.
 - A consequence in the specs: `toHaveBeenLastCalledWith` cannot take an event
   name held in a variable any more, because its typed arguments cannot satisfy
   a correlated tuple. Compare the recorded call instead
