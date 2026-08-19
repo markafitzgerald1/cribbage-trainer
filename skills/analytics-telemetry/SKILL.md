@@ -100,8 +100,8 @@ mean anything.
   (`TrainerEvent`), not as a generic pair: a generic infers the name as the
   whole union whenever a caller holds a widened `TrainerEventName`, which
   re-admits exactly the mismatch this prevents (Codex caught that on #731).
-  Consumers forward the tuple — the hook's `emit` takes `...event:
-TrainerEvent` — rather than re-declaring a name and a payload separately.
+  Consumers forward that tuple rather than re-declaring a name and a payload
+  separately; the hook's `emit` takes it as a rest parameter.
 - A consequence in the specs: `toHaveBeenLastCalledWith` cannot take an event
   name held in a variable any more, because its typed arguments cannot satisfy
   a correlated tuple. Compare the recorded call instead
