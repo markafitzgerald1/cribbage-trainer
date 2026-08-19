@@ -31,11 +31,16 @@ review mechanics that have each produced a wrong conclusion when guessed at.
   covers: a real phone, a real network, a real Google Analytics stream. When
   the human runs those steps, record the result in the PR body, and say
   plainly if later commits have moved the code out from under that run.
-- Request Copilot with
-  `gh api --method POST --raw-field
-'reviewers[]=copilot-pull-request-reviewer[bot]'
-repos/<owner>/<repo>/pulls/<n>/requested_reviewers`.
-  `gh pr edit --add-reviewer copilot` cannot resolve that login. Afterwards
+- Request Copilot with this, since `gh pr edit --add-reviewer copilot` cannot
+  resolve that login:
+
+  ```bash
+  gh api --method POST \
+    --raw-field 'reviewers[]=copilot-pull-request-reviewer[bot]' \
+    repos/<owner>/<repo>/pulls/<n>/requested_reviewers
+  ```
+
+  Afterwards
   `gh pr view <n> --json reviewRequests` still returns `[]` and the REST
   response's own `requested_reviewers` array is empty — Copilot is simply not
   represented there, which is **not** evidence the request failed and must not
@@ -43,6 +48,7 @@ repos/<owner>/<repo>/pulls/<n>/requested_reviewers`.
   `gh api repos/<owner>/<repo>/issues/<n>/timeline`, which shows
   `review_requested` with `requested_reviewer.login == "Copilot"` followed by
   `copilot_work_started`.
+
 - Read the body of any review that arrives before claiming a review happened.
   Both bots can return a stub instead: Copilot when the requester is out of
   quota, Codex when its usage limits are reached.

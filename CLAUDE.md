@@ -33,8 +33,8 @@ guidance only one tool can use.
   tools see, and each difference has already been mistaken for a real failure:
   - `jest.config.json` ignores `/.claude/`, and the worktree's absolute path
     contains it, so a bare `npx jest` finds no tests at all. Override the
-    list: `npx jest --testPathIgnorePatterns '/scripts/' '/tests-e2e/'
-'/tests-examples' --runTestsByPath <files>`.
+    list, which a focused run does not otherwise need:
+    `npx jest --testPathIgnorePatterns '/tests-e2e/' --runTestsByPath <file>`.
   - `npm run lint:cspell` reports "Files checked: 0" and exits 1, because the
     parent repository's `.gitignore` excludes `/.claude/` and `--gitignore`
     therefore excludes the whole worktree. Check changed files directly with
