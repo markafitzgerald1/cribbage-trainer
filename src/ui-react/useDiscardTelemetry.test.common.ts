@@ -71,18 +71,21 @@ type TrackEventCall<Name extends TrainerEventName> = readonly [
   TrainerEventParams<Name>,
 ];
 
-const isCallOf = <Name extends TrainerEventName>(
+function isCallOf<Name extends TrainerEventName>(
   call: readonly unknown[],
   eventName: Name,
-): call is TrackEventCall<Name> => call[1] === eventName;
+): call is TrackEventCall<Name> {
+  return call[1] === eventName;
+}
 
-export const eventParams = <Name extends TrainerEventName>(
+export function eventParams<Name extends TrainerEventName>(
   scene: Scene,
   eventName: Name,
-): readonly TrainerEventParams<Name>[] =>
-  scene.trackEvent.mock.calls
+): readonly TrainerEventParams<Name>[] {
+  return scene.trackEvent.mock.calls
     .filter((call) => isCallOf(call, eventName))
     .map(([, , params]) => params);
+}
 
 export const shownEvents = (scene: Scene) =>
   eventParams(scene, "analysis_shown");
