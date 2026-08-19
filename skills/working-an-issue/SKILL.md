@@ -41,11 +41,10 @@ review mechanics that have each produced a wrong conclusion when guessed at.
     repos/<owner>/<repo>/pulls/<n>/requested_reviewers
   ```
 
-  Afterwards
-  `gh pr view <n> --json reviewRequests` still returns `[]` and the REST
-  response's own `requested_reviewers` array is empty — Copilot is simply not
-  represented there, which is **not** evidence the request failed and must not
-  be retried on that basis. Confirm it in
+  Afterwards `gh pr view <n> --json reviewRequests` still returns `[]`, and
+  the REST response's own `requested_reviewers` array is empty — Copilot is
+  simply not represented there, which is **not** evidence the request failed
+  and must not be retried on that basis. Confirm it in
   `gh api --paginate repos/<owner>/<repo>/issues/<n>/timeline`, which shows
   `review_requested` with `requested_reviewer.login == "Copilot"` followed by
   `copilot_work_started`.
