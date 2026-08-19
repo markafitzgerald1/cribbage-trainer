@@ -8,18 +8,25 @@ import { Trainer, type TrainerProps } from "./Trainer";
 import { expect, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
+import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { UserEvent } from "@testing-library/user-event";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
-import { setTableSync } from "../game/expectedCribPointsTableLoader";
+import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
+import { setTableSync as setCribTableSync } from "../game/expectedCribPointsTableLoader";
+import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 
 export const mathRandom = Math.random;
 const CARD_DRAW_RANDOM_VALUE = 0;
 export const DEALER_RANDOM_VALUE = 0.49;
 export const PONE_RANDOM_VALUE = 0.5;
 
-export const setCribTable = () => {
-  setTableSync(
+// Analysis renders only with both tables loaded, and only a rendered analysis ends first-instinct status.
+export const setAnalysisTables = () => {
+  setCribTableSync(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+  );
+  setPlayTableSync(
+    expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
   );
 };
 
@@ -27,7 +34,7 @@ export const renderTrainerWithGenerator = (
   generateRandomNumber: () => number,
   trackEvent: TrainerProps["trackEvent"] = jest.fn(),
 ) => {
-  setCribTable();
+  setAnalysisTables();
 
   return render(
     <Trainer
@@ -125,3 +132,5 @@ export const getHandText = (container: HTMLElement) =>
   container.querySelector("ul")!.textContent;
 
 export const SIX_HEARTS_HAND = "AH,2H,3H,4H,5H,6H";
+
+export const SIX_SPADES_HAND = "AS,2S,3S,4S,5S,6S";

@@ -53,6 +53,7 @@ const createStory = (dealtCards: DealtCard[], sortOrder: SortOrder): Story => ({
   args: {
     cribRole: CribRole.Dealer,
     dealtCards,
+    onAnalysisRendered: fn(),
     onScoreSortKeyChange: fn(),
     scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints,
     sortOrder,

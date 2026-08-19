@@ -5,9 +5,9 @@ import {
   type Scene,
   type SetupOptions,
   completeDiscard,
-  currentEntry,
   deepLinkedOptions,
-  entryFrom,
+  entryForAnotherHand,
+  entryForCurrentHand,
   expectLastShown,
   expectTelemetryScene,
   handStartedEvents,
@@ -50,7 +50,7 @@ describe("telemetry hand identity and provenance", () => {
   type HistoryRestore = readonly [string, boolean | null];
 
   const restoreEntry = (provenance: boolean | null) =>
-    provenance === null ? null : entryFrom(provenance);
+    provenance === null ? null : entryForAnotherHand(provenance);
 
   const PROVENANCE_CASES: readonly {
     readonly expected: boolean;
@@ -136,7 +136,7 @@ describe("telemetry hand identity and provenance", () => {
 
   it("restores the hand an entry names, not the one whose cards match", () => {
     expectTelemetryScene(seededOptions, (scene) => {
-      const seededEntry = currentEntry(scene);
+      const seededEntry = entryForCurrentHand(scene);
       replaceHandWith(scene, HAND, "manual");
       navigateHistory(scene, [HAND, null], seededEntry);
       const [seeded, entered, restored] = handStartedEvents(scene);

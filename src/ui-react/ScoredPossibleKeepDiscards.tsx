@@ -32,6 +32,12 @@ export interface ScoredPossibleKeepDiscardsProps {
    */
   readonly loadCribTable?: () => Promise<ExpectedCribPointsTable>;
   readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
+
+  /**
+   * Called once the ranked results are actually on screen, which telemetry
+   * needs to tell an answer the user saw from one that never arrived.
+   */
+  readonly onAnalysisRendered: () => void;
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
@@ -87,6 +93,7 @@ export function ScoredPossibleKeepDiscards({
   dealtCards,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
+  onAnalysisRendered,
   onScoreSortKeyChange,
   scoreSortKey,
   sortOrder,
@@ -113,6 +120,14 @@ export function ScoredPossibleKeepDiscards({
         });
     }
   }, [loadCribTable, loadError, loadPlayTable, retryCount, tables]);
+
+  const resultsAreOnScreen = tables !== null;
+  useEffect(() => {
+    // The cards are a dependency because Back and Forward swap the hand while this component stays mounted.
+    if (resultsAreOnScreen) {
+      onAnalysisRendered();
+    }
+  }, [dealtCards, onAnalysisRendered, resultsAreOnScreen]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);

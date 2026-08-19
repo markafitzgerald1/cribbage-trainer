@@ -43,6 +43,7 @@ interface DealTelemetryState {
   readonly dealNonce: string;
   readonly generatedFromSeed: boolean;
   handStarted: boolean;
+  hasRenderedAnalysis: boolean;
   readonly handStartSource: HandStartSource;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
@@ -58,6 +59,7 @@ const createDealTelemetryState = (
   generatedFromSeed,
   handStartSource,
   handStarted: false,
+  hasRenderedAnalysis: false,
   pendingCards: dealtCards,
   shown: null,
   source,
@@ -84,6 +86,7 @@ export interface DiscardTelemetry {
     dealtCards: readonly DealtCard[],
     cause: HandReplacementCause,
   ) => void;
+  readonly reportAnalysisRendered: () => void;
   readonly reportHistoryNavigation: (
     dealtCards: readonly DealtCard[],
     entry: HistoryHandScope | null,
@@ -166,10 +169,10 @@ export const useDiscardTelemetry = ({
         return;
       }
       state.analysisCount += 1;
-      // Any earlier exposure of this deal's ranked answers ends first-instinct status.
-      // Deep links, history hydration, and pre-consent selections all reveal them.
+      // Only an exposure the user actually saw ends first-instinct status, so an analysis that never loaded leaves the next discard unaided.
+      // Deep links, history hydration, and pre-consent selections all reveal the answers once they render.
       const isFirstAnalysis =
-        state.source === "interactive" && state.analysisCount === 1;
+        state.source === "interactive" && !state.hasRenderedAnalysis;
       const reported = emit("analysis_shown", {
         analysisIndex: state.analysisCount,
         dealNonce: state.dealNonce,
@@ -230,6 +233,9 @@ export const useDiscardTelemetry = ({
       reportHandStarted,
     ],
   );
+  const reportAnalysisRendered = useCallback(() => {
+    stateRef.current.hasRenderedAnalysis = true;
+  }, []);
   const currentHandScope = useCallback(
     (): HistoryHandScope => ({
       generatedFromSeed: stateRef.current.generatedFromSeed,
@@ -241,7 +247,6 @@ export const useDiscardTelemetry = ({
     (newDealtCards: readonly DealtCard[], entry: HistoryHandScope | null) => {
       const state = stateRef.current;
       if (entry?.handId === state.dealNonce) {
-        // Back/Forward within the same hand keeps its identifier and analysis count.
         state.source = "history";
         state.pendingCards = newDealtCards;
         reportAnalysisState(state);
@@ -265,12 +270,14 @@ export const useDiscardTelemetry = ({
   return useMemo(
     () => ({
       currentHandScope,
+      reportAnalysisRendered,
       reportCardToggled,
       reportHandReplaced,
       reportHistoryNavigation,
     }),
     [
       currentHandScope,
+      reportAnalysisRendered,
       reportCardToggled,
       reportHandReplaced,
       reportHistoryNavigation,

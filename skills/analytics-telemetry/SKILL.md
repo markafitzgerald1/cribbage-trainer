@@ -29,15 +29,48 @@ mean anything.
   "first analysis exposure per hand" after the fact, and #665's EV-loss metric
   keys off `is_first_analysis`. That flag means the _first exposure of this
   hand's ranked answers was this interactive one_ (`source === "interactive"`
-  and `analysis_index === 1`), not merely the first interactive exposure: a
-  deep link, a history hydration, or a selection made before consent all
-  reveal the full answer key, so any analysis after one of those is informed
-  and must never be counted as first instinct. `analysis_shown` fires
+  and no analysis of this hand has rendered yet), not merely the first
+  interactive exposure: a deep link, a history hydration, or a selection made
+  before consent all reveal the full answer key once they render, so any
+  analysis after one of those is informed and must never be counted as first
+  instinct. `analysis_shown` fires
   immediately when a complete discard exposes the answer, and
   `analysis_unshown` fires immediately when the panel closes; delaying either
   event would let an answer-influenced choice look unaided.
   `card_selected`/`card_unselected` (keep-toggle semantics: un-keeping selects
   for discard) are also immediate.
+- What ends first-instinct status is an analysis the user could actually
+  see, not one that was emitted. `analysis_shown` fires the moment a complete
+  discard exists — deliberately, since delaying it would let an
+  answer-influenced choice look unaided — but `ScoredPossibleKeepDiscards`
+  reports through `onAnalysisRendered` only once ranked results are on
+  screen, and the flag reads `source === "interactive" && !hasRenderedAnalysis`
+  (#687). An exposure stuck on `Loading analysis...` or ending in
+  `Failed to load analysis.` therefore leaves the next discard unaided, which
+  is what it was. Ordering is what makes this safe: an exposure is emitted
+  synchronously in the interaction handler while the reveal arrives from an
+  effect after commit, so the exposure that causes a render is always stamped
+  before that render can consume the flag.
+- A consequence to carry into any consumer: more than one `analysis_shown` per
+  hand can now be `is_first_analysis: true`, because a hand whose answers
+  never rendered can hold several genuinely unaided discards. The flag means
+  _this decision was unaided_, not _this is the one row per hand_. Take the
+  lowest `analysis_index` among true rows for a `deal_nonce` when one row per
+  hand is wanted.
+- The measurement rule those flags exist to serve, agreed for #19/#719/#665:
+  score the **first complete discard per hand, and only that**. Analysis
+  fires only once two cards are committed, so with auto-analyze the first
+  choice is already made before any ranked answer for that hand is visible —
+  uncontaminated by construction, which is why measuring discard quality does
+  not depend on #14 (opt-in deferred analysis). Exclude, or segment
+  separately, any later discard on the same hand, any hand whose answers were
+  revealed before the user chose at all (deep link, history hydration), and
+  any seeded hand. The denominator is _hands chosen unaided_, not _hands
+  seen_, so counted hands lag played hands for anyone who deep links or
+  replays — surface that wherever the count is shown. Local statistics
+  (#24/#19/#719) need the same rule against browser storage, since they must
+  work with analytics declined: share this logic rather than duplicating it,
+  because jscpd runs at 0%.
 - Telemetry bookkeeping advances even while consent withholds transmission,
   because an unsent exposure still informs the next choice. Each tracked
   exposure therefore records whether it actually reached Google Analytics, and

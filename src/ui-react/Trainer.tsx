@@ -183,7 +183,13 @@ export function Trainer({
   );
   const { analyticsConsented, setConsented, storedConsentOnFirstRender } =
     useAnalyticsConsent(loadGoogleAnalytics);
-  const telemetry = useDiscardTelemetry({
+  const {
+    currentHandScope,
+    reportAnalysisRendered,
+    reportCardToggled,
+    reportHandReplaced,
+    reportHistoryNavigation,
+  } = useDiscardTelemetry({
     consented: analyticsConsented,
     dealtCards,
     isSeededSession,
@@ -200,7 +206,7 @@ export function Trainer({
       scoreSortKey,
       sortOrder,
     });
-    const handScope = telemetry.currentHandScope();
+    const handScope = currentHandScope();
     if (shouldPushHistory.current) {
       window.history.pushState(
         { handScope, previousUrl: window.location.search },
@@ -221,7 +227,7 @@ export function Trainer({
       );
     }
     shouldPushHistory.current = false;
-  }, [cribRole, dealtCards, scoreSortKey, sortOrder, telemetry]);
+  }, [cribRole, currentHandScope, dealtCards, scoreSortKey, sortOrder]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -235,7 +241,7 @@ export function Trainer({
         const newDealtCards = toDealtCards(cards, discards);
         // Returning to the covered stable URL is cleanup, not user navigation.
         if (!isInternalMerge) {
-          telemetry.reportHistoryNavigation(
+          reportHistoryNavigation(
             newDealtCards,
             getHistoryEntryState()?.handScope ?? null,
           );
@@ -256,7 +262,7 @@ export function Trainer({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [telemetry]);
+  }, [reportHistoryNavigation]);
 
   // Preserve the current history entry only when its state is stable.
   // Transient single-card selections get replaced, so Back skips them.
@@ -265,10 +271,10 @@ export function Trainer({
   }, [dealtCards]);
   const applyManualHand = useCallback(
     (state: DealState) => {
-      telemetry.reportHandReplaced(state.dealtCards, "manual");
+      reportHandReplaced(state.dealtCards, "manual");
       setDealState(state);
     },
-    [telemetry],
+    [reportHandReplaced],
   );
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
@@ -285,21 +291,26 @@ export function Trainer({
       // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
       const newDealtCard = newDealtCards[dealOrderIndex]!;
       newDealtCard.kept = !newDealtCard.kept;
-      telemetry.reportCardToggled(newDealtCards, newDealtCard.kept);
+      reportCardToggled(newDealtCards, newDealtCard.kept);
       setDealState({
         cribRole,
         dealtCards: newDealtCards,
       });
     },
-    [cribRole, dealtCards, markHistoryUpdate, telemetry],
+    [cribRole, dealtCards, markHistoryUpdate, reportCardToggled],
   );
 
   const dealNewHand = useCallback(() => {
     markHistoryUpdate();
     const newDealState = createDealState(dealHandWithGenerator());
-    telemetry.reportHandReplaced(newDealState.dealtCards, "deal");
+    reportHandReplaced(newDealState.dealtCards, "deal");
     setDealState(newDealState);
-  }, [createDealState, dealHandWithGenerator, markHistoryUpdate, telemetry]);
+  }, [
+    createDealState,
+    dealHandWithGenerator,
+    markHistoryUpdate,
+    reportHandReplaced,
+  ]);
 
   const changeSortOrder = useCallback(
     (newSortOrder: SortOrder) => {
@@ -348,6 +359,7 @@ export function Trainer({
           <ScoredPossibleKeepDiscards
             cribRole={cribRole}
             dealtCards={dealtCards}
+            onAnalysisRendered={reportAnalysisRendered}
             onScoreSortKeyChange={changeScoreSortKey}
             scoreSortKey={scoreSortKey}
             sortOrder={sortOrder}

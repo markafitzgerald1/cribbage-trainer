@@ -1,10 +1,11 @@
 import type { AnalysisSource, TrainerEventName } from "../ui/trackEvent";
 import {
   SIX_HEARTS_HAND,
+  SIX_SPADES_HAND,
   mathRandom,
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
-  setCribTable,
+  setAnalysisTables,
 } from "./Trainer.test.common";
 import { type TrainerProps, analyticsConsentKey } from "./Trainer";
 import { describe, expect, it, jest } from "@jest/globals";
@@ -33,7 +34,7 @@ const setupInitialPropsTrainer = (
   >,
 ) => {
   const trackEvent = startTelemetryCapture(true);
-  setCribTable();
+  setAnalysisTables();
   renderTrainerWithInitialProps({ ...props, trackEvent });
   return trackEvent;
 };
@@ -67,6 +68,16 @@ const expectLastAnalysisShown = (
     generatedFromSeed,
     isFirstAnalysis,
     source,
+  });
+};
+
+const expectSecondAnalysisInformed = (
+  trackEvent: ReturnType<typeof startTelemetryCapture>,
+) => {
+  expectLastAnalysisShown(trackEvent, {
+    analysisIndex: 2,
+    isFirstAnalysis: false,
+    source: "interactive",
   });
 };
 
@@ -151,11 +162,7 @@ describe("trainer telemetry wiring", () => {
       consentAction();
       afterConsent.forEach(clickCheckbox);
 
-      expectLastAnalysisShown(trackEvent, {
-        analysisIndex: 2,
-        isFirstAnalysis: false,
-        source: "interactive",
-      });
+      expectSecondAnalysisInformed(trackEvent);
     },
   );
 
@@ -188,6 +195,22 @@ describe("trainer telemetry wiring", () => {
       isFirstAnalysis: false,
       source: "history",
     });
+  });
+
+  // Back and Forward between two complete discards keep the analysis mounted, so the restored hand's results were on screen the whole time.
+  it("consumes first instinct for a hand restored with its analysis on screen", () => {
+    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
+    hydrateFromHistory(null);
+    window.history.replaceState(
+      null,
+      "",
+      `?hand=${SIX_SPADES_HAND}&discard=AS,2S`,
+    );
+    fireEvent.popState(window);
+    clickCheckbox(2);
+    clickCheckbox(2);
+
+    expectSecondAnalysisInformed(trackEvent);
   });
 
   it("reports a popstate hydration with a history source", () => {

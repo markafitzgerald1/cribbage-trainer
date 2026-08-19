@@ -10,7 +10,7 @@ import {
   renderTrainer,
   renderTrainerShowingDealerRole,
   renderTrainerWithInitialProps,
-  setCribTable,
+  setAnalysisTables,
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
@@ -31,7 +31,7 @@ const resetUrl = () => {
 };
 
 const renderHydratedTrainer = () => {
-  setCribTable();
+  setAnalysisTables();
 
   return renderTrainerWithInitialProps({
     initialCards: parseHand(SIX_HEARTS_HAND),

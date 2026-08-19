@@ -80,6 +80,10 @@ export const toggleTo = (
   scene.telemetry.reportCardToggled(handWithDiscards(HAND, discards), kept);
 };
 
+export const renderAnalysisOnScreen = (scene: Scene) => {
+  scene.telemetry.reportAnalysisRendered();
+};
+
 export const completeDiscard = (scene: Scene, discards: string) => {
   toggleTo(scene, discards);
 };
@@ -105,14 +109,14 @@ export const navigateHistory = (
   );
 };
 
-// A restore of the hand on screen carries the entry the app stamped while that hand was current.
-export const currentEntry = (scene: Scene) =>
+export const entryForCurrentHand = (scene: Scene) =>
   scene.telemetry.currentHandScope();
 
-// An entry recording provenance but belonging to some other hand, which is every restore that leaves the current hand.
-export const entryFrom = (generatedFromSeed: boolean): HistoryHandScope => ({
+export const entryForAnotherHand = (
+  generatedFromSeed: boolean,
+): HistoryHandScope => ({
   generatedFromSeed,
-  handId: "other-hand",
+  handId: "another-hand",
 });
 
 export const shownParams = (
