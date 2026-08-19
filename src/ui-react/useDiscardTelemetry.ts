@@ -12,6 +12,13 @@ import { serializeHand } from "../game/Card";
 
 export type HandReplacementCause = "deal" | "manual";
 
+// What a history entry has to store for a restore to know which hand it is returning to.
+// Cards cannot serve as that identity: one seeded deal and a later hand-entry of the same six cards are two hands under one key.
+export interface HistoryHandScope {
+  readonly generatedFromSeed: boolean;
+  readonly handId: string;
+}
+
 // One telemetry hand is identified globally, not merely within a browser session, so warehouse analysis may treat the value as a key.
 // The seeded deal generator must not be consumed here: that would change which hands seeded links deal.
 const createDealNonce = () => crypto.randomUUID();
@@ -37,7 +44,6 @@ interface DealTelemetryState {
   readonly generatedFromSeed: boolean;
   handStarted: boolean;
   readonly handStartSource: HandStartSource;
-  readonly handKey: string;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
   source: AnalysisSource;
@@ -50,7 +56,6 @@ const createDealTelemetryState = (
   analysisCount: 0,
   dealNonce: createDealNonce(),
   generatedFromSeed,
-  handKey: serializeHand(dealtCards),
   handStartSource,
   handStarted: false,
   pendingCards: dealtCards,
@@ -81,10 +86,10 @@ export interface DiscardTelemetry {
   ) => void;
   readonly reportHistoryNavigation: (
     dealtCards: readonly DealtCard[],
-    entryProvenance: boolean | null,
+    entry: HistoryHandScope | null,
   ) => void;
-  // Callers stamp this onto the history entry they write, so a restored entry can state its own provenance.
-  readonly currentHandProvenance: () => boolean;
+  // Callers stamp this onto the history entry they write and hand it back on a restore, so an entry states which hand it holds and where those cards came from.
+  readonly currentHandScope: () => HistoryHandScope;
 }
 
 // GA4 cannot reconstruct "first analysis exposure per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
@@ -225,23 +230,25 @@ export const useDiscardTelemetry = ({
       reportHandStarted,
     ],
   );
-  const currentHandProvenance = useCallback(
-    () => stateRef.current.generatedFromSeed,
+  const currentHandScope = useCallback(
+    (): HistoryHandScope => ({
+      generatedFromSeed: stateRef.current.generatedFromSeed,
+      handId: stateRef.current.dealNonce,
+    }),
     [],
   );
   const reportHistoryNavigation = useCallback(
-    (newDealtCards: readonly DealtCard[], entryProvenance: boolean | null) => {
+    (newDealtCards: readonly DealtCard[], entry: HistoryHandScope | null) => {
       const state = stateRef.current;
-      const handKey = serializeHand(newDealtCards);
-      if (handKey === state.handKey) {
-        // Back/Forward within the same deal keeps the deal's nonce.
+      if (entry?.handId === state.dealNonce) {
+        // Back/Forward within the same hand keeps its identifier and analysis count.
         state.source = "history";
         state.pendingCards = newDealtCards;
         reportAnalysisState(state);
       } else {
         const newState = replaceHand(newDealtCards, {
-          // An entry written before this document loaded cannot state its provenance, and a seeded session assumes its own seed there, which can only over-exclude.
-          generatedFromSeed: entryProvenance ?? isSeededSession,
+          // An entry written before this document loaded states nothing, and a seeded session assumes its own seed there, which can only over-exclude.
+          generatedFromSeed: entry?.generatedFromSeed ?? isSeededSession,
           handStartSource: "history",
           source: "history",
         });
@@ -257,13 +264,13 @@ export const useDiscardTelemetry = ({
   }, [reportAnalysisState]);
   return useMemo(
     () => ({
-      currentHandProvenance,
+      currentHandScope,
       reportCardToggled,
       reportHandReplaced,
       reportHistoryNavigation,
     }),
     [
-      currentHandProvenance,
+      currentHandScope,
       reportCardToggled,
       reportHandReplaced,
       reportHistoryNavigation,

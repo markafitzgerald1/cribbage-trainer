@@ -171,13 +171,17 @@ describe("trainer telemetry wiring", () => {
   it("stamps the current hand's provenance onto its history entry", () => {
     setupInitialPropsTrainer({ isSeededSession: true });
 
-    expect(window.history.state).toStrictEqual({ generatedFromSeed: true });
+    expect(window.history.state).toStrictEqual({
+      handScope: { generatedFromSeed: true, handId: expect.any(String) },
+    });
   });
 
   // A restored entry outranks the session default, which is the only way to tell a seeded deal from a later hand-entry of the same cards.
   it("reports a restored entry with the provenance that entry recorded", () => {
     const { trackEvent } = setupTelemetryTrainer(true);
-    hydrateFromHistory({ generatedFromSeed: true });
+    hydrateFromHistory({
+      handScope: { generatedFromSeed: true, handId: "another-hand" },
+    });
 
     expectLastAnalysisShown(trackEvent, {
       generatedFromSeed: true,

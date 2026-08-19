@@ -75,17 +75,24 @@ mean anything.
   `isSeededSession` in `randomNumberGenerator.ts` defines what counts as a
   seed for both the generator and telemetry, and only that boolean is passed
   in.
-- A history-restored hand takes its provenance from the history entry, not
-  from its cards. `Trainer` stamps `generatedFromSeed` into `history.state`
-  beside `previousUrl` on every push and replace, reading the live value from
-  the telemetry hook's `currentHandProvenance()`, and the `popstate` handler
-  passes the restored entry's value back into `reportHistoryNavigation`.
-  Cards cannot carry provenance: a seeded deal and a later hand-entry of the
-  same six cards are two hands under one key, so any card-keyed record
-  answers one of them wrongly. This shipped first as an add-only set of
-  seeded hand keys and reported a re-entered hand as seeded forever after —
-  Codex caught it on PR #728, and retyping the hand you just played is a
-  normal use of the Enter cards dialog, not a chance collision.
+- Cards are not an identity for a hand. A seeded deal and a later hand-entry
+  of the same six cards are two hands under one key, so anything keyed by
+  cards answers one of them wrongly — both a card-keyed provenance record and
+  the "same hand, keep the identifier" fast path in
+  `reportHistoryNavigation`. `Trainer` therefore stamps the hook's
+  `currentHandScope()` — `{ generatedFromSeed, handId }`, the handId being
+  the hand's `deal_nonce` — into `history.state` beside `previousUrl` on
+  every push and replace, and the `popstate` handler hands that record back
+  to `reportHistoryNavigation`. A restore continues the current hand only
+  when the entry names it (`entry.handId === state.dealNonce`); otherwise it
+  starts a new scope carrying the entry's own provenance.
+- Codex caught both halves of this on PR #728, one per review round: first
+  the card-keyed provenance record, then the card-keyed fast path, which
+  attributed a restored seeded hand to the manual scope that had replaced it.
+  Reaching either takes only a normal workflow — retyping the hand you just
+  played is what the Enter cards dialog is for, and
+  `isUnchangedEnteredHand` only no-ops that when the role matches and nothing
+  is discarded. Do not reintroduce a cards comparison in either place.
 - An entry written before this document loaded records nothing, and a seeded
   session then assumes its own seed rather than guessing unseeded, which can
   only over-exclude from population statistics. Never invert that default.

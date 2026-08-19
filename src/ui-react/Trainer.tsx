@@ -2,6 +2,10 @@ import * as classes from "./Trainer.module.css";
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
+  type HistoryHandScope,
+  useDiscardTelemetry,
+} from "./useDiscardTelemetry";
+import {
   parseUrlAnalysisState,
   serializeUrlAnalysisState,
 } from "../ui/urlAnalysisState";
@@ -20,7 +24,6 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
-import { useDiscardTelemetry } from "./useDiscardTelemetry";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -55,9 +58,9 @@ interface DealState {
 }
 
 // Invariant: previousUrl is the URL of the entry directly beneath this one.
-// Provenance rides on the entry because its cards cannot say where they came from: a seeded deal and a later hand-entry of the same six cards are different hands that share a key.
+// The hand scope rides on the entry because its cards cannot identify the hand: a seeded deal and a later hand-entry of the same six cards are different hands that share a key.
 interface HistoryEntryState {
-  readonly generatedFromSeed?: boolean;
+  readonly handScope?: HistoryHandScope;
   readonly previousUrl?: string;
 }
 
@@ -197,10 +200,10 @@ export function Trainer({
       scoreSortKey,
       sortOrder,
     });
-    const generatedFromSeed = telemetry.currentHandProvenance();
+    const handScope = telemetry.currentHandScope();
     if (shouldPushHistory.current) {
       window.history.pushState(
-        { generatedFromSeed, previousUrl: window.location.search },
+        { handScope, previousUrl: window.location.search },
         "",
         url,
       );
@@ -212,7 +215,7 @@ export function Trainer({
     } else {
       // Keep previousUrl so later settles can still detect convergence.
       window.history.replaceState(
-        { ...getHistoryEntryState(), generatedFromSeed },
+        { ...getHistoryEntryState(), handScope },
         "",
         url,
       );
@@ -234,7 +237,7 @@ export function Trainer({
         if (!isInternalMerge) {
           telemetry.reportHistoryNavigation(
             newDealtCards,
-            getHistoryEntryState()?.generatedFromSeed ?? null,
+            getHistoryEntryState()?.handScope ?? null,
           );
         }
         setDealState((previous) => ({

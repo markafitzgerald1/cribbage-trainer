@@ -1,11 +1,14 @@
 /* jscpd:ignore-start */
+import {
+  type HistoryHandScope,
+  useDiscardTelemetry,
+} from "./useDiscardTelemetry";
 import { expect, jest } from "@jest/globals";
 import type { DealtCard } from "../game/DealtCard";
 import type { TrackEvent } from "../ui/trackEvent";
 import { parseHand } from "../game/Card";
 import { renderHook } from "@testing-library/react";
 import { toDealtCards } from "../game/toDealtCards";
-import { useDiscardTelemetry } from "./useDiscardTelemetry";
 /* jscpd:ignore-end */
 
 export const HAND = "AH,2H,3H,4H,5H,6H";
@@ -94,13 +97,23 @@ export type HistoryDestination = readonly [string, string | null];
 export const navigateHistory = (
   scene: Scene,
   [hand, discards]: HistoryDestination,
-  entryProvenance: boolean | null,
+  entry: HistoryHandScope | null,
 ) => {
   scene.telemetry.reportHistoryNavigation(
     handWithDiscards(hand, discards),
-    entryProvenance,
+    entry,
   );
 };
+
+// A restore of the hand on screen carries the entry the app stamped while that hand was current.
+export const currentEntry = (scene: Scene) =>
+  scene.telemetry.currentHandScope();
+
+// An entry recording provenance but belonging to some other hand, which is every restore that leaves the current hand.
+export const entryFrom = (generatedFromSeed: boolean): HistoryHandScope => ({
+  generatedFromSeed,
+  handId: "other-hand",
+});
 
 export const shownParams = (
   analysisIndex: number,

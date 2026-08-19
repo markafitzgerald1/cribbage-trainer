@@ -1,10 +1,13 @@
 /* jscpd:ignore-start */
 import {
+  HAND,
   OTHER_HAND,
   type Scene,
   type SetupOptions,
   completeDiscard,
+  currentEntry,
   deepLinkedOptions,
+  entryFrom,
   expectLastShown,
   expectTelemetryScene,
   handStartedEvents,
@@ -45,6 +48,9 @@ describe("telemetry hand identity and provenance", () => {
 
   // A restored entry states its own provenance, because cards cannot: a seeded deal and a later hand-entry of the same six cards share a key.
   type HistoryRestore = readonly [string, boolean | null];
+
+  const restoreEntry = (provenance: boolean | null) =>
+    provenance === null ? null : entryFrom(provenance);
 
   const PROVENANCE_CASES: readonly {
     readonly expected: boolean;
@@ -124,9 +130,23 @@ describe("telemetry hand identity and provenance", () => {
       replaceHandWith(scene, hand, cause);
     });
     if (restore !== null) {
-      navigateHistory(scene, [restore[0], null], restore[1]);
+      navigateHistory(scene, [restore[0], null], restoreEntry(restore[1]));
     }
   };
+
+  it("restores the hand an entry names, not the one whose cards match", () => {
+    expectTelemetryScene(seededOptions, (scene) => {
+      const seededEntry = currentEntry(scene);
+      replaceHandWith(scene, HAND, "manual");
+      navigateHistory(scene, [HAND, null], seededEntry);
+      const [seeded, entered, restored] = handStartedEvents(scene);
+
+      expect(entered?.generatedFromSeed).toBe(false);
+      expect(restored?.generatedFromSeed).toBe(true);
+      expect(restored?.dealNonce).not.toBe(entered?.dealNonce);
+      expect(restored?.dealNonce).not.toBe(seeded?.dealNonce);
+    });
+  });
 
   it.each(PROVENANCE_CASES)(
     "reports $name as generated from a seed: $expected",
