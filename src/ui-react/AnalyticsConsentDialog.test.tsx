@@ -22,6 +22,7 @@ const renderDialogElement = (
     <AnalyticsConsentDialog
       consent={consent}
       onChange={onChange}
+      onPolicyUpdateDecline={jest.fn()}
     />,
   );
 
@@ -60,6 +61,7 @@ const setupFadeTest = (initialConsent: boolean | null = null) => {
       <AnalyticsConsentDialog
         consent={newConsent}
         onChange={onChange}
+        onPolicyUpdateDecline={jest.fn()}
       />,
     );
   };
@@ -87,9 +89,12 @@ describe("analytics consent dialog", () => {
 
   it("contains the accept button with null consent", () =>
     expect(
-      render(<AnalyticsConsentDialog onChange={jest.fn()} />).getByText(
-        ANALYTICS_CONSENT,
-      ),
+      render(
+        <AnalyticsConsentDialog
+          onChange={jest.fn()}
+          onPolicyUpdateDecline={jest.fn()}
+        />,
+      ).getByText(ANALYTICS_CONSENT),
     ).toBeTruthy());
 
   it.each<[boolean, string]>([
@@ -119,12 +124,10 @@ describe("analytics consent dialog", () => {
   it.each<[boolean | "unexpected"]>([[true], [false], ["unexpected"]])(
     "shows only policy and settings links when consent is already %s on load",
     (consent) => {
-      const { getByText, queryByText } = render(
-        <AnalyticsConsentDialog
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-          consent={consent as any}
-          onChange={jest.fn()}
-        />,
+      const { getByText, queryByText } = renderDialogElement(
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+        consent as any,
+        jest.fn(),
       );
 
       expect(getByText(privacyPolicyLinkText)).toBeTruthy();
@@ -328,4 +331,78 @@ describe("analytics consent dialog fade-out behavior", () => {
       expect(onChange).not.toHaveBeenCalled();
     },
   );
+
+  const decisionQualityOfferText = "Allow decision-quality measurements";
+
+  const renderPolicyUpdate = () => {
+    const onChange = createMockOnChange();
+    const onPolicyUpdateDecline = jest.fn();
+    const rendered = render(
+      <AnalyticsConsentDialog
+        consent
+        isPolicyUpdate
+        onChange={onChange}
+        onPolicyUpdateDecline={onPolicyUpdateDecline}
+      />,
+    );
+    return { onChange, onPolicyUpdateDecline, rendered };
+  };
+
+  // An answered choice normally collapses to the links on load, which would hide a question the user has not answered yet.
+  it("keeps a pending policy update visible over an answered consent", () => {
+    const { rendered } = renderPolicyUpdate();
+
+    expect(rendered.getByText("Analytics Consent Update")).toBeTruthy();
+    expect(
+      rendered.getByText("expected points", { exact: false }),
+    ).toBeTruthy();
+  });
+
+  it("accepts the updated policy through the consent callback", () => {
+    const { onChange, rendered } = renderPolicyUpdate();
+
+    fireEvent.click(rendered.getByText("Accept"));
+
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  // Declining the addition must not travel through onChange, which would withdraw analytics itself.
+  it("declines only the update", () => {
+    const { onChange, onPolicyUpdateDecline, rendered } = renderPolicyUpdate();
+
+    fireEvent.click(rendered.getByText("Decline"));
+
+    expect(onPolicyUpdateDecline).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  const renderSettingsWithDecisionQuality = (
+    decisionQualityConsented: boolean,
+  ) => {
+    const onChange = createMockOnChange();
+    const rendered = render(
+      <AnalyticsConsentDialog
+        consent
+        decisionQualityConsented={decisionQualityConsented}
+        onChange={onChange}
+        onPolicyUpdateDecline={jest.fn()}
+      />,
+    );
+    fireEvent.click(rendered.getByText(analyticsSettingsLinkText));
+    return { onChange, rendered };
+  };
+
+  it("offers the declined measurement again from analytics settings", () => {
+    const { onChange, rendered } = renderSettingsWithDecisionQuality(false);
+
+    fireEvent.click(rendered.getByText(decisionQualityOfferText));
+
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
+
+  it("offers nothing more once the measurement is already allowed", () => {
+    const { rendered } = renderSettingsWithDecisionQuality(true);
+
+    expect(rendered.queryByText(decisionQualityOfferText)).toBeNull();
+  });
 });

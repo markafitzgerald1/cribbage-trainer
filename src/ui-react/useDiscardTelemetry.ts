@@ -1,11 +1,14 @@
 import {
   type AnalysisSource,
+  DISCARD_SCORED_SCHEMA_VERSION,
   type HandStartSource,
   type TrackEvent,
   type TrainerEvent,
 } from "../ui/trackEvent";
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import type { DiscardQuality } from "../analysis/discardQuality";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { serializeHand } from "../game/Card";
 
@@ -25,9 +28,18 @@ const createDealNonce = () => crypto.randomUUID();
 interface ShownAnalysis {
   readonly analysisIndex: number;
   readonly discardKey: string;
+  // Stamped from the exposure rather than read again when the answers render, because rendering them is what ends first-instinct status.
+  readonly isFirstAnalysis: boolean;
+  qualityReported: boolean;
   // An exposure that consent kept off the wire must also close silently.
   // Otherwise Google Analytics receives an unshown whose shown it never saw.
   readonly reported: boolean;
+}
+
+// What the analysis component saw on screen: the role it scored against, and what the discard gave up, which is absent until two cards are discarded.
+export interface RenderedAnalysis {
+  readonly cribRole: CribRole;
+  readonly quality: DiscardQuality | null;
 }
 
 // Provenance is fixed when the hand is created, because the URL at emit time no longer says where the cards came from.
@@ -44,6 +56,8 @@ interface DealTelemetryState {
   handStarted: boolean;
   hasRenderedAnalysis: boolean;
   readonly handStartSource: HandStartSource;
+  // Held when answers reach the screen before the exposure that reports them exists, which is the order effects run in on a deep-linked first render.
+  pendingAnalysis: RenderedAnalysis | null;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
   source: AnalysisSource;
@@ -59,6 +73,7 @@ const createDealTelemetryState = (
   handStartSource,
   handStarted: false,
   hasRenderedAnalysis: false,
+  pendingAnalysis: null,
   pendingCards: dealtCards,
   shown: null,
   source,
@@ -70,6 +85,8 @@ const discardedCards = (dealtCards: readonly DealtCard[]) =>
 export interface DiscardTelemetryProps {
   readonly consented: boolean | null;
   readonly dealtCards: readonly DealtCard[];
+  // Decision-quality collection is disclosed by a policy version of its own, so it can be withheld while the rest of the events keep flowing under the consent already given.
+  readonly decisionQualityConsented: boolean;
   // Only whether a seed exists crosses into telemetry; the seed value itself never does.
   readonly isSeededSession: boolean;
   readonly trackEvent: TrackEvent;
@@ -85,7 +102,7 @@ export interface DiscardTelemetry {
     dealtCards: readonly DealtCard[],
     cause: HandReplacementCause,
   ) => void;
-  readonly reportAnalysisRendered: () => void;
+  readonly reportAnalysisRendered: (analysis: RenderedAnalysis) => void;
   readonly reportHistoryNavigation: (
     dealtCards: readonly DealtCard[],
     entry: HistoryHandScope | null,
@@ -97,28 +114,44 @@ export interface DiscardTelemetry {
 // GA4 cannot reconstruct "first analysis exposure per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
 // Only the first render's `dealtCards` is read here; later states arrive through the report methods.
 // Timer and interaction callbacks read consent when they fire, not when they were created, so the latest values live in a ref rather than in each callback's closure.
-const useEventEmitter = (consented: boolean | null, trackEvent: TrackEvent) => {
-  const latestRef = useRef({ consented, trackEvent });
+const useEventEmitter = (
+  consented: boolean | null,
+  decisionQualityConsented: boolean,
+  trackEvent: TrackEvent,
+) => {
+  const latestRef = useRef({ consented, decisionQualityConsented, trackEvent });
   useEffect(() => {
-    latestRef.current = { consented, trackEvent };
+    latestRef.current = { consented, decisionQualityConsented, trackEvent };
   });
-  const emit = useCallback((...event: TrainerEvent) => {
-    const latest = latestRef.current;
-    latest.trackEvent(latest.consented, ...event);
-    // Consent alone decides what actually reaches Google Analytics.
-    // Callers that pair a later event need to know whether this one was sent.
-    return latest.consented === true;
-  }, []);
+  const send = useCallback(
+    (sendConsent: boolean | null, ...event: TrainerEvent) => {
+      latestRef.current.trackEvent(sendConsent, ...event);
+      // Consent alone decides what actually reaches Google Analytics.
+      // Callers that pair a later event need to know whether this one was sent.
+      return sendConsent === true;
+    },
+    [],
+  );
+  const emit = useCallback(
+    (...event: TrainerEvent) => send(latestRef.current.consented, ...event),
+    [send],
+  );
+  const emitDecisionQuality = useCallback(
+    (...event: TrainerEvent) =>
+      send(latestRef.current.decisionQualityConsented, ...event),
+    [send],
+  );
   const hasConsent = useCallback(
     () => latestRef.current.consented === true,
     [],
   );
-  return { emit, hasConsent };
+  return { emit, emitDecisionQuality, hasConsent };
 };
 
 export const useDiscardTelemetry = ({
   consented,
   dealtCards,
+  decisionQualityConsented,
   isSeededSession,
   trackEvent,
   wasDeepLinked,
@@ -131,7 +164,11 @@ export const useDiscardTelemetry = ({
       source: wasDeepLinked ? "deeplink" : "interactive",
     }),
   );
-  const { emit, hasConsent } = useEventEmitter(consented, trackEvent);
+  const { emit, emitDecisionQuality, hasConsent } = useEventEmitter(
+    consented,
+    decisionQualityConsented,
+    trackEvent,
+  );
   const reportHandStarted = useCallback(
     (state: DealTelemetryState) => {
       if (state.handStarted || !hasConsent()) {
@@ -164,9 +201,35 @@ export const useDiscardTelemetry = ({
     },
     [emit],
   );
+  const reportDiscardScored = useCallback(
+    (
+      state: DealTelemetryState,
+      shown: ShownAnalysis,
+      { cribRole, quality }: RenderedAnalysis,
+    ) => {
+      if (shown.qualityReported || !quality) {
+        return;
+      }
+      shown.qualityReported = true;
+      emitDecisionQuality("discard_scored", {
+        analysisIndex: shown.analysisIndex,
+        cribRole,
+        dealNonce: state.dealNonce,
+        generatedFromSeed: state.generatedFromSeed,
+        isFirstAnalysis: shown.isFirstAnalysis,
+        schemaVersion: DISCARD_SCORED_SCHEMA_VERSION,
+        source: state.source,
+        // Spread from the derivation's own type rather than a widened record, so every quality field still type-checks against the event's payload.
+        ...quality,
+      });
+    },
+    [emitDecisionQuality],
+  );
   const reportAnalysisState = useCallback(
     (state: DealTelemetryState) => {
       if (!discardIsComplete(state.pendingCards)) {
+        // An analysis of a discard that is no longer complete must not attach itself to the next exposure.
+        state.pendingAnalysis = null;
         closeShownAnalysis(state);
         return;
       }
@@ -186,13 +249,21 @@ export const useDiscardTelemetry = ({
         isFirstAnalysis,
         source: state.source,
       });
-      state.shown = {
+      const shown = {
         analysisIndex: state.analysisCount,
         discardKey,
+        isFirstAnalysis,
+        qualityReported: false,
         reported,
       };
+      state.shown = shown;
+      const { pendingAnalysis } = state;
+      state.pendingAnalysis = null;
+      if (pendingAnalysis) {
+        reportDiscardScored(state, shown, pendingAnalysis);
+      }
     },
-    [closeShownAnalysis, emit],
+    [closeShownAnalysis, emit, reportDiscardScored],
   );
   const replaceHand = useCallback(
     (newDealtCards: readonly DealtCard[], scope: HandScope) => {
@@ -240,9 +311,18 @@ export const useDiscardTelemetry = ({
       reportHandStarted,
     ],
   );
-  const reportAnalysisRendered = useCallback(() => {
-    stateRef.current.hasRenderedAnalysis = true;
-  }, []);
+  const reportAnalysisRendered = useCallback(
+    (analysis: RenderedAnalysis) => {
+      const state = stateRef.current;
+      state.hasRenderedAnalysis = true;
+      if (state.shown) {
+        reportDiscardScored(state, state.shown, analysis);
+      } else {
+        state.pendingAnalysis = analysis;
+      }
+    },
+    [reportDiscardScored],
+  );
   const currentHandScope = useCallback(
     (): HistoryHandScope => ({
       generatedFromSeed: stateRef.current.generatedFromSeed,

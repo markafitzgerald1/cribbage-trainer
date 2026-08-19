@@ -1,4 +1,10 @@
 import * as classes from "./Trainer.module.css";
+import {
+  type AnalyticsChoice,
+  readAnalyticsChoice,
+  storeAnalyticsChoice,
+  storePolicyUpdateDecline,
+} from "../ui/analyticsConsent";
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
@@ -37,21 +43,6 @@ export interface TrainerProps {
   readonly isSeededSession?: boolean;
 }
 
-export const analyticsConsentKey = "analyticsConsent-2026-07-23";
-const legacyAnalyticsConsentKey = "analyticsConsent";
-
-const getStoredConsent = (): boolean | null => {
-  const storedConsent = localStorage.getItem(analyticsConsentKey);
-  if (storedConsent === "true") {
-    return true;
-  }
-  if (storedConsent === "false") {
-    return false;
-  }
-  localStorage.removeItem(analyticsConsentKey);
-  return null;
-};
-
 interface DealState {
   readonly cribRole: CribRole;
   readonly dealtCards: DealtCard[];
@@ -82,17 +73,12 @@ const isUnchangedEnteredHand = (
 const useAnalyticsConsent = (
   loadGoogleAnalytics: (consented: boolean | null) => void,
 ) => {
-  const storedConsentOnFirstRender = useMemo(() => {
-    localStorage.removeItem(legacyAnalyticsConsentKey);
-    return getStoredConsent();
-  }, []);
-  const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
-    storedConsentOnFirstRender,
-  );
+  const choiceOnFirstRender = useMemo(() => readAnalyticsChoice(), []);
+  const [choice, setChoice] = useState<AnalyticsChoice>(choiceOnFirstRender);
+  const analyticsConsented = choice.consented;
   const setConsented = useCallback(
     (value: boolean) => {
-      setAnalyticsConsented(value);
-      localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
+      setChoice(storeAnalyticsChoice(value));
       if (!value) {
         clearGoogleAnalyticsCookies();
         if (analyticsConsented) {
@@ -102,6 +88,9 @@ const useAnalyticsConsent = (
     },
     [analyticsConsented],
   );
+  const declinePolicyUpdate = useCallback(() => {
+    setChoice(storePolicyUpdateDecline());
+  }, []);
   useEffect(() => {
     if (analyticsConsented === false) {
       clearGoogleAnalyticsCookies();
@@ -110,7 +99,14 @@ const useAnalyticsConsent = (
   useEffect(() => {
     loadGoogleAnalytics(analyticsConsented);
   }, [analyticsConsented, loadGoogleAnalytics]);
-  return { analyticsConsented, setConsented, storedConsentOnFirstRender };
+  return {
+    choice,
+    declinePolicyUpdate,
+    // An unanswered browser is asked the whole question; one that answered an earlier policy is asked only about what this one added.
+    isPolicyUpdate: choice.needsPolicyChoice && analyticsConsented !== null,
+    setConsented,
+    wasAnsweredOnFirstRender: choiceOnFirstRender.consented !== null,
+  };
 };
 
 const useEnterCardsDialog = (
@@ -181,8 +177,13 @@ export function Trainer({
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
-  const { analyticsConsented, setConsented, storedConsentOnFirstRender } =
-    useAnalyticsConsent(loadGoogleAnalytics);
+  const {
+    choice,
+    declinePolicyUpdate,
+    isPolicyUpdate,
+    setConsented,
+    wasAnsweredOnFirstRender,
+  } = useAnalyticsConsent(loadGoogleAnalytics);
   const {
     currentHandScope,
     reportAnalysisRendered,
@@ -190,8 +191,9 @@ export function Trainer({
     reportHandReplaced,
     reportHistoryNavigation,
   } = useDiscardTelemetry({
-    consented: analyticsConsented,
+    consented: choice.consented,
     dealtCards,
+    decisionQualityConsented: choice.decisionQualityConsented,
     isSeededSession,
     trackEvent,
     wasDeepLinked: initialCards !== null,
@@ -366,9 +368,12 @@ export function Trainer({
           />
         )}
         <AnalyticsConsentDialog
-          consent={analyticsConsented}
+          consent={choice.consented}
+          decisionQualityConsented={choice.decisionQualityConsented}
+          isPolicyUpdate={isPolicyUpdate}
           onChange={setConsented}
-          wasInitiallyConsented={storedConsentOnFirstRender !== null}
+          onPolicyUpdateDecline={declinePolicyUpdate}
+          wasInitiallyConsented={wasAnsweredOnFirstRender}
         />
       </div>
     </div>

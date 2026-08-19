@@ -9,7 +9,9 @@ import type {
   TrainerEventParams,
 } from "../ui/trackEvent";
 import { expect, jest } from "@jest/globals";
+import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import type { DiscardQuality } from "../analysis/discardQuality";
 import { parseHand } from "../game/Card";
 import { renderHook } from "@testing-library/react";
 import { toDealtCards } from "../game/toDealtCards";
@@ -24,6 +26,7 @@ export const handWithDiscards = (hand: string, discards: string | null) =>
 export interface SetupOptions {
   readonly consented?: boolean | null;
   readonly dealtCards?: readonly DealtCard[];
+  readonly decisionQualityConsented?: boolean;
   readonly isSeededSession?: boolean;
   readonly wasDeepLinked?: boolean;
 }
@@ -31,6 +34,8 @@ export interface SetupOptions {
 const setupTelemetry = ({
   consented = true,
   dealtCards = handWithDiscards(HAND, null),
+  // Mirrors what the trainer can actually hold: decision-quality collection is a narrowing of analytics consent, never a widening of it.
+  decisionQualityConsented = consented === true,
   isSeededSession = false,
   wasDeepLinked = false,
 }: SetupOptions = {}) => {
@@ -40,6 +45,7 @@ const setupTelemetry = ({
       useDiscardTelemetry({
         consented: currentConsent,
         dealtCards,
+        decisionQualityConsented,
         isSeededSession,
         trackEvent,
         wasDeepLinked,
@@ -90,6 +96,15 @@ export function eventParams<Name extends TrainerEventName>(
 export const shownEvents = (scene: Scene) =>
   eventParams(scene, "analysis_shown");
 
+export const scoredEvents = (scene: Scene) =>
+  eventParams(scene, "discard_scored");
+
+export const RENDERED_QUALITY: DiscardQuality = {
+  expectedPointsLoss: 1.25,
+  expectedPointsLossBucket: "1-2",
+  isOptimal: false,
+};
+
 export const handStartedEvents = (scene: Scene) =>
   eventParams(scene, "hand_started");
 
@@ -101,9 +116,30 @@ export const toggleTo = (
   scene.telemetry.reportCardToggled(handWithDiscards(HAND, discards), kept);
 };
 
-export const renderAnalysisOnScreen = (scene: Scene) => {
-  scene.telemetry.reportAnalysisRendered();
+export const renderAnalysisOnScreen = (
+  scene: Scene,
+  quality: DiscardQuality | null = RENDERED_QUALITY,
+) => {
+  scene.telemetry.reportAnalysisRendered({
+    cribRole: CribRole.Dealer,
+    quality,
+  });
 };
+
+export const scoredParams = (
+  analysisIndex: number,
+  isFirstAnalysis: boolean,
+  source: string,
+) => ({
+  ...RENDERED_QUALITY,
+  analysisIndex,
+  cribRole: CribRole.Dealer,
+  dealNonce: expect.any(String),
+  generatedFromSeed: false,
+  isFirstAnalysis,
+  schemaVersion: 1,
+  source,
+});
 
 export const completeDiscard = (scene: Scene, discards: string) => {
   toggleTo(scene, discards);

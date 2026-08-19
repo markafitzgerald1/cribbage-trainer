@@ -1,5 +1,12 @@
 import * as classes from "./AnalyticsConsentDialog.module.css";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Modal from "./Modal";
 import { PrivacyPolicy } from "./PrivacyPolicy";
 
@@ -8,7 +15,13 @@ const FADE_DELAY_MS = 5000;
 type AnalyticsConsentDialogProps = {
   // eslint-disable-next-line react/require-default-props
   readonly consent?: boolean | null;
+  // eslint-disable-next-line react/require-default-props
+  readonly decisionQualityConsented?: boolean;
+  // eslint-disable-next-line react/require-default-props
+  readonly isPolicyUpdate?: boolean;
   readonly onChange: (value: boolean) => void;
+  // Required rather than defaulted: a no-op default would swallow a decline of the update and ask again on the next load.
+  readonly onPolicyUpdateDecline: () => void;
   // eslint-disable-next-line react/require-default-props
   readonly wasInitiallyConsented?: boolean;
 };
@@ -92,14 +105,70 @@ const getDialogClassName = (
   return classes.analyticsConsentDialog;
 };
 
+const renderDecisionQualityOffer = (
+  privacyPolicyLink: ReactNode,
+  onAccept: () => void,
+) => (
+  <>
+    <p>
+      Discard decision-quality measurement is off. It stays off until you accept
+      the updated {privacyPolicyLink}.
+    </p>
+    <button
+      onClick={onAccept}
+      type="button"
+    >
+      Allow decision-quality measurements
+    </button>
+  </>
+);
+
+const renderPolicyUpdate = (
+  privacyPolicyLink: ReactNode,
+  onAccept: () => void,
+  onDecline: () => void,
+) => (
+  <>
+    <h2>Analytics Consent Update</h2>
+    <p>
+      Our {privacyPolicyLink} has been updated. Analytics may now also receive,
+      for each completed discard, whether you were dealer or pone, how many
+      expected points the discard gave up against the best-scoring option, and
+      whether it was the top-ranked choice. Card identities, hands, and discards
+      are still never sent.
+    </p>
+    <p>
+      Accepting turns that measurement on. Declining leaves your current
+      analytics choice exactly as it is.
+    </p>
+    <button
+      onClick={onAccept}
+      type="button"
+    >
+      Accept
+    </button>
+    <button
+      onClick={onDecline}
+      type="button"
+    >
+      Decline
+    </button>
+  </>
+);
+
 export function AnalyticsConsentDialog({
   consent = null,
+  decisionQualityConsented = false,
+  isPolicyUpdate = false,
   onChange,
+  onPolicyUpdateDecline,
   wasInitiallyConsented = false,
 }: AnalyticsConsentDialogProps) {
   const [showModal, setShowModal] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isFadedOut, setIsFadedOut] = useState(consent !== null);
+  const [isFadedOut, setIsFadedOut] = useState(
+    consent !== null && !isPolicyUpdate,
+  );
   const [isFading, setIsFading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const privacyPolicyRef = useRef<HTMLDivElement>(null);
@@ -170,7 +239,8 @@ export function AnalyticsConsentDialog({
     [setIsFadedOut, setIsFading],
   );
   useFadeOutTimer(
-    consent,
+    // A pending policy choice must stay on screen, and the timer fades anything already answered.
+    isPolicyUpdate ? null : consent,
     { isFadedOut, isFading, isSettingsOpen },
     fadeSetters,
   );
@@ -210,6 +280,9 @@ export function AnalyticsConsentDialog({
             Analytics is currently {consent ? "enabled" : "disabled"}. You can
             change that choice at any time.
           </p>
+          {consent === true &&
+            !decisionQualityConsented &&
+            renderDecisionQualityOffer(PrivacyPolicyLink, handleAccept)}
           {consent ? (
             <button
               onClick={handleDecline}
@@ -232,6 +305,14 @@ export function AnalyticsConsentDialog({
             Close
           </button>
         </>
+      );
+    }
+
+    if (isPolicyUpdate) {
+      return renderPolicyUpdate(
+        PrivacyPolicyLink,
+        handleAccept,
+        onPolicyUpdateDecline,
       );
     }
 

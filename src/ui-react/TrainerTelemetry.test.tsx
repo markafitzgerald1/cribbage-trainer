@@ -1,31 +1,20 @@
+/* jscpd:ignore-start */
 import type { AnalysisSource, CardToggleEventName } from "../ui/trackEvent";
 import {
   SIX_HEARTS_HAND,
   SIX_SPADES_HAND,
+  lastEventParams,
   mathRandom,
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
   setAnalysisTables,
+  startTelemetryCapture,
 } from "./Trainer.test.common";
-import { type TrainerProps, analyticsConsentKey } from "./Trainer";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { parseHand } from "../game/Card";
-
-const setStoredConsent = (consent: boolean | null) => {
-  if (consent === null) {
-    localStorage.removeItem(analyticsConsentKey);
-  } else {
-    localStorage.setItem(analyticsConsentKey, JSON.stringify(consent));
-  }
-};
-
-const startTelemetryCapture = (consent: boolean | null) => {
-  window.history.replaceState(null, "", "/");
-  setStoredConsent(consent);
-  return jest.fn<TrainerProps["trackEvent"]>();
-};
+/* jscpd:ignore-end */
 
 const setupInitialPropsTrainer = (
   props: Omit<
@@ -62,7 +51,7 @@ const expectLastAnalysisShown = (
     readonly source: AnalysisSource;
   },
 ) => {
-  expect(trackEvent).toHaveBeenLastCalledWith(true, "analysis_shown", {
+  expect(lastEventParams(trackEvent, "analysis_shown")).toStrictEqual({
     analysisIndex,
     dealNonce: expect.any(String),
     generatedFromSeed,
@@ -152,6 +141,25 @@ describe("trainer telemetry wiring", () => {
 
     expect(trackEvent).toHaveBeenCalledWith(false, "deal_clicked", {
       dealNonce: expect.any(String),
+    });
+  });
+
+  it("scores a completed discard once its ranked answers are on screen", () => {
+    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
+    clickCheckbox(0);
+    clickCheckbox(1);
+
+    expect(lastEventParams(trackEvent, "discard_scored")).toStrictEqual({
+      analysisIndex: 1,
+      cribRole: expect.any(String),
+      dealNonce: expect.any(String),
+      expectedPointsLoss: expect.any(Number),
+      expectedPointsLossBucket: expect.any(String),
+      generatedFromSeed: false,
+      isFirstAnalysis: true,
+      isOptimal: expect.any(Boolean),
+      schemaVersion: 1,
+      source: "interactive",
     });
   });
 

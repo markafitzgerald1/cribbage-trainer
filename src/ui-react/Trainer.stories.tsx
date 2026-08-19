@@ -6,10 +6,14 @@ import {
   playToggle,
 } from "./stories.common";
 import { Rank, Suit, createCard } from "../game/Card";
-import { Trainer, analyticsConsentKey } from "./Trainer";
+import {
+  clearAnalyticsChoice,
+  storeAnalyticsChoice,
+} from "../ui/analyticsConsent";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
+import { Trainer } from "./Trainer";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { getSortOrderName } from "../ui/SortOrderName";
 
@@ -23,7 +27,7 @@ const meta = {
     trackEvent: () => null,
   },
   beforeEach: () => () => {
-    localStorage.removeItem(analyticsConsentKey);
+    clearAnalyticsChoice();
   },
   component: Trainer,
   parameters: {
@@ -114,7 +118,7 @@ export const StoredConsentGiven = {
     loadGoogleAnalytics,
     trackEvent,
   }: Parameters<typeof Trainer>[0]) => {
-    localStorage.setItem(analyticsConsentKey, "true");
+    storeAnalyticsChoice(true);
 
     return (
       <Trainer

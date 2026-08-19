@@ -3,13 +3,14 @@ import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
-import { Rank, createCard } from "../game/Card";
+import { Rank, createCard, parseHand } from "../game/Card";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
+import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
@@ -18,6 +19,7 @@ import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
+import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
 
 const mockLoadCribTable = jest.fn(() => {
@@ -40,12 +42,37 @@ jest.mock<typeof import("../game/expectedCribPointsTableLoader")>(
   },
 );
 
+const REPORTED_HAND = "AH,2H,3H,4H,5H,6H";
+
+const REPORTED_ANALYSIS_CASES = [
+  {
+    cribRole: CribRole.Pone,
+    discards: parseHand("AH,2H"),
+    expected: {
+      cribRole: CribRole.Pone,
+      quality: {
+        expectedPointsLoss: expect.any(Number),
+        expectedPointsLossBucket: expect.any(String),
+        isOptimal: expect.any(Boolean),
+      },
+    },
+    name: "the role and what the chosen discard gave up",
+  },
+  {
+    cribRole: CribRole.Dealer,
+    discards: null,
+    // Every option's keep is entirely kept until two cards are discarded, so a quality here would be the top-ranked option's, not the user's.
+    expected: { cribRole: CribRole.Dealer, quality: null },
+    name: "no decision quality until two cards are discarded",
+  },
+];
+
 describe("scored possible keep discards component", () => {
   const mathRandom = Math.random;
 
   interface RenderOptions {
     readonly cribRole?: CribRole;
-    readonly onAnalysisRendered?: () => void;
+    readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
     readonly onScoreSortKeyChange?: (
       scoreSortKey: ScoredKeepDiscardSortKey,
     ) => void;
@@ -238,6 +265,20 @@ describe("scored possible keep discards component", () => {
 
     expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
   });
+
+  it.each(REPORTED_ANALYSIS_CASES)(
+    "reports $name",
+    ({ cribRole, discards, expected }) => {
+      const onAnalysisRendered =
+        jest.fn<(analysis: RenderedAnalysis) => void>();
+      renderScoredPossibleKeepDiscards(
+        toDealtCards(parseHand(REPORTED_HAND), discards),
+        { cribRole, onAnalysisRendered },
+      );
+
+      expect(onAnalysisRendered).toHaveBeenCalledWith(expected);
+    },
+  );
 
   it("reports no rendered analysis while the tables are still loading", () => {
     const onAnalysisRendered = jest.fn();

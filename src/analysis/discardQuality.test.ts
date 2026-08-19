@@ -31,22 +31,56 @@ describe("getDiscardQuality", () => {
   });
 
   it.each([
-    { bucket: "0", loss: 0, name: "an exactly optimal choice" },
-    { bucket: "0", loss: 0.004, name: "a loss that rounds away" },
-    { bucket: "0-0.5", loss: 0.01, name: "the smallest visible loss" },
-    { bucket: "0-0.5", loss: 0.49, name: "a loss just under a half point" },
-    { bucket: "0.5-1", loss: 0.5, name: "a loss of exactly a half point" },
-    { bucket: "0.5-1", loss: 0.99, name: "a loss just under a point" },
-    { bucket: "1-2", loss: 1, name: "a loss of exactly a point" },
-    { bucket: "1-2", loss: 1.99, name: "a loss just under two points" },
-    { bucket: "2+", loss: 2, name: "a loss of exactly two points" },
-    { bucket: "2+", loss: 3.5, name: "a loss well past two points" },
-  ])("buckets $name as $bucket", ({ bucket, loss }) => {
-    const roundedLoss = Number(loss.toFixed(2));
+    { bucket: "0", loss: 0, name: "an exactly optimal choice", reported: 0 },
+    { bucket: "0", loss: 0.004, name: "a loss that rounds away", reported: 0 },
+    {
+      bucket: "0-0.5",
+      loss: 0.01,
+      name: "the smallest visible loss",
+      reported: 0.01,
+    },
+    {
+      bucket: "0-0.5",
+      loss: 0.49,
+      name: "a loss just under a half point",
+      reported: 0.49,
+    },
+    {
+      bucket: "0.5-1",
+      loss: 0.5,
+      name: "a loss of exactly a half point",
+      reported: 0.5,
+    },
+    {
+      bucket: "0.5-1",
+      loss: 0.99,
+      name: "a loss just under a point",
+      reported: 0.99,
+    },
+    { bucket: "1-2", loss: 1, name: "a loss of exactly a point", reported: 1 },
+    {
+      bucket: "1-2",
+      loss: 1.99,
+      name: "a loss just under two points",
+      reported: 1.99,
+    },
+    {
+      bucket: "2+",
+      loss: 2,
+      name: "a loss of exactly two points",
+      reported: 2,
+    },
+    {
+      bucket: "2+",
+      loss: 3.5,
+      name: "a loss well past two points",
+      reported: 3.5,
+    },
+  ])("buckets $name as $bucket", ({ bucket, loss, reported }) => {
     expect(qualityOfLoss(loss)).toStrictEqual({
-      expectedPointsLoss: bucket === "0" ? 0 : roundedLoss,
+      expectedPointsLoss: reported,
       expectedPointsLossBucket: bucket,
-      isOptimal: bucket === "0",
+      isOptimal: reported === 0,
     });
   });
 

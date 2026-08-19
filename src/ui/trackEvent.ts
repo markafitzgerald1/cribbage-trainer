@@ -1,3 +1,5 @@
+import type { CribRole } from "../game/expectedCribPoints";
+import type { DiscardQuality } from "../analysis/discardQuality";
 import { gtag } from "./gtag";
 
 export type AnalysisSource = "deeplink" | "history" | "interactive";
@@ -22,6 +24,17 @@ interface TrainerEventParamsByName {
   readonly card_selected: DiscardCountParams;
   readonly card_unselected: DiscardCountParams;
   readonly deal_clicked: { readonly dealNonce: string };
+  // The quality fields come from the shared derivation rather than being restated here, so the wire contract cannot drift from what the trainer measured.
+  readonly discard_scored: DiscardQuality & {
+    readonly analysisIndex: number;
+    readonly cribRole: CribRole;
+    readonly dealNonce: string;
+    readonly generatedFromSeed: boolean;
+    readonly isFirstAnalysis: boolean;
+    // Explicit, so an export stays interpretable once these parameters change.
+    readonly schemaVersion: number;
+    readonly source: AnalysisSource;
+  };
   readonly hand_started: {
     readonly dealNonce: string;
     readonly generatedFromSeed: boolean;
@@ -37,6 +50,9 @@ interface DiscardCountParams {
 export type TrainerEventName = keyof TrainerEventParamsByName;
 
 export type CardToggleEventName = "card_selected" | "card_unselected";
+
+// Raised whenever the decision-quality payload's meaning changes, never for an unrelated event.
+export const DISCARD_SCORED_SCHEMA_VERSION = 1;
 
 type TrainerEventParamKey = {
   [Name in TrainerEventName]: keyof TrainerEventParamsByName[Name];
@@ -85,6 +101,21 @@ const eventParamKeys = [
   ["card_selected", ["dealNonce", "discardCount"]],
   ["card_unselected", ["dealNonce", "discardCount"]],
   ["deal_clicked", ["dealNonce"]],
+  [
+    "discard_scored",
+    [
+      "analysisIndex",
+      "cribRole",
+      "dealNonce",
+      "expectedPointsLoss",
+      "expectedPointsLossBucket",
+      "generatedFromSeed",
+      "isFirstAnalysis",
+      "isOptimal",
+      "schemaVersion",
+      "source",
+    ],
+  ],
   ["hand_started", ["dealNonce", "generatedFromSeed", "source"]],
 ] as const satisfies readonly EventParamKeyEntry[];
 

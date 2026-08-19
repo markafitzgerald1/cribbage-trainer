@@ -3,12 +3,14 @@ const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 export type ExpectedPointsLossBucket = "0" | "0-0.5" | "0.5-1" | "1-2" | "2+";
 
 const LARGEST_LOSS_BUCKET: ExpectedPointsLossBucket = "2+";
+const HALF_POINT = 0.5;
+const TWO_POINTS = 2;
 
 // The boundaries #665 names, as exclusive upper bounds: a loss of exactly 0.5, 1, or 2 belongs to the bucket above it.
 const lossBucketUpperBounds = [
-  ["0-0.5", 0.5],
+  ["0-0.5", HALF_POINT],
   ["0.5-1", 1],
-  ["1-2", 2],
+  ["1-2", TWO_POINTS],
 ] as const satisfies readonly (readonly [ExpectedPointsLossBucket, number])[];
 
 const toExpectedPointsLossBucket = (

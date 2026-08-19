@@ -146,6 +146,7 @@ export default [
             "arm64",
             "autodocs",
             "callee",
+            "interpretable",
             "camelcase",
             "cardinality",
             "charset",

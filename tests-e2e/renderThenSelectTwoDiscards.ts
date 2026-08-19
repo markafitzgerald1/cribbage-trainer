@@ -1,3 +1,9 @@
+import {
+  PRIVACY_POLICY_VERSION,
+  acceptedPolicyVersionKey,
+  analyticsConsentKey,
+  answeredPolicyVersionKey,
+} from "../src/ui/analyticsConsent";
 import type { Page } from "@playwright/test";
 import { SortOrder } from "../src/ui/SortOrder";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
@@ -19,9 +25,20 @@ export const renderThenSelectTwoDiscards = async (
     // Pre-seed stored consent so the banner mounts already collapsed.
     // Clicking Accept instead starts the dialog's multi-second fade timer.
     // That slows every screenshot test and races the capture against it.
-    await page.addInitScript(() => {
-      window.localStorage.setItem("analyticsConsent-2026-07-23", "true");
-    });
+    // The answered policy version is part of that stored state.
+    // Consent predating the current policy re-opens the banner to ask.
+    await page.addInitScript(
+      (storedChoice: Record<string, string>) => {
+        Object.entries(storedChoice).forEach(([key, value]) => {
+          window.localStorage.setItem(key, value);
+        });
+      },
+      {
+        [acceptedPolicyVersionKey]: PRIVACY_POLICY_VERSION,
+        [analyticsConsentKey]: "true",
+        [answeredPolicyVersionKey]: PRIVACY_POLICY_VERSION,
+      },
+    );
   }
 
   await page.goto(`/${constantSeedQuery}`);
