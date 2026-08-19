@@ -10,20 +10,20 @@
   must be mathematically derived.
 - Primary branch: `main`; active work often happens on feature branches.
 - **Product direction:** the roadmap is gated on two things the app has not
-  yet earned from its own author: stickiness and trust. It does get played
-  from time to time, but not often enough to call it sticky, and many of its
+  yet earned from its own author: stickiness and trust. It does get played from
+  time to time, but not often enough to call it sticky, and many of its
   recommendations still get double-checked rather than acted on — the math is
   trusted, the recommendations only somewhat trusted as advice so far. The
   objective is voluntary play several times a week even when not testing a
   change, and acting on what the app says without re-deriving it. Finding,
-  retaining, and monetizing users is deliberately deferred until that holds. The loop being
-  closed is: play a game, make authentic decisions, identify the decisions
-  that cost the most expected value, understand them, practice the weaknesses,
-  play again. So any proposed work faces two questions: **does this make
-  playing, learning, diagnosing mistakes, or measuring improvement meaningfully
-  better?** and **does it close the trust gap — is a recommendation legible
-  enough to act on without checking it?** Work that answers neither ranks
-  below work that answers either. Be suspicious in particular of technical
+  retaining, and monetizing users is deliberately deferred until that holds. The
+  loop being closed is: play a game, make authentic decisions, identify the
+  decisions that cost the most expected value, understand them, practice the
+  weaknesses, play again. So any proposed work faces two questions: **does this
+  make playing, learning, diagnosing mistakes, or measuring improvement
+  meaningfully better?** and **does it close the trust gap — is a recommendation
+  legible enough to act on without checking it?** Work that answers neither
+  ranks below work that answers either. Be suspicious in particular of technical
   work that deepens the simulator without improving that loop: implementation
   scalability is treated as mostly solved by tests, guardrails, and agents.
 
