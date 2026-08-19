@@ -73,7 +73,7 @@ type EventParamKeys = {
   ];
 }[TrainerEventName];
 
-const eventParamKeys: readonly EventParamKeys[] = [
+const eventParamKeys = [
   [
     "analysis_shown",
     [
@@ -89,7 +89,18 @@ const eventParamKeys: readonly EventParamKeys[] = [
   ["card_unselected", ["dealNonce", "discardCount"]],
   ["deal_clicked", ["dealNonce"]],
   ["hand_started", ["dealNonce", "generatedFromSeed", "source"]],
-];
+] as const satisfies readonly EventParamKeys[];
+
+// An event with no entry above would send nothing at all, so its absence has to be a compile error rather than a silent runtime strip.
+// Exported because it exists only to be checked: an unlisted event makes this fail to satisfy `extends never`, and a local type nothing reads is itself an error.
+type AssertNever<Name extends never> = Name;
+export type EveryEventIsListed = AssertNever<
+  Exclude<TrainerEventName, (typeof eventParamKeys)[number][0]>
+>;
+
+// Exported so a test can prove its own event coverage against the same list.
+export const trainerEventNames: readonly TrainerEventName[] =
+  eventParamKeys.map(([name]) => name);
 
 // Filtered rather than looked up, so a name with no entry yields nothing to send instead of a branch that can never run.
 const allowedParamKeys = (eventName: TrainerEventName): readonly string[] =>

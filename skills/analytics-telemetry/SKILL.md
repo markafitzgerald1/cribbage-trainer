@@ -121,7 +121,11 @@ mean anything.
   exemption as literal keys, and it is applied by filtering rather than
   lookup so a name with no entry sends nothing instead of leaving a branch
   that can never run under the 100% coverage gate. The card-free payload
-  invariant is now enforced, not merely declared.
+  invariant is now enforced, not merely declared. An event missing from that
+  list would silently send nothing, so a type assertion makes its absence a
+  compile error, and the spec proves its own payload table covers every event
+  by comparing against the exported list rather than a second hand-written
+  one.
 - A consequence in the specs: `toHaveBeenLastCalledWith` cannot take an event
   name held in a variable any more, because its typed arguments cannot satisfy
   a correlated tuple. Compare the recorded call instead

@@ -1,4 +1,4 @@
-import { type TrainerEvent, trackEvent } from "./trackEvent";
+import { type TrainerEvent, trackEvent, trainerEventNames } from "./trackEvent";
 import { describe, expect, it } from "@jest/globals";
 
 describe("trackEvent", () => {
@@ -54,6 +54,12 @@ describe("trackEvent", () => {
     Array.from(dataLayer[0] as IArguments)[2] as Record<string, unknown>;
 
   // Spread rather than taken apart, because splitting the pair widens the name and the payload independently, which the event type exists to prevent.
+  it("covers every event this module can send", () => {
+    expect(FULL_PAYLOADS.map(([eventName]) => eventName)).toStrictEqual(
+      trainerEventNames,
+    );
+  });
+
   it("sends every parameter each event declares", () => {
     const sentCounts = FULL_PAYLOADS.map((event) => {
       const dataLayer = setupDataLayer();
