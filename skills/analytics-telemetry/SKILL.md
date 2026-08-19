@@ -187,6 +187,58 @@ mean anything.
   anything else, or seeded deep links would deal different hands. The hook
   has no access to it, and a `Trainer` test pins the generator to exactly six
   card draws plus one crib-role draw per render.
+- `discard_scored` (#665) is the decision-quality event, and it is emitted
+  when the ranked answers reach the screen rather than when the second card
+  is committed: nothing has scored the discard before the vendored tables
+  load, so the event is named for what just happened. It carries the crib
+  role, the expected net points the choice gave up against the best-scoring
+  option, that figure's bucket, whether it was optimal, an explicit
+  `schema_version`, and the same `deal_nonce`, `analysis_index`,
+  `is_first_analysis`, `generated_from_seed`, and `source` that
+  `analysis_shown` carries. The bookkeeping is repeated rather than joined
+  because the filtering contract above has to be applicable to a single row,
+  and #683's export does not exist yet to join against.
+- The loss is rounded to the two decimals the trainer displays **before**
+  the bucket and the optimal flag are derived from it, so all three agree
+  with the table the user is looking at. A choice that trails the best by
+  0.004 reports `0`, bucket `0`, optimal — deliberately, since the two rows
+  are indistinguishable on screen. Changing that rounding changes what
+  "optimal" means in every accumulated row, so it is a schema change.
+- `src/analysis/discardQuality.ts` finds the chosen option by its **discard**
+  (both of its cards un-kept), never by its keep. Before two cards are
+  discarded every option's keep is entirely kept, so a keep match silently
+  scores the top-ranked option as the user's own choice, and the caller
+  cannot see the difference. It is a shared module because #19/#24 must
+  agree with analytics about what a decision cost.
+- The score is attributed to the exposure that revealed it — its
+  `analysis_index` and `is_first_analysis` come from the stored exposure,
+  never from state read at render time — and one exposure scores at most
+  once however often its results re-render. A score reported while no
+  exposure exists is held and emitted when the next one is created: on a
+  first render the child's effect runs before the parent's, so a deep-linked
+  complete discard renders its answers before `reportAnalysisState` has
+  opened the exposure. Reporting it from the render callback instead would
+  put `analysis_shown` ahead of `hand_started`.
+- Consent is versioned by the privacy policy that described the collection
+  (`src/ui/analyticsConsent.ts`). The base consent key is deliberately not
+  rotated: rotating it discards the answer already given to the narrower
+  policy, which is what the #665 criteria rule out. A stored consent that
+  predates the current policy keeps sending everything that policy covered
+  while the banner asks about the addition alone, and `discard_scored` is
+  the one event gated on the newer acceptance — the hook emits it through
+  `trackEvent` with the decision-quality consent in place of the base one,
+  so the send path stays the single gate.
+- Declining the addition must not travel through the dialog's `onChange`.
+  That callback is also withdrawal: `onChange(false)` from Analytics
+  Settings turns analytics off and reloads the page, whereas declining the
+  update has to leave the earlier consent exactly as it was. They are
+  separate callbacks for that reason, and the decline is recorded as an
+  answer to the current version so the question is not asked again.
+- Seeding stored consent in an e2e test now means seeding the answered and
+  accepted policy versions too (`tests-e2e/renderThenSelectTwoDiscards.ts`).
+  Setting only the consent key produces a browser that answered an earlier
+  policy, which re-opens the banner — every screenshot baseline would shift
+  and the fade-timer race the helper exists to avoid would come back.
 - The e2e build gets a test measurement ID from `playwright.config.ts`'s
   `webServer.env`, and `tests-e2e/blockGoogleAnalytics.ts` aborts every
   request to the Google hosts. Both halves are load-bearing. Without an ID

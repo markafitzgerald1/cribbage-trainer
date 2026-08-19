@@ -7,6 +7,7 @@ import {
 } from "./stories.common";
 import { Rank, Suit, createCard } from "../game/Card";
 import {
+  analyticsConsentKey,
   clearAnalyticsChoice,
   storeAnalyticsChoice,
 } from "../ui/analyticsConsent";
@@ -91,8 +92,31 @@ export const AnalyticsDisabled = {
   },
 };
 
-export const StoredConsentGiven = {
-  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+type StoryPlay = (args: { canvasElement: HTMLElement }) => Promise<void>;
+
+// The choice has to be stored while the story renders, since the trainer reads it once on mount.
+const createStoredChoiceStory = (storeChoice: () => void, play: StoryPlay) => ({
+  play,
+  render: ({
+    generateRandomNumber,
+    loadGoogleAnalytics,
+    trackEvent,
+  }: Parameters<typeof Trainer>[0]) => {
+    storeChoice();
+
+    return (
+      <Trainer
+        generateRandomNumber={generateRandomNumber}
+        loadGoogleAnalytics={loadGoogleAnalytics}
+        trackEvent={trackEvent}
+      />
+    );
+  },
+});
+
+export const StoredConsentGiven = createStoredChoiceStory(
+  () => storeAnalyticsChoice(true),
+  async ({ canvasElement }) => {
     // When consent is already stored, only the persistent settings links are shown.
     // Wait for fade-in animation to complete before checking visibility
     await waitFor(
@@ -113,22 +137,24 @@ export const StoredConsentGiven = {
       }),
     ).toBeVisible();
   },
-  render: ({
-    generateRandomNumber,
-    loadGoogleAnalytics,
-    trackEvent,
-  }: Parameters<typeof Trainer>[0]) => {
-    storeAnalyticsChoice(true);
+);
 
-    return (
-      <Trainer
-        generateRandomNumber={generateRandomNumber}
-        loadGoogleAnalytics={loadGoogleAnalytics}
-        trackEvent={trackEvent}
-      />
-    );
+// A browser that answered the policy in force before decision-quality collection existed is asked about the addition alone.
+export const StoredConsentPredatingThePolicy = createStoredChoiceStory(
+  () => {
+    localStorage.setItem(analyticsConsentKey, "true");
   },
-};
+  async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent("Analytics Consent Update");
+
+    await fireEvent.click(getButton(canvasElement, "Decline"));
+
+    await expect(canvasElement).not.toHaveTextContent(
+      "Analytics Consent Update",
+    );
+    await expect(localStorage.getItem(analyticsConsentKey)).toBe("true");
+  },
+);
 
 export const DealNewHandReplacesCards = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
