@@ -9,6 +9,7 @@ import {
 import { type TrainerProps, analyticsConsentKey } from "./Trainer";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
+import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { parseHand } from "../game/Card";
 
 const setStoredConsent = (consent: boolean | null) => {
@@ -25,6 +26,18 @@ const startTelemetryCapture = (consent: boolean | null) => {
   return jest.fn<TrainerProps["trackEvent"]>();
 };
 
+const setupInitialPropsTrainer = (
+  props: Omit<
+    Parameters<typeof renderTrainerWithInitialProps>[0],
+    "trackEvent"
+  >,
+) => {
+  const trackEvent = startTelemetryCapture(true);
+  setCribTable();
+  renderTrainerWithInitialProps({ ...props, trackEvent });
+  return trackEvent;
+};
+
 const setupTelemetryTrainer = (consent: boolean | null) => {
   const trackEvent = startTelemetryCapture(consent);
   const renderResult = renderTrainerWithGenerator(mathRandom, trackEvent);
@@ -38,10 +51,12 @@ const expectLastAnalysisShown = (
   trackEvent: ReturnType<typeof startTelemetryCapture>,
   {
     analysisIndex = 1,
+    generatedFromSeed = false,
     isFirstAnalysis,
     source,
   }: {
     readonly analysisIndex?: number;
+    readonly generatedFromSeed?: boolean;
     readonly isFirstAnalysis: boolean;
     readonly source: AnalysisSource;
   },
@@ -49,6 +64,7 @@ const expectLastAnalysisShown = (
   expect(trackEvent).toHaveBeenLastCalledWith(true, "analysis_shown", {
     analysisIndex,
     dealNonce: expect.any(String),
+    generatedFromSeed,
     isFirstAnalysis,
     source,
   });
@@ -143,14 +159,40 @@ describe("trainer telemetry wiring", () => {
     },
   );
 
-  it("reports a popstate hydration with a history source", () => {
-    const { trackEvent } = setupTelemetryTrainer(true);
+  const hydrateFromHistory = (entryState: unknown) => {
     window.history.replaceState(
-      null,
+      entryState,
       "",
       `?hand=${SIX_HEARTS_HAND}&discard=AH,2H`,
     );
     fireEvent.popState(window);
+  };
+
+  it("stamps the current hand's provenance onto its history entry", () => {
+    setupInitialPropsTrainer({ isSeededSession: true });
+
+    expect(window.history.state).toStrictEqual({
+      handScope: { generatedFromSeed: true, handId: expect.any(String) },
+    });
+  });
+
+  // A restored entry outranks the session default, which is the only way to tell a seeded deal from a later hand-entry of the same cards.
+  it("reports a restored entry with the provenance that entry recorded", () => {
+    const { trackEvent } = setupTelemetryTrainer(true);
+    hydrateFromHistory({
+      handScope: { generatedFromSeed: true, handId: "another-hand" },
+    });
+
+    expectLastAnalysisShown(trackEvent, {
+      generatedFromSeed: true,
+      isFirstAnalysis: false,
+      source: "history",
+    });
+  });
+
+  it("reports a popstate hydration with a history source", () => {
+    const { trackEvent } = setupTelemetryTrainer(true);
+    hydrateFromHistory(null);
 
     expectLastAnalysisShown(trackEvent, {
       isFirstAnalysis: false,
@@ -159,17 +201,35 @@ describe("trainer telemetry wiring", () => {
   });
 
   it("reports a deep-linked discard with a deeplink source", () => {
-    const trackEvent = startTelemetryCapture(true);
-    setCribTable();
-    renderTrainerWithInitialProps({
+    const trackEvent = setupInitialPropsTrainer({
       initialCards: parseHand(SIX_HEARTS_HAND),
       initialDiscards: parseHand("AH,2H"),
-      trackEvent,
     });
 
     expectLastAnalysisShown(trackEvent, {
       isFirstAnalysis: false,
       source: "deeplink",
     });
+  });
+
+  it("marks the initial hand of a seeded session as seed-derived", () => {
+    const trackEvent = setupInitialPropsTrainer({ isSeededSession: true });
+
+    expect(trackEvent).toHaveBeenCalledWith(true, "hand_started", {
+      dealNonce: expect.any(String),
+      generatedFromSeed: true,
+      source: "initial",
+    });
+  });
+
+  // Spending the injected generator on an identifier would change which hands a seeded link deals.
+  it("leaves the injected generator to the deal and the crib role", () => {
+    const trackEvent = startTelemetryCapture(true);
+    const generateRandomNumber = jest.fn(mathRandom);
+    renderTrainerWithGenerator(generateRandomNumber, trackEvent);
+
+    expect(generateRandomNumber).toHaveBeenCalledTimes(
+      CARDS_PER_DEALT_HAND + 1,
+    );
   });
 });

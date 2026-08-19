@@ -369,6 +369,20 @@
   merge near-identical tests into `it.each` (object cases with `$name`
   titles stay within `max-params`), or vary one mid-list expression (e.g. a
   genuinely needed `?? null`) to split the token run.
+- `max-lines` caps a file at 520, tests included, so a long-lived spec
+  eventually has to split rather than grow. Splitting one means extracting
+  its setup and assertion helpers into a `*.test.common.ts` module both
+  specs import, because jscpd at 0% rejects re-declaring them; the new
+  module must also join `jest.config.json`'s `collectCoverageFrom`
+  exclusions, or its helpers count toward the 100% function threshold from
+  whichever spec happens not to use them.
+- Treat that 520 as frozen: a `max-lines` failure means split the file, never
+  raise the cap. It has already ratcheted 343 → 517 → 520, each bump riding
+  along inside a feature commit, so the number now equals the largest file in
+  the repo exactly and has no slack left. Raising it is invisible in review
+  and buys one file's growth at the cost of the only pressure that produces
+  the extraction above. The same applies to `max-lines-per-function`
+  (266 → 473 → 490).
 - Jest enforces 100% branch coverage, so an unreachable defensive branch
   fails the build: `split("=")[0] ?? ""` cannot yield the fallback and cost a
   Docker run to discover, since `npm test -- --coverage=false` hides it.

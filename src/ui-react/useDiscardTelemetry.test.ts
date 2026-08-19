@@ -1,81 +1,34 @@
+/* jscpd:ignore-start */
+import {
+  HAND,
+  type HistoryDestination,
+  OTHER_HAND,
+  type Scene,
+  type SetupOptions,
+  completeDiscard,
+  currentEntry,
+  deepLinkedOptions,
+  eventParams,
+  expectLastShown,
+  expectTelemetryScene,
+  handStartedEvents,
+  handWithDiscards,
+  navigateHistory,
+  replaceHandWith,
+  shownEvents,
+  shownParams,
+  toggleTo,
+} from "./useDiscardTelemetry.test.common";
 import type {
   HandStartSource,
-  TrackEvent,
   TrainerEventName,
   TrainerEventParams,
 } from "../ui/trackEvent";
-import { describe, expect, it, jest } from "@jest/globals";
-import type { DealtCard } from "../game/DealtCard";
-import { parseHand } from "../game/Card";
-import { renderHook } from "@testing-library/react";
-import { toDealtCards } from "../game/toDealtCards";
-import { useDiscardTelemetry } from "./useDiscardTelemetry";
-
-const HAND = "AH,2H,3H,4H,5H,6H";
-const OTHER_HAND = "AS,2S,3S,4S,5S,6S";
-
-const handWithDiscards = (hand: string, discards: string | null) =>
-  toDealtCards(parseHand(hand), discards ? parseHand(discards) : null);
-
-interface SetupOptions {
-  readonly consented?: boolean | null;
-  readonly dealtCards?: readonly DealtCard[];
-  readonly wasDeepLinked?: boolean;
-}
-
-const setupTelemetry = ({
-  consented = true,
-  dealtCards = handWithDiscards(HAND, null),
-  wasDeepLinked = false,
-}: SetupOptions = {}) => {
-  const trackEvent = jest.fn<TrackEvent>();
-  const hook = renderHook(
-    ({ currentConsent }: { readonly currentConsent: boolean | null }) =>
-      useDiscardTelemetry({
-        consented: currentConsent,
-        dealtCards,
-        trackEvent,
-        wasDeepLinked,
-      }),
-    { initialProps: { currentConsent: consented } },
-  );
-  return {
-    rerenderConsent: (currentConsent: boolean | null) => {
-      hook.rerender({ currentConsent });
-    },
-    telemetry: hook.result.current,
-    trackEvent,
-  };
-};
-
-type Scene = ReturnType<typeof setupTelemetry>;
-
-const expectTelemetryScene = (
-  options: SetupOptions,
-  run: (scene: Scene) => void,
-) => {
-  const scene = setupTelemetry(options);
-  run(scene);
-};
-
-const eventParams = (scene: Scene, eventName: string) =>
-  scene.trackEvent.mock.calls
-    .filter(([, name]) => name === eventName)
-    .map(([, , params]) => params);
-
-const shownEvents = (scene: Scene) => eventParams(scene, "analysis_shown");
+import { describe, expect, it } from "@jest/globals";
+import type { HistoryHandScope } from "./useDiscardTelemetry";
+/* jscpd:ignore-end */
 
 const unshownEvents = (scene: Scene) => eventParams(scene, "analysis_unshown");
-
-const handStartedEvents = (scene: Scene) => eventParams(scene, "hand_started");
-
-const toggleTo = (scene: Scene, discards: string | null, kept = false) => {
-  scene.telemetry.reportCardToggled(handWithDiscards(HAND, discards), kept);
-};
-
-const completeDiscard = (scene: Scene, discards: string) => {
-  toggleTo(scene, discards);
-};
 
 const showThenHideAnalysis = (scene: Scene) => {
   completeDiscard(scene, "AH,2H");
@@ -83,43 +36,13 @@ const showThenHideAnalysis = (scene: Scene) => {
 };
 
 const replaceHand = (scene: Scene, cause: "deal" | "manual") => {
-  scene.telemetry.reportHandReplaced(handWithDiscards(OTHER_HAND, null), cause);
-};
-
-const navigateHistory = (scene: Scene, hand: string, discards: string) => {
-  scene.telemetry.reportHistoryNavigation(handWithDiscards(hand, discards));
-};
-
-const discardThenNavigate = (
-  scene: Scene,
-  discards: string,
-  destination: readonly [string, string],
-) => {
-  completeDiscard(scene, discards);
-  navigateHistory(scene, destination[0], destination[1]);
-  return shownEvents(scene);
+  replaceHandWith(scene, OTHER_HAND, cause);
 };
 
 const cardParams = (discardCount: number) => ({
   dealNonce: expect.any(String),
   discardCount,
 });
-
-const shownParams = (
-  analysisIndex: number,
-  isFirstAnalysis: boolean,
-  source: string,
-) => ({
-  analysisIndex,
-  dealNonce: expect.any(String),
-  isFirstAnalysis,
-  source,
-});
-
-const deepLinkedOptions: SetupOptions = {
-  dealtCards: handWithDiscards(HAND, "AH,2H"),
-  wasDeepLinked: true,
-};
 
 const expectCardEvent = (
   scene: Scene,
@@ -131,10 +54,6 @@ const expectCardEvent = (
     eventName,
     cardParams(discardCount),
   );
-};
-
-const expectLastShown = (scene: Scene, expected: object) => {
-  expect(shownEvents(scene).at(-1)).toStrictEqual(expected);
 };
 
 const expectTwoInteractiveAnalyses = (scene: Scene) => {
@@ -157,6 +76,7 @@ const expectLastHandStarted = (
 ) => {
   expect(handStartedEvents(scene).at(-1)).toStrictEqual({
     dealNonce,
+    generatedFromSeed: false,
     source,
   });
 };
@@ -177,11 +97,14 @@ interface HistoryMoveEvents {
 }
 
 const expectHistoryMove = (
-  destination: readonly [string, string],
+  destination: HistoryDestination,
+  resolveEntry: (scene: Scene) => HistoryHandScope | null,
   verify: (events: HistoryMoveEvents) => void,
 ) => {
   expectTelemetryScene({}, (scene) => {
-    const [first, second] = discardThenNavigate(scene, "3H,6H", destination);
+    completeDiscard(scene, "3H,6H");
+    navigateHistory(scene, destination, resolveEntry(scene));
+    const [first, second] = shownEvents(scene);
     verify({ first, scene, second });
   });
 };
@@ -213,7 +136,11 @@ describe("useDiscardTelemetry", () => {
       scene.rerenderConsent(true);
 
       expect(handStartedEvents(scene)).toStrictEqual([
-        { dealNonce: expect.any(String), source: "initial" },
+        {
+          dealNonce: expect.any(String),
+          generatedFromSeed: false,
+          source: "initial",
+        },
       ]);
     });
   });
@@ -311,24 +238,34 @@ describe("useDiscardTelemetry", () => {
   });
 
   it("keeps the deal nonce for a history move within the same hand", () => {
-    expectHistoryMove([HAND, "4H,6H"], ({ first, scene, second }) => {
-      expect(second).toStrictEqual({
-        ...shownParams(2, false, "history"),
-        dealNonce: first!.dealNonce,
-      });
-      expect(handStartedEvents(scene)).toHaveLength(1);
-    });
+    expectHistoryMove(
+      [HAND, "4H,6H"],
+      currentEntry,
+      ({ first, scene, second }) => {
+        expect(second).toStrictEqual({
+          ...shownParams(2, false, "history"),
+          dealNonce: first!.dealNonce,
+        });
+        expect(handStartedEvents(scene)).toHaveLength(1);
+      },
+    );
   });
 
+  const noEntry = () => null;
+
   it("starts a new deal for a history move to a different hand", () => {
-    expectHistoryMove([OTHER_HAND, "AS,2S"], ({ first, scene, second }) => {
-      expect(unshownEvents(scene)).toHaveLength(1);
-      expect(second).toStrictEqual(shownParams(1, false, "history"));
+    expectHistoryMove(
+      [OTHER_HAND, "AS,2S"],
+      noEntry,
+      ({ first, scene, second }) => {
+        expect(unshownEvents(scene)).toHaveLength(1);
+        expect(second).toStrictEqual(shownParams(1, false, "history"));
 
-      expectNewDealWithoutDealClick(scene, first, second);
+        expectNewDealWithoutDealClick(scene, first, second);
 
-      expectLastHandStarted(scene, second!.dealNonce, "history");
-    });
+        expectLastHandStarted(scene, second!.dealNonce, "history");
+      },
+    );
   });
 
   it("emits a deep-linked analysis as non-first after mount", () => {
@@ -339,6 +276,7 @@ describe("useDiscardTelemetry", () => {
       expect(handStartedEvents(scene)).toStrictEqual([
         {
           dealNonce: shownEvents(scene)[0]!.dealNonce,
+          generatedFromSeed: false,
           source: "deeplink",
         },
       ]);

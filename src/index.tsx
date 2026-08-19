@@ -1,7 +1,7 @@
 import * as ReactDOMClient from "react-dom/client";
+import { createGenerator, isSeededSession } from "./game/randomNumberGenerator";
 import { StrictMode } from "react";
 import { Trainer } from "./ui-react/Trainer";
-import { createGenerator } from "./game/randomNumberGenerator";
 import { getInitialProps } from "./ui/getInitialProps";
 import { handleLoadGoogleAnalytics } from "./ui/handleLoadGoogleAnalytics";
 import { trackEvent } from "./ui/trackEvent";
@@ -25,6 +25,7 @@ ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
       initialDiscards={initialDiscards}
       initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
+      isSeededSession={isSeededSession(seed)}
       loadGoogleAnalytics={handleLoadGoogleAnalytics}
       trackEvent={trackEvent}
     />

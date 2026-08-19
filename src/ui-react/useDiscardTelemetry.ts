@@ -12,15 +12,16 @@ import { serializeHand } from "../game/Card";
 
 export type HandReplacementCause = "deal" | "manual";
 
-const NONCE_RADIX = 36;
-const NONCE_RANDOM_OFFSET = "0.".length;
+// What a history entry has to store for a restore to know which hand it is returning to.
+// Cards cannot serve as that identity: one seeded deal and a later hand-entry of the same six cards are two hands under one key.
+export interface HistoryHandScope {
+  readonly generatedFromSeed: boolean;
+  readonly handId: string;
+}
 
-// The nonce only needs uniqueness within one browser session, so wall-clock time plus Math.random suffices.
+// One telemetry hand is identified globally, not merely within a browser session, so warehouse analysis may treat the value as a key.
 // The seeded deal generator must not be consumed here: that would change which hands seeded links deal.
-const createDealNonce = () =>
-  `${Date.now().toString(NONCE_RADIX)}-${Math.random()
-    .toString(NONCE_RADIX)
-    .slice(NONCE_RANDOM_OFFSET)}`;
+const createDealNonce = () => crypto.randomUUID();
 
 interface ShownAnalysis {
   readonly analysisIndex: number;
@@ -30,12 +31,19 @@ interface ShownAnalysis {
   readonly reported: boolean;
 }
 
+// Provenance is fixed when the hand is created, because the URL at emit time no longer says where the cards came from.
+interface HandScope {
+  readonly generatedFromSeed: boolean;
+  readonly handStartSource: HandStartSource;
+  readonly source: AnalysisSource;
+}
+
 interface DealTelemetryState {
   analysisCount: number;
   readonly dealNonce: string;
+  readonly generatedFromSeed: boolean;
   handStarted: boolean;
   readonly handStartSource: HandStartSource;
-  readonly handKey: string;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
   source: AnalysisSource;
@@ -43,12 +51,11 @@ interface DealTelemetryState {
 
 const createDealTelemetryState = (
   dealtCards: readonly DealtCard[],
-  source: AnalysisSource,
-  handStartSource: HandStartSource,
+  { generatedFromSeed, handStartSource, source }: HandScope,
 ): DealTelemetryState => ({
   analysisCount: 0,
   dealNonce: createDealNonce(),
-  handKey: serializeHand(dealtCards),
+  generatedFromSeed,
   handStartSource,
   handStarted: false,
   pendingCards: dealtCards,
@@ -62,6 +69,8 @@ const discardedCards = (dealtCards: readonly DealtCard[]) =>
 export interface DiscardTelemetryProps {
   readonly consented: boolean | null;
   readonly dealtCards: readonly DealtCard[];
+  // Only whether a seed exists crosses into telemetry; the seed value itself never does.
+  readonly isSeededSession: boolean;
   readonly trackEvent: TrackEvent;
   readonly wasDeepLinked: boolean;
 }
@@ -75,7 +84,12 @@ export interface DiscardTelemetry {
     dealtCards: readonly DealtCard[],
     cause: HandReplacementCause,
   ) => void;
-  readonly reportHistoryNavigation: (dealtCards: readonly DealtCard[]) => void;
+  readonly reportHistoryNavigation: (
+    dealtCards: readonly DealtCard[],
+    entry: HistoryHandScope | null,
+  ) => void;
+  // Callers stamp this onto the history entry they write and hand it back on a restore, so an entry states which hand it holds and where those cards came from.
+  readonly currentHandScope: () => HistoryHandScope;
 }
 
 // GA4 cannot reconstruct "first analysis exposure per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
@@ -83,15 +97,17 @@ export interface DiscardTelemetry {
 export const useDiscardTelemetry = ({
   consented,
   dealtCards,
+  isSeededSession,
   trackEvent,
   wasDeepLinked,
 }: DiscardTelemetryProps): DiscardTelemetry => {
   const stateRef = useRef(
-    createDealTelemetryState(
-      dealtCards,
-      wasDeepLinked ? "deeplink" : "interactive",
-      wasDeepLinked ? "deeplink" : "initial",
-    ),
+    createDealTelemetryState(dealtCards, {
+      // A deep link supplies its own cards, so the seed did not generate them.
+      generatedFromSeed: isSeededSession && !wasDeepLinked,
+      handStartSource: wasDeepLinked ? "deeplink" : "initial",
+      source: wasDeepLinked ? "deeplink" : "interactive",
+    }),
   );
   const latestRef = useRef({ consented, trackEvent });
   useEffect(() => {
@@ -115,6 +131,7 @@ export const useDiscardTelemetry = ({
       state.handStarted = true;
       emit("hand_started", {
         dealNonce: state.dealNonce,
+        generatedFromSeed: state.generatedFromSeed,
         source: state.handStartSource,
       });
     },
@@ -156,6 +173,7 @@ export const useDiscardTelemetry = ({
       const reported = emit("analysis_shown", {
         analysisIndex: state.analysisCount,
         dealNonce: state.dealNonce,
+        generatedFromSeed: state.generatedFromSeed,
         isFirstAnalysis,
         source: state.source,
       });
@@ -168,17 +186,9 @@ export const useDiscardTelemetry = ({
     [closeShownAnalysis, emit],
   );
   const replaceHand = useCallback(
-    (
-      newDealtCards: readonly DealtCard[],
-      source: AnalysisSource,
-      handStartSource: HandStartSource,
-    ) => {
+    (newDealtCards: readonly DealtCard[], scope: HandScope) => {
       closeShownAnalysis(stateRef.current);
-      const state = createDealTelemetryState(
-        newDealtCards,
-        source,
-        handStartSource,
-      );
+      const state = createDealTelemetryState(newDealtCards, scope);
       stateRef.current = state;
       return state;
     },
@@ -200,37 +210,70 @@ export const useDiscardTelemetry = ({
   );
   const reportHandReplaced = useCallback(
     (newDealtCards: readonly DealtCard[], cause: HandReplacementCause) => {
-      const state = replaceHand(newDealtCards, "interactive", cause);
+      const state = replaceHand(newDealtCards, {
+        // A hand the user typed in is theirs, not the seed's, but typing one leaves the seeded generator untouched, so later deals are seed-derived again.
+        generatedFromSeed: cause === "deal" && isSeededSession,
+        handStartSource: cause,
+        source: "interactive",
+      });
       if (cause === "deal") {
         emit("deal_clicked", { dealNonce: state.dealNonce });
       }
       reportHandStarted(state);
       reportAnalysisState(state);
     },
-    [emit, replaceHand, reportAnalysisState, reportHandStarted],
+    [
+      emit,
+      isSeededSession,
+      replaceHand,
+      reportAnalysisState,
+      reportHandStarted,
+    ],
+  );
+  const currentHandScope = useCallback(
+    (): HistoryHandScope => ({
+      generatedFromSeed: stateRef.current.generatedFromSeed,
+      handId: stateRef.current.dealNonce,
+    }),
+    [],
   );
   const reportHistoryNavigation = useCallback(
-    (newDealtCards: readonly DealtCard[]) => {
+    (newDealtCards: readonly DealtCard[], entry: HistoryHandScope | null) => {
       const state = stateRef.current;
-      if (serializeHand(newDealtCards) === state.handKey) {
-        // Back/Forward within the same deal keeps the deal's nonce.
+      if (entry?.handId === state.dealNonce) {
+        // Back/Forward within the same hand keeps its identifier and analysis count.
         state.source = "history";
         state.pendingCards = newDealtCards;
         reportAnalysisState(state);
       } else {
-        const newState = replaceHand(newDealtCards, "history", "history");
+        const newState = replaceHand(newDealtCards, {
+          // An entry written before this document loaded states nothing, and a seeded session assumes its own seed there, which can only over-exclude.
+          generatedFromSeed: entry?.generatedFromSeed ?? isSeededSession,
+          handStartSource: "history",
+          source: "history",
+        });
         reportHandStarted(newState);
         reportAnalysisState(newState);
       }
     },
-    [replaceHand, reportAnalysisState, reportHandStarted],
+    [isSeededSession, replaceHand, reportAnalysisState, reportHandStarted],
   );
   useEffect(() => {
     // A deep-linked complete discard is reported after its first render.
     reportAnalysisState(stateRef.current);
   }, [reportAnalysisState]);
   return useMemo(
-    () => ({ reportCardToggled, reportHandReplaced, reportHistoryNavigation }),
-    [reportCardToggled, reportHandReplaced, reportHistoryNavigation],
+    () => ({
+      currentHandScope,
+      reportCardToggled,
+      reportHandReplaced,
+      reportHistoryNavigation,
+    }),
+    [
+      currentHandScope,
+      reportCardToggled,
+      reportHandReplaced,
+      reportHistoryNavigation,
+    ],
   );
 };

@@ -2,6 +2,10 @@ import * as classes from "./Trainer.module.css";
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
+  type HistoryHandScope,
+  useDiscardTelemetry,
+} from "./useDiscardTelemetry";
+import {
   parseUrlAnalysisState,
   serializeUrlAnalysisState,
 } from "../ui/urlAnalysisState";
@@ -20,7 +24,6 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
-import { useDiscardTelemetry } from "./useDiscardTelemetry";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -31,6 +34,7 @@ export interface TrainerProps {
   readonly initialDiscards?: Card[] | null;
   readonly initialScoreSortKey?: ScoredKeepDiscardSortKey | null;
   readonly initialSortOrder?: SortOrder | null;
+  readonly isSeededSession?: boolean;
 }
 
 export const analyticsConsentKey = "analyticsConsent-2026-07-23";
@@ -54,12 +58,17 @@ interface DealState {
 }
 
 // Invariant: previousUrl is the URL of the entry directly beneath this one.
+// The hand scope rides on the entry because its cards cannot identify the hand: a seeded deal and a later hand-entry of the same six cards are different hands that share a key.
 interface HistoryEntryState {
+  readonly handScope?: HistoryHandScope;
   readonly previousUrl?: string;
 }
 
+const getHistoryEntryState = (): HistoryEntryState | null =>
+  window.history.state as HistoryEntryState | null;
+
 const getPreviousUrl = (): string | undefined =>
-  (window.history.state as HistoryEntryState | null)?.previousUrl;
+  getHistoryEntryState()?.previousUrl;
 
 const isUnchangedEnteredHand = (
   cards: readonly Card[],
@@ -143,6 +152,7 @@ export function Trainer({
   initialDiscards = null,
   initialScoreSortKey = null,
   initialSortOrder = null,
+  isSeededSession = false,
 }: TrainerProps) {
   const dealHandWithGenerator = useCallback(
     () => dealHand(generator),
@@ -176,6 +186,7 @@ export function Trainer({
   const telemetry = useDiscardTelemetry({
     consented: analyticsConsented,
     dealtCards,
+    isSeededSession,
     trackEvent,
     wasDeepLinked: initialCards !== null,
   });
@@ -189,9 +200,10 @@ export function Trainer({
       scoreSortKey,
       sortOrder,
     });
+    const handScope = telemetry.currentHandScope();
     if (shouldPushHistory.current) {
       window.history.pushState(
-        { previousUrl: window.location.search },
+        { handScope, previousUrl: window.location.search },
         "",
         url,
       );
@@ -202,10 +214,14 @@ export function Trainer({
       window.history.back();
     } else {
       // Keep previousUrl so later settles can still detect convergence.
-      window.history.replaceState(window.history.state, "", url);
+      window.history.replaceState(
+        { ...getHistoryEntryState(), handScope },
+        "",
+        url,
+      );
     }
     shouldPushHistory.current = false;
-  }, [cribRole, dealtCards, scoreSortKey, sortOrder]);
+  }, [cribRole, dealtCards, scoreSortKey, sortOrder, telemetry]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -219,7 +235,10 @@ export function Trainer({
         const newDealtCards = toDealtCards(cards, discards);
         // Returning to the covered stable URL is cleanup, not user navigation.
         if (!isInternalMerge) {
-          telemetry.reportHistoryNavigation(newDealtCards);
+          telemetry.reportHistoryNavigation(
+            newDealtCards,
+            getHistoryEntryState()?.handScope ?? null,
+          );
         }
         setDealState((previous) => ({
           cribRole: urlState.cribRole ?? previous.cribRole,
@@ -350,4 +369,5 @@ Trainer.defaultProps = {
   initialDiscards: null,
   initialScoreSortKey: null,
   initialSortOrder: null,
+  isSeededSession: false,
 };
