@@ -79,7 +79,7 @@ own handling and that is where it lives.
   ```bash
   SCRATCH=$(mktemp --directory)
   CA=/usr/local/share/ca-certificates/ccr.crt
-  { echo "FROM mcr.microsoft.com/playwright:v1.61.1-noble"
+  { head --lines=1 Dockerfile
     echo "COPY --from=certs ca-bundle.crt $CA"
     echo "RUN update-ca-certificates"
     tail --lines=+2 Dockerfile
