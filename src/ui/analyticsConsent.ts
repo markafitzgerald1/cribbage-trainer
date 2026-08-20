@@ -123,9 +123,19 @@ export const storeAnalyticsChoice = (consented: boolean): AnalyticsChoice => {
  * so does every measurement disclosed by an earlier policy.
  */
 export const storePolicyUpdateChoice = (accepted: boolean): AnalyticsChoice => {
+  /*
+   * Read before the new answer is recorded, and compared against what this
+   * browser last answered rather than against the newest release: a browser
+   * that skipped a release entirely was never asked about what that release
+   * introduced, and recording an answer to the current version would bury
+   * the question for good. The comparison selects what to ask about; the
+   * answer is still recorded against each measurement by name.
+   */
+  const previouslyAnswered =
+    localStorage.getItem(answeredPolicyVersionKey) ?? "";
   localStorage.setItem(answeredPolicyVersionKey, PRIVACY_POLICY_VERSION);
   const added = gatedMeasurements
-    .filter(({ introducedIn }) => introducedIn === PRIVACY_POLICY_VERSION)
+    .filter(({ introducedIn }) => introducedIn > previouslyAnswered)
     .map(({ name }) => name);
   recordMeasurementChoices(accepted ? added : [], accepted ? [] : added);
   return readAnalyticsChoice();

@@ -5,7 +5,13 @@ import {
   type TrackEvent,
   type TrainerEvent,
 } from "../ui/trackEvent";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardQuality } from "../analysis/discardQuality";
@@ -130,7 +136,14 @@ const useEventEmitter = (
   trackEvent: TrackEvent,
 ) => {
   const latestRef = useRef({ consented, decisionQualityConsented, trackEvent });
-  useEffect(() => {
+  /*
+   * A layout effect, because the reader that matters is a child's passive
+   * effect: the analysis reports itself rendered from one, and those run
+   * before the parent's passive effects. Syncing this ref passively would
+   * hand that reader the previous render's consent, which is precisely the
+   * withdrawal committed alongside the analysis it was still loading.
+   */
+  useLayoutEffect(() => {
     latestRef.current = { consented, decisionQualityConsented, trackEvent };
   });
   const send = useCallback(

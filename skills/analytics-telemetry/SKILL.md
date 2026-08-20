@@ -237,6 +237,17 @@ mean anything.
   scores the top-ranked option as the user's own choice, and the caller
   cannot see the difference. It is a shared module because #19/#24 must
   agree with analytics about what a decision cost.
+- The hook's latest-value ref is synced in a **layout** effect, not a
+  passive one. Its reader that matters is a child's passive effect —
+  `ScoredPossibleKeepDiscards` reports itself rendered from one — and child
+  passive effects run before the parent's, so a passive sync hands that
+  reader the previous render's consent. That is exactly a withdrawal
+  committed alongside the analysis whose tables had just finished loading,
+  and it silently defeated the live consent check the round before (Codex,
+  on #732). The guard is a harness whose single click flips consent and
+  re-runs a child's effect in one commit; a single-component test cannot
+  catch this, because layout effects always precede passive ones within a
+  component.
 - A score is sent only when the decision-quality consent stamped on its
   exposure **and** the answer standing when it arrives both allow it. The
   stamp is a floor and the current answer a ceiling: a grant given after the

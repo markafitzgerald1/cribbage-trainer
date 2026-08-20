@@ -80,6 +80,29 @@ describe("analytics choice storage", () => {
   });
 
   /*
+   * The update covers everything added since the version this browser last
+   * answered, so a browser returning from any earlier policy is asked about
+   * the current addition. With one gated measurement, introduced by the
+   * current policy, this case cannot yet distinguish that rule from one
+   * keyed to the newest release — the test below is what does.
+   */
+  it("asks a browser returning from an earlier policy", () => {
+    clearAnalyticsChoice();
+    localStorage.setItem(analyticsConsentKey, "true");
+    localStorage.setItem(answeredPolicyVersionKey, "2026-07-23");
+
+    expect(storePolicyUpdateChoice(true).decisionQualityConsented).toBe(true);
+  });
+
+  // Answering again must add nothing, which is what separates "everything since the last answer" from "whatever the newest release introduced".
+  it("grants nothing further once the current version is answered", () => {
+    startWithEarlierChoice(true);
+    storePolicyUpdateChoice(false);
+
+    expect(storePolicyUpdateChoice(true).decisionQualityConsented).toBe(false);
+  });
+
+  /*
    * The decline is recorded against the measurement, not inferred from a
    * version. That is what stops a later policy's acceptance — which asks only
    * about what that policy adds — from granting this one behind the user.
