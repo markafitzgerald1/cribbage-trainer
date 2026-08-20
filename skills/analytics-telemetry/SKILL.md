@@ -198,15 +198,15 @@ mean anything.
   is committed: nothing has scored the discard before the vendored tables
   load, so the event is named for what just happened. It carries the crib
   role, the expected net points the choice gave up against the best-scoring
-  option, that figure's bucket, whether it was optimal, an explicit
-  `schema_version`, and the same `deal_nonce`, `analysis_index`,
-  `is_first_analysis`, `generated_from_seed`, and `source` that
+  option, whether it was optimal, an explicit `schema_version`, and the same
+  `deal_nonce`, `analysis_index`, `is_first_analysis`, `generated_from_seed`,
+  `hand_start_source`, and `source` that
   `analysis_shown` carries. The bookkeeping is repeated rather than joined
   because the filtering contract above has to be applicable to a single row,
   and #683's export does not exist yet to join against.
 - Both scores are taken to the two decimals the trainer displays **before**
   they are compared, so the reported loss is exactly the difference between
-  the two numbers on screen and the bucket and optimal flag agree with it. A
+  the two numbers on screen and the optimal flag agrees with it. A
   choice the table draws identically to the best reports `0`, bucket `0`,
   optimal — deliberately, since the rows are indistinguishable on screen.
   Rounding the difference instead of the scores is not the same rule and is
@@ -215,6 +215,19 @@ mean anything.
   while the table shows 8.00 twice (Codex caught this on #732). Changing the
   rule changes what "optimal" means in every row already collected, so it is
   a schema change rather than a tweak.
+- The loss ships as a **number**, not as bands. #665 specified bucket
+  boundaries (0 / 0–0.5 / 0.5–1 / 1–2 / 2+) and they were built and then
+  removed deliberately: a stored band is a boundary guess baked into every
+  row, while the number lets any banding be cut at query time from data that
+  exists. Bands alone would also have left the mean impossible to estimate,
+  because the top one is open-ended, and would have collapsed percentile
+  resolution to roughly two populated bands for a competent player — which
+  is what #666 needs most. `is_optimal` is the one band kept, because the
+  point mass at
+  zero is the headline and a boolean cannot drift. Register the number in
+  GA4 as a **metric**, never a dimension: ~1500 distinct values is the
+  cardinality problem the issue worried about, and the same goes double for
+  `deal_nonce`, which must never become a custom dimension.
 - `src/analysis/discardQuality.ts` finds the chosen option by its **discard**
   (both of its cards un-kept), never by its keep. Before two cards are
   discarded every option's keep is entirely kept, so a keep match silently
@@ -233,7 +246,8 @@ mean anything.
   nonce, the seed provenance, the hand-start source — and cannot drift. One
   exposure scores at most once, however often its results re-render. A score
   reported while no exposure exists is held and emitted when the next one is
-  created: on a first render the child's effect runs before the parent's, so a deep-linked
+  created: on a first render the child's effect runs before the parent's, so a
+  deep-linked
   complete discard renders its answers before `reportAnalysisState` has
   opened the exposure. Reporting it from the render callback instead would
   put `analysis_shown` ahead of `hand_started`.

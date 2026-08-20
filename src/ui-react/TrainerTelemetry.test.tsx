@@ -154,7 +154,6 @@ describe("trainer telemetry wiring", () => {
       cribRole: expect.any(String),
       dealNonce: expect.any(String),
       expectedPointsLoss: expect.any(Number),
-      expectedPointsLossBucket: expect.any(String),
       generatedFromSeed: false,
       handStartSource: "initial",
       isFirstAnalysis: true,

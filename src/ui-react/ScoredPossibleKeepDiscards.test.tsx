@@ -52,7 +52,6 @@ const REPORTED_ANALYSIS_CASES = [
       cribRole: CribRole.Pone,
       quality: {
         expectedPointsLoss: expect.any(Number),
-        expectedPointsLossBucket: expect.any(String),
         isOptimal: expect.any(Boolean),
       },
     },

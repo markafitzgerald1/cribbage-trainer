@@ -110,7 +110,6 @@ const eventParamKeys = [
       "cribRole",
       "dealNonce",
       "expectedPointsLoss",
-      "expectedPointsLossBucket",
       "generatedFromSeed",
       "handStartSource",
       "isFirstAnalysis",

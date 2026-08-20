@@ -101,7 +101,6 @@ export const scoredEvents = (scene: Scene) =>
 
 export const RENDERED_QUALITY: DiscardQuality = {
   expectedPointsLoss: 1.25,
-  expectedPointsLossBucket: "1-2",
   isOptimal: false,
 };
 
