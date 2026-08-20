@@ -280,6 +280,17 @@ mean anything.
   Codex and Copilot raised the declined-browser case on #732 — Copilot's
   point that a flag meaning merely "the version is stale" invites the wrong
   read is why it moved).
+- Each gated measurement is compared against the policy version that
+  **introduced** it, never against the latest one. Requiring equality with
+  the current version reintroduces the bug the whole mechanism exists to
+  prevent, one level down: the next additive policy would stop
+  decision-quality collection the moment it shipped, and declining only what
+  _that_ policy adds would leave it off for good, discarding an acceptance
+  already given (Codex, on #732 — the fifth round). So
+  `DECISION_QUALITY_POLICY_VERSION` is frozen at its own value and the check
+  is "accepted at or after", which is why the versions are zero-padded ISO
+  dates: the comparison is lexicographic. A new gated measurement gets its
+  own frozen constant; none of them may track `PRIVACY_POLICY_VERSION`.
 - Declining the addition must not travel through the dialog's `onChange`.
   That callback is also withdrawal: `onChange(false)` from Analytics
   Settings turns analytics off and reloads the page, whereas declining the

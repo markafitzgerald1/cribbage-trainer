@@ -94,6 +94,35 @@ describe("analytics choice storage", () => {
     expect(localStorage.getItem(acceptedPolicyVersionKey)).toBeNull();
   });
 
+  /*
+   * The stored acceptance is compared against the version that introduced the
+   * measurement, not the latest one: a later additive policy asks only about
+   * what it adds, so it must not revoke this.
+   */
+  it.each([
+    {
+      accepted: PRIVACY_POLICY_VERSION,
+      expected: true,
+      name: "the policy that introduced it",
+    },
+    {
+      accepted: "2999-01-01",
+      expected: true,
+      name: "a policy later than that",
+    },
+    {
+      accepted: "2026-07-23",
+      expected: false,
+      name: "a policy that predates it",
+    },
+  ])("reads an acceptance of $name as $expected", ({ accepted, expected }) => {
+    clearAnalyticsChoice();
+    localStorage.setItem(analyticsConsentKey, "true");
+    localStorage.setItem(acceptedPolicyVersionKey, accepted);
+
+    expect(readAnalyticsChoice().decisionQualityConsented).toBe(expected);
+  });
+
   it("withholds decision-quality collection once analytics itself is withdrawn", () => {
     clearAnalyticsChoice();
     storeAnalyticsChoice(true);

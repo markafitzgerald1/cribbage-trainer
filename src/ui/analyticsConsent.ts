@@ -6,6 +6,17 @@
  */
 export const PRIVACY_POLICY_VERSION = "2026-08-19";
 
+/*
+ * The policy version that introduced decision-quality collection, frozen at
+ * that value. It must never be made to track PRIVACY_POLICY_VERSION: the next
+ * additive update would then revoke a consent already given, because an
+ * acceptance stored under this policy would stop matching the latest one, and
+ * declining only what that later policy adds would leave this measurement off
+ * for good. Versions are zero-padded ISO dates precisely so "the acceptance
+ * came at or after this" is a plain string comparison.
+ */
+const DECISION_QUALITY_POLICY_VERSION = "2026-08-19";
+
 export const analyticsConsentKey = "analyticsConsent-2026-07-23";
 const legacyAnalyticsConsentKey = "analyticsConsent";
 export const acceptedPolicyVersionKey = "analyticsPolicyAccepted";
@@ -46,7 +57,8 @@ export const readAnalyticsChoice = (): AnalyticsChoice => {
     consented,
     decisionQualityConsented:
       consented === true &&
-      localStorage.getItem(acceptedPolicyVersionKey) === PRIVACY_POLICY_VERSION,
+      (localStorage.getItem(acceptedPolicyVersionKey) ?? "") >=
+        DECISION_QUALITY_POLICY_VERSION,
     needsPolicyUpdateChoice:
       consented === true &&
       localStorage.getItem(answeredPolicyVersionKey) !== PRIVACY_POLICY_VERSION,
