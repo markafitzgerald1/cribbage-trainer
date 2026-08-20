@@ -310,12 +310,22 @@ mean anything.
   update has to leave the earlier consent exactly as it was. They are
   separate callbacks for that reason, and the decline is recorded as an
   answer to the current version so the question is not asked again.
-- Enabling analytics from Analytics Settings records acceptance of the
-  **current** policy version, so a user who declined the addition and later
-  turns analytics back on gets it. That is deliberate — the settings panel
-  links the current policy, and the button means the same thing the first-run
-  Accept does — but it means the stored accepted version is a property of the
-  last enable, not a separate switch to be reasoned about independently.
+- Enabling analytics from Analytics Settings does **not** revive a
+  measurement the user declined on its own. "Allow analytics" restores
+  analytics as a whole; it discloses nothing about a measurement that was
+  refused when it was put to them directly, so granting it there would be the
+  same grant-escaping-its-disclosure failure as routing the update's Accept
+  through `onChange`. A specific answer outranks a general one until the user
+  is asked the specific question again, which the settings panel offers on
+  its own button. The completeness cost — a re-enabling user keeps
+  `discard_scored` off — is real and is the intended trade: an explicit
+  decline is not a gap in the data. Analytics Settings therefore stays **open**
+  when analytics is enabled from it, so that offer is visible immediately
+  rather than one reopen away. (An earlier draft of this bullet described the
+  opposite behavior and outlived the model it belonged to; Codex read it,
+  believed it over the code, and filed the code as the defect. Documentation
+  drift here reads as a spec, so fix this file in the same commit as the
+  behavior.)
 - The consent banner's **policy-update** and **settings** states are taller
   than the first-run one and land in the same height-tight side-by-side grid
   cell, so both need their own phone-landscape guard: the existing one opens

@@ -1,6 +1,8 @@
 /* jscpd:ignore-start */
 import {
+  DECISION_QUALITY_MEASUREMENT,
   analyticsConsentKey,
+  declinedMeasurementsKey,
   storePolicyUpdateChoice,
 } from "../ui/analyticsConsent";
 import { describe, expect, it } from "@jest/globals";
@@ -89,6 +91,26 @@ describe("analytics policy update", () => {
     renderWithEarlierChoice(true, true);
 
     expect(screen.queryByText(POLICY_UPDATE_HEADING)).toBeNull();
+  });
+
+  /*
+   * "Allow analytics" restores analytics as a whole and discloses nothing
+   * about a measurement refused when it was put to the user directly, so the
+   * decline stands — and its own offer is left on screen to be seen rather
+   * than one reopen away.
+   */
+  it("leaves a declined measurement declined when analytics is re-enabled", () => {
+    renderWithEarlierChoice(false);
+    localStorage.setItem(declinedMeasurementsKey, DECISION_QUALITY_MEASUREMENT);
+
+    clickButton("Analytics Settings");
+    clickButton("Allow analytics");
+
+    expect(
+      screen.getByRole("button", {
+        name: "Allow decision-quality measurements",
+      }),
+    ).toBeTruthy();
   });
 
   it("turns the declined measurement on again from analytics settings", () => {

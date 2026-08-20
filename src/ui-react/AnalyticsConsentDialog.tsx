@@ -195,6 +195,10 @@ export function AnalyticsConsentDialog({
   // One memo rather than two, because the component is at its statement limit and both are the same kind of thing: click handlers that carry no state of their own.
   const actions = useMemo(
     () => ({
+      // Unlike the first-run Accept, this leaves the panel open: a measurement declined on its own stays declined, and its offer is right here to be seen.
+      handleAllowAnalytics: () => {
+        onChange(true);
+      },
       handleDismiss: () => {
         setIsSettingsOpen(false);
         setIsFadedOut(true);
@@ -212,7 +216,7 @@ export function AnalyticsConsentDialog({
         onPolicyUpdateChoice(false);
       },
     }),
-    [onPolicyUpdateChoice],
+    [onChange, onPolicyUpdateChoice],
   );
 
   const handleKeyDown = useCallback(
@@ -303,7 +307,7 @@ export function AnalyticsConsentDialog({
             </button>
           ) : (
             <button
-              onClick={handleAccept}
+              onClick={actions.handleAllowAnalytics}
               type="button"
             >
               Allow analytics
