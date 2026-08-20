@@ -251,6 +251,15 @@ mean anything.
   complete discard renders its answers before `reportAnalysisState` has
   opened the exposure. Reporting it from the render callback instead would
   put `analysis_shown` ahead of `hand_started`.
+- The Privacy Policy is the basis of the renewed consent, so its list of
+  measurements has to match the event's allowlist exactly, in both
+  directions. When the loss bands were dropped, the policy kept promising a
+  "coarse range" that nothing sent any more, which Codex caught on #732 —
+  the paragraph had been reflowed by an earlier wording change, so a
+  find-and-replace against the old wrapping silently matched nothing. Diff
+  the policy against the allowlist in `trackEvent.ts` whenever either moves,
+  and verify a scripted text edit actually landed rather than trusting its
+  exit code.
 - Consent is versioned by the privacy policy that described the collection
   (`src/ui/analyticsConsent.ts`). The base consent key is deliberately not
   rotated: rotating it discards the answer already given to the narrower
