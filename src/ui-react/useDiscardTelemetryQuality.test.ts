@@ -131,6 +131,21 @@ describe("useDiscardTelemetry decision quality", () => {
     });
   });
 
+  /*
+   * The decision was made before the answer was given, and consent is not
+   * retroactive. Reading consent when the score arrives would also make
+   * collection depend on how long the tables took to load.
+   */
+  it("withholds a score for a discard chosen before consent was granted", () => {
+    expectTelemetryScene({ consented: null }, (scene) => {
+      completeDiscard(scene, "AH,2H");
+      scene.rerenderConsent(true);
+      renderAnalysisOnScreen(scene);
+
+      expect(scoredConsents(scene)).toStrictEqual([false]);
+    });
+  });
+
   it("scores a hand the seed generated as seed-derived practice data", () => {
     expectTelemetryScene({ isSeededSession: true }, (scene) => {
       scoreFirstDiscard(scene);

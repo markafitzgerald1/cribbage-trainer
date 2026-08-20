@@ -30,6 +30,14 @@ interface ShownAnalysis {
   readonly discardKey: string;
   // Stamped from the exposure rather than read again when the answers render, because rendering them is what ends first-instinct status.
   readonly isFirstAnalysis: boolean;
+  /*
+   * Stamped when the exposure opens, not read when its score arrives: the
+   * decision was made under this answer, and consent is not retroactive.
+   * Reading it later would also make collection depend on how long the tables
+   * took to load, and could ship a score for an exposure Google Analytics
+   * never saw begin — the same pairing analysis_unshown keeps.
+   */
+  readonly qualityConsented: boolean;
   qualityReported: boolean;
   // Stamped like the flag above, because the hand's source can change after this exposure opens: a history move onto the same discard keeps the exposure while making the state history-sourced, and the score must not disagree with the analysis_shown it belongs to.
   readonly source: AnalysisSource;
@@ -138,16 +146,15 @@ const useEventEmitter = (
     (...event: TrainerEvent) => send(latestRef.current.consented, ...event),
     [send],
   );
-  const emitDecisionQuality = useCallback(
-    (...event: TrainerEvent) =>
-      send(latestRef.current.decisionQualityConsented, ...event),
-    [send],
-  );
   const hasConsent = useCallback(
     () => latestRef.current.consented === true,
     [],
   );
-  return { emit, emitDecisionQuality, hasConsent };
+  const hasDecisionQualityConsent = useCallback(
+    () => latestRef.current.decisionQualityConsented,
+    [],
+  );
+  return { emit, emitAs: send, hasConsent, hasDecisionQualityConsent };
 };
 
 export const useDiscardTelemetry = ({
@@ -166,11 +173,8 @@ export const useDiscardTelemetry = ({
       source: wasDeepLinked ? "deeplink" : "interactive",
     }),
   );
-  const { emit, emitDecisionQuality, hasConsent } = useEventEmitter(
-    consented,
-    decisionQualityConsented,
-    trackEvent,
-  );
+  const { emit, emitAs, hasConsent, hasDecisionQualityConsent } =
+    useEventEmitter(consented, decisionQualityConsented, trackEvent);
   const reportHandStarted = useCallback(
     (state: DealTelemetryState) => {
       if (state.handStarted || !hasConsent()) {
@@ -213,7 +217,7 @@ export const useDiscardTelemetry = ({
         return;
       }
       shown.qualityReported = true;
-      emitDecisionQuality("discard_scored", {
+      emitAs(shown.qualityConsented, "discard_scored", {
         analysisIndex: shown.analysisIndex,
         cribRole,
         dealNonce: state.dealNonce,
@@ -226,7 +230,7 @@ export const useDiscardTelemetry = ({
         ...quality,
       });
     },
-    [emitDecisionQuality],
+    [emitAs],
   );
   const reportAnalysisState = useCallback(
     (state: DealTelemetryState) => {
@@ -256,6 +260,7 @@ export const useDiscardTelemetry = ({
         analysisIndex: state.analysisCount,
         discardKey,
         isFirstAnalysis,
+        qualityConsented: hasDecisionQualityConsent(),
         qualityReported: false,
         reported,
         source: state.source,
@@ -267,7 +272,7 @@ export const useDiscardTelemetry = ({
         reportDiscardScored(state, shown, pendingAnalysis);
       }
     },
-    [closeShownAnalysis, emit, reportDiscardScored],
+    [closeShownAnalysis, emit, hasDecisionQualityConsent, reportDiscardScored],
   );
   const replaceHand = useCallback(
     (newDealtCards: readonly DealtCard[], scope: HandScope) => {

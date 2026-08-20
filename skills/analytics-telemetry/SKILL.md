@@ -237,6 +237,16 @@ mean anything.
   scores the top-ranked option as the user's own choice, and the caller
   cannot see the difference. It is a shared module because #19/#24 must
   agree with analytics about what a decision cost.
+- The decision-quality consent that decides whether a score is sent is
+  stamped **when the exposure opens**, not read when the score arrives. The
+  decision was made under the answer that stood at the time, and consent is
+  not retroactive: accepting while the tables are still loading must not
+  transmit the discard chosen before it. Reading it late also made collection
+  depend on load timing — a cached table sends nothing, a slow one sends —
+  and could ship a score for an exposure Google Analytics never saw begin,
+  which is the pairing `analysis_unshown` already keeps (Codex, on #732).
+  The stamp subsumes that pairing: decision-quality consent implies analytics
+  consent, so a stamped-true exposure always had its `analysis_shown` sent.
 - The score is attributed to the exposure that revealed it — its
   `analysis_index`, `is_first_analysis`, and `source` all come from the stored
   exposure, never from state read at render time, so the score and the

@@ -41,20 +41,35 @@ const setupTelemetry = ({
 }: SetupOptions = {}) => {
   const trackEvent = jest.fn<TrackEvent>();
   const hook = renderHook(
-    ({ currentConsent }: { readonly currentConsent: boolean | null }) =>
+    ({
+      currentConsent,
+      currentDecisionQuality,
+    }: {
+      readonly currentConsent: boolean | null;
+      readonly currentDecisionQuality: boolean;
+    }) =>
       useDiscardTelemetry({
         consented: currentConsent,
         dealtCards,
-        decisionQualityConsented,
+        decisionQualityConsented: currentDecisionQuality,
         isSeededSession,
         trackEvent,
         wasDeepLinked,
       }),
-    { initialProps: { currentConsent: consented } },
+    {
+      initialProps: {
+        currentConsent: consented,
+        currentDecisionQuality: decisionQualityConsented,
+      },
+    },
   );
   return {
+    // Accepting analytics grants what the current policy describes, so the two move together here as they do in the trainer.
     rerenderConsent: (currentConsent: boolean | null) => {
-      hook.rerender({ currentConsent });
+      hook.rerender({
+        currentConsent,
+        currentDecisionQuality: currentConsent === true,
+      });
     },
     telemetry: hook.result.current,
     trackEvent,
