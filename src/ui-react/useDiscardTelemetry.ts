@@ -217,20 +217,32 @@ export const useDiscardTelemetry = ({
         return;
       }
       shown.qualityReported = true;
-      emitAs(shown.qualityConsented, "discard_scored", {
-        analysisIndex: shown.analysisIndex,
-        cribRole,
-        dealNonce: state.dealNonce,
-        generatedFromSeed: state.generatedFromSeed,
-        handStartSource: state.handStartSource,
-        isFirstAnalysis: shown.isFirstAnalysis,
-        schemaVersion: DISCARD_SCORED_SCHEMA_VERSION,
-        source: shown.source,
-        // Spread from the derivation's own type rather than a widened record, so every quality field still type-checks against the event's payload.
-        ...quality,
-      });
+      /*
+       * Both the stamp and the answer standing now. The stamp keeps a grant
+       * given after the decision from reaching back to it; the live read
+       * makes a withdrawal take effect at once, which matters because
+       * disabling analytics cannot unload the Google runtime already on the
+       * page — only the reload it triggers does, and a score rendered before
+       * that reload commits would still transmit.
+       */
+      emitAs(
+        shown.qualityConsented && hasDecisionQualityConsent(),
+        "discard_scored",
+        {
+          analysisIndex: shown.analysisIndex,
+          cribRole,
+          dealNonce: state.dealNonce,
+          generatedFromSeed: state.generatedFromSeed,
+          handStartSource: state.handStartSource,
+          isFirstAnalysis: shown.isFirstAnalysis,
+          schemaVersion: DISCARD_SCORED_SCHEMA_VERSION,
+          source: shown.source,
+          // Spread from the derivation's own type rather than a widened record, so every quality field still type-checks against the event's payload.
+          ...quality,
+        },
+      );
     },
-    [emitAs],
+    [emitAs, hasDecisionQualityConsent],
   );
   const reportAnalysisState = useCallback(
     (state: DealTelemetryState) => {

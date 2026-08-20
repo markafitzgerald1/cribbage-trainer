@@ -132,14 +132,26 @@ describe("useDiscardTelemetry decision quality", () => {
   });
 
   /*
-   * The decision was made before the answer was given, and consent is not
-   * retroactive. Reading consent when the score arrives would also make
-   * collection depend on how long the tables took to load.
+   * The stamp on the exposure is a floor and the answer standing when the
+   * score arrives is a ceiling, so a score needs both: consent is not
+   * retroactive, and a withdrawal takes effect before the reload that
+   * unloads the Google runtime has committed.
    */
-  it("withholds a score for a discard chosen before consent was granted", () => {
-    expectTelemetryScene({ consented: null }, (scene) => {
+  it.each([
+    {
+      atChoice: null,
+      name: "granted only after the discard was chosen",
+      whenScored: true,
+    },
+    {
+      atChoice: true,
+      name: "withdrawn before the score arrived",
+      whenScored: false,
+    },
+  ])("withholds a score for consent $name", ({ atChoice, whenScored }) => {
+    expectTelemetryScene({ consented: atChoice }, (scene) => {
       completeDiscard(scene, "AH,2H");
-      scene.rerenderConsent(true);
+      scene.rerenderConsent(whenScored);
       renderAnalysisOnScreen(scene);
 
       expect(scoredConsents(scene)).toStrictEqual([false]);

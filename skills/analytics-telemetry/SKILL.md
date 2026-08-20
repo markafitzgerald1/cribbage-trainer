@@ -237,8 +237,15 @@ mean anything.
   scores the top-ranked option as the user's own choice, and the caller
   cannot see the difference. It is a shared module because #19/#24 must
   agree with analytics about what a decision cost.
-- The decision-quality consent that decides whether a score is sent is
-  stamped **when the exposure opens**, not read when the score arrives. The
+- A score is sent only when the decision-quality consent stamped on its
+  exposure **and** the answer standing when it arrives both allow it. The
+  stamp is a floor and the current answer a ceiling: a grant given after the
+  decision cannot reach back to it, and a withdrawal takes effect at once.
+  The second half matters because disabling analytics cannot unload the
+  Google runtime already on the page — only the reload it triggers does — so
+  a score rendered before that reload commits would otherwise still
+  transmit, leaving reload timing as the only thing preventing it (Codex, on
+  #732, one round after the stamp itself). The
   decision was made under the answer that stood at the time, and consent is
   not retroactive: accepting while the tables are still loading must not
   transmit the discard chosen before it. Reading it late also made collection
