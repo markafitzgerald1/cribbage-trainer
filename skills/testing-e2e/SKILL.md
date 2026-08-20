@@ -12,7 +12,7 @@ baselines so CI agrees with what was generated locally.
 
 **Playwright and UI-layout debugging:**
 
-- Analysis-row text (e.g. `K♥Q♠10♦9♣(6♠5♠)`) is rendered in the **active
+- Analysis-row text (e.g. `K♥Q♀10♦9♣(6♠5♠)`) is rendered in the **active
   sort order**; a deep link or click that sets `sort=ascending` reverses the
   row text (`9♣10♦Q♠K♥(5♠6♠)`). Don't reuse row-text constants across tests
   with different sort orders.
@@ -110,7 +110,7 @@ baselines so CI agrees with what was generated locally.
     neither arm64 nor CI's amd64, and the emulated browser is too
     slow/flaky for the interaction tests. Generate baselines natively on
     arm64 and let the threshold absorb the delta.
-  - A cloud session (Claude Code on the web) is a third rendering variant in
+  - A cloud session (Claude Code on the web) renders differently again, in
     exactly the sense above, so run e2e there with the pixel comparison
     switched off, inside the test image:
 
@@ -119,10 +119,12 @@ baselines so CI agrees with what was generated locally.
       npx playwright test --ignore-snapshots
     ```
 
-    That is 167 passed and exit 0, against 138 passed and exit 1 when the
-    pixels are compared. The screenshot specs still execute every
-    interaction and locator; only the image comparison is skipped, and CI
-    adjudicates the pixels against baselines it already matches.
+    That exits 0 with the whole suite passing, where comparing the pixels
+    exits 1 on every screenshot shot — 167 against 138 passing when this was
+    written, though those totals drift as specs are added, so judge the run
+    by its exit code rather than by the counts. The screenshot specs still
+    execute every interaction and locator; only the image comparison is
+    skipped, and CI adjudicates the pixels against baselines it matches.
 
   - `--ignore-snapshots` makes a **new** screenshot spec pass vacuously:
     with no baseline written and no comparison run, a visual guard added in
@@ -139,5 +141,5 @@ baselines so CI agrees with what was generated locally.
     per-pixel `threshold` does not rescue it either: at 0.7 the noise is
     still 23,116px across 13 of 16 shots, because the differing pixels are
     full text-versus-background swings at glyph edges rather than soft
-    gradients. Baselines regenerated on that host are a fourth variant that
-    CI would reject.
+    gradients. Baselines regenerated on that host encode its own rendering
+    rather than CI's, so CI would reject them.
