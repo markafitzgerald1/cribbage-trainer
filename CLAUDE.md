@@ -77,14 +77,16 @@ own handling and that is where it lives.
   build from that:
 
   ```bash
+  SCRATCH=$(mktemp --directory)
   CA=/usr/local/share/ca-certificates/ccr.crt
   { echo "FROM mcr.microsoft.com/playwright:v1.61.1-noble"
     echo "COPY --from=certs ca-bundle.crt $CA"
     echo "RUN update-ca-certificates"
-    tail -n +2 Dockerfile
+    tail --lines=+2 Dockerfile
   } > "$SCRATCH/Dockerfile.ca"
-  docker build --build-context certs=/root/.ccr -f "$SCRATCH/Dockerfile.ca" \
-    -t cribbage-trainer-integration-tests .
+  docker build --build-context certs=/root/.ccr \
+    --file "$SCRATCH/Dockerfile.ca" \
+    --tag cribbage-trainer-integration-tests .
   ```
 
   The committed `Dockerfile` is correct as written and must stay
