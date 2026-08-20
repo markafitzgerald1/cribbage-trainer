@@ -269,6 +269,17 @@ mean anything.
   links the current policy, and the button means the same thing the first-run
   Accept does — but it means the stored accepted version is a property of the
   last enable, not a separate switch to be reasoned about independently.
+- The consent banner's **policy-update** and **settings** states are taller
+  than the first-run one and land in the same height-tight side-by-side grid
+  cell, so both need their own phone-landscape guard: the existing one opens
+  an unanswered browser and never renders either. The first version of the
+  update banner carried two paragraphs and pushed Accept to y+height 401.5 in
+  a 390px-tall viewport on WebKit, Firefox, and Mobile Safari while Chromium
+  passed — so the Chromium-only screenshots could never have caught it
+  (Codex, on #732). Keep each of these messages to roughly the first-run
+  message's length, and measure rather than assume. The guards live in
+  `tests-e2e/consentLayout.spec.ts`, split out when `index.spec.ts` reached
+  the 520-line cap.
 - Seeding stored consent in an e2e test now means seeding the answered and
   accepted policy versions too (`tests-e2e/renderThenSelectTwoDiscards.ts`).
   Setting only the consent key produces a browser that answered an earlier

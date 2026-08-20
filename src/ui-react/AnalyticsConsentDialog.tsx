@@ -130,16 +130,12 @@ const renderPolicyUpdate = (
 ) => (
   <>
     <h2>Analytics Consent Update</h2>
+    {/* Kept to roughly the first-run message's length: both land in the same height-tight side-by-side grid cell, where the extra lines push these buttons off a phone-landscape screen. */}
     <p>
-      Our {privacyPolicyLink} has been updated. Analytics may now also receive,
-      for each completed discard, whether you were dealer or pone, how many
-      expected points the discard gave up against the best-scoring option, and
-      whether it was the top-ranked choice. Card identities, hands, and discards
-      are still never sent.
-    </p>
-    <p>
-      Accepting turns that measurement on. Declining leaves your current
-      analytics choice exactly as it is.
+      Our {privacyPolicyLink} now also covers card-free discard quality: your
+      role, the expected points a discard gave up, and whether it was the top
+      choice. Card identities are never sent, and declining leaves your
+      analytics choice unchanged.
     </p>
     <button
       onClick={onAccept}
