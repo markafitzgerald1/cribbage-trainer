@@ -109,6 +109,13 @@ own handling and that is where it lives.
   (`docker cp "$(docker create <image>):/ms-playwright/." /opt/pw-browsers/`).
   Its reported totals then match the Docker run exactly, so coverage
   thresholds can be re-pinned from either.
+- Raw Actions job logs are unreachable: `gh api` on a job's `logs` endpoint
+  redirects to an Azure `*.blob.core.windows.net` host that egress policy
+  refuses, so the fetch 403s rather than returning the log. The
+  GitHub MCP `get_job_logs` tool serves the same content through the API and
+  works, so read a CI failure that way instead of concluding the run is
+  opaque. Its `tail_lines` default of 500 lands inside the post-job cleanup
+  on this workflow; ask for more to reach the Playwright summary.
 - `gh` is not installed; its release tarball downloads and runs fine. Note
   that `gh auth status` reports "The token in GH_TOKEN is invalid" while REST
   calls succeed — the tool's own status output lies about its capability,
