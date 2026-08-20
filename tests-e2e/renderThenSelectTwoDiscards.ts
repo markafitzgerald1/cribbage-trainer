@@ -1,6 +1,7 @@
 import {
+  DECISION_QUALITY_MEASUREMENT,
   PRIVACY_POLICY_VERSION,
-  acceptedPolicyVersionKey,
+  acceptedMeasurementsKey,
   analyticsConsentKey,
   answeredPolicyVersionKey,
 } from "../src/ui/analyticsConsent";
@@ -34,7 +35,7 @@ export const renderThenSelectTwoDiscards = async (
         });
       },
       {
-        [acceptedPolicyVersionKey]: PRIVACY_POLICY_VERSION,
+        [acceptedMeasurementsKey]: DECISION_QUALITY_MEASUREMENT,
         [analyticsConsentKey]: "true",
         [answeredPolicyVersionKey]: PRIVACY_POLICY_VERSION,
       },

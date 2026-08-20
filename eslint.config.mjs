@@ -147,6 +147,7 @@ export default [
             "autodocs",
             "callee",
             "interpretable",
+            "vendored",
             "camelcase",
             "cardinality",
             "charset",

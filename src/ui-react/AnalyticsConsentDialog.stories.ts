@@ -16,8 +16,9 @@ type Story = StoryObj<typeof meta>;
 
 const sharedArgs = {
   consent: true,
+  onAllowDecisionQuality: () => null,
   onChange: () => null,
-  onPolicyUpdateDecline: () => null,
+  onPolicyUpdateChoice: () => null,
 };
 
 const createStoryWithConsent = (consent: boolean | null) => ({
@@ -66,37 +67,47 @@ const openAnalyticsSettings = async (canvasElement: HTMLElement) => {
 
 const createSettingsArgs = (consent: boolean) => ({
   consent,
+  onAllowDecisionQuality: fn(),
   onChange: fn(),
-  onPolicyUpdateDecline: fn(),
+  onPolicyUpdateChoice: fn(),
 });
 
 const createSettingsStory = ({
   actionName,
   consent,
   decisionQualityConsented = true,
-  expectedConsent = !consent,
+  verify,
 }: {
   readonly actionName: string;
   readonly consent: boolean;
   readonly decisionQualityConsented?: boolean;
-  readonly expectedConsent?: boolean;
+  readonly verify: (args: {
+    readonly onAllowDecisionQuality: unknown;
+    readonly onChange: unknown;
+  }) => Promise<void>;
 }): Story => ({
   args: { ...createSettingsArgs(consent), decisionQualityConsented },
   play: async ({ args, canvasElement }) => {
     const canvas = await openAnalyticsSettings(canvasElement);
     await fireEvent.click(canvas.getByText(actionName));
 
-    await expect(args.onChange).toHaveBeenCalledWith(expectedConsent);
+    await verify(args);
   },
 });
 
 export const ConsentCanBeGranted: Story = createSettingsStory({
   actionName: "Allow analytics",
   consent: false,
+  verify: async ({ onChange }) => {
+    await expect(onChange).toHaveBeenCalledWith(true);
+  },
 });
 export const ConsentCanBeWithdrawn: Story = createSettingsStory({
   actionName: "Disable analytics",
   consent: true,
+  verify: async ({ onChange }) => {
+    await expect(onChange).toHaveBeenCalledWith(false);
+  },
 });
 
 export const AnalyticsSettingsCanBeDismissed: Story = {
@@ -151,14 +162,15 @@ const createPolicyUpdateStory = (
   buttonName: string,
   verify: (args: {
     readonly onChange: unknown;
-    readonly onPolicyUpdateDecline: unknown;
+    readonly onPolicyUpdateChoice: unknown;
   }) => Promise<void>,
 ): Story => ({
   args: {
     consent: true,
     isPolicyUpdate: true,
+    onAllowDecisionQuality: fn(),
     onChange: fn(),
-    onPolicyUpdateDecline: fn(),
+    onPolicyUpdateChoice: fn(),
   },
   play: async ({ args, canvasElement }) => {
     await expect(canvasElement).toHaveTextContent("Analytics Consent Update");
@@ -173,24 +185,27 @@ const createPolicyUpdateStory = (
 
 export const PolicyUpdateAccepted: Story = createPolicyUpdateStory(
   "Accept",
-  async ({ onChange }) => {
-    await expect(onChange).toHaveBeenCalledWith(true);
+  async ({ onPolicyUpdateChoice }) => {
+    await expect(onPolicyUpdateChoice).toHaveBeenCalledWith(true);
   },
 );
 
 // Declining the addition must leave analytics consent itself alone.
 export const PolicyUpdateDeclined: Story = createPolicyUpdateStory(
   "Decline",
-  async ({ onChange, onPolicyUpdateDecline }) => {
-    await expect(onPolicyUpdateDecline).toHaveBeenCalledTimes(1);
+  async ({ onChange, onPolicyUpdateChoice }) => {
+    await expect(onPolicyUpdateChoice).toHaveBeenCalledWith(false);
     await expect(onChange).not.toHaveBeenCalled();
   },
 );
 
-// The measurement declined with the policy update can still be turned on later.
+// The measurement declined with the policy update can still be turned on later, and granting it must not re-answer analytics itself.
 export const DecisionQualityAllowedInSettings: Story = createSettingsStory({
   actionName: "Allow decision-quality measurements",
   consent: true,
   decisionQualityConsented: false,
-  expectedConsent: true,
+  verify: async ({ onAllowDecisionQuality, onChange }) => {
+    await expect(onAllowDecisionQuality).toHaveBeenCalledTimes(1);
+    await expect(onChange).not.toHaveBeenCalled();
+  },
 });

@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 import {
   analyticsConsentKey,
-  storePolicyUpdateDecline,
+  storePolicyUpdateChoice,
 } from "../ui/analyticsConsent";
 import { describe, expect, it } from "@jest/globals";
 import {
@@ -20,7 +20,7 @@ const renderWithEarlierChoice = (consent: boolean, declineUpdate = false) => {
   const trackEvent = startTelemetryCapture(null);
   localStorage.setItem(analyticsConsentKey, JSON.stringify(consent));
   if (declineUpdate) {
-    storePolicyUpdateDecline();
+    storePolicyUpdateChoice(false);
   }
   const renderResult = renderTrainerWithGenerator(mathRandom, trackEvent);
   return {

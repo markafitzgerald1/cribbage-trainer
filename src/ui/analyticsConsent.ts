@@ -6,26 +6,30 @@
  */
 export const PRIVACY_POLICY_VERSION = "2026-08-19";
 
+export const DECISION_QUALITY_MEASUREMENT = "decisionQuality";
+
 /*
- * The policy version that introduced decision-quality collection, frozen at
- * that value. It must never be made to track PRIVACY_POLICY_VERSION: the next
- * additive update would then revoke a consent already given, because an
- * acceptance stored under this policy would stop matching the latest one, and
- * declining only what that later policy adds would leave this measurement off
- * for good. Versions are zero-padded ISO dates precisely so "the acceptance
- * came at or after this" is a plain string comparison.
+ * Every measurement disclosed on its own, with the policy version that
+ * introduced it. The invariant these exist to keep: a grant is recorded only
+ * for a measurement the interaction actually disclosed. Deriving the gates
+ * from one accepted version instead cannot represent selective answers — the
+ * next additive update would revoke a measurement accepted earlier, or grant
+ * one declined earlier, depending on which way the comparison ran.
  */
-const DECISION_QUALITY_POLICY_VERSION = "2026-08-19";
+const gatedMeasurements = [
+  { introducedIn: "2026-08-19", name: DECISION_QUALITY_MEASUREMENT },
+] as const;
 
 export const analyticsConsentKey = "analyticsConsent-2026-07-23";
 const legacyAnalyticsConsentKey = "analyticsConsent";
-export const acceptedPolicyVersionKey = "analyticsPolicyAccepted";
+export const acceptedMeasurementsKey = "analyticsAcceptedMeasurements";
+export const declinedMeasurementsKey = "analyticsDeclinedMeasurements";
 export const answeredPolicyVersionKey = "analyticsPolicyAnswered";
 
 export interface AnalyticsChoice {
   // Consent to analytics itself, which every event from #250 follows.
   readonly consented: boolean | null;
-  // Consent to the decision-quality collection the current policy adds.
+  // Consent to the decision-quality collection this policy version adds.
   readonly decisionQualityConsented: boolean;
   /*
    * True only when analytics is on under an answer given to an earlier
@@ -51,14 +55,41 @@ const readConsent = (): boolean | null => {
   return null;
 };
 
+const readMeasurements = (key: string): readonly string[] =>
+  (localStorage.getItem(key) ?? "").split(",").filter(Boolean);
+
+const writeMeasurements = (key: string, names: readonly string[]) => {
+  localStorage.setItem(key, [...new Set(names)].join(","));
+};
+
+// A measurement moves between the two lists rather than appearing in both, so the latest answer about it is the one that counts.
+const recordMeasurementChoices = (
+  accepted: readonly string[],
+  declined: readonly string[],
+) => {
+  writeMeasurements(acceptedMeasurementsKey, [
+    ...readMeasurements(acceptedMeasurementsKey).filter(
+      (name) => !declined.includes(name),
+    ),
+    ...accepted,
+  ]);
+  writeMeasurements(declinedMeasurementsKey, [
+    ...readMeasurements(declinedMeasurementsKey).filter(
+      (name) => !accepted.includes(name),
+    ),
+    ...declined,
+  ]);
+};
+
 export const readAnalyticsChoice = (): AnalyticsChoice => {
   const consented = readConsent();
   return {
     consented,
     decisionQualityConsented:
       consented === true &&
-      (localStorage.getItem(acceptedPolicyVersionKey) ?? "") >=
-        DECISION_QUALITY_POLICY_VERSION,
+      readMeasurements(acceptedMeasurementsKey).includes(
+        DECISION_QUALITY_MEASUREMENT,
+      ),
     needsPolicyUpdateChoice:
       consented === true &&
       localStorage.getItem(answeredPolicyVersionKey) !== PRIVACY_POLICY_VERSION,
@@ -69,18 +100,40 @@ export const storeAnalyticsChoice = (consented: boolean): AnalyticsChoice => {
   localStorage.setItem(analyticsConsentKey, JSON.stringify(consented));
   localStorage.setItem(answeredPolicyVersionKey, PRIVACY_POLICY_VERSION);
   if (consented) {
-    localStorage.setItem(acceptedPolicyVersionKey, PRIVACY_POLICY_VERSION);
+    /*
+     * Turning analytics on accepts what this policy describes, except a
+     * measurement the user has already declined on its own: that answer
+     * stands until they revisit it in Analytics Settings, so toggling
+     * analytics off and on cannot quietly undo it.
+     */
+    const declined = readMeasurements(declinedMeasurementsKey);
+    recordMeasurementChoices(
+      gatedMeasurements
+        .map(({ name }) => name)
+        .filter((name) => !declined.includes(name)),
+      [],
+    );
   }
   return readAnalyticsChoice();
 };
 
 /*
- * Declining what the current policy adds answers that policy and nothing
- * else: analytics consent given under an earlier one keeps its own value, so
- * the events disclosed there keep flowing exactly as before.
+ * Answering the update answers what this policy version added, and nothing
+ * else: analytics consent given under an earlier one keeps its own value, and
+ * so does every measurement disclosed by an earlier policy.
  */
-export const storePolicyUpdateDecline = (): AnalyticsChoice => {
+export const storePolicyUpdateChoice = (accepted: boolean): AnalyticsChoice => {
   localStorage.setItem(answeredPolicyVersionKey, PRIVACY_POLICY_VERSION);
+  const added = gatedMeasurements
+    .filter(({ introducedIn }) => introducedIn === PRIVACY_POLICY_VERSION)
+    .map(({ name }) => name);
+  recordMeasurementChoices(accepted ? added : [], accepted ? [] : added);
+  return readAnalyticsChoice();
+};
+
+// Accepting one measurement from Analytics Settings grants that measurement and no other.
+export const storeMeasurementAccepted = (name: string): AnalyticsChoice => {
+  recordMeasurementChoices([name], []);
   return readAnalyticsChoice();
 };
 
@@ -90,6 +143,7 @@ export const storePolicyUpdateDecline = (): AnalyticsChoice => {
  */
 export const clearAnalyticsChoice = () => {
   localStorage.removeItem(analyticsConsentKey);
-  localStorage.removeItem(acceptedPolicyVersionKey);
+  localStorage.removeItem(acceptedMeasurementsKey);
+  localStorage.removeItem(declinedMeasurementsKey);
   localStorage.removeItem(answeredPolicyVersionKey);
 };

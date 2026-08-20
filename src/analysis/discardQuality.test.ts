@@ -29,7 +29,20 @@ describe("getDiscardQuality", () => {
 
   it.each([
     { best: 8, chosen: 8, name: "an exactly optimal choice", reported: 0 },
-    { best: 8, chosen: 7.996, name: "a loss that rounds away", reported: 0 },
+    // Two options the model scores equally: picking either is optimal play, and only floating point separates them.
+    {
+      best: 0.1 + 0.2,
+      chosen: 0.3,
+      name: "a tie only floating point separates",
+      reported: 0,
+    },
+    // Displayed identically at two decimals, but the model does separate them, so this is not the top choice.
+    {
+      best: 8,
+      chosen: 7.996,
+      name: "a loss too small for the table to show",
+      reported: 0.004,
+    },
     {
       best: 8,
       chosen: 7.99,
@@ -38,20 +51,6 @@ describe("getDiscardQuality", () => {
     },
     { best: 8, chosen: 7.5, name: "half a point given up", reported: 0.5 },
     { best: 8, chosen: 4.5, name: "a badly costly choice", reported: 3.5 },
-    // Rounding the difference instead of the scores would call these equal, though the table draws 8.01 against 8.00.
-    {
-      best: 8.006,
-      chosen: 8.002,
-      name: "scores the table separates by a hundredth",
-      reported: 0.01,
-    },
-    // And it would call these a hundredth apart, though the table draws 8.00 twice.
-    {
-      best: 8.004,
-      chosen: 7.996,
-      name: "scores the table draws identically",
-      reported: 0,
-    },
   ])("reports $name as $reported", ({ best, chosen, reported }) => {
     expect(qualityOf(best, chosen)).toStrictEqual({
       expectedPointsLoss: reported,

@@ -204,17 +204,20 @@ mean anything.
   `analysis_shown` carries. The bookkeeping is repeated rather than joined
   because the filtering contract above has to be applicable to a single row,
   and #683's export does not exist yet to join against.
-- Both scores are taken to the two decimals the trainer displays **before**
-  they are compared, so the reported loss is exactly the difference between
-  the two numbers on screen and the optimal flag agrees with it. A
-  choice the table draws identically to the best reports `0`, bucket `0`,
-  optimal — deliberately, since the rows are indistinguishable on screen.
-  Rounding the difference instead of the scores is not the same rule and is
-  wrong in both directions: 8.006 against 8.002 is a loss of `0.00` that way
-  while the table shows 8.01 and 8.00, and 8.004 against 7.996 is `0.01`
-  while the table shows 8.00 twice (Codex caught this on #732). Changing the
-  rule changes what "optimal" means in every row already collected, so it is
-  a schema change rather than a tweak.
+- The loss is measured at full precision, not at the two decimals the
+  trainer displays, because `is_optimal` has to mean the model's top choice
+  for "played the top choice N% of the time" to be true. A choice trailing by
+  0.004 draws the same 8.00 on screen and is not optimal. Rounding is only
+  the six-decimal clearing of floating-point residue, which is far below
+  anything the vendored tables distinguish and far above the noise of summing
+  fifty-odd terms — so two options the model scores equally still count as a
+  tie, and picking either is optimal play. An earlier version compared at
+  display precision, and its story is worth keeping: Codex first caught that
+  rounding the _difference_ rather than each score was wrong in both
+  directions, then Mark pointed out that display precision was the wrong
+  question entirely for a flag that feeds a headline percentage. A
+  rule change here changes what "optimal" means in every row already
+  collected, so it is a schema change rather than a tweak.
 - The loss ships as a **number**, not as bands. #665 specified bucket
   boundaries (0 / 0–0.5 / 0.5–1 / 1–2 / 2+) and they were built and then
   removed deliberately: a stored band is a boundary guess baked into every

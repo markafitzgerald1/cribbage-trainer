@@ -14,17 +14,22 @@ const ENTER_KEY_CODE = "Enter";
 
 const createMockOnChange = () => jest.fn();
 
+const createDialog = (
+  consent: boolean | null,
+  onChange: ReturnType<typeof createMockOnChange>,
+) => (
+  <AnalyticsConsentDialog
+    consent={consent}
+    onAllowDecisionQuality={jest.fn()}
+    onChange={onChange}
+    onPolicyUpdateChoice={jest.fn()}
+  />
+);
+
 const renderDialogElement = (
   consent: boolean | null,
   onChange: ReturnType<typeof createMockOnChange>,
-) =>
-  render(
-    <AnalyticsConsentDialog
-      consent={consent}
-      onChange={onChange}
-      onPolicyUpdateDecline={jest.fn()}
-    />,
-  );
+) => render(createDialog(consent, onChange));
 
 const renderDialog = (consent: boolean | null = null) => {
   const onChange = createMockOnChange();
@@ -57,13 +62,7 @@ const setupFadeTest = (initialConsent: boolean | null = null) => {
     });
   };
   const rerenderWithConsent = (newConsent: boolean) => {
-    rendered.rerender(
-      <AnalyticsConsentDialog
-        consent={newConsent}
-        onChange={onChange}
-        onPolicyUpdateDecline={jest.fn()}
-      />,
-    );
+    rendered.rerender(createDialog(newConsent, onChange));
   };
   return {
     advancePastFade,
@@ -91,8 +90,9 @@ describe("analytics consent dialog", () => {
     expect(
       render(
         <AnalyticsConsentDialog
+          onAllowDecisionQuality={jest.fn()}
           onChange={jest.fn()}
-          onPolicyUpdateDecline={jest.fn()}
+          onPolicyUpdateChoice={jest.fn()}
         />,
       ).getByText(ANALYTICS_CONSENT),
     ).toBeTruthy());
@@ -336,16 +336,17 @@ describe("analytics consent dialog fade-out behavior", () => {
 
   const renderPolicyUpdate = () => {
     const onChange = createMockOnChange();
-    const onPolicyUpdateDecline = jest.fn();
+    const onPolicyUpdateChoice = jest.fn();
     const rendered = render(
       <AnalyticsConsentDialog
         consent
         isPolicyUpdate
+        onAllowDecisionQuality={jest.fn()}
         onChange={onChange}
-        onPolicyUpdateDecline={onPolicyUpdateDecline}
+        onPolicyUpdateChoice={onPolicyUpdateChoice}
       />,
     );
-    return { onChange, onPolicyUpdateDecline, rendered };
+    return { onChange, onPolicyUpdateChoice, rendered };
   };
 
   // An answered choice normally collapses to the links on load, which would hide a question the user has not answered yet.
@@ -358,46 +359,50 @@ describe("analytics consent dialog fade-out behavior", () => {
     ).toBeTruthy();
   });
 
-  it("accepts the updated policy through the consent callback", () => {
-    const { onChange, rendered } = renderPolicyUpdate();
+  /*
+   * Neither answer may travel through onChange: accepting through it would
+   * grant every measurement this policy describes rather than the one it
+   * asked about, and declining through it would withdraw analytics itself.
+   */
+  it.each([
+    { accepted: true, button: "Accept" },
+    { accepted: false, button: "Decline" },
+  ])("answers the update with $button alone", ({ accepted, button }) => {
+    const { onChange, onPolicyUpdateChoice, rendered } = renderPolicyUpdate();
 
-    fireEvent.click(rendered.getByText("Accept"));
+    fireEvent.click(rendered.getByText(button));
 
-    expect(onChange).toHaveBeenCalledWith(true);
-  });
-
-  // Declining the addition must not travel through onChange, which would withdraw analytics itself.
-  it("declines only the update", () => {
-    const { onChange, onPolicyUpdateDecline, rendered } = renderPolicyUpdate();
-
-    fireEvent.click(rendered.getByText("Decline"));
-
-    expect(onPolicyUpdateDecline).toHaveBeenCalledTimes(1);
+    expect(onPolicyUpdateChoice).toHaveBeenCalledWith(accepted);
     expect(onChange).not.toHaveBeenCalled();
   });
 
   const renderSettingsWithDecisionQuality = (
     decisionQualityConsented: boolean,
   ) => {
+    const onAllowDecisionQuality = jest.fn();
     const onChange = createMockOnChange();
     const rendered = render(
       <AnalyticsConsentDialog
         consent
         decisionQualityConsented={decisionQualityConsented}
+        onAllowDecisionQuality={onAllowDecisionQuality}
         onChange={onChange}
-        onPolicyUpdateDecline={jest.fn()}
+        onPolicyUpdateChoice={jest.fn()}
       />,
     );
     fireEvent.click(rendered.getByText(analyticsSettingsLinkText));
-    return { onChange, rendered };
+    return { onAllowDecisionQuality, onChange, rendered };
   };
 
+  // Granting one named measurement must not travel through onChange either, which would grant any other the policy describes.
   it("offers the declined measurement again from analytics settings", () => {
-    const { onChange, rendered } = renderSettingsWithDecisionQuality(false);
+    const { onAllowDecisionQuality, onChange, rendered } =
+      renderSettingsWithDecisionQuality(false);
 
     fireEvent.click(rendered.getByText(decisionQualityOfferText));
 
-    expect(onChange).toHaveBeenCalledWith(true);
+    expect(onAllowDecisionQuality).toHaveBeenCalledTimes(1);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("offers nothing more once the measurement is already allowed", () => {

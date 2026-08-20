@@ -1,4 +1,14 @@
 import {
+  DECISION_QUALITY_MEASUREMENT,
+  PRIVACY_POLICY_VERSION,
+  acceptedMeasurementsKey,
+  analyticsConsentKey,
+  answeredPolicyVersionKey,
+  clearAnalyticsChoice,
+  declinedMeasurementsKey,
+  storeAnalyticsChoice,
+} from "../ui/analyticsConsent";
+import {
   type Meta,
   SORT_ORDER_NAMES,
   SortOrder,
@@ -6,11 +16,6 @@ import {
   playToggle,
 } from "./stories.common";
 import { Rank, Suit, createCard } from "../game/Card";
-import {
-  analyticsConsentKey,
-  clearAnalyticsChoice,
-  storeAnalyticsChoice,
-} from "../ui/analyticsConsent";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
@@ -140,10 +145,12 @@ export const StoredConsentGiven = createStoredChoiceStory(
 );
 
 // A browser that answered the policy in force before decision-quality collection existed is asked about the addition alone.
+const seedConsentPredatingThePolicy = () => {
+  localStorage.setItem(analyticsConsentKey, "true");
+};
+
 export const StoredConsentPredatingThePolicy = createStoredChoiceStory(
-  () => {
-    localStorage.setItem(analyticsConsentKey, "true");
-  },
+  seedConsentPredatingThePolicy,
   async ({ canvasElement }) => {
     await expect(canvasElement).toHaveTextContent("Analytics Consent Update");
 
@@ -153,6 +160,39 @@ export const StoredConsentPredatingThePolicy = createStoredChoiceStory(
       "Analytics Consent Update",
     );
     await expect(localStorage.getItem(analyticsConsentKey)).toBe("true");
+  },
+);
+
+const grantedMeasurements = () =>
+  localStorage.getItem(acceptedMeasurementsKey) ?? "";
+
+// Accepting the update grants the measurement it asked about, without re-answering analytics itself.
+export const StoredConsentAcceptingTheUpdate = createStoredChoiceStory(
+  seedConsentPredatingThePolicy,
+  async ({ canvasElement }) => {
+    await fireEvent.click(getButton(canvasElement, "Accept"));
+
+    await expect(grantedMeasurements()).toContain(DECISION_QUALITY_MEASUREMENT);
+    await expect(canvasElement).not.toHaveTextContent(
+      "Analytics Consent Update",
+    );
+  },
+);
+
+// A browser that declined the addition can still turn it on from Analytics Settings.
+export const DecisionQualityAllowedFromSettings = createStoredChoiceStory(
+  () => {
+    localStorage.setItem(analyticsConsentKey, "true");
+    localStorage.setItem(answeredPolicyVersionKey, PRIVACY_POLICY_VERSION);
+    localStorage.setItem(declinedMeasurementsKey, DECISION_QUALITY_MEASUREMENT);
+  },
+  async ({ canvasElement }) => {
+    await fireEvent.click(getButton(canvasElement, "Analytics Settings"));
+    await fireEvent.click(
+      getButton(canvasElement, "Allow decision-quality measurements"),
+    );
+
+    await expect(grantedMeasurements()).toContain(DECISION_QUALITY_MEASUREMENT);
   },
 );
 

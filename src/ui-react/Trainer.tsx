@@ -1,9 +1,11 @@
 import * as classes from "./Trainer.module.css";
 import {
   type AnalyticsChoice,
+  DECISION_QUALITY_MEASUREMENT,
   readAnalyticsChoice,
   storeAnalyticsChoice,
-  storePolicyUpdateDecline,
+  storeMeasurementAccepted,
+  storePolicyUpdateChoice,
 } from "../ui/analyticsConsent";
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
@@ -88,8 +90,11 @@ const useAnalyticsConsent = (
     },
     [analyticsConsented],
   );
-  const declinePolicyUpdate = useCallback(() => {
-    setChoice(storePolicyUpdateDecline());
+  const choosePolicyUpdate = useCallback((accepted: boolean) => {
+    setChoice(storePolicyUpdateChoice(accepted));
+  }, []);
+  const allowDecisionQuality = useCallback(() => {
+    setChoice(storeMeasurementAccepted(DECISION_QUALITY_MEASUREMENT));
   }, []);
   useEffect(() => {
     if (analyticsConsented === false) {
@@ -100,8 +105,9 @@ const useAnalyticsConsent = (
     loadGoogleAnalytics(analyticsConsented);
   }, [analyticsConsented, loadGoogleAnalytics]);
   return {
+    allowDecisionQuality,
     choice,
-    declinePolicyUpdate,
+    choosePolicyUpdate,
     setConsented,
     wasAnsweredOnFirstRender: choiceOnFirstRender.consented !== null,
   };
@@ -176,8 +182,9 @@ export function Trainer({
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
   const {
+    allowDecisionQuality,
     choice,
-    declinePolicyUpdate,
+    choosePolicyUpdate,
     setConsented,
     wasAnsweredOnFirstRender,
   } = useAnalyticsConsent(loadGoogleAnalytics);
@@ -368,8 +375,9 @@ export function Trainer({
           consent={choice.consented}
           decisionQualityConsented={choice.decisionQualityConsented}
           isPolicyUpdate={choice.needsPolicyUpdateChoice}
+          onAllowDecisionQuality={allowDecisionQuality}
           onChange={setConsented}
-          onPolicyUpdateDecline={declinePolicyUpdate}
+          onPolicyUpdateChoice={choosePolicyUpdate}
           wasInitiallyConsented={wasAnsweredOnFirstRender}
         />
       </div>

@@ -1,7 +1,12 @@
-const EXPECTED_POINTS_FRACTION_DIGITS = 2;
+/*
+ * Six decimals sits far below anything the vendored tables can distinguish
+ * and far above the residue of summing fifty-odd terms, so rounding here
+ * clears floating-point noise without inventing a tolerance of its own.
+ */
+const LOSS_FRACTION_DIGITS = 6;
 
-const toDisplayedPoints = (points: number): number =>
-  Number(points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
+const withoutFloatResidue = (points: number): number =>
+  Number(points.toFixed(LOSS_FRACTION_DIGITS));
 
 interface KeptCard {
   readonly kept: boolean;
@@ -14,7 +19,14 @@ export interface ScoredKeepDiscardChoice {
 
 export interface DiscardQuality {
   readonly expectedPointsLoss: number;
-  // The one band worth storing: whether the choice was the top-ranked one. Any other banding is a query-time decision, which the loss above keeps open.
+  /*
+   * Whether the choice gave up nothing at all, so that "played the top
+   * choice N% of the time" means exactly that. Two options the model scores
+   * equally both count: picking either is optimal play. Anything the model
+   * separates does not, however little it displays as — a choice trailing by
+   * 0.004 shows the same 8.00 on screen but is not the top choice, and
+   * counting it as one would overstate the number it feeds.
+   */
   readonly isOptimal: boolean;
 }
 
@@ -40,17 +52,9 @@ export const getDiscardQuality = (
       (scoredKeepDiscard) => scoredKeepDiscard.expectedNetPoints,
     ),
   );
-  /*
-   * Both scores are taken to the precision the trainer displays before they
-   * are compared, so the reported loss is exactly the difference between the
-   * two numbers on screen, and the optimal flag agrees with it.
-   * Subtracting first and rounding after does not do that: 8.006 against
-   * 8.002 is a loss of 0.00 that way, while the table draws 8.01 and 8.00.
-   * The outer rounding only clears the residue of subtracting two decimals.
-   */
-  const expectedPointsLoss = toDisplayedPoints(
-    toDisplayedPoints(bestExpectedNetPoints) -
-      toDisplayedPoints(chosen.expectedNetPoints),
+  // Compared at full precision rather than at the two decimals the trainer displays: the loss is what the choice actually cost against this model, and the flag below has to mean the top choice rather than "within a hundredth of it".
+  const expectedPointsLoss = withoutFloatResidue(
+    bestExpectedNetPoints - chosen.expectedNetPoints,
   );
   return {
     expectedPointsLoss,
