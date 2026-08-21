@@ -7,7 +7,7 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     ref={ref}
   >
     <h1>Privacy Policy for Cribbage Trainer</h1>
-    <p>Effective date: July 23, 2026</p>
+    <p>Effective date: August 21, 2026</p>
 
     <h2>Who is responsible</h2>
     <p>
@@ -106,8 +106,15 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <p>
       Google Analytics user-level and event-level data is retained for 14
       months. Aggregated reports that no longer identify an individual device
-      may be retained longer. Cribbage Trainer does not currently export
-      analytics data to a separate warehouse.
+      may be retained longer.
+    </p>
+    <p>
+      Cribbage Trainer also receives a daily copy of these analytics events in
+      its own Google BigQuery dataset, hosted in Canada. That copy holds the
+      same card-free information listed above and is used for the same purposes.
+      It is kept without a scheduled expiry, so that early measurements stay
+      comparable over time once Google Analytics’ own 14-month window has
+      passed.
     </p>
     <p>
       Cribbage Trainer uses local storage to remember your analytics choice.
@@ -159,6 +166,11 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <p>
       Material changes will be described here and, when appropriate, will
       require a new analytics choice before further analytics collection.
+    </p>
+    <p>
+      The August 21, 2026 update disclosed that analytics events are also copied
+      daily into Cribbage Trainer’s own BigQuery dataset in Canada and kept
+      there without a scheduled expiry. What is collected did not change.
     </p>
     <p>
       The July 23, 2026 update made analytics entirely opt-in, added persistent
