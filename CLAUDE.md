@@ -54,3 +54,95 @@ guidance only one tool can use.
   - Playwright's non-CI `reuseExistingServer` will reuse a stale `vite preview`
     left on port 4173 by the main checkout, running e2e against an old bundle.
   - Docker and CI are unaffected by all of the above: they check out normally.
+
+## Cloud sessions (Claude Code on the web)
+
+A cloud session is a fresh container, not this machine, and much of what the
+local setup takes for granted is absent there. Bootstrap them before running
+any gate, or a working tree looks broken. For how to run e2e once the image
+exists, read `skills/testing-e2e/SKILL.md` — the pixel comparison needs its
+own handling and that is where it lives.
+
+- The Docker daemon is not running, though the CLI, `dockerd`, and root are
+  all present; there is simply no init system to start it. Launch it directly
+  (`setsid nohup dockerd > /tmp/dockerd.log 2>&1 < /dev/null &`), then poll
+  `docker info` until it answers. It does not reliably survive a turn
+  boundary, so re-check before each build; images live in `/var/lib/docker`
+  and do survive, so a restart costs seconds rather than a rebuild.
+- Containers reach the network but do not trust the session's egress proxy,
+  so the build dies at the `actionlint` download with "SSL certificate
+  problem: self-signed certificate in certificate chain". **Fix this from
+  the session, never in the repository.** Generate a throwaway Dockerfile
+  outside the working tree that prepends the CA install to the repo's, and
+  build from that:
+
+  ```bash
+  SCRATCH=$(mktemp --directory)
+  CA=/usr/local/share/ca-certificates/ccr.crt
+  { head --lines=1 Dockerfile
+    echo "COPY --from=certs ca-bundle.crt $CA"
+    echo "RUN update-ca-certificates"
+    tail --lines=+2 Dockerfile
+  } > "$SCRATCH/Dockerfile.ca"
+  docker build --build-context certs=/root/.ccr \
+    --file "$SCRATCH/Dockerfile.ca" \
+    --tag cribbage-trainer-integration-tests .
+  ```
+
+  The committed `Dockerfile` is correct as written and must stay
+  byte-identical: those three lines name a CA path that exists only in this
+  sandbox, so committing them breaks the build for CI and every other
+  machine. With them applied out of tree the image builds in about three
+  minutes with every lint, unit, and Storybook step green.
+
+- Docker Hub is blocked by egress policy (`hello-world` fails on
+  `production.cloudfront.docker.com`), but `mcr.microsoft.com` is allowed, so
+  the repo's own base image pulls normally. Also blocked:
+  `cdn.playwright.dev`, and the deployed site itself, so a cloud session
+  cannot check <https://markafitzgerald1.github.io/cribbage-trainer/>.
+- Node is 22 there with no `nvm`, so the `nvm use` line above does not apply
+  and `.nvmrc`'s pinned 24 is unreachable on the host. Only the Docker path
+  runs the pinned runtime. Host-side results are useful for fast iteration
+  but are **not** evidence about the runtime this project ships: a green
+  `npm test` on the host says nothing about Node 24.
+- Because `cdn.playwright.dev` is blocked and the preinstalled browsers in
+  `/opt/pw-browsers` are the wrong build, `npm run storybook:test:coverage`
+  fails on the host until the right ones are lifted out of the built image:
+
+  ```bash
+  CONTAINER=$(docker create cribbage-trainer-integration-tests)
+  docker cp "$CONTAINER:/ms-playwright/." /opt/pw-browsers/
+  docker rm "$CONTAINER"
+  ```
+
+  Its reported totals then match the Docker run exactly, so coverage
+  thresholds can be re-pinned from either.
+
+- Raw Actions job logs are unreachable: `gh api` on a job's `logs` endpoint
+  redirects to an Azure `*.blob.core.windows.net` host that egress policy
+  refuses, so the fetch 403s rather than returning the log. The
+  GitHub MCP `get_job_logs` tool serves the same content through the API and
+  works, so read a CI failure that way instead of concluding the run is
+  opaque. Its `tail_lines` default of 500 lands inside the post-job cleanup
+  on this workflow; ask for more to reach the Playwright summary.
+- `gh` is not installed; its release tarball downloads and runs fine. Note
+  that `gh auth status` reports "The token in GH_TOKEN is invalid" while REST
+  calls succeed — the tool's own status output lies about its capability,
+  the same trap as Copilot's `reviewRequests` stub, so test a real read
+  before believing it. Arbitrary `gh api graphql` is refused ("only the
+  pinned set of PR-review operations is served"), which takes out the
+  review-thread queries and `resolveReviewThread` in `AGENTS.md`; use the
+  GitHub MCP tools instead, whose `get_review_comments` returns the same
+  `is_resolved`/`is_outdated` metadata. The project board has no substitute
+  there — `gh project item-list` fails outright.
+- Commit signing works here (`gpg.format=ssh`, with the key supplied through
+  an agent), so do not pass `--no-gpg-sign`: sign intermediate commits,
+  because this session's stop-hook check rejects unsigned ones. The bypass
+  rule in `AGENTS.md` assumes a sandbox where no signing key is available
+  and does not apply. `git log` still reports `signed: N` afterwards because
+  `gpg.ssh.allowedSignersFile` is unset locally; that is a local
+  verification gap, not an unsigned commit, so confirm with
+  `git cat-file commit HEAD | grep gpgsig` rather than trusting `%G?`.
+- Foreground commands are capped at 600s, which the ~3 minute Docker build
+  fits but not by much; commands started in the background survive across
+  turns, so run the gate that way and poll its log.

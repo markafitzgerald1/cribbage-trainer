@@ -110,3 +110,56 @@ baselines so CI agrees with what was generated locally.
     neither arm64 nor CI's amd64, and the emulated browser is too
     slow/flaky for the interaction tests. Generate baselines natively on
     arm64 and let the threshold absorb the delta.
+  - A cloud session (Claude Code on the web) renders differently again, in
+    exactly the sense above, so run e2e there with the pixel comparison
+    switched off, inside the test image:
+
+    ```bash
+    docker run --rm cribbage-trainer-integration-tests \
+      npx playwright test --ignore-snapshots
+    ```
+
+    That exits 0 with all 167 tests passing; comparing the pixels instead
+    exits 1, with 29 of them failing on screenshot diffs and 138 passing.
+    Those counts are as of writing and drift as specs are added, so judge
+    the run by its exit code rather than by the totals.
+
+  - Be exact about what `--ignore-snapshots` leaves running, because it is
+    less than it looks. Each spec's setup still executes — `goto`, the
+    clicks, and the waits inside `renderThenSelectTwoDiscards` — so a break
+    there still fails the run. But `toHaveScreenshot` returns before it
+    resolves its locator, waits for visual stability, or captures anything,
+    so whatever is reached only through that call goes unexercised: the
+    `modalPanel` locator in `index.screenshots.spec.ts` is never resolved,
+    leaving that test covering just the `goto` and the "Enter cards" click.
+    Confirmed by pointing `toHaveScreenshot` at a locator matching nothing,
+    which fails on the missing element normally and passes under
+    `--ignore-snapshots`. Read a green cloud run as evidence about the
+    interactions, not about the assertions those shots stand in for; CI
+    adjudicates the pixels against baselines it matches.
+
+  - `--ignore-snapshots` makes a **new** screenshot shot pass vacuously:
+    with no baseline written and no comparison run, a visual guard added in
+    a cloud session goes green while proving nothing. Landing it does not
+    validate it either. Without a committed baseline Playwright's default
+    `missing` mode writes the actual image and fails, so that run reports
+    the absent baseline rather than any comparison — a new shot run without
+    `--update-snapshots` fails with "A snapshot doesn't exist at
+    ..., writing actual." The guard is proven only once a baseline
+    generated where baselines are owned has been reviewed, committed, and
+    compared by a later run, so author new visual cases there rather than
+    in a cloud session. Add them to `index.screenshots.spec.ts` too:
+    its snapshots directory is the only one the `docker:` scripts mount
+    back, so a new spec file's generated baseline is written inside the
+    container and lost.
+  - Do not raise `maxDiffPixels` to make a cloud session's pixels pass, and
+    do not regenerate baselines there. Measured on that host: its glyph
+    antialiasing needs roughly 47,000 against the configured 800, while a
+    real 1%-card-width regression (`1.212em` to `1.2em`) peaks at 23,514px
+    and a card-border thickening (`0.022em` to `0.03em`) at 4,171px — both
+    would sit under the raised threshold and stop being caught. Playwright's
+    per-pixel `threshold` does not rescue it either: at 0.7 the noise is
+    still 23,116px across 13 of 16 shots, because the differing pixels are
+    full text-versus-background swings at glyph edges rather than soft
+    gradients. Baselines regenerated on that host encode its own rendering
+    rather than CI's, so CI would reject them.
