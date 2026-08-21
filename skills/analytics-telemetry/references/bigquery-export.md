@@ -240,7 +240,7 @@ the forced 60-day table expiration no longer applies.
 Record the submission time immediately. The link is active when its details
 match the decision record; data should begin flowing within 24 hours.
 
-**Evidence.** The link was submitted at 2026-08-22 00:04 UTC (2026-08-21 20:04
+**Evidence.** The link was submitted at 2026-08-21 22:04 UTC (18:04
 EDT) and Google reported `LINK CREATED`. It exports the production web stream
 daily to `northamerica-northeast2`, with streaming off, no excluded events, and
 advertising identifiers off.
@@ -394,6 +394,9 @@ recorded USD $1 amount.
 Success is a visible project and per-user custom quota plus a 1 GiB per-query
 limit in the query editor. Custom quotas are approximate safeguards, not exact
 spending caps.
+
+**Evidence.** Mark set both BigQuery API quotas on 2026-08-21: query usage per
+day at `0.01 TiB` and query usage per day per user at `0.005 TiB`.
 
 ### 8. Run the #250 daily-table verification
 
