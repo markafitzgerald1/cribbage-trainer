@@ -60,6 +60,27 @@ test("policy update controls stay within the phone-landscape viewport", async ({
 });
 
 /*
+ * Mobile browsers scale rem with the device font-size setting, and the
+ * side-by-side consent cell is sized in rem, so an emulator at the default
+ * scale passes while a real phone has to scroll — which is what happened on
+ * hardware for the update banner in landscape.
+ */
+test("the policy update fits the phone-landscape viewport at an enlarged root font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phoneLandscapeViewport);
+  await page.addInitScript((key) => {
+    window.localStorage.setItem(key, "true");
+  }, analyticsConsentKey);
+  await page.goto("/");
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  expect(await consentActionBottom(page, "Decline")).toBeLessThanOrEqual(
+    phoneLandscapeViewport.height,
+  );
+});
+
+/*
  * The settings panel is the tallest state this cell can hold — it adds the
  * decision-quality offer above the analytics actions — and a phone reaches it
  * with one tap, so its own actions have to stay reachable too.
