@@ -30,12 +30,18 @@ the decision is made and the console work confirms it.
 
 #### Raw-data retention
 
-- **Question for Mark:** keep raw tables with no expiration?
-- **Recommendation:** yes. That best serves durable longitudinal analysis and
-  should remain inside BigQuery's free storage allowance initially.
-- **Trade-off:** storage grows without a fixed bound. Measure cost after 30 days
-  and quarterly. A finite policy limits cost but permanently deletes history.
-- **Recorded value:** Pending.
+- **Question for Mark:** retain raw export tables for 14 months?
+- **Recommendation:** yes. Configure BigQuery to expire each table after 425
+  days, approximately matching GA4's 14-month event-retention window.
+- **Reason:** indefinite raw retention is not justified by a stated purpose.
+  BigQuery earns its place on capability: GA4 collapses high-cardinality
+  `deal_nonce` reports into `(other)`, samples reports, computes no percentiles,
+  and cannot join events. Beyond 14 months, preserve longitudinal value through
+  the non-identifying aggregate summaries designed in issue #666.
+- **Trade-off:** raw event-level history is permanently deleted after 425 days,
+  while the purpose-built aggregate history remains available for longer-term
+  comparisons.
+- **Recorded value:** 14 months, configured as 425 days.
 
 #### Monthly budget amount
 
@@ -93,8 +99,8 @@ placeholders:
 - `YYYYMMDD`: the suffix of one exported daily table.
 - `REGION`: the BigQuery region, such as `northamerica-northeast2`.
 - `BASELINE_START_DATE`: the first complete export date, formatted `YYYY-MM-DD`.
-- `RETENTION_DAYS`: Mark's chosen finite retention in whole days; omit the
-  finite-policy query when the decision is no expiration.
+- `RETENTION_DAYS`: `425`, the recorded 14-month raw-table retention expressed
+  as the whole-day value BigQuery requires.
 - `MEASUREMENT_ID`: the production web stream ID, beginning with `G-`.
 - `API_SECRET`: the private Measurement Protocol secret used only in the Cloud
   Scheduler job. Never put its value in this repository or the decision record.
@@ -227,28 +233,28 @@ and region. Google may update that daily table with late events for three days.
 
 Do this after Google creates the export dataset.
 
+Set the policy deliberately. A sandbox dataset defaults to 60 days, while a
+billing-enabled standard project's tables default to never expiring. Neither
+default is the recorded 14-month policy.
+
 1. In **BigQuery** > **Explorer**, open `analytics_PROPERTY_ID` and select its
    **Details** tab.
 2. Click **Edit details**.
-3. If Mark chose no expiration, leave **Enable table expiration** off. If Mark
-   chose a finite policy, enable it and enter the chosen **Default maximum table
-   age** in days.
+3. Enable **Enable table expiration** and enter `425` for **Default maximum
+   table age** in days.
 4. Click **Save**, reopen **Details**, and confirm **Default table expiration**
-   shows the chosen value or **Never**.
+   shows 425 days.
 5. A dataset default change affects only future tables. In a new BigQuery query
    tab, run the first query below to generate one `ALTER TABLE` statement for
-   every existing `events_YYYYMMDD` table. For finite retention, replace
-   `RETENTION_DAYS` with the recorded number of days. For no expiration, use
-   the second version instead.
+   every existing `events_YYYYMMDD` table. Replace `RETENTION_DAYS` with `425`.
 6. Copy every generated statement into a new query tab, select all of them, and
    click **Run**. Do not update only the first table.
-7. Run the inventory query below. For no expiration, every
-   `expiration_timestamp` must be `NULL`. For finite retention, every value must
-   equal that table's creation time plus the recorded number of days.
+7. Run the inventory query below. Every `expiration_timestamp` must equal that
+   table's creation time plus 425 days.
 8. Check a newly created daily table after the next export. Confirm it inherited
-   the dataset policy.
+   the 425-day dataset policy.
 
-Generate repairs for a finite policy:
+Generate repairs for the recorded 425-day policy:
 
 ```sql
 SELECT FORMAT(
@@ -261,21 +267,6 @@ SELECT FORMAT(
     TIMESTAMP_ADD(creation_time, INTERVAL RETENTION_DAYS DAY),
     'UTC'
   )
-) AS repair_statement
-FROM `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLES`
-WHERE STARTS_WITH(table_name, 'events_')
-  AND table_type = 'BASE TABLE'
-ORDER BY table_name;
-```
-
-Generate repairs for no expiration:
-
-```sql
-SELECT FORMAT(
-  "ALTER TABLE `%s.%s.%s` SET OPTIONS (expiration_timestamp = NULL);",
-  table_catalog,
-  table_schema,
-  table_name
 ) AS repair_statement
 FROM `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLES`
 WHERE STARTS_WITH(table_name, 'events_')
@@ -302,9 +293,10 @@ WHERE STARTS_WITH(tables.table_name, 'events_')
 ORDER BY tables.table_name;
 ```
 
-For no expiration, the dataset default, every existing daily table, and the
-newly sampled table must say **Never**. Merely upgrading from sandbox does not
-prove that a table's old 60-day expiration was removed.
+The dataset default, every existing daily table, and the newly sampled table
+must show the recorded 425-day policy. Merely upgrading from sandbox would
+replace one wrong implicit default with another; it would not deliberately set
+14-month retention or repair the old 60-day expirations.
 
 ### 6. Configure billing alerts
 
