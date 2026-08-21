@@ -175,6 +175,13 @@ The BigQuery link may now be submitted.
 8. Reopen **Data retention** and confirm the page still shows **14 months** and
    reset off. Record the verifier and date in the decision record.
 
+**Evidence.** Mark checked the production property on 2026-08-21. **Event data
+retention** was already **14 months**, so no change was needed, and **Reset
+user data on new activity** is **off**, matching the policy decision. The
+reporting time zone is North American Eastern, UTC-4 in summer and UTC-5 in
+winter; the operator substitutes its IANA identifier for `PROPERTY_TIME_ZONE`
+when running the SQL, so this file does not record it.
+
 Success is the saved production property showing 14 months. This setting does
 not preserve raw events beyond GA4's retention window; the BigQuery link does.
 
@@ -198,6 +205,13 @@ Success is an active billing account, an enabled BigQuery API, and a project
 Owner who is also an Editor or Administrator on the production GA4 property.
 This is a non-sandbox project; do not proceed with the sandbox's 60-day table
 expiration.
+
+**Evidence, 2026-08-21.** Project `cribbage-trainer-analytics` was created with
+no parent resource. The earlier expired free-trial billing account could not be
+reopened — Google refuses that for lapsed trials — so a new individual billing
+account was created in Canada and linked to the project. Billing management
+shows it as a paid account, and BigQuery opens without the sandbox banner, so
+the forced 60-day table expiration no longer applies.
 
 ### 3. Create the GA4 link
 
@@ -840,7 +854,8 @@ two unlabeled numbers or call a free-tier result evidence that usage was zero.
 Do not tick a box based on this file existing. Tick it only after the named
 evidence is recorded.
 
-- [ ] Production GA4 retention is 14 months: saved setting and verifier/date.
+- [x] Production GA4 retention is 14 months: verified by Mark on 2026-08-21,
+      already set, no change needed.
 - [x] Production disclosure gate cleared: PR #736 deployed at `cc5a81c` on
       2026-08-21, verified live by Mark, with #665 still out of production.
 - [ ] Billing-enabled non-sandbox project and region: project billing overview,
