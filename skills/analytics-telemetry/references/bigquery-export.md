@@ -4,10 +4,14 @@ Use this runbook to create, verify, and operate the production GA4 daily export.
 It covers issue #683. It does not grant access to Google Analytics or Google
 Cloud, so every console result must be recorded by the person who performed it.
 
-The export must be active before #665 is deployed. Google does not re-export
-data missed while billing or the link is unavailable, and a standard property
-whose daily export is paused for exceeding its event limit does not have the
-missed days reprocessed.
+The export must be active before #665 is deployed. It must also not export data
+while the live Privacy Policy still says no separate warehouse export exists.
+Those constraints require the disclosure gate below to be cleared before the
+link is submitted; if the policy change remains bundled with #665 in PR #732,
+the releases must be separated before this runbook can proceed. Google does not
+re-export data missed while billing or the link is unavailable, and a standard
+property whose daily export is paused for exceeding its event limit does not
+have the missed days reprocessed.
 
 ## Decision record
 
@@ -67,7 +71,10 @@ the decision is made and the console work confirms it.
   `events_YYYYMMDD` table and query date.
 - **Retention confirmed by:** Pending. Record the account and date that checked
   dataset and table expiration.
-- **Cost baseline period:** Pending. Use the first 30 complete export days.
+- **Cost baseline start date, inclusive:** Pending. Record the first complete
+  export date in the GA4 reporting time zone.
+- **Cost baseline end date, exclusive:** Pending. Record the date exactly 30
+  days after the start date.
 - **Measured monthly cost:** Pending. Record storage usage, query bytes, gross
   cost, credits, and net billed amount separately.
 - **Missing-table alert recipient:** Pending. Use the operational owner, plus a
@@ -83,12 +90,39 @@ Before running SQL, replace all uppercase placeholders:
   `America/Toronto`.
 - `YYYYMMDD`: the suffix of one exported daily table.
 - `REGION`: the BigQuery region, such as `northamerica-northeast2`.
+- `BASELINE_START_DATE`: the first complete export date, formatted `YYYY-MM-DD`.
 
 Do not put `deal_nonce` in GA4 custom definitions. It is a UUID per hand, so it
 would immediately create a high-cardinality dimension and collapse in GA4
 reports. BigQuery can query and join it directly without registering it.
 
 ## Console checklist
+
+### 0. Clear the production-disclosure gate
+
+Do not submit or enable the BigQuery link while the deployed Privacy Policy
+still says analytics is not exported to a separate warehouse.
+
+1. Open the production Cribbage Trainer and navigate to **Privacy Policy**.
+2. Confirm the retention section discloses the BigQuery warehouse export and
+   the raw-data retention policy Mark chose in the decision record.
+3. Record the production deployment URL, commit, and verification time.
+4. Confirm whether the disclosure change requires resetting existing analytics
+   consent. If it does, deploy and verify that reset before submitting the
+   link; record the decision and who made it. Do not infer consent requirements
+   from this technical runbook.
+5. Confirm #665's new events have not yet reached production.
+
+The disclosure edit currently lives in PR #732 together with #665. This issue
+must not edit `src/ui-react/PrivacyPolicy.tsx`; instead, Mark must arrange a
+privacy-only production deployment before the export link is submitted, then
+rebase or otherwise reconcile PR #732. If the policy cannot be deployed
+separately, stop: enabling the export first would contradict the live
+disclosure, while deploying #665 first would lose events that cannot be
+backfilled.
+
+Success is recorded evidence that the warehouse disclosure and any required
+consent transition are live before #665 reaches production.
 
 ### 1. Confirm GA4 retention
 
@@ -583,23 +617,35 @@ missed data cannot be re-exported, and relinking can create another gap.
 
 ### 11. Measure initial monthly cost
 
-After 30 complete export days, run this usage query. Use the region qualifier
-that matches the dataset. `JOBS_BY_PROJECT` measures query bytes billed by this
-project; a dedicated project keeps the result attributable to this export.
+After 30 complete export days, replace `BASELINE_START_DATE` with the recorded
+first complete export date and run this usage query. It fixes both measurements
+to the same 30 local calendar days even if the query runs later. Use the region
+qualifier that matches the dataset. `JOBS_BY_PROJECT` measures query bytes
+billed by this project; a dedicated project keeps the result attributable to
+this export.
 
 ```sql
+DECLARE baseline_start_date DATE DEFAULT DATE 'BASELINE_START_DATE';
+DECLARE baseline_end_date DATE DEFAULT DATE_ADD(
+  baseline_start_date,
+  INTERVAL 30 DAY
+);
+
 WITH storage AS (
   SELECT
     SUM(total_logical_bytes) AS logical_bytes
   FROM `PROJECT_ID.region-REGION.INFORMATION_SCHEMA.TABLE_STORAGE_BY_PROJECT`
   WHERE table_schema = 'analytics_PROPERTY_ID'
+    AND table_name >= FORMAT_DATE('events_%Y%m%d', baseline_start_date)
+    AND table_name < FORMAT_DATE('events_%Y%m%d', baseline_end_date)
     AND deleted = FALSE
 ),
 queries AS (
   SELECT
     SUM(total_bytes_billed) AS query_bytes_billed
   FROM `PROJECT_ID.region-REGION.INFORMATION_SCHEMA.JOBS_BY_PROJECT`
-  WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 30 DAY)
+  WHERE creation_time >= TIMESTAMP(baseline_start_date, 'PROPERTY_TIME_ZONE')
+    AND creation_time < TIMESTAMP(baseline_end_date, 'PROPERTY_TIME_ZONE')
     AND job_type = 'QUERY'
     AND state = 'DONE'
     AND error_result IS NULL
@@ -616,7 +662,9 @@ CROSS JOIN queries;
 
 Then open **Billing** > **Reports** with `PROJECT_ID` selected:
 
-1. Set the date range to the same 30 complete days.
+1. Set the start date to the recorded inclusive start and the displayed end
+   date to the day before the recorded exclusive end. This is the same fixed
+   30-day period as the query.
 2. Group by **Service** and filter **Services** to **BigQuery**.
 3. Record gross cost, credits, and net cost in the decision record. A zero net
    cost is expected inside the free allowance, but record the storage and query
@@ -651,8 +699,9 @@ evidence is recorded.
 - [ ] Operational monitoring works: scheduled assertion succeeds for a present
       table and its negative check delivers a failure email to the owner.
 
-The Privacy Policy's warehouse-retention sentence is handled in PR #732. Do not
-edit `src/ui-react/PrivacyPolicy.tsx` in #683.
+The Privacy Policy's warehouse-retention sentence is authored in PR #732. Do
+not edit `src/ui-react/PrivacyPolicy.tsx` in #683, but do not enable the export
+until section 0's production-disclosure gate is satisfied.
 
 ## Primary references
 
