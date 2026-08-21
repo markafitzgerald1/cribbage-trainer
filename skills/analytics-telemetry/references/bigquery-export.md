@@ -22,9 +22,8 @@ the decision is made and the console work confirms it.
 
 #### Dataset region
 
-- **Question for Mark:** use Toronto, `northamerica-northeast2`?
-- **Recommendation:** yes. It keeps the raw data in Canada and close to its
-  operator.
+- **Question for Mark:** use `northamerica-northeast2`?
+- **Recommendation:** yes. It keeps the raw data in Canada.
 - **Trade-off:** the `US` multi-region has broader cross-service compatibility.
   Changing later requires a migration and can create an export gap.
 - **Recorded value:** Pending.
@@ -63,7 +62,7 @@ the decision is made and the console work confirms it.
 - **GA4 property ID:** Pending. Copy the production property ID, not the test
   property.
 - **GA4 reporting time zone:** Pending. Record the production property's time
-  zone. For Toronto, use `America/Toronto` in the scheduled query.
+  zone in IANA form and use it as `PROPERTY_TIME_ZONE` in the scheduled query.
 - **Export dataset:** Pending. Google creates `analytics_<property_id>` after
   the link is submitted.
 - **Link submitted at:** Pending. Record an ISO 8601 time and time zone.
@@ -90,8 +89,7 @@ placeholders:
 
 - `PROJECT_ID`: the billing-enabled Google Cloud project ID.
 - `PROPERTY_ID`: the numeric production GA4 property ID.
-- `PROPERTY_TIME_ZONE`: the production GA4 reporting time zone, such as
-  `America/Toronto`.
+- `PROPERTY_TIME_ZONE`: the production GA4 reporting time zone, in IANA form.
 - `YYYYMMDD`: the suffix of one exported daily table.
 - `REGION`: the BigQuery region, such as `northamerica-northeast2`.
 - `BASELINE_START_DATE`: the first complete export date, formatted `YYYY-MM-DD`.
@@ -138,8 +136,8 @@ consent transition are live before #665 reaches production.
 1. Sign in to Google Analytics and use the property selector to select the
    production Cribbage Trainer property. Confirm its property ID against the
    decision record.
-2. Open **Admin** > **Property details**. Record **Reporting time zone**. If it
-   is Toronto, record `America/Toronto` for the SQL placeholder.
+2. Open **Admin** > **Property details**. Record **Reporting time zone** in
+   IANA form for the SQL placeholder.
 3. Return to **Admin**.
 4. Under the property settings, open **Data collection and modification** >
    **Data retention**. Google's older navigation labels the same page
@@ -713,7 +711,7 @@ statistics.
     replacing the project, property, and time-zone placeholders. Keep
     `@run_time`; BigQuery supplies it.
 11. Set **Repeats** to **Daily** at an off-the-hour UTC time. Recommendation:
-    `18:05 UTC` when `PROPERTY_TIME_ZONE` is `America/Toronto`. The query checks
+    `18:05 UTC` for a `PROPERTY_TIME_ZONE` at UTC-4 or UTC-5. The query checks
     two reporting dates back, allowing the normal daily export more than a full
     day to arrive without waiting so long that a gap goes unnoticed.
 12. Set **Processing location** to the recorded dataset region. Leave
