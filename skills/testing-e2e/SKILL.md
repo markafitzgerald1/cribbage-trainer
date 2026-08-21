@@ -119,12 +119,13 @@ baselines so CI agrees with what was generated locally.
       npx playwright test --ignore-snapshots
     ```
 
-    That exits 0 with the whole suite passing, where comparing the pixels
-    exits 1 on every screenshot shot — 167 against 138 passing when this was
-    written, though those totals drift as specs are added, so judge the run
-    by its exit code rather than by the counts. The screenshot specs still
-    execute every interaction and locator; only the image comparison is
-    skipped, and CI adjudicates the pixels against baselines it matches.
+    That exits 0 with all 167 tests passing; comparing the pixels instead
+    exits 1, with 29 of them failing on screenshot diffs and 138 passing.
+    Those counts are as of writing and drift as specs are added, so judge
+    the run by its exit code rather than by the totals. The screenshot
+    specs still execute every interaction and locator; only the image
+    comparison is skipped, and CI adjudicates the pixels against baselines
+    it matches.
 
   - `--ignore-snapshots` makes a **new** screenshot spec pass vacuously:
     with no baseline written and no comparison run, a visual guard added in
