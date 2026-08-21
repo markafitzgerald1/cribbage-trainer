@@ -130,31 +130,31 @@ reports. BigQuery can query and join it directly without registering it.
 
 ## Console checklist
 
-### 0. Clear the production-disclosure gate
+### 0. Clear the production-disclosure gate — **cleared 2026-08-21**
 
-Do not submit or enable the BigQuery link while the deployed Privacy Policy
-still says analytics is not exported to a separate warehouse.
+The disclosure shipped separately from #665 in PR #736, merged to `main` at
+19:42 UTC on 2026-08-21 and deployed by the Pages workflow at commit
+`cc5a81c`.
 
-1. Open the production Cribbage Trainer and navigate to **Privacy Policy**.
-2. Confirm the retention section discloses the BigQuery warehouse export and
-   the raw-data retention policy Mark chose in the decision record.
-3. Record the production deployment URL, commit, and verification time.
-4. Confirm whether the disclosure change requires resetting existing analytics
-   consent. If it does, deploy and verify that reset before submitting the
-   link; record the decision and who made it. Do not infer consent requirements
-   from this technical runbook.
-5. Confirm #665's new events have not yet reached production.
+**Evidence.** The production bundle served from
+<https://markafitzgerald1.github.io/cribbage-trainer/> contains the disclosure
+text, verified in the built asset and confirmed by Mark in the live Privacy
+Policy on 2026-08-21. The policy states that analytics events are copied daily
+into Cribbage Trainer's own BigQuery dataset in Canada and kept for the same 14
+months.
 
-The disclosure edit currently lives in PR #732 together with #665. This issue
-must not edit `src/ui-react/PrivacyPolicy.tsx`; instead, Mark must arrange a
-privacy-only production deployment before the export link is submitted, then
-rebase or otherwise reconcile PR #732. If the policy cannot be deployed
-separately, stop: enabling the export first would contradict the live
-disclosure, while deploying #665 first would lose events that cannot be
-backfilled.
+**Consent transition: none required, deliberately.** Matching Google
+Analytics' own 14-month retention means the copy extends nothing — same data,
+same duration, same operator, in a system that can query it — so no new
+category, purpose, recipient, or retention period was introduced. `main` also
+carries no policy-version machinery; that arrives with #665, which re-presents
+the whole policy and collects a fresh choice from every consenting user when it
+deploys.
 
-Success is recorded evidence that the warehouse disclosure and any required
-consent transition are live before #665 reaches production.
+**#665 is not in production.** PR #732 remains unmerged, so no
+`discard_scored` event has ever been sent.
+
+The BigQuery link may now be submitted.
 
 ### 1. Confirm GA4 retention
 
@@ -841,9 +841,8 @@ Do not tick a box based on this file existing. Tick it only after the named
 evidence is recorded.
 
 - [ ] Production GA4 retention is 14 months: saved setting and verifier/date.
-- [ ] Production disclosure gate cleared: deployed policy evidence and any
-      required consent-transition evidence exist while #665 remains out of
-      production.
+- [x] Production disclosure gate cleared: PR #736 deployed at `cc5a81c` on
+      2026-08-21, verified live by Mark, with #665 still out of production.
 - [ ] Billing-enabled non-sandbox project and region: project billing overview,
       dataset details, and completed region decision.
 - [ ] Daily export active before #665 deploys: GA4 link details plus submission
