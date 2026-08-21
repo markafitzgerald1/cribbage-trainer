@@ -107,10 +107,17 @@ own handling and that is where it lives.
   `npm test` on the host says nothing about Node 24.
 - Because `cdn.playwright.dev` is blocked and the preinstalled browsers in
   `/opt/pw-browsers` are the wrong build, `npm run storybook:test:coverage`
-  fails on the host until the right ones are lifted out of the built image
-  (`docker cp "$(docker create <image>):/ms-playwright/." /opt/pw-browsers/`).
+  fails on the host until the right ones are lifted out of the built image:
+
+  ```bash
+  CONTAINER=$(docker create cribbage-trainer-integration-tests)
+  docker cp "$CONTAINER:/ms-playwright/." /opt/pw-browsers/
+  docker rm "$CONTAINER"
+  ```
+
   Its reported totals then match the Docker run exactly, so coverage
   thresholds can be re-pinned from either.
+
 - Raw Actions job logs are unreachable: `gh api` on a job's `logs` endpoint
   redirects to an Azure `*.blob.core.windows.net` host that egress policy
   refuses, so the fetch 403s rather than returning the log. The
