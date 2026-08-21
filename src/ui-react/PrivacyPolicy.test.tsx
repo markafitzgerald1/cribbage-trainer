@@ -17,7 +17,7 @@ describe("privacy policy component", () => {
     "14 months",
     "BigQuery",
     "daily copy",
-    "without a scheduled expiry",
+    "kept for the same 14 months",
     "13 months",
     "applicable rights",
     "Office of the Privacy Commissioner of Canada",

@@ -111,10 +111,9 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <p>
       Cribbage Trainer also receives a daily copy of these analytics events in
       its own Google BigQuery dataset, hosted in Canada. That copy holds the
-      same card-free information listed above and is used for the same purposes.
-      It is kept without a scheduled expiry, so that early measurements stay
-      comparable over time once Google Analytics’ own 14-month window has
-      passed.
+      same card-free information listed above, is used for the same purposes,
+      and is kept for the same 14 months. It exists so those measurements can be
+      analyzed in more detail than Google Analytics’ own reports allow.
     </p>
     <p>
       Cribbage Trainer uses local storage to remember your analytics choice.
@@ -170,7 +169,8 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <p>
       The August 21, 2026 update disclosed that analytics events are also copied
       daily into Cribbage Trainer’s own BigQuery dataset in Canada and kept
-      there without a scheduled expiry. What is collected did not change.
+      there for the same 14 months. What is collected, and how long it is kept,
+      did not change.
     </p>
     <p>
       The July 23, 2026 update made analytics entirely opt-in, added persistent
