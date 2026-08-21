@@ -15,24 +15,32 @@ have the missed days reprocessed.
 
 ## Decision record
 
-Answer these questions before creating the link. Replace `Pending` only after
-the decision is made and the console work confirms it.
+The operator choices below are settled. They are decisions, not evidence that
+the corresponding production settings exist. Keep console evidence separately
+as `Pending` until Mark performs and verifies each console step.
 
-### Decisions Mark must make
+### Recorded operator decisions
 
 #### Dataset region
 
-- **Question for Mark:** use `northamerica-northeast2`?
-- **Recommendation:** yes. It keeps the raw data in Canada.
-- **Trade-off:** the `US` multi-region has broader cross-service compatibility.
-  Changing later requires a migration and can create an export gap.
-- **Recorded value:** Pending.
+- **Recorded value:** `northamerica-northeast2` (Toronto).
+- **Reason:** it keeps raw events in Canada with no current query, storage, or
+  free-tier price premium over the `US` multi-region. Core SQL, GA4 export,
+  scheduled queries, BI Engine, Analytics Hub, materialized views, Looker
+  Studio, Connected Sheets, and Gemini SQL assistance support this region.
+- **Trade-off:** some advanced BigQuery ML and BigQuery Studio code-asset
+  features lag the `US` multi-region. A future large join to data held only in
+  another region would require copying data or using Preview global queries
+  with added limits, latency, and cost.
+- **Reversibility:** changing region is a migration, not an in-place setting.
+  Historical tables must be copied or replicated, and any export gap cannot be
+  backfilled. Treat this as effectively permanent for routine operation.
 
 #### Raw-data retention
 
-- **Question for Mark:** retain raw export tables for 14 months?
-- **Recommendation:** yes. Configure BigQuery to expire each table after 425
-  days, approximately matching GA4's 14-month event-retention window.
+- **Recorded value:** 14 months, configured as 425 days.
+- **Configuration:** expire each table after 425 days, approximately matching
+  GA4's 14-month event-retention window.
 - **Reason:** indefinite raw retention is not justified by a stated purpose.
   BigQuery earns its place on capability: GA4 collapses high-cardinality
   `deal_nonce` reports into `(other)`, samples reports, computes no percentiles,
@@ -41,25 +49,36 @@ the decision is made and the console work confirms it.
 - **Trade-off:** raw event-level history is permanently deleted after 425 days,
   while the purpose-built aggregate history remains available for longer-term
   comparisons.
-- **Recorded value:** 14 months, configured as 425 days.
+- **Reversibility:** an unexpired table's deadline can be changed. An expired
+  daily table is permanently gone and GA4 cannot export that day again.
 
 #### Monthly budget amount
 
-- **Question for Mark:** set the monthly budget to 5 in the billing account's
-  currency?
-- **Recommendation:** yes. It is intentionally low for an export expected to
-  cost zero or nearly zero.
-- **Trade-off:** a lower amount alerts earlier but may be noisy; a higher amount
-  delays detection. A budget alerts but does not cap spend.
-- **Recorded value:** Pending.
+- **Recorded value:** USD $1 per month, scoped to this project and BigQuery.
+- **Query safeguards:** use on-demand pricing; set project-wide **Query usage
+  per day** to `0.01 TiB`, **Query usage per day per user** to `0.005 TiB`, and
+  **Maximum bytes billed** to `1073741824` bytes (1 GiB) for each supported
+  manual or programmatic query context. Create no slot reservation, capacity
+  commitment, or BI Engine reservation.
+- **Reason:** expected net cost is zero or nearly zero. The $1 budget detects
+  abnormal billed spend, while the project quota is the proactive aggregate
+  query safeguard. At `0.01 TiB` per day, a 31-day month permits about
+  `0.31 TiB`, below the account-level 1 TiB monthly query free tier.
+- **Trade-off:** a budget alerts but does not stop spend. Custom query quotas
+  are approximate and can occasionally be exceeded. Maximum bytes billed
+  rejects an oversized individual query but is not a project-wide default.
+  Cloud Billing's Preview spend caps do not currently include BigQuery.
+- **Reversibility:** all values can be changed for future work; none can undo
+  charges already incurred.
 
 #### Operational owner
 
-- **Question for Mark:** make Mark's durable Google account the owner and alert
-  recipient?
-- **Recommendation:** yes, and name a second administrator if one is available.
+- **Recorded value:** Mark is the sole operational owner for now. Mark's durable
+  Google account owns the scheduled query and receives export-health and
+  billing alerts. The backup owner is intentionally blank.
 - **Trade-off:** one owner is simplest but creates a single-person failure risk.
-- **Recorded value:** Pending.
+- **Reversibility:** add a backup only after that person accepts responsibility,
+  receives the required access, and passes the failure-email test.
 
 ### Console evidence to record
 
@@ -327,19 +346,22 @@ safeguard.
 2. Filter **Service** to **BigQuery API**.
 3. Select **Query usage per day** and **Query usage per day per user**, then
    click **Edit**.
-4. Recommendation: set the project quota to `0.01 TiB` per day and the per-user
-   quota to `0.005 TiB` per day. That is roughly 10.24 GiB and 5.12 GiB,
-   respectively. That is far above the expected verification queries but low
-   enough to
-   stop an accidental broad scan. Record different values if normal work needs
-   more headroom.
+4. Set the project quota to `0.01 TiB` per day and the per-user quota to
+   `0.005 TiB` per day. That is roughly 10.24 GiB and 5.12 GiB, respectively:
+   far above the expected verification queries but low enough to stop an
+   accidental broad scan.
 5. Submit the quota changes and confirm the overrides appear in the quota list.
 6. In **BigQuery**, open the query editor and choose **Edit** > **Query
    settings** > **Advanced options**. Set **Maximum bytes billed** to
-   `1073741824` (1 GiB) for interactive verification queries and click **Save**.
-7. Before every query, wait for the editor's byte estimate. Do not run it if the
-   estimate is unexpectedly large. A `LIMIT` does not reduce bytes read from an
-   unclustered table.
+   `1073741824` (1 GiB) for interactive queries and click **Save**.
+7. For a query submitted through the `bq` command or API, set the same limit
+   with `--maximum_bytes_billed=1073741824` or `maximumBytesBilled`,
+   respectively. This is a per-query execution setting, not a project default.
+   BigQuery scheduled-query configuration does not expose it; scheduled queries
+   remain subject to the recorded project and per-user daily quotas.
+8. Before every manual query, wait for the editor's byte estimate. Do not run it
+   if the estimate is unexpectedly large. A `LIMIT` does not reduce bytes read
+   from an unclustered table.
 
 Success is a visible project and per-user custom quota plus a 1 GiB per-query
 limit in the query editor. Custom quotas are approximate safeguards, not exact
@@ -832,10 +854,12 @@ evidence is recorded.
       daily table, and a newly created table match the recorded raw-data policy.
 - [ ] Billing alerts and query safeguards: budget thresholds and recipients,
       both daily quotas, and per-query maximum recorded.
-- [ ] Monthly storage and query cost measured: section 11 recorded after 30
-      complete days.
-- [ ] #665 keeps #683 as a deployment prerequisite: #665 and PR #732 both state
-      it; do not remove the draft/merge block before the evidence above exists.
+- [ ] #665 deployment gate satisfied: export active, verified against an exact
+      daily table, retained for 425 days, cost-controlled, and monitored end to
+      end before #665 reaches production.
+- [ ] Monthly storage and query cost measured as a follow-up: section 11 records
+      30 complete post-deployment days without blocking #665 on evidence its
+      production workload must exist to generate.
 - [ ] Operational monitoring works: Cloud Scheduler's canary appears in its
       daily table, the scheduled assertion succeeds, and its negative check
       delivers a failure email to the owner.
@@ -855,6 +879,8 @@ until section 0's production-disclosure gate is satisfied.
 - [Update table expiration](https://cloud.google.com/bigquery/docs/managing-tables)
 - [BigQuery query cost controls](https://cloud.google.com/bigquery/docs/best-practices-costs)
 - [BigQuery custom query quotas](https://cloud.google.com/bigquery/docs/custom-quotas)
+- [BigQuery pricing](https://cloud.google.com/bigquery/pricing)
 - [Cloud Billing budgets](https://cloud.google.com/billing/docs/how-to/budgets)
+- [Cloud Billing spend caps](https://cloud.google.com/billing/docs/how-to/budgets-spend-caps)
 - [Schedule BigQuery queries](https://cloud.google.com/bigquery/docs/scheduling-queries)
 - [BigQuery transfer failure notifications](https://cloud.google.com/bigquery/docs/transfer-run-notifications)
