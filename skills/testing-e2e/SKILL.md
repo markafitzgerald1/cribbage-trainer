@@ -122,10 +122,21 @@ baselines so CI agrees with what was generated locally.
     That exits 0 with all 167 tests passing; comparing the pixels instead
     exits 1, with 29 of them failing on screenshot diffs and 138 passing.
     Those counts are as of writing and drift as specs are added, so judge
-    the run by its exit code rather than by the totals. The screenshot
-    specs still execute every interaction and locator; only the image
-    comparison is skipped, and CI adjudicates the pixels against baselines
-    it matches.
+    the run by its exit code rather than by the totals.
+
+  - Be exact about what `--ignore-snapshots` leaves running, because it is
+    less than it looks. Each spec's setup still executes — `goto`, the
+    clicks, and the waits inside `renderThenSelectTwoDiscards` — so a break
+    there still fails the run. But `toHaveScreenshot` returns before it
+    resolves its locator, waits for visual stability, or captures anything,
+    so whatever is reached only through that call goes unexercised: the
+    `modalPanel` locator in `index.screenshots.spec.ts` is never resolved,
+    leaving that test covering just the `goto` and the "Enter cards" click.
+    Confirmed by pointing `toHaveScreenshot` at a locator matching nothing,
+    which fails on the missing element normally and passes under
+    `--ignore-snapshots`. Read a green cloud run as evidence about the
+    interactions, not about the assertions those shots stand in for; CI
+    adjudicates the pixels against baselines it matches.
 
   - `--ignore-snapshots` makes a **new** screenshot spec pass vacuously:
     with no baseline written and no comparison run, a visual guard added in
