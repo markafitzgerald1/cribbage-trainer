@@ -79,10 +79,14 @@ the decision is made and the console work confirms it.
   cost, credits, and net billed amount separately.
 - **Missing-table alert recipient:** Pending. Use the operational owner, plus a
   backup if one exists.
+- **Canary scheduler job:** Pending. Record its project, region, schedule, GA4
+  stream, and first exported `export_health_canary` date. Never record its API
+  secret in this file, an issue, a PR, source control, or a screenshot.
 
 ## Placeholders used below
 
-Before running SQL, replace all uppercase placeholders:
+Before following the console paths or running SQL, replace all uppercase
+placeholders:
 
 - `PROJECT_ID`: the billing-enabled Google Cloud project ID.
 - `PROPERTY_ID`: the numeric production GA4 property ID.
@@ -91,6 +95,11 @@ Before running SQL, replace all uppercase placeholders:
 - `YYYYMMDD`: the suffix of one exported daily table.
 - `REGION`: the BigQuery region, such as `northamerica-northeast2`.
 - `BASELINE_START_DATE`: the first complete export date, formatted `YYYY-MM-DD`.
+- `RETENTION_DAYS`: Mark's chosen finite retention in whole days; omit the
+  finite-policy query when the decision is no expiration.
+- `MEASUREMENT_ID`: the production web stream ID, beginning with `G-`.
+- `API_SECRET`: the private Measurement Protocol secret used only in the Cloud
+  Scheduler job. Never put its value in this repository or the decision record.
 
 Do not put `deal_nonce` in GA4 custom definitions. It is a UUID per hand, so it
 would immediately create a high-cardinality dimension and collapse in GA4
@@ -228,19 +237,76 @@ Do this after Google creates the export dataset.
    age** in days.
 4. Click **Save**, reopen **Details**, and confirm **Default table expiration**
    shows the chosen value or **Never**.
-5. Open the first `events_YYYYMMDD` table and inspect **Details**. Confirm its
-   **Expiration time** follows the policy. A dataset default change affects new
-   tables, not tables that already exist.
-6. If the first table does not match, open **Overview** > **Tables**, select the
-   table, open **Details**, and click **Edit details**. Under **Expiration
-   time**, choose **Never** for no expiration or **Specify date** for the finite
-   policy, then click **Save** and confirm the updated **Table info**.
-7. Check a newly created daily table after the next export. Confirm it inherited
+5. A dataset default change affects only future tables. In a new BigQuery query
+   tab, run the first query below to generate one `ALTER TABLE` statement for
+   every existing `events_YYYYMMDD` table. For finite retention, replace
+   `RETENTION_DAYS` with the recorded number of days. For no expiration, use
+   the second version instead.
+6. Copy every generated statement into a new query tab, select all of them, and
+   click **Run**. Do not update only the first table.
+7. Run the inventory query below. For no expiration, every
+   `expiration_timestamp` must be `NULL`. For finite retention, every value must
+   equal that table's creation time plus the recorded number of days.
+8. Check a newly created daily table after the next export. Confirm it inherited
    the dataset policy.
 
-For no expiration, both the dataset default and each sampled daily table must
-say **Never**. Merely upgrading from sandbox does not prove that a table's old
-60-day expiration was removed.
+Generate repairs for a finite policy:
+
+```sql
+SELECT FORMAT(
+  "ALTER TABLE `%s.%s.%s` SET OPTIONS (expiration_timestamp = TIMESTAMP '%s');",
+  table_catalog,
+  table_schema,
+  table_name,
+  FORMAT_TIMESTAMP(
+    '%Y-%m-%d %H:%M:%S UTC',
+    TIMESTAMP_ADD(creation_time, INTERVAL RETENTION_DAYS DAY),
+    'UTC'
+  )
+) AS repair_statement
+FROM `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLES`
+WHERE STARTS_WITH(table_name, 'events_')
+  AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+```
+
+Generate repairs for no expiration:
+
+```sql
+SELECT FORMAT(
+  "ALTER TABLE `%s.%s.%s` SET OPTIONS (expiration_timestamp = NULL);",
+  table_catalog,
+  table_schema,
+  table_name
+) AS repair_statement
+FROM `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLES`
+WHERE STARTS_WITH(table_name, 'events_')
+  AND table_type = 'BASE TABLE'
+ORDER BY table_name;
+```
+
+Inventory every existing export table after running the repairs:
+
+```sql
+SELECT
+  tables.table_name,
+  tables.creation_time,
+  options.option_value AS expiration_timestamp
+FROM `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLES` AS tables
+LEFT JOIN `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLE_OPTIONS`
+  AS options
+  ON tables.table_catalog = options.table_catalog
+    AND tables.table_schema = options.table_schema
+    AND tables.table_name = options.table_name
+    AND options.option_name = 'expiration_timestamp'
+WHERE STARTS_WITH(tables.table_name, 'events_')
+  AND tables.table_type = 'BASE TABLE'
+ORDER BY tables.table_name;
+```
+
+For no expiration, the dataset default, every existing daily table, and the
+newly sampled table must say **Never**. Merely upgrading from sandbox does not
+prove that a table's old 60-day expiration was removed.
 
 ### 6. Configure billing alerts
 
@@ -388,22 +454,28 @@ SELECT
     WHERE param.key = 'discard_count'
   ) AS discard_count,
   (
-    SELECT ANY_VALUE(
-      COALESCE(
-        param.value.double_value,
-        CAST(param.value.int_value AS FLOAT64)
-      )
-    ) = 1
+    SELECT COALESCE(
+      SAFE_CAST(ANY_VALUE(param.value.string_value) AS BOOL),
+      ANY_VALUE(
+        COALESCE(
+          param.value.double_value,
+          CAST(param.value.int_value AS FLOAT64)
+        )
+      ) = 1
+    )
     FROM UNNEST(event_params) AS param
     WHERE param.key = 'generated_from_seed'
   ) AS generated_from_seed,
   (
-    SELECT ANY_VALUE(
-      COALESCE(
-        param.value.double_value,
-        CAST(param.value.int_value AS FLOAT64)
-      )
-    ) = 1
+    SELECT COALESCE(
+      SAFE_CAST(ANY_VALUE(param.value.string_value) AS BOOL),
+      ANY_VALUE(
+        COALESCE(
+          param.value.double_value,
+          CAST(param.value.int_value AS FLOAT64)
+        )
+      ) = 1
+    )
     FROM UNNEST(event_params) AS param
     WHERE param.key = 'is_first_analysis'
   ) AS is_first_analysis,
@@ -424,8 +496,9 @@ WHERE event_name IN (
 ORDER BY event_time DESC;
 ```
 
-Values should match the production interaction. `deal_nonce` should join the
-events from one hand; Deal should create a new nonce whose `hand_started`
+Values should match the production interaction. The boolean flags should be
+non-null and match the sent `true` or `false` string. `deal_nonce` should join
+the events from one hand; Deal should create a new nonce whose `hand_started`
 precedes `deal_clicked`.
 
 ### 9. Keep the #665 query ready without deploying #665
@@ -493,32 +566,41 @@ WITH discard_scored AS (
       WHERE param.key = 'expected_points_loss'
     ) AS expected_points_loss,
     (
-      SELECT ANY_VALUE(
-        COALESCE(
-          param.value.double_value,
-          CAST(param.value.int_value AS FLOAT64)
-        )
-      ) = 1
+      SELECT COALESCE(
+        SAFE_CAST(ANY_VALUE(param.value.string_value) AS BOOL),
+        ANY_VALUE(
+          COALESCE(
+            param.value.double_value,
+            CAST(param.value.int_value AS FLOAT64)
+          )
+        ) = 1
+      )
       FROM UNNEST(event_params) AS param
       WHERE param.key = 'is_optimal'
     ) AS is_optimal,
     (
-      SELECT ANY_VALUE(
-        COALESCE(
-          param.value.double_value,
-          CAST(param.value.int_value AS FLOAT64)
-        )
-      ) = 1
+      SELECT COALESCE(
+        SAFE_CAST(ANY_VALUE(param.value.string_value) AS BOOL),
+        ANY_VALUE(
+          COALESCE(
+            param.value.double_value,
+            CAST(param.value.int_value AS FLOAT64)
+          )
+        ) = 1
+      )
       FROM UNNEST(event_params) AS param
       WHERE param.key = 'is_first_analysis'
     ) AS is_first_analysis,
     (
-      SELECT ANY_VALUE(
-        COALESCE(
-          param.value.double_value,
-          CAST(param.value.int_value AS FLOAT64)
-        )
-      ) = 1
+      SELECT COALESCE(
+        SAFE_CAST(ANY_VALUE(param.value.string_value) AS BOOL),
+        ANY_VALUE(
+          COALESCE(
+            param.value.double_value,
+            CAST(param.value.int_value AS FLOAT64)
+          )
+        ) = 1
+      )
       FROM UNNEST(event_params) AS param
       WHERE param.key = 'generated_from_seed'
     ) AS generated_from_seed
@@ -570,50 +652,115 @@ hands. More than one exposure per hand can legitimately carry
 then keeps only the lowest `analysis_index` for each `deal_nonce`. Keep other
 sources as separately segmented practice data.
 
-### 10. Alert when a daily export table is missing
+### 10. Create a daily canary and alert on its absence
 
-The GA4 link is not a BigQuery Data Transfer configuration with a failure-email
-toggle, so create a scheduled assertion that fails when an expected daily table
-is absent. Its own failed-run notification is the durable signal.
+GA4 may legitimately omit a daily table when a property has no events. Because
+this trainer is used intermittently, table absence alone is not evidence of a
+failed export. Send one synthetic daily canary first, then require both its
+table and event. Never include `export_health_canary` in user behavior or skill
+statistics.
 
-1. In **BigQuery**, select `PROJECT_ID`, open **Scheduled queries**, and click
-   **Create scheduled query**.
-2. Name it `GA4 daily export health`.
-3. Paste the SQL below after replacing the project and property placeholders.
-   Keep `@run_time`; BigQuery supplies it to scheduled queries.
-4. Set **Repeats** to **Daily** at an off-the-hour UTC time. Recommendation:
-   `18:05 UTC` when `PROPERTY_TIME_ZONE` is `America/Toronto`. The query checks
-   two reporting dates back, allowing the normal daily export more than a full
-   day to arrive without waiting so long that a gap goes unnoticed.
-5. Set **Processing location** to the recorded dataset region. Leave destination
-   table settings empty because this assertion writes no result table.
-6. Under **Notification options**, enable **Send email notifications**. Confirm
-   the scheduled query owner is the recorded operational owner.
-7. Save it, open its details, and choose **Schedule backfill** or **Run now** for
-   a date known to have a table. Confirm the run succeeds.
-8. Negative-check the alert once: in a copy of the query, change the expected
-   table prefix to `events_missing_` while keeping the real dataset. Run it and
-   confirm the assertion fails and the owner receives a BigQuery Data Transfer
-   Service failure email. Delete the test copy afterwards.
+1. In production GA4, open **Admin** > **Data collection and modification** >
+   **Data streams**, then open the production web stream. Record its
+   **Measurement ID**.
+2. Open **Measurement Protocol API secrets**, click **Create**, name it
+   `BigQuery export canary`, and copy the secret into a password manager. It is
+   private: never put it in client code, this repository, GitHub, screenshots,
+   or the decision record.
+3. In Google Cloud Console, select `PROJECT_ID`, open **APIs & Services** >
+   **Library**, search for **Cloud Scheduler API**, and click **Enable**. If the
+   button says **Manage**, it is already enabled.
+4. Open **Cloud Scheduler** and click **Create job**. Name it
+   `ga4-export-health-canary`, choose the recorded dataset region if available,
+   set frequency to `5 0 * * *`, and select the recorded GA4 reporting time
+   zone. This sends the canary at 00:05 on every reporting date.
+5. Click **Continue**, choose **HTTP** as the target type, set method **POST**,
+   and enter this URL after replacing both values:
+   `https://www.google-analytics.com/mp/collect?measurement_id=MEASUREMENT_ID&api_secret=API_SECRET`.
+6. Add header `Content-Type: application/json`. Enter this body exactly:
+
+   ```json
+   {
+     "client_id": "683.1",
+     "non_personalized_ads": true,
+     "events": [
+       {
+         "name": "export_health_canary",
+         "params": { "source": "cloud_scheduler" }
+       }
+     ]
+   }
+   ```
+
+7. Keep the default retry settings and click **Create**. Restrict project IAM
+   so only the operational owner and backup can inspect or edit the job; its URL
+   contains the private API secret.
+8. Open the job, click **Force run**, and confirm **Status of last execution**
+   is **Success**. A success means Google accepted the HTTP request, not that it
+   processed a valid event.
+9. After that reporting date's daily export arrives, run this query against the
+   exact table. Success is `canary_events` greater than zero. Record the table
+   and date; this proves the complete scheduler, GA4 ingestion, and export path.
+
+   ```sql
+   SELECT COUNT(*) AS canary_events
+   FROM `PROJECT_ID.analytics_PROPERTY_ID.events_YYYYMMDD`
+   WHERE event_name = 'export_health_canary';
+   ```
+
+10. In **BigQuery**, open **Scheduled queries** and click **Create scheduled
+    query**. Name it `GA4 daily export health`, then paste the SQL below after
+    replacing the project, property, and time-zone placeholders. Keep
+    `@run_time`; BigQuery supplies it.
+11. Set **Repeats** to **Daily** at an off-the-hour UTC time. Recommendation:
+    `18:05 UTC` when `PROPERTY_TIME_ZONE` is `America/Toronto`. The query checks
+    two reporting dates back, allowing the normal daily export more than a full
+    day to arrive without waiting so long that a gap goes unnoticed.
+12. Set **Processing location** to the recorded dataset region. Leave
+    destination table settings empty because this assertion writes no table.
+13. Under **Notification options**, enable **Send email notifications**. Confirm
+    the scheduled-query owner is the recorded operational owner, save it, and
+    run it for the verified canary date. Confirm the run succeeds.
+14. Negative-check the alert once: in a copy, change the event name to
+    `export_health_canary_missing`. Run it and confirm the assertion fails and
+    the owner receives a BigQuery Data Transfer Service failure email. Delete
+    the test copy afterwards.
 
 ```sql
 DECLARE checked_date DATE DEFAULT DATE_SUB(
   DATE(@run_time, 'PROPERTY_TIME_ZONE'),
   INTERVAL 2 DAY
 );
+DECLARE checked_table STRING DEFAULT FORMAT_DATE(
+  'events_%Y%m%d',
+  checked_date
+);
+DECLARE canary_count INT64 DEFAULT 0;
 
 ASSERT (
   SELECT COUNT(*) = 1
   FROM `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name = FORMAT_DATE('events_%Y%m%d', checked_date)
+  WHERE table_name = checked_table
 ) AS 'GA4 daily export table is missing; inspect the GA4 BigQuery link now';
+
+EXECUTE IMMEDIATE FORMAT(
+  "SELECT COUNT(*) " ||
+  "FROM `PROJECT_ID.analytics_PROPERTY_ID.%s` " ||
+  "WHERE event_name = 'export_health_canary'",
+  checked_table
+) INTO canary_count;
+
+ASSERT canary_count > 0
+  AS 'GA4 export canary is missing; inspect its scheduler and the export link';
 ```
 
-On an alert, immediately check **GA4 Admin** > **Product links** > **BigQuery
-links**, the Cloud billing account and payment method, the one-million-event
-standard-property limit, and the export service-account permissions. Record the
-missing date in issue #683 or a follow-up incident. Do not unlink casually:
-missed data cannot be re-exported, and relinking can create another gap.
+On an alert, first open the Cloud Scheduler job and check the expected date's
+execution. Then check its secret, payload, and the prior verified canary; **GA4
+Admin** > **Product links** > **BigQuery links**; the Cloud billing account and
+payment method; the one-million-event standard-property limit; and the export
+service-account permissions. Record the missing date in issue #683 or a
+follow-up incident. Do not unlink casually: missed data cannot be re-exported,
+and relinking can create another gap.
 
 ### 11. Measure initial monthly cost
 
@@ -682,22 +829,26 @@ Do not tick a box based on this file existing. Tick it only after the named
 evidence is recorded.
 
 - [ ] Production GA4 retention is 14 months: saved setting and verifier/date.
+- [ ] Production disclosure gate cleared: deployed policy evidence and any
+      required consent-transition evidence exist while #665 remains out of
+      production.
 - [ ] Billing-enabled non-sandbox project and region: project billing overview,
       dataset details, and completed region decision.
 - [ ] Daily export active before #665 deploys: GA4 link details plus submission
       time earlier than the production deployment of #665.
 - [ ] One daily table queried for #250: six positive event counts and no missing
       expected parameters from section 8.
-- [ ] Dataset and table expiration explicit: dataset default plus two sampled
-      daily tables match the recorded raw-data policy.
+- [ ] Dataset and table expiration explicit: dataset default, every preexisting
+      daily table, and a newly created table match the recorded raw-data policy.
 - [ ] Billing alerts and query safeguards: budget thresholds and recipients,
       both daily quotas, and per-query maximum recorded.
 - [ ] Monthly storage and query cost measured: section 11 recorded after 30
       complete days.
 - [ ] #665 keeps #683 as a deployment prerequisite: #665 and PR #732 both state
       it; do not remove the draft/merge block before the evidence above exists.
-- [ ] Operational monitoring works: scheduled assertion succeeds for a present
-      table and its negative check delivers a failure email to the owner.
+- [ ] Operational monitoring works: Cloud Scheduler's canary appears in its
+      daily table, the scheduled assertion succeeds, and its negative check
+      delivers a failure email to the owner.
 
 The Privacy Policy's warehouse-retention sentence is authored in PR #732. Do
 not edit `src/ui-react/PrivacyPolicy.tsx` in #683, but do not enable the export
