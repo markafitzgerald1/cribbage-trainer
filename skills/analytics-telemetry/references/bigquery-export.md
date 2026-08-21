@@ -240,6 +240,17 @@ the forced 60-day table expiration no longer applies.
 Record the submission time immediately. The link is active when its details
 match the decision record; data should begin flowing within 24 hours.
 
+**Evidence.** The link was submitted at 2026-08-22 00:04 UTC (2026-08-21 20:04
+EDT) and Google reported `LINK CREATED`. It exports the production web stream
+daily to `northamerica-northeast2`, with streaming off, no excluded events, and
+advertising identifiers off.
+
+**User-data export was deliberately left off.** Nothing in #665 or #666 needs
+user-scoped rows — every metric is per hand, joined on `deal_nonce` — and the
+deployed policy discloses a daily copy of analytics _events_. A `users_*` table
+is a person-scoped dataset of user properties and predictive attributes, so
+enabling it would put collection ahead of its disclosure again.
+
 ### 4. Verify Cloud permissions and the first daily table
 
 1. In Google Cloud Console, select `PROJECT_ID` and open **IAM & Admin** >
@@ -353,6 +364,9 @@ replace one wrong implicit default with another; it would not deliberately set
 Success is the scoped budget row with all four thresholds. A budget is an alert,
 not a spending cap; the query quotas in the next section are the proactive
 safeguard.
+
+**Evidence.** Mark created the scoped monthly budget on 2026-08-21 at the
+recorded USD $1 amount.
 
 ### 7. Configure query-cost safeguards
 
