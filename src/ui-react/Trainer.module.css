@@ -87,8 +87,15 @@
     padding-block: 0.2em 0;
   }
 
+  /*
+   * The lower bound is itself capped by a viewport unit: a bare rem floor
+   * grows with the device font-size setting, and this header sits above the
+   * height-tightest column, so on a phone set larger than default it pushed
+   * the consent banner into needing a scroll. At the default setting every
+   * size here is what it was.
+   */
   .app-title {
-    font-size: clamp(1rem, 1.7vw, 1.5rem);
+    font-size: clamp(min(1rem, 2vw), 1.7vw, 1.5rem);
   }
 
   .tagline {
@@ -115,12 +122,29 @@
   }
 
   /*
-   * Compact the first-run consent banner (last child) in the height-tight
-   * side-by-side column. Its text and em-based padding both track this size,
-   * which WebKit renders tallest, so keep Accept/Decline within the viewport.
+   * Compact the consent banner (last child) in the height-tight side-by-side
+   * column. Its text and em-based padding both track this size, which WebKit
+   * renders tallest, so keep the actions within the viewport.
+   *
+   * Capped by a viewport-relative size rather than left as a bare rem:
+   * mobile browsers scale rem with the device font-size setting, so a phone
+   * set larger than default inflated this cell until the banner had to be
+   * scrolled, while emulators at the default scale showed nothing wrong. The
+   * rem still wins on a wide screen, leaving desktop sizing unchanged.
    */
   .dynamic-ui > :last-child {
-    font-size: 0.8rem;
+    font-size: min(0.8rem, 1.5vw);
+    padding: 0.35em;
+  }
+
+  /*
+   * The banner's own heading and paragraph margins are em-based, so they
+   * shrink with the size above; trimming them as well is what keeps the
+   * longest of these messages — the policy update — off a scrollbar in
+   * WebKit, which renders this surface tallest.
+   */
+  .dynamic-ui > :last-child :is(h2, p) {
+    margin-block: 0.3em;
   }
 
   .dynamic-ui > :nth-child(n + 2):nth-last-child(n + 2) {

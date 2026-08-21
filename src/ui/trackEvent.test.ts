@@ -50,6 +50,21 @@ describe("trackEvent", () => {
     ["card_unselected", { dealNonce: "n", discardCount: 0 }],
     ["deal_clicked", { dealNonce: "n" }],
     [
+      "discard_scored",
+      {
+        analysisIndex: 1,
+        cribRole: "Dealer",
+        dealNonce: "n",
+        expectedPointsLoss: 1.25,
+        generatedFromSeed: false,
+        handStartSource: "deal",
+        isFirstAnalysis: true,
+        isOptimal: false,
+        schemaVersion: 1,
+        source: "interactive",
+      },
+    ],
+    [
       "hand_started",
       { dealNonce: "n", generatedFromSeed: true, source: "deal" },
     ],
@@ -85,10 +100,15 @@ describe("trackEvent", () => {
   it("sends an event only the parameters it declares", () => {
     const everyParam = {
       analysisIndex: 9,
+      cribRole: "Pone",
       dealNonce: "n",
       discardCount: 4,
+      expectedPointsLoss: 0.5,
       generatedFromSeed: true,
+      handStartSource: "manual",
       isFirstAnalysis: true,
+      isOptimal: true,
+      schemaVersion: 1,
       source: "deal",
     };
     const sent = FULL_PAYLOADS.map((event) =>

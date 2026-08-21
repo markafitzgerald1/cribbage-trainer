@@ -5,10 +5,15 @@ import {
   screen,
 } from "@testing-library/react";
 import { Trainer, type TrainerProps } from "./Trainer";
+import {
+  clearAnalyticsChoice,
+  storeAnalyticsChoice,
+} from "../ui/analyticsConsent";
 import { expect, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
+import type { TrainerEventName } from "../ui/trackEvent";
 import type { UserEvent } from "@testing-library/user-event";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
@@ -134,3 +139,25 @@ export const getHandText = (container: HTMLElement) =>
 export const SIX_HEARTS_HAND = "AH,2H,3H,4H,5H,6H";
 
 export const SIX_SPADES_HAND = "AS,2S,3S,4S,5S,6S";
+
+export const startTelemetryCapture = (consent: boolean | null) => {
+  window.history.replaceState(null, "", "/");
+  clearAnalyticsChoice();
+  if (consent !== null) {
+    storeAnalyticsChoice(consent);
+  }
+  return jest.fn<TrainerProps["trackEvent"]>();
+};
+
+export type TelemetryCapture = ReturnType<typeof startTelemetryCapture>;
+
+// Filtered by name rather than taken from the end of the calls, because a rendered analysis reports its decision quality after the exposure that revealed it.
+export const eventCalls = (
+  trackEvent: TelemetryCapture,
+  eventName: TrainerEventName,
+) => trackEvent.mock.calls.filter(([, name]) => name === eventName);
+
+export const lastEventParams = (
+  trackEvent: TelemetryCapture,
+  eventName: TrainerEventName,
+) => eventCalls(trackEvent, eventName).at(-1)?.[2];

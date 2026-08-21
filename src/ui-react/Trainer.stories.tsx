@@ -1,4 +1,14 @@
 import {
+  DECISION_QUALITY_MEASUREMENT,
+  PRIVACY_POLICY_VERSION,
+  acceptedMeasurementsKey,
+  analyticsConsentKey,
+  answeredPolicyVersionKey,
+  clearAnalyticsChoice,
+  declinedMeasurementsKey,
+  storeAnalyticsChoice,
+} from "../ui/analyticsConsent";
+import {
   type Meta,
   SORT_ORDER_NAMES,
   SortOrder,
@@ -6,10 +16,10 @@ import {
   playToggle,
 } from "./stories.common";
 import { Rank, Suit, createCard } from "../game/Card";
-import { Trainer, analyticsConsentKey } from "./Trainer";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
+import { Trainer } from "./Trainer";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { getSortOrderName } from "../ui/SortOrderName";
 
@@ -23,7 +33,7 @@ const meta = {
     trackEvent: () => null,
   },
   beforeEach: () => () => {
-    localStorage.removeItem(analyticsConsentKey);
+    clearAnalyticsChoice();
   },
   component: Trainer,
   parameters: {
@@ -87,8 +97,31 @@ export const AnalyticsDisabled = {
   },
 };
 
-export const StoredConsentGiven = {
-  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+type StoryPlay = (args: { canvasElement: HTMLElement }) => Promise<void>;
+
+// The choice has to be stored while the story renders, since the trainer reads it once on mount.
+const createStoredChoiceStory = (storeChoice: () => void, play: StoryPlay) => ({
+  play,
+  render: ({
+    generateRandomNumber,
+    loadGoogleAnalytics,
+    trackEvent,
+  }: Parameters<typeof Trainer>[0]) => {
+    storeChoice();
+
+    return (
+      <Trainer
+        generateRandomNumber={generateRandomNumber}
+        loadGoogleAnalytics={loadGoogleAnalytics}
+        trackEvent={trackEvent}
+      />
+    );
+  },
+});
+
+export const StoredConsentGiven = createStoredChoiceStory(
+  () => storeAnalyticsChoice(true),
+  async ({ canvasElement }) => {
     // When consent is already stored, only the persistent settings links are shown.
     // Wait for fade-in animation to complete before checking visibility
     await waitFor(
@@ -109,22 +142,59 @@ export const StoredConsentGiven = {
       }),
     ).toBeVisible();
   },
-  render: ({
-    generateRandomNumber,
-    loadGoogleAnalytics,
-    trackEvent,
-  }: Parameters<typeof Trainer>[0]) => {
-    localStorage.setItem(analyticsConsentKey, "true");
+);
 
-    return (
-      <Trainer
-        generateRandomNumber={generateRandomNumber}
-        loadGoogleAnalytics={loadGoogleAnalytics}
-        trackEvent={trackEvent}
-      />
+// A browser that answered the policy in force before decision-quality collection existed is asked about the addition alone.
+const seedConsentPredatingThePolicy = () => {
+  localStorage.setItem(analyticsConsentKey, "true");
+};
+
+export const StoredConsentPredatingThePolicy = createStoredChoiceStory(
+  seedConsentPredatingThePolicy,
+  async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent("Analytics Consent Update");
+
+    await fireEvent.click(getButton(canvasElement, "Decline"));
+
+    await expect(canvasElement).not.toHaveTextContent(
+      "Analytics Consent Update",
+    );
+    await expect(localStorage.getItem(analyticsConsentKey)).toBe("true");
+  },
+);
+
+const grantedMeasurements = () =>
+  localStorage.getItem(acceptedMeasurementsKey) ?? "";
+
+// Accepting the update grants the measurement it asked about, without re-answering analytics itself.
+export const StoredConsentAcceptingTheUpdate = createStoredChoiceStory(
+  seedConsentPredatingThePolicy,
+  async ({ canvasElement }) => {
+    await fireEvent.click(getButton(canvasElement, "Accept"));
+
+    await expect(grantedMeasurements()).toContain(DECISION_QUALITY_MEASUREMENT);
+    await expect(canvasElement).not.toHaveTextContent(
+      "Analytics Consent Update",
     );
   },
-};
+);
+
+// A browser that declined the addition can still turn it on from Analytics Settings.
+export const DecisionQualityAllowedFromSettings = createStoredChoiceStory(
+  () => {
+    localStorage.setItem(analyticsConsentKey, "true");
+    localStorage.setItem(answeredPolicyVersionKey, PRIVACY_POLICY_VERSION);
+    localStorage.setItem(declinedMeasurementsKey, DECISION_QUALITY_MEASUREMENT);
+  },
+  async ({ canvasElement }) => {
+    await fireEvent.click(getButton(canvasElement, "Analytics Settings"));
+    await fireEvent.click(
+      getButton(canvasElement, "Allow decision-quality measurements"),
+    );
+
+    await expect(grantedMeasurements()).toContain(DECISION_QUALITY_MEASUREMENT);
+  },
+);
 
 export const DealNewHandReplacesCards = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {

@@ -252,6 +252,16 @@
   fine (the tell: `cqw`-sized parts fit while rem-floored parts overflow).
   Stacked-mode controls are sized entirely in container units; an e2e guard
   asserts they fit the portrait viewport at a 28px root font.
+- The rem-floor trap is not only about control rows: any rem **lower
+  bound** inflates on a phone whose font-size setting is above default,
+  including `clamp(1rem, …)`. In side-by-side mode the app title and the
+  consent cell were floored that way, and on real hardware the consent
+  banner had to be scrolled to reach its buttons while every emulated check
+  at the default scale passed. Cap such a floor with a viewport unit —
+  `clamp(min(1rem, 2vw), …)`, `min(0.8rem, 1.5vw)` — which leaves every
+  default-scale size unchanged, and guard it the way portrait already does:
+  the same measurement repeated at a 28px root font. That guard failed on
+  all five browser projects before the fix and passes after it.
 - `line-height: normal` is not proportional across font sizes (font-metric
   pixel rounding differs), so pin an explicit line-height wherever an
   aspect-ratio invariant depends on text height.
