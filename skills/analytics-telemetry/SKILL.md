@@ -322,6 +322,15 @@ mean anything.
   is "accepted at or after", which is why the versions are zero-padded ISO
   dates: the comparison is lexicographic. A new gated measurement gets its
   own frozen constant; none of them may track `PRIVACY_POLICY_VERSION`.
+- A measurement's `introducedIn` must equal the `PRIVACY_POLICY_VERSION` of
+  the release whose banner first asks about it, and the two have to move in
+  the same commit. Bumping the policy version alone leaves the measurement
+  introduced by an older one, and `storePolicyUpdateChoice` grants only what
+  came after the version the browser last answered — so the banner asks, the
+  user accepts, and nothing is granted. Nothing catches that today: the two
+  constants were equal from the start, and a browser that has answered no
+  version at all is granted everything regardless, which is the only case the
+  specs can currently express.
 - Declining the addition must not travel through the dialog's `onChange`.
   That callback is also withdrawal: `onChange(false)` from Analytics
   Settings turns analytics off and reloads the page, whereas declining the

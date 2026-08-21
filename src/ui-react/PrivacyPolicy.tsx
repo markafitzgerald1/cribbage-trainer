@@ -180,7 +180,7 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
       until you accept it.
     </p>
     <p>
-      The August 19, 2026 update added the card-free discard decision-quality
+      The August 22, 2026 update added the card-free discard decision-quality
       measurements listed above, so that aggregate skill statistics can be
       reported back to players later. It is asked for separately: analytics
       accepted under the July 23, 2026 policy continues unchanged whether you

@@ -4,7 +4,7 @@
  * without discarding the answer already given to the narrower one, which is
  * what rotating the consent key would do.
  */
-export const PRIVACY_POLICY_VERSION = "2026-08-19";
+export const PRIVACY_POLICY_VERSION = "2026-08-22";
 
 export const DECISION_QUALITY_MEASUREMENT = "decisionQuality";
 
@@ -17,7 +17,7 @@ export const DECISION_QUALITY_MEASUREMENT = "decisionQuality";
  * one declined earlier, depending on which way the comparison ran.
  */
 const gatedMeasurements = [
-  { introducedIn: "2026-08-19", name: DECISION_QUALITY_MEASUREMENT },
+  { introducedIn: "2026-08-22", name: DECISION_QUALITY_MEASUREMENT },
 ] as const;
 
 export const analyticsConsentKey = "analyticsConsent-2026-07-23";
