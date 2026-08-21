@@ -138,12 +138,20 @@ baselines so CI agrees with what was generated locally.
     interactions, not about the assertions those shots stand in for; CI
     adjudicates the pixels against baselines it matches.
 
-  - `--ignore-snapshots` makes a **new** screenshot spec pass vacuously:
+  - `--ignore-snapshots` makes a **new** screenshot shot pass vacuously:
     with no baseline written and no comparison run, a visual guard added in
-    a cloud session goes green while proving nothing. CI adjudicating the
-    pixels covers existing baselines, not new ones. Author a new visual
-    guard on a machine that owns the baselines, or land the spec and treat
-    the first CI run as the only evidence it works.
+    a cloud session goes green while proving nothing. Landing it does not
+    validate it either. Without a committed baseline Playwright's default
+    `missing` mode writes the actual image and fails, so that run reports
+    the absent baseline rather than any comparison — a new shot run without
+    `--update-snapshots` fails with "A snapshot doesn't exist at
+    ..., writing actual." The guard is proven only once a baseline
+    generated where baselines are owned has been reviewed, committed, and
+    compared by a later run, so author new visual cases there rather than
+    in a cloud session. Add them to `index.screenshots.spec.ts` too:
+    its snapshots directory is the only one the `docker:` scripts mount
+    back, so a new spec file's generated baseline is written inside the
+    container and lost.
   - Do not raise `maxDiffPixels` to make a cloud session's pixels pass, and
     do not regenerate baselines there. Measured on that host: its glyph
     antialiasing needs roughly 47,000 against the configured 800, while a
