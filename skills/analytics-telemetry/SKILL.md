@@ -193,10 +193,11 @@ be inferred from repository changes.
   segmented practice data.
 - GA4 BigQuery export stores a numeric parameter in `int_value` when its value
   is a whole number and in `double_value` otherwise. Every warehouse numeric
-  read must use
-  `COALESCE(value.double_value, CAST(value.int_value AS FLOAT64))`. Reading
-  only `double_value` silently removes every zero-loss optimal discard, the
-  largest single decision-quality group, as well as integer schema versions.
+  read, after `UNNEST(event_params) AS param`, must use
+  `COALESCE(param.value.double_value, CAST(param.value.int_value AS FLOAT64))`.
+  Reading only `double_value` silently removes every zero-loss optimal discard,
+  the largest single decision-quality group, as well as integer schema
+  versions.
 - `deal_nonce` belongs in BigQuery joins but never in GA4 custom definitions.
   Its per-hand UUID cardinality would immediately exceed dimension guidance and
   collapse GA4 reports into `(other)` rows.

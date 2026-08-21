@@ -58,6 +58,8 @@ the decision is made and the console work confirms it.
   costs and query quotas isolate this export.
 - **GA4 property ID:** Pending. Copy the production property ID, not the test
   property.
+- **GA4 reporting time zone:** Pending. Record the production property's time
+  zone. For Toronto, use `America/Toronto` in the scheduled query.
 - **Export dataset:** Pending. Google creates `analytics_<property_id>` after
   the link is submitted.
 - **Link submitted at:** Pending. Record an ISO 8601 time and time zone.
@@ -77,6 +79,8 @@ Before running SQL, replace all uppercase placeholders:
 
 - `PROJECT_ID`: the billing-enabled Google Cloud project ID.
 - `PROPERTY_ID`: the numeric production GA4 property ID.
+- `PROPERTY_TIME_ZONE`: the production GA4 reporting time zone, such as
+  `America/Toronto`.
 - `YYYYMMDD`: the suffix of one exported daily table.
 - `REGION`: the BigQuery region, such as `northamerica-northeast2`.
 
@@ -91,16 +95,18 @@ reports. BigQuery can query and join it directly without registering it.
 1. Sign in to Google Analytics and use the property selector to select the
    production Cribbage Trainer property. Confirm its property ID against the
    decision record.
-2. Open **Admin**.
-3. Under the property settings, open **Data collection and modification** >
+2. Open **Admin** > **Property details**. Record **Reporting time zone**. If it
+   is Toronto, record `America/Toronto` for the SQL placeholder.
+3. Return to **Admin**.
+4. Under the property settings, open **Data collection and modification** >
    **Data retention**. Google's older navigation labels the same page
    **Data Settings** > **Data Retention**.
-4. Set **Event data retention** to **14 months**.
-5. Confirm **Reset user data on new activity** is off. That matches the current
+5. Set **Event data retention** to **14 months**.
+6. Confirm **Reset user data on new activity** is off. That matches the current
    policy decision and prevents an active user identifier from being retained
    indefinitely; this switch affects user-level data only.
-6. Click **Save**.
-7. Reopen **Data retention** and confirm the page still shows **14 months** and
+7. Click **Save**.
+8. Reopen **Data retention** and confirm the page still shows **14 months** and
    reset off. Record the verifier and date in the decision record.
 
 Success is the saved production property showing 14 months. This setting does
@@ -190,9 +196,12 @@ Do this after Google creates the export dataset.
    shows the chosen value or **Never**.
 5. Open the first `events_YYYYMMDD` table and inspect **Details**. Confirm its
    **Expiration time** follows the policy. A dataset default change affects new
-   tables, not tables that already exist, so clear or set the first table's
-   expiration separately if it does not match.
-6. Check a newly created daily table after the next export. Confirm it inherited
+   tables, not tables that already exist.
+6. If the first table does not match, open **Overview** > **Tables**, select the
+   table, open **Details**, and click **Edit details**. Under **Expiration
+   time**, choose **Never** for no expiration or **Specify date** for the finite
+   policy, then click **Save** and confirm the updated **Table info**.
+7. Check a newly created daily table after the next export. Confirm it inherited
    the dataset policy.
 
 For no expiration, both the dataset default and each sampled daily table must
@@ -482,12 +491,20 @@ WITH discard_scored AS (
   FROM `PROJECT_ID.analytics_PROPERTY_ID.events_YYYYMMDD`
   WHERE event_name = 'discard_scored'
 ),
-population_skill AS (
+population_candidates AS (
   SELECT *
   FROM discard_scored
   WHERE is_first_analysis = TRUE
     AND generated_from_seed = FALSE
     AND hand_start_source IN ('initial', 'deal')
+),
+population_skill AS (
+  SELECT *
+  FROM population_candidates
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY deal_nonce
+    ORDER BY analysis_index, event_time
+  ) = 1
 )
 SELECT
   schema_version,
@@ -514,7 +531,10 @@ AND hand_start_source IN ('initial', 'deal')
 ```
 
 Do not weaken it to the first two clauses: that silently admits manually typed
-hands. Keep other sources as separately segmented practice data.
+hands. More than one exposure per hand can legitimately carry
+`is_first_analysis = TRUE` when earlier results never rendered, so the query
+then keeps only the lowest `analysis_index` for each `deal_nonce`. Keep other
+sources as separately segmented practice data.
 
 ### 10. Alert when a daily export table is missing
 
@@ -528,23 +548,23 @@ is absent. Its own failed-run notification is the durable signal.
 3. Paste the SQL below after replacing the project and property placeholders.
    Keep `@run_time`; BigQuery supplies it to scheduled queries.
 4. Set **Repeats** to **Daily** at an off-the-hour UTC time. Recommendation:
-   `18:05 UTC`. The query checks two reporting dates back, allowing the normal
-   daily export more than a full day to arrive without waiting so long that a
-   gap goes unnoticed.
+   `18:05 UTC` when `PROPERTY_TIME_ZONE` is `America/Toronto`. The query checks
+   two reporting dates back, allowing the normal daily export more than a full
+   day to arrive without waiting so long that a gap goes unnoticed.
 5. Set **Processing location** to the recorded dataset region. Leave destination
    table settings empty because this assertion writes no result table.
 6. Under **Notification options**, enable **Send email notifications**. Confirm
    the scheduled query owner is the recorded operational owner.
 7. Save it, open its details, and choose **Schedule backfill** or **Run now** for
    a date known to have a table. Confirm the run succeeds.
-8. Negative-check the alert once: temporarily change `PROPERTY_ID` in a copy of
-   the query to a nonexistent dataset or change the expected table prefix, run
-   it, and confirm the owner receives a BigQuery Data Transfer Service failure
-   email. Delete the test copy afterwards.
+8. Negative-check the alert once: in a copy of the query, change the expected
+   table prefix to `events_missing_` while keeping the real dataset. Run it and
+   confirm the assertion fails and the owner receives a BigQuery Data Transfer
+   Service failure email. Delete the test copy afterwards.
 
 ```sql
 DECLARE checked_date DATE DEFAULT DATE_SUB(
-  DATE(@run_time, 'America/Toronto'),
+  DATE(@run_time, 'PROPERTY_TIME_ZONE'),
   INTERVAL 2 DAY
 );
 
@@ -642,6 +662,7 @@ edit `src/ui-react/PrivacyPolicy.tsx` in #683.
 - [GA4 data retention](https://support.google.com/analytics/answer/7667196)
 - [BigQuery locations](https://cloud.google.com/bigquery/docs/locations)
 - [Update dataset expiration](https://cloud.google.com/bigquery/docs/updating-datasets)
+- [Update table expiration](https://cloud.google.com/bigquery/docs/managing-tables)
 - [BigQuery query cost controls](https://cloud.google.com/bigquery/docs/best-practices-costs)
 - [BigQuery custom query quotas](https://cloud.google.com/bigquery/docs/custom-quotas)
 - [Cloud Billing budgets](https://cloud.google.com/billing/docs/how-to/budgets)
