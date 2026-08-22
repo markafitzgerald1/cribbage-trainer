@@ -342,6 +342,12 @@ must show the recorded 425-day policy. Merely upgrading from sandbox would
 replace one wrong implicit default with another; it would not deliberately set
 14-month retention or repair the old 60-day expirations.
 
+**Evidence, 2026-08-22.** The dataset `analytics_458709208` appeared at 11:04
+EDT and its default table expiration was set to 425 days. `events_20260821`
+had already been created and so did not inherit that default; it was given an
+explicit `expiration_timestamp` of 2027-10-20, which is 425 days after its
+reporting date.
+
 ### 6. Configure billing alerts
 
 1. In Google Cloud Console, select `PROJECT_ID` before opening **Billing**.
@@ -543,6 +549,26 @@ Values should match the production interaction. The boolean flags should be
 non-null and match the sent `true` or `false` string. `deal_nonce` should join
 the events from one hand; Deal should create a new nonce whose `hand_started`
 precedes `deal_clicked`.
+
+**Evidence, 2026-08-22.** The query ran against `events_20260821`, a partial
+day covering activity after the link was created. Five of the six #250 events
+were present with every expected parameter and no missing ones:
+`hand_started` 15, `card_selected` 28, `analysis_shown` 14, `analysis_unshown`
+14, `deal_clicked` 14. `card_unselected` was absent because no card was
+un-selected during that session, which is the absence of an action that was
+never performed rather than a gap in the export.
+
+The counts corroborate each other: fifteen hands started is fourteen deals plus
+the initial hand, twenty-eight card selections is two per hand, and each of the
+fourteen completed discards was both shown and later closed.
+
+**The card-free claim was also verified against transmitted data.** Every row's
+`page_location` is exactly
+`https://markafitzgerald1.github.io/cribbage-trainer/`, with no query string, so
+the hands, roles, discards and seeds the trainer keeps in the URL never reached
+Google Analytics. That claim had only ever been checked against the code before:
+Google Analytics strips query strings from its own reports, so the export is the
+first place it could be confirmed.
 
 ### 9. Keep the #665 query ready without deploying #665
 
@@ -875,8 +901,8 @@ evidence is recorded.
       already set, no change needed.
 - [x] Production disclosure gate cleared: PR #736 deployed at `cc5a81c` on
       2026-08-21, verified live by Mark, with #665 still out of production.
-- [ ] Billing-enabled non-sandbox project and region: project billing overview,
-      dataset details, and completed region decision.
+- [x] Billing-enabled non-sandbox project and region: `cribbage-trainer-analytics`
+      on a paid account, dataset `analytics_458709208` in `northamerica-northeast2`.
 - [ ] Daily export active before #665 deploys: GA4 link details plus submission
       time earlier than the production deployment of #665.
 - [ ] One daily table queried for #250: six positive event counts and no missing
