@@ -54,6 +54,10 @@ jobs:
               ;;
             *)
               if [ -n "${REPORTING_DATE}" ]; then
+                # Noon rather than midnight: a backfill names a date, and local
+                # noon is the one hour of the day that never falls inside a
+                # daylight-saving gap or repeat, so it resolves to exactly one
+                # instant on every date including the two transitions.
                 stamp=$(TZ="${PROPERTY_TIME_ZONE}" date -d "${REPORTING_DATE} 12:00:00" +%s)
               else
                 stamp="${now}"
