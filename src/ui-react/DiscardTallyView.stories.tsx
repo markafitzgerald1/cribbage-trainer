@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { expect } from "storybook/test";
 
@@ -12,30 +13,27 @@ const meta = {
 } satisfies Meta<typeof DiscardTallyView>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {
-    summary: {
-      decisions: 24,
-      meanExpectedPointsLoss: 0.7361,
-      optimalDecisions: 9,
-    },
-  },
+const summaryOf = (
+  decisions: number,
+  meanExpectedPointsLoss: number | null,
+  optimalDecisions: number,
+): DiscardTallySummary => ({
+  decisions,
+  meanExpectedPointsLoss,
+  optimalDecisions,
+});
+
+export const Default: StoryObj<typeof meta> = {
+  args: { summary: summaryOf(24, 0.7361, 9) },
   play: async ({ canvas }) => {
     await expect(canvas.getByText("0.74")).toBeVisible();
   },
 };
 
 // A player who has always taken the top option still has an average, and it is zero rather than absent.
-export const FaultlessSoFar: Story = {
-  args: {
-    summary: {
-      decisions: 3,
-      meanExpectedPointsLoss: 0,
-      optimalDecisions: 3,
-    },
-  },
+export const FaultlessSoFar: StoryObj<typeof meta> = {
+  args: { summary: summaryOf(3, 0, 3) },
   play: async ({ canvas }) => {
     await expect(canvas.getByText("0.00")).toBeVisible();
   },
@@ -45,14 +43,8 @@ export const FaultlessSoFar: Story = {
  * Nothing is shown before a first discard is completed. A zero here would
  * read as faultless play rather than as an absence of evidence.
  */
-export const NoDecisionsYet: Story = {
-  args: {
-    summary: {
-      decisions: 0,
-      meanExpectedPointsLoss: null,
-      optimalDecisions: 0,
-    },
-  },
+export const NoDecisionsYet: StoryObj<typeof meta> = {
+  args: { summary: summaryOf(0, null, 0) },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.textContent).toBe("");
   },

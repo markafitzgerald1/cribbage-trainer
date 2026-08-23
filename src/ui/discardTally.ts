@@ -209,8 +209,8 @@ const addToLifetime = (
       };
 
 /*
- * Idempotent by hand rather than by call. Deduplicating here rather than in
- * the caller is what makes a reload safe: a completed discard restored from
+ * Idempotent by hand rather than by call. Collapsing repeats here rather
+ * than in the caller is what makes a reload safe: a completed discard restored from
  * its own URL renders exactly as a fresh one does, and no amount of care in
  * a component can tell the two apart.
  */
