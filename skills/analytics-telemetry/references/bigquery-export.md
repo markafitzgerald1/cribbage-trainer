@@ -82,30 +82,34 @@ as `Pending` until Mark performs and verifies each console step.
 
 ### Console evidence to record
 
-- **BigQuery project ID:** Pending. Use a dedicated billing-enabled project so
-  costs and query quotas isolate this export.
-- **GA4 property ID:** Pending. Copy the production property ID, not the test
-  property.
-- **GA4 reporting time zone:** Pending. Record the production property's time
-  zone in IANA form and use it as `PROPERTY_TIME_ZONE` in the scheduled query.
-- **Export dataset:** Pending. Google creates `analytics_<property_id>` after
-  the link is submitted.
-- **Link submitted at:** Pending. Record an ISO 8601 time and time zone.
-- **First daily table verified:** Pending. Record the exact
-  `events_YYYYMMDD` table and query date.
-- **Retention confirmed by:** Pending. Record the account and date that checked
-  dataset and table expiration.
-- **Cost baseline start date, inclusive:** Pending. Record the first complete
-  export date in the GA4 reporting time zone.
+- **BigQuery project ID:** `cribbage-trainer-analytics`, dedicated and
+  billing-enabled, so costs and query quotas isolate this export.
+- **GA4 property ID:** `458709208`, the production property rather than the
+  test one.
+- **GA4 reporting time zone:** North American Eastern; use `America/Toronto`
+  as `PROPERTY_TIME_ZONE` in the scheduled query.
+- **Export dataset:** `analytics_458709208`, created by Google on 2026-08-22
+  at 11:04 EDT, about 13 hours after the link was submitted.
+- **Link submitted at:** 2026-08-21T22:04Z, which was 18:04 EDT.
+- **First daily table verified:** `events_20260821`, queried on 2026-08-22.
+  It is a partial day, covering only the hours after the link was created.
+- **Retention confirmed by:** Mark on 2026-08-22, covering the dataset default
+  and the one table that predated it.
+- **Cost baseline start date, inclusive:** Pending until #665 is deployed,
+  since the baseline measures a production workload that does not exist yet.
+  Record the first complete export date in the GA4 reporting time zone.
 - **Cost baseline end date, exclusive:** Pending. Record the date exactly 30
   days after the start date.
 - **Measured monthly cost:** Pending. Record storage usage, query bytes, gross
   cost, credits, and net billed amount separately.
-- **Missing-table alert recipient:** Pending. Use the operational owner, plus a
-  backup if one exists.
-- **Canary scheduler job:** Pending. Record its project, region, schedule, GA4
-  stream, and first exported `export_health_canary` date. Never record its API
-  secret in this file, an issue, a PR, source control, or a screenshot.
+- **Missing-table alert recipient:** Mark, the sole operational owner, with no
+  backup by decision. The alert itself is not configured yet; see section 10.
+- **Canary emitter:** `.github/workflows/bigquery-export-canary.yml`, run
+  daily at `5 17 * * *` against the production web stream, authenticated by the
+  repository secret `GA4_MEASUREMENT_PROTOCOL_SECRET`. First exported
+  `export_health_canary` date: Pending, and recordable only once the workflow
+  reaches the default branch. Never record its API secret in this file, an
+  issue, a PR, source control, or a screenshot.
 
 ## Placeholders used below
 
@@ -121,8 +125,9 @@ placeholders:
 - `RETENTION_DAYS`: `425`, the recorded 14-month raw-table retention expressed
   as the whole-day value BigQuery requires.
 - `MEASUREMENT_ID`: the production web stream ID, beginning with `G-`.
-- `API_SECRET`: the private Measurement Protocol secret used only in the Cloud
-  Scheduler job. Never put its value in this repository or the decision record.
+- `API_SECRET`: the private Measurement Protocol secret, held only as the
+  GitHub Actions repository secret `GA4_MEASUREMENT_PROTOCOL_SECRET`. Never put
+  its value in this repository or the decision record.
 
 Do not put `deal_nonce` in GA4 custom definitions. It is a UUID per hand, so it
 would immediately create a high-cardinality dimension and collapse in GA4
@@ -777,6 +782,22 @@ delayed run landing on the adjacent reporting date, leaving one day with two
 canaries and another with none; GitHub's scheduled runs can be delayed well
 beyond an hour.
 
+Timing alone is not enough, because a run can also be retried by hand a day
+later, so the event carries an explicit `timestamp_micros`. A scheduled run
+stamps the most recent cron fire at or before it started rather than the moment
+it executed, which keeps a delayed or retried run attached to the day it was
+meant to cover. The workflow refuses a stamp in the future, and refuses one
+older than 71 hours, since Google discards an event backdated past 72 and would
+otherwise accept the request while leaving the gap open. It also sends the
+intended date as a `reporting_date` parameter, so a row states which day it
+stands for and a stamp that slipped is visible in the table rather than only in
+a workflow log that expires. Any Eastern zone identifier yields the same dates,
+so `America/Toronto` in the workflow matches a property set to Toronto or to
+New York.
+
+To cover a day whose run failed, dispatch the workflow with `reporting_date`
+set to that day, within the 71-hour window.
+
 1. In production GA4, open **Admin** > **Data collection and modification** >
    **Data streams** and open the production web stream.
 2. Open **Measurement Protocol API secrets**, click **Create**, and name it
@@ -786,14 +807,15 @@ beyond an hour.
    requests, screenshots, or the decision record. The measurement ID comes from
    the existing `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID` repository variable.
 3. Run the workflow once by hand from the **Actions** tab using **Run
-   workflow**, and confirm it succeeds. The Measurement Protocol answers `204`
-   for an accepted event and says nothing about a rejected one, so a green run
-   proves the request was accepted rather than that the event was recorded.
-   Step 4 is what confirms it arrived.
+   workflow**, leaving `reporting_date` empty, and confirm it succeeds. The run
+   summary names the reporting date and the table to look in. The Measurement
+   Protocol answers `204` for an accepted event and says nothing about a
+   rejected one, so a green run proves the request was accepted rather than
+   that the event was recorded. Step 4 is what confirms it arrived.
 
 4. After that reporting date's daily export arrives, run this query against the
    exact table. Success is `canary_events` greater than zero. Record the table
-   and date; this proves the complete scheduler, GA4 ingestion, and export path.
+   and date; this proves the whole path: workflow, GA4 ingestion, and export.
 
    ```sql
    SELECT COUNT(*) AS canary_events
@@ -844,7 +866,7 @@ EXECUTE IMMEDIATE FORMAT(
 ) INTO canary_count;
 
 ASSERT canary_count > 0
-  AS 'GA4 export canary is missing; inspect its scheduler and the export link';
+  AS 'GA4 export canary is missing; inspect its workflow and the export link';
 ```
 
 On an alert, first open the canary workflow's runs in the GitHub Actions tab
@@ -942,9 +964,10 @@ evidence is recorded.
 - [ ] Monthly storage and query cost measured as a follow-up: section 11 records
       30 complete post-deployment days without blocking #665 on evidence its
       production workload must exist to generate.
-- [ ] Operational monitoring works: Cloud Scheduler's canary appears in its
-      daily table, the scheduled assertion succeeds, and its negative check
-      delivers a failure email to the owner.
+- [ ] Operational monitoring works: the canary workflow runs from its
+      repository secret, its event appears in the matching daily table, the
+      scheduled assertion succeeds, and its negative check delivers a failure
+      email to the owner.
 
 The Privacy Policy's warehouse-retention sentence is authored in PR #732. Do
 not edit `src/ui-react/PrivacyPolicy.tsx` in #683, but do not enable the export

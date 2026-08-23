@@ -13,36 +13,111 @@ on:
     # scheduled runs can be delayed by well over an hour under load.
     - cron: "5 17 * * *"
   workflow_dispatch:
+    inputs:
+      reporting_date:
+        description: >-
+          Reporting date to backfill as YYYY-MM-DD, for a day whose run failed.
+          Leave empty to stamp the event at the current time.
+        required: false
+        default: ""
 
 permissions: {}
+
+env:
+  # The reporting time zone decides which daily table an event lands in, so
+  # this must track the GA4 property rather than the runner, which is UTC.
+  PROPERTY_TIME_ZONE: America/Toronto
 
 jobs:
   send-canary:
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve the reporting date this run stands for
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REPORTING_DATE: ${{ inputs.reporting_date }}
+        run: |
+          set -euo pipefail
+          now=$(date -u +%s)
+          case "${EVENT_NAME}" in
+            schedule)
+              # A scheduled run stands for its cron fire, not for the moment it
+              # executes. Deriving the most recent fire at or before now keeps a
+              # run delayed past local midnight, or retried later, stamped with
+              # the day it was meant to cover, instead of leaving that day
+              # uncovered and giving the next one two canaries.
+              stamp=$(date -u -d "today 17:05" +%s)
+              if [ "${stamp}" -gt "${now}" ]; then
+                stamp=$(date -u -d "yesterday 17:05" +%s)
+              fi
+              ;;
+            *)
+              if [ -n "${REPORTING_DATE}" ]; then
+                stamp=$(TZ="${PROPERTY_TIME_ZONE}" date -d "${REPORTING_DATE} 12:00:00" +%s)
+              else
+                stamp="${now}"
+              fi
+              ;;
+          esac
+          age=$(( now - stamp ))
+          if [ "${age}" -lt 0 ]; then
+            echo "Refusing to stamp ${age}s into the future." >&2
+            exit 1
+          fi
+          # The Measurement Protocol silently discards an event backdated more
+          # than 72 hours, so a backfill beyond that would report success while
+          # leaving the gap it was run to close. Stop an hour early, since the
+          # limit is measured at Google's ingestion rather than here.
+          if [ "${age}" -ge 255600 ]; then
+            echo "Refusing to backdate ${age}s; Google discards events older than 72 hours." >&2
+            exit 1
+          fi
+          reporting_date=$(TZ="${PROPERTY_TIME_ZONE}" date -d "@${stamp}" +%F)
+          {
+            echo "stamp_micros=$(( stamp * 1000000 ))"
+            echo "reporting_date=${reporting_date}"
+          } >> "${GITHUB_OUTPUT}"
+          echo "Canary stamped for ${reporting_date} (events_${reporting_date//-/})." \
+            >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Send the canary event
         env:
           API_SECRET: ${{ secrets.GA4_MEASUREMENT_PROTOCOL_SECRET }}
           MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
+          REPORTING_DATE: ${{ steps.target.outputs.reporting_date }}
+          STAMP_MICROS: ${{ steps.target.outputs.stamp_micros }}
         run: |
           set -euo pipefail
           if [ -z "${API_SECRET}" ] || [ -z "${MEASUREMENT_ID}" ]; then
             echo "Missing GA4_MEASUREMENT_PROTOCOL_SECRET or VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID." >&2
             exit 1
           fi
+          # Carrying the intended date as a parameter as well as in the
+          # timestamp makes a row self-describing: a canary whose reporting_date
+          # disagrees with the table holding it shows the stamp slipped, which
+          # is otherwise invisible once the row has landed.
+          payload=$(cat <<JSON
+          {
+            "client_id": "683.1",
+            "non_personalized_ads": true,
+            "timestamp_micros": ${STAMP_MICROS},
+            "events": [
+              {
+                "name": "export_health_canary",
+                "params": {
+                  "reporting_date": "${REPORTING_DATE}",
+                  "source": "github_actions"
+                }
+              }
+            ]
+          }
+          JSON
+          )
           # --fail turns an HTTP error into a failed run, which GitHub emails about.
           # The Measurement Protocol answers 204 for an accepted event.
           curl --fail --silent --show-error \
             --request POST \
             --header 'Content-Type: application/json' \
-            --data '{
-              "client_id": "683.1",
-              "non_personalized_ads": true,
-              "events": [
-                {
-                  "name": "export_health_canary",
-                  "params": { "source": "github_actions" }
-                }
-              ]
-            }' \
+            --data "${payload}" \
             "https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${API_SECRET}"
