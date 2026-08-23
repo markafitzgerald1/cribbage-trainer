@@ -728,6 +728,34 @@ hands. More than one exposure per hand can legitimately carry
 then keeps only the lowest `analysis_index` for each `deal_nonce`. Keep other
 sources as separately segmented practice data.
 
+**Evidence, 2026-08-23.** The query ran against `events_20260821` and returned
+no rows, which is the expected result while `discard_scored` does not yet
+exist. That outcome establishes less than it appears to. It proves the SQL
+parses, the dataset and table resolve, and every top-level column and function
+reference is real, since a mistake in any of those raises an error rather than
+returning nothing. It proves nothing whatever about the extraction: parameter
+names are compared as string data rather than resolved as columns, so a query
+asking for a key that nothing has ever sent succeeds and yields nulls forever.
+
+The names were therefore checked separately, against the emitter rather than
+against the data. `gtag` stores whichever key it is handed, and `trackEvent`
+converts each camelCase parameter to snake_case on the way out, so the wire
+names are the converted forms. All ten keys read here agree exactly with the
+`discard_scored` allowlist in `src/ui/trackEvent.ts` on #665's branch, in both
+directions, with nothing extra on either side.
+
+Nothing enforces that agreement. A parameter renamed on one side leaves the
+other reading a key that will never arrive, and the symptom is a column of
+nulls rather than a failure, which is indistinguishable from a day nobody
+played. Re-derive the list after any rename and compare it against that
+allowlist:
+
+```bash
+awk '/^### 9\./,/^### 10\./' \
+  skills/analytics-telemetry/references/bigquery-export.md |
+  grep -oE "param\.key = '[a-z_]+'" | grep -oE "'[a-z_]+'" | tr -d "'" | sort -u
+```
+
 ### 10. Create a daily canary and alert on its absence
 
 GA4 may legitimately omit a daily table when a property has no events. Because
