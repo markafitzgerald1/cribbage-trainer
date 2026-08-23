@@ -10,6 +10,7 @@ import {
   phoneLandscapeViewport,
   requireBoundingBox,
 } from "./layoutMeasurements";
+import { discardTallyKey } from "../src/ui/discardTally";
 
 const consentActionBottom = async (page: Page, name: string) => {
   const bounds = await requireBoundingBox(
@@ -159,4 +160,52 @@ test("side-by-side privacy policy text scales with the viewport, not the compact
   expect(narrowSideBySide).toBeGreaterThanOrEqual(minPrivacyPolicyFontSizePx);
   // A wider viewport yields larger text, tracking the vw-scaled app chrome.
   expect(wideSideBySide).toBeGreaterThan(narrowSideBySide);
+});
+
+/*
+ * A returning player asked to answer a policy update has very likely also
+ * built a tally, and every guard above starts from a browser with no history,
+ * so none of them renders the two together.
+ *
+ * This cannot fail against the current stylesheet, and that was checked
+ * rather than assumed: with the tally's margin inflated to 6em the actions
+ * still sit inside the viewport, because side-by-side mode puts the tally in
+ * column two as a middle child while the banner is a last child pinned to
+ * column one. It is kept as a guard on that separation — a later change that
+ * moved the tally into the banner's column would fail here — and not as
+ * evidence that today's code was ever at risk.
+ */
+test("the policy update fits beside a tally at an enlarged root font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phoneLandscapeViewport);
+  await page.addInitScript(
+    (stored: Record<string, string>) => {
+      Object.entries(stored).forEach(([key, value]) => {
+        window.localStorage.setItem(key, value);
+      });
+    },
+    {
+      [analyticsConsentKey]: "true",
+      [discardTallyKey]: JSON.stringify({
+        lifetime: {
+          decisions: 128,
+          expectedPointsLossTotal: 157.44,
+          optimalDecisions: 61,
+        },
+        records: [],
+        version: 1,
+      }),
+    },
+  );
+  await page.goto("/");
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  await expect(page.getByText("Average cost")).toBeVisible();
+  expect(await consentActionBottom(page, "Accept")).toBeLessThanOrEqual(
+    phoneLandscapeViewport.height,
+  );
+  expect(await consentActionBottom(page, "Decline")).toBeLessThanOrEqual(
+    phoneLandscapeViewport.height,
+  );
 });

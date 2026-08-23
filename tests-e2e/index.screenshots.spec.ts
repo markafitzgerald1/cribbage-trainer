@@ -1,6 +1,23 @@
 import { expect, test } from "@playwright/test";
 import { constantHandQuery } from "./layoutMeasurements";
+import { discardTallyKey } from "../src/ui/discardTally";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
+
+/*
+ * A history deep enough to render every part of the tally, written straight
+ * into storage. The figures come from there rather than from this hand, which
+ * is what makes the shot deterministic: the seeded deep link below is study
+ * rather than play, so it adds nothing and cannot move the numbers.
+ */
+const STORED_TALLY = JSON.stringify({
+  lifetime: {
+    decisions: 9,
+    expectedPointsLossTotal: 11.07,
+    optimalDecisions: 4,
+  },
+  records: [],
+  version: 1,
+});
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
@@ -94,6 +111,19 @@ const nearSquareLandscapeViewportSize = {
   width: 1000,
 };
 
+const testDiscardTallyScreenshot = () =>
+  test("discard tally still visually the same", async ({ page }) => {
+    await page.addInitScript(
+      (stored: { readonly key: string; readonly value: string }) => {
+        window.localStorage.setItem(stored.key, stored.value);
+      },
+      { key: discardTallyKey, value: STORED_TALLY },
+    );
+    await renderThenSelectTwoDiscards(page, constantHandQuery, true);
+
+    await expect(page).toHaveScreenshot();
+  });
+
 const testScreenshots = () => {
   testInitialRenderScreenshot();
   testEnterCardsDialogScreenshot();
@@ -102,6 +132,7 @@ const testScreenshots = () => {
   testExpandedRowScreenshot();
   testDoubleExpandedScreenshot();
   testCribExpandedScreenshot();
+  testDiscardTallyScreenshot();
 };
 
 test.describe("portrait", () => {
