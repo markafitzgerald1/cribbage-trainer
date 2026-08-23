@@ -1,0 +1,159 @@
+# Sends one synthetic event per reporting day so that a missing daily
+# BigQuery table means a failed export rather than a day nobody played.
+# Without it, absence is ambiguous: this trainer is used intermittently, and
+# Google Analytics creates no table for a day that collected no events.
+name: BigQuery export canary
+
+on:
+  schedule:
+    # 17:05 UTC is early afternoon in the property's reporting time zone all
+    # year, whether it is at UTC-4 or UTC-5. Scheduling near local midnight
+    # would risk a delayed run landing on the adjacent reporting date,
+    # leaving one day with two canaries and another with none, and GitHub's
+    # scheduled runs can be delayed by well over an hour under load.
+    - cron: "5 17 * * *"
+  workflow_dispatch:
+    inputs:
+      reporting_date:
+        description: >-
+          Reporting date to backfill as YYYY-MM-DD, for a day whose run failed.
+          Leave empty to stamp the event at the current time.
+        required: false
+        default: ""
+
+# Reading this run's own creation time is what ties a scheduled run to the
+# cron fire it stands for; nothing else here needs a token.
+permissions:
+  actions: read
+
+env:
+  # The reporting time zone decides which daily table an event lands in, so
+  # this must track the GA4 property rather than the runner, which is UTC.
+  PROPERTY_TIME_ZONE: America/Toronto
+
+jobs:
+  send-canary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the reporting date this run stands for
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPORTING_DATE: ${{ inputs.reporting_date }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          now=$(date -u +%s)
+          case "${EVENT_NAME}" in
+            schedule)
+              # A re-run keeps event_name at schedule and is given no way to
+              # learn the fire it is retrying, so any date it computed would
+              # come from its own clock. Refusing is the only answer here that
+              # cannot be silently wrong.
+              if [ "${RUN_ATTEMPT}" != "1" ]; then
+                # Deliberately no suggested date. Any value computed here comes
+                # from this re-run's clock, so in the very case this guard
+                # exists for it names today rather than the day that failed,
+                # and an operator following it would duplicate today and leave
+                # the gap open. The failed attempt knows its own day; this one
+                # does not.
+                echo "Refusing to re-run a scheduled canary: this run cannot tell which day it was retrying." >&2
+                echo "Read the reporting date off the failed attempt: its job summary names the date it stamped," >&2
+                echo "and its scheduled start gives the same date if it failed before writing that line." >&2
+                echo "Then dispatch this workflow with reporting_date set to that date." >&2
+                exit 1
+              fi
+              # A first attempt stands for its cron fire, not for the moment it
+              # reached a runner, and the two can be far apart: a job queued
+              # past the next fire would read its own clock and claim that
+              # newer day, leaving its own uncovered. So derive the fire from
+              # when the run was created rather than from now. The objection to
+              # created_at elsewhere in this file is that GitHub does not
+              # document whether it survives a re-run, which cannot apply to a
+              # run that has not been re-run.
+              created=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq '.created_at' || true)
+              if [ -z "${created}" ]; then
+                echo "Refusing: could not read this run's creation time, so the fire it stands for is unknown." >&2
+                exit 1
+              fi
+              origin=$(date -u -d "${created}" +%s)
+              stamp=$(date -u -d "$(date -u -d "@${origin}" +%F) 17:05" +%s)
+              if [ "${stamp}" -gt "${origin}" ]; then
+                # UTC has no daylight saving, so one period is exactly 86400s.
+                stamp=$(( stamp - 86400 ))
+              fi
+              ;;
+            *)
+              if [ -n "${REPORTING_DATE}" ]; then
+                # Noon rather than midnight: a backfill names a date, and local
+                # noon is the one hour of the day that never falls inside a
+                # daylight-saving gap or repeat, so it resolves to exactly one
+                # instant on every date including the two transitions.
+                stamp=$(TZ="${PROPERTY_TIME_ZONE}" date -d "${REPORTING_DATE} 12:00:00" +%s)
+              else
+                stamp="${now}"
+              fi
+              ;;
+          esac
+          age=$(( now - stamp ))
+          if [ "${age}" -lt 0 ]; then
+            echo "Refusing to stamp ${age}s into the future." >&2
+            exit 1
+          fi
+          # The Measurement Protocol silently discards an event backdated more
+          # than 72 hours, so a backfill beyond that would report success while
+          # leaving the gap it was run to close. Stop an hour early, since the
+          # limit is measured at Google's ingestion rather than here.
+          if [ "${age}" -ge 255600 ]; then
+            echo "Refusing to backdate ${age}s; Google discards events older than 72 hours." >&2
+            exit 1
+          fi
+          reporting_date=$(TZ="${PROPERTY_TIME_ZONE}" date -d "@${stamp}" +%F)
+          {
+            echo "stamp_micros=$(( stamp * 1000000 ))"
+            echo "reporting_date=${reporting_date}"
+          } >> "${GITHUB_OUTPUT}"
+          echo "Canary stamped for ${reporting_date} (events_${reporting_date//-/})." \
+            >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Send the canary event
+        env:
+          API_SECRET: ${{ secrets.GA4_MEASUREMENT_PROTOCOL_SECRET }}
+          MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
+          REPORTING_DATE: ${{ steps.target.outputs.reporting_date }}
+          STAMP_MICROS: ${{ steps.target.outputs.stamp_micros }}
+        run: |
+          set -euo pipefail
+          if [ -z "${API_SECRET}" ] || [ -z "${MEASUREMENT_ID}" ]; then
+            echo "Missing GA4_MEASUREMENT_PROTOCOL_SECRET or VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID." >&2
+            exit 1
+          fi
+          # Carrying the intended date as a parameter as well as in the
+          # timestamp makes a row self-describing: a canary whose reporting_date
+          # disagrees with the table holding it shows the stamp slipped, which
+          # is otherwise invisible once the row has landed.
+          payload=$(cat <<JSON
+          {
+            "client_id": "683.1",
+            "non_personalized_ads": true,
+            "timestamp_micros": ${STAMP_MICROS},
+            "events": [
+              {
+                "name": "export_health_canary",
+                "params": {
+                  "reporting_date": "${REPORTING_DATE}",
+                  "source": "github_actions"
+                }
+              }
+            ]
+          }
+          JSON
+          )
+          # --fail turns an HTTP error into a failed run, which GitHub emails about.
+          # The Measurement Protocol answers 204 for an accepted event.
+          curl --fail --silent --show-error \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "${payload}" \
+            "https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${API_SECRET}"
