@@ -37,6 +37,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           REPORTING_DATE: ${{ inputs.reporting_date }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
           now=$(date -u +%s)
@@ -50,6 +51,21 @@ jobs:
               stamp=$(date -u -d "today 17:05" +%s)
               if [ "${stamp}" -gt "${now}" ]; then
                 stamp=$(date -u -d "yesterday 17:05" +%s)
+              fi
+              # A re-run keeps event_name at schedule and is given no way to
+              # learn the fire it is retrying, so once a later fire has passed,
+              # the arithmetic above would resolve to that newer day: the failed
+              # day would stay uncovered while the newer one took two canaries.
+              # Refusing is the only answer available here that cannot be
+              # silently wrong. Deriving the date from the run's created_at was
+              # the alternative, but GitHub does not document whether that field
+              # survives a re-run, and a guarantee resting on an unverified
+              # field is a guess wearing a fix's clothes.
+              if [ "${RUN_ATTEMPT}" != "1" ]; then
+                suggested=$(TZ="${PROPERTY_TIME_ZONE}" date -d "@${stamp}" +%F)
+                echo "Refusing to re-run a scheduled canary: this run cannot tell which day it was retrying." >&2
+                echo "Dispatch the workflow with reporting_date set to the day that failed, likely ${suggested}." >&2
+                exit 1
               fi
               ;;
             *)

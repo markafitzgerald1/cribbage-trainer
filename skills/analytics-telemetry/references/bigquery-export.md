@@ -785,10 +785,24 @@ beyond an hour.
 Timing alone is not enough, because a run can also be retried by hand a day
 later, so the event carries an explicit `timestamp_micros`. A scheduled run
 stamps the most recent cron fire at or before it started rather than the moment
-it executed, which keeps a delayed or retried run attached to the day it was
-meant to cover. The workflow refuses a stamp in the future, and refuses one
-older than 71 hours, since Google discards an event backdated past 72 and would
-otherwise accept the request while leaving the gap open. It also sends the
+it executed, which keeps a delayed run attached to the day it was meant to
+cover even when it is most of a day late.
+
+A re-run is refused rather than stamped. GitHub keeps `event_name` at
+`schedule` for a re-run and gives it no way to learn which fire it is retrying,
+so once a later fire has passed, that same arithmetic would resolve to the
+newer day: the failed day would stay uncovered while the newer one took two
+canaries, which is the exact failure the stamping exists to prevent. Deriving
+the date from the run's `created_at` would allow re-runs, but GitHub does not
+document whether that field survives one, and a guarantee resting on an
+unverified field is a guess wearing a fix's clothes. The refusal names the
+likely date, so recovery is one dated dispatch. A re-run that is merely prompt
+would in fact have been safe; it is refused too, because nothing available to
+the run distinguishes the two cases.
+
+Every path refuses a stamp in the future, and refuses one older than 71 hours,
+since Google discards an event backdated past 72 and would otherwise accept the
+request while leaving the gap open. Every path also sends the
 intended date as a `reporting_date` parameter, so a row states which day it
 stands for and a stamp that slipped is visible in the table rather than only in
 a workflow log that expires. Any Eastern zone identifier yields the same dates,
