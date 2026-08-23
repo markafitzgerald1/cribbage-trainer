@@ -729,45 +729,34 @@ failed export. Send one synthetic daily canary first, then require both its
 table and event. Never include `export_health_canary` in user behavior or skill
 statistics.
 
+**The canary is emitted from this repository, not from Cloud Scheduler.**
+`.github/workflows/bigquery-export-canary.yml` posts it daily through the
+Measurement Protocol. A workflow file is versioned, reviewed and linted with
+everything else, whereas a Scheduler job exists only in a console with nothing
+in the repository recording that it is load-bearing. It also removes a Google
+Cloud service, and a failed run is surfaced by GitHub's own notification.
+
+It runs at `5 17 * * *`, early afternoon in the reporting time zone whether
+that zone is at UTC-4 or UTC-5. Scheduling near local midnight would risk a
+delayed run landing on the adjacent reporting date, leaving one day with two
+canaries and another with none; GitHub's scheduled runs can be delayed well
+beyond an hour.
+
 1. In production GA4, open **Admin** > **Data collection and modification** >
-   **Data streams**, then open the production web stream. Record its
-   **Measurement ID**.
-2. Open **Measurement Protocol API secrets**, click **Create**, name it
-   `BigQuery export canary`, and copy the secret into a password manager. It is
-   private: never put it in client code, this repository, GitHub, screenshots,
-   or the decision record.
-3. In Google Cloud Console, select `PROJECT_ID`, open **APIs & Services** >
-   **Library**, search for **Cloud Scheduler API**, and click **Enable**. If the
-   button says **Manage**, it is already enabled.
-4. Open **Cloud Scheduler** and click **Create job**. Name it
-   `ga4-export-health-canary`, choose the recorded dataset region if available,
-   set frequency to `5 0 * * *`, and select the recorded GA4 reporting time
-   zone. This sends the canary at 00:05 on every reporting date.
-5. Click **Continue**, choose **HTTP** as the target type, set method **POST**,
-   and enter this URL after replacing both values:
-   `https://www.google-analytics.com/mp/collect?measurement_id=MEASUREMENT_ID&api_secret=API_SECRET`.
-6. Add header `Content-Type: application/json`. Enter this body exactly:
+   **Data streams** and open the production web stream.
+2. Open **Measurement Protocol API secrets**, click **Create**, and name it
+   `BigQuery export canary`. Store the value as the GitHub Actions repository
+   secret `GA4_MEASUREMENT_PROTOCOL_SECRET`, and in a password manager. It is
+   private: never put it in client code, this repository, GitHub issues or pull
+   requests, screenshots, or the decision record. The measurement ID comes from
+   the existing `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID` repository variable.
+3. Run the workflow once by hand from the **Actions** tab using **Run
+   workflow**, and confirm it succeeds. The Measurement Protocol answers `204`
+   for an accepted event and says nothing about a rejected one, so a green run
+   proves the request was accepted rather than that the event was recorded.
+   Step 4 is what confirms it arrived.
 
-   ```json
-   {
-     "client_id": "683.1",
-     "non_personalized_ads": true,
-     "events": [
-       {
-         "name": "export_health_canary",
-         "params": { "source": "cloud_scheduler" }
-       }
-     ]
-   }
-   ```
-
-7. Keep the default retry settings and click **Create**. Restrict project IAM
-   so only the operational owner and backup can inspect or edit the job; its URL
-   contains the private API secret.
-8. Open the job, click **Force run**, and confirm **Status of last execution**
-   is **Success**. A success means Google accepted the HTTP request, not that it
-   processed a valid event.
-9. After that reporting date's daily export arrives, run this query against the
+4. After that reporting date's daily export arrives, run this query against the
    exact table. Success is `canary_events` greater than zero. Record the table
    and date; this proves the complete scheduler, GA4 ingestion, and export path.
 
@@ -777,23 +766,23 @@ statistics.
    WHERE event_name = 'export_health_canary';
    ```
 
-10. In **BigQuery**, open **Scheduled queries** and click **Create scheduled
-    query**. Name it `GA4 daily export health`, then paste the SQL below after
-    replacing the project, property, and time-zone placeholders. Keep
-    `@run_time`; BigQuery supplies it.
-11. Set **Repeats** to **Daily** at an off-the-hour UTC time. Recommendation:
-    `18:05 UTC` for a `PROPERTY_TIME_ZONE` at UTC-4 or UTC-5. The query checks
-    two reporting dates back, allowing the normal daily export more than a full
-    day to arrive without waiting so long that a gap goes unnoticed.
-12. Set **Processing location** to the recorded dataset region. Leave
-    destination table settings empty because this assertion writes no table.
-13. Under **Notification options**, enable **Send email notifications**. Confirm
-    the scheduled-query owner is the recorded operational owner, save it, and
-    run it for the verified canary date. Confirm the run succeeds.
-14. Negative-check the alert once: in a copy, change the event name to
-    `export_health_canary_missing`. Run it and confirm the assertion fails and
-    the owner receives a BigQuery Data Transfer Service failure email. Delete
-    the test copy afterwards.
+5. In **BigQuery**, open **Scheduled queries** and click **Create scheduled
+   query**. Name it `GA4 daily export health`, then paste the SQL below after
+   replacing the project, property, and time-zone placeholders. Keep
+   `@run_time`; BigQuery supplies it.
+6. Set **Repeats** to **Daily** at an off-the-hour UTC time. Recommendation:
+   `18:05 UTC` for a `PROPERTY_TIME_ZONE` at UTC-4 or UTC-5. The query checks
+   two reporting dates back, allowing the normal daily export more than a full
+   day to arrive without waiting so long that a gap goes unnoticed.
+7. Set **Processing location** to the recorded dataset region. Leave
+   destination table settings empty because this assertion writes no table.
+8. Under **Notification options**, enable **Send email notifications**. Confirm
+   the scheduled-query owner is the recorded operational owner, save it, and
+   run it for the verified canary date. Confirm the run succeeds.
+9. Negative-check the alert once: in a copy, change the event name to
+   `export_health_canary_missing`. Run it and confirm the assertion fails and
+   the owner receives a BigQuery Data Transfer Service failure email. Delete
+   the test copy afterwards.
 
 ```sql
 DECLARE checked_date DATE DEFAULT DATE_SUB(
@@ -823,7 +812,8 @@ ASSERT canary_count > 0
   AS 'GA4 export canary is missing; inspect its scheduler and the export link';
 ```
 
-On an alert, first open the Cloud Scheduler job and check the expected date's
+On an alert, first open the canary workflow's runs in the GitHub Actions tab
+and check the expected date's
 execution. Then check its secret, payload, and the prior verified canary; **GA4
 Admin** > **Product links** > **BigQuery links**; the Cloud billing account and
 payment method; the one-million-event standard-property limit; and the export
