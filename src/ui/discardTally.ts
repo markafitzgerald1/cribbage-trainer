@@ -22,6 +22,15 @@ const MAX_RECORDS = 2000;
 export interface DiscardDecisionRecord {
   readonly at: number;
   readonly cribRole: CribRole;
+  /*
+   * The hand this decision was made from, which is what makes recording
+   * idempotent. The trainer shows every option ranked before a discard is
+   * chosen, so only a hand's first completed discard is an instinct; a second
+   * one is a choice made after reading the answer. Re-renders from Back,
+   * Forward, a re-sort, or a reload of the same URL all arrive here as the
+   * same hand, and all of them must count once.
+   */
+  readonly handKey: string;
   readonly expectedPointsLoss: number;
   readonly isOptimal: boolean;
   /*
@@ -84,6 +93,7 @@ interface MaybeLifetime {
 interface MaybeDecisionRecord {
   readonly at?: unknown;
   readonly cribRole?: unknown;
+  readonly handKey?: unknown;
   readonly expectedPointsLoss?: unknown;
   readonly isOptimal?: unknown;
   readonly isPractice?: unknown;
@@ -99,6 +109,7 @@ const isDecisionRecord = (value: unknown): value is DiscardDecisionRecord => {
   const candidate = value as MaybeDecisionRecord;
   return (
     typeof candidate.at === "number" &&
+    typeof candidate.handKey === "string" &&
     typeof candidate.expectedPointsLoss === "number" &&
     typeof candidate.isOptimal === "boolean" &&
     typeof candidate.isPractice === "boolean" &&
@@ -197,10 +208,19 @@ const addToLifetime = (
           lifetime.optimalDecisions + (decision.isOptimal ? 1 : 0),
       };
 
+/*
+ * Idempotent by hand rather than by call. Deduplicating here rather than in
+ * the caller is what makes a reload safe: a completed discard restored from
+ * its own URL renders exactly as a fresh one does, and no amount of care in
+ * a component can tell the two apart.
+ */
 export const recordDiscardDecision = (
   decision: DiscardDecisionRecord,
 ): DiscardTallySummary => {
   const tally = readTallyOrEmpty();
+  if (tally.records.some((record) => record.handKey === decision.handKey)) {
+    return summarize(tally);
+  }
   const next: StoredTally = {
     lifetime: addToLifetime(tally.lifetime, decision),
     records: [...tally.records, decision].slice(-MAX_RECORDS),

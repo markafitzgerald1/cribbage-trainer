@@ -37,6 +37,7 @@ const decisionOf = (
   at: 1_700_000_000_000,
   cribRole: CribRole.Dealer,
   expectedPointsLoss: 1.5,
+  handKey: "AH,2H,3H,4H,5H,6H|AH,2H",
   isOptimal: false,
   isPractice: false,
   ...overrides,
@@ -103,10 +104,14 @@ describe("discard tally storage", () => {
 
   it("averages across decisions", () => {
     clearDiscardTally();
-    recordDiscardDecision(decisionOf({ expectedPointsLoss: 1 }));
+    recordDiscardDecision(
+      decisionOf({ expectedPointsLoss: 1, handKey: "first" }),
+    );
 
     expect(
-      recordDiscardDecision(decisionOf({ expectedPointsLoss: 2 })),
+      recordDiscardDecision(
+        decisionOf({ expectedPointsLoss: 2, handKey: "second" }),
+      ),
     ).toStrictEqual({
       decisions: 2,
       meanExpectedPointsLoss: 1.5,
@@ -117,17 +122,52 @@ describe("discard tally storage", () => {
   // Practice is kept as a record but must not move the headline, which is the point of separating them.
   it("keeps a practice decision out of the average", () => {
     clearDiscardTally();
-    recordDiscardDecision(decisionOf({ expectedPointsLoss: 4 }));
+    recordDiscardDecision(
+      decisionOf({ expectedPointsLoss: 4, handKey: "played" }),
+    );
 
     expect(
       recordDiscardDecision(
-        decisionOf({ expectedPointsLoss: 99, isPractice: true }),
+        decisionOf({
+          expectedPointsLoss: 99,
+          handKey: "studied",
+          isPractice: true,
+        }),
       ),
     ).toStrictEqual({
       decisions: 1,
       meanExpectedPointsLoss: 4,
       optimalDecisions: 0,
     });
+  });
+
+  /*
+   * Back, Forward, a re-sort and a reload all re-render a completed discard.
+   * Each arrives as the same hand and must move the tally exactly once.
+   */
+  it("counts a hand's decision once however often it is re-reported", () => {
+    clearDiscardTally();
+    recordDiscardDecision(decisionOf({ expectedPointsLoss: 3 }));
+
+    expect(
+      recordDiscardDecision(decisionOf({ expectedPointsLoss: 3 })),
+    ).toStrictEqual({
+      decisions: 1,
+      meanExpectedPointsLoss: 3,
+      optimalDecisions: 0,
+    });
+  });
+
+  // A second discard from the same hand is chosen after reading the ranked table, so it is not a fresh instinct.
+  it("ignores a changed mind about the same hand", () => {
+    clearDiscardTally();
+    recordDiscardDecision(decisionOf({ expectedPointsLoss: 5 }));
+
+    expect(
+      recordDiscardDecision(
+        decisionOf({ expectedPointsLoss: 0, isOptimal: true }),
+      ).meanExpectedPointsLoss,
+    ).toBe(5);
   });
 
   it("reads back a tally written by an earlier session", () => {
@@ -195,7 +235,9 @@ describe("discard tally storage", () => {
     storeRaw(asJson(storedWith({})));
 
     expect(
-      recordDiscardDecision(decisionOf({ expectedPointsLoss: 3 })),
+      recordDiscardDecision(
+        decisionOf({ expectedPointsLoss: 3, handKey: "another" }),
+      ),
     ).toStrictEqual({
       decisions: 3,
       meanExpectedPointsLoss: 2,
@@ -235,8 +277,9 @@ describe("discard tally storage", () => {
    */
   it("keeps the average correct after records are trimmed", () => {
     clearDiscardTally();
-    const overflowing = Array.from({ length: 2_010 }, () =>
-      decisionOf({ expectedPointsLoss: 2 }),
+    // Indices come from the iterator so no unused element parameter is declared.
+    const overflowing = [...Array(2_010).keys()].map((index) =>
+      decisionOf({ expectedPointsLoss: 2, handKey: `hand-${index}` }),
     );
     let summary = readDiscardTally();
     for (const decision of overflowing) {

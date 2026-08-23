@@ -1,0 +1,22 @@
+/*
+ * Sized in em against the grid cell's inherited font rather than in rem. A
+ * rem lower bound scales with the device font-size setting on a phone and
+ * pushes a nowrap row past the screen edge, which every emulator at the
+ * default scale reports as fitting.
+ */
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 0.6em;
+  justify-content: space-between;
+  margin-block: 0.3em;
+}
+
+.figure {
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+}
+
+.label {
+  opacity: 0.8;
+}

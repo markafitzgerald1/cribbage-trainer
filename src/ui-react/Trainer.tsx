@@ -10,10 +10,6 @@ import {
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
-  type HistoryHandScope,
-  useDiscardTelemetry,
-} from "./useDiscardTelemetry";
-import {
   parseUrlAnalysisState,
   serializeUrlAnalysisState,
 } from "../ui/urlAnalysisState";
@@ -21,7 +17,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 import type { DealtCard } from "../game/DealtCard";
+import { DiscardTallyView } from "./DiscardTallyView";
 import { EnterCardsDialog } from "./EnterCardsDialog";
+import type { HistoryHandScope } from "./useDiscardTelemetry";
 import { InteractiveHand } from "./InteractiveHand";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
@@ -32,6 +30,7 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
+import { useAnalysisReporting } from "./useAnalysisReporting";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -194,7 +193,8 @@ export function Trainer({
     reportCardToggled,
     reportHandReplaced,
     reportHistoryNavigation,
-  } = useDiscardTelemetry({
+    tallySummary,
+  } = useAnalysisReporting({
     consented: choice.consented,
     dealtCards,
     decisionQualityConsented: choice.decisionQualityConsented,
@@ -371,6 +371,7 @@ export function Trainer({
             sortOrder={sortOrder}
           />
         )}
+        <DiscardTallyView summary={tallySummary} />
         <AnalyticsConsentDialog
           consent={choice.consented}
           decisionQualityConsented={choice.decisionQualityConsented}
