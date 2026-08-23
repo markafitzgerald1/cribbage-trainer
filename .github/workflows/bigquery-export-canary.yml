@@ -162,11 +162,23 @@ jobs:
           # The debug endpoint is the one that says what is wrong with a
           # payload, and it records nothing, so validating first turns a silent
           # rejection into a failed run rather than into a missing table
-          # noticed a day later.
+          # noticed a day later. It cannot cover everything: Google documents
+          # that the validation server does not check the api_secret, so a
+          # green run still does not prove the credentials are right. Only the
+          # table does.
+          #
+          # Without validation_behavior the server defaults to RELAXED, which
+          # may normalize or drop an offending field and return nothing, so an
+          # empty result would not mean what this gate reads it to mean. The
+          # directive is added to the payload rather than written out a second
+          # time, so what is validated is provably what is sent plus the one
+          # field the validation server alone reads.
+          validated=$(jq --compact-output \
+            '. + {validation_behavior: "ENFORCE_RECOMMENDATIONS"}' <<< "${payload}")
           validation=$(curl --fail --silent --show-error \
             --request POST \
             --header 'Content-Type: application/json' \
-            --data "${payload}" \
+            --data "${validated}" \
             "https://www.google-analytics.com/debug/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${API_SECRET}")
           if [ "$(jq '(.validationMessages // []) | length' <<< "${validation}")" != "0" ]; then
             jq -r '.validationMessages[] | "\(.fieldPath // "payload"): \(.description)"' \

@@ -854,10 +854,15 @@ set to that day, within the 71-hour window.
    workflow**, leaving `reporting_date` empty, and confirm it succeeds. The run
    summary names the reporting date and the table to look in. `/mp/collect`
    answers `204` for anything at all, including a payload it then discards, so
-   the workflow posts the same payload to `/debug/mp/collect` first and fails
-   on any `validationMessages`. A green run therefore proves the payload is
-   well formed and that a request was accepted — not that the event was
-   recorded. Step 4 is still what confirms it arrived.
+   the workflow posts the same payload to `/debug/mp/collect` first, with
+   `validation_behavior` set to `ENFORCE_RECOMMENDATIONS`, and fails on any
+   `validationMessages`. That directive matters: the server defaults to
+   `RELAXED`, which may normalize or drop an offending field and report
+   nothing, so an empty result would not mean what the gate reads it to mean.
+   Even strict validation stops short of the credentials — Google documents
+   that the validation server does not check the `api_secret` — so a green run
+   proves the payload is well formed and a request was accepted, never that
+   the event was recorded. Step 4 is still what confirms it arrived.
 
 4. After that reporting date's daily export arrives, run this query against the
    exact table. Success is `canary_events` greater than zero. Record the table
