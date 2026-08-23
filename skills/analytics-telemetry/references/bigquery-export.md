@@ -268,9 +268,10 @@ enabling it would put collection ahead of its disclosure again.
 4. Open the dataset's **Sharing** > **Permissions** view and confirm the same
    service account has **BigQuery Data Owner** on the export dataset.
 5. Expand the dataset and find `events_YYYYMMDD`. Daily export creates one
-   table for the previous day. It usually arrives the following afternoon in
-   the GA4 property's reporting time zone, but Google does not guarantee an
-   exact time and may deliver it the next day.
+   table for the previous day. Both tables observed here were written around
+   09:10 in the GA4 property's reporting time zone, not the afternoon this
+   step used to claim, but Google does not guarantee an exact time and may
+   deliver it the next day.
 6. Open the table's **Details** tab. Confirm its location equals the decision
    record and its row count is greater than zero after production has recorded
    consented traffic.
@@ -360,7 +361,7 @@ had already been created and so did not inherit that default; it was given an
 explicit `expiration_timestamp` of 2027-10-20, computed as 425 days after its
 reporting date rather than after its creation time.
 
-**Outstanding as of 2026-08-23.** Step 7 checks creation time plus 425 days,
+**Repaired 2026-08-23.** Step 7 checks creation time plus 425 days,
 which for this table is 2027-10-21, so it fails that check as configured and
 will keep failing it. The substance is immaterial, a single day of one partial
 table, but a check that the estate cannot pass stops being read, and this is
@@ -370,6 +371,20 @@ step 5 generator again, execute the one statement it emits for
 `events_20260821`, and re-run step 7. Every later table inherits the dataset
 default and is created after the day it holds, so none of them can drift this
 way.
+
+The inventory now reports both tables at exactly `creation_time` plus 425
+days, to the second: `events_20260821` created 2026-08-22 13:20:40 UTC and
+expiring 2027-10-21 13:20:40 UTC, `events_20260822` created 2026-08-23
+13:02:24 UTC and expiring 2027-10-22 13:02:24 UTC. The second was already
+correct from the dataset default; re-applying the generated statement to it
+changed nothing, which is why step 6 says to run every statement rather than
+pick.
+
+Those two creation times are also the only real evidence of **when a daily
+table lands**: 13:20 and 13:02 UTC, both around 09:10 Eastern. Earlier text
+here guessed the following afternoon, and the recorded 11:04 EDT for the
+dataset was when Mark looked, not when Google wrote. Expect a table
+mid-morning Eastern and check for the canary then.
 
 ### 6. Configure billing alerts
 
@@ -793,6 +808,17 @@ delayed run landing on the adjacent reporting date, leaving one day with two
 canaries and another with none; GitHub's scheduled runs can be delayed well
 beyond an hour.
 
+**Do not expect the canary in GA4's Realtime report as a health check.**
+Measurement Protocol events are not reliably shown there, and the first canary
+carried no `session_id` or `engagement_time_msec`, which is what GA4's
+session-oriented reports need before an event surfaces in the interface at all.
+It was exported correctly and appeared nowhere a human looked, which reads
+exactly like a dead canary. The workflow now sends both parameters so the
+interface agrees with the warehouse. Never reach for `debug_mode` to make an
+event visible: that routes it to DebugView and excludes it from standard
+reports and from the export, which would disable the canary while appearing to
+confirm it.
+
 Timing alone is not enough, because a run can also be retried by hand a day
 later, so the event carries an explicit `timestamp_micros`. A scheduled run
 stamps the most recent cron fire at or before it started rather than the moment
@@ -841,10 +867,17 @@ set to that day, within the 71-hour window.
    the existing `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID` repository variable.
 3. Run the workflow once by hand from the **Actions** tab using **Run
    workflow**, leaving `reporting_date` empty, and confirm it succeeds. The run
-   summary names the reporting date and the table to look in. The Measurement
-   Protocol answers `204` for an accepted event and says nothing about a
-   rejected one, so a green run proves the request was accepted rather than
-   that the event was recorded. Step 4 is what confirms it arrived.
+   summary names the reporting date and the table to look in. `/mp/collect`
+   answers `204` for anything at all, including a payload it then discards, so
+   the workflow posts the same payload to `/debug/mp/collect` first, with
+   `validation_behavior` set to `ENFORCE_RECOMMENDATIONS`, and fails on any
+   `validationMessages`. That directive matters: the server defaults to
+   `RELAXED`, which may normalize or drop an offending field and report
+   nothing, so an empty result would not mean what the gate reads it to mean.
+   Even strict validation stops short of the credentials — Google documents
+   that the validation server does not check the `api_secret` — so a green run
+   proves the payload is well formed and a request was accepted, never that
+   the event was recorded. Step 4 is still what confirms it arrived.
 
 4. After that reporting date's daily export arrives, run this query against the
    exact table. Success is `canary_events` greater than zero. Record the table
