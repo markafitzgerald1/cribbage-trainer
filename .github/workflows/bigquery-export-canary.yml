@@ -62,9 +62,15 @@ jobs:
               # survives a re-run, and a guarantee resting on an unverified
               # field is a guess wearing a fix's clothes.
               if [ "${RUN_ATTEMPT}" != "1" ]; then
-                suggested=$(TZ="${PROPERTY_TIME_ZONE}" date -d "@${stamp}" +%F)
+                # Deliberately no suggested date. The stamp above came from this
+                # re-run's clock, so in the very case this guard exists for it
+                # names today rather than the day that failed, and an operator
+                # following it would duplicate today and leave the gap open.
+                # The failed attempt is the only thing that knows its own day.
                 echo "Refusing to re-run a scheduled canary: this run cannot tell which day it was retrying." >&2
-                echo "Dispatch the workflow with reporting_date set to the day that failed, likely ${suggested}." >&2
+                echo "Read the reporting date off the failed attempt: its job summary names the date it stamped," >&2
+                echo "and its scheduled start gives the same date if it failed before writing that line." >&2
+                echo "Then dispatch this workflow with reporting_date set to that date." >&2
                 exit 1
               fi
               ;;

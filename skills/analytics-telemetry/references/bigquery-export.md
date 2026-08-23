@@ -795,10 +795,18 @@ newer day: the failed day would stay uncovered while the newer one took two
 canaries, which is the exact failure the stamping exists to prevent. Deriving
 the date from the run's `created_at` would allow re-runs, but GitHub does not
 document whether that field survives one, and a guarantee resting on an
-unverified field is a guess wearing a fix's clothes. The refusal names the
-likely date, so recovery is one dated dispatch. A re-run that is merely prompt
-would in fact have been safe; it is refused too, because nothing available to
-the run distinguishes the two cases.
+unverified field is a guess wearing a fix's clothes. A re-run that is merely
+prompt would in fact have been safe; it is refused too, because nothing
+available to the run distinguishes the two cases.
+
+The refusal deliberately suggests no date. It could only compute one from the
+re-run's own clock, which in the very case being guarded names today rather
+than the day that failed, so an operator following it would dispatch a
+duplicate for today and leave the gap open — the original bug, handed to a
+human instead of committed by the workflow. The failed attempt is the only
+thing that knows its own day: its job summary names the date it stamped, and
+its scheduled start gives the same date if it failed before writing that line.
+Recovery is reading that date, then one dated dispatch.
 
 Every path refuses a stamp in the future, and refuses one older than 71 hours,
 since Google discards an event backdated past 72 and would otherwise accept the
