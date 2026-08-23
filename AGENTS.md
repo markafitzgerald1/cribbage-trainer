@@ -586,6 +586,19 @@
   matches the parent's several, so git replays those originals and reports
   conflicts against its own merged result. Replay only the child's commits
   with `git rebase --no-gpg-sign --onto origin/main <last-parent-commit>`.
+- Never rebase or force-push a branch whose PR has already been reviewed, even
+  when the content survives the rewrite unchanged. GitHub anchors its
+  changes-since-your-last-review diff to commit SHAs, so rewriting them costs
+  the reviewer the delta and makes them re-read the whole branch. That cost is
+  invisible from the agent's side, where a verified-identical rebase looks
+  clean, which is why it needs a rule rather than judgement. To clear a
+  `BEHIND` merge state, use GitHub's **Update branch** instead: this repository
+  squash-merges, so the merge commit disappears at merge and the outcome is
+  identical, while the SHAs and every review anchor survive. Rebase only a
+  branch nobody has read yet. If history has already been rewritten, recover
+  the delta with `compare/<old-head>...<new-head>`, which still resolves
+  because force-pushed objects stay reachable by SHA, and offer it without
+  being asked.
 
 ## CI workflow notes
 
