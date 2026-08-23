@@ -133,6 +133,18 @@ jobs:
           # timestamp makes a row self-describing: a canary whose reporting_date
           # disagrees with the table holding it shows the stamp slipped, which
           # is otherwise invisible once the row has landed.
+          #
+          # session_id and engagement_time_msec are what make the event visible
+          # in GA4's own reports. BigQuery does not need them, but a human
+          # checking Realtime after a run does, and an event that shows nowhere
+          # in the UI reads as a failure when it is fine.
+          #
+          # Their JSON types differ and Google's reference is the authority on
+          # which is which: engagement_time_msec is a bare number, session_id a
+          # quoted string. Quoting the number is not cosmetic — strict
+          # validation rejects the type mismatch, and the run would fail before
+          # sending anything, disabling the canary rather than merely
+          # degrading it.
           payload=$(cat <<JSON
           {
             "client_id": "683.1",
@@ -142,7 +154,9 @@ jobs:
               {
                 "name": "export_health_canary",
                 "params": {
+                  "engagement_time_msec": 100,
                   "reporting_date": "${REPORTING_DATE}",
+                  "session_id": "${STAMP_MICROS%??????}",
                   "source": "github_actions"
                 }
               }
@@ -150,10 +164,39 @@ jobs:
           }
           JSON
           )
+          # /mp/collect answers 204 for anything, including a payload it will
+          # then discard, so sending alone proves only that a request arrived.
+          # The debug endpoint is the one that says what is wrong with a
+          # payload, and it records nothing, so validating first turns a silent
+          # rejection into a failed run rather than into a missing table
+          # noticed a day later. It cannot cover everything: Google documents
+          # that the validation server does not check the api_secret, so a
+          # green run still does not prove the credentials are right. Only the
+          # table does.
+          #
+          # Without validation_behavior the server defaults to RELAXED, which
+          # may normalize or drop an offending field and return nothing, so an
+          # empty result would not mean what this gate reads it to mean. The
+          # directive is added to the payload rather than written out a second
+          # time, so what is validated is provably what is sent plus the one
+          # field the validation server alone reads.
+          validated=$(jq --compact-output \
+            '. + {validation_behavior: "ENFORCE_RECOMMENDATIONS"}' <<< "${payload}")
+          validation=$(curl --fail --silent --show-error \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "${validated}" \
+            "https://www.google-analytics.com/debug/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${API_SECRET}")
+          if [ "$(jq '(.validationMessages // []) | length' <<< "${validation}")" != "0" ]; then
+            jq -r '.validationMessages[] | "\(.fieldPath // "payload"): \(.description)"' \
+              <<< "${validation}" >&2
+            echo "Refusing to send a payload Google reports as invalid." >&2
+            exit 1
+          fi
           # --fail turns an HTTP error into a failed run, which GitHub emails about.
-          # The Measurement Protocol answers 204 for an accepted event.
           curl --fail --silent --show-error \
             --request POST \
             --header 'Content-Type: application/json' \
             --data "${payload}" \
             "https://www.google-analytics.com/mp/collect?measurement_id=${MEASUREMENT_ID}&api_secret=${API_SECRET}"
+          echo "Validated and sent for ${REPORTING_DATE}." >> "${GITHUB_STEP_SUMMARY}"
