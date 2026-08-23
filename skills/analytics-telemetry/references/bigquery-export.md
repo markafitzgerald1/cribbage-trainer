@@ -357,8 +357,19 @@ replace one wrong implicit default with another; it would not deliberately set
 **Evidence, 2026-08-22.** The dataset `analytics_458709208` appeared at 11:04
 EDT and its default table expiration was set to 425 days. `events_20260821`
 had already been created and so did not inherit that default; it was given an
-explicit `expiration_timestamp` of 2027-10-20, which is 425 days after its
-reporting date.
+explicit `expiration_timestamp` of 2027-10-20, computed as 425 days after its
+reporting date rather than after its creation time.
+
+**Outstanding as of 2026-08-23.** Step 7 checks creation time plus 425 days,
+which for this table is 2027-10-21, so it fails that check as configured and
+will keep failing it. The substance is immaterial, a single day of one partial
+table, but a check that the estate cannot pass stops being read, and this is
+the only table in the export that will ever need the comparison made by hand.
+Repair it through the documented path rather than by editing the date: run the
+step 5 generator again, execute the one statement it emits for
+`events_20260821`, and re-run step 7. Every later table inherits the dataset
+default and is created after the day it holds, so none of them can drift this
+way.
 
 ### 6. Configure billing alerts
 

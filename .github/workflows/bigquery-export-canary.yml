@@ -21,7 +21,10 @@ on:
         required: false
         default: ""
 
-permissions: {}
+# Reading this run's own creation time is what ties a scheduled run to the
+# cron fire it stands for; nothing else here needs a token.
+permissions:
+  actions: read
 
 env:
   # The reporting time zone decides which daily table an event lands in, so
@@ -36,6 +39,7 @@ jobs:
         id: target
         env:
           EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
           REPORTING_DATE: ${{ inputs.reporting_date }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
@@ -43,35 +47,41 @@ jobs:
           now=$(date -u +%s)
           case "${EVENT_NAME}" in
             schedule)
-              # A scheduled run stands for its cron fire, not for the moment it
-              # executes. Deriving the most recent fire at or before now keeps a
-              # run delayed past local midnight, or retried later, stamped with
-              # the day it was meant to cover, instead of leaving that day
-              # uncovered and giving the next one two canaries.
-              stamp=$(date -u -d "today 17:05" +%s)
-              if [ "${stamp}" -gt "${now}" ]; then
-                stamp=$(date -u -d "yesterday 17:05" +%s)
-              fi
               # A re-run keeps event_name at schedule and is given no way to
-              # learn the fire it is retrying, so once a later fire has passed,
-              # the arithmetic above would resolve to that newer day: the failed
-              # day would stay uncovered while the newer one took two canaries.
-              # Refusing is the only answer available here that cannot be
-              # silently wrong. Deriving the date from the run's created_at was
-              # the alternative, but GitHub does not document whether that field
-              # survives a re-run, and a guarantee resting on an unverified
-              # field is a guess wearing a fix's clothes.
+              # learn the fire it is retrying, so any date it computed would
+              # come from its own clock. Refusing is the only answer here that
+              # cannot be silently wrong.
               if [ "${RUN_ATTEMPT}" != "1" ]; then
-                # Deliberately no suggested date. The stamp above came from this
-                # re-run's clock, so in the very case this guard exists for it
-                # names today rather than the day that failed, and an operator
-                # following it would duplicate today and leave the gap open.
-                # The failed attempt is the only thing that knows its own day.
+                # Deliberately no suggested date. Any value computed here comes
+                # from this re-run's clock, so in the very case this guard
+                # exists for it names today rather than the day that failed,
+                # and an operator following it would duplicate today and leave
+                # the gap open. The failed attempt knows its own day; this one
+                # does not.
                 echo "Refusing to re-run a scheduled canary: this run cannot tell which day it was retrying." >&2
                 echo "Read the reporting date off the failed attempt: its job summary names the date it stamped," >&2
                 echo "and its scheduled start gives the same date if it failed before writing that line." >&2
                 echo "Then dispatch this workflow with reporting_date set to that date." >&2
                 exit 1
+              fi
+              # A first attempt stands for its cron fire, not for the moment it
+              # reached a runner, and the two can be far apart: a job queued
+              # past the next fire would read its own clock and claim that
+              # newer day, leaving its own uncovered. So derive the fire from
+              # when the run was created rather than from now. The objection to
+              # created_at elsewhere in this file is that GitHub does not
+              # document whether it survives a re-run, which cannot apply to a
+              # run that has not been re-run.
+              created=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq '.created_at' || true)
+              if [ -z "${created}" ]; then
+                echo "Refusing: could not read this run's creation time, so the fire it stands for is unknown." >&2
+                exit 1
+              fi
+              origin=$(date -u -d "${created}" +%s)
+              stamp=$(date -u -d "$(date -u -d "@${origin}" +%F) 17:05" +%s)
+              if [ "${stamp}" -gt "${origin}" ]; then
+                # UTC has no daylight saving, so one period is exactly 86400s.
+                stamp=$(( stamp - 86400 ))
               fi
               ;;
             *)
