@@ -273,6 +273,13 @@ enabling it would put collection ahead of its disclosure again.
 Success is a nonempty `events_YYYYMMDD` table in the expected project, dataset,
 and region. Google may update that daily table with late events for three days.
 
+**Evidence, 2026-08-22.** Verified by outcome rather than by inspection: the
+dataset `analytics_458709208` was created and `events_20260821` delivered with
+88 rows, which demonstrates end to end that the export service account holds
+the access this section asks to be read from the IAM and dataset permission
+views. Those views were not opened. If a future export fails, check them first,
+since a revoked or altered grant would present exactly as a missing table.
+
 ### 5. Apply and verify the raw-data retention decision
 
 Do this after Google creates the export dataset.
