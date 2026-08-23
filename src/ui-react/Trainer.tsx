@@ -342,7 +342,9 @@ export function Trainer({
           Sharpen your cribbage discards with expected-score analysis.
         </p>
       </header>
-      <div className={classes.dynamicUi}>
+      <div
+        className={`${classes.dynamicUi} ${tallySummary.meanExpectedPointsLoss === null ? "" : classes.withTally}`}
+      >
         <InteractiveHand
           cribRole={cribRole}
           dealtCards={dealtCards}

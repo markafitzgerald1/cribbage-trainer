@@ -8,6 +8,7 @@ import type {
   RenderedAnalysis,
 } from "./useDiscardTelemetry";
 import { useCallback, useRef, useState } from "react";
+import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { serializeHand } from "../game/Card";
 
@@ -29,17 +30,30 @@ export interface DiscardTally {
 
 /*
  * Deal order rather than the displayed order, so re-sorting the six cards
- * cannot make one hand look like two.
+ * cannot make one hand look like two, and the crib role alongside them,
+ * because the same six cards played as dealer and as pone are two different
+ * decisions with two different best answers. Cards alone let a hand entered
+ * to study the opposite role suppress the dealt hand's own decision.
+ *
+ * It is not a complete identity: the same cards entered by hand under the
+ * same role still collide with the dealt hand. Closing that needs the
+ * per-hand scope the telemetry hook keeps in history state, which is more
+ * plumbing than the remaining case earns, so provenance can still be wrong
+ * for it even though the decision is no longer lost.
  */
-const toHandKey = (dealtCards: readonly DealtCard[]): string =>
-  serializeHand(dealtCards);
+const toHandKey = (
+  dealtCards: readonly DealtCard[],
+  cribRole: CribRole,
+): string => `${serializeHand(dealtCards)}|${cribRole}`;
 
 export const useDiscardTally = ({
   dealtCards,
   isSeededSession,
   wasDeepLinked,
 }: UseDiscardTallyProps): DiscardTally => {
-  const [summary, setSummary] = useState<DiscardTallySummary>(readDiscardTally);
+  const [summary, setSummary] = useState<DiscardTallySummary>(() =>
+    readDiscardTally(Date.now()),
+  );
   /*
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
@@ -66,7 +80,7 @@ export const useDiscardTally = ({
   const reportHandOrigin = useCallback(
     (cards: readonly DealtCard[], cause: HandReplacementCause) => {
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
-      notePractice(toHandKey(cards), cause === "manual" || isSeededSession);
+      notePractice(serializeHand(cards), cause === "manual" || isSeededSession);
     },
     [isSeededSession, notePractice],
   );
@@ -76,7 +90,7 @@ export const useDiscardTally = ({
       if (quality === null) {
         return;
       }
-      const handKey = toHandKey(dealtCards);
+      const handKey = toHandKey(dealtCards, cribRole);
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
@@ -90,7 +104,13 @@ export const useDiscardTally = ({
            * and counting it would add a decision whose origin nothing here
            * can vouch for.
            */
-          isPractice: practiceByHand.current.get(handKey) ?? true,
+          /*
+           * Looked up by cards alone, because a replacement announces itself
+           * before its role reaches this hook. An unknown hand is treated as
+           * practice: it can only be one this session never dealt.
+           */
+          isPractice:
+            practiceByHand.current.get(serializeHand(dealtCards)) ?? true,
         }),
       );
     },

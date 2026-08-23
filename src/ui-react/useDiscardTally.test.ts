@@ -155,17 +155,20 @@ describe("discard tally hook", () => {
     const { result } = start();
     reportScoreTimes(result.current, reports);
 
-    expect(readDiscardTally().decisions).toBe(counted);
+    expect(readDiscardTally(Date.now()).decisions).toBe(counted);
   });
 
   it("records nothing until a discard has been scored", () => {
     const { result } = renderTally(HAND);
     reportScore(result.current, { cribRole: CribRole.Dealer, quality: null });
 
-    expect(readDiscardTally()).toStrictEqual({
+    expect(readDiscardTally(Date.now())).toStrictEqual({
       decisions: 0,
       meanExpectedPointsLoss: null,
       optimalDecisions: 0,
+      todayDecisions: 0,
+      todayMeanExpectedPointsLoss: null,
+      todayOptimalDecisions: 0,
     });
   });
 
@@ -173,6 +176,6 @@ describe("discard tally hook", () => {
     const { result } = renderTally(HAND);
     reportScore(result.current);
 
-    expect(readDiscardTally().meanExpectedPointsLoss).toBe(2);
+    expect(readDiscardTally(Date.now()).meanExpectedPointsLoss).toBe(2);
   });
 });

@@ -45,6 +45,16 @@ export interface DiscardTallySummary {
   readonly decisions: number;
   readonly meanExpectedPointsLoss: number | null;
   readonly optimalDecisions: number;
+  /*
+   * Today is read from the records rather than from a counter, because a
+   * counter would have to be reset by something and nothing here runs at
+   * midnight. It is the one slice #19 shows: two numbers are a comparison a
+   * reader can make at a glance, where a run of them is a trend and needs the
+   * chart #719 owns.
+   */
+  readonly todayDecisions: number;
+  readonly todayMeanExpectedPointsLoss: number | null;
+  readonly todayOptimalDecisions: number;
 }
 
 interface LifetimeTotals {
@@ -146,14 +156,20 @@ const readableTally = (parsed: unknown): MaybeTally | null => {
     : null;
 };
 
-const readStoredTally = (): StoredTally => {
+/*
+ * Null means "present but written by a build this one cannot read", which is
+ * different from empty in the one way that matters: empty may be written
+ * over, and this may not. Returning an empty tally for both is what let the
+ * next completed discard erase a newer history one commit ago.
+ */
+const readStoredTally = (): StoredTally | null => {
   const stored = localStorage.getItem(discardTallyKey);
   if (stored === null) {
     return emptyTally;
   }
   const candidate = readableTally(JSON.parse(stored));
   if (candidate === null) {
-    return emptyTally;
+    return null;
   }
   const { records } = candidate;
   return {
@@ -163,21 +179,51 @@ const readStoredTally = (): StoredTally => {
   };
 };
 
-const summarize = ({ lifetime }: StoredTally): DiscardTallySummary => ({
-  decisions: lifetime.decisions,
-  meanExpectedPointsLoss:
-    lifetime.decisions === 0
-      ? null
-      : lifetime.expectedPointsLossTotal / lifetime.decisions,
-  optimalDecisions: lifetime.optimalDecisions,
-});
+// Calendar days in the reader's own zone, which is what "today" means to them; comparing dates avoids doing arithmetic across a daylight-saving change.
+const isSameLocalDay = (one: number, other: number) =>
+  new Date(one).toDateString() === new Date(other).toDateString();
+
+const meanOf = (losses: readonly number[]) =>
+  losses.length === 0
+    ? null
+    : losses.reduce((total, loss) => total + loss, 0) / losses.length;
+
+const summarize = (
+  { lifetime, records }: StoredTally,
+  now: number,
+): DiscardTallySummary => {
+  const today = records.filter(
+    (record) => !record.isPractice && isSameLocalDay(record.at, now),
+  );
+  return {
+    decisions: lifetime.decisions,
+    meanExpectedPointsLoss:
+      lifetime.decisions === 0
+        ? null
+        : lifetime.expectedPointsLossTotal / lifetime.decisions,
+    optimalDecisions: lifetime.optimalDecisions,
+    todayDecisions: today.length,
+    todayMeanExpectedPointsLoss: meanOf(
+      today.map((record) => record.expectedPointsLoss),
+    ),
+    todayOptimalDecisions: today.filter((record) => record.isOptimal).length,
+  };
+};
 
 /*
  * Malformed storage reads as an empty tally rather than throwing, matching
  * how analytics consent already treats a value it cannot trust: a corrupt
  * statistic is worth losing, a working deal is not.
  */
-const readTallyOrEmpty = (): StoredTally => {
+/*
+ * Held only when a write fails. Storage is otherwise the single source of
+ * truth, but a browser refusing writes would re-read the same stale tally
+ * before every decision, so a session's second hand would replace its first
+ * rather than add to it.
+ */
+let unsavedTally: StoredTally | null = null;
+
+const readTallyOrNull = (): StoredTally | null => {
   try {
     return readStoredTally();
   } catch {
@@ -185,8 +231,11 @@ const readTallyOrEmpty = (): StoredTally => {
   }
 };
 
-export const readDiscardTally = (): DiscardTallySummary =>
-  summarize(readTallyOrEmpty());
+const readTallyForDisplay = (): StoredTally =>
+  unsavedTally ?? readTallyOrNull() ?? emptyTally;
+
+export const readDiscardTally = (now: number): DiscardTallySummary =>
+  summarize(readTallyForDisplay(), now);
 
 /*
  * The counters are deliberately redundant with the records. Records are
@@ -217,9 +266,18 @@ const addToLifetime = (
 export const recordDiscardDecision = (
   decision: DiscardDecisionRecord,
 ): DiscardTallySummary => {
-  const tally = readTallyOrEmpty();
+  const stored = unsavedTally ?? readTallyOrNull();
+  /*
+   * A tally this build cannot read is left exactly as it is. Recording over
+   * it would discard a richer history for the sake of one decision, and the
+   * tab that can read it is the one that should keep writing it.
+   */
+  if (stored === null) {
+    return summarize(emptyTally, decision.at);
+  }
+  const tally = stored;
   if (tally.records.some((record) => record.handKey === decision.handKey)) {
-    return summarize(tally);
+    return summarize(tally, decision.at);
   }
   const next: StoredTally = {
     lifetime: addToLifetime(tally.lifetime, decision),
@@ -228,17 +286,20 @@ export const recordDiscardDecision = (
   };
   try {
     localStorage.setItem(discardTallyKey, JSON.stringify(next));
+    unsavedTally = null;
   } catch {
+    unsavedTally = next;
     /*
      * A quota or a storage-disabled browser must not break the deal. The
      * summary returned still reflects this decision, so the number on screen
      * stays right for the session even when nothing can be persisted.
      */
   }
-  return summarize(next);
+  return summarize(next, decision.at);
 };
 
 // Exported for the specs and stories that need a browser with no history.
 export const clearDiscardTally = () => {
+  unsavedTally = null;
   localStorage.removeItem(discardTallyKey);
 };

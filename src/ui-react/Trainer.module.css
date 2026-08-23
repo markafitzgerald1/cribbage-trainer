@@ -70,6 +70,26 @@
   .dynamic-ui > :last-child {
     grid-row: 3 / 4;
   }
+
+  /*
+   * A fourth track only while a tally is on screen. Leaving the consent cell
+   * unplaced instead let it inherit the flexible second row and swell to fill
+   * the page on a first run, and adding the track unconditionally left an
+   * empty row whose gap is dead space on every screen without a tally. The
+   * tally is second to last whenever it renders, which is what makes the
+   * conditional selector exact without a marker on the element itself.
+   */
+  .dynamic-ui.with-tally {
+    grid-template-rows: auto 1fr auto auto;
+  }
+
+  .dynamic-ui.with-tally > :nth-last-child(2) {
+    grid-row: 3 / 4;
+  }
+
+  .dynamic-ui.with-tally > :last-child {
+    grid-row: 4 / 5;
+  }
 }
 
 @media (aspect-ratio >= 6 / 5) {

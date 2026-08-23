@@ -4,20 +4,25 @@ import { discardTallyKey } from "../src/ui/discardTally";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
 /*
- * A history deep enough to render every part of the tally, written straight
- * into storage. The figures come from there rather than from this hand, which
- * is what makes the shot deterministic: the seeded deep link below is study
- * rather than play, so it adds nothing and cannot move the numbers.
+ * A history deep enough to render every part of the tally, including today's
+ * own figures, written straight into storage. The lifetime numbers come from
+ * the counters and today's from the records, so the shot exercises both
+ * periods rather than only the half that survives an empty record list.
+ *
+ * Each record is dated when the script runs, because "today" is whatever
+ * day the suite runs on; the losses are fixed, so every figure on screen is
+ * still deterministic.
  */
-const STORED_TALLY = JSON.stringify({
-  lifetime: {
-    decisions: 9,
-    expectedPointsLossTotal: 11.07,
-    optimalDecisions: 4,
-  },
-  records: [],
-  version: 1,
-});
+const STORED_TALLY_LIFETIME = {
+  decisions: 9,
+  expectedPointsLossTotal: 11.07,
+  optimalDecisions: 4,
+};
+
+const BEST_TODAY = 0.4;
+const NEAR_MISS = 0.5;
+const WORST_TODAY = 0.9;
+const TODAY_LOSSES = [NEAR_MISS, WORST_TODAY, BEST_TODAY];
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
@@ -114,10 +119,34 @@ const nearSquareLandscapeViewportSize = {
 const testDiscardTallyScreenshot = () =>
   test("discard tally still visually the same", async ({ page }) => {
     await page.addInitScript(
-      (stored: { readonly key: string; readonly value: string }) => {
-        window.localStorage.setItem(stored.key, stored.value);
+      (stored: {
+        readonly best: number;
+        readonly key: string;
+        readonly lifetime: unknown;
+        readonly losses: readonly number[];
+      }) => {
+        window.localStorage.setItem(
+          stored.key,
+          JSON.stringify({
+            lifetime: stored.lifetime,
+            records: stored.losses.map((loss, index) => ({
+              at: Date.now(),
+              cribRole: "Dealer",
+              expectedPointsLoss: loss,
+              handKey: `stored-${index}`,
+              isOptimal: loss === stored.best,
+              isPractice: false,
+            })),
+            version: 1,
+          }),
+        );
       },
-      { key: discardTallyKey, value: STORED_TALLY },
+      {
+        best: BEST_TODAY,
+        key: discardTallyKey,
+        lifetime: STORED_TALLY_LIFETIME,
+        losses: TODAY_LOSSES,
+      },
     );
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 

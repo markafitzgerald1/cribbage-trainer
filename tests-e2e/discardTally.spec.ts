@@ -14,12 +14,13 @@ import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 const DISCARD_COUNT = 2;
 /*
- * Anchored on the total, since how many were optimal depends on the deal.
+ * Anchored on the lifetime total, since how many were optimal depends on the
+ * deal, and scoped by the period word so today's figures cannot satisfy it.
  * The two counts this spec asserts are spelled out rather than built into a
  * pattern, so no regular expression is assembled from a value.
  */
-const ONE_DECISION = /Best choice \d+ of 1$/u;
-const TWO_DECISIONS = /Best choice \d+ of 2$/u;
+const ONE_DECISION = /all time \d+ of 1 \(/u;
+const TWO_DECISIONS = /all time \d+ of 2 \(/u;
 
 const decisionsCounted = (page: Page, counted: RegExp) =>
   page.getByText(counted);
@@ -92,5 +93,5 @@ test("leaves a seeded deep link out of the tally", async ({ page }) => {
   await page.goto(`/${constantHandQuery}`);
   await selectTwoDiscards(page);
 
-  await expect(page.getByText("Average cost")).toBeHidden();
+  await expect(page.getByText("Points lost per discard")).toBeHidden();
 });

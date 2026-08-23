@@ -22,10 +22,24 @@ const summaryOf = (
   decisions,
   meanExpectedPointsLoss,
   optimalDecisions,
+  todayDecisions: 0,
+  todayMeanExpectedPointsLoss: null,
+  todayOptimalDecisions: 0,
+});
+
+const playedToday = (
+  summary: DiscardTallySummary,
+  decisions: number,
+  mean: number,
+): DiscardTallySummary => ({
+  ...summary,
+  todayDecisions: decisions,
+  todayMeanExpectedPointsLoss: mean,
+  todayOptimalDecisions: 2,
 });
 
 export const Default: StoryObj<typeof meta> = {
-  args: { summary: summaryOf(24, 0.7361, 9) },
+  args: { summary: playedToday(summaryOf(24, 0.7361, 9), 5, 0.4128) },
   /*
    * The figures are asserted one at a time because each sits in its own
    * element for styling, and this matcher will not join text across them the
@@ -35,6 +49,7 @@ export const Default: StoryObj<typeof meta> = {
     await expect(canvas.getByText("0.74")).toBeVisible();
     await expect(canvas.getByText("9")).toBeVisible();
     await expect(canvas.getByText("24")).toBeVisible();
+    await expect(canvas.getByText("0.41")).toBeVisible();
   },
 };
 
