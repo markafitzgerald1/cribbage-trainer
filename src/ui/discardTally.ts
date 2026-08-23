@@ -62,51 +62,91 @@ const emptyTally: StoredTally = {
   version: CURRENT_VERSION,
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+/*
+ * Parsed storage is described by interfaces with unknown-typed optional
+ * fields rather than by an index signature. An index signature would force
+ * bracket access under noPropertyAccessFromIndexSignature, and eslint's
+ * dot-notation rule rewrites exactly that back to dots on --fix, so the two
+ * gates disagree forever. Declaring the fields settles it in the type.
+ */
+interface MaybeTally {
+  readonly lifetime?: unknown;
+  readonly records?: unknown;
+  readonly version?: unknown;
+}
+
+interface MaybeLifetime {
+  readonly decisions?: unknown;
+  readonly expectedPointsLossTotal?: unknown;
+  readonly optimalDecisions?: unknown;
+}
+
+interface MaybeDecisionRecord {
+  readonly at?: unknown;
+  readonly cribRole?: unknown;
+  readonly expectedPointsLoss?: unknown;
+  readonly isOptimal?: unknown;
+  readonly isPractice?: unknown;
+}
+
+const isObject = (value: unknown): value is object =>
   typeof value === "object" && value !== null;
 
-const isDecisionRecord = (value: unknown): value is DiscardDecisionRecord =>
-  isRecord(value) &&
-  typeof value.at === "number" &&
-  typeof value.expectedPointsLoss === "number" &&
-  typeof value.isOptimal === "boolean" &&
-  typeof value.isPractice === "boolean" &&
-  typeof value.cribRole === "string";
+const isDecisionRecord = (value: unknown): value is DiscardDecisionRecord => {
+  if (!isObject(value)) {
+    return false;
+  }
+  const candidate = value as MaybeDecisionRecord;
+  return (
+    typeof candidate.at === "number" &&
+    typeof candidate.expectedPointsLoss === "number" &&
+    typeof candidate.isOptimal === "boolean" &&
+    typeof candidate.isPractice === "boolean" &&
+    typeof candidate.cribRole === "string"
+  );
+};
 
-const parseLifetime = (value: unknown): LifetimeTotals =>
-  isRecord(value) &&
-  typeof value.decisions === "number" &&
-  typeof value.expectedPointsLossTotal === "number" &&
-  typeof value.optimalDecisions === "number"
-    ? {
-        decisions: value.decisions,
-        expectedPointsLossTotal: value.expectedPointsLossTotal,
-        optimalDecisions: value.optimalDecisions,
-      }
+const parseLifetime = (value: unknown): LifetimeTotals => {
+  if (!isObject(value)) {
+    return emptyLifetime;
+  }
+  const { decisions, expectedPointsLossTotal, optimalDecisions } =
+    value as MaybeLifetime;
+  return typeof decisions === "number" &&
+    typeof expectedPointsLossTotal === "number" &&
+    typeof optimalDecisions === "number"
+    ? { decisions, expectedPointsLossTotal, optimalDecisions }
     : emptyLifetime;
+};
 
 /*
  * A stored version newer than this build is left untouched and read as empty.
  * The alternative is to overwrite it, which would destroy a richer history
  * because one tab happens to be running an older deploy.
  */
-const isReadable = (parsed: unknown): parsed is Record<string, unknown> =>
-  isRecord(parsed) &&
-  typeof parsed.version === "number" &&
-  parsed.version <= CURRENT_VERSION;
+const readableTally = (parsed: unknown): MaybeTally | null => {
+  if (!isObject(parsed)) {
+    return null;
+  }
+  const candidate = parsed as MaybeTally;
+  return typeof candidate.version === "number" &&
+    candidate.version <= CURRENT_VERSION
+    ? candidate
+    : null;
+};
 
 const readStoredTally = (): StoredTally => {
   const stored = localStorage.getItem(discardTallyKey);
   if (stored === null) {
     return emptyTally;
   }
-  const parsed: unknown = JSON.parse(stored);
-  if (!isReadable(parsed)) {
+  const candidate = readableTally(JSON.parse(stored));
+  if (candidate === null) {
     return emptyTally;
   }
-  const {records} = parsed;
+  const { records } = candidate;
   return {
-    lifetime: parseLifetime(parsed.lifetime),
+    lifetime: parseLifetime(candidate.lifetime),
     records: Array.isArray(records) ? records.filter(isDecisionRecord) : [],
     version: CURRENT_VERSION,
   };

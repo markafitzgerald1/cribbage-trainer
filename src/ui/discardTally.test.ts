@@ -47,9 +47,7 @@ const storeRaw = (value: string) => {
   localStorage.setItem(discardTallyKey, value);
 };
 
-const storeValue = (value: unknown) => {
-  storeRaw(JSON.stringify(value));
-};
+const asJson = (value: unknown) => JSON.stringify(value);
 
 const validRecord = decisionOf();
 
@@ -139,60 +137,62 @@ describe("discard tally storage", () => {
     expect(readDiscardTally().meanExpectedPointsLoss).toBe(2.5);
   });
 
+  /*
+   * One table rather than three: every case here is storage this build
+   * cannot trust, and all of them must read as an empty tally rather than
+   * throw or half-load. Splitting them by cause produced identical bodies,
+   * which is duplication by any measure that matters.
+   */
   it.each([
     { name: "text that is not JSON", stored: "{" },
     { name: "a JSON null", stored: "null" },
     { name: "a bare number", stored: "7" },
-  ])("forgets storage holding $name", ({ stored }) => {
+    { name: "no version", stored: asJson(storedOmitting("version")) },
+    {
+      name: "a non-numeric version",
+      stored: asJson(storedWith({ version: "1" })),
+    },
+    // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
+    { name: "a newer version", stored: asJson(storedWith({ version: 2 })) },
+    { name: "no counters", stored: asJson(storedOmitting("lifetime")) },
+    {
+      name: "counters that are not an object",
+      stored: asJson(storedWith({ lifetime: 3 })),
+    },
+    {
+      name: "counters missing their count",
+      stored: asJson(
+        storedWith({
+          lifetime: { expectedPointsLossTotal: 1, optimalDecisions: 1 },
+        }),
+      ),
+    },
+    {
+      name: "counters missing their total",
+      stored: asJson(
+        storedWith({ lifetime: { decisions: 1, optimalDecisions: 1 } }),
+      ),
+    },
+    {
+      name: "counters missing their optimal count",
+      stored: asJson(
+        storedWith({ lifetime: { decisions: 1, expectedPointsLossTotal: 1 } }),
+      ),
+    },
+  ])("reads $name as an empty tally", ({ stored }) => {
     storeRaw(stored);
 
     expect(readDiscardTally()).toStrictEqual(EMPTY);
   });
 
-  it.each([
-    { name: "no version", stored: storedOmitting("version") },
-    { name: "a non-numeric version", stored: storedWith({ version: "1" }) },
-    // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
-    { name: "a newer version", stored: storedWith({ version: 2 }) },
-  ])("forgets a tally with $name", ({ stored }) => {
-    storeValue(stored);
-
-    expect(readDiscardTally()).toStrictEqual(EMPTY);
-  });
-
   it("accepts a tally from an older version", () => {
-    storeValue(storedWith({ version: 0 }));
+    storeRaw(asJson(storedWith({ version: 0 })));
 
     expect(readDiscardTally().decisions).toBe(2);
   });
 
-  it.each([
-    { name: "absent", stored: storedOmitting("lifetime") },
-    { name: "not an object", stored: storedWith({ lifetime: 3 }) },
-    {
-      name: "missing its count",
-      stored: storedWith({
-        lifetime: { expectedPointsLossTotal: 1, optimalDecisions: 1 },
-      }),
-    },
-    {
-      name: "missing its total",
-      stored: storedWith({ lifetime: { decisions: 1, optimalDecisions: 1 } }),
-    },
-    {
-      name: "missing its optimal count",
-      stored: storedWith({
-        lifetime: { decisions: 1, expectedPointsLossTotal: 1 },
-      }),
-    },
-  ])("restarts counters that are $name", ({ stored }) => {
-    storeValue(stored);
-
-    expect(readDiscardTally()).toStrictEqual(EMPTY);
-  });
-
   it("keeps counting onto a recovered tally", () => {
-    storeValue(storedWith({}));
+    storeRaw(asJson(storedWith({})));
 
     expect(
       recordDiscardDecision(decisionOf({ expectedPointsLoss: 3 })),
@@ -223,7 +223,7 @@ describe("discard tally storage", () => {
   ])(
     "drops records that are $name while keeping the counters",
     ({ records }) => {
-      storeValue(storedWith({ records }));
+      storeRaw(asJson(storedWith({ records })));
 
       expect(readDiscardTally().decisions).toBe(2);
     },
