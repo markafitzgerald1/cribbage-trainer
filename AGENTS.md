@@ -524,6 +524,13 @@
   claiming a Copilot review happened.
 - To find PR review threads without individual review URLs, use any available
   GitHub integration or the `gh` CLI for the repository and PR number.
+- A bot's login differs between the two GitHub APIs: REST reports
+  `chatgpt-codex-connector[bot]` where GraphQL reports
+  `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling
+  matches nothing and returns a confident zero, which reads as "no review
+  yet" rather than as a broken filter. When polling for a review round, also
+  bound the query by time or comment id: counting a bot's comments without one
+  matches a round from days ago and reports a reply that never happened.
 - With the `gh` CLI, use `gh api graphql` to query review thread fields such as
   `isResolved`, `isOutdated`, and nested comments.
 - After replying to addressed review threads, use the GraphQL
@@ -623,6 +630,19 @@
   a PR branch while waiting on its preview or CI result — including a
   doc-only follow-up commit — or the run producing that result dies and the
   wait restarts. Land such commits before the run starts, or after it ends.
+- A scheduled workflow's execution clock is not the time it was scheduled
+  for, and the gap can exceed the whole interval. GitHub delays scheduled
+  runs under load, a queued job may reach a runner much later, and a re-run
+  keeps `event_name` at `schedule` while its clock reads whenever a human
+  clicked. Anything that dates work by `date` at run time therefore attributes
+  it to the wrong period, silently. Derive the period from the run's
+  `created_at` instead, which is unambiguous on a first attempt; refuse when
+  `run_attempt` is above 1, since GitHub documents neither `created_at` nor
+  `run_started_at` as preserved or reset across a re-run. Refusing beats
+  guessing here, because a wrong period is invisible while a refusal is loud
+  and recoverable. The export canary in `.github/workflows` carries the worked
+  example, and four review rounds were spent finding the variants of this one
+  bug, each hiding inside the fix for the last.
 - Never retry a failed Pages deploy with a single-job rerun: rerunning a
   job that already uploaded a `github-pages` artifact adds a second one to
   the same run, and `actions/deploy-pages` then always fails with

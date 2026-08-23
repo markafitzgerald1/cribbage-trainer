@@ -11,6 +11,12 @@ bookkeeping that GA4 cannot reconstruct after the fact, and the two
 load-bearing halves of the e2e setup that make "nothing was sent" assertions
 mean anything.
 
+Before creating, changing, querying, or auditing the GA4 BigQuery export, read
+[`references/bigquery-export.md`](references/bigquery-export.md). It is the
+operator runbook and decision record for region, retention, costs, ownership,
+failure detection, and verification SQL; those console-only outcomes must never
+be inferred from repository changes.
+
 **Learnings:**
 
 - `src/ui/loadGoogleAnalytics.ts` implements basic consent mode. Unanswered or
@@ -189,6 +195,26 @@ mean anything.
   `discard_scored` carries the hand's own provenance and why an
   `analysis_shown` row can only be segmented by joining `hand_started` on
   `deal_nonce` (Codex, on #732).
+- GA4 BigQuery export stores a numeric parameter in `int_value` when its value
+  is a whole number and in `double_value` otherwise. Every warehouse numeric
+  read, after `UNNEST(event_params) AS param`, must use
+  `COALESCE(param.value.double_value, CAST(param.value.int_value AS FLOAT64))`.
+  Reading only `double_value` silently removes every zero-loss optimal discard,
+  the largest single decision-quality group, as well as integer schema
+  versions.
+- The Google tag sends the trainer's JavaScript boolean event parameters into
+  BigQuery as `string_value` values such as `true` and `false`. Parse them with
+  `SAFE_CAST(param.value.string_value AS BOOL)`. A warehouse query that also
+  tolerates numeric historical data may fall back to the numeric coalesce
+  above, but it must try the string slot first.
+- `deal_nonce` belongs in BigQuery joins but never in GA4 custom definitions.
+  Its per-hand UUID cardinality would immediately exceed dimension guidance and
+  collapse GA4 reports into `(other)` rows.
+- A repository runbook does not prove the export exists. A production operator
+  must record the link, expiration, budget, query safeguards, first daily-table
+  result, owner, and a negative-checked missing-table alert. GA4 cannot
+  re-export data missed while billing or the link is unavailable, so detecting
+  a gap is part of the data contract rather than optional operations work.
 - Telemetry must not consume the injected seeded generator for identifiers or
   anything else, or seeded deep links would deal different hands. The hook
   has no access to it, and a `Trainer` test pins the generator to exactly six
