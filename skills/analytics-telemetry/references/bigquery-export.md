@@ -268,9 +268,10 @@ enabling it would put collection ahead of its disclosure again.
 4. Open the dataset's **Sharing** > **Permissions** view and confirm the same
    service account has **BigQuery Data Owner** on the export dataset.
 5. Expand the dataset and find `events_YYYYMMDD`. Daily export creates one
-   table for the previous day. It usually arrives the following afternoon in
-   the GA4 property's reporting time zone, but Google does not guarantee an
-   exact time and may deliver it the next day.
+   table for the previous day. Both tables observed here were written around
+   09:10 in the GA4 property's reporting time zone, not the afternoon this
+   step used to claim, but Google does not guarantee an exact time and may
+   deliver it the next day.
 6. Open the table's **Details** tab. Confirm its location equals the decision
    record and its row count is greater than zero after production has recorded
    consented traffic.
@@ -360,7 +361,7 @@ had already been created and so did not inherit that default; it was given an
 explicit `expiration_timestamp` of 2027-10-20, computed as 425 days after its
 reporting date rather than after its creation time.
 
-**Outstanding as of 2026-08-23.** Step 7 checks creation time plus 425 days,
+**Repaired 2026-08-23.** Step 7 checks creation time plus 425 days,
 which for this table is 2027-10-21, so it fails that check as configured and
 will keep failing it. The substance is immaterial, a single day of one partial
 table, but a check that the estate cannot pass stops being read, and this is
@@ -370,6 +371,20 @@ step 5 generator again, execute the one statement it emits for
 `events_20260821`, and re-run step 7. Every later table inherits the dataset
 default and is created after the day it holds, so none of them can drift this
 way.
+
+The inventory now reports both tables at exactly `creation_time` plus 425
+days, to the second: `events_20260821` created 2026-08-22 13:20:40 UTC and
+expiring 2027-10-21 13:20:40 UTC, `events_20260822` created 2026-08-23
+13:02:24 UTC and expiring 2027-10-22 13:02:24 UTC. The second was already
+correct from the dataset default; re-applying the generated statement to it
+changed nothing, which is why step 6 says to run every statement rather than
+pick.
+
+Those two creation times are also the only real evidence of **when a daily
+table lands**: 13:20 and 13:02 UTC, both around 09:10 Eastern. Earlier text
+here guessed the following afternoon, and the recorded 11:04 EDT for the
+dataset was when Mark looked, not when Google wrote. Expect a table
+mid-morning Eastern and check for the canary then.
 
 ### 6. Configure billing alerts
 

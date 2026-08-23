@@ -138,6 +138,13 @@ jobs:
           # in GA4's own reports. BigQuery does not need them, but a human
           # checking Realtime after a run does, and an event that shows nowhere
           # in the UI reads as a failure when it is fine.
+          #
+          # Their JSON types differ and Google's reference is the authority on
+          # which is which: engagement_time_msec is a bare number, session_id a
+          # quoted string. Quoting the number is not cosmetic — strict
+          # validation rejects the type mismatch, and the run would fail before
+          # sending anything, disabling the canary rather than merely
+          # degrading it.
           payload=$(cat <<JSON
           {
             "client_id": "683.1",
@@ -147,7 +154,7 @@ jobs:
               {
                 "name": "export_health_canary",
                 "params": {
-                  "engagement_time_msec": "100",
+                  "engagement_time_msec": 100,
                   "reporting_date": "${REPORTING_DATE}",
                   "session_id": "${STAMP_MICROS%??????}",
                   "source": "github_actions"
