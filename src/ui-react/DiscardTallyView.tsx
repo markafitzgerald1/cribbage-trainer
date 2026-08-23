@@ -32,11 +32,12 @@ export function DiscardTallyView({
           {summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS)}
         </span>
       </span>
+      {/* "N of M" rather than a pluralized noun, so the phrasing is right at every count including one. */}
       <span>
+        <span className={classes.label}>Best choice </span>
         <span className={classes.figure}>{summary.optimalDecisions}</span>
         <span className={classes.label}> of </span>
         <span className={classes.figure}>{summary.decisions}</span>
-        <span className={classes.label}> discards were best</span>
       </span>
     </p>
   );

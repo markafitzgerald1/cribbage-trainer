@@ -26,8 +26,15 @@ const summaryOf = (
 
 export const Default: StoryObj<typeof meta> = {
   args: { summary: summaryOf(24, 0.7361, 9) },
+  /*
+   * The figures are asserted one at a time because each sits in its own
+   * element for styling, and this matcher will not join text across them the
+   * way a browser-level one does.
+   */
   play: async ({ canvas }) => {
     await expect(canvas.getByText("0.74")).toBeVisible();
+    await expect(canvas.getByText("9")).toBeVisible();
+    await expect(canvas.getByText("24")).toBeVisible();
   },
 };
 
