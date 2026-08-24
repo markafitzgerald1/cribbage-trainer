@@ -28,6 +28,7 @@ import type { TrackEvent } from "../ui/trackEvent";
 import { clearGoogleAnalyticsCookies } from "../ui/clearGoogleAnalyticsCookies";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
 import { useAnalysisReporting } from "./useAnalysisReporting";
@@ -344,7 +345,7 @@ export function Trainer({
         </p>
       </header>
       <div
-        className={`${classes.dynamicUi} ${tallySummary.meanExpectedPointsLoss === null ? "" : classes.withTally}`}
+        className={`${classes.dynamicUi} ${hasTallyToShow(tallySummary) ? classes.withTally : ""}`}
       >
         <InteractiveHand
           cribRole={cribRole}

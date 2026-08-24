@@ -1,5 +1,5 @@
 import * as classes from "./DiscardTallyView.module.css";
-import type { DiscardTallySummary } from "../ui/discardTally";
+import { type DiscardTallySummary, hasTallyToShow } from "../ui/discardTally";
 import type { ReactNode } from "react";
 
 const LOSS_FRACTION_DIGITS = 2;
@@ -57,10 +57,10 @@ export function DiscardTallyView({
    * who this row was added for, and hiding it until they complete a discard
    * would keep it from the one person it has something to say to.
    */
-  const faced = summary.decisions + summary.skippedHands;
-  if (faced === 0) {
+  if (!hasTallyToShow(summary)) {
     return null;
   }
+  const faced = summary.decisions + summary.skippedHands;
   const facedToday = summary.todayDecisions + summary.todaySkippedHands;
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;

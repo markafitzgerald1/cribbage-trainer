@@ -278,8 +278,44 @@ const summarize = (
  * truth, but a browser refusing writes would re-read the same stale tally
  * before every decision, so a session's second hand would replace its first
  * rather than add to it.
+ *
+ * The value it was derived from is kept beside it. If storage has moved on
+ * since — another tab recording while this one could not write — the
+ * fallback is a branch off a history that no longer exists, and extending it
+ * would overwrite that tab's hands with this one's stale copy.
  */
 let unsavedTally: StoredTally | null = null;
+let unsavedBase: StoredTally | null = null;
+
+// Counts alone: the question is whether storage moved, not how it moved, and a deep comparison would cost more on every hand than the answer is worth.
+const sameHistory = (one: StoredTally, other: StoredTally) =>
+  one.lifetime.decisions === other.lifetime.decisions &&
+  one.lifetime.skippedHands === other.lifetime.skippedHands &&
+  one.records.length === other.records.length &&
+  one.skipped.length === other.skipped.length;
+
+const forgetUnsaved = () => {
+  unsavedTally = null;
+  unsavedBase = null;
+};
+
+/*
+ * The unsaved copy only when storage still holds what it grew from.
+ * Otherwise this tab's pending hands are dropped: losing them costs a
+ * session's own statistics, where keeping them would cost another tab its
+ * entire history.
+ */
+const basisFor = (persisted: StoredTally): StoredTally => {
+  if (
+    unsavedTally !== null &&
+    unsavedBase !== null &&
+    sameHistory(persisted, unsavedBase)
+  ) {
+    return unsavedTally;
+  }
+  forgetUnsaved();
+  return persisted;
+};
 
 const readTallyOrNull = (): StoredTally | null => {
   try {
@@ -291,7 +327,7 @@ const readTallyOrNull = (): StoredTally | null => {
 
 const readTallyForDisplay = (): StoredTally => {
   const persisted = readTallyOrNull();
-  return persisted === null ? emptyTally : (unsavedTally ?? persisted);
+  return persisted === null ? emptyTally : basisFor(persisted);
 };
 
 export const readDiscardTally = (now: number): DiscardTallySummary =>
@@ -335,7 +371,7 @@ const extendStoredTally = (
    * flush its own history over that one the moment writing worked again.
    */
   const persisted = readTallyOrNull();
-  const stored = persisted === null ? null : (unsavedTally ?? persisted);
+  const stored = persisted === null ? null : basisFor(persisted);
   /*
    * A tally this build cannot read is left exactly as it is. Recording over
    * it would discard a richer history for the sake of one hand, and the tab
@@ -350,7 +386,7 @@ const extendStoredTally = (
   }
   try {
     localStorage.setItem(discardTallyKey, JSON.stringify(next));
-    unsavedTally = null;
+    forgetUnsaved();
   } catch {
     /*
      * A quota or a storage-disabled browser must not break the deal. The
@@ -359,6 +395,8 @@ const extendStoredTally = (
      * the unchanged stored value.
      */
     unsavedTally = next;
+    // The first failure's basis is kept through a run of them, so a later success still compares against what storage held before any of this.
+    unsavedBase ??= persisted;
   }
   return summarize(next, at);
 };
@@ -398,8 +436,16 @@ export const recordSkippedHand = (at: number): DiscardTallySummary =>
     skipped: [...tally.skipped, { at }].slice(-MAX_RECORDS),
   }));
 
+/*
+ * Whether there is anything to show. Exported so the view and the layout that
+ * places it read one rule: they diverged once, and the tally rendered into a
+ * grid cell sized for something else.
+ */
+export const hasTallyToShow = (summary: DiscardTallySummary): boolean =>
+  summary.decisions + summary.skippedHands > 0;
+
 // Exported for the specs and stories that need a browser with no history.
 export const clearDiscardTally = () => {
-  unsavedTally = null;
+  forgetUnsaved();
   localStorage.removeItem(discardTallyKey);
 };

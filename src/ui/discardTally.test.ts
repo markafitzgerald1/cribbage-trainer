@@ -286,7 +286,11 @@ describe("discard tally recovery", () => {
     expect(recordDiscardDecision(decisionOf())).toStrictEqual(EMPTY);
   });
 
-  // A browser refusing writes must still accumulate within the session, or its second hand replaces its first.
+  /*
+   * A browser refusing writes must still accumulate within the session, or
+   * its second hand replaces its first. This is also the case where the
+   * pending copy is kept, since storage has not moved beneath it.
+   */
   it("keeps accumulating after a write is refused", () => {
     clearDiscardTally();
     const summary = withFailingWrite(() => {
@@ -370,6 +374,25 @@ describe("discard tally recovery", () => {
     clearDiscardTally();
 
     expect(withFailingWrite(() => recordSkippedHand(AT)).skippedHands).toBe(1);
+  });
+
+  /*
+   * A tab that could not write holds its hands in memory. If another tab
+   * records meanwhile, that memory is a branch off a history that no longer
+   * exists, and extending it would overwrite the other tab's work. The
+   * pending hands are dropped instead: they cost this session its own
+   * figures, where keeping them would cost the other tab everything.
+   */
+  it("drops pending hands when another writer moved the tally", () => {
+    clearDiscardTally();
+    withFailingWrite(() =>
+      recordDiscardDecision(decisionOf({ handKey: "mine" })),
+    );
+    storeRaw(asJson(storedWith({})));
+
+    expect(
+      recordDiscardDecision(decisionOf({ handKey: "later" })).decisions,
+    ).toBe(3);
   });
 
   it("accepts a tally from an older version", () => {
