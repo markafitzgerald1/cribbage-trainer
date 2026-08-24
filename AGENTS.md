@@ -138,7 +138,13 @@
 - Playwright e2e report viewer: `npx --no-install playwright show-report`.
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 - Storybook coverage: run `npm run storybook:test:coverage`, then update the
-  Vite `test.coverage.thresholds` block to the exact reported totals.
+  Vite `test.coverage.thresholds` block to the exact reported totals — the
+  totals **Docker** reports, not the local run's. The two disagree, because
+  the dev machine is arm64 and the image amd64: one change here measured
+  79.58% branches locally and 79.43% in Docker, a single branch apart. Only
+  the Docker figure gates CI, so a threshold set from the local number fails
+  the build, and it fails during `storybook:test:coverage` — a _build_ step,
+  before any test runs — which reads as an unrelated breakage.
 - For focused Jest/debug runs, pass `--coverage=false` when you only need
   targeted test signal; global coverage thresholds can make otherwise passing
   `--runTestsByPath` suites exit nonzero.
@@ -283,6 +289,29 @@
   `.dynamic-ui > :last-child`, which its text and `em` padding both track —
   rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
   asserts Accept stays within a 844x390 viewport across all browsers.
+- `.dynamic-ui` places its children by **position**, and one of them is
+  conditionally rendered, so those selectors do not mean what they read as.
+  The analysis element exists only once two cards are discarded
+  (`discardIsComplete(dealtCards) && <ScoredPossibleKeepDiscards …>`), so
+  with no discard selected every positional selector after it shifts by one.
+  In side-by-side mode `> :nth-child(n + 2):nth-last-child(n + 2)` hands the
+  middle child the analysis's own slot — `grid-column: 2 / 3` with
+  `grid-row: span 2` — so whichever child lands there inherits a full-height
+  cell and stretches to fill it. The discard tally did exactly that: 753px
+  tall around 56px of content, its rows spread down the whole column, with
+  nothing wrong in its own CSS. A new child added to this container needs an
+  explicit placement of its own, anchored the way the stacked layout already
+  anchors one (`.dynamic-ui.with-tally > :nth-last-child(2)`), and the
+  conditional class driving it must come from the same predicate the child's
+  own render uses or the two diverge.
+- Aligning such a child to the **end** of its cell is not the safe way to
+  stop it stretching. Items placed after the consent cell's row sit below the
+  privacy links once pushed to their cell's end: `align-self: end` put the
+  tally at y675 against the links' y670 and failed
+  `discardTally.spec.ts`'s ordering assertion in all three landscape
+  projects, while looking correct in a single hand-checked viewport.
+  `align-self: start` removes the stretch and leaves the geometry with an
+  analysis on screen byte-identical, which is why it is the smaller change.
 - Desktop engines do not model the mobile viewport, in two independent ways,
   and each has already produced a wrong fix. First, Chrome for Android has a
   toolbar that shows and hides; no desktop engine does, so `100%`, `100svh`,
