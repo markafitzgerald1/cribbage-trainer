@@ -946,6 +946,26 @@ set to that day, within the 71-hour window.
    else. That is the same argument that put the canary emitter here, applied
    to the half of monitoring that had been left behind in a console.
 
+   **Known limit, and it is the cost of that choice: both halves now share one
+   scheduler.** GitHub disables scheduled workflows in a public repository
+   after 60 days with no repository activity, and this repository is public.
+   The canary and this assertion would stop together, producing no failed run
+   and so no notification, while the export itself carries on until something
+   breaks it unwatched. A BigQuery scheduled query was not subject to that
+   rule, so moving here traded an alert that could not deliver for two alerts
+   that can be switched off at once.
+
+   The exposure is compound — dormancy **and** an export failure inside it —
+   and at the current commit cadence the clock never gets close. It is
+   recorded rather than dismissed because the scenario is this project's
+   stated goal state rather than its failure state: the objective is play
+   several times a week without touching the code, and a browser sending
+   events while nobody pushes is exactly the condition that trips this. The
+   billing account has also lapsed once already, so an unwatched break is not
+   hypothetical. Covering it needs a check outside GitHub's scheduler, which
+   is a design decision rather than a tweak, and it is tracked in issue #742.
+   Revisit it the moment this repository goes quiet for a few weeks.
+
 6. Create the service account and give it the workflow's credential. In
    **IAM & Admin** > **Service Accounts**, create one; grant it **BigQuery Job
    User** on the project and **BigQuery Data Viewer** on the export dataset,
