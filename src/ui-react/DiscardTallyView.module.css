@@ -7,9 +7,19 @@
 .tally {
   /* Every other surface here declares this; inheriting the browser default left the tally in a different typeface from the table it summarizes. */
   font-family: var(--text-font-family);
+
+  /* Likewise: without this the tally inherited the UA default black, which on the table's green is far too low a contrast to read. */
+  color: var(--text-color);
   display: grid;
   column-gap: 0.7em;
   margin-block: 0.3em;
+
+  /*
+   * Rows hug the top rather than sharing out surplus height. Auto-sized grid
+   * rows are stretched by the default align-content, so a cell taller than
+   * the content spread these three rows down the whole of it.
+   */
+  align-content: start;
 }
 
 /*
