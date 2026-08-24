@@ -59,16 +59,29 @@ jobs:
           # This value becomes a table name inside SQL, and a dispatch input is
           # attacker-shaped even when the attacker is a typo. Constrain it here
           # rather than trusting it downstream.
-          if ! printf '%s' "${checked}" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
-            echo "Refusing: '${checked}' is not a YYYY-MM-DD reporting date." >&2
-            exit 1
-          fi
+          #
+          # A glob against the whole value rather than grep, which matches line
+          # by line: a multiline input whose first line is a valid date passes
+          # a grep anchored with ^ and $, then carries its remaining lines into
+          # the table name and writes a second table= record to GITHUB_OUTPUT,
+          # where the later record wins and reaches the SQL below.
+          case "${checked}" in
+            [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+            *)
+              echo "Refusing: '${checked}' is not a YYYY-MM-DD reporting date." >&2
+              exit 1
+              ;;
+          esac
           table="events_${checked//-/}"
-          echo "table=${table}" >> "${GITHUB_OUTPUT}"
+          {
+            echo "checked_date=${checked}"
+            echo "table=${table}"
+          } >> "${GITHUB_OUTPUT}"
           echo "Asserting ${checked} (${table})." >> "${GITHUB_STEP_SUMMARY}"
 
       - name: Assert the daily table and its canary
         env:
+          CHECKED_DATE: ${{ steps.target.outputs.checked_date }}
           SERVICE_ACCOUNT_KEY: ${{ secrets.BIGQUERY_MONITOR_SERVICE_ACCOUNT_KEY }}
           TABLE: ${{ steps.target.outputs.table }}
         run: |
@@ -100,6 +113,7 @@ jobs:
             --format=none \
             <<SQL
           DECLARE checked_table STRING DEFAULT '${TABLE}';
+          DECLARE checked_date STRING DEFAULT '${CHECKED_DATE}';
           DECLARE canary_count INT64 DEFAULT 0;
 
           ASSERT (
@@ -108,14 +122,22 @@ jobs:
             WHERE table_name = checked_table
           ) AS 'GA4 daily export table is missing; inspect the GA4 BigQuery link now';
 
+          -- Matched on the canary's own reporting_date, not merely on the table
+          -- holding some canary. The emitter carries that parameter precisely so
+          -- a slipped timestamp is visible: without this clause a canary that
+          -- landed in the neighboring day's table would satisfy the check for
+          -- both days, and the drift would never surface.
           EXECUTE IMMEDIATE FORMAT(
             "SELECT COUNT(*) FROM \`${BIGQUERY_PROJECT}.${EXPORT_DATASET}.%s\` "
-            || "WHERE event_name = 'export_health_canary'",
+            || "WHERE event_name = 'export_health_canary' "
+            || "AND (SELECT ANY_VALUE(param.value.string_value) "
+            || "FROM UNNEST(event_params) AS param "
+            || "WHERE param.key = 'reporting_date') = @reporting_date",
             checked_table
-          ) INTO canary_count;
+          ) INTO canary_count USING checked_date AS reporting_date;
 
           ASSERT canary_count > 0
-            AS 'GA4 export canary is missing; inspect its workflow and the export link';
+            AS 'No GA4 export canary for this reporting date; inspect its workflow, its stamped date, and the export link';
           SQL
           echo "Table and canary both present for ${TABLE}." \
             >> "${GITHUB_STEP_SUMMARY}"

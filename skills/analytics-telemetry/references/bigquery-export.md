@@ -76,17 +76,20 @@ as `Pending` until Mark performs and verifies each console step.
 - **Recorded value:** Mark is the sole operational owner for now. Mark's durable
   Google account receives export-health and billing alerts. The backup owner is
   intentionally blank.
-- **The scheduled query runs as a service account, not as Mark.** An earlier
-  version of this record said otherwise. It should not: creating a scheduled
-  query under personal credentials makes the BigQuery Data Transfer Service
-  demand two OAuth scopes, the first being **"See, edit, create, and delete
-  all of your Google Drive files"** — full read-write-delete over every file
-  in the owner's personal Drive, granted to an unattended service, for a query
-  that counts rows in two tables. BigQuery asks because it can read Drive-backed
-  external tables such as Google Sheets; nothing here uses that. The consent
-  screen offers no per-scope opt-out, and revoking Drive afterwards removes the
-  whole connection and breaks the query with it. A service account draws its
-  permissions from IAM instead, so the grant never appears at all.
+- **The health workflow's query authenticates as a service account, never as a
+  person, and no BigQuery scheduled query exists.** Do not create one: an
+  earlier attempt did, and section 10 records what it cost. The short version
+  is that a scheduled query created under personal credentials makes the
+  BigQuery Data Transfer Service demand two OAuth scopes, the first being
+  **"See, edit, create, and delete all of your Google Drive files"** — full
+  read-write-delete over every file in the owner's personal Drive, granted to
+  an unattended service, for a query that counts rows in two tables. BigQuery
+  asks because it can read Drive-backed external tables such as Google Sheets;
+  nothing here uses that. The consent screen offers no per-scope opt-out, and
+  revoking Drive afterwards removes the whole connection and breaks the query
+  with it. A service account draws its permissions from IAM instead, so the
+  grant never appears — which is why the workflow holds a service-account key
+  rather than anyone's personal credential.
 - **Both halves of monitoring run from this repository, not from a console.**
   The canary is emitted by `.github/workflows/bigquery-export-canary.yml` and
   asserted by `.github/workflows/bigquery-export-health.yml`, each notifying
