@@ -26,8 +26,10 @@ on:
         required: false
         default: ""
 
-# Nothing here reads or writes the repository.
-permissions: {}
+# Reading this run's own creation time is what ties a scheduled run to the cron
+# fire it stands for; nothing else here needs a token.
+permissions:
+  actions: read
 
 env:
   BIGQUERY_PROJECT: cribbage-trainer-analytics
@@ -47,15 +49,48 @@ jobs:
         id: target
         env:
           CHECKED_DATE: ${{ inputs.checked_date }}
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
           set -euo pipefail
-          if [ -n "${CHECKED_DATE}" ]; then
-            checked="${CHECKED_DATE}"
-          else
-            # Two reporting dates back, so an export running late has more than
-            # a full day to arrive before its absence is called a failure.
-            checked=$(TZ="${PROPERTY_TIME_ZONE}" date -d '2 days ago' +%F)
-          fi
+          case "${EVENT_NAME}" in
+            schedule)
+              # A re-run keeps event_name at schedule and is given no way to
+              # learn which fire it is retrying, so a date computed from its own
+              # clock would name the wrong day -- and the day that failed would
+              # stay unchecked while a newer one was checked twice. Refusing is
+              # the only answer here that cannot be silently wrong. The canary
+              # workflow refuses for the same reason.
+              if [ "${RUN_ATTEMPT}" != "1" ]; then
+                echo "Refusing to re-run a scheduled health check: this run cannot tell which day it was retrying." >&2
+                echo "Read the reporting date off the failed attempt's job summary, which names it," >&2
+                echo "then dispatch this workflow with checked_date set to that date." >&2
+                exit 1
+              fi
+              # A first attempt stands for its cron fire, not for the moment it
+              # reached a runner. Deriving from now would let a run delayed past
+              # local midnight check the following day and leave its own
+              # unchecked, which the next scheduled run would then re-check
+              # rather than catch.
+              created=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq '.created_at' || true)
+              if [ -z "${created}" ]; then
+                echo "Refusing: could not read this run's creation time, so the fire it stands for is unknown." >&2
+                exit 1
+              fi
+              # Two reporting dates back, so an export running late has more
+              # than a full day to arrive before its absence is called a
+              # failure.
+              checked=$(TZ="${PROPERTY_TIME_ZONE}" date -d "${created} -2 days" +%F)
+              ;;
+            *)
+              if [ -n "${CHECKED_DATE}" ]; then
+                checked="${CHECKED_DATE}"
+              else
+                checked=$(TZ="${PROPERTY_TIME_ZONE}" date -d '2 days ago' +%F)
+              fi
+              ;;
+          esac
           # This value becomes a table name inside SQL, and a dispatch input is
           # attacker-shaped even when the attacker is a typo. Constrain it here
           # rather than trusting it downstream.
