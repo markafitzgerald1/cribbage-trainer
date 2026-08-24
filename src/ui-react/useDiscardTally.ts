@@ -73,7 +73,25 @@ export const useDiscardTally = ({
    * has to happen at the moment of replacement rather than later: once the
    * cards change there is nothing left to notice was abandoned.
    */
-  const openHand = useRef<{ key: string; scored: boolean } | null>(null);
+  const openHand = useRef<{ key: string; scored: boolean } | null>(
+    /*
+     * The hand a page load starts with is open like any other. Exempting it
+     * looked fair — nobody chose it — but pressing Deal from it is a
+     * deliberate abandonment, and leaving it uncounted made the first hand of
+     * every session free to walk away from.
+     *
+     * Practice starts stay closed: a seeded or deep-linked hand is study, and
+     * study is outside these figures entirely.
+     *
+     * One gap remains and cannot be closed from here: reloading the page
+     * abandons the open hand without replacing it, so nothing observes the
+     * departure. Catching that needs the open hand to outlive the session in
+     * storage, which is more machinery than a loophole this visible earns.
+     */
+    isSeededSession || wasDeepLinked
+      ? null
+      : { key: toHandKey(dealtCards, cribRole), scored: false },
+  );
 
   const practiceByHand = useRef(
     /*

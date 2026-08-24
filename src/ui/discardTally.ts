@@ -289,8 +289,10 @@ const readTallyOrNull = (): StoredTally | null => {
   }
 };
 
-const readTallyForDisplay = (): StoredTally =>
-  unsavedTally ?? readTallyOrNull() ?? emptyTally;
+const readTallyForDisplay = (): StoredTally => {
+  const persisted = readTallyOrNull();
+  return persisted === null ? emptyTally : (unsavedTally ?? persisted);
+};
 
 export const readDiscardTally = (now: number): DiscardTallySummary =>
   summarize(readTallyForDisplay(), now);
@@ -326,7 +328,14 @@ const extendStoredTally = (
   at: number,
   extend: (tally: StoredTally) => StoredTally,
 ): DiscardTallySummary => {
-  const stored = unsavedTally ?? readTallyOrNull();
+  /*
+   * Storage is consulted even when a write failed earlier, because the
+   * failure may have been transient and another tab may have written a newer
+   * schema since. Trusting the in-memory copy alone would let this build
+   * flush its own history over that one the moment writing worked again.
+   */
+  const persisted = readTallyOrNull();
+  const stored = persisted === null ? null : (unsavedTally ?? persisted);
   /*
    * A tally this build cannot read is left exactly as it is. Recording over
    * it would discard a richer history for the sake of one hand, and the tab

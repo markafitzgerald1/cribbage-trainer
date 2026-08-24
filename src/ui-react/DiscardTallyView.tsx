@@ -17,6 +17,9 @@ const shareOf = (part: number, whole: number) =>
 const countAndShare = (part: number, whole: number) =>
   `${part}/${whole} (${shareOf(part, whole)})`;
 
+// An empty cell holds the column open; omitting it would shift every figure to its left.
+const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
+
 interface DiscardTallyViewProps {
   readonly summary: DiscardTallySummary;
 }
@@ -49,33 +52,52 @@ export function DiscardTallyView({
   summary,
 }: DiscardTallyViewProps): ReactNode {
   /*
-   * A browser that has completed no discards has nothing to average, and a
-   * zero here would read as perfect play rather than as no evidence.
+   * Nothing is shown until a hand has been either played or walked away from.
+   * Skips alone are enough: a player who has only avoided hands is exactly
+   * who this row was added for, and hiding it until they complete a discard
+   * would keep it from the one person it has something to say to.
    */
-  if (summary.meanExpectedPointsLoss === null) {
+  const faced = summary.decisions + summary.skippedHands;
+  if (faced === 0) {
     return null;
   }
-  const hasToday = summary.todayDecisions > 0;
+  const facedToday = summary.todayDecisions + summary.todaySkippedHands;
+  const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
   return (
     <div className={`${classes.tally} ${columns}`}>
       <span />
       {hasToday ? <span className={classes.period}>today</span> : null}
       <span className={classes.period}>all time</span>
-      {renderMeasure(
-        "Points lost per discard",
-        summary.todayMeanExpectedPointsLoss === null
-          ? null
-          : summary.todayMeanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
-        summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
-      )}
-      {renderMeasure(
-        "Best choice",
-        hasToday
-          ? countAndShare(summary.todayOptimalDecisions, summary.todayDecisions)
-          : null,
-        countAndShare(summary.optimalDecisions, summary.decisions),
-      )}
+      {/*
+       * The decision measures are blank rather than absent when nothing has
+       * been scored, so the skip row below keeps its columns and a reader
+       * sees which figures exist rather than a table that changes shape.
+       */}
+      {/* Guarded on the mean rather than the count, which says the same thing and leaves no branch that cannot run. */}
+      {summary.meanExpectedPointsLoss === null
+        ? null
+        : renderMeasure(
+            "Points lost per discard",
+            summary.todayMeanExpectedPointsLoss === null
+              ? blankWhen(hasToday)
+              : summary.todayMeanExpectedPointsLoss.toFixed(
+                  LOSS_FRACTION_DIGITS,
+                ),
+            summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
+          )}
+      {summary.decisions === 0
+        ? null
+        : renderMeasure(
+            "Best choice",
+            summary.todayDecisions === 0
+              ? blankWhen(hasToday)
+              : countAndShare(
+                  summary.todayOptimalDecisions,
+                  summary.todayDecisions,
+                ),
+            countAndShare(summary.optimalDecisions, summary.decisions),
+          )}
       {/*
        * Only once a hand has been abandoned, so an untouched row never implies
        * a habit nobody has. The share is of the hands actually faced — those
@@ -87,15 +109,9 @@ export function DiscardTallyView({
         : renderMeasure(
             "Hands skipped",
             hasToday
-              ? countAndShare(
-                  summary.todaySkippedHands,
-                  summary.todayDecisions + summary.todaySkippedHands,
-                )
+              ? countAndShare(summary.todaySkippedHands, facedToday)
               : null,
-            countAndShare(
-              summary.skippedHands,
-              summary.decisions + summary.skippedHands,
-            ),
+            countAndShare(summary.skippedHands, faced),
           )}
     </div>
   );

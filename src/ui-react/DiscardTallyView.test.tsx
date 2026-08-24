@@ -3,77 +3,64 @@ import { DiscardTallyView } from "./DiscardTallyView";
 import { discardTallySummary } from "./discardTally.test.common";
 import { render } from "@testing-library/react";
 
+// Typed from the builder rather than from the summary, so this file does not restate an import the stories already make.
+const renderTally = (overrides: Parameters<typeof discardTallySummary>[0]) =>
+  render(<DiscardTallyView summary={discardTallySummary(overrides)} />);
+
+const NOTHING_SCORED = {
+  decisions: 0,
+  meanExpectedPointsLoss: null,
+  optimalDecisions: 0,
+};
+
 describe("discard tally view", () => {
   /*
-   * Today appears only once there is a decision from today to average. A zero
-   * would read as faultless play on a day nobody has played yet.
+   * Today is named once as a column heading rather than beside every figure,
+   * and the column exists only when today has something in it. A zero there
+   * would read as a day played faultlessly rather than one not played.
    */
   it.each([
-    {
-      name: "gives today a column of its own alongside all time",
-      scoped: 1,
-      today: { decisions: 5, mean: 0.4128 },
-    },
-    {
-      name: "shows all time alone before a decision is made today",
-      scoped: 0,
-      today: { decisions: 0, mean: null },
-    },
-  ])("$name", ({ scoped, today }) => {
-    const { queryAllByText } = render(
-      <DiscardTallyView
-        summary={discardTallySummary({
-          todayDecisions: today.decisions,
-          todayMeanExpectedPointsLoss: today.mean,
-          todayOptimalDecisions: 2,
-        })}
-      />,
-    );
+    { name: "a decision made today", scoped: 1, today: { todayDecisions: 5 } },
+    // A skip counts as facing a hand, so it earns the column on its own.
+    { name: "a skip alone", scoped: 1, today: { todaySkippedHands: 1 } },
+    { name: "nothing faced today", scoped: 0, today: {} },
+  ])("gives today a column for $name", ({ scoped, today }) => {
+    const { queryAllByText } = renderTally({ skippedHands: 3, ...today });
 
-    // Named once as a column heading rather than repeated beside every figure.
     expect(queryAllByText("today")).toHaveLength(scoped);
   });
 
   /*
-   * The skipped row appears only once a hand has been abandoned, and takes a
-   * today column only when today has decisions to compare it against.
+   * The skip row appears only once a hand has been abandoned, so an untouched
+   * account never implies a habit nobody has.
    */
   it.each([
-    {
-      mean: 0.4128,
-      name: "beside today once a hand was played today",
-      today: 5,
-    },
-    {
-      mean: null,
-      name: "on its own before anything was played today",
-      today: 0,
-    },
-  ])("shows skips $name", ({ mean, today }) => {
-    const { queryAllByText } = render(
-      <DiscardTallyView
-        summary={discardTallySummary({
-          skippedHands: 3,
-          todayDecisions: today,
-          todayMeanExpectedPointsLoss: mean,
-          todaySkippedHands: 1,
-        })}
-      />,
-    );
+    { name: "some were skipped", rows: 1, skippedHands: 3 },
+    { name: "none were", rows: 0, skippedHands: 0 },
+  ])("shows the skip row when $name", ({ rows, skippedHands }) => {
+    const { queryAllByText } = renderTally({ skippedHands });
 
-    expect(queryAllByText("Hands skipped")).toHaveLength(1);
+    expect(queryAllByText("Hands skipped")).toHaveLength(rows);
   });
 
-  it("says nothing at all before any decision is recorded", () => {
-    const { container } = render(
-      <DiscardTallyView
-        summary={discardTallySummary({
-          decisions: 0,
-          meanExpectedPointsLoss: null,
-          optimalDecisions: 0,
-        })}
-      />,
-    );
+  /*
+   * A player who has only walked away from hands is exactly who the skip row
+   * was added for, so it shows without any decision to average beside it, and
+   * the decision rows are absent rather than showing a misleading zero.
+   */
+  it("shows skips alone when nothing has been scored", () => {
+    const { queryByText } = renderTally({
+      ...NOTHING_SCORED,
+      skippedHands: 2,
+      todaySkippedHands: 2,
+    });
+
+    expect(queryByText("Hands skipped")).not.toBeNull();
+    expect(queryByText("Points lost per discard")).toBeNull();
+  });
+
+  it("says nothing at all before a hand has been faced", () => {
+    const { container } = renderTally(NOTHING_SCORED);
 
     expect(container.textContent).toBe("");
   });

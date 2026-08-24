@@ -66,11 +66,17 @@ export const WithSkippedHands = showing(
 );
 
 /*
- * Nothing is shown before a first discard is completed. A zero would read as
- * faultless play rather than as an absence of evidence.
+ * Nothing is shown before a hand has been either played or walked away from.
+ * A zero would read as faultless play rather than as an absence of evidence.
  */
-export const NoDecisionsYet: StoryObj<typeof meta> = {
-  args: { summary: discardTallySummary({ meanExpectedPointsLoss: null }) },
+export const NothingFacedYet: StoryObj<typeof meta> = {
+  args: {
+    summary: discardTallySummary({
+      decisions: 0,
+      meanExpectedPointsLoss: null,
+      optimalDecisions: 0,
+    }),
+  },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.textContent).toBe("");
   },

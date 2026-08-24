@@ -179,47 +179,63 @@ describe("discard tally hook", () => {
   /*
    * Dealing away from a hand that was never scored is the whole point of the
    * skip count: without it, abandoning the hands a player finds hard would
-   * quietly improve every figure above. What must not count is a hand nobody
-   * chose — the one a page load deals — or one entered to study, which is
-   * already outside the averages and would otherwise be penalized twice.
+   * quietly improve every figure above. The hand a page load deals counts
+   * like any other, because pressing Deal from it is a deliberate walk-away
+   * — but a hand entered to study does not, being already outside the
+   * averages and otherwise penalized twice.
    */
   it.each([
     {
-      name: "a hand dealt and then left",
-      open: (tally: DiscardTally) => {
-        noteOrigin(tally, HAND, "deal");
+      name: "the hand on screen when Deal is pressed",
+      play: () => {
+        // Nothing: the hand a page load deals is the one walked away from.
       },
       skipped: 1,
     },
     {
       name: "a hand whose decision was scored",
-      open: (tally: DiscardTally) => {
-        noteOrigin(tally, HAND, "deal");
+      play: (tally: DiscardTally) => {
         reportScore(tally);
       },
       skipped: 0,
     },
     {
-      name: "the hand a page load starts with",
-      open: () => {
-        // Nothing: the hand a page load deals is the one under test.
+      name: "a hand entered to study",
+      play: (tally: DiscardTally) => {
+        reportScore(tally);
+        noteOrigin(tally, OTHER_HAND, "manual");
       },
       skipped: 0,
     },
     {
-      name: "a hand entered to study",
-      open: (tally: DiscardTally) => {
-        noteOrigin(tally, HAND, "manual");
+      name: "the hand a seeded session starts with",
+      play: () => {
+        // Nothing: the seeded start is the hand walked away from.
       },
       skipped: 0,
+      start: { isSeededSession: true },
     },
-  ])("counts $skipped skips for $name", ({ open, skipped }) => {
-    const { result } = renderTally(HAND);
-    open(result.current);
+    {
+      name: "the hand a deep link starts with",
+      play: () => {
+        // Nothing: the deep-linked start is the hand walked away from.
+      },
+      skipped: 0,
+      start: { wasDeepLinked: true },
+    },
+  ])("counts $skipped skips for $name", ({ play, skipped, start }) => {
+    const { result } = renderTally(HAND, start);
+    play(result.current);
     noteOrigin(result.current, OTHER_HAND, "deal");
 
     expect(readDiscardTally(Date.now()).skippedHands).toBe(skipped);
   });
+
+  /*
+   * A seeded or deep-linked start is study, so walking away from it is not
+   * avoidance. Folded into the table above rather than tested separately,
+   * where its body was identical to it.
+   */
 
   it("records nothing until a discard has been scored", () => {
     const { result } = renderTally(HAND);
