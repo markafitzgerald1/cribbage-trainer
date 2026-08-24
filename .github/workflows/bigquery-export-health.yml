@@ -1,0 +1,192 @@
+# Asserts that the GA4 daily export produced a table for a past reporting date
+# and that the canary for that date is inside it. The canary workflow proves an
+# event was sent; this proves it came back out of the export.
+#
+# This lives in a workflow rather than in a BigQuery scheduled query for two
+# reasons. A scheduled query owned by a service account raises its assertion
+# correctly and delivers no failure email, so its alert reaches nobody, while a
+# failed workflow run is something GitHub notifies about on its own. And a
+# workflow file is versioned, reviewed and linted with everything else, whereas
+# a scheduled query exists only in a console with nothing here recording that
+# it is load-bearing -- the same argument that put the canary emitter here.
+name: BigQuery export health
+
+on:
+  schedule:
+    # An hour after the canary, and well after the daily export lands mid-
+    # morning Eastern, so a slow export is never mistaken for a missing one.
+    - cron: "5 18 * * *"
+  workflow_dispatch:
+    inputs:
+      checked_date:
+        description: >-
+          Reporting date to assert as YYYY-MM-DD. Leave empty for two days back.
+          Give a date with no canary to negative-check that a failure is
+          delivered rather than merely detected.
+        required: false
+        default: ""
+
+# Reading this run's own creation time is what ties a scheduled run to the cron
+# fire it stands for; nothing else here needs a token.
+permissions:
+  actions: read
+
+env:
+  BIGQUERY_PROJECT: cribbage-trainer-analytics
+  EXPORT_DATASET: analytics_458709208
+  # The reporting time zone decides which daily table an event landed in, so
+  # this must track the GA4 property rather than the runner, which is UTC.
+  PROPERTY_TIME_ZONE: America/Toronto
+  # The runbook's per-query ceiling. INFORMATION_SCHEMA plus one COUNT(*) is far
+  # below it; the cap is what stops a mistake here becoming a bill.
+  MAXIMUM_BYTES_BILLED: 1073741824
+
+jobs:
+  assert-export-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the reporting date to assert
+        id: target
+        env:
+          CHECKED_DATE: ${{ inputs.checked_date }}
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          case "${EVENT_NAME}" in
+            schedule)
+              # A re-run keeps event_name at schedule and is given no way to
+              # learn which fire it is retrying, so a date computed from its own
+              # clock would name the wrong day -- and the day that failed would
+              # stay unchecked while a newer one was checked twice. Refusing is
+              # the only answer here that cannot be silently wrong. The canary
+              # workflow refuses for the same reason.
+              if [ "${RUN_ATTEMPT}" != "1" ]; then
+                echo "Refusing to re-run a scheduled health check: this run cannot tell which day it was retrying." >&2
+                echo "Read the reporting date off the failed attempt's job summary, which names it," >&2
+                echo "then dispatch this workflow with checked_date set to that date." >&2
+                exit 1
+              fi
+              # A first attempt stands for its cron fire, not for the moment it
+              # reached a runner. Deriving from now would let a run delayed past
+              # local midnight check the following day and leave its own
+              # unchecked, which the next scheduled run would then re-check
+              # rather than catch.
+              created=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" --jq '.created_at' || true)
+              if [ -z "${created}" ]; then
+                echo "Refusing: could not read this run's creation time, so the fire it stands for is unknown." >&2
+                exit 1
+              fi
+              # Two reporting dates back, so an export running late has more
+              # than a full day to arrive before its absence is called a
+              # failure.
+              checked=$(TZ="${PROPERTY_TIME_ZONE}" date -d "${created} -2 days" +%F)
+              ;;
+            *)
+              if [ -n "${CHECKED_DATE}" ]; then
+                # A dispatched date is replayed unchanged on a re-run, so this
+                # is the one path that is stable by construction.
+                checked="${CHECKED_DATE}"
+              else
+                # A blank dispatch resolves from now, so re-running one after
+                # local midnight moves its target: the run could turn green while
+                # the date its first attempt failed on stayed unchecked. Same
+                # drift as the scheduled branch, and the same remedy, because
+                # created_at is no better documented to survive a re-run here
+                # than it is there.
+                if [ "${RUN_ATTEMPT}" != "1" ]; then
+                  echo "Refusing to re-run a dispatch that named no date: this attempt would resolve its own, which may not be the date the first attempt checked." >&2
+                  echo "That first attempt's job summary names the date it used;" >&2
+                  echo "dispatch again with checked_date set to it." >&2
+                  exit 1
+                fi
+                checked=$(TZ="${PROPERTY_TIME_ZONE}" date -d '2 days ago' +%F)
+              fi
+              ;;
+          esac
+          # This value becomes a table name inside SQL, and a dispatch input is
+          # attacker-shaped even when the attacker is a typo. Constrain it here
+          # rather than trusting it downstream.
+          #
+          # A glob against the whole value rather than grep, which matches line
+          # by line: a multiline input whose first line is a valid date passes
+          # a grep anchored with ^ and $, then carries its remaining lines into
+          # the table name and writes a second table= record to GITHUB_OUTPUT,
+          # where the later record wins and reaches the SQL below.
+          case "${checked}" in
+            [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
+            *)
+              echo "Refusing: '${checked}' is not a YYYY-MM-DD reporting date." >&2
+              exit 1
+              ;;
+          esac
+          table="events_${checked//-/}"
+          {
+            echo "checked_date=${checked}"
+            echo "table=${table}"
+          } >> "${GITHUB_OUTPUT}"
+          echo "Asserting ${checked} (${table})." >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Assert the daily table and its canary
+        env:
+          CHECKED_DATE: ${{ steps.target.outputs.checked_date }}
+          SERVICE_ACCOUNT_KEY: ${{ secrets.BIGQUERY_MONITOR_SERVICE_ACCOUNT_KEY }}
+          TABLE: ${{ steps.target.outputs.table }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SERVICE_ACCOUNT_KEY}" ]; then
+            echo "Missing BIGQUERY_MONITOR_SERVICE_ACCOUNT_KEY." >&2
+            exit 1
+          fi
+          # bq ships with the Google Cloud CLI, which the runner image already
+          # provides. Saying so loudly beats failing later with a message about
+          # something else, the way an unstated assumption already cost the
+          # canary a run.
+          if ! command -v bq > /dev/null; then
+            echo "bq is not on this runner; the Google Cloud CLI is missing." >&2
+            exit 1
+          fi
+          key_file="${RUNNER_TEMP}/bigquery-monitor-key.json"
+          # The key is removed however this step ends, including on assertion
+          # failure, which is the path that runs most often by design.
+          trap 'rm -f "${key_file}"' EXIT
+          printf '%s' "${SERVICE_ACCOUNT_KEY}" > "${key_file}"
+          gcloud auth activate-service-account --key-file="${key_file}" --quiet
+          # A failed ASSERT exits non-zero, so the query is the whole gate: no
+          # output parsing to get wrong, and GitHub emails on the failed run.
+          bq query \
+            --project_id="${BIGQUERY_PROJECT}" \
+            --use_legacy_sql=false \
+            --maximum_bytes_billed="${MAXIMUM_BYTES_BILLED}" \
+            --format=none \
+            <<SQL
+          DECLARE checked_table STRING DEFAULT '${TABLE}';
+          DECLARE checked_date STRING DEFAULT '${CHECKED_DATE}';
+          DECLARE canary_count INT64 DEFAULT 0;
+
+          ASSERT (
+            SELECT COUNT(*) = 1
+            FROM \`${BIGQUERY_PROJECT}.${EXPORT_DATASET}.INFORMATION_SCHEMA.TABLES\`
+            WHERE table_name = checked_table
+          ) AS 'GA4 daily export table is missing; inspect the GA4 BigQuery link now';
+
+          -- Matched on the canary's own reporting_date, not merely on the table
+          -- holding some canary. The emitter carries that parameter precisely so
+          -- a slipped timestamp is visible: without this clause a canary that
+          -- landed in the neighboring day's table would satisfy the check for
+          -- both days, and the drift would never surface.
+          EXECUTE IMMEDIATE FORMAT(
+            "SELECT COUNT(*) FROM \`${BIGQUERY_PROJECT}.${EXPORT_DATASET}.%s\` "
+            || "WHERE event_name = 'export_health_canary' "
+            || "AND (SELECT ANY_VALUE(param.value.string_value) "
+            || "FROM UNNEST(event_params) AS param "
+            || "WHERE param.key = 'reporting_date') = @reporting_date",
+            checked_table
+          ) INTO canary_count USING checked_date AS reporting_date;
+
+          ASSERT canary_count > 0
+            AS 'No GA4 export canary for this reporting date; inspect its workflow, its stamped date, and the export link';
+          SQL
+          echo "Table and canary both present for ${TABLE}." \
+            >> "${GITHUB_STEP_SUMMARY}"
