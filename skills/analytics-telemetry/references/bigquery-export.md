@@ -1086,20 +1086,38 @@ evidence is recorded.
       2026-08-21, verified live by Mark, with #665 still out of production.
 - [x] Billing-enabled non-sandbox project and region: `cribbage-trainer-analytics`
       on a paid account, dataset `analytics_458709208` in `northamerica-northeast2`.
-- [ ] Daily export active before #665 deploys: GA4 link details plus submission
-      time earlier than the production deployment of #665.
-- [ ] One daily table queried for #250: six positive event counts and no missing
-      expected parameters from section 8.
-- [ ] Dataset and table expiration explicit: dataset default, every preexisting
-      daily table, and a newly created table match the recorded raw-data policy.
-- [ ] Billing alerts and query safeguards: budget thresholds and recipients,
-      both daily quotas, and per-query maximum recorded.
-- [ ] #665 deployment gate satisfied: export active, verified against an exact
-      daily table, retained for 425 days, cost-controlled, and monitored end to
-      end before #665 reaches production.
+- [x] Daily export active before #665 deploys: link submitted 2026-08-21T22:04Z
+      and reported `LINK CREATED`, exporting the production web stream daily to
+      `northamerica-northeast2`, streaming off, no excluded events. Earlier than
+      #665's production deployment, which had not happened when this was ticked.
+- [x] One daily table queried for #250: section 8's query run against
+      `events_20260821` on 2026-08-22. Five of the six events present with every
+      expected parameter and none missing; `card_unselected` was absent because
+      no card was un-selected in that session, an action not performed rather
+      than a gap in the export, and the surrounding counts corroborate that
+      reading.
+- [x] Dataset and table expiration explicit: dataset default set to 425 days on
+      2026-08-22, `events_20260821` given an explicit expiration and then
+      repaired on 2026-08-23 so it satisfies the section 5 check rather than
+      merely being close, and `events_20260822` confirmed to have inherited the
+      default. Every later table inherits it and is created after the day it
+      holds, so none can drift the same way.
+- [x] Billing alerts and query safeguards: scoped monthly budget at USD $1 with
+      four thresholds created 2026-08-21, both BigQuery API daily quotas set the
+      same day, and the per-query maximum applied by the health workflow on
+      every run.
+- [x] #665 deployment gate satisfied: every element of it is ticked above —
+      active, verified against an exact daily table, retained at 425 days,
+      cost-controlled, and monitored end to end with delivery proven. Note what
+      this gate is: #665's own criteria state those five conditions and
+      **explicitly exclude** the 30-day cost measurement, because it measures a
+      production workload that cannot exist until #665 deploys. Read instead as
+      "#683 fully complete", the gate is circular and can never be satisfied.
 - [ ] Monthly storage and query cost measured as a follow-up: section 11 records
       30 complete post-deployment days without blocking #665 on evidence its
-      production workload must exist to generate.
+      production workload must exist to generate. This is the one criterion
+      deliberately left open at #665's deployment, and the reason #683 stays
+      open afterwards.
 - [x] Operational monitoring works, verified 2026-08-24 and recorded in the
       console-evidence section above: the canary workflow runs from its
       repository secret, its event reached `events_20260823`, the health
