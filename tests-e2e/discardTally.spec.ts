@@ -95,3 +95,23 @@ test("leaves a seeded deep link out of the tally", async ({ page }) => {
 
   await expect(page.getByText("Points lost per discard")).toBeHidden();
 });
+
+/*
+ * Where the tally sits, which its screenshots deliberately no longer capture:
+ * they shoot the element alone, because a whole-page shot moved with the
+ * analysis table's row count across processor architectures.
+ */
+test("renders the tally between the analysis and the privacy links", async ({
+  page,
+}) => {
+  await playOneAuthenticHand(page);
+
+  const tally = await page.getByText("Points lost per discard").boundingBox();
+  const table = await page.getByRole("table").boundingBox();
+  const privacy = await page
+    .getByRole("button", { name: "Privacy Policy" })
+    .boundingBox();
+
+  expect(tally?.y).toBeGreaterThan(table?.y ?? 0);
+  expect(tally?.y).toBeLessThan(privacy?.y ?? 0);
+});

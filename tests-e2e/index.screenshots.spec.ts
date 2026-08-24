@@ -150,7 +150,19 @@ const testDiscardTallyScreenshot = () =>
     );
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
-    await expect(page).toHaveScreenshot();
+    /*
+     * The tally itself rather than the page. It sits below a clipped analysis
+     * table, and how many rows that table fits depends on font metrics, which
+     * differ between the arm64 host these baselines are generated on and the
+     * amd64 CI runs them on. A whole-page shot therefore moved the tally by a
+     * row and failed on a difference that says nothing about this feature.
+     * Where it sits is asserted in discardTally.spec.ts instead.
+     */
+    const tally = page
+      .locator("p")
+      .filter({ hasText: "Points lost per discard" })
+      .locator("..");
+    await expect(tally).toHaveScreenshot();
   });
 
 const testScreenshots = () => {
