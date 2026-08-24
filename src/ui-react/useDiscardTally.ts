@@ -17,25 +17,44 @@ import { serializeHand } from "../game/Card";
 interface UseDiscardTallyProps {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
+  // Telemetry's own identifier for the hand this page load starts with, needed only to give that hand a true identity for later restores to compare against.
+  readonly initialHandId: string;
   readonly isSeededSession: boolean;
   readonly wasDeepLinked: boolean;
+}
+
+/*
+ * Which hand a set of cards is, carried as one unit the way telemetry's
+ * own `HistoryHandScope` does. The role decides what the best discard even
+ * is, and the handId is telemetry's per-hand identifier, which is what
+ * separates two occurrences of identical cards under identical roles.
+ */
+interface HandIdentity {
+  readonly cribRole: CribRole;
+  readonly handId: string;
+}
+
+/*
+ * The same, as a history entry states it. Either half may be absent: an
+ * entry written before this document loaded carries no scope, and a URL this
+ * build cannot parse a role from yields none — both of which are read as
+ * "cannot vouch for this hand" rather than guessed at.
+ */
+interface RestoredHandIdentity {
+  readonly cribRole: CribRole | null;
+  readonly handId: string | null;
 }
 
 // The hand a page load starts with is seeded at construction, so only replacements arrive here.
 export type ReportHandOrigin = (
   cards: readonly DealtCard[],
   cause: HandReplacementCause,
-  cribRole: CribRole,
+  identity: HandIdentity,
 ) => void;
 
-/*
- * The hand history navigation brings back. `null` matches a URL entry this
- * build cannot parse a role from, which every other reader of that parse
- * already treats as fail-soft rather than guessed.
- */
 export type ReportHandRestored = (
   cards: readonly DealtCard[],
-  cribRole: CribRole | null,
+  entry: RestoredHandIdentity,
 ) => void;
 
 export interface DiscardTally {
@@ -52,20 +71,34 @@ export interface DiscardTally {
  * decisions with two different best answers. Cards alone let a hand entered
  * to study the opposite role suppress the dealt hand's own decision.
  *
- * It is not a complete identity: the same cards entered by hand under the
- * same role still collide with the dealt hand. Closing that needs the
- * per-hand scope the telemetry hook keeps in history state, which is more
- * plumbing than the remaining case earns, so provenance can still be wrong
- * for it even though the decision is no longer lost.
+ * Not a complete identity by itself: the same cards entered by hand can
+ * later coincide with a genuinely dealt hand under the same role, and only
+ * one of the two occurrences is practice. What tells them apart is
+ * telemetry's own per-hand scope, tracked alongside this key as the open
+ * hand's identity (see `OpenHand` below) — the key alone is what a stored
+ * record is keyed by and what provenance is looked up by, but which
+ * occurrence a history restore names is decided by scope, not by key.
  */
 const toHandKey = (
   dealtCards: readonly DealtCard[],
   cribRole: CribRole,
 ): string => `${serializeHand(dealtCards)}|${cribRole}`;
 
+/*
+ * The hand currently on screen: its record key, and telemetry's own
+ * identifier for it. Two different occurrences of the same cards and role —
+ * a hand entered to study and a later genuine deal of it — share one key but
+ * never one handId, which is what lets a history restore tell them apart.
+ */
+interface OpenHand {
+  readonly handId: string | null;
+  readonly key: string;
+}
+
 export const useDiscardTally = ({
   cribRole,
   dealtCards,
+  initialHandId,
   isSeededSession,
   wasDeepLinked,
 }: UseDiscardTallyProps): DiscardTally => {
@@ -85,7 +118,7 @@ export const useDiscardTally = ({
    * has to happen at the moment of replacement rather than later: once the
    * cards change there is nothing left to notice was abandoned.
    */
-  const openHand = useRef<string | null>(
+  const openHand = useRef<OpenHand | null>(
     /*
      * The hand a page load starts with is open like any other. Exempting it
      * looked fair — nobody chose it — but pressing Deal from it is a
@@ -100,7 +133,9 @@ export const useDiscardTally = ({
      * departure. Catching that needs the open hand to outlive the session in
      * storage, which is more machinery than a loophole this visible earns.
      */
-    isSeededSession || wasDeepLinked ? null : toHandKey(dealtCards, cribRole),
+    isSeededSession || wasDeepLinked
+      ? null
+      : { handId: initialHandId, key: toHandKey(dealtCards, cribRole) },
   );
 
   /*
@@ -165,7 +200,7 @@ export const useDiscardTally = ({
   }, []);
 
   const reportHandOrigin: ReportHandOrigin = useCallback(
-    (cards, cause, role) => {
+    (cards, cause, { cribRole: role, handId }) => {
       /*
        * The hand being replaced is abandoned unless it was scored. Only a
        * hand the player asked for counts: the one a page load deals was
@@ -181,15 +216,16 @@ export const useDiscardTally = ({
       const abandoned = openHand.current;
       if (
         abandoned !== null &&
-        !decidedHands.current.has(abandoned) &&
-        practiceByHand.current.get(abandoned) === false
+        !decidedHands.current.has(abandoned.key) &&
+        practiceByHand.current.get(abandoned.key) === false
       ) {
         setSummary(recordSkippedHand(Date.now()));
       }
       const isPractice = cause === "manual" || isSeededSession;
+      const key = toHandKey(cards, role);
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
-      notePractice(toHandKey(cards, role), isPractice);
-      openHand.current = toHandKey(cards, role);
+      notePractice(key, isPractice);
+      openHand.current = { handId, key };
     },
     [isSeededSession, notePractice],
   );
@@ -203,21 +239,30 @@ export const useDiscardTally = ({
    * than only checking at score time, also stops a second walk-away from
    * charging a skip the first walk-away already recorded.
    *
-   * Guarded on the restored hand differing from the one currently open: a
-   * same-hand navigation — a sort-only push, or Back to an earlier state of
-   * the hand still on screen — keeps whatever provenance it already had, and
-   * marking it here would wrongly overwrite an authentic hand mid-decision.
+   * Guarded on telemetry's own scope rather than the record key: the same
+   * cards under the same role can name two different occurrences — a hand
+   * entered to study and a later genuine deal of it — and a key match alone
+   * cannot tell a restore of one from a restore of the other. A restore
+   * naming no scope at all is never treated as the hand already open, which
+   * is also what telemetry itself does with such an entry. A restore that
+   * does name the hand already open — a sort-only push, or Back to an
+   * earlier state of the hand still on screen — leaves whatever provenance
+   * it already had, or marking it here would wrongly overwrite an authentic
+   * hand mid-decision.
    */
-  const reportHandRestored: ReportHandRestored = useCallback((cards, role) => {
-    if (role === null) {
-      return;
-    }
-    const restoredKey = toHandKey(cards, role);
-    if (restoredKey !== openHand.current) {
-      practiceByHand.current.set(restoredKey, true);
-      openHand.current = restoredKey;
-    }
-  }, []);
+  const reportHandRestored: ReportHandRestored = useCallback(
+    (cards, { cribRole: role, handId }) => {
+      if (role === null) {
+        return;
+      }
+      if (handId === null || handId !== openHand.current?.handId) {
+        const key = toHandKey(cards, role);
+        practiceByHand.current.set(key, true);
+        openHand.current = { handId, key };
+      }
+    },
+    [],
+  );
 
   const reportAnalysisRendered = useCallback(
     ({ cribRole: scoredRole, quality }: RenderedAnalysis) => {

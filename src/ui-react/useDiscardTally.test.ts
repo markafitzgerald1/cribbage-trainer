@@ -17,6 +17,9 @@ import { toDealtCards } from "../game/toDealtCards";
 const HAND = "AH,2H,3H,4H,5H,6H";
 const OTHER_HAND = "7S,8S,9S,10S,JS,QS";
 
+// Telemetry's own identifier for the hand a page load starts with. Fixed across tests: each starts from a fresh tally, so nothing shares a hand across them.
+const INITIAL_HAND_ID = "initial-hand-id";
+
 // Each hand discards its own first two cards, so every dealt set is consistent and no lookup can miss.
 const discardFor = (hand: string) => (hand === HAND ? "AH,2H" : "7S,8S");
 
@@ -39,23 +42,37 @@ const reportScore = (
   });
 };
 
+// Each hand replacement opens its own telemetry scope, so deriving the identifier from the cards keeps every hand distinct without a parameter at each call.
+const scopeFor = (hand: string) => `${hand}-scope`;
+
 const noteOrigin = (
   tally: DiscardTally,
   hand: string,
   cause: HandReplacementCause,
 ) => {
   act(() => {
-    tally.reportHandOrigin(handOf(hand), cause, CribRole.Dealer);
+    tally.reportHandOrigin(handOf(hand), cause, {
+      cribRole: CribRole.Dealer,
+      handId: scopeFor(hand),
+    });
   });
 };
 
+/*
+ * Defaults to restoring the scope the page load opened, which is what a
+ * same-hand navigation looks like. Passing another identifier is what
+ * separates a genuine restore of a different occurrence of the same cards.
+ */
 const noteRestore = (
   tally: DiscardTally,
   hand: string,
-  cribRole: CribRole | null = CribRole.Dealer,
+  {
+    cribRole = CribRole.Dealer,
+    handId = INITIAL_HAND_ID,
+  }: { cribRole?: CribRole | null; handId?: string | null } = {},
 ) => {
   act(() => {
-    tally.reportHandRestored(handOf(hand), cribRole);
+    tally.reportHandRestored(handOf(hand), { cribRole, handId });
   });
 };
 
@@ -68,6 +85,7 @@ const renderTally = (
     useDiscardTally({
       cribRole: CribRole.Dealer,
       dealtCards: handOf(hand, discarded),
+      initialHandId: INITIAL_HAND_ID,
       isSeededSession,
       wasDeepLinked,
     }),
@@ -90,6 +108,7 @@ const startWithUnknownOrigin = () => {
       useDiscardTally({
         cribRole: CribRole.Dealer,
         dealtCards: handOf(hand),
+        initialHandId: INITIAL_HAND_ID,
         isSeededSession: false,
         wasDeepLinked: false,
       }),
@@ -181,37 +200,54 @@ describe("discard tally hook", () => {
   });
 
   /*
-   * Neither disturbs the identity of the hand actually being decided, so
-   * scoring it afterward must still land as one authentic decision.
-   * Provenance is keyed by the same cards-and-role identity the record uses:
-   * keying it on cards alone let a hand re-entered under the other role mark
-   * the dealt hand as practice, so its decision was recorded and then left
-   * out of every figure shown. A same-hand history restore — a sort-only
-   * push, or Back to an earlier state of the hand still open — must not
-   * relabel it either; only a restore naming a different hand marks
-   * practice.
+   * What a re-entry or a restore does to the provenance of the hand being
+   * decided. Studying the other role does not disturb it, because identity
+   * is cards and role together — keying it on cards alone let that study
+   * mark the dealt hand as practice, so its decision was recorded and then
+   * left out of every figure shown. Nor does a restore of the hand already
+   * open, which is what a sort-only push or a Back within the same hand
+   * looks like.
+   *
+   * A restore naming a different scope does, even with identical cards and
+   * role: the same six cards can be both a hand entered to study and a later
+   * genuine deal of them, and only telemetry's per-hand scope separates the
+   * two. Comparing record keys called that the hand already open and left
+   * the study hand counted as authentic.
    */
   it.each([
     {
+      counted: 1,
       name: "the other role is studied",
       perform: (tally: DiscardTally) => {
         act(() => {
-          tally.reportHandOrigin(handOf(HAND), "manual", CribRole.Pone);
+          tally.reportHandOrigin(handOf(HAND), "manual", {
+            cribRole: CribRole.Pone,
+            handId: scopeFor(HAND),
+          });
         });
       },
     },
     {
+      counted: 1,
       name: "a same-hand history restore occurs",
       perform: (tally: DiscardTally) => {
         noteRestore(tally, HAND);
       },
     },
-  ])("keeps a dealt hand authentic when $name", ({ perform }) => {
+    {
+      counted: 0,
+      name: "another scope's restore names the same cards",
+      perform: (tally: DiscardTally) => {
+        noteRestore(tally, HAND, { handId: "a-different-scope" });
+      },
+    },
+  ])("counts $counted decisions when $name", ({ counted, perform }) => {
     const { result } = renderTally(HAND);
     perform(result.current);
     reportScore(result.current);
 
-    expect(readDiscardTally(Date.now()).decisions).toBe(1);
+    // The skip half is pinned too: none of these is a walk-away, and every bug in this area so far has put one hand into both columns at once.
+    expect(decisionsAndSkips()).toStrictEqual([counted, 0]);
   });
 
   /*
@@ -282,7 +318,7 @@ describe("discard tally hook", () => {
     {
       name: "a hand a role-free history restore left untouched",
       play: (tally: DiscardTally) => {
-        noteRestore(tally, HAND, null);
+        noteRestore(tally, HAND, { cribRole: null });
       },
       skipped: 1,
       start: { discarded: false },
@@ -345,6 +381,7 @@ describe("discard tally hook", () => {
         useDiscardTally({
           cribRole: CribRole.Dealer,
           dealtCards: handOf(HAND, discarded),
+          initialHandId: INITIAL_HAND_ID,
           isSeededSession: false,
           wasDeepLinked: false,
         }),
