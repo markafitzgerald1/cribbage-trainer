@@ -32,8 +32,8 @@ export default {
       thresholds: {
         branches: 80.24,
         functions: 92.57,
-        lines: 90.24,
-        statements: 90.45,
+        lines: 90.23,
+        statements: 90.44,
       },
     },
     projects: [

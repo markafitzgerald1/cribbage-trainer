@@ -382,13 +382,24 @@ describe("discard tally recovery", () => {
    * exists, and extending it would overwrite the other tab's work. The
    * pending hands are dropped instead: they cost this session its own
    * figures, where keeping them would cost the other tab everything.
+   *
+   * The second case is the one counting rows could not see. At the record
+   * cap another tab adds a practice decision, which leaves the lifetime
+   * totals alone and cannot lengthen a list already full, so only a revision
+   * notices that storage moved at all.
    */
-  it("drops pending hands when another writer moved the tally", () => {
+  it.each([
+    { name: "another writer moved the tally", stored: storedWith({}) },
+    {
+      name: "a write it cannot otherwise see has happened",
+      stored: storedWith({ revision: 9 }),
+    },
+  ])("drops pending hands when $name", ({ stored }) => {
     clearDiscardTally();
     withFailingWrite(() =>
       recordDiscardDecision(decisionOf({ handKey: "mine" })),
     );
-    storeRaw(asJson(storedWith({})));
+    storeRaw(asJson(stored));
 
     expect(
       recordDiscardDecision(decisionOf({ handKey: "later" })).decisions,

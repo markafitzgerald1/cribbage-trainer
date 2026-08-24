@@ -87,6 +87,14 @@ interface SkippedHand {
 interface StoredTally {
   readonly lifetime: LifetimeTotals;
   readonly records: readonly DiscardDecisionRecord[];
+  /*
+   * Incremented on every write, and the only thing compared when deciding
+   * whether storage has moved. Counting rows cannot answer that: at the
+   * record cap another tab can add a practice decision without changing a
+   * single count, because practice leaves the lifetime totals alone and the
+   * cap holds the length steady.
+   */
+  readonly revision: number;
   // Times only: a skipped hand has no decision to describe, and its cards are not worth keeping to say so.
   readonly skipped: readonly SkippedHand[];
   readonly version: number;
@@ -102,6 +110,7 @@ const emptyLifetime: LifetimeTotals = {
 const emptyTally: StoredTally = {
   lifetime: emptyLifetime,
   records: [],
+  revision: 0,
   skipped: [],
   version: CURRENT_VERSION,
 };
@@ -116,6 +125,7 @@ const emptyTally: StoredTally = {
 interface MaybeTally {
   readonly lifetime?: unknown;
   readonly records?: unknown;
+  readonly revision?: unknown;
   readonly skipped?: unknown;
   readonly version?: unknown;
 }
@@ -227,6 +237,8 @@ const readStoredTally = (): StoredTally | null => {
   return {
     lifetime: parseLifetime(candidate.lifetime),
     records: Array.isArray(records) ? records.filter(isDecisionRecord) : [],
+    // Absent in a tally written before revisions were kept, which simply starts the count.
+    revision: typeof candidate.revision === "number" ? candidate.revision : 0,
     skipped: Array.isArray(candidate.skipped)
       ? candidate.skipped.filter(isSkippedHand)
       : [],
@@ -287,12 +299,8 @@ const summarize = (
 let unsavedTally: StoredTally | null = null;
 let unsavedBase: StoredTally | null = null;
 
-// Counts alone: the question is whether storage moved, not how it moved, and a deep comparison would cost more on every hand than the answer is worth.
 const sameHistory = (one: StoredTally, other: StoredTally) =>
-  one.lifetime.decisions === other.lifetime.decisions &&
-  one.lifetime.skippedHands === other.lifetime.skippedHands &&
-  one.records.length === other.records.length &&
-  one.skipped.length === other.skipped.length;
+  one.revision === other.revision;
 
 const forgetUnsaved = () => {
   unsavedTally = null;
@@ -380,10 +388,12 @@ const extendStoredTally = (
   if (stored === null) {
     return summarize(emptyTally, at);
   }
-  const next = extend(stored);
-  if (next === stored) {
+  const extended = extend(stored);
+  if (extended === stored) {
     return summarize(stored, at);
   }
+  // Every write advances the revision, which is what lets another tab's write be noticed at all.
+  const next: StoredTally = { ...extended, revision: extended.revision + 1 };
   try {
     localStorage.setItem(discardTallyKey, JSON.stringify(next));
     forgetUnsaved();

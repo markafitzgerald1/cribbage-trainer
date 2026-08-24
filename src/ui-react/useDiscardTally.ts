@@ -11,6 +11,7 @@ import type {
 import { useCallback, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import { discardIsComplete } from "../game/discardIsComplete";
 import { serializeHand } from "../game/Card";
 
 interface UseDiscardTallyProps {
@@ -73,7 +74,7 @@ export const useDiscardTally = ({
    * has to happen at the moment of replacement rather than later: once the
    * cards change there is nothing left to notice was abandoned.
    */
-  const openHand = useRef<{ key: string; scored: boolean } | null>(
+  const openHand = useRef<string | null>(
     /*
      * The hand a page load starts with is open like any other. Exempting it
      * looked fair — nobody chose it — but pressing Deal from it is a
@@ -88,9 +89,7 @@ export const useDiscardTally = ({
      * departure. Catching that needs the open hand to outlive the session in
      * storage, which is more machinery than a loophole this visible earns.
      */
-    isSeededSession || wasDeepLinked
-      ? null
-      : { key: toHandKey(dealtCards, cribRole), scored: false },
+    isSeededSession || wasDeepLinked ? null : toHandKey(dealtCards, cribRole),
   );
 
   const practiceByHand = useRef(
@@ -117,20 +116,26 @@ export const useDiscardTally = ({
        * never chosen, and practice hands are already outside the averages,
        * so charging either as avoidance would describe neither correctly.
        */
+      /*
+       * Whether the discard was completed, not whether its score arrived.
+       * Scoring waits on the expected-points tables, so a slow or failed load
+       * would otherwise turn a decision the player did make into avoidance —
+       * counting them as having ducked the hand they actually played.
+       */
       const abandoned = openHand.current;
       if (
         abandoned !== null &&
-        !abandoned.scored &&
-        practiceByHand.current.get(abandoned.key) === false
+        !discardIsComplete(dealtCards) &&
+        practiceByHand.current.get(abandoned) === false
       ) {
         setSummary(recordSkippedHand(Date.now()));
       }
       const isPractice = cause === "manual" || isSeededSession;
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
       notePractice(toHandKey(cards, role), isPractice);
-      openHand.current = { key: toHandKey(cards, role), scored: false };
+      openHand.current = toHandKey(cards, role);
     },
-    [isSeededSession, notePractice],
+    [dealtCards, isSeededSession, notePractice],
   );
 
   const reportAnalysisRendered = useCallback(
@@ -139,9 +144,6 @@ export const useDiscardTally = ({
         return;
       }
       const handKey = toHandKey(dealtCards, scoredRole);
-      if (openHand.current?.key === handKey) {
-        openHand.current = { key: handKey, scored: true };
-      }
       setSummary(
         recordDiscardDecision({
           at: Date.now(),

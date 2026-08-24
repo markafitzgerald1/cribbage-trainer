@@ -16,8 +16,9 @@ const OTHER_HAND = "7S,8S,9S,10S,JS,QS";
 // Each hand discards its own first two cards, so every dealt set is consistent and no lookup can miss.
 const discardFor = (hand: string) => (hand === HAND ? "AH,2H" : "7S,8S");
 
-const handOf = (hand: string) =>
-  toDealtCards(parseHand(hand), parseHand(discardFor(hand)));
+// A hand with its two cards chosen, or one still untouched — which is what separates a decision from a hand walked away from.
+const handOf = (hand: string, discarded = true) =>
+  toDealtCards(parseHand(hand), discarded ? parseHand(discardFor(hand)) : null);
 
 const scoredAnalysis: RenderedAnalysis = {
   cribRole: CribRole.Dealer,
@@ -46,13 +47,13 @@ const noteOrigin = (
 
 const renderTally = (
   hand: string,
-  { isSeededSession = false, wasDeepLinked = false } = {},
+  { discarded = true, isSeededSession = false, wasDeepLinked = false } = {},
 ) => {
   clearDiscardTally();
   return renderHook(() =>
     useDiscardTally({
       cribRole: CribRole.Dealer,
-      dealtCards: handOf(hand),
+      dealtCards: handOf(hand, discarded),
       isSeededSession,
       wasDeepLinked,
     }),
@@ -186,16 +187,29 @@ describe("discard tally hook", () => {
    */
   it.each([
     {
-      name: "the hand on screen when Deal is pressed",
+      name: "a hand left without a discard",
       play: () => {
         // Nothing: the hand a page load deals is the one walked away from.
       },
       skipped: 1,
+      start: { discarded: false },
     },
     {
       name: "a hand whose decision was scored",
       play: (tally: DiscardTally) => {
         reportScore(tally);
+      },
+      skipped: 0,
+    },
+    /*
+     * Scoring waits on the expected-points tables. A discard completed while
+     * they are still loading — or after they fail — is a decision the player
+     * made, and counting it as avoidance would punish them for the latency.
+     */
+    {
+      name: "a discard completed but never scored",
+      play: () => {
+        // Nothing: no score arrives, and none is needed.
       },
       skipped: 0,
     },
@@ -213,7 +227,7 @@ describe("discard tally hook", () => {
         // Nothing: the seeded start is the hand walked away from.
       },
       skipped: 0,
-      start: { isSeededSession: true },
+      start: { discarded: false, isSeededSession: true },
     },
     {
       name: "the hand a deep link starts with",
@@ -221,7 +235,7 @@ describe("discard tally hook", () => {
         // Nothing: the deep-linked start is the hand walked away from.
       },
       skipped: 0,
-      start: { wasDeepLinked: true },
+      start: { discarded: false, wasDeepLinked: true },
     },
   ])("counts $skipped skips for $name", ({ play, skipped, start }) => {
     const { result } = renderTally(HAND, start);
