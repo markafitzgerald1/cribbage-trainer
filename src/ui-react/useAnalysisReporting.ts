@@ -1,11 +1,13 @@
 import {
   type DiscardTelemetry,
   type DiscardTelemetryProps,
+  type HistoryHandScope,
   type RenderedAnalysis,
   useDiscardTelemetry,
 } from "./useDiscardTelemetry";
 import { type ReportHandOrigin, useDiscardTally } from "./useDiscardTally";
 import type { CribRole } from "../game/expectedCribPoints";
+import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
@@ -19,11 +21,19 @@ export interface AnalysisReportingProps extends DiscardTelemetryProps {
   readonly cribRole: CribRole;
 }
 
+// The tally also needs to know which hand a history restore names, which telemetry's own dealNonce-keyed signature has no reason to carry.
+export type ReportHistoryNavigation = (
+  dealtCards: readonly DealtCard[],
+  entry: HistoryHandScope | null,
+  cribRole: CribRole | null,
+) => void;
+
 export interface AnalysisReporting extends Omit<
   DiscardTelemetry,
-  "reportHandReplaced"
+  "reportHandReplaced" | "reportHistoryNavigation"
 > {
   readonly reportHandReplaced: ReportHandOrigin;
+  readonly reportHistoryNavigation: ReportHistoryNavigation;
   readonly tallySummary: DiscardTallySummary;
 }
 
@@ -48,10 +58,12 @@ export const useAnalysisReporting = (
   const {
     reportAnalysisRendered: reportAnalysisToTelemetry,
     reportHandReplaced: reportHandToTelemetry,
+    reportHistoryNavigation: reportHistoryNavigationToTelemetry,
   } = telemetry;
   const {
     reportAnalysisRendered: addAnalysisToTally,
     reportHandOrigin,
+    reportHandRestored,
     summary: tallySummary,
   } = tally;
 
@@ -71,10 +83,19 @@ export const useAnalysisReporting = (
     [reportHandOrigin, reportHandToTelemetry],
   );
 
+  const reportHistoryNavigation: ReportHistoryNavigation = useCallback(
+    (cards, entry, role) => {
+      reportHistoryNavigationToTelemetry(cards, entry);
+      reportHandRestored(cards, role);
+    },
+    [reportHandRestored, reportHistoryNavigationToTelemetry],
+  );
+
   return {
     ...telemetry,
     reportAnalysisRendered,
     reportHandReplaced,
+    reportHistoryNavigation,
     tallySummary,
   };
 };

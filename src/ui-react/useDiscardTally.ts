@@ -28,9 +28,20 @@ export type ReportHandOrigin = (
   cribRole: CribRole,
 ) => void;
 
+/*
+ * The hand history navigation brings back. `null` matches a URL entry this
+ * build cannot parse a role from, which every other reader of that parse
+ * already treats as fail-soft rather than guessed.
+ */
+export type ReportHandRestored = (
+  cards: readonly DealtCard[],
+  cribRole: CribRole | null,
+) => void;
+
 export interface DiscardTally {
   readonly reportAnalysisRendered: (analysis: RenderedAnalysis) => void;
   readonly reportHandOrigin: ReportHandOrigin;
+  readonly reportHandRestored: ReportHandRestored;
   readonly summary: DiscardTallySummary;
 }
 
@@ -183,6 +194,31 @@ export const useDiscardTally = ({
     [isSeededSession, notePractice],
   );
 
+  /*
+   * A hand history navigation restores is never first instinct, matching the
+   * population rule telemetry already applies (see the filtering contract in
+   * skills/analytics-telemetry/SKILL.md): its ranked answers were already
+   * revealed, either by whichever visit first completed it or by the answer
+   * key a reload of its own URL shows immediately. Marking it here, rather
+   * than only checking at score time, also stops a second walk-away from
+   * charging a skip the first walk-away already recorded.
+   *
+   * Guarded on the restored hand differing from the one currently open: a
+   * same-hand navigation — a sort-only push, or Back to an earlier state of
+   * the hand still on screen — keeps whatever provenance it already had, and
+   * marking it here would wrongly overwrite an authentic hand mid-decision.
+   */
+  const reportHandRestored: ReportHandRestored = useCallback((cards, role) => {
+    if (role === null) {
+      return;
+    }
+    const restoredKey = toHandKey(cards, role);
+    if (restoredKey !== openHand.current) {
+      practiceByHand.current.set(restoredKey, true);
+      openHand.current = restoredKey;
+    }
+  }, []);
+
   const reportAnalysisRendered = useCallback(
     ({ cribRole: scoredRole, quality }: RenderedAnalysis) => {
       if (quality === null) {
@@ -218,5 +254,10 @@ export const useDiscardTally = ({
     [dealtCards],
   );
 
-  return { reportAnalysisRendered, reportHandOrigin, summary };
+  return {
+    reportAnalysisRendered,
+    reportHandOrigin,
+    reportHandRestored,
+    summary,
+  };
 };

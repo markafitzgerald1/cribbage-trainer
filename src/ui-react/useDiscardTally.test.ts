@@ -49,6 +49,16 @@ const noteOrigin = (
   });
 };
 
+const noteRestore = (
+  tally: DiscardTally,
+  hand: string,
+  cribRole: CribRole | null = CribRole.Dealer,
+) => {
+  act(() => {
+    tally.reportHandRestored(handOf(hand), cribRole);
+  });
+};
+
 const renderTally = (
   hand: string,
   { discarded = true, isSeededSession = false, wasDeepLinked = false } = {},
@@ -94,6 +104,11 @@ const reportScoreTimes = (tally: DiscardTally, times: number) => {
   [...Array(times).keys()].forEach(() => {
     reportScore(tally);
   });
+};
+
+const decisionsAndSkips = () => {
+  const summary = readDiscardTally(Date.now());
+  return [summary.decisions, summary.skippedHands];
 };
 
 describe("discard tally hook", () => {
@@ -166,16 +181,34 @@ describe("discard tally hook", () => {
   });
 
   /*
-   * Provenance is keyed by the same cards-and-role identity the record uses.
-   * Keying it on cards alone let a hand re-entered under the other role mark
+   * Neither disturbs the identity of the hand actually being decided, so
+   * scoring it afterward must still land as one authentic decision.
+   * Provenance is keyed by the same cards-and-role identity the record uses:
+   * keying it on cards alone let a hand re-entered under the other role mark
    * the dealt hand as practice, so its decision was recorded and then left
-   * out of every figure shown.
+   * out of every figure shown. A same-hand history restore — a sort-only
+   * push, or Back to an earlier state of the hand still open — must not
+   * relabel it either; only a restore naming a different hand marks
+   * practice.
    */
-  it("keeps a dealt hand authentic when the other role is studied", () => {
+  it.each([
+    {
+      name: "the other role is studied",
+      perform: (tally: DiscardTally) => {
+        act(() => {
+          tally.reportHandOrigin(handOf(HAND), "manual", CribRole.Pone);
+        });
+      },
+    },
+    {
+      name: "a same-hand history restore occurs",
+      perform: (tally: DiscardTally) => {
+        noteRestore(tally, HAND);
+      },
+    },
+  ])("keeps a dealt hand authentic when $name", ({ perform }) => {
     const { result } = renderTally(HAND);
-    act(() => {
-      result.current.reportHandOrigin(handOf(HAND), "manual", CribRole.Pone);
-    });
+    perform(result.current);
     reportScore(result.current);
 
     expect(readDiscardTally(Date.now()).decisions).toBe(1);
@@ -240,6 +273,19 @@ describe("discard tally hook", () => {
       },
       skipped: 0,
       start: { discarded: false, wasDeepLinked: true },
+    },
+    /*
+     * A restore naming no role — a URL entry this build cannot parse one
+     * from — must leave the open hand's provenance untouched, or this
+     * Deal-away would go uncounted along with it.
+     */
+    {
+      name: "a hand a role-free history restore left untouched",
+      play: (tally: DiscardTally) => {
+        noteRestore(tally, HAND, null);
+      },
+      skipped: 1,
+      start: { discarded: false },
     },
   ])("counts $skipped skips for $name", ({ play, skipped, start }) => {
     const { result } = renderTally(HAND, start);
@@ -308,9 +354,24 @@ describe("discard tally hook", () => {
     rerender({ discarded: false });
     noteOrigin(result.current, OTHER_HAND, "deal");
 
-    const summary = readDiscardTally(Date.now());
+    expect(decisionsAndSkips()).toStrictEqual([1, 0]);
+  });
 
-    expect([summary.decisions, summary.skippedHands]).toStrictEqual([1, 0]);
+  /*
+   * A hand history restores after being walked away from must not also count
+   * as a decision: Deal already charged it a skip, and scoring its eventual
+   * discard would put the same hand in both halves of the denominator they
+   * share. Matches telemetry's own rule that a history-restored exposure is
+   * never first instinct (skills/analytics-telemetry/SKILL.md's filtering
+   * contract): its answers were already revealed, by this same visit.
+   */
+  it("excludes a decision reached after its hand was restored from history", () => {
+    const { result } = renderTally(HAND, { discarded: false });
+    noteOrigin(result.current, OTHER_HAND, "deal");
+    noteRestore(result.current, HAND);
+    reportScore(result.current);
+
+    expect(decisionsAndSkips()).toStrictEqual([0, 1]);
   });
 
   it("records nothing until a discard has been scored", () => {

@@ -252,6 +252,7 @@ export function Trainer({
           reportHistoryNavigation(
             newDealtCards,
             getHistoryEntryState()?.handScope ?? null,
+            urlState.cribRole,
           );
         }
         setDealState((previous) => ({
