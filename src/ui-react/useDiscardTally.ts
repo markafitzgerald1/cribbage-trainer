@@ -92,6 +92,16 @@ export const useDiscardTally = ({
     isSeededSession || wasDeepLinked ? null : toHandKey(dealtCards, cribRole),
   );
 
+  /*
+   * Hands that have completed a discard at some point, which is not the same
+   * as hands showing one now. Deselecting a card after deciding, or stepping
+   * Back to the same hand before its discard, leaves the cards incomplete
+   * while the decision is already counted — and reading the cards alone then
+   * charged that hand a skip as well, putting one hand in both columns and
+   * inflating the denominator they share.
+   */
+  const decidedHands = useRef(new Set<string>());
+
   const practiceByHand = useRef(
     /*
      * Seeded eagerly with the hand this page load starts with, rather than in
@@ -115,6 +125,18 @@ export const useDiscardTally = ({
    * next interaction. Catching that needs a timer armed for the next
    * midnight, which is more machinery than a figure nobody is looking at.
    */
+  /*
+   * Watched rather than reported, because completion is a property of the
+   * cards and nothing has to announce it: the score that follows may never
+   * arrive if the expected-points tables are slow or fail, and a decision
+   * does not stop being one for that.
+   */
+  useEffect(() => {
+    if (discardIsComplete(dealtCards)) {
+      decidedHands.current.add(toHandKey(dealtCards, cribRole));
+    }
+  }, [cribRole, dealtCards]);
+
   useEffect(() => {
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") {
@@ -148,7 +170,7 @@ export const useDiscardTally = ({
       const abandoned = openHand.current;
       if (
         abandoned !== null &&
-        !discardIsComplete(dealtCards) &&
+        !decidedHands.current.has(abandoned) &&
         practiceByHand.current.get(abandoned) === false
       ) {
         setSummary(recordSkippedHand(Date.now()));
@@ -158,7 +180,7 @@ export const useDiscardTally = ({
       notePractice(toHandKey(cards, role), isPractice);
       openHand.current = toHandKey(cards, role);
     },
-    [dealtCards, isSeededSession, notePractice],
+    [isSeededSession, notePractice],
   );
 
   const reportAnalysisRendered = useCallback(

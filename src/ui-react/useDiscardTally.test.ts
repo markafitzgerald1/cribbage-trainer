@@ -285,6 +285,34 @@ describe("discard tally hook", () => {
     expect(result.current.summary.decisions).toBe(decisions);
   });
 
+  /*
+   * A decision already counted must not be charged a skip as well. Taking a
+   * card back after deciding — or stepping back to the same hand before its
+   * discard — leaves the cards incomplete while the decision stands, and
+   * reading the cards alone put one hand in both columns, inflating the
+   * denominator the two figures share.
+   */
+  it("counts no skip for a hand whose discard was later undone", () => {
+    clearDiscardTally();
+    const { rerender, result } = renderHook(
+      ({ discarded }: { discarded: boolean }) =>
+        useDiscardTally({
+          cribRole: CribRole.Dealer,
+          dealtCards: handOf(HAND, discarded),
+          isSeededSession: false,
+          wasDeepLinked: false,
+        }),
+      { initialProps: { discarded: true } },
+    );
+    reportScore(result.current);
+    rerender({ discarded: false });
+    noteOrigin(result.current, OTHER_HAND, "deal");
+
+    const summary = readDiscardTally(Date.now());
+
+    expect([summary.decisions, summary.skippedHands]).toStrictEqual([1, 0]);
+  });
+
   it("records nothing until a discard has been scored", () => {
     const { result } = renderTally(HAND);
     reportScore(result.current, { cribRole: CribRole.Dealer, quality: null });
