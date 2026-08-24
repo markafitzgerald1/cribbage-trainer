@@ -74,9 +74,32 @@ as `Pending` until Mark performs and verifies each console step.
 #### Operational owner
 
 - **Recorded value:** Mark is the sole operational owner for now. Mark's durable
-  Google account owns the scheduled query and receives export-health and
-  billing alerts. The backup owner is intentionally blank.
+  Google account receives export-health and billing alerts. The backup owner is
+  intentionally blank.
+- **The health workflow's query authenticates as a service account, never as a
+  person, and no BigQuery scheduled query exists.** Do not create one: an
+  earlier attempt did, and section 10 records what it cost. The short version
+  is that a scheduled query created under personal credentials makes the
+  BigQuery Data Transfer Service demand two OAuth scopes, the first being
+  **"See, edit, create, and delete all of your Google Drive files"** — full
+  read-write-delete over every file in the owner's personal Drive, granted to
+  an unattended service, for a query that counts rows in two tables. BigQuery
+  asks because it can read Drive-backed external tables such as Google Sheets;
+  nothing here uses that. The consent screen offers no per-scope opt-out, and
+  revoking Drive afterwards removes the whole connection and breaks the query
+  with it. A service account draws its permissions from IAM instead, so the
+  grant never appears — which is why the workflow holds a service-account key
+  rather than anyone's personal credential.
+- **Both halves of monitoring run from this repository, not from a console.**
+  The canary is emitted by `.github/workflows/bigquery-export-canary.yml` and
+  asserted by `.github/workflows/bigquery-export-health.yml`, each notifying
+  through GitHub's own failed-run email. A BigQuery scheduled query was built
+  for the assertion first and abandoned; section 10 records what that cost and
+  why, including a service-account-owned scheduled query that raises its
+  assertion correctly and delivers no email at all.
 - **Trade-off:** one owner is simplest but creates a single-person failure risk.
+  Running the query as a service account slightly reduces it, since the job no
+  longer depends on one person's OAuth grant staying valid.
 - **Reversibility:** add a backup only after that person accepts responsibility,
   receives the required access, and passes the failure-email test.
 
@@ -86,8 +109,11 @@ as `Pending` until Mark performs and verifies each console step.
   billing-enabled, so costs and query quotas isolate this export.
 - **GA4 property ID:** `458709208`, the production property rather than the
   test one.
-- **GA4 reporting time zone:** North American Eastern; use `America/Toronto`
-  as `PROPERTY_TIME_ZONE` in the scheduled query.
+- **GA4 reporting time zone:** North American Eastern. `America/Toronto` is the
+  `PROPERTY_TIME_ZONE` environment value in both monitoring workflows, and the
+  substitution to make wherever this file's SQL carries that placeholder. Any
+  Eastern zone identifier yields the same dates, so a property set to New York
+  agrees with it.
 - **Export dataset:** `analytics_458709208`, created by Google on 2026-08-22
   at 11:04 EDT, about 13 hours after the link was submitted.
 - **Link submitted at:** 2026-08-21T22:04Z, which was 18:04 EDT.
@@ -428,9 +454,10 @@ recorded USD $1 amount.
    `1073741824` (1 GiB) for interactive queries and click **Save**.
 7. For a query submitted through the `bq` command or API, set the same limit
    with `--maximum_bytes_billed=1073741824` or `maximumBytesBilled`,
-   respectively. This is a per-query execution setting, not a project default.
-   BigQuery scheduled-query configuration does not expose it; scheduled queries
-   remain subject to the recorded project and per-user daily quotas.
+   respectively. This is a per-query execution setting, not a project default,
+   so it has to be passed every time: the health workflow does, on every run.
+   Anything submitted without it still falls under the recorded project and
+   per-user daily quotas, which is the backstop rather than the intent.
 8. Before every manual query, wait for the editor's byte estimate. Do not run it
    if the estimate is unexpectedly large. A `LIMIT` does not reduce bytes read
    from an unclustered table.
@@ -889,51 +916,74 @@ set to that day, within the 71-hour window.
    WHERE event_name = 'export_health_canary';
    ```
 
-5. In **BigQuery**, open **Scheduled queries** and click **Create scheduled
-   query**. Name it `GA4 daily export health`, then paste the SQL below after
-   replacing the project, property, and time-zone placeholders. Keep
-   `@run_time`; BigQuery supplies it.
-6. Set **Repeats** to **Daily** at an off-the-hour UTC time. Recommendation:
-   `18:05 UTC` for a `PROPERTY_TIME_ZONE` at UTC-4 or UTC-5. The query checks
-   two reporting dates back, allowing the normal daily export more than a full
-   day to arrive without waiting so long that a gap goes unnoticed.
-7. Set **Processing location** to the recorded dataset region. Leave
-   destination table settings empty because this assertion writes no table.
-8. Under **Notification options**, enable **Send email notifications**. Confirm
-   the scheduled-query owner is the recorded operational owner, save it, and
-   run it for the verified canary date. Confirm the run succeeds.
-9. Negative-check the alert once: in a copy, change the event name to
-   `export_health_canary_missing`. Run it and confirm the assertion fails and
-   the owner receives a BigQuery Data Transfer Service failure email. Delete
-   the test copy afterwards.
+5. The assertion runs from
+   `.github/workflows/bigquery-export-health.yml`, daily at `5 18 * * *`, and
+   needs no console work beyond the credential in step 6. It checks two
+   reporting dates back, so an export running late has more than a full day to
+   arrive before its absence is called a failure, and a failed `ASSERT` exits
+   `bq` non-zero so the run fails and GitHub notifies on its own.
 
-```sql
-DECLARE checked_date DATE DEFAULT DATE_SUB(
-  DATE(@run_time, 'PROPERTY_TIME_ZONE'),
-  INTERVAL 2 DAY
-);
-DECLARE checked_table STRING DEFAULT FORMAT_DATE(
-  'events_%Y%m%d',
-  checked_date
-);
-DECLARE canary_count INT64 DEFAULT 0;
+   **A BigQuery scheduled query was built first and then abandoned, which is
+   the whole reason this section reads as it does.** Two findings came out of
+   it, both console-only and neither recoverable from this repository:
 
-ASSERT (
-  SELECT COUNT(*) = 1
-  FROM `PROJECT_ID.analytics_PROPERTY_ID.INFORMATION_SCHEMA.TABLES`
-  WHERE table_name = checked_table
-) AS 'GA4 daily export table is missing; inspect the GA4 BigQuery link now';
+   - Creating one under personal credentials makes the Data Transfer Service
+     demand full Drive read-write-delete, for the reasons in the
+     operational-owner decision above. A service account avoids the grant.
+   - A service-account-owned scheduled query then raises its assertion
+     correctly and delivers **no failure email**, with **Send email
+     notifications** enabled and verified as saved. Detection and delivery are
+     separate claims, and the console cannot tell them apart: a failed run
+     appears in the run history either way, and silence means "healthy" in
+     both cases, so an alert can look fully configured while reaching nobody.
+     That happened here on 2026-08-24 and only a negative check found it.
 
-EXECUTE IMMEDIATE FORMAT(
-  "SELECT COUNT(*) " ||
-  "FROM `PROJECT_ID.analytics_PROPERTY_ID.%s` " ||
-  "WHERE event_name = 'export_health_canary'",
-  checked_table
-) INTO canary_count;
+   Delivery could have been repaired with a Cloud Logging alert policy on
+   `resource.type="bigquery_dts_config"` and `severity>=ERROR`. A workflow was
+   chosen instead because it removes three console artifacts — the scheduled
+   query, the alert policy, and its notification channel — rather than adding
+   a fourth, and because it is versioned, reviewed and linted with everything
+   else. That is the same argument that put the canary emitter here, applied
+   to the half of monitoring that had been left behind in a console.
 
-ASSERT canary_count > 0
-  AS 'GA4 export canary is missing; inspect its workflow and the export link';
-```
+   **Known limit, and it is the cost of that choice: both halves now share one
+   scheduler.** GitHub disables scheduled workflows in a public repository
+   after 60 days with no repository activity, and this repository is public.
+   The canary and this assertion would stop together, producing no failed run
+   and so no notification, while the export itself carries on until something
+   breaks it unwatched. A BigQuery scheduled query was not subject to that
+   rule, so moving here traded an alert that could not deliver for two alerts
+   that can be switched off at once.
+
+   The exposure is compound — dormancy **and** an export failure inside it —
+   and at the current commit cadence the clock never gets close. It is
+   recorded rather than dismissed because the scenario is this project's
+   stated goal state rather than its failure state: the objective is play
+   several times a week without touching the code, and a browser sending
+   events while nobody pushes is exactly the condition that trips this. The
+   billing account has also lapsed once already, so an unwatched break is not
+   hypothetical. Covering it needs a check outside GitHub's scheduler, which
+   is a design decision rather than a tweak, and it is tracked in issue #742.
+   Revisit it the moment this repository goes quiet for a few weeks.
+
+6. Create the service account and give it the workflow's credential. In
+   **IAM & Admin** > **Service Accounts**, create one; grant it **BigQuery Job
+   User** on the project and **BigQuery Data Viewer** on the export dataset,
+   which is everything the assertion needs and nothing more. Then **KEYS** >
+   **ADD KEY** > **Create new key** > **JSON**, and store the whole file as the
+   GitHub Actions repository secret
+   `BIGQUERY_MONITOR_SERVICE_ACCOUNT_KEY`. Delete the downloaded file
+   afterwards: a long-lived key sitting in a downloads folder is the main risk
+   this approach carries. Its blast radius is otherwise small — read-only, one
+   dedicated project, capped by the recorded per-query and per-day quotas, over
+   card-free data. Workload Identity Federation removes the key entirely and is
+   the upgrade path if that trade stops looking right.
+7. Negative-check **delivery**, not just detection, and do it against the real
+   workflow rather than a copy: dispatch it with `checked_date` set to a date
+   you know has no canary. The assertion fails on demand, nothing needs
+   deleting afterwards, and the thing under test is the artifact that will
+   actually run. Confirm the notification **arrives**. A run that fails while
+   the inbox stays empty is exactly the failure this step exists to catch.
 
 On an alert, first open the canary workflow's runs in the GitHub Actions tab
 and check the expected date's
@@ -1032,8 +1082,13 @@ evidence is recorded.
       production workload must exist to generate.
 - [ ] Operational monitoring works: the canary workflow runs from its
       repository secret, its event appears in the matching daily table, the
-      scheduled assertion succeeds, and its negative check delivers a failure
-      email to the owner.
+      health workflow's assertion succeeds against a date that has one, and its
+      negative check against a date that has none delivers a failure
+      notification to the owner. Detection and delivery are separate claims and
+      both need evidence: on 2026-08-24 an assertion fired correctly against
+      a canary-free date and no email was sent, so a tick resting on run
+      history alone would have been wrong. Record the failing run **and** the
+      message that reached a human.
 
 The Privacy Policy's warehouse-retention sentence is authored in PR #732. Do
 not edit `src/ui-react/PrivacyPolicy.tsx` in #683, but do not enable the export
