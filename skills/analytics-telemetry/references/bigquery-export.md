@@ -144,7 +144,7 @@ as `Pending` until Mark performs and verifies each console step.
   branch in PR #741, since neither `workflow_dispatch` nor `schedule` works
   before that:
   - `2026-08-23`, which has two canaries: **passed**. This is what proves the
-    check is not passing vacuously — the same query fails on the neighbouring
+    check is not passing vacuously — the same query fails on the adjacent
     date, so it is genuinely reading canary rows rather than succeeding on an
     empty result.
   - `2026-08-22`, where the table exists and holds no canary: **failed** on the
