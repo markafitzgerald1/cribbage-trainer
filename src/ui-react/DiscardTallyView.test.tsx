@@ -1,19 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
-import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
+import { discardTallySummary } from "./discardTally.test.common";
 import { render } from "@testing-library/react";
-
-const summaryOf = (today: {
-  readonly decisions: number;
-  readonly mean: number | null;
-}): DiscardTallySummary => ({
-  decisions: 24,
-  meanExpectedPointsLoss: 0.7361,
-  optimalDecisions: 9,
-  todayDecisions: today.decisions,
-  todayMeanExpectedPointsLoss: today.mean,
-  todayOptimalDecisions: 2,
-});
 
 describe("discard tally view", () => {
   /*
@@ -33,24 +21,48 @@ describe("discard tally view", () => {
     },
   ])("$name", ({ scoped, today }) => {
     const { queryAllByText } = render(
-      <DiscardTallyView summary={summaryOf(today)} />,
+      <DiscardTallyView
+        summary={discardTallySummary({
+          todayDecisions: today.decisions,
+          todayMeanExpectedPointsLoss: today.mean,
+          todayOptimalDecisions: 2,
+        })}
+      />,
     );
 
     // One per measure, so a reader can never mistake which period a figure belongs to.
     expect(queryAllByText("today")).toHaveLength(scoped);
   });
 
+  // The skipped row appears only once a hand has been abandoned, and names today only once one was abandoned today.
+  it.each([
+    { name: "both periods once a hand is skipped today", rows: 1, today: 2 },
+    { name: "all time only when none was skipped today", rows: 1, today: 0 },
+  ])("shows skips: $name", ({ rows, today }) => {
+    const { queryAllByText } = render(
+      <DiscardTallyView
+        summary={{
+          ...discardTallySummary({
+            todayDecisions: 5,
+            todayMeanExpectedPointsLoss: 0.4128,
+          }),
+          skippedHands: 3,
+          todaySkippedHands: today,
+        }}
+      />,
+    );
+
+    expect(queryAllByText("Hands skipped")).toHaveLength(rows);
+  });
+
   it("says nothing at all before any decision is recorded", () => {
     const { container } = render(
       <DiscardTallyView
-        summary={{
+        summary={discardTallySummary({
           decisions: 0,
           meanExpectedPointsLoss: null,
           optimalDecisions: 0,
-          todayDecisions: 0,
-          todayMeanExpectedPointsLoss: null,
-          todayOptimalDecisions: 0,
-        }}
+        })}
       />,
     );
 

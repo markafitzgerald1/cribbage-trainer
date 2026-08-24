@@ -40,7 +40,7 @@ const noteOrigin = (
   cause: HandReplacementCause,
 ) => {
   act(() => {
-    tally.reportHandOrigin(handOf(hand), cause);
+    tally.reportHandOrigin(handOf(hand), cause, CribRole.Dealer);
   });
 };
 
@@ -51,6 +51,7 @@ const renderTally = (
   clearDiscardTally();
   return renderHook(() =>
     useDiscardTally({
+      cribRole: CribRole.Dealer,
       dealtCards: handOf(hand),
       isSeededSession,
       wasDeepLinked,
@@ -72,6 +73,7 @@ const startWithUnknownOrigin = () => {
   const rendered = renderHook(
     ({ hand }: { hand: string }) =>
       useDiscardTally({
+        cribRole: CribRole.Dealer,
         dealtCards: handOf(hand),
         isSeededSession: false,
         wasDeepLinked: false,
@@ -158,6 +160,67 @@ describe("discard tally hook", () => {
     expect(readDiscardTally(Date.now()).decisions).toBe(counted);
   });
 
+  /*
+   * Provenance is keyed by the same cards-and-role identity the record uses.
+   * Keying it on cards alone let a hand re-entered under the other role mark
+   * the dealt hand as practice, so its decision was recorded and then left
+   * out of every figure shown.
+   */
+  it("keeps a dealt hand authentic when the other role is studied", () => {
+    const { result } = renderTally(HAND);
+    act(() => {
+      result.current.reportHandOrigin(handOf(HAND), "manual", CribRole.Pone);
+    });
+    reportScore(result.current);
+
+    expect(readDiscardTally(Date.now()).decisions).toBe(1);
+  });
+
+  /*
+   * Dealing away from a hand that was never scored is the whole point of the
+   * skip count: without it, abandoning the hands a player finds hard would
+   * quietly improve every figure above. What must not count is a hand nobody
+   * chose — the one a page load deals — or one entered to study, which is
+   * already outside the averages and would otherwise be penalized twice.
+   */
+  it.each([
+    {
+      name: "a hand dealt and then left",
+      open: (tally: DiscardTally) => {
+        noteOrigin(tally, HAND, "deal");
+      },
+      skipped: 1,
+    },
+    {
+      name: "a hand whose decision was scored",
+      open: (tally: DiscardTally) => {
+        noteOrigin(tally, HAND, "deal");
+        reportScore(tally);
+      },
+      skipped: 0,
+    },
+    {
+      name: "the hand a page load starts with",
+      open: () => {
+        // Nothing: the hand a page load deals is the one under test.
+      },
+      skipped: 0,
+    },
+    {
+      name: "a hand entered to study",
+      open: (tally: DiscardTally) => {
+        noteOrigin(tally, HAND, "manual");
+      },
+      skipped: 0,
+    },
+  ])("counts $skipped skips for $name", ({ open, skipped }) => {
+    const { result } = renderTally(HAND);
+    open(result.current);
+    noteOrigin(result.current, OTHER_HAND, "deal");
+
+    expect(readDiscardTally(Date.now()).skippedHands).toBe(skipped);
+  });
+
   it("records nothing until a discard has been scored", () => {
     const { result } = renderTally(HAND);
     reportScore(result.current, { cribRole: CribRole.Dealer, quality: null });
@@ -166,9 +229,11 @@ describe("discard tally hook", () => {
       decisions: 0,
       meanExpectedPointsLoss: null,
       optimalDecisions: 0,
+      skippedHands: 0,
       todayDecisions: 0,
       todayMeanExpectedPointsLoss: null,
       todayOptimalDecisions: 0,
+      todaySkippedHands: 0,
     });
   });
 

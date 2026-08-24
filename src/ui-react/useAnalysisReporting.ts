@@ -1,17 +1,29 @@
 import {
   type DiscardTelemetry,
   type DiscardTelemetryProps,
-  type HandReplacementCause,
   type RenderedAnalysis,
   useDiscardTelemetry,
 } from "./useDiscardTelemetry";
-import type { DealtCard } from "../game/DealtCard";
+import { type ReportHandOrigin, useDiscardTally } from "./useDiscardTally";
+import type { CribRole } from "../game/expectedCribPoints";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import { useCallback } from "react";
-import { useDiscardTally } from "./useDiscardTally";
-
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
-export interface AnalysisReporting extends DiscardTelemetry {
+/*
+ * The telemetry surface, plus what the tally needs on top of it. Replacing a
+ * hand carries its crib role, because identity here is cards and role
+ * together: the same six cards are a different decision under each.
+ */
+// Extends rather than restates, so a change to the telemetry props cannot leave this describing a shape that no longer exists.
+export interface AnalysisReportingProps extends DiscardTelemetryProps {
+  readonly cribRole: CribRole;
+}
+
+export interface AnalysisReporting extends Omit<
+  DiscardTelemetry,
+  "reportHandReplaced"
+> {
+  readonly reportHandReplaced: ReportHandOrigin;
   readonly tallySummary: DiscardTallySummary;
 }
 
@@ -23,11 +35,16 @@ export interface AnalysisReporting extends DiscardTelemetry {
  * which should not have to know either rule.
  */
 export const useAnalysisReporting = (
-  props: DiscardTelemetryProps,
+  props: AnalysisReportingProps,
 ): AnalysisReporting => {
   const telemetry = useDiscardTelemetry(props);
-  const { dealtCards, isSeededSession, wasDeepLinked } = props;
-  const tally = useDiscardTally({ dealtCards, isSeededSession, wasDeepLinked });
+  const { cribRole, dealtCards, isSeededSession, wasDeepLinked } = props;
+  const tally = useDiscardTally({
+    cribRole,
+    dealtCards,
+    isSeededSession,
+    wasDeepLinked,
+  });
   const {
     reportAnalysisRendered: reportAnalysisToTelemetry,
     reportHandReplaced: reportHandToTelemetry,
@@ -46,10 +63,10 @@ export const useAnalysisReporting = (
     [addAnalysisToTally, reportAnalysisToTelemetry],
   );
 
-  const reportHandReplaced = useCallback(
-    (cards: readonly DealtCard[], cause: HandReplacementCause) => {
+  const reportHandReplaced: ReportHandOrigin = useCallback(
+    (cards, cause, role) => {
       reportHandToTelemetry(cards, cause);
-      reportHandOrigin(cards, cause);
+      reportHandOrigin(cards, cause, role);
     },
     [reportHandOrigin, reportHandToTelemetry],
   );

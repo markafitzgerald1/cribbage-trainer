@@ -95,6 +95,24 @@ export function DiscardTallyView({
             ),
         renderShare("all time", summary.optimalDecisions, summary.decisions),
       )}
+      {/* Only once a hand has been abandoned, so an untouched row never implies a habit nobody has. */}
+      {summary.skippedHands === 0
+        ? null
+        : renderRow(
+            "Hands skipped",
+            summary.todaySkippedHands === 0
+              ? null
+              : renderPeriod(
+                  "today",
+                  <span className={classes.figure}>
+                    {summary.todaySkippedHands}
+                  </span>,
+                ),
+            renderPeriod(
+              "all time",
+              <span className={classes.figure}>{summary.skippedHands}</span>,
+            ),
+          )}
     </div>
   );
 }

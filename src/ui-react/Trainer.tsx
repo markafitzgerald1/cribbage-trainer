@@ -196,6 +196,7 @@ export function Trainer({
     tallySummary,
   } = useAnalysisReporting({
     consented: choice.consented,
+    cribRole,
     dealtCards,
     decisionQualityConsented: choice.decisionQualityConsented,
     isSeededSession,
@@ -277,7 +278,7 @@ export function Trainer({
   }, [dealtCards]);
   const applyManualHand = useCallback(
     (state: DealState) => {
-      reportHandReplaced(state.dealtCards, "manual");
+      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
       setDealState(state);
     },
     [reportHandReplaced],
@@ -309,7 +310,7 @@ export function Trainer({
   const dealNewHand = useCallback(() => {
     markHistoryUpdate();
     const newDealState = createDealState(dealHandWithGenerator());
-    reportHandReplaced(newDealState.dealtCards, "deal");
+    reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
     setDealState(newDealState);
   }, [
     createDealState,

@@ -2,6 +2,7 @@ import {
   type DiscardTallySummary,
   readDiscardTally,
   recordDiscardDecision,
+  recordSkippedHand,
 } from "../ui/discardTally";
 import type {
   HandReplacementCause,
@@ -13,18 +14,22 @@ import type { DealtCard } from "../game/DealtCard";
 import { serializeHand } from "../game/Card";
 
 interface UseDiscardTallyProps {
+  readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
   readonly isSeededSession: boolean;
   readonly wasDeepLinked: boolean;
 }
 
+// The hand a page load starts with is seeded at construction, so only replacements arrive here.
+export type ReportHandOrigin = (
+  cards: readonly DealtCard[],
+  cause: HandReplacementCause,
+  cribRole: CribRole,
+) => void;
+
 export interface DiscardTally {
   readonly reportAnalysisRendered: (analysis: RenderedAnalysis) => void;
-  // The hand a page load starts with is seeded at construction, so only replacements arrive here.
-  readonly reportHandOrigin: (
-    cards: readonly DealtCard[],
-    cause: HandReplacementCause,
-  ) => void;
+  readonly reportHandOrigin: ReportHandOrigin;
   readonly summary: DiscardTallySummary;
 }
 
@@ -47,6 +52,7 @@ const toHandKey = (
 ): string => `${serializeHand(dealtCards)}|${cribRole}`;
 
 export const useDiscardTally = ({
+  cribRole,
   dealtCards,
   isSeededSession,
   wasDeepLinked,
@@ -61,6 +67,14 @@ export const useDiscardTally = ({
    * keeps the origin it was dealt with, rather than being reclassified by
    * whatever the app happens to be doing when it reappears.
    */
+  /*
+   * The hand currently on screen, and whether its decision has been counted.
+   * Dealing away from a hand that never was is what a skip is, so the check
+   * has to happen at the moment of replacement rather than later: once the
+   * cards change there is nothing left to notice was abandoned.
+   */
+  const openHand = useRef<{ key: string; scored: boolean } | null>(null);
+
   const practiceByHand = useRef(
     /*
      * Seeded eagerly with the hand this page load starts with, rather than in
@@ -69,7 +83,7 @@ export const useDiscardTally = ({
      * would mislabel exactly the decision it was meant to describe.
      */
     new Map<string, boolean>([
-      [serializeHand(dealtCards), isSeededSession || wasDeepLinked],
+      [toHandKey(dealtCards, cribRole), isSeededSession || wasDeepLinked],
     ]),
   );
 
@@ -77,24 +91,43 @@ export const useDiscardTally = ({
     practiceByHand.current.set(handKey, isPractice);
   }, []);
 
-  const reportHandOrigin = useCallback(
-    (cards: readonly DealtCard[], cause: HandReplacementCause) => {
+  const reportHandOrigin: ReportHandOrigin = useCallback(
+    (cards, cause, role) => {
+      /*
+       * The hand being replaced is abandoned unless it was scored. Only a
+       * hand the player asked for counts: the one a page load deals was
+       * never chosen, and practice hands are already outside the averages,
+       * so charging either as avoidance would describe neither correctly.
+       */
+      const abandoned = openHand.current;
+      if (
+        abandoned !== null &&
+        !abandoned.scored &&
+        practiceByHand.current.get(abandoned.key) === false
+      ) {
+        setSummary(recordSkippedHand(Date.now()));
+      }
+      const isPractice = cause === "manual" || isSeededSession;
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
-      notePractice(serializeHand(cards), cause === "manual" || isSeededSession);
+      notePractice(toHandKey(cards, role), isPractice);
+      openHand.current = { key: toHandKey(cards, role), scored: false };
     },
     [isSeededSession, notePractice],
   );
 
   const reportAnalysisRendered = useCallback(
-    ({ cribRole, quality }: RenderedAnalysis) => {
+    ({ cribRole: scoredRole, quality }: RenderedAnalysis) => {
       if (quality === null) {
         return;
       }
-      const handKey = toHandKey(dealtCards, cribRole);
+      const handKey = toHandKey(dealtCards, scoredRole);
+      if (openHand.current?.key === handKey) {
+        openHand.current = { key: handKey, scored: true };
+      }
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
-          cribRole,
+          cribRole: scoredRole,
           expectedPointsLoss: quality.expectedPointsLoss,
           handKey,
           isOptimal: quality.isOptimal,
@@ -105,12 +138,15 @@ export const useDiscardTally = ({
            * can vouch for.
            */
           /*
-           * Looked up by cards alone, because a replacement announces itself
-           * before its role reaches this hook. An unknown hand is treated as
-           * practice: it can only be one this session never dealt.
+           * Looked up by the same key the record carries. Keying provenance on
+           * cards alone let a hand re-entered under the opposite role mark the
+           * dealt hand as practice, so its authentic decision was recorded and
+           * then left out of every figure shown.
+           *
+           * An unknown hand counts as practice: it can only be one this
+           * session never dealt.
            */
-          isPractice:
-            practiceByHand.current.get(serializeHand(dealtCards)) ?? true,
+          isPractice: practiceByHand.current.get(handKey) ?? true,
         }),
       );
     },

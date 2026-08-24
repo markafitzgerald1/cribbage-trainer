@@ -5,6 +5,7 @@ import {
   discardTallyKey,
   readDiscardTally,
   recordDiscardDecision,
+  recordSkippedHand,
 } from "./discardTally";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
@@ -23,9 +24,11 @@ const summaryOf = (
   decisions,
   meanExpectedPointsLoss,
   optimalDecisions,
+  skippedHands: 0,
   todayDecisions: decisions,
   todayMeanExpectedPointsLoss: meanExpectedPointsLoss,
   todayOptimalDecisions: optimalDecisions,
+  todaySkippedHands: 0,
 });
 
 // For the cases where today and the lifetime figures genuinely differ.
@@ -92,7 +95,12 @@ const storedRecords = (): readonly unknown[] =>
   ).records;
 
 const storedWith = (overrides: Record<string, unknown>) => ({
-  lifetime: { decisions: 2, expectedPointsLossTotal: 3, optimalDecisions: 1 },
+  lifetime: {
+    decisions: 2,
+    expectedPointsLossTotal: 3,
+    optimalDecisions: 1,
+    skippedHands: 0,
+  },
   records: [validRecord],
   version: 1,
   ...overrides,
@@ -103,6 +111,23 @@ const storedOmitting = (missing: string) =>
   Object.fromEntries(
     Object.entries(storedWith({})).filter(([key]) => key !== missing),
   );
+
+/*
+ * Values this build cannot read and may freely replace. Shared by the two
+ * questions asked of them — that they read as empty, and that a later hand
+ * can still be written over them — because listing each case twice is the
+ * duplication those two tests would otherwise be.
+ */
+const junkValues = () => [
+  { name: "text that is not JSON", stored: "{" },
+  { name: "a JSON null", stored: "null" },
+  { name: "a bare number", stored: "7" },
+  { name: "no version", stored: asJson(storedOmitting("version")) },
+  {
+    name: "a non-numeric version",
+    stored: asJson(storedWith({ version: "1" })),
+  },
+];
 
 describe("discard tally storage", () => {
   it("reads a browser with no history as empty", () => {
@@ -190,7 +215,14 @@ describe("discard tally storage", () => {
 
     expect(readDiscardTally(AT).meanExpectedPointsLoss).toBe(2.5);
   });
+});
 
+/*
+ * What the store does with values it did not write: damaged, foreign, or
+ * simply older. Split from the recording tests above because the describe
+ * grew past the statement cap, and because these ask a different question.
+ */
+describe("discard tally recovery", () => {
   /*
    * One table rather than three: every case here is storage this build
    * cannot trust, and all of them must read as an empty tally rather than
@@ -198,14 +230,7 @@ describe("discard tally storage", () => {
    * which is duplication by any measure that matters.
    */
   it.each([
-    { name: "text that is not JSON", stored: "{" },
-    { name: "a JSON null", stored: "null" },
-    { name: "a bare number", stored: "7" },
-    { name: "no version", stored: asJson(storedOmitting("version")) },
-    {
-      name: "a non-numeric version",
-      stored: asJson(storedWith({ version: "1" })),
-    },
+    ...junkValues(),
     // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
     { name: "a newer version", stored: asJson(storedWith({ version: 2 })) },
     { name: "no counters", stored: asJson(storedOmitting("lifetime")) },
@@ -244,10 +269,13 @@ describe("discard tally storage", () => {
    * Reading a newer tally as empty and then recording over it would erase a
    * richer history for one decision, which is worse than showing nothing.
    */
-  it("refuses to record over a tally from a newer version", () => {
+  it.each([
+    { name: "a decision", record: () => recordDiscardDecision(decisionOf()) },
+    { name: "a skipped hand", record: () => recordSkippedHand(AT) },
+  ])("refuses to record $name over a newer version", ({ record }) => {
     const newer = asJson(storedWith({ version: 2 }));
     storeRaw(newer);
-    recordDiscardDecision(decisionOf());
+    record();
 
     expect(localStorage.getItem(discardTallyKey)).toBe(newer);
   });
@@ -278,6 +306,70 @@ describe("discard tally storage", () => {
     expect(
       recordDiscardDecision(decisionOf({ handKey: "kept" })).decisions,
     ).toBe(2);
+  });
+
+  /*
+   * Write protection is for a richer history, not for junk. Refusing to write
+   * over anything unreadable would leave the tally empty and refusing every
+   * record until storage was cleared by hand, which is worse than the
+   * overwrite the protection exists to prevent.
+   */
+  it.each(junkValues())("records over storage holding $name", ({ stored }) => {
+    storeRaw(stored);
+
+    expect(recordDiscardDecision(decisionOf()).decisions).toBe(1);
+  });
+
+  /*
+   * A hand abandoned rather than played. It cannot enter the averages, since
+   * nothing scored it, but it has to be visible or the averages flatter a
+   * player for avoiding the hands they find hard.
+   */
+  it("counts a skipped hand without moving the averages", () => {
+    clearDiscardTally();
+    recordDiscardDecision(decisionOf());
+
+    expect(recordSkippedHand(AT)).toStrictEqual({
+      ...summaryOf(1, 1.5, 0),
+      skippedHands: 1,
+      todaySkippedHands: 1,
+    });
+  });
+
+  // A tally written before skips were counted is history worth keeping, not a shape to discard.
+  it("starts counting skips on a tally that predates them", () => {
+    storeRaw(
+      asJson(
+        storedWith({
+          lifetime: {
+            decisions: 2,
+            expectedPointsLossTotal: 3,
+            optimalDecisions: 1,
+          },
+        }),
+      ),
+    );
+
+    expect(recordSkippedHand(AT)).toStrictEqual({
+      ...summaryOf(2, 1.5, 1),
+      skippedHands: 1,
+      todayDecisions: 0,
+      todayMeanExpectedPointsLoss: null,
+      todayOptimalDecisions: 0,
+      todaySkippedHands: 1,
+    });
+  });
+
+  it("drops skip entries it cannot read while keeping the count", () => {
+    storeRaw(asJson(storedWith({ skipped: [{ at: "soon" }, 4] })));
+
+    expect(readDiscardTally(AT).todaySkippedHands).toBe(0);
+  });
+
+  it("keeps a skip in the session when the write is refused", () => {
+    clearDiscardTally();
+
+    expect(withFailingWrite(() => recordSkippedHand(AT)).skippedHands).toBe(1);
   });
 
   it("accepts a tally from an older version", () => {
