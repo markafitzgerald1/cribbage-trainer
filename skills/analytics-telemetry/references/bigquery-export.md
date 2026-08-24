@@ -129,13 +129,33 @@ as `Pending` until Mark performs and verifies each console step.
 - **Measured monthly cost:** Pending. Record storage usage, query bytes, gross
   cost, credits, and net billed amount separately.
 - **Missing-table alert recipient:** Mark, the sole operational owner, with no
-  backup by decision. The alert itself is not configured yet; see section 10.
+  backup by decision. Delivery is GitHub's own failed-run notification for
+  `.github/workflows/bigquery-export-health.yml`, verified on 2026-08-24; see
+  section 10 for why it is not the BigQuery transfer's email setting.
 - **Canary emitter:** `.github/workflows/bigquery-export-canary.yml`, run
   daily at `5 17 * * *` against the production web stream, authenticated by the
   repository secret `GA4_MEASUREMENT_PROTOCOL_SECRET`. First exported
-  `export_health_canary` date: Pending, and recordable only once the workflow
-  reaches the default branch. Never record its API secret in this file, an
-  issue, a PR, source control, or a screenshot.
+  `export_health_canary` reporting date: **2026-08-23**, two canaries, both
+  dispatched by hand that day and confirmed present in `events_20260823` on
+  2026-08-24. Never record its API secret in this file, an issue, a PR, source
+  control, or a screenshot.
+- **Health assertion verified end to end on 2026-08-24**, by three dispatched
+  runs after `.github/workflows/bigquery-export-health.yml` reached the default
+  branch in PR #741, since neither `workflow_dispatch` nor `schedule` works
+  before that:
+  - `2026-08-23`, which has two canaries: **passed**. This is what proves the
+    check is not passing vacuously — the same query fails on the neighbouring
+    date, so it is genuinely reading canary rows rather than succeeding on an
+    empty result.
+  - `2026-08-22`, where the table exists and holds no canary: **failed** on the
+    canary assertion.
+  - `2026-08-01`, where no table exists at all: **failed** on the table
+    assertion. The two negatives fire different assertions, so each is known to
+    work rather than one masking the other.
+  - Both failures delivered a GitHub notification to the owner within minutes.
+    That is the half that had to be proven rather than assumed, because the
+    BigQuery scheduled query this replaced detected correctly and delivered
+    nothing.
 
 ## Placeholders used below
 
@@ -1080,15 +1100,16 @@ evidence is recorded.
 - [ ] Monthly storage and query cost measured as a follow-up: section 11 records
       30 complete post-deployment days without blocking #665 on evidence its
       production workload must exist to generate.
-- [ ] Operational monitoring works: the canary workflow runs from its
-      repository secret, its event appears in the matching daily table, the
-      health workflow's assertion succeeds against a date that has one, and its
-      negative check against a date that has none delivers a failure
-      notification to the owner. Detection and delivery are separate claims and
-      both need evidence: on 2026-08-24 an assertion fired correctly against
-      a canary-free date and no email was sent, so a tick resting on run
-      history alone would have been wrong. Record the failing run **and** the
-      message that reached a human.
+- [x] Operational monitoring works, verified 2026-08-24 and recorded in the
+      console-evidence section above: the canary workflow runs from its
+      repository secret, its event reached `events_20260823`, the health
+      workflow passed against that date, and two negatives against dates
+      without a canary each failed on their own assertion and **delivered a
+      notification that reached a human**. Detection and delivery are separate
+      claims and both needed evidence: earlier the same day an assertion fired
+      correctly against a canary-free date and no email was sent at all, so a
+      tick resting on run history alone would have been wrong. Keep that rule
+      if this is ever rebuilt.
 
 The Privacy Policy's warehouse-retention sentence is authored in PR #732. Do
 not edit `src/ui-react/PrivacyPolicy.tsx` in #683, but do not enable the export
