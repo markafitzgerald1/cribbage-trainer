@@ -74,9 +74,25 @@ as `Pending` until Mark performs and verifies each console step.
 #### Operational owner
 
 - **Recorded value:** Mark is the sole operational owner for now. Mark's durable
-  Google account owns the scheduled query and receives export-health and
-  billing alerts. The backup owner is intentionally blank.
+  Google account receives export-health and billing alerts. The backup owner is
+  intentionally blank.
+- **The scheduled query runs as a service account, not as Mark.** An earlier
+  version of this record said otherwise. It should not: creating a scheduled
+  query under personal credentials makes the BigQuery Data Transfer Service
+  demand two OAuth scopes, the first being **"See, edit, create, and delete
+  all of your Google Drive files"** — full read-write-delete over every file
+  in the owner's personal Drive, granted to an unattended service, for a query
+  that counts rows in two tables. BigQuery asks because it can read Drive-backed
+  external tables such as Google Sheets; nothing here uses that. The consent
+  screen offers no per-scope opt-out, and revoking Drive afterwards removes the
+  whole connection and breaks the query with it. A service account draws its
+  permissions from IAM instead, so the grant never appears at all.
+- **Alert delivery is a Cloud Logging alert policy, not the transfer's own
+  email setting.** Section 10 records why: the assertion fires correctly and no
+  email is sent.
 - **Trade-off:** one owner is simplest but creates a single-person failure risk.
+  Running the query as a service account slightly reduces it, since the job no
+  longer depends on one person's OAuth grant staying valid.
 - **Reversibility:** add a backup only after that person accepts responsibility,
   receives the required access, and passes the failure-email test.
 
@@ -899,13 +915,34 @@ set to that day, within the 71-hour window.
    day to arrive without waiting so long that a gap goes unnoticed.
 7. Set **Processing location** to the recorded dataset region. Leave
    destination table settings empty because this assertion writes no table.
-8. Under **Notification options**, enable **Send email notifications**. Confirm
-   the scheduled-query owner is the recorded operational owner, save it, and
-   run it for the verified canary date. Confirm the run succeeds.
-9. Negative-check the alert once: in a copy, change the event name to
-   `export_health_canary_missing`. Run it and confirm the assertion fails and
-   the owner receives a BigQuery Data Transfer Service failure email. Delete
-   the test copy afterwards.
+8. Under **Advanced options**, set **Service account** to a dedicated service
+   account rather than accepting personal credentials. Create it first with
+   **BigQuery Job User** on the project and **BigQuery Data Viewer** on the
+   export dataset, and grant yourself **Service Account User** on it so the
+   transfer may run as it. Do not skip this to save time: the personal-
+   credential path demands full Drive read-write-delete, for the reasons in the
+   operational-owner decision above, and the consent screen has no per-scope
+   opt-out. A run that reaches Save without Google asking for Drive access is
+   the confirmation that the service account took effect.
+9. Do not rely on **Send email notifications** under **Notification options**.
+   Enable it, but treat it as decorative until proven: a service-account-owned
+   scheduled query raises its assertion correctly and delivers no email, which
+   the next step is what discovers. Configure delivery instead as a **Cloud
+   Logging** alert policy, built from a log query filtered to
+   `resource.type="bigquery_dts_config"` with `severity>=ERROR`, attached to a
+   verified email notification channel. Build the filter against a real failure
+   in Logs Explorer before creating the policy, so the filter is known to match
+   the entry it must catch rather than assumed to.
+10. Negative-check delivery, not just detection, and do it against the real
+    scheduled query rather than a copy: use **Schedule backfill** over a narrow
+    window covering one run slot whose checked date has no canary. The
+    assertion fails on demand, nothing needs deleting afterwards, and the thing
+    under test is the artifact that will actually run. Confirm the email
+    **arrives**. A run that fails in the history while the inbox stays empty is
+    the exact failure this step exists to catch, and it is invisible from the
+    console: detection and delivery look identical there, and silence means
+    "healthy" in both cases. This was not hypothetical — it is what happened
+    here on 2026-08-24, and only the negative check found it.
 
 ```sql
 DECLARE checked_date DATE DEFAULT DATE_SUB(
@@ -1033,7 +1070,11 @@ evidence is recorded.
 - [ ] Operational monitoring works: the canary workflow runs from its
       repository secret, its event appears in the matching daily table, the
       scheduled assertion succeeds, and its negative check delivers a failure
-      email to the owner.
+      email to the owner. Detection and delivery are separate claims and both
+      need evidence — on 2026-08-24 the assertion fired correctly against a
+      canary-free date and no email was sent, so a tick resting on the run
+      history alone would have been wrong. Record the failing run **and** the
+      message that reached a human.
 
 The Privacy Policy's warehouse-retention sentence is authored in PR #732. Do
 not edit `src/ui-react/PrivacyPolicy.tsx` in #683, but do not enable the export
