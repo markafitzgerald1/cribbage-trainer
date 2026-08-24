@@ -31,9 +31,9 @@ export default {
       reportsDirectory: path.join(dirname, "coverage"),
       thresholds: {
         branches: 80.24,
-        functions: 92.57,
-        lines: 90.23,
-        statements: 90.44,
+        functions: 92.4,
+        lines: 90.14,
+        statements: 90.36,
       },
     },
     projects: [

@@ -8,7 +8,7 @@ import type {
   HandReplacementCause,
   RenderedAnalysis,
 } from "./useDiscardTelemetry";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { discardIsComplete } from "../game/discardIsComplete";
@@ -103,6 +103,29 @@ export const useDiscardTally = ({
       [toHandKey(dealtCards, cribRole), isSeededSession || wasDeepLinked],
     ]),
   );
+
+  /*
+   * Today is computed when a hand is recorded, so a tab left open across
+   * local midnight goes on showing yesterday's play under "today" — a label
+   * asserting something false, which is worse than a figure simply missing.
+   * Returning to the tab recomputes it, which also picks up anything another
+   * tab recorded while this one was hidden.
+   *
+   * A tab left visible across midnight still shows the old day until its
+   * next interaction. Catching that needs a timer armed for the next
+   * midnight, which is more machinery than a figure nobody is looking at.
+   */
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        setSummary(readDiscardTally(Date.now()));
+      }
+    };
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, []);
 
   const notePractice = useCallback((handKey: string, isPractice: boolean) => {
     practiceByHand.current.set(handKey, isPractice);

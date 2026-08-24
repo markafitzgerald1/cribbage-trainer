@@ -4,7 +4,11 @@ import type {
   RenderedAnalysis,
 } from "./useDiscardTelemetry";
 import { act, renderHook } from "@testing-library/react";
-import { clearDiscardTally, readDiscardTally } from "../ui/discardTally";
+import {
+  clearDiscardTally,
+  readDiscardTally,
+  recordDiscardDecision,
+} from "../ui/discardTally";
 import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
 import { parseHand } from "../game/Card";
@@ -250,6 +254,36 @@ describe("discard tally hook", () => {
    * avoidance. Folded into the table above rather than tested separately,
    * where its body was identical to it.
    */
+
+  /*
+   * A tab left open across local midnight would otherwise keep showing
+   * yesterday's play under "today". Returning to it recomputes the figures,
+   * which also picks up whatever another tab recorded meanwhile — here, a
+   * decision written straight to storage behind the hook's back.
+   */
+  it.each([
+    { decisions: 1, name: "the tab is visible again", state: "visible" },
+    { decisions: 0, name: "it stays hidden", state: "hidden" },
+  ])("refreshes when $name", ({ decisions, state }) => {
+    const { result } = renderTally(HAND);
+    recordDiscardDecision({
+      at: Date.now(),
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 1,
+      handKey: "written-elsewhere",
+      isOptimal: false,
+      isPractice: false,
+    });
+    act(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: state,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    expect(result.current.summary.decisions).toBe(decisions);
+  });
 
   it("records nothing until a discard has been scored", () => {
     const { result } = renderTally(HAND);

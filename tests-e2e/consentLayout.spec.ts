@@ -212,7 +212,7 @@ test("the policy update fits beside a tally at an enlarged root font", async ({
   await page.goto("/");
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
-  await expect(page.getByText("Points lost per discard")).toBeVisible();
+  await expect(page.getByText("Lost per discard")).toBeVisible();
   expect(await consentActionBottom(page, "Accept")).toBeLessThanOrEqual(
     phoneLandscapeViewport.height,
   );
@@ -236,7 +236,7 @@ test("first-run consent controls stay in view once a tally exists", async ({
   await checkboxes.nth(0).click();
   await checkboxes.nth(1).click();
   await page.locator('text="Loading analysis..."').waitFor({ state: "hidden" });
-  await expect(page.getByText("Points lost per discard")).toBeVisible();
+  await expect(page.getByText("Lost per discard")).toBeVisible();
 
   expect(await consentActionBottom(page, "Accept")).toBeLessThanOrEqual(
     phoneLandscapeViewport.height,

@@ -99,7 +99,7 @@ test("leaves a seeded deep link out of the tally", async ({ page }) => {
   await page.goto(`/${constantHandQuery}`);
   await selectTwoDiscards(page);
 
-  await expect(page.getByText("Points lost per discard")).toBeHidden();
+  await expect(page.getByText("Lost per discard")).toBeHidden();
 });
 
 /*
@@ -112,7 +112,7 @@ test("renders the tally between the analysis and the privacy links", async ({
 }) => {
   await playOneAuthenticHand(page);
 
-  const tally = await page.getByText("Points lost per discard").boundingBox();
+  const tally = await page.getByText("Lost per discard").boundingBox();
   const table = await page.getByRole("table").boundingBox();
   const privacy = await page
     .getByRole("button", { name: "Privacy Policy" })

@@ -56,7 +56,7 @@ describe("discard tally view", () => {
     });
 
     expect(queryByText("Hands skipped")).not.toBeNull();
-    expect(queryByText("Points lost per discard")).toBeNull();
+    expect(queryByText("Lost per discard")).toBeNull();
   });
 
   it("says nothing at all before a hand has been faced", () => {
