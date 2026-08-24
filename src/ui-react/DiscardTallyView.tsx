@@ -8,9 +8,8 @@ const PER_CENT = 100;
 
 /*
  * One decimal at every count rather than a whole number for some and a
- * fraction for others, so two shares on the same line stay comparable at a
- * glance. A format that changes shape as the denominator fills is harder to
- * read than one that does not.
+ * fraction for others, so two shares on the same row stay comparable at a
+ * glance.
  */
 const shareOf = (part: number, whole: number) =>
   `${((part / whole) * PER_CENT).toFixed(SHARE_FRACTION_DIGITS)}%`;
@@ -19,51 +18,29 @@ interface DiscardTallyViewProps {
   readonly summary: DiscardTallySummary;
 }
 
-// The period word and the figures beside it are one shape, so both measures build it here rather than each spelling it out.
-const renderPeriod = (period: string, figures: ReactNode) => (
-  <span>
-    <span className={classes.label}>{period} </span>
-    {figures}
-  </span>
-);
-
-const renderMean = (period: string, mean: number) =>
-  renderPeriod(
-    period,
-    <span className={classes.figure}>
-      {mean.toFixed(LOSS_FRACTION_DIGITS)}
-    </span>,
-  );
-
-const renderShare = (period: string, optimal: number, decisions: number) =>
-  renderPeriod(
-    period,
-    <>
-      <span className={classes.figure}>{optimal}</span>
-      <span className={classes.label}> of </span>
-      <span className={classes.figure}>{decisions}</span>
-      <span className={classes.label}> ({shareOf(optimal, decisions)})</span>
-    </>,
-  );
-
-const renderRow = (measure: string, today: ReactNode, allTime: ReactNode) => (
-  <p className={classes.row}>
+const renderMeasure = (
+  measure: string,
+  today: string | null,
+  allTime: string,
+) => (
+  <>
     <span className={classes.label}>{measure}</span>
-    {today}
-    {allTime}
-  </p>
+    {today === null ? null : <span className={classes.figure}>{today}</span>}
+    <span className={classes.figure}>{allTime}</span>
+  </>
 );
 
 /*
  * What a player's own discards have given up against the best available one,
  * across every session on this browser. Named for the quantity rather than
- * for the idea — "cost" alone left a reader asking what was being spent —
- * and phrased per discard because a total only says how much has been played.
+ * the idea — "cost" alone left a reader asking what was being spent — and
+ * phrased per discard because a total only says how much has been played.
  *
- * One row per measure with both periods named inside it, rather than one row
- * per period. Every figure then sits beside the word that scopes it: an
- * earlier layout put "today 0.87 over 5" next to a lifetime average carrying
- * no period at all, and a reader could not tell which the count belonged to.
+ * A grid of measures against periods, rather than sentences that wrap. Each
+ * period is named once in a heading and every figure sits in its column, so
+ * a reader can compare down as well as across. The sentence form put a label
+ * and two figures on one line and let them wrap wherever they ran out of
+ * room, which on a phone turned two rows into four ragged ones.
  */
 export function DiscardTallyView({
   summary,
@@ -75,43 +52,34 @@ export function DiscardTallyView({
   if (summary.meanExpectedPointsLoss === null) {
     return null;
   }
+  const hasToday = summary.todayDecisions > 0;
+  const columns = hasToday ? classes.withToday : classes.allTimeOnly;
   return (
-    <div className={classes.tally}>
-      {renderRow(
+    <div className={`${classes.tally} ${columns}`}>
+      <span />
+      {hasToday ? <span className={classes.period}>today</span> : null}
+      <span className={classes.period}>all time</span>
+      {renderMeasure(
         "Points lost per discard",
         summary.todayMeanExpectedPointsLoss === null
           ? null
-          : renderMean("today", summary.todayMeanExpectedPointsLoss),
-        renderMean("all time", summary.meanExpectedPointsLoss),
+          : summary.todayMeanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
+        summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
       )}
-      {renderRow(
+      {renderMeasure(
         "Best choice",
-        summary.todayDecisions === 0
-          ? null
-          : renderShare(
-              "today",
-              summary.todayOptimalDecisions,
-              summary.todayDecisions,
-            ),
-        renderShare("all time", summary.optimalDecisions, summary.decisions),
+        hasToday
+          ? `${summary.todayOptimalDecisions}/${summary.todayDecisions} (${shareOf(summary.todayOptimalDecisions, summary.todayDecisions)})`
+          : null,
+        `${summary.optimalDecisions}/${summary.decisions} (${shareOf(summary.optimalDecisions, summary.decisions)})`,
       )}
       {/* Only once a hand has been abandoned, so an untouched row never implies a habit nobody has. */}
       {summary.skippedHands === 0
         ? null
-        : renderRow(
+        : renderMeasure(
             "Hands skipped",
-            summary.todaySkippedHands === 0
-              ? null
-              : renderPeriod(
-                  "today",
-                  <span className={classes.figure}>
-                    {summary.todaySkippedHands}
-                  </span>,
-                ),
-            renderPeriod(
-              "all time",
-              <span className={classes.figure}>{summary.skippedHands}</span>,
-            ),
+            hasToday ? String(summary.todaySkippedHands) : null,
+            String(summary.skippedHands),
           )}
     </div>
   );

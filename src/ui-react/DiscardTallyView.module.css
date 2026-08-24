@@ -4,25 +4,38 @@
  * pushes a nowrap row past the screen edge, which every emulator at the
  * default scale reports as fitting.
  */
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2em 0.6em;
-  justify-content: space-between;
-  margin-block: 0.15em;
-}
-
 .tally {
   /* Every other surface here declares this; inheriting the browser default left the tally in a different typeface from the table it summarizes. */
   font-family: var(--text-font-family);
+  display: grid;
+  column-gap: 0.7em;
   margin-block: 0.3em;
+}
+
+/*
+ * The measure names take what they need and the figures take what is left,
+ * so a long name wraps inside its own column instead of pushing a figure
+ * onto a line of its own.
+ */
+.with-today {
+  grid-template-columns: 1fr auto auto;
+}
+
+.all-time-only {
+  grid-template-columns: 1fr auto;
 }
 
 .figure {
   font-variant-numeric: tabular-nums;
   font-weight: bold;
+  text-align: right;
 }
 
 .label {
   opacity: 0.8;
+}
+
+.period {
+  opacity: 0.8;
+  text-align: right;
 }

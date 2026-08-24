@@ -10,12 +10,12 @@ describe("discard tally view", () => {
    */
   it.each([
     {
-      name: "scopes both measures to today as well as all time",
-      scoped: 2,
+      name: "gives today a column of its own alongside all time",
+      scoped: 1,
       today: { decisions: 5, mean: 0.4128 },
     },
     {
-      name: "names only all time before a decision is made today",
+      name: "shows all time alone before a decision is made today",
       scoped: 0,
       today: { decisions: 0, mean: null },
     },
@@ -30,29 +30,38 @@ describe("discard tally view", () => {
       />,
     );
 
-    // One per measure, so a reader can never mistake which period a figure belongs to.
+    // Named once as a column heading rather than repeated beside every figure.
     expect(queryAllByText("today")).toHaveLength(scoped);
   });
 
-  // The skipped row appears only once a hand has been abandoned, and names today only once one was abandoned today.
+  /*
+   * The skipped row appears only once a hand has been abandoned, and takes a
+   * today column only when today has decisions to compare it against.
+   */
   it.each([
-    { name: "both periods once a hand is skipped today", rows: 1, today: 2 },
-    { name: "all time only when none was skipped today", rows: 1, today: 0 },
-  ])("shows skips: $name", ({ rows, today }) => {
+    {
+      mean: 0.4128,
+      name: "beside today once a hand was played today",
+      today: 5,
+    },
+    {
+      mean: null,
+      name: "on its own before anything was played today",
+      today: 0,
+    },
+  ])("shows skips $name", ({ mean, today }) => {
     const { queryAllByText } = render(
       <DiscardTallyView
-        summary={{
-          ...discardTallySummary({
-            todayDecisions: 5,
-            todayMeanExpectedPointsLoss: 0.4128,
-          }),
+        summary={discardTallySummary({
           skippedHands: 3,
-          todaySkippedHands: today,
-        }}
+          todayDecisions: today,
+          todayMeanExpectedPointsLoss: mean,
+          todaySkippedHands: 1,
+        })}
       />,
     );
 
-    expect(queryAllByText("Hands skipped")).toHaveLength(rows);
+    expect(queryAllByText("Hands skipped")).toHaveLength(1);
   });
 
   it("says nothing at all before any decision is recorded", () => {

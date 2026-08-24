@@ -14,16 +14,22 @@ import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 const DISCARD_COUNT = 2;
 /*
- * Anchored on the lifetime total, since how many were optimal depends on the
- * deal, and scoped by the period word so today's figures cannot satisfy it.
+ * Anchored on the total, since how many were optimal depends on the deal.
+ * Each figure is now its own cell, so the pattern matches a whole cell rather
+ * than a phrase, and today's cell carries the same text — which is why the
+ * count, not the period, is what these assert.
  * The two counts this spec asserts are spelled out rather than built into a
  * pattern, so no regular expression is assembled from a value.
  */
-const ONE_DECISION = /all time \d+ of 1 \(/u;
-const TWO_DECISIONS = /all time \d+ of 2 \(/u;
+const ONE_DECISION = /^\d+\/1 \(/u;
+const TWO_DECISIONS = /^\d+\/2 \(/u;
 
+/*
+ * The last match is the all-time column: today and all time carry the same
+ * text within a single session, and it is the lifetime figure these assert.
+ */
 const decisionsCounted = (page: Page, counted: RegExp) =>
-  page.getByText(counted);
+  page.getByText(counted).last();
 
 const selectTwoDiscards = async (page: Page) => {
   const checkboxes = page.getByRole("checkbox");
