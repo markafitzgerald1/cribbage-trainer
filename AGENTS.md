@@ -139,12 +139,26 @@
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 - Storybook coverage: run `npm run storybook:test:coverage`, then update the
   Vite `test.coverage.thresholds` block to the exact reported totals — the
-  totals **Docker** reports, not the local run's. The two disagree, because
-  the dev machine is arm64 and the image amd64: one change here measured
-  79.58% branches locally and 79.43% in Docker, a single branch apart. Only
-  the Docker figure gates CI, so a threshold set from the local number fails
-  the build, and it fails during `storybook:test:coverage` — a _build_ step,
-  before any test runs — which reads as an unrelated breakage.
+  totals **Docker** reports, not the local run's. The two disagree by a
+  branch or so, and a threshold set from the local number fails the build
+  during `storybook:test:coverage` — a _build_ step, before any test runs —
+  which reads as an unrelated breakage.
+  **Not an arm64/amd64 split**, despite an earlier version of this bullet
+  claiming one: `docker build --platform linux/amd64` (QEMU-emulated on an
+  Apple Silicon host) reproduced the plain local number exactly, on the
+  identical commit, while the ordinary arm64-native Docker build reported a
+  branch lower — and both the amd64 and arm64 variants of the Playwright
+  base image ship the identical Node build — checked directly by running
+  `node --version` in each, via `docker run --platform linux/<arch>
+mcr.microsoft.com/playwright:<tag>`.
+  Architecture cannot be the variable when both architectures agree with
+  each other and disagree with the one thing that changed: whether Node ran
+  inside this Dockerfile's container at all. The container's Node (baked
+  into the base image, not `nvm`-selected from `.nvmrc`) was one patch
+  behind the locally installed one when this was checked. Retune from
+  whatever your own Docker build reports; do not assume a rerun will match
+  a previous one exactly, and do not extrapolate a cause from a single
+  comparison the way this bullet originally did.
 - For focused Jest/debug runs, pass `--coverage=false` when you only need
   targeted test signal; global coverage thresholds can make otherwise passing
   `--runTestsByPath` suites exit nonzero.
