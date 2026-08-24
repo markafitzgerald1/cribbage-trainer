@@ -85,8 +85,22 @@ jobs:
               ;;
             *)
               if [ -n "${CHECKED_DATE}" ]; then
+                # A dispatched date is replayed unchanged on a re-run, so this
+                # is the one path that is stable by construction.
                 checked="${CHECKED_DATE}"
               else
+                # A blank dispatch resolves from now, so re-running one after
+                # local midnight moves its target: the run could turn green while
+                # the date its first attempt failed on stayed unchecked. Same
+                # drift as the scheduled branch, and the same remedy, because
+                # created_at is no better documented to survive a re-run here
+                # than it is there.
+                if [ "${RUN_ATTEMPT}" != "1" ]; then
+                  echo "Refusing to re-run a dispatch that named no date: this attempt would resolve its own, which may not be the date the first attempt checked." >&2
+                  echo "That first attempt's job summary names the date it used;" >&2
+                  echo "dispatch again with checked_date set to it." >&2
+                  exit 1
+                fi
                 checked=$(TZ="${PROPERTY_TIME_ZONE}" date -d '2 days ago' +%F)
               fi
               ;;
