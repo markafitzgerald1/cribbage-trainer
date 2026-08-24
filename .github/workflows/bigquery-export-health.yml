@@ -1,0 +1,121 @@
+# Asserts that the GA4 daily export produced a table for a past reporting date
+# and that the canary for that date is inside it. The canary workflow proves an
+# event was sent; this proves it came back out of the export.
+#
+# This lives in a workflow rather than in a BigQuery scheduled query for two
+# reasons. A scheduled query owned by a service account raises its assertion
+# correctly and delivers no failure email, so its alert reaches nobody, while a
+# failed workflow run is something GitHub notifies about on its own. And a
+# workflow file is versioned, reviewed and linted with everything else, whereas
+# a scheduled query exists only in a console with nothing here recording that
+# it is load-bearing -- the same argument that put the canary emitter here.
+name: BigQuery export health
+
+on:
+  schedule:
+    # An hour after the canary, and well after the daily export lands mid-
+    # morning Eastern, so a slow export is never mistaken for a missing one.
+    - cron: "5 18 * * *"
+  workflow_dispatch:
+    inputs:
+      checked_date:
+        description: >-
+          Reporting date to assert as YYYY-MM-DD. Leave empty for two days back.
+          Give a date with no canary to negative-check that a failure is
+          delivered rather than merely detected.
+        required: false
+        default: ""
+
+# Nothing here reads or writes the repository.
+permissions: {}
+
+env:
+  BIGQUERY_PROJECT: cribbage-trainer-analytics
+  EXPORT_DATASET: analytics_458709208
+  # The reporting time zone decides which daily table an event landed in, so
+  # this must track the GA4 property rather than the runner, which is UTC.
+  PROPERTY_TIME_ZONE: America/Toronto
+  # The runbook's per-query ceiling. INFORMATION_SCHEMA plus one COUNT(*) is far
+  # below it; the cap is what stops a mistake here becoming a bill.
+  MAXIMUM_BYTES_BILLED: 1073741824
+
+jobs:
+  assert-export-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve the reporting date to assert
+        id: target
+        env:
+          CHECKED_DATE: ${{ inputs.checked_date }}
+        run: |
+          set -euo pipefail
+          if [ -n "${CHECKED_DATE}" ]; then
+            checked="${CHECKED_DATE}"
+          else
+            # Two reporting dates back, so an export running late has more than
+            # a full day to arrive before its absence is called a failure.
+            checked=$(TZ="${PROPERTY_TIME_ZONE}" date -d '2 days ago' +%F)
+          fi
+          # This value becomes a table name inside SQL, and a dispatch input is
+          # attacker-shaped even when the attacker is a typo. Constrain it here
+          # rather than trusting it downstream.
+          if ! printf '%s' "${checked}" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'; then
+            echo "Refusing: '${checked}' is not a YYYY-MM-DD reporting date." >&2
+            exit 1
+          fi
+          table="events_${checked//-/}"
+          echo "table=${table}" >> "${GITHUB_OUTPUT}"
+          echo "Asserting ${checked} (${table})." >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Assert the daily table and its canary
+        env:
+          SERVICE_ACCOUNT_KEY: ${{ secrets.BIGQUERY_MONITOR_SERVICE_ACCOUNT_KEY }}
+          TABLE: ${{ steps.target.outputs.table }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SERVICE_ACCOUNT_KEY}" ]; then
+            echo "Missing BIGQUERY_MONITOR_SERVICE_ACCOUNT_KEY." >&2
+            exit 1
+          fi
+          # bq ships with the Google Cloud CLI, which the runner image already
+          # provides. Saying so loudly beats failing later with a message about
+          # something else, the way an unstated assumption already cost the
+          # canary a run.
+          if ! command -v bq > /dev/null; then
+            echo "bq is not on this runner; the Google Cloud CLI is missing." >&2
+            exit 1
+          fi
+          key_file="${RUNNER_TEMP}/bigquery-monitor-key.json"
+          # The key is removed however this step ends, including on assertion
+          # failure, which is the path that runs most often by design.
+          trap 'rm -f "${key_file}"' EXIT
+          printf '%s' "${SERVICE_ACCOUNT_KEY}" > "${key_file}"
+          gcloud auth activate-service-account --key-file="${key_file}" --quiet
+          # A failed ASSERT exits non-zero, so the query is the whole gate: no
+          # output parsing to get wrong, and GitHub emails on the failed run.
+          bq query \
+            --project_id="${BIGQUERY_PROJECT}" \
+            --use_legacy_sql=false \
+            --maximum_bytes_billed="${MAXIMUM_BYTES_BILLED}" \
+            --format=none \
+            <<SQL
+          DECLARE checked_table STRING DEFAULT '${TABLE}';
+          DECLARE canary_count INT64 DEFAULT 0;
+
+          ASSERT (
+            SELECT COUNT(*) = 1
+            FROM \`${BIGQUERY_PROJECT}.${EXPORT_DATASET}.INFORMATION_SCHEMA.TABLES\`
+            WHERE table_name = checked_table
+          ) AS 'GA4 daily export table is missing; inspect the GA4 BigQuery link now';
+
+          EXECUTE IMMEDIATE FORMAT(
+            "SELECT COUNT(*) FROM \`${BIGQUERY_PROJECT}.${EXPORT_DATASET}.%s\` "
+            || "WHERE event_name = 'export_health_canary'",
+            checked_table
+          ) INTO canary_count;
+
+          ASSERT canary_count > 0
+            AS 'GA4 export canary is missing; inspect its workflow and the export link';
+          SQL
+          echo "Table and canary both present for ${TABLE}." \
+            >> "${GITHUB_STEP_SUMMARY}"
