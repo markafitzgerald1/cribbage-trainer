@@ -14,6 +14,9 @@ const PER_CENT = 100;
 const shareOf = (part: number, whole: number) =>
   `${((part / whole) * PER_CENT).toFixed(SHARE_FRACTION_DIGITS)}%`;
 
+const countAndShare = (part: number, whole: number) =>
+  `${part}/${whole} (${shareOf(part, whole)})`;
+
 interface DiscardTallyViewProps {
   readonly summary: DiscardTallySummary;
 }
@@ -69,17 +72,30 @@ export function DiscardTallyView({
       {renderMeasure(
         "Best choice",
         hasToday
-          ? `${summary.todayOptimalDecisions}/${summary.todayDecisions} (${shareOf(summary.todayOptimalDecisions, summary.todayDecisions)})`
+          ? countAndShare(summary.todayOptimalDecisions, summary.todayDecisions)
           : null,
-        `${summary.optimalDecisions}/${summary.decisions} (${shareOf(summary.optimalDecisions, summary.decisions)})`,
+        countAndShare(summary.optimalDecisions, summary.decisions),
       )}
-      {/* Only once a hand has been abandoned, so an untouched row never implies a habit nobody has. */}
+      {/*
+       * Only once a hand has been abandoned, so an untouched row never implies
+       * a habit nobody has. The share is of the hands actually faced — those
+       * played plus those left — because that is the question it answers: how
+       * often a hand gets walked away from rather than decided.
+       */}
       {summary.skippedHands === 0
         ? null
         : renderMeasure(
             "Hands skipped",
-            hasToday ? String(summary.todaySkippedHands) : null,
-            String(summary.skippedHands),
+            hasToday
+              ? countAndShare(
+                  summary.todaySkippedHands,
+                  summary.todayDecisions + summary.todaySkippedHands,
+                )
+              : null,
+            countAndShare(
+              summary.skippedHands,
+              summary.decisions + summary.skippedHands,
+            ),
           )}
     </div>
   );

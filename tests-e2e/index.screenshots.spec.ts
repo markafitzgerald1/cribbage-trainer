@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { constantHandQuery } from "./layoutMeasurements";
-import { discardTallyKey } from "../src/ui/discardTally";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
 /*
@@ -119,14 +119,18 @@ const nearSquareLandscapeViewportSize = {
 const testDiscardTallyScreenshot = () =>
   test("discard tally still visually the same", async ({ page }) => {
     await page.addInitScript(
+      /*
+       * The key is built in the browser, because it carries the deployment's
+       * own base path and only the page knows what that is.
+       */
       (stored: {
         readonly best: number;
-        readonly key: string;
+        readonly keyPrefix: string;
         readonly lifetime: unknown;
         readonly losses: readonly number[];
       }) => {
         window.localStorage.setItem(
-          stored.key,
+          stored.keyPrefix + new URL(document.baseURI).pathname,
           JSON.stringify({
             lifetime: stored.lifetime,
             records: stored.losses.map((loss, index) => ({
@@ -143,7 +147,7 @@ const testDiscardTallyScreenshot = () =>
       },
       {
         best: BEST_TODAY,
-        key: discardTallyKey,
+        keyPrefix: DISCARD_TALLY_KEY_PREFIX,
         lifetime: STORED_TALLY_LIFETIME,
         losses: TODAY_LOSSES,
       },

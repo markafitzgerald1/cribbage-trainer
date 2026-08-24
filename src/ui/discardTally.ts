@@ -1,6 +1,13 @@
 import type { CribRole } from "../game/expectedCribPoints";
+import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 
-export const discardTallyKey = "discardTally";
+/*
+ * Scoped to the deployment that wrote it. A PR preview and production share
+ * an origin — both are pages on the same host, differing only by path — and
+ * localStorage is keyed by origin alone, so an unscoped key would let a
+ * preview being tested write into the player's real history, permanently.
+ */
+export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BASE_URL}`;
 
 /*
  * The version travels inside the value rather than in the key, so a future

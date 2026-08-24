@@ -10,7 +10,7 @@ import {
   phoneLandscapeViewport,
   requireBoundingBox,
 } from "./layoutMeasurements";
-import { discardTallyKey } from "../src/ui/discardTally";
+import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 
 const consentActionBottom = async (page: Page, name: string) => {
   const bounds = await requireBoundingBox(
@@ -180,14 +180,24 @@ test("the policy update fits beside a tally at an enlarged root font", async ({
 }) => {
   await page.setViewportSize(phoneLandscapeViewport);
   await page.addInitScript(
-    (stored: Record<string, string>) => {
-      Object.entries(stored).forEach(([key, value]) => {
-        window.localStorage.setItem(key, value);
-      });
+    /*
+     * The tally key is built in the browser, because it carries the
+     * deployment's own base path and only the page knows what that is.
+     */
+    (stored: {
+      readonly consentKey: string;
+      readonly tallyPrefix: string;
+      readonly tally: string;
+    }) => {
+      window.localStorage.setItem(stored.consentKey, "true");
+      window.localStorage.setItem(
+        stored.tallyPrefix + new URL(document.baseURI).pathname,
+        stored.tally,
+      );
     },
     {
-      [analyticsConsentKey]: "true",
-      [discardTallyKey]: JSON.stringify({
+      consentKey: analyticsConsentKey,
+      tally: JSON.stringify({
         lifetime: {
           decisions: 128,
           expectedPointsLossTotal: 157.44,
@@ -196,6 +206,7 @@ test("the policy update fits beside a tally at an enlarged root font", async ({
         records: [],
         version: 1,
       }),
+      tallyPrefix: DISCARD_TALLY_KEY_PREFIX,
     },
   );
   await page.goto("/");
