@@ -109,8 +109,11 @@ as `Pending` until Mark performs and verifies each console step.
   billing-enabled, so costs and query quotas isolate this export.
 - **GA4 property ID:** `458709208`, the production property rather than the
   test one.
-- **GA4 reporting time zone:** North American Eastern; use `America/Toronto`
-  as `PROPERTY_TIME_ZONE` in the scheduled query.
+- **GA4 reporting time zone:** North American Eastern. `America/Toronto` is the
+  `PROPERTY_TIME_ZONE` environment value in both monitoring workflows, and the
+  substitution to make wherever this file's SQL carries that placeholder. Any
+  Eastern zone identifier yields the same dates, so a property set to New York
+  agrees with it.
 - **Export dataset:** `analytics_458709208`, created by Google on 2026-08-22
   at 11:04 EDT, about 13 hours after the link was submitted.
 - **Link submitted at:** 2026-08-21T22:04Z, which was 18:04 EDT.
@@ -451,9 +454,10 @@ recorded USD $1 amount.
    `1073741824` (1 GiB) for interactive queries and click **Save**.
 7. For a query submitted through the `bq` command or API, set the same limit
    with `--maximum_bytes_billed=1073741824` or `maximumBytesBilled`,
-   respectively. This is a per-query execution setting, not a project default.
-   BigQuery scheduled-query configuration does not expose it; scheduled queries
-   remain subject to the recorded project and per-user daily quotas.
+   respectively. This is a per-query execution setting, not a project default,
+   so it has to be passed every time: the health workflow does, on every run.
+   Anything submitted without it still falls under the recorded project and
+   per-user daily quotas, which is the backstop rather than the intent.
 8. Before every manual query, wait for the editor's byte estimate. Do not run it
    if the estimate is unexpectedly large. A `LIMIT` does not reduce bytes read
    from an unclustered table.
