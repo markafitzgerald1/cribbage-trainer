@@ -135,8 +135,9 @@ baselines so CI agrees with what was generated locally.
     exits 0. Confirmed by leaving one in place and running both ways: without
     `CI=true` it reports `1 passed`, exit 0; with `CI=true` it fails immediately
     on the `.only` itself, exit 1. That is worse paired with the advice two
-    paragraphs down to judge a run by its exit code rather than its count:
-    without `CI=true` there is no count to catch it either.
+    paragraphs down to judge a run by its exit code rather than its count: an
+    ad hoc run has no stable expected total to compare `1 passed` against, so
+    a suspiciously small count does not register as wrong either.
 
     Prefer `--grep <pattern>` over editing `.only` into a spec for a focused run
     here in the first place, rather than relying on `CI=true` to catch a
