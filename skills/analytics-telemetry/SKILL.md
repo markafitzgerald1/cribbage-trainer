@@ -267,12 +267,15 @@ be inferred from repository changes.
   the fifteen candidates and the keep test matches 15, then 5, then 1 as the
   user selects 0, 1 and 2 cards, while the discard test matches 0, then 0,
   then 1. So a keep test hands `find` the first of many matches at every
-  incomplete state — the top-ranked option, reported as a flawless choice
-  nobody had made. The rule to carry: where a partial state can satisfy a
-  subset test, prefer the direction that demands positive evidence of the
-  choice over the one satisfied by an absence of evidence against it. It is a
-  shared module because #19/#24 must agree with analytics about what a
-  decision cost.
+  incomplete state, reporting as the user's own an option nobody chose. Which
+  one depends on the caller's ordering, which this module deliberately does
+  not assume — it takes the best score with `Math.max` rather than trusting
+  position — though the trainer does pass them in net-score order, so there
+  it would be the top-ranked option. The rule to carry: where a partial
+  state can satisfy a subset test, prefer the direction that demands
+  positive evidence of the choice over the one satisfied by an absence of
+  evidence against it. It is a shared module because #19/#24 must agree with
+  analytics about what a decision cost.
 - The hook's latest-value ref is synced in a **layout** effect, not a
   passive one. Its reader that matters is a child's passive effect —
   `ScoredPossibleKeepDiscards` reports itself rendered from one — and child

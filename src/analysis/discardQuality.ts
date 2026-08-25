@@ -45,9 +45,13 @@ export const getDiscardQuality = (
    * what each asks of a partial selection. Both are subset tests pointing
    * opposite ways, and across the fifteen candidates a keep test matches 15,
    * then 5, then 1 as cards are selected, where this one matches 0, then 0,
-   * then 1. A keep test would therefore hand find the top-ranked option as
-   * the user's own at every incomplete state; this needs two specific cards
-   * actually not kept, so it matches none and yields the null below.
+   * then 1. A keep test would therefore hand find the first of those matches
+   * at every incomplete state, reporting as the user's own an option nobody
+   * chose. Which one that is depends on the caller's ordering, which this
+   * function does not assume — see the Math.max below — though the trainer
+   * does pass them in net-score order, making it the top-ranked one there.
+   * This test needs two specific cards actually not kept, so it matches none
+   * and yields the null below.
    */
   const chosen = scoredKeepDiscards.find((scoredKeepDiscard) =>
     scoredKeepDiscard.discard.every((card) => !card.kept),
