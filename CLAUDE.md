@@ -132,8 +132,12 @@ own handling and that is where it lives.
   docker rm "$CONTAINER"
   ```
 
-  Its reported totals then match the Docker run exactly, so coverage
-  thresholds can be re-pinned from either.
+  Its reported totals matched the Docker run exactly when checked here, but
+  `AGENTS.md` already documents that the two **can** disagree by a branch or
+  so and that a threshold set from the local number then fails the build
+  during `storybook:test:coverage` — a build step, before any test runs.
+  Treat a host/Docker match as a useful sanity check, not a license to skip
+  Docker: re-pin thresholds from Docker's own reported totals only.
 
 - Raw Actions job logs are unreachable: `gh api` on a job's `logs` endpoint
   redirects to an Azure `*.blob.core.windows.net` host that egress policy
