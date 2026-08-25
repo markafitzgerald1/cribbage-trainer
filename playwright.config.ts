@@ -5,6 +5,9 @@ const continuousIntegrationRetryLimit = 2;
 const continuousIntegrationWorkerLimit = 2;
 const defaultMaxLocalWorkers = 4;
 const ignoreScreenshotTests = /.*\.screenshots\.spec\.ts$/u;
+const isContinuousIntegration = Boolean(
+  process.env["CI"] && process.env["CI"] !== "false",
+);
 const testTimeoutMs = 60_000;
 
 export default defineConfig({
@@ -15,7 +18,7 @@ export default defineConfig({
       maxDiffPixels: 800,
     },
   },
-  forbidOnly: Boolean(process.env["CI"]),
+  forbidOnly: isContinuousIntegration,
   fullyParallel: true,
   projects: [
     {
@@ -43,7 +46,7 @@ export default defineConfig({
     },
   ],
   reporter: [["html", { open: "never" }]],
-  retries: process.env["CI"] ? continuousIntegrationRetryLimit : 0,
+  retries: isContinuousIntegration ? continuousIntegrationRetryLimit : 0,
   testDir: "./tests-e2e",
   timeout: testTimeoutMs,
   use: {
@@ -56,10 +59,10 @@ export default defineConfig({
     // A "nothing was sent" assertion would then hold even if that check broke.
     // This ID is unregistered and the specs block the hosts, so nothing leaves.
     env: { VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: "G-0000000000" },
-    reuseExistingServer: !process.env["CI"],
+    reuseExistingServer: !isContinuousIntegration,
     url: "http://localhost:4173/cribbage-trainer",
   },
-  workers: process.env["CI"]
+  workers: isContinuousIntegration
     ? continuousIntegrationWorkerLimit
     : Math.min(os.cpus().length, defaultMaxLocalWorkers),
 });
