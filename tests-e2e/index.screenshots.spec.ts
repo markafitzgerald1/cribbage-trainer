@@ -1,6 +1,28 @@
 import { expect, test } from "@playwright/test";
+import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { constantHandQuery } from "./layoutMeasurements";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
+
+/*
+ * A history deep enough to render every part of the tally, including today's
+ * own figures, written straight into storage. The lifetime numbers come from
+ * the counters and today's from the records, so the shot exercises both
+ * periods rather than only the half that survives an empty record list.
+ *
+ * Each record is dated when the script runs, because "today" is whatever
+ * day the suite runs on; the losses are fixed, so every figure on screen is
+ * still deterministic.
+ */
+const STORED_TALLY_LIFETIME = {
+  decisions: 9,
+  expectedPointsLossTotal: 11.07,
+  optimalDecisions: 4,
+};
+
+const BEST_TODAY = 0.4;
+const NEAR_MISS = 0.5;
+const WORST_TODAY = 0.9;
+const TODAY_LOSSES = [NEAR_MISS, WORST_TODAY, BEST_TODAY];
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
@@ -94,6 +116,56 @@ const nearSquareLandscapeViewportSize = {
   width: 1000,
 };
 
+const testDiscardTallyScreenshot = () =>
+  test("discard tally still visually the same", async ({ page }) => {
+    await page.addInitScript(
+      /*
+       * The key is built in the browser, because it carries the deployment's
+       * own base path and only the page knows what that is.
+       */
+      (stored: {
+        readonly best: number;
+        readonly keyPrefix: string;
+        readonly lifetime: unknown;
+        readonly losses: readonly number[];
+      }) => {
+        window.localStorage.setItem(
+          stored.keyPrefix + new URL(document.baseURI).pathname,
+          JSON.stringify({
+            lifetime: stored.lifetime,
+            records: stored.losses.map((loss, index) => ({
+              at: Date.now(),
+              cribRole: "Dealer",
+              expectedPointsLoss: loss,
+              handKey: `stored-${index}`,
+              isOptimal: loss === stored.best,
+              isPractice: false,
+            })),
+            version: 1,
+          }),
+        );
+      },
+      {
+        best: BEST_TODAY,
+        keyPrefix: DISCARD_TALLY_KEY_PREFIX,
+        lifetime: STORED_TALLY_LIFETIME,
+        losses: TODAY_LOSSES,
+      },
+    );
+    await renderThenSelectTwoDiscards(page, constantHandQuery, true);
+
+    /*
+     * The tally itself rather than the page. It sits below a clipped analysis
+     * table, and how many rows that table fits depends on font metrics, which
+     * differ between the arm64 host these baselines are generated on and the
+     * amd64 CI runs them on. A whole-page shot therefore moved the tally by a
+     * row and failed on a difference that says nothing about this feature.
+     * Where it sits is asserted in discardTally.spec.ts instead.
+     */
+    const tally = page.getByText("Lost per discard").locator("..");
+    await expect(tally).toHaveScreenshot();
+  });
+
 const testScreenshots = () => {
   testInitialRenderScreenshot();
   testEnterCardsDialogScreenshot();
@@ -102,6 +174,7 @@ const testScreenshots = () => {
   testExpandedRowScreenshot();
   testDoubleExpandedScreenshot();
   testCribExpandedScreenshot();
+  testDiscardTallyScreenshot();
 };
 
 test.describe("portrait", () => {

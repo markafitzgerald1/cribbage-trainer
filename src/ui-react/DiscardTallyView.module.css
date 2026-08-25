@@ -1,0 +1,51 @@
+/*
+ * Sized in em against the grid cell's inherited font rather than in rem. A
+ * rem lower bound scales with the device font-size setting on a phone and
+ * pushes a nowrap row past the screen edge, which every emulator at the
+ * default scale reports as fitting.
+ */
+.tally {
+  /* Every other surface here declares this; inheriting the browser default left the tally in a different typeface from the table it summarizes. */
+  font-family: var(--text-font-family);
+
+  /* Likewise: without this the tally inherited the UA default black, which on the table's green is far too low a contrast to read. */
+  color: var(--text-color);
+  display: grid;
+  column-gap: 0.7em;
+  margin-block: 0.3em;
+
+  /*
+   * Rows hug the top rather than sharing out surplus height. Auto-sized grid
+   * rows are stretched by the default align-content, so a cell taller than
+   * the content spread these three rows down the whole of it.
+   */
+  align-content: start;
+}
+
+/*
+ * The measure names take what they need and the figures take what is left,
+ * so a long name wraps inside its own column instead of pushing a figure
+ * onto a line of its own.
+ */
+.with-today {
+  grid-template-columns: 1fr auto auto;
+}
+
+.all-time-only {
+  grid-template-columns: 1fr auto;
+}
+
+.figure {
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  text-align: right;
+}
+
+.label {
+  opacity: 0.8;
+}
+
+.period {
+  opacity: 0.8;
+  text-align: right;
+}

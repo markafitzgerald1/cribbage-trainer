@@ -10,10 +10,6 @@ import {
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
-  type HistoryHandScope,
-  useDiscardTelemetry,
-} from "./useDiscardTelemetry";
-import {
   parseUrlAnalysisState,
   serializeUrlAnalysisState,
 } from "../ui/urlAnalysisState";
@@ -21,7 +17,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 import type { DealtCard } from "../game/DealtCard";
+import { DiscardTallyView } from "./DiscardTallyView";
 import { EnterCardsDialog } from "./EnterCardsDialog";
+import type { HistoryHandScope } from "./useDiscardTelemetry";
 import { InteractiveHand } from "./InteractiveHand";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
@@ -30,8 +28,10 @@ import type { TrackEvent } from "../ui/trackEvent";
 import { clearGoogleAnalyticsCookies } from "../ui/clearGoogleAnalyticsCookies";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
+import { useAnalysisReporting } from "./useAnalysisReporting";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -194,8 +194,10 @@ export function Trainer({
     reportCardToggled,
     reportHandReplaced,
     reportHistoryNavigation,
-  } = useDiscardTelemetry({
+    tallySummary,
+  } = useAnalysisReporting({
     consented: choice.consented,
+    cribRole,
     dealtCards,
     decisionQualityConsented: choice.decisionQualityConsented,
     isSeededSession,
@@ -250,6 +252,7 @@ export function Trainer({
           reportHistoryNavigation(
             newDealtCards,
             getHistoryEntryState()?.handScope ?? null,
+            urlState.cribRole,
           );
         }
         setDealState((previous) => ({
@@ -277,7 +280,7 @@ export function Trainer({
   }, [dealtCards]);
   const applyManualHand = useCallback(
     (state: DealState) => {
-      reportHandReplaced(state.dealtCards, "manual");
+      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
       setDealState(state);
     },
     [reportHandReplaced],
@@ -309,7 +312,7 @@ export function Trainer({
   const dealNewHand = useCallback(() => {
     markHistoryUpdate();
     const newDealState = createDealState(dealHandWithGenerator());
-    reportHandReplaced(newDealState.dealtCards, "deal");
+    reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
     setDealState(newDealState);
   }, [
     createDealState,
@@ -342,7 +345,9 @@ export function Trainer({
           Sharpen your cribbage discards with expected-score analysis.
         </p>
       </header>
-      <div className={classes.dynamicUi}>
+      <div
+        className={`${classes.dynamicUi} ${hasTallyToShow(tallySummary) ? classes.withTally : ""}`}
+      >
         <InteractiveHand
           cribRole={cribRole}
           dealtCards={dealtCards}
@@ -371,6 +376,7 @@ export function Trainer({
             sortOrder={sortOrder}
           />
         )}
+        <DiscardTallyView summary={tallySummary} />
         <AnalyticsConsentDialog
           consent={choice.consented}
           decisionQualityConsented={choice.decisionQualityConsented}

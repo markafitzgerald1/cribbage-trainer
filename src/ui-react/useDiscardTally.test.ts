@@ -1,0 +1,417 @@
+import { type DiscardTally, useDiscardTally } from "./useDiscardTally";
+import {
+  HAND,
+  INITIAL_HAND_ID,
+  OTHER_HAND,
+  decisionsAndSkips,
+  handOf,
+  noteOrigin,
+  noteRestore,
+  renderTally,
+  renderTallyWithMutableCards,
+  replacedBy,
+  reportScore,
+  reportScoreTimes,
+  scopeFor,
+  startWithUnknownOrigin,
+} from "./useDiscardTally.test.common";
+import { act, renderHook } from "@testing-library/react";
+import {
+  clearDiscardTally,
+  readDiscardTally,
+  recordDiscardDecision,
+} from "../ui/discardTally";
+import { describe, expect, it } from "@jest/globals";
+import { CribRole } from "../game/expectedCribPoints";
+
+type MutableCardsHarness = ReturnType<typeof renderTallyWithMutableCards>;
+
+// Performs an action against the currently open hand, then rerenders HAND as the complete dealt cards, so the hook's own completion effect fires against whatever that action just established.
+const completeHandUnder = (
+  harness: MutableCardsHarness,
+  perform: () => void,
+) => {
+  act(perform);
+  harness.rerender({ dealtCards: handOf(HAND, true) });
+};
+
+describe("discard tally hook", () => {
+  /*
+   * One table because every case is the same question — does this decision
+   * reach the headline average — and separate bodies for it were identical
+   * enough to be duplication. What varies is where the hand came from and
+   * how often its score is reported, so that is what the table carries.
+   */
+  it.each([
+    {
+      counted: 1,
+      name: "a hand dealt in an ordinary session",
+      reports: 1,
+      start: () => renderTally(HAND),
+    },
+    // Back, Forward and a re-sort all re-report the same completed discard.
+    {
+      counted: 1,
+      name: "one hand however often its score arrives",
+      reports: 4,
+      start: () => renderTally(HAND),
+    },
+    {
+      counted: 0,
+      name: "the hand a seeded session starts with",
+      reports: 1,
+      start: () => renderTally(HAND, { isSeededSession: true }),
+    },
+    {
+      counted: 0,
+      name: "the hand a deep link starts with",
+      reports: 1,
+      start: () => renderTally(HAND, { wasDeepLinked: true }),
+    },
+    {
+      counted: 0,
+      name: "a hand entered by hand",
+      reports: 1,
+      start: () => replacedBy(OTHER_HAND, "manual"),
+    },
+    {
+      counted: 0,
+      name: "a deal inside a seeded session",
+      reports: 1,
+      start: () => replacedBy(HAND, "deal", { isSeededSession: true }),
+    },
+    {
+      counted: 1,
+      name: "a hand dealt after a manual one",
+      reports: 1,
+      start: () => replacedBy(OTHER_HAND, "deal"),
+    },
+    /*
+     * A hand this session never dealt can only have arrived from a history
+     * entry that outlived a page load, and nothing here can vouch for where
+     * those cards came from.
+     */
+    {
+      counted: 0,
+      name: "a hand of unknown origin",
+      reports: 1,
+      start: startWithUnknownOrigin,
+    },
+  ])("counts $counted decisions for $name", ({ counted, reports, start }) => {
+    const { result } = start();
+    reportScoreTimes(result.current, reports);
+
+    expect(readDiscardTally(Date.now()).decisions).toBe(counted);
+  });
+
+  /*
+   * What a re-entry or a restore does to the provenance of the hand being
+   * decided. Studying the other role does not disturb it, because identity
+   * is cards and role together — keying it on cards alone let that study
+   * mark the dealt hand as practice, so its decision was recorded and then
+   * left out of every figure shown. Nor does a restore of the hand already
+   * open, which is what a sort-only push or a Back within the same hand
+   * looks like.
+   *
+   * A restore naming a different scope does, even with identical cards and
+   * role: the same six cards can be both a hand entered to study and a later
+   * genuine deal of them, and only telemetry's per-hand scope separates the
+   * two. Comparing record keys called that the hand already open and left
+   * the study hand counted as authentic.
+   */
+  it.each([
+    {
+      counted: 1,
+      name: "the other role is studied",
+      perform: (tally: DiscardTally) => {
+        act(() => {
+          tally.reportHandOrigin(handOf(HAND), "manual", {
+            cribRole: CribRole.Pone,
+            handId: scopeFor(HAND),
+          });
+        });
+      },
+    },
+    {
+      counted: 1,
+      name: "a same-hand history restore occurs",
+      perform: (tally: DiscardTally) => {
+        noteRestore(tally, HAND);
+      },
+    },
+    {
+      counted: 0,
+      name: "another scope's restore names the same cards",
+      perform: (tally: DiscardTally) => {
+        noteRestore(tally, HAND, { handId: "a-different-scope" });
+      },
+    },
+  ])("counts $counted decisions when $name", ({ counted, perform }) => {
+    const { result } = renderTally(HAND);
+    perform(result.current);
+    reportScore(result.current);
+
+    // The skip half is pinned too: none of these is a walk-away, and every bug in this area so far has put one hand into both columns at once.
+    expect(decisionsAndSkips()).toStrictEqual([counted, 0]);
+  });
+
+  /*
+   * Dealing away from a hand that was never scored is the whole point of the
+   * skip count: without it, abandoning the hands a player finds hard would
+   * quietly improve every figure above. The hand a page load deals counts
+   * like any other, because pressing Deal from it is a deliberate walk-away
+   * — but a hand entered to study does not, being already outside the
+   * averages and otherwise penalized twice.
+   */
+  it.each([
+    {
+      name: "a hand left without a discard",
+      play: () => {
+        // Nothing: the hand a page load deals is the one walked away from.
+      },
+      skipped: 1,
+      start: { discarded: false },
+    },
+    {
+      name: "a hand whose decision was scored",
+      play: (tally: DiscardTally) => {
+        reportScore(tally);
+      },
+      skipped: 0,
+    },
+    /*
+     * Scoring waits on the expected-points tables. A discard completed while
+     * they are still loading — or after they fail — is a decision the player
+     * made, and counting it as avoidance would punish them for the latency.
+     */
+    {
+      name: "a discard completed but never scored",
+      play: () => {
+        // Nothing: no score arrives, and none is needed.
+      },
+      skipped: 0,
+    },
+    {
+      name: "a hand entered to study",
+      play: (tally: DiscardTally) => {
+        reportScore(tally);
+        noteOrigin(tally, OTHER_HAND, "manual");
+      },
+      skipped: 0,
+    },
+    {
+      name: "the hand a seeded session starts with",
+      play: () => {
+        // Nothing: the seeded start is the hand walked away from.
+      },
+      skipped: 0,
+      start: { discarded: false, isSeededSession: true },
+    },
+    {
+      name: "the hand a deep link starts with",
+      play: () => {
+        // Nothing: the deep-linked start is the hand walked away from.
+      },
+      skipped: 0,
+      start: { discarded: false, wasDeepLinked: true },
+    },
+    /*
+     * A restore naming no role — a URL entry this build cannot parse one
+     * from — must leave the open hand's provenance untouched, or this
+     * Deal-away would go uncounted along with it.
+     */
+    {
+      name: "a hand a role-free history restore left untouched",
+      play: (tally: DiscardTally) => {
+        noteRestore(tally, HAND, { cribRole: null });
+      },
+      skipped: 1,
+      start: { discarded: false },
+    },
+  ])("counts $skipped skips for $name", ({ play, skipped, start }) => {
+    const { result } = renderTally(HAND, start);
+    play(result.current);
+    noteOrigin(result.current, OTHER_HAND, "deal");
+
+    expect(readDiscardTally(Date.now()).skippedHands).toBe(skipped);
+  });
+
+  /*
+   * A seeded or deep-linked start is study, so walking away from it is not
+   * avoidance. Folded into the table above rather than tested separately,
+   * where its body was identical to it.
+   */
+
+  /*
+   * A tab left open across local midnight would otherwise keep showing
+   * yesterday's play under "today". Returning to it recomputes the figures,
+   * which also picks up whatever another tab recorded meanwhile — here, a
+   * decision written straight to storage behind the hook's back.
+   */
+  it.each([
+    { decisions: 1, name: "the tab is visible again", state: "visible" },
+    { decisions: 0, name: "it stays hidden", state: "hidden" },
+  ])("refreshes when $name", ({ decisions, state }) => {
+    const { result } = renderTally(HAND);
+    recordDiscardDecision({
+      at: Date.now(),
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 1,
+      handKey: "written-elsewhere",
+      isOptimal: false,
+      isPractice: false,
+    });
+    act(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: state,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
+    expect(result.current.summary.decisions).toBe(decisions);
+  });
+
+  /*
+   * A decision already counted must not be charged a skip as well. Taking a
+   * card back after deciding — or stepping back to the same hand before its
+   * discard — leaves the cards incomplete while the decision stands, and
+   * reading the cards alone put one hand in both columns, inflating the
+   * denominator the two figures share.
+   */
+  it("counts no skip for a hand whose discard was later undone", () => {
+    clearDiscardTally();
+    const { rerender, result } = renderHook(
+      ({ discarded }: { discarded: boolean }) =>
+        useDiscardTally({
+          cribRole: CribRole.Dealer,
+          dealtCards: handOf(HAND, discarded),
+          initialHandId: INITIAL_HAND_ID,
+          isSeededSession: false,
+          wasDeepLinked: false,
+        }),
+      { initialProps: { discarded: true } },
+    );
+    reportScore(result.current);
+    rerender({ discarded: false });
+    noteOrigin(result.current, OTHER_HAND, "deal");
+
+    expect(decisionsAndSkips()).toStrictEqual([1, 0]);
+  });
+
+  /*
+   * A hand history restores after being walked away from must not also count
+   * as a decision: Deal already charged it a skip, and scoring its eventual
+   * discard would put the same hand in both halves of the denominator they
+   * share. Matches telemetry's own rule that a history-restored exposure is
+   * never first instinct (skills/analytics-telemetry/SKILL.md's filtering
+   * contract): its answers were already revealed, by this same visit.
+   */
+  it("excludes a decision reached after its hand was restored from history", () => {
+    const { result } = renderTally(HAND, { discarded: false });
+    noteOrigin(result.current, OTHER_HAND, "deal");
+    noteRestore(result.current, HAND);
+    reportScore(result.current);
+
+    expect(decisionsAndSkips()).toStrictEqual([0, 1]);
+  });
+
+  /*
+   * Two ways completion can be remembered under an identity other than the
+   * abandoned hand's own key, and what each does to the skip that follows.
+   *
+   * A skip must still be charged when the hand abandoned shares its record
+   * key with an earlier, different occurrence that was already decided.
+   * Remembering completion by that key alone let a practiced hand's
+   * completion stand in for a later, coincidentally identical authentic
+   * deal's — so walking away from the genuine deal recorded no skip at all,
+   * because the key already looked decided. Telemetry's own per-hand scope is
+   * what tells the two occurrences apart, the same signal that already
+   * separates a same-hand restore from a different scope's.
+   *
+   * The record key still stands in for identity when no scope is known at
+   * all, the same fallback the record itself and provenance already use.
+   * Reachable in practice: a restore's role comes from the URL and its scope
+   * from `history.state` independently, so an entry from before this build
+   * tracked scopes can carry one without the other.
+   */
+  it.each([
+    {
+      expected: [0, 1],
+      // A manual entry of HAND completes: practice, remembered under its own scope.
+      firstAction: (harness: MutableCardsHarness) => {
+        harness.result.current.reportHandOrigin(handOf(HAND), "manual", {
+          cribRole: CribRole.Dealer,
+          handId: "practice-scope",
+        });
+      },
+      name: "abandoned after a same-key hand was decided",
+      // The same cards are genuinely dealt later, under a different scope.
+      thenAlso: (harness: MutableCardsHarness) => {
+        act(() => {
+          harness.result.current.reportHandOrigin(handOf(HAND), "deal", {
+            cribRole: CribRole.Dealer,
+            handId: "authentic-scope",
+          });
+        });
+      },
+    },
+    {
+      expected: [0, 0],
+      firstAction: (harness: MutableCardsHarness) => {
+        harness.result.current.reportHandRestored(handOf(HAND), {
+          cribRole: CribRole.Dealer,
+          handId: null,
+        });
+      },
+      name: "restored with no scope to fall back on",
+      thenAlso: () => {
+        // Nothing further: the restore alone is what this row exercises.
+      },
+    },
+  ])(
+    "counts $expected for a hand $name",
+    ({ firstAction, thenAlso, expected }) => {
+      /*
+       * The initial hand is complete, so its own abandonment below is
+       * excused before either hand-origin call this test cares about runs.
+       */
+      const harness = renderTallyWithMutableCards(handOf(OTHER_HAND, true));
+      completeHandUnder(harness, () => firstAction(harness));
+      thenAlso(harness);
+
+      // Abandoned without a discard.
+      act(() => {
+        harness.result.current.reportHandOrigin(handOf(OTHER_HAND), "deal", {
+          cribRole: CribRole.Dealer,
+          handId: "elsewhere-scope",
+        });
+      });
+
+      expect(decisionsAndSkips()).toStrictEqual(expected);
+    },
+  );
+
+  it("records nothing until a discard has been scored", () => {
+    const { result } = renderTally(HAND);
+    reportScore(result.current, { cribRole: CribRole.Dealer, quality: null });
+
+    expect(readDiscardTally(Date.now())).toStrictEqual({
+      decisions: 0,
+      meanExpectedPointsLoss: null,
+      optimalDecisions: 0,
+      skippedHands: 0,
+      todayDecisions: 0,
+      todayMeanExpectedPointsLoss: null,
+      todayOptimalDecisions: 0,
+      todaySkippedHands: 0,
+    });
+  });
+
+  it("averages what the counted decisions cost", () => {
+    const { result } = renderTally(HAND);
+    reportScore(result.current);
+
+    expect(readDiscardTally(Date.now()).meanExpectedPointsLoss).toBe(2);
+  });
+});

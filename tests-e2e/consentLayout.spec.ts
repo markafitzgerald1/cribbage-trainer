@@ -10,6 +10,7 @@ import {
   phoneLandscapeViewport,
   requireBoundingBox,
 } from "./layoutMeasurements";
+import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 
 const consentActionBottom = async (page: Page, name: string) => {
   const bounds = await requireBoundingBox(
@@ -159,4 +160,88 @@ test("side-by-side privacy policy text scales with the viewport, not the compact
   expect(narrowSideBySide).toBeGreaterThanOrEqual(minPrivacyPolicyFontSizePx);
   // A wider viewport yields larger text, tracking the vw-scaled app chrome.
   expect(wideSideBySide).toBeGreaterThan(narrowSideBySide);
+});
+
+/*
+ * A returning player asked to answer a policy update has very likely also
+ * built a tally, and every guard above starts from a browser with no history,
+ * so none of them renders the two together.
+ *
+ * This cannot fail against the current stylesheet, and that was checked
+ * rather than assumed: with the tally's margin inflated to 6em the actions
+ * still sit inside the viewport, because side-by-side mode puts the tally in
+ * column two as a middle child while the banner is a last child pinned to
+ * column one. It is kept as a guard on that separation — a later change that
+ * moved the tally into the banner's column would fail here — and not as
+ * evidence that today's code was ever at risk.
+ */
+test("the policy update fits beside a tally at an enlarged root font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phoneLandscapeViewport);
+  await page.addInitScript(
+    /*
+     * The tally key is built in the browser, because it carries the
+     * deployment's own base path and only the page knows what that is.
+     */
+    (stored: {
+      readonly consentKey: string;
+      readonly tallyPrefix: string;
+      readonly tally: string;
+    }) => {
+      window.localStorage.setItem(stored.consentKey, "true");
+      window.localStorage.setItem(
+        stored.tallyPrefix + new URL(document.baseURI).pathname,
+        stored.tally,
+      );
+    },
+    {
+      consentKey: analyticsConsentKey,
+      tally: JSON.stringify({
+        lifetime: {
+          decisions: 128,
+          expectedPointsLossTotal: 157.44,
+          optimalDecisions: 61,
+        },
+        records: [],
+        version: 1,
+      }),
+      tallyPrefix: DISCARD_TALLY_KEY_PREFIX,
+    },
+  );
+  await page.goto("/");
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  await expect(page.getByText("Lost per discard")).toBeVisible();
+  expect(await consentActionBottom(page, "Accept")).toBeLessThanOrEqual(
+    phoneLandscapeViewport.height,
+  );
+  expect(await consentActionBottom(page, "Decline")).toBeLessThanOrEqual(
+    phoneLandscapeViewport.height,
+  );
+});
+
+/*
+ * A first visit can produce a tally before consent is answered: the banner
+ * does not block play, and the tally is local data consent never gated. The
+ * banner, the analysis and the tally therefore render together, which is a
+ * different set of grid children from every case above.
+ */
+test("first-run consent controls stay in view once a tally exists", async ({
+  page,
+}) => {
+  await page.setViewportSize(phoneLandscapeViewport);
+  await page.goto("/");
+  const checkboxes = page.getByRole("checkbox");
+  await checkboxes.nth(0).click();
+  await checkboxes.nth(1).click();
+  await page.locator('text="Loading analysis..."').waitFor({ state: "hidden" });
+  await expect(page.getByText("Lost per discard")).toBeVisible();
+
+  expect(await consentActionBottom(page, "Accept")).toBeLessThanOrEqual(
+    phoneLandscapeViewport.height,
+  );
+  expect(await consentActionBottom(page, "Decline")).toBeLessThanOrEqual(
+    phoneLandscapeViewport.height,
+  );
 });

@@ -70,6 +70,26 @@
   .dynamic-ui > :last-child {
     grid-row: 3 / 4;
   }
+
+  /*
+   * A fourth track only while a tally is on screen. Leaving the consent cell
+   * unplaced instead let it inherit the flexible second row and swell to fill
+   * the page on a first run, and adding the track unconditionally left an
+   * empty row whose gap is dead space on every screen without a tally. The
+   * tally is second to last whenever it renders, which is what makes the
+   * conditional selector exact without a marker on the element itself.
+   */
+  .dynamic-ui.with-tally {
+    grid-template-rows: auto 1fr auto auto;
+  }
+
+  .dynamic-ui.with-tally > :nth-last-child(2) {
+    grid-row: 3 / 4;
+  }
+
+  .dynamic-ui.with-tally > :last-child {
+    grid-row: 4 / 5;
+  }
 }
 
 @media (aspect-ratio >= 6 / 5) {
@@ -151,5 +171,22 @@
     grid-column: 2 / 3;
     overflow: auto;
     grid-row: span 2;
+  }
+
+  /*
+   * The analysis is only rendered once two cards are discarded, so with no
+   * discard selected the tally becomes the middle child and the rule above
+   * hands it the analysis's own full-height slot. Stretching to fill that
+   * spread its three rows down the entire column.
+   *
+   * Start rather than end: the tally is placed in rows after the one the
+   * consent cell occupies, so aligning it to the end of its cell drops it
+   * below the privacy links, which `discardTally.spec.ts` asserts it stays
+   * above. Start also leaves the geometry with an analysis on screen exactly
+   * as it was. The tally is the last child before the consent cell whenever
+   * it renders, which is the same anchor the stacked layout above uses.
+   */
+  .dynamic-ui.with-tally > :nth-last-child(2) {
+    align-self: start;
   }
 }
