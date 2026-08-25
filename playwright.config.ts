@@ -2,7 +2,10 @@ import { defineConfig, devices } from "@playwright/test";
 import os from "os";
 
 const continuousIntegrationRetryLimit = 2;
+const continuousIntegrationWorkerLimit = 2;
+const defaultMaxLocalWorkers = 4;
 const ignoreScreenshotTests = /.*.screenshots.spec.ts/u;
+const testTimeoutMs = 60_000;
 
 export default defineConfig({
   expect: {
@@ -42,6 +45,7 @@ export default defineConfig({
   reporter: [["html", { open: "never" }]],
   retries: process.env["CI"] ? continuousIntegrationRetryLimit : 0,
   testDir: "./tests-e2e",
+  timeout: testTimeoutMs,
   use: {
     baseURL: "http://localhost:4173",
     trace: "on-first-retry",
@@ -53,7 +57,9 @@ export default defineConfig({
     // This ID is unregistered and the specs block the hosts, so nothing leaves.
     env: { VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: "G-0000000000" },
     reuseExistingServer: !process.env["CI"],
-    url: "http://localhost:4173",
+    url: "http://localhost:4173/cribbage-trainer",
   },
-  workers: os.cpus().length,
+  workers: process.env["CI"]
+    ? continuousIntegrationWorkerLimit
+    : Math.min(os.cpus().length, defaultMaxLocalWorkers),
 });
