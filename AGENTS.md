@@ -252,6 +252,16 @@
   fine (the tell: `cqw`-sized parts fit while rem-floored parts overflow).
   Stacked-mode controls are sized entirely in container units; an e2e guard
   asserts they fit the portrait viewport at a 28px root font.
+- The rem-floor trap is not only about control rows: any rem **lower
+  bound** inflates on a phone whose font-size setting is above default,
+  including `clamp(1rem, …)`. In side-by-side mode the app title and the
+  consent cell were floored that way, and on real hardware the consent
+  banner had to be scrolled to reach its buttons while every emulated check
+  at the default scale passed. Cap such a floor with a viewport unit —
+  `clamp(min(1rem, 2vw), …)`, `min(0.8rem, 1.5vw)` — which leaves every
+  default-scale size unchanged, and guard it the way portrait already does:
+  the same measurement repeated at a 28px root font. That guard failed on
+  all five browser projects before the fix and passes after it.
 - `line-height: normal` is not proportional across font sizes (font-metric
   pixel rounding differs), so pin an explicit line-height wherever an
   aspect-ratio invariant depends on text height.
@@ -583,6 +593,19 @@
   matches the parent's several, so git replays those originals and reports
   conflicts against its own merged result. Replay only the child's commits
   with `git rebase --no-gpg-sign --onto origin/main <last-parent-commit>`.
+- Never rebase or force-push a branch whose PR has already been reviewed, even
+  when the content survives the rewrite unchanged. GitHub anchors its
+  changes-since-your-last-review diff to commit SHAs, so rewriting them costs
+  the reviewer the delta and makes them re-read the whole branch. That cost is
+  invisible from the agent's side, where a verified-identical rebase looks
+  clean, which is why it needs a rule rather than judgement. To clear a
+  `BEHIND` merge state, use GitHub's **Update branch** instead: this repository
+  squash-merges, so the merge commit disappears at merge and the outcome is
+  identical, while the SHAs and every review anchor survive. Rebase only a
+  branch nobody has read yet. If history has already been rewritten, recover
+  the delta with `compare/<old-head>...<new-head>`, which still resolves
+  because force-pushed objects stay reachable by SHA, and offer it without
+  being asked.
 
 ## CI workflow notes
 

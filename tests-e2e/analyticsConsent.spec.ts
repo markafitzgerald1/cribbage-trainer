@@ -3,6 +3,7 @@ import {
   blockGoogleAnalytics,
 } from "./blockGoogleAnalytics";
 import { type Page, expect, test } from "@playwright/test";
+import { analyticsConsentKey } from "../src/ui/analyticsConsent";
 
 const analyticsCookieNames = async (page: Page) =>
   (await page.context().cookies())
@@ -59,4 +60,31 @@ test("loads the tag once analytics is accepted", async ({ page }) => {
 
   await expect.poll(() => googleRequests.length).toBeGreaterThan(0);
   expect(await page.evaluate(() => "dataLayer" in window)).toBe(true);
+});
+
+const policyUpdateHeading = (page: Page) =>
+  page.getByRole("heading", { name: "Analytics Consent Update" });
+
+// A browser that answered the policy in force before decision-quality collection existed.
+test("asks about the policy update without disturbing the consent already given", async ({
+  page,
+}) => {
+  const googleRequests = await blockGoogleAnalytics(page);
+  await page.addInitScript((key) => {
+    window.localStorage.setItem(key, "true");
+  }, analyticsConsentKey);
+  await page.goto("/");
+
+  await expect(policyUpdateHeading(page)).toBeVisible();
+  await expect.poll(() => googleRequests.length).toBeGreaterThan(0);
+
+  await page.getByRole("button", { exact: true, name: "Decline" }).click();
+
+  await expect(policyUpdateHeading(page)).toBeHidden();
+  expect(
+    await page.evaluate(
+      (key) => localStorage.getItem(key),
+      analyticsConsentKey,
+    ),
+  ).toBe("true");
 });

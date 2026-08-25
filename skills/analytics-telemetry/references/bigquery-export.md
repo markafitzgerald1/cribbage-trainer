@@ -911,7 +911,19 @@ set to that day, within the 71-hour window.
    secret `GA4_MEASUREMENT_PROTOCOL_SECRET`, and in a password manager. It is
    private: never put it in client code, this repository, GitHub issues or pull
    requests, screenshots, or the decision record. The measurement ID comes from
-   the existing `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID` repository variable.
+   the **repository** variable `VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID`, created
+   on 2026-08-23 with the same value the `github-pages` environment holds.
+   Before that it existed only as an environment variable on `github-pages`
+   and `github-pages-preview`, and this step wrongly called it a repository
+   variable. A job that declares no `environment:` resolves `vars.` against
+   repository and organization scope only, so the first real run received an
+   empty ID and its guard failed the run — the guard working, on an
+   assumption nothing else could have caught: `actionlint` sees valid syntax,
+   and a review reads the same false premise the runbook stated. Only
+   execution could find it, and execution was impossible before the workflow
+   reached the default branch. Keep the two values equal. Divergence is
+   self-catching rather than silent, because a canary sent to another property
+   never reaches this export and the section 10 alert fires.
 3. Run the workflow once by hand from the **Actions** tab using **Run
    workflow**, leaving `reporting_date` empty, and confirm it succeeds. The run
    summary names the reporting date and the table to look in. `/mp/collect`

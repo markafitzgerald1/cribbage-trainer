@@ -18,11 +18,15 @@ import {
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
 } from "./Trainer.test.common";
+import {
+  analyticsConsentKey,
+  clearAnalyticsChoice,
+  storeAnalyticsChoice,
+} from "../ui/analyticsConsent";
 import { describe, expect, it, jest } from "@jest/globals";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
-import { analyticsConsentKey } from "./Trainer";
 import { getSortOrderName } from "../ui/SortOrderName";
 import { screen } from "@testing-library/react";
 /* jscpd:ignore-end */
@@ -67,9 +71,6 @@ function getSortInput(container: HTMLElement, sortOrder: SortOrder) {
     `input[value='${getSortOrderName(sortOrder)}']`,
   )!;
 }
-
-const clearAnalyticsConsent = () =>
-  localStorage.removeItem(analyticsConsentKey);
 
 const setupTrainerUser = () => ({
   ...renderTrainer(),
@@ -166,7 +167,7 @@ describe("trainer component", () => {
   ])(
     "persists that analytics acceptance is %s when button %s is clicked",
     async (expectedConsent, buttonText) => {
-      clearAnalyticsConsent();
+      clearAnalyticsChoice();
       const user = userEvent.setup();
       renderTrainer();
 
@@ -181,7 +182,7 @@ describe("trainer component", () => {
   );
 
   it("shows persistent policy and analytics settings links when consent is stored", () => {
-    localStorage.setItem(analyticsConsentKey, "true");
+    storeAnalyticsChoice(true);
     const renderResult = renderTrainer();
 
     expect(renderResult.getByText("Privacy Policy")).toBeTruthy();
@@ -192,7 +193,7 @@ describe("trainer component", () => {
   });
 
   it("withdraws stored analytics consent and removes analytics cookies", async () => {
-    localStorage.setItem(analyticsConsentKey, "true");
+    storeAnalyticsChoice(true);
     document.cookie = "_ga=client-id; Path=/";
     const consoleErrorSpy = jest.spyOn(console, "error").mockReturnValue();
     const user = userEvent.setup();
@@ -209,7 +210,7 @@ describe("trainer component", () => {
   });
 
   it("removes an analytics cookie rewritten while a declined page loads", () => {
-    localStorage.setItem(analyticsConsentKey, "false");
+    storeAnalyticsChoice(false);
     document.cookie = "_ga_TEST=late-session-id; Path=/";
 
     renderTrainer();
@@ -218,7 +219,7 @@ describe("trainer component", () => {
   });
 
   it("requires a new choice after the analytics policy changes", () => {
-    clearAnalyticsConsent();
+    clearAnalyticsChoice();
     localStorage.setItem("analyticsConsent", "true");
 
     const renderResult = renderTrainer();

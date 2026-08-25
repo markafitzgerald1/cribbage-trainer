@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { constantHandQuery } from "./layoutMeasurements";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
-
-const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H&seed=e2e";
 
 const testInitialRenderScreenshot = () =>
   test("initial page render with fixed random seed still visually the same", async ({
