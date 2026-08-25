@@ -29,6 +29,16 @@ guidance only one tool can use.
 - The shell may start on an old Node. Activate the repo version per command:
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use; hash -r`
   (`hash -r` is required because zsh caches the old `node` path).
+- `.husky/pre-commit` runs the full `npm run docker:build-and-test-all` gate
+  synchronously on every commit — several minutes end to end. The Bash tool's
+  default 2-minute timeout is long enough for a hook that fails early (a lint
+  or coverage-threshold error partway through the Dockerfile) but not for one
+  that runs to completion, so a `git commit` that hits the timeout (exit 143,
+  "Command timed out") has not necessarily failed — it may still be running
+  server-side. Check `git log`/`git status` before concluding a timed-out
+  commit was rejected, and issue any `git commit` in this repo with
+  `run_in_background: true` rather than trusting a fixed timeout to cover a
+  passing run.
 - Working inside a `.claude/worktrees/<name>` checkout changes what several
   tools see, and each difference has already been mistaken for a real failure:
   - `jest.config.json` ignores `/.claude/`, and the worktree's absolute path
