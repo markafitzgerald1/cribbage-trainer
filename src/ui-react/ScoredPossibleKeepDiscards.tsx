@@ -18,9 +18,11 @@ import {
 } from "../analysis/compareByExpectedScoreDescending";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
+import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
+import { getDiscardQuality } from "../analysis/discardQuality";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
@@ -35,9 +37,11 @@ export interface ScoredPossibleKeepDiscardsProps {
 
   /**
    * Called once the ranked results are actually on screen, which telemetry
-   * needs to tell an answer the user saw from one that never arrived.
+   * needs to tell an answer the user saw from one that never arrived. It
+   * carries what those results say about the discard the user chose, since
+   * nothing outside this component has scored them.
    */
-  readonly onAnalysisRendered: () => void;
+  readonly onAnalysisRendered: (analysis: RenderedAnalysis) => void;
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
@@ -121,14 +125,6 @@ export function ScoredPossibleKeepDiscards({
     }
   }, [loadCribTable, loadError, loadPlayTable, retryCount, tables]);
 
-  const resultsAreOnScreen = tables !== null;
-  useEffect(() => {
-    // The cards are a dependency because Back and Forward swap the hand while this component stays mounted.
-    if (resultsAreOnScreen) {
-      onAnalysisRendered();
-    }
-  }, [dealtCards, onAnalysisRendered, resultsAreOnScreen]);
-
   const handleRetry = useCallback(() => {
     setLoadError(false);
     setRetryCount((prev) => prev + 1);
@@ -145,6 +141,21 @@ export function ScoredPossibleKeepDiscards({
         : [],
     [cribRole, dealtCards, tables],
   );
+  const renderedAnalysis = useMemo(
+    (): RenderedAnalysis => ({
+      cribRole,
+      quality: getDiscardQuality(scoredKeepDiscardsByNetScore),
+    }),
+    [cribRole, scoredKeepDiscardsByNetScore],
+  );
+  const resultsAreOnScreen = tables !== null;
+  useEffect(() => {
+    // The scored options are a dependency because Back and Forward swap the hand while this component stays mounted.
+    if (resultsAreOnScreen) {
+      onAnalysisRendered(renderedAnalysis);
+    }
+  }, [onAnalysisRendered, renderedAnalysis, resultsAreOnScreen]);
+
   const scoredKeepDiscards = useMemo(
     () =>
       [...scoredKeepDiscardsByNetScore].sort(

@@ -7,7 +7,7 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     ref={ref}
   >
     <h1>Privacy Policy for Cribbage Trainer</h1>
-    <p>Effective date: July 23, 2026</p>
+    <p>Effective date: August 22, 2026</p>
 
     <h2>Who is responsible</h2>
     <p>
@@ -62,6 +62,15 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
         A random identifier for one dealt hand, counts, sequence indices, and
         low-cardinality sources such as interactive, deep link, or history.
       </li>
+      <li>
+        For each completed discard, and only if your analytics choice was made
+        under this version of the policy: whether the hand was played as dealer
+        or pone, how many expected points the discard gave up against the
+        best-scoring option, whether the choice was the top-ranked one, and a
+        version number for this list of measurements. These are derived from the
+        trainer’s own analysis of your hand. The hand itself is not sent, and
+        the figures cannot be used to reconstruct it.
+      </li>
     </ul>
     <p>
       Cribbage Trainer does not send card identities, hand contents, discard
@@ -106,13 +115,20 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <p>
       Google Analytics user-level and event-level data is retained for 14
       months. Aggregated reports that no longer identify an individual device
-      may be retained longer. Cribbage Trainer does not currently export
-      analytics data to a separate warehouse.
+      may be retained longer.
     </p>
     <p>
-      Cribbage Trainer uses local storage to remember your analytics choice.
-      This preference remains until you change it, clear site storage, or a
-      future material privacy-policy update requires a new choice.
+      Cribbage Trainer also receives a daily copy of these analytics events in
+      its own Google BigQuery dataset, hosted in Canada. That copy holds the
+      same card-free information listed above, is used for the same purposes,
+      and is kept for the same 14 months. It exists so those measurements can be
+      analyzed in more detail than Google Analytics’ own reports allow.
+    </p>
+    <p>
+      Cribbage Trainer uses local storage to remember your analytics choice and
+      the version of this policy that choice answered. Both remain until you
+      change the choice, clear site storage, or a future material privacy-policy
+      update requires a new choice.
     </p>
 
     <h2>Changing or withdrawing your choice</h2>
@@ -158,7 +174,25 @@ export const PrivacyPolicy = forwardRef<HTMLDivElement>((_, ref) => (
     <h2>Changes to this policy</h2>
     <p>
       Material changes will be described here and, when appropriate, will
-      require a new analytics choice before further analytics collection.
+      require a new analytics choice before further analytics collection. A
+      change that widens what is collected asks only about the addition: what
+      you already chose keeps its own value, and the added measurement stays off
+      until you accept it.
+    </p>
+    <p>
+      The August 22, 2026 update added the card-free discard decision-quality
+      measurements listed above, so that aggregate skill statistics can be
+      reported back to players later. It is asked for separately: analytics
+      accepted under the July 23, 2026 policy continues unchanged whether you
+      accept or decline, and declining sends none of the new measurements.
+      Analytics Settings shows the current state and can turn the new
+      measurement on later.
+    </p>
+    <p>
+      The August 21, 2026 update disclosed that analytics events are also copied
+      daily into Cribbage Trainer’s own BigQuery dataset in Canada and kept
+      there for the same 14 months. What is collected, and how long it is kept,
+      did not change.
     </p>
     <p>
       The July 23, 2026 update made analytics entirely opt-in, added persistent

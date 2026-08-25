@@ -2,6 +2,11 @@ import type { Locator, Page } from "@playwright/test";
 
 export const poneHandQuery = "/?hand=KH,QS,10D,9C,6S,5H&role=pone";
 
+export const constantHandQuery = "?hand=KH,QS,10D,9C,6S,5H&seed=e2e";
+
+// A shared literal, so a locator cannot go substring-matching by accident.
+export const exactTextMatch = { exact: true };
+
 export const phonePortraitViewport = { height: 844, width: 390 };
 
 export const phoneLandscapeViewport = { height: 390, width: 844 };

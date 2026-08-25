@@ -1,10 +1,14 @@
 import * as classes from "./Trainer.module.css";
+import {
+  type AnalyticsChoice,
+  DECISION_QUALITY_MEASUREMENT,
+  readAnalyticsChoice,
+  storeAnalyticsChoice,
+  storeMeasurementAccepted,
+  storePolicyUpdateChoice,
+} from "../ui/analyticsConsent";
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
-import {
-  type HistoryHandScope,
-  useDiscardTelemetry,
-} from "./useDiscardTelemetry";
 import {
   parseUrlAnalysisState,
   serializeUrlAnalysisState,
@@ -13,7 +17,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
 import type { DealtCard } from "../game/DealtCard";
+import { DiscardTallyView } from "./DiscardTallyView";
 import { EnterCardsDialog } from "./EnterCardsDialog";
+import type { HistoryHandScope } from "./useDiscardTelemetry";
 import { InteractiveHand } from "./InteractiveHand";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
@@ -22,8 +28,10 @@ import type { TrackEvent } from "../ui/trackEvent";
 import { clearGoogleAnalyticsCookies } from "../ui/clearGoogleAnalyticsCookies";
 import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
+import { useAnalysisReporting } from "./useAnalysisReporting";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -36,21 +44,6 @@ export interface TrainerProps {
   readonly initialSortOrder?: SortOrder | null;
   readonly isSeededSession?: boolean;
 }
-
-export const analyticsConsentKey = "analyticsConsent-2026-07-23";
-const legacyAnalyticsConsentKey = "analyticsConsent";
-
-const getStoredConsent = (): boolean | null => {
-  const storedConsent = localStorage.getItem(analyticsConsentKey);
-  if (storedConsent === "true") {
-    return true;
-  }
-  if (storedConsent === "false") {
-    return false;
-  }
-  localStorage.removeItem(analyticsConsentKey);
-  return null;
-};
 
 interface DealState {
   readonly cribRole: CribRole;
@@ -82,17 +75,12 @@ const isUnchangedEnteredHand = (
 const useAnalyticsConsent = (
   loadGoogleAnalytics: (consented: boolean | null) => void,
 ) => {
-  const storedConsentOnFirstRender = useMemo(() => {
-    localStorage.removeItem(legacyAnalyticsConsentKey);
-    return getStoredConsent();
-  }, []);
-  const [analyticsConsented, setAnalyticsConsented] = useState<boolean | null>(
-    storedConsentOnFirstRender,
-  );
+  const choiceOnFirstRender = useMemo(() => readAnalyticsChoice(), []);
+  const [choice, setChoice] = useState<AnalyticsChoice>(choiceOnFirstRender);
+  const analyticsConsented = choice.consented;
   const setConsented = useCallback(
     (value: boolean) => {
-      setAnalyticsConsented(value);
-      localStorage.setItem(analyticsConsentKey, JSON.stringify(value));
+      setChoice(storeAnalyticsChoice(value));
       if (!value) {
         clearGoogleAnalyticsCookies();
         if (analyticsConsented) {
@@ -102,6 +90,12 @@ const useAnalyticsConsent = (
     },
     [analyticsConsented],
   );
+  const choosePolicyUpdate = useCallback((accepted: boolean) => {
+    setChoice(storePolicyUpdateChoice(accepted));
+  }, []);
+  const allowDecisionQuality = useCallback(() => {
+    setChoice(storeMeasurementAccepted(DECISION_QUALITY_MEASUREMENT));
+  }, []);
   useEffect(() => {
     if (analyticsConsented === false) {
       clearGoogleAnalyticsCookies();
@@ -110,7 +104,13 @@ const useAnalyticsConsent = (
   useEffect(() => {
     loadGoogleAnalytics(analyticsConsented);
   }, [analyticsConsented, loadGoogleAnalytics]);
-  return { analyticsConsented, setConsented, storedConsentOnFirstRender };
+  return {
+    allowDecisionQuality,
+    choice,
+    choosePolicyUpdate,
+    setConsented,
+    wasAnsweredOnFirstRender: choiceOnFirstRender.consented !== null,
+  };
 };
 
 const useEnterCardsDialog = (
@@ -181,17 +181,25 @@ export function Trainer({
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
-  const { analyticsConsented, setConsented, storedConsentOnFirstRender } =
-    useAnalyticsConsent(loadGoogleAnalytics);
+  const {
+    allowDecisionQuality,
+    choice,
+    choosePolicyUpdate,
+    setConsented,
+    wasAnsweredOnFirstRender,
+  } = useAnalyticsConsent(loadGoogleAnalytics);
   const {
     currentHandScope,
     reportAnalysisRendered,
     reportCardToggled,
     reportHandReplaced,
     reportHistoryNavigation,
-  } = useDiscardTelemetry({
-    consented: analyticsConsented,
+    tallySummary,
+  } = useAnalysisReporting({
+    consented: choice.consented,
+    cribRole,
     dealtCards,
+    decisionQualityConsented: choice.decisionQualityConsented,
     isSeededSession,
     trackEvent,
     wasDeepLinked: initialCards !== null,
@@ -244,6 +252,7 @@ export function Trainer({
           reportHistoryNavigation(
             newDealtCards,
             getHistoryEntryState()?.handScope ?? null,
+            urlState.cribRole,
           );
         }
         setDealState((previous) => ({
@@ -271,7 +280,7 @@ export function Trainer({
   }, [dealtCards]);
   const applyManualHand = useCallback(
     (state: DealState) => {
-      reportHandReplaced(state.dealtCards, "manual");
+      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
       setDealState(state);
     },
     [reportHandReplaced],
@@ -303,7 +312,7 @@ export function Trainer({
   const dealNewHand = useCallback(() => {
     markHistoryUpdate();
     const newDealState = createDealState(dealHandWithGenerator());
-    reportHandReplaced(newDealState.dealtCards, "deal");
+    reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
     setDealState(newDealState);
   }, [
     createDealState,
@@ -336,7 +345,9 @@ export function Trainer({
           Sharpen your cribbage discards with expected-score analysis.
         </p>
       </header>
-      <div className={classes.dynamicUi}>
+      <div
+        className={`${classes.dynamicUi} ${hasTallyToShow(tallySummary) ? classes.withTally : ""}`}
+      >
         <InteractiveHand
           cribRole={cribRole}
           dealtCards={dealtCards}
@@ -365,10 +376,15 @@ export function Trainer({
             sortOrder={sortOrder}
           />
         )}
+        <DiscardTallyView summary={tallySummary} />
         <AnalyticsConsentDialog
-          consent={analyticsConsented}
+          consent={choice.consented}
+          decisionQualityConsented={choice.decisionQualityConsented}
+          isPolicyUpdate={choice.needsPolicyUpdateChoice}
+          onAllowDecisionQuality={allowDecisionQuality}
           onChange={setConsented}
-          wasInitiallyConsented={storedConsentOnFirstRender !== null}
+          onPolicyUpdateChoice={choosePolicyUpdate}
+          wasInitiallyConsented={wasAnsweredOnFirstRender}
         />
       </div>
     </div>

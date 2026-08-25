@@ -11,6 +11,12 @@ bookkeeping that GA4 cannot reconstruct after the fact, and the two
 load-bearing halves of the e2e setup that make "nothing was sent" assertions
 mean anything.
 
+Before creating, changing, querying, or auditing the GA4 BigQuery export, read
+[`references/bigquery-export.md`](references/bigquery-export.md). It is the
+operator runbook and decision record for region, retention, costs, ownership,
+failure detection, and verification SQL; those console-only outcomes must never
+be inferred from repository changes.
+
 **Learnings:**
 
 - `src/ui/loadGoogleAnalytics.ts` implements basic consent mode. Unanswered or
@@ -180,13 +186,251 @@ mean anything.
   `is_first_analysis` true — so a restored hand can still enter the
   first-instinct population and must carry its true provenance.
 - Filtering contract for #665: population performance statistics take only
-  rows with `is_first_analysis` true **and** `generated_from_seed` false.
-  Seeded, deep-linked, manual, and history-restored hands are kept only as
-  separately segmented practice data.
+  rows with `is_first_analysis` true, `generated_from_seed` false, **and**
+  `hand_start_source` in `initial`/`deal`. Seeded, deep-linked, manual, and
+  history-restored hands are kept only as separately segmented practice data.
+  The first two conditions alone do not express that: a typed-in hand reaches
+  its first discard unaided, unseeded, and interactive, so it is
+  indistinguishable from a dealt one on those two flags — which is why
+  `discard_scored` carries the hand's own provenance and why an
+  `analysis_shown` row can only be segmented by joining `hand_started` on
+  `deal_nonce` (Codex, on #732).
+- GA4 BigQuery export stores a numeric parameter in `int_value` when its value
+  is a whole number and in `double_value` otherwise. Every warehouse numeric
+  read, after `UNNEST(event_params) AS param`, must use
+  `COALESCE(param.value.double_value, CAST(param.value.int_value AS FLOAT64))`.
+  Reading only `double_value` silently removes every zero-loss optimal discard,
+  the largest single decision-quality group, as well as integer schema
+  versions.
+- The Google tag sends the trainer's JavaScript boolean event parameters into
+  BigQuery as `string_value` values such as `true` and `false`. Parse them with
+  `SAFE_CAST(param.value.string_value AS BOOL)`. A warehouse query that also
+  tolerates numeric historical data may fall back to the numeric coalesce
+  above, but it must try the string slot first.
+- `deal_nonce` belongs in BigQuery joins but never in GA4 custom definitions.
+  Its per-hand UUID cardinality would immediately exceed dimension guidance and
+  collapse GA4 reports into `(other)` rows.
+- A repository runbook does not prove the export exists. A production operator
+  must record the link, expiration, budget, query safeguards, first daily-table
+  result, owner, and a negative-checked missing-table alert. GA4 cannot
+  re-export data missed while billing or the link is unavailable, so detecting
+  a gap is part of the data contract rather than optional operations work.
 - Telemetry must not consume the injected seeded generator for identifiers or
   anything else, or seeded deep links would deal different hands. The hook
   has no access to it, and a `Trainer` test pins the generator to exactly six
   card draws plus one crib-role draw per render.
+- `discard_scored` (#665) is the decision-quality event, and it is emitted
+  when the ranked answers reach the screen rather than when the second card
+  is committed: nothing has scored the discard before the vendored tables
+  load, so the event is named for what just happened. It carries the crib
+  role, the expected net points the choice gave up against the best-scoring
+  option, whether it was optimal, an explicit `schema_version`, and the same
+  `deal_nonce`, `analysis_index`, `is_first_analysis`, `generated_from_seed`,
+  `hand_start_source`, and `source` that
+  `analysis_shown` carries. The bookkeeping is repeated rather than joined
+  because the filtering contract above has to be applicable to a single row,
+  and #683's export does not exist yet to join against.
+- The loss is measured at full precision, not at the two decimals the
+  trainer displays, because `is_optimal` has to mean the model's top choice
+  for "played the top choice N% of the time" to be true. A choice trailing by
+  0.004 draws the same 8.00 on screen and is not optimal. Rounding is only
+  the six-decimal clearing of floating-point residue, which is far below
+  anything the vendored tables distinguish and far above the noise of summing
+  fifty-odd terms — so two options the model scores equally still count as a
+  tie, and picking either is optimal play. An earlier version compared at
+  display precision, and its story is worth keeping: Codex first caught that
+  rounding the _difference_ rather than each score was wrong in both
+  directions, then Mark pointed out that display precision was the wrong
+  question entirely for a flag that feeds a headline percentage. A
+  rule change here changes what "optimal" means in every row already
+  collected, so it is a schema change rather than a tweak.
+- The loss ships as a **number**, not as bands. #665 specified bucket
+  boundaries (0 / 0–0.5 / 0.5–1 / 1–2 / 2+) and they were built and then
+  removed deliberately: a stored band is a boundary guess baked into every
+  row, while the number lets any banding be cut at query time from data that
+  exists. Bands alone would also have left the mean impossible to estimate,
+  because the top one is open-ended, and would have collapsed percentile
+  resolution to roughly two populated bands for a competent player — which
+  is what #666 needs most. `is_optimal` is the one band kept, because the
+  point mass at
+  zero is the headline and a boolean cannot drift. Register the number in
+  GA4 as a **metric**, never a dimension: ~1500 distinct values is the
+  cardinality problem the issue worried about, and the same goes double for
+  `deal_nonce`, which must never become a custom dimension.
+- `src/analysis/discardQuality.ts` finds the chosen option by its **discard**
+  (both of its cards un-kept), never by its keep. Not because a discard
+  identifies an option better — for a completed discard the two are a
+  bijection, so either would do. The reason is what each asks of a _partial_
+  selection. Both are subset tests pointing opposite ways: this one asks
+  whether a candidate's two cards are among those the user has un-kept, where
+  a keep test would ask whether its four are among those still kept. Enumerate
+  the fifteen candidates and the keep test matches 15, then 5, then 1 as the
+  user selects 0, 1 and 2 cards, while the discard test matches 0, then 0,
+  then 1. So a keep test hands `find` the first of many matches at every
+  incomplete state, reporting as the user's own an option nobody chose. Which
+  one depends on the caller's ordering, which this module deliberately does
+  not assume — it takes the best score with `Math.max` rather than trusting
+  position — though the trainer does pass them in net-score order, so there
+  it would be the top-ranked option. The rule to carry, and the condition
+  that carries it: this direction fails closed only because every candidate
+  discard is exactly two cards and an incomplete selection holds fewer, so a
+  complete candidate cannot be a subset of an incomplete state. Mix in
+  one-card candidates and it matches one option at a single selection, where
+  the uniform set matched none. So prefer the direction demanding positive
+  evidence of the choice where candidates are equal-sized and every
+  incomplete state is strictly smaller than one, and test completeness
+  explicitly where they are not. It is a shared module because #19/#24 must
+  agree with analytics about what a decision cost.
+- The hook's latest-value ref is synced in a **layout** effect, not a
+  passive one. Its reader that matters is a child's passive effect —
+  `ScoredPossibleKeepDiscards` reports itself rendered from one — and child
+  passive effects run before the parent's, so a passive sync hands that
+  reader the previous render's consent. That is exactly a withdrawal
+  committed alongside the analysis whose tables had just finished loading,
+  and it silently defeated the live consent check the round before (Codex,
+  on #732). The guard is a harness whose single click flips consent and
+  re-runs a child's effect in one commit; a single-component test cannot
+  catch this, because layout effects always precede passive ones within a
+  component.
+- A score is sent only when the decision-quality consent stamped on its
+  exposure **and** the answer standing when it arrives both allow it. The
+  stamp is a floor and the current answer a ceiling: a grant given after the
+  decision cannot reach back to it, and a withdrawal takes effect at once.
+  The second half matters because disabling analytics cannot unload the
+  Google runtime already on the page — only the reload it triggers does — so
+  a score rendered before that reload commits would otherwise still
+  transmit, leaving reload timing as the only thing preventing it (Codex, on
+  #732, one round after the stamp itself). The
+  decision was made under the answer that stood at the time, and consent is
+  not retroactive: accepting while the tables are still loading must not
+  transmit the discard chosen before it. Reading it late also made collection
+  depend on load timing — a cached table sends nothing, a slow one sends —
+  and could ship a score for an exposure Google Analytics never saw begin,
+  which is the pairing `analysis_unshown` already keeps (Codex, on #732).
+  The stamp subsumes that pairing: decision-quality consent implies analytics
+  consent, so a stamped-true exposure always had its `analysis_shown` sent.
+- The score is attributed to the exposure that revealed it — its
+  `analysis_index`, `is_first_analysis`, and `source` all come from the stored
+  exposure, never from state read at render time, so the score and the
+  `analysis_shown` it belongs to can never disagree. `source` needs stamping
+  for the same reason the flag does and was missed at first (Codex, on #732):
+  a history move onto the discard already shown keeps the exposure, because
+  its discard key is unchanged, while making the hand history-sourced, so a
+  score rendered afterwards would have called an interactive exposure a
+  history one. Anything else the score reports is fixed for the hand — the
+  nonce, the seed provenance, the hand-start source — and cannot drift. One
+  exposure scores at most once, however often its results re-render. A score
+  reported while no exposure exists is held and emitted when the next one is
+  created: on a first render the child's effect runs before the parent's, so a
+  deep-linked
+  complete discard renders its answers before `reportAnalysisState` has
+  opened the exposure. Reporting it from the render callback instead would
+  put `analysis_shown` ahead of `hand_started`.
+- The Privacy Policy is the basis of the renewed consent, so its list of
+  measurements has to match the event's allowlist exactly, in both
+  directions. When the loss bands were dropped, the policy kept promising a
+  "coarse range" that nothing sent any more, which Codex caught on #732 —
+  the paragraph had been reflowed by an earlier wording change, so a
+  find-and-replace against the old wrapping silently matched nothing. Diff
+  the policy against the allowlist in `trackEvent.ts` whenever either moves,
+  and verify a scripted text edit actually landed rather than trusting its
+  exit code.
+- Consent is versioned by the privacy policy that described the collection
+  (`src/ui/analyticsConsent.ts`). The base consent key is deliberately not
+  rotated: rotating it discards the answer already given to the narrower
+  policy, which is what the #665 criteria rule out. A stored consent that
+  predates the current policy keeps sending everything that policy covered
+  while the banner asks about the addition alone, and `discard_scored` is
+  the one event gated on the newer acceptance — the hook emits it through
+  `trackEvent` with the decision-quality consent in place of the base one,
+  so the send path stays the single gate.
+- A browser that **declined** analytics is asked nothing when the policy
+  widens. The addition lives inside analytics, which is already off, so there
+  is nothing to disclose and nothing to collect — and an Accept in the update
+  banner would silently turn analytics itself back on, under copy that
+  promises the current choice is left alone. Only a browser that accepted the
+  earlier policy sees the update, and that rule lives in
+  `readAnalyticsChoice` rather than in the component, so the flag a caller
+  reads is already the question "does this browser owe an answer?" (both
+  Codex and Copilot raised the declined-browser case on #732 — Copilot's
+  point that a flag meaning merely "the version is stale" invites the wrong
+  read is why it moved).
+- Each gated measurement is compared against the policy version that
+  **introduced** it, never against the latest one. Requiring equality with
+  the current version reintroduces the bug the whole mechanism exists to
+  prevent, one level down: the next additive policy would stop
+  decision-quality collection the moment it shipped, and declining only what
+  _that_ policy adds would leave it off for good, discarding an acceptance
+  already given (Codex, on #732 — the fifth round). So
+  `DECISION_QUALITY_POLICY_VERSION` is frozen at its own value and the check
+  is "accepted at or after", which is why the versions are zero-padded ISO
+  dates: the comparison is lexicographic. A new gated measurement gets its
+  own frozen constant; none of them may track `PRIVACY_POLICY_VERSION`.
+- A measurement's `introducedIn` must equal the `PRIVACY_POLICY_VERSION` of
+  the release whose banner first asks about it, and the two have to move in
+  the same commit. Bumping the policy version alone leaves the measurement
+  introduced by an older one, and `storePolicyUpdateChoice` grants only what
+  came after the version the browser last answered — so the banner asks, the
+  user accepts, and nothing is granted. Nothing catches that today: the two
+  constants were equal from the start, and a browser that has answered no
+  version at all is granted everything regardless, which is the only case the
+  specs can currently express.
+- Declining the addition must not travel through the dialog's `onChange`.
+  That callback is also withdrawal: `onChange(false)` from Analytics
+  Settings turns analytics off and reloads the page, whereas declining the
+  update has to leave the earlier consent exactly as it was. They are
+  separate callbacks for that reason, and the decline is recorded as an
+  answer to the current version so the question is not asked again.
+- Enabling analytics from Analytics Settings does **not** revive a
+  measurement the user declined on its own. "Allow analytics" restores
+  analytics as a whole; it discloses nothing about a measurement that was
+  refused when it was put to them directly, so granting it there would be the
+  same grant-escaping-its-disclosure failure as routing the update's Accept
+  through `onChange`. A specific answer outranks a general one until the user
+  is asked the specific question again, which the settings panel offers on
+  its own button. The completeness cost — a re-enabling user keeps
+  `discard_scored` off — is real and is the intended trade: an explicit
+  decline is not a gap in the data. Analytics Settings therefore stays **open**
+  when analytics is enabled from it, so that offer is visible immediately
+  rather than one reopen away. (An earlier draft of this bullet described the
+  opposite behavior and outlived the model it belonged to; Codex read it,
+  believed it over the code, and filed the code as the defect. Documentation
+  drift here reads as a spec, so fix this file in the same commit as the
+  behavior.)
+- The consent banner's **policy-update** and **settings** states are taller
+  than the first-run one and land in the same height-tight side-by-side grid
+  cell, so both need their own phone-landscape guard: the existing one opens
+  an unanswered browser and never renders either. The first version of the
+  update banner carried two paragraphs and pushed Accept to y+height 401.5 in
+  a 390px-tall viewport on WebKit, Firefox, and Mobile Safari while Chromium
+  passed — so the Chromium-only screenshots could never have caught it
+  (Codex, on #732). Keep each of these messages to roughly the first-run
+  message's length, and measure rather than assume. The guards live in
+  `tests-e2e/consentLayout.spec.ts`, split out when `index.spec.ts` reached
+  the 520-line cap.
+- Seeding stored consent in an e2e test now means seeding the answered and
+  accepted policy versions too (`tests-e2e/renderThenSelectTwoDiscards.ts`).
+  Setting only the consent key produces a browser that answered an earlier
+  policy, which re-opens the banner — every screenshot baseline would shift
+  and the fade-timer race the helper exists to avoid would come back.
+- **A consent banner cannot be verified in production from a browser that
+  has opened a PR preview.** Every stored consent key is scoped by origin
+  alone, and a preview shares production's origin — same host, different
+  path — so answering a policy on a preview records that answer for
+  production too. On 2026-08-25 the decision-quality update banner appeared
+  nowhere across three of Mark's clients minutes after it deployed. Nothing
+  was wrong: each had opened #738's preview, which is stacked on #732 and so
+  already carried `PRIVACY_POLICY_VERSION` `2026-08-22`, and
+  `analyticsPolicyAnswered` read exactly that. Real users, who touch no
+  preview, hold no such key and are asked correctly. Check the key before
+  believing the banner is broken, and clear only it —
+  `localStorage.removeItem("analyticsPolicyAnswered")` — to restore the
+  returning-user state without discarding the analytics consent underneath
+  it. An installed PWA needs its bundle checked as well, by reading the
+  policy's own date on screen, since a stale cache presents identically.
+  Whether these keys _should_ be deployment-scoped the way `discardTally` is
+  remains open: preview and production report to one GA property, so shared
+  consent is arguably correct and only the test procedure needs the caveat.
 - The e2e build gets a test measurement ID from `playwright.config.ts`'s
   `webServer.env`, and `tests-e2e/blockGoogleAnalytics.ts` aborts every
   request to the Google hosts. Both halves are load-bearing. Without an ID

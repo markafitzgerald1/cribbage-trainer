@@ -143,7 +143,27 @@
 - Playwright e2e report viewer: `npx --no-install playwright show-report`.
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 - Storybook coverage: run `npm run storybook:test:coverage`, then update the
-  Vite `test.coverage.thresholds` block to the exact reported totals.
+  Vite `test.coverage.thresholds` block to the exact reported totals — the
+  totals **Docker** reports, not the local run's. The two disagree by a
+  branch or so, and a threshold set from the local number fails the build
+  during `storybook:test:coverage` — a _build_ step, before any test runs —
+  which reads as an unrelated breakage.
+  **Not an arm64/amd64 split**, despite an earlier version of this bullet
+  claiming one: `docker build --platform linux/amd64` (QEMU-emulated on an
+  Apple Silicon host) reproduced the plain local number exactly, on the
+  identical commit, while the ordinary arm64-native Docker build reported a
+  branch lower — and both the amd64 and arm64 variants of the Playwright
+  base image ship the identical Node build — checked directly by running
+  `node --version` in each, via `docker run --platform linux/<arch>
+mcr.microsoft.com/playwright:<tag>`.
+  Architecture cannot be the variable when both architectures agree with
+  each other and disagree with the one thing that changed: whether Node ran
+  inside this Dockerfile's container at all. The container's Node (baked
+  into the base image, not `nvm`-selected from `.nvmrc`) was one patch
+  behind the locally installed one when this was checked. Retune from
+  whatever your own Docker build reports; do not assume a rerun will match
+  a previous one exactly, and do not extrapolate a cause from a single
+  comparison the way this bullet originally did.
 - For focused Jest/debug runs, pass `--coverage=false` when you only need
   targeted test signal; global coverage thresholds can make otherwise passing
   `--runTestsByPath` suites exit nonzero.
@@ -257,6 +277,16 @@
   fine (the tell: `cqw`-sized parts fit while rem-floored parts overflow).
   Stacked-mode controls are sized entirely in container units; an e2e guard
   asserts they fit the portrait viewport at a 28px root font.
+- The rem-floor trap is not only about control rows: any rem **lower
+  bound** inflates on a phone whose font-size setting is above default,
+  including `clamp(1rem, …)`. In side-by-side mode the app title and the
+  consent cell were floored that way, and on real hardware the consent
+  banner had to be scrolled to reach its buttons while every emulated check
+  at the default scale passed. Cap such a floor with a viewport unit —
+  `clamp(min(1rem, 2vw), …)`, `min(0.8rem, 1.5vw)` — which leaves every
+  default-scale size unchanged, and guard it the way portrait already does:
+  the same measurement repeated at a 28px root font. That guard failed on
+  all five browser projects before the fix and passes after it.
 - `line-height: normal` is not proportional across font sizes (font-metric
   pixel rounding differs), so pin an explicit line-height wherever an
   aspect-ratio invariant depends on text height.
@@ -278,6 +308,29 @@
   `.dynamic-ui > :last-child`, which its text and `em` padding both track —
   rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
   asserts Accept stays within a 844x390 viewport across all browsers.
+- `.dynamic-ui` places its children by **position**, and one of them is
+  conditionally rendered, so those selectors do not mean what they read as.
+  The analysis element exists only once two cards are discarded
+  (`discardIsComplete(dealtCards) && <ScoredPossibleKeepDiscards …>`), so
+  with no discard selected every positional selector after it shifts by one.
+  In side-by-side mode `> :nth-child(n + 2):nth-last-child(n + 2)` hands the
+  middle child the analysis's own slot — `grid-column: 2 / 3` with
+  `grid-row: span 2` — so whichever child lands there inherits a full-height
+  cell and stretches to fill it. The discard tally did exactly that: 753px
+  tall around 56px of content, its rows spread down the whole column, with
+  nothing wrong in its own CSS. A new child added to this container needs an
+  explicit placement of its own, anchored the way the stacked layout already
+  anchors one (`.dynamic-ui.with-tally > :nth-last-child(2)`), and the
+  conditional class driving it must come from the same predicate the child's
+  own render uses or the two diverge.
+- Aligning such a child to the **end** of its cell is not the safe way to
+  stop it stretching. Items placed after the consent cell's row sit below the
+  privacy links once pushed to their cell's end: `align-self: end` put the
+  tally at y675 against the links' y670 and failed
+  `discardTally.spec.ts`'s ordering assertion in all three landscape
+  projects, while looking correct in a single hand-checked viewport.
+  `align-self: start` removes the stretch and leaves the geometry with an
+  analysis on screen byte-identical, which is why it is the smaller change.
 - Desktop engines do not model the mobile viewport, in two independent ways,
   and each has already produced a wrong fix. First, Chrome for Android has a
   toolbar that shows and hides; no desktop engine does, so `100%`, `100svh`,
@@ -519,6 +572,13 @@
   claiming a Copilot review happened.
 - To find PR review threads without individual review URLs, use any available
   GitHub integration or the `gh` CLI for the repository and PR number.
+- A bot's login differs between the two GitHub APIs: REST reports
+  `chatgpt-codex-connector[bot]` where GraphQL reports
+  `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling
+  matches nothing and returns a confident zero, which reads as "no review
+  yet" rather than as a broken filter. When polling for a review round, also
+  bound the query by time or comment id: counting a bot's comments without one
+  matches a round from days ago and reports a reply that never happened.
 - With the `gh` CLI, use `gh api graphql` to query review thread fields such as
   `isResolved`, `isOutdated`, and nested comments.
 - After replying to addressed review threads, use the GraphQL
@@ -581,6 +641,19 @@
   matches the parent's several, so git replays those originals and reports
   conflicts against its own merged result. Replay only the child's commits
   with `git rebase --no-gpg-sign --onto origin/main <last-parent-commit>`.
+- Never rebase or force-push a branch whose PR has already been reviewed, even
+  when the content survives the rewrite unchanged. GitHub anchors its
+  changes-since-your-last-review diff to commit SHAs, so rewriting them costs
+  the reviewer the delta and makes them re-read the whole branch. That cost is
+  invisible from the agent's side, where a verified-identical rebase looks
+  clean, which is why it needs a rule rather than judgement. To clear a
+  `BEHIND` merge state, use GitHub's **Update branch** instead: this repository
+  squash-merges, so the merge commit disappears at merge and the outcome is
+  identical, while the SHAs and every review anchor survive. Rebase only a
+  branch nobody has read yet. If history has already been rewritten, recover
+  the delta with `compare/<old-head>...<new-head>`, which still resolves
+  because force-pushed objects stay reachable by SHA, and offer it without
+  being asked.
 
 ## CI workflow notes
 
@@ -605,6 +678,19 @@
   a PR branch while waiting on its preview or CI result — including a
   doc-only follow-up commit — or the run producing that result dies and the
   wait restarts. Land such commits before the run starts, or after it ends.
+- A scheduled workflow's execution clock is not the time it was scheduled
+  for, and the gap can exceed the whole interval. GitHub delays scheduled
+  runs under load, a queued job may reach a runner much later, and a re-run
+  keeps `event_name` at `schedule` while its clock reads whenever a human
+  clicked. Anything that dates work by `date` at run time therefore attributes
+  it to the wrong period, silently. Derive the period from the run's
+  `created_at` instead, which is unambiguous on a first attempt; refuse when
+  `run_attempt` is above 1, since GitHub documents neither `created_at` nor
+  `run_started_at` as preserved or reset across a re-run. Refusing beats
+  guessing here, because a wrong period is invisible while a refusal is loud
+  and recoverable. The export canary in `.github/workflows` carries the worked
+  example, and four review rounds were spent finding the variants of this one
+  bug, each hiding inside the fix for the last.
 - Never retry a failed Pages deploy with a single-job rerun: rerunning a
   job that already uploaded a `github-pages` artifact adds a second one to
   the same run, and `actions/deploy-pages` then always fails with

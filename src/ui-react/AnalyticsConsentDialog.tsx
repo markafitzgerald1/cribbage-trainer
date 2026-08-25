@@ -1,5 +1,12 @@
 import * as classes from "./AnalyticsConsentDialog.module.css";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Modal from "./Modal";
 import { PrivacyPolicy } from "./PrivacyPolicy";
 
@@ -8,7 +15,15 @@ const FADE_DELAY_MS = 5000;
 type AnalyticsConsentDialogProps = {
   // eslint-disable-next-line react/require-default-props
   readonly consent?: boolean | null;
+  // eslint-disable-next-line react/require-default-props
+  readonly decisionQualityConsented?: boolean;
+  // eslint-disable-next-line react/require-default-props
+  readonly isPolicyUpdate?: boolean;
   readonly onChange: (value: boolean) => void;
+  // Required rather than defaulted: a no-op default would swallow an answer to the update and ask again on the next load.
+  readonly onPolicyUpdateChoice: (accepted: boolean) => void;
+  // Separate from onChange, so accepting one named measurement cannot grant another the user has not been asked about.
+  readonly onAllowDecisionQuality: () => void;
   // eslint-disable-next-line react/require-default-props
   readonly wasInitiallyConsented?: boolean;
 };
@@ -92,14 +107,68 @@ const getDialogClassName = (
   return classes.analyticsConsentDialog;
 };
 
+const renderDecisionQualityOffer = (
+  privacyPolicyLink: ReactNode,
+  onAllow: () => void,
+) => (
+  <>
+    <p>
+      Discard decision-quality measurement is off. It stays off until you accept
+      the updated {privacyPolicyLink}.
+    </p>
+    <button
+      onClick={onAllow}
+      type="button"
+    >
+      Allow decision-quality measurements
+    </button>
+  </>
+);
+
+const renderPolicyUpdate = (
+  privacyPolicyLink: ReactNode,
+  actions: {
+    readonly handlePolicyAccept: () => void;
+    readonly handlePolicyDecline: () => void;
+  },
+) => (
+  <>
+    <h2>Analytics Consent Update</h2>
+    {/* Kept to roughly the first-run message's length: both land in the same height-tight side-by-side grid cell, where the extra lines push these buttons off a phone-landscape screen. */}
+    <p>
+      Our {privacyPolicyLink} now also covers card-free discard quality: dealer
+      or pone, the expected points the discard gave up, and whether it was the
+      top choice. No card is ever sent, and declining leaves analytics as it is.
+    </p>
+    <button
+      onClick={actions.handlePolicyAccept}
+      type="button"
+    >
+      Accept
+    </button>
+    <button
+      onClick={actions.handlePolicyDecline}
+      type="button"
+    >
+      Decline
+    </button>
+  </>
+);
+
 export function AnalyticsConsentDialog({
   consent = null,
+  decisionQualityConsented = false,
+  isPolicyUpdate = false,
+  onAllowDecisionQuality,
   onChange,
+  onPolicyUpdateChoice,
   wasInitiallyConsented = false,
 }: AnalyticsConsentDialogProps) {
   const [showModal, setShowModal] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isFadedOut, setIsFadedOut] = useState(consent !== null);
+  const [isFadedOut, setIsFadedOut] = useState(
+    consent !== null && !isPolicyUpdate,
+  );
   const [isFading, setIsFading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const privacyPolicyRef = useRef<HTMLDivElement>(null);
@@ -122,8 +191,13 @@ export function AnalyticsConsentDialog({
     onChange(false);
   }, [onChange]);
 
-  const settingsActions = useMemo(
+  // One memo rather than two, because the component is at its statement limit and both are the same kind of thing: click handlers that carry no state of their own.
+  const actions = useMemo(
     () => ({
+      // Unlike the first-run Accept, this leaves the panel open: a measurement declined on its own stays declined, and its offer is right here to be seen.
+      handleAllowAnalytics: () => {
+        onChange(true);
+      },
       handleDismiss: () => {
         setIsSettingsOpen(false);
         setIsFadedOut(true);
@@ -134,8 +208,14 @@ export function AnalyticsConsentDialog({
         setIsFading(false);
         setIsSettingsOpen(true);
       },
+      handlePolicyAccept: () => {
+        onPolicyUpdateChoice(true);
+      },
+      handlePolicyDecline: () => {
+        onPolicyUpdateChoice(false);
+      },
     }),
-    [],
+    [onChange, onPolicyUpdateChoice],
   );
 
   const handleKeyDown = useCallback(
@@ -170,7 +250,8 @@ export function AnalyticsConsentDialog({
     [setIsFadedOut, setIsFading],
   );
   useFadeOutTimer(
-    consent,
+    // A pending policy choice must stay on screen, and the timer fades anything already answered.
+    isPolicyUpdate ? null : consent,
     { isFadedOut, isFading, isSettingsOpen },
     fadeSetters,
   );
@@ -193,7 +274,7 @@ export function AnalyticsConsentDialog({
           <span aria-hidden="true"> · </span>
           <button
             className={classes.privacyPolicyLink}
-            onClick={settingsActions.handleDisplay}
+            onClick={actions.handleDisplay}
             type="button"
           >
             Analytics Settings
@@ -210,6 +291,12 @@ export function AnalyticsConsentDialog({
             Analytics is currently {consent ? "enabled" : "disabled"}. You can
             change that choice at any time.
           </p>
+          {consent === true &&
+            !decisionQualityConsented &&
+            renderDecisionQualityOffer(
+              PrivacyPolicyLink,
+              onAllowDecisionQuality,
+            )}
           {consent ? (
             <button
               onClick={handleDecline}
@@ -219,20 +306,24 @@ export function AnalyticsConsentDialog({
             </button>
           ) : (
             <button
-              onClick={handleAccept}
+              onClick={actions.handleAllowAnalytics}
               type="button"
             >
               Allow analytics
             </button>
           )}
           <button
-            onClick={settingsActions.handleDismiss}
+            onClick={actions.handleDismiss}
             type="button"
           >
             Close
           </button>
         </>
       );
+    }
+
+    if (isPolicyUpdate) {
+      return renderPolicyUpdate(PrivacyPolicyLink, actions);
     }
 
     switch (consent) {
