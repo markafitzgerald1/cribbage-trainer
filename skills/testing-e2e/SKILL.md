@@ -137,6 +137,14 @@ baselines so CI agrees with what was generated locally.
     rather than its count: without `CI=true` there is no count to catch it
     either.
 
+    Prefer `--grep <pattern>` over editing `.only` into a spec for a focused run
+    here in the first place, rather than relying on `CI=true` to catch a
+    leftover one. Unlike Jest's `plugin:jest/all` (`jest/no-focused-tests`), no
+    lint rule covers `tests-e2e/**/*.spec.ts`, so a committed `.only` is
+    invisible to lint and caught only once a `CI=true` run actually executes it.
+    `--grep` never touches the file, so there is nothing to forget or leave
+    behind.
+
     That exits 0 with all 167 tests passing; comparing the pixels instead
     exits 1, with 29 of them failing on screenshot diffs and 138 passing.
     Those counts are as of writing and drift as specs are added, so judge
