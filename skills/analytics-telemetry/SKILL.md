@@ -260,15 +260,19 @@ be inferred from repository changes.
 - `src/analysis/discardQuality.ts` finds the chosen option by its **discard**
   (both of its cards un-kept), never by its keep. Not because a discard
   identifies an option better — for a completed discard the two are a
-  bijection, so either would do — but because the match is an `every()`, and
-  the two readings fail in opposite directions while the discard is still
-  incomplete. With no card selected, every option's keep is entirely kept, so
-  a keep test is vacuously true for all fifteen and `find` returns the first,
-  which is the top-ranked one: the module would report a flawless choice
-  nobody had made yet. The discard test matches nothing and returns `null`,
-  which is the truth. Prefer the predicate that fails closed whenever a
-  partial state can satisfy a universal quantifier. It is a shared module
-  because #19/#24 must agree with analytics about what a decision cost.
+  bijection, so either would do. The reason is what each asks of a _partial_
+  selection. Both are subset tests pointing opposite ways: this one asks
+  whether a candidate's two cards are among those the user has un-kept, where
+  a keep test would ask whether its four are among those still kept. Enumerate
+  the fifteen candidates and the keep test matches 15, then 5, then 1 as the
+  user selects 0, 1 and 2 cards, while the discard test matches 0, then 0,
+  then 1. So a keep test hands `find` the first of many matches at every
+  incomplete state — the top-ranked option, reported as a flawless choice
+  nobody had made. The rule to carry: where a partial state can satisfy a
+  subset test, prefer the direction that demands positive evidence of the
+  choice over the one satisfied by an absence of evidence against it. It is a
+  shared module because #19/#24 must agree with analytics about what a
+  decision cost.
 - The hook's latest-value ref is synced in a **layout** effect, not a
   passive one. Its reader that matters is a child's passive effect —
   `ScoredPossibleKeepDiscards` reports itself rendered from one — and child

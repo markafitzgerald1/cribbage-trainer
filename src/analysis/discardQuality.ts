@@ -41,12 +41,13 @@ export const getDiscardQuality = (
 ): DiscardQuality | null => {
   /*
    * Found by its discard, never by its keep. Not because a discard identifies
-   * an option better — completed, the two are a bijection — but because this
-   * is an every(), and the two readings fail in opposite directions while the
-   * discard is incomplete: with no card selected a keep test is vacuously true
-   * for all fifteen options, so find returns the top-ranked one and this
-   * reports a flawless choice nobody made. The discard test matches nothing
-   * and yields the null below, which is the truth.
+   * an option better — completed, the two are a bijection — but because of
+   * what each asks of a partial selection. Both are subset tests pointing
+   * opposite ways, and across the fifteen candidates a keep test matches 15,
+   * then 5, then 1 as cards are selected, where this one matches 0, then 0,
+   * then 1. A keep test would therefore hand find the top-ranked option as
+   * the user's own at every incomplete state; this needs two specific cards
+   * actually not kept, so it matches none and yields the null below.
    */
   const chosen = scoredKeepDiscards.find((scoredKeepDiscard) =>
     scoredKeepDiscard.discard.every((card) => !card.kept),
