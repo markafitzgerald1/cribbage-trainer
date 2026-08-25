@@ -71,3 +71,125 @@ guidance only one tool can use.
   - Playwright's non-CI `reuseExistingServer` will reuse a stale `vite preview`
     left on port 4173 by the main checkout, running e2e against an old bundle.
   - Docker and CI are unaffected by all of the above: they check out normally.
+
+## Cloud sessions (Claude Code on the web)
+
+A cloud session is a fresh container, not this machine, and much of what the
+local setup takes for granted is absent there. Bootstrap them before running
+any gate, or a working tree looks broken. For how to run e2e once the image
+exists, read `skills/testing-e2e/SKILL.md` — the pixel comparison needs its
+own handling and that is where it lives.
+
+- This host's own rendering mismatch is what makes that workaround necessary
+  here specifically, not just "being in a cloud session": glyph antialiasing
+  on this host needs roughly 47,000px of slack against the configured
+  `maxDiffPixels` of 800, while a real 1%-card-width regression (`1.212em`
+  to `1.2em`) peaks at 23,514px and a card-border thickening (`0.022em` to
+  `0.03em`) at 4,171px — both would sit under a threshold raised to absorb
+  this host's noise and stop being caught. Playwright's per-pixel
+  `threshold` does not rescue it either: at 0.7 the noise is still 23,116px
+  across 13 of 16 shots, because the differing pixels are full
+  text-versus-background swings at glyph edges rather than soft gradients.
+  Baselines regenerated on this host encode its own rendering rather than
+  CI's, so CI would reject them. A different harness's cloud host may
+  render closer to CI's and not need any of this — verify before assuming
+  it applies.
+- The Docker daemon is not running, though the CLI, `dockerd`, and root are
+  all present; there is simply no init system to start it. Launch it directly
+  (`setsid nohup dockerd > /tmp/dockerd.log 2>&1 < /dev/null &`), then poll
+  `docker info` until it answers. It does not reliably survive a turn
+  boundary, so re-check before each build; images live in `/var/lib/docker`
+  and do survive, so a restart costs seconds rather than a rebuild.
+- Containers reach the network but do not trust the session's egress proxy,
+  so the build dies at the `actionlint` download with "SSL certificate
+  problem: self-signed certificate in certificate chain". **Fix this from
+  the session, never in the repository.** Generate a throwaway Dockerfile
+  outside the working tree that prepends the CA install to the repo's, and
+  build from that:
+
+  ```bash
+  SCRATCH=$(mktemp --directory)
+  CA=/usr/local/share/ca-certificates/ccr.crt
+  { head --lines=1 Dockerfile
+    echo "COPY --from=certs ca-bundle.crt $CA"
+    echo "RUN update-ca-certificates"
+    tail --lines=+2 Dockerfile
+  } > "$SCRATCH/Dockerfile.ca"
+  docker build --build-context certs=/root/.ccr \
+    --file "$SCRATCH/Dockerfile.ca" \
+    --tag cribbage-trainer-integration-tests .
+  ```
+
+  The committed `Dockerfile` is correct as written and must stay
+  byte-identical: those three lines name a CA path that exists only in this
+  sandbox, so committing them breaks the build for CI and every other
+  machine. With them applied out of tree the image builds in about three
+  minutes with every lint, unit, and Storybook step green.
+
+- Docker Hub is blocked by egress policy (`hello-world` fails on
+  `production.cloudfront.docker.com`), but `mcr.microsoft.com` is allowed, so
+  the repo's own base image pulls normally. Also blocked:
+  `cdn.playwright.dev`, and the deployed site itself, so a cloud session
+  cannot check <https://markafitzgerald1.github.io/cribbage-trainer/>.
+- Node is 22 there with no `nvm`, so the `nvm use` line above does not apply
+  and `.nvmrc`'s pinned 24 is unreachable on the host. Host-side results are
+  useful for fast iteration but are **not** evidence about the runtime the
+  CI workflow's non-Docker jobs use: a green `npm test` on the host says
+  nothing about Node 24. The Docker gate is not `.nvmrc`-pinned either,
+  despite running closer to it (`v24.17.0` in the base image when this was
+  checked): `Dockerfile`'s `FROM mcr.microsoft.com/playwright:v1.61.1-noble`
+  bundles whatever Node that frozen third-party tag ships, not a version
+  selected from `.nvmrc`, and `AGENTS.md` already records that number
+  drifting a patch behind the pinned one. Only the workflow's own
+  `node-version-file: .nvmrc` jobs are actually pinned; treat the Docker
+  gate as validating the shipped app, not the exact runtime.
+- Because `cdn.playwright.dev` is blocked and the preinstalled browsers in
+  `/opt/pw-browsers` are the wrong build, `npm run storybook:test:coverage`
+  fails on the host until the right ones are lifted out of the built image:
+
+  ```bash
+  CONTAINER=$(docker create cribbage-trainer-integration-tests)
+  docker cp "$CONTAINER:/ms-playwright/." /opt/pw-browsers/
+  docker rm "$CONTAINER"
+  ```
+
+  Its reported totals matched the Docker run exactly when checked here, but
+  `AGENTS.md` already documents that the two **can** disagree by a branch or
+  so and that a threshold set from the local number then fails the build
+  during `storybook:test:coverage` — a build step, before any test runs.
+  Treat a host/Docker match as a useful sanity check, not a license to skip
+  Docker: re-pin thresholds from Docker's own reported totals only.
+
+- Raw Actions job logs are unreachable: `gh api` on a job's `logs` endpoint
+  redirects to an Azure `*.blob.core.windows.net` host that egress policy
+  refuses, so the fetch 403s rather than returning the log. The
+  GitHub MCP `get_job_logs` tool serves the same content through the API and
+  works, so read a CI failure that way instead of concluding the run is
+  opaque. Its `tail_lines` default of 500 lands inside the post-job cleanup
+  on this workflow; ask for more to reach the Playwright summary.
+- `gh` is not installed; its release tarball downloads and runs fine. Note
+  that `gh auth status` reports "The token in GH_TOKEN is invalid" while REST
+  calls succeed — the tool's own status output lies about its capability,
+  the same trap as Copilot's `reviewRequests` stub, so test a real read
+  before believing it. Arbitrary `gh api graphql` is refused ("only the
+  pinned set of PR-review operations is served"), which takes out the
+  review-thread queries and `resolveReviewThread` in `AGENTS.md`; use the
+  GitHub MCP tools instead, whose `get_review_comments` returns the same
+  `is_resolved`/`is_outdated` metadata. The project board has no substitute
+  there — `gh project item-list` fails outright.
+- Commit signing works here (`gpg.format=ssh`, with the key supplied through
+  an agent) — `git log` still reports `signed: N` because
+  `gpg.ssh.allowedSignersFile` is unset locally; that is a local
+  verification gap, not an unsigned commit, so confirm with
+  `git cat-file commit HEAD | grep gpgsig` rather than trusting `%G?`. This
+  sits in real tension with `AGENTS.md`'s Husky/hooks rule that autonomous
+  agents **MUST** bypass signing with `--no-gpg-sign` on intermediate
+  commits: this session's stop-hook check has rejected an unsigned commit
+  outright, on this exact branch, so the two instructions cannot both be
+  followed in one push here. Neither instruction wins by default: surface
+  the conflict to a human rather than silently picking a side, the way an
+  earlier version of this bullet did by inventing an unstated exception to
+  the `AGENTS.md` rule.
+- Foreground commands are capped at 600s, which the ~3 minute Docker build
+  fits but not by much; commands started in the background survive across
+  turns, so run the gate that way and poll its log.

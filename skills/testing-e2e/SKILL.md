@@ -118,3 +118,73 @@ baselines so CI agrees with what was generated locally.
     neither arm64 nor CI's amd64, and the emulated browser is too
     slow/flaky for the interaction tests. Generate baselines natively on
     arm64 and let the threshold absorb the delta.
+  - A sandbox whose rendering doesn't match CI's needs pixel comparison switched
+    off rather than tuned. Confirm the mismatch first by running a known-good
+    baseline and checking the diff, rather than assuming every cloud session has
+    it — then run e2e there with the pixel comparison off, inside the test
+    image:
+
+    ```bash
+    docker run --rm --env CI=true cribbage-trainer-integration-tests \
+      npx playwright test --ignore-snapshots
+    ```
+
+    `CI=true` matters here, not only for parity with `docker:run-e2e-only`:
+    without it `playwright.config.ts` sets `forbidOnly` to `false`, so a stray
+    `test.only` left in a spec silently runs just that one test and still
+    exits 0. Confirmed by leaving one in place and running both ways: without
+    `CI=true` it reports `1 passed`, exit 0; with `CI=true` it fails immediately
+    on the `.only` itself, exit 1. That is worse paired with the advice two
+    paragraphs down to judge a run by its exit code rather than its count: an
+    ad hoc run has no stable expected total to compare `1 passed` against, so
+    a suspiciously small count does not register as wrong either.
+
+    Prefer `--grep <pattern>` over editing `.only` into a spec for a focused run
+    here in the first place, rather than relying on `CI=true` to catch a
+    leftover one. Unlike Jest's `plugin:jest/all` (`jest/no-focused-tests`), no
+    lint rule covers `tests-e2e/**/*.spec.ts`, so a committed `.only` is
+    invisible to lint and caught only once a `CI=true` run actually executes it.
+    `--grep` never touches the file, so there is nothing to forget or leave
+    behind.
+
+    That exits 0 with all 167 tests passing; comparing the pixels instead exits
+    1, with 29 of them failing on screenshot diffs and 138 passing. Those counts
+    are as of writing and drift as specs are added, so judge the run by its exit
+    code rather than by the totals.
+
+  - Be exact about what `--ignore-snapshots` leaves running, because it is less
+    than it looks. Each spec's setup still executes — `goto`, the clicks, and
+    the waits inside `renderThenSelectTwoDiscards` — so a break there still
+    fails the run. But `toHaveScreenshot` returns before it resolves its
+    locator, waits for visual stability, or captures anything, so whatever is
+    reached only through that call goes unexercised: the `modalPanel` locator in
+    `index.screenshots.spec.ts` is never resolved, leaving that test covering
+    just the `goto` and the "Enter cards" click. Confirmed by pointing
+    `toHaveScreenshot` at a locator matching nothing, which fails on the missing
+    element normally and passes under `--ignore-snapshots`. Read a green run
+    under this workaround as evidence about the interactions, not about the
+    assertions those shots stand in for; CI adjudicates the pixels against
+    baselines it matches.
+
+  - `--ignore-snapshots` makes a **new** screenshot shot pass vacuously: with no
+    baseline written and no comparison run, a visual guard added this way goes
+    green while proving nothing. Landing it does not validate it either. Without
+    a committed baseline Playwright's default `missing` mode writes the actual
+    image and fails, so that run reports the absent baseline rather than any
+    comparison — a new shot run without `--update-snapshots` fails with "A
+    snapshot doesn't exist at ..., writing actual." The guard is proven only
+    once a baseline generated where baselines are owned has been reviewed,
+    committed, and compared by a later run, so author new visual cases there
+    rather than under this workaround. Add them to `index.screenshots.spec.ts`
+    too: its snapshots directory is the only one the `docker:` scripts mount
+    back, so a new spec file's generated baseline is written inside the
+    container and lost.
+
+  - Do not raise `maxDiffPixels` to make a mismatched sandbox's pixels pass, and
+    do not regenerate baselines there: doing so also raises it above the size of
+    real regressions, so it stops catching them, and a baseline generated there
+    encodes that sandbox's own rendering rather than CI's, so CI would reject
+    it. Measure your own sandbox's noise floor before assuming this applies —
+    see your harness's own environment notes (for Claude Code on the web,
+    `CLAUDE.md`'s Cloud sessions section) for numbers measured on a specific
+    host, since they do not transfer to a different one.
