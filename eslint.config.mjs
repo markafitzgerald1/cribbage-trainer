@@ -145,6 +145,7 @@ export default [
             "antialiasing",
             "arm64",
             "autodocs",
+            "bijection",
             "callee",
             "interpretable",
             "vendored",

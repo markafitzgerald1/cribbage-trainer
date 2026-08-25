@@ -258,11 +258,17 @@ be inferred from repository changes.
   cardinality problem the issue worried about, and the same goes double for
   `deal_nonce`, which must never become a custom dimension.
 - `src/analysis/discardQuality.ts` finds the chosen option by its **discard**
-  (both of its cards un-kept), never by its keep. Before two cards are
-  discarded every option's keep is entirely kept, so a keep match silently
-  scores the top-ranked option as the user's own choice, and the caller
-  cannot see the difference. It is a shared module because #19/#24 must
-  agree with analytics about what a decision cost.
+  (both of its cards un-kept), never by its keep. Not because a discard
+  identifies an option better — for a completed discard the two are a
+  bijection, so either would do — but because the match is an `every()`, and
+  the two readings fail in opposite directions while the discard is still
+  incomplete. With no card selected, every option's keep is entirely kept, so
+  a keep test is vacuously true for all fifteen and `find` returns the first,
+  which is the top-ranked one: the module would report a flawless choice
+  nobody had made yet. The discard test matches nothing and returns `null`,
+  which is the truth. Prefer the predicate that fails closed whenever a
+  partial state can satisfy a universal quantifier. It is a shared module
+  because #19/#24 must agree with analytics about what a decision cost.
 - The hook's latest-value ref is synced in a **layout** effect, not a
   passive one. Its reader that matters is a child's passive effect —
   `ScoredPossibleKeepDiscards` reports itself rendered from one — and child

@@ -39,7 +39,15 @@ export interface DiscardQuality {
 export const getDiscardQuality = (
   scoredKeepDiscards: readonly ScoredKeepDiscardChoice[],
 ): DiscardQuality | null => {
-  // Found by its discard, never by its keep: before two cards are discarded every option's keep is entirely kept, and a keep match would score the top-ranked option as the user's own choice.
+  /*
+   * Found by its discard, never by its keep. Not because a discard identifies
+   * an option better — completed, the two are a bijection — but because this
+   * is an every(), and the two readings fail in opposite directions while the
+   * discard is incomplete: with no card selected a keep test is vacuously true
+   * for all fifteen options, so find returns the top-ranked one and this
+   * reports a flawless choice nobody made. The discard test matches nothing
+   * and yields the null below, which is the truth.
+   */
   const chosen = scoredKeepDiscards.find((scoredKeepDiscard) =>
     scoredKeepDiscard.discard.every((card) => !card.kept),
   );
