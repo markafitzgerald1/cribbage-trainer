@@ -80,6 +80,20 @@ any gate, or a working tree looks broken. For how to run e2e once the image
 exists, read `skills/testing-e2e/SKILL.md` — the pixel comparison needs its
 own handling and that is where it lives.
 
+- This host's own rendering mismatch is what makes that workaround necessary
+  here specifically, not just "being in a cloud session": glyph antialiasing
+  on this host needs roughly 47,000px of slack against the configured
+  `maxDiffPixels` of 800, while a real 1%-card-width regression (`1.212em`
+  to `1.2em`) peaks at 23,514px and a card-border thickening (`0.022em` to
+  `0.03em`) at 4,171px — both would sit under a threshold raised to absorb
+  this host's noise and stop being caught. Playwright's per-pixel
+  `threshold` does not rescue it either: at 0.7 the noise is still 23,116px
+  across 13 of 16 shots, because the differing pixels are full
+  text-versus-background swings at glyph edges rather than soft gradients.
+  Baselines regenerated on this host encode its own rendering rather than
+  CI's, so CI would reject them. A different harness's cloud host may
+  render closer to CI's and not need any of this — verify before assuming
+  it applies.
 - The Docker daemon is not running, though the CLI, `dockerd`, and root are
   all present; there is simply no init system to start it. Launch it directly
   (`setsid nohup dockerd > /tmp/dockerd.log 2>&1 < /dev/null &`), then poll
