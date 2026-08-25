@@ -118,10 +118,17 @@ own handling and that is where it lives.
   `cdn.playwright.dev`, and the deployed site itself, so a cloud session
   cannot check <https://markafitzgerald1.github.io/cribbage-trainer/>.
 - Node is 22 there with no `nvm`, so the `nvm use` line above does not apply
-  and `.nvmrc`'s pinned 24 is unreachable on the host. Only the Docker path
-  runs the pinned runtime. Host-side results are useful for fast iteration
-  but are **not** evidence about the runtime this project ships: a green
-  `npm test` on the host says nothing about Node 24.
+  and `.nvmrc`'s pinned 24 is unreachable on the host. Host-side results are
+  useful for fast iteration but are **not** evidence about the runtime the
+  CI workflow's non-Docker jobs use: a green `npm test` on the host says
+  nothing about Node 24. The Docker gate is not `.nvmrc`-pinned either,
+  despite running closer to it (`v24.17.0` in the base image when this was
+  checked): `Dockerfile`'s `FROM mcr.microsoft.com/playwright:v1.61.1-noble`
+  bundles whatever Node that frozen third-party tag ships, not a version
+  selected from `.nvmrc`, and `AGENTS.md` already records that number
+  drifting a patch behind the pinned one. Only the workflow's own
+  `node-version-file: .nvmrc` jobs are actually pinned; treat the Docker
+  gate as validating the shipped app, not the exact runtime.
 - Because `cdn.playwright.dev` is blocked and the preinstalled browsers in
   `/opt/pw-browsers` are the wrong build, `npm run storybook:test:coverage`
   fails on the host until the right ones are lifted out of the built image:
