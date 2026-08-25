@@ -76,6 +76,14 @@ baselines so CI agrees with what was generated locally.
 - Add a visual regression viewport with the exact width, height, and resulting
   aspect ratio that exposed a layout bug. Portrait and phone-landscape
   baselines alone do not cover near-square windows or other breakpoint edges.
+- In multi-browser runs under containerized or CI environments, launching
+  multiple browser engines concurrently to compile and parse multi-megabyte
+  bundle chunks can cause extreme cold-start CPU contention. Without an explicit
+  test timeout, the default 30s timeout intermittently aborts initial
+  `page.goto` calls (e.g. `has title`). Keep an explicit 60s `timeout` in
+  `playwright.config.ts`, cap CI workers (e.g. 2 on standard GitHub Actions
+  runners), and point `webServer.url` at the actual served route rather than a
+  redirect.
 
 **Visual regression updates:**
 
