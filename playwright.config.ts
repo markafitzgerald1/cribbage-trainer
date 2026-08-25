@@ -4,7 +4,7 @@ import os from "os";
 const continuousIntegrationRetryLimit = 2;
 const continuousIntegrationWorkerLimit = 2;
 const defaultMaxLocalWorkers = 4;
-const ignoreScreenshotTests = /.*.screenshots.spec.ts/u;
+const ignoreScreenshotTests = /.*\.screenshots\.spec\.ts$/u;
 const testTimeoutMs = 60_000;
 
 export default defineConfig({
