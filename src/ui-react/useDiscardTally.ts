@@ -145,6 +145,16 @@ export const useDiscardTally = ({
    * while the decision is already counted — and reading the cards alone then
    * charged that hand a skip as well, putting one hand in both columns and
    * inflating the denominator they share.
+   *
+   * Keyed by handId, not by the card-role key: the same cards under the same
+   * role can be two different occurrences — a hand entered to study and a
+   * later genuine deal of it — and a key match alone cannot tell one
+   * occurrence's completion from the other's abandonment. Keying by the
+   * card-role key let a practiced hand's completion mark a later,
+   * coincidentally identical authentic deal as already decided, so
+   * abandoning that deal recorded no skip at all. Falls back to the key only
+   * when no handId is known, the same degraded identity this file already
+   * accepts elsewhere.
    */
   const decidedHands = useRef(new Set<string>());
 
@@ -178,10 +188,10 @@ export const useDiscardTally = ({
    * does not stop being one for that.
    */
   useEffect(() => {
-    if (discardIsComplete(dealtCards)) {
-      decidedHands.current.add(toHandKey(dealtCards, cribRole));
+    if (discardIsComplete(dealtCards) && openHand.current !== null) {
+      decidedHands.current.add(openHand.current.handId ?? openHand.current.key);
     }
-  }, [cribRole, dealtCards]);
+  }, [dealtCards]);
 
   useEffect(() => {
     const refreshWhenVisible = () => {
@@ -216,7 +226,7 @@ export const useDiscardTally = ({
       const abandoned = openHand.current;
       if (
         abandoned !== null &&
-        !decidedHands.current.has(abandoned.key) &&
+        !decidedHands.current.has(abandoned.handId ?? abandoned.key) &&
         practiceByHand.current.get(abandoned.key) === false
       ) {
         setSummary(recordSkippedHand(Date.now()));

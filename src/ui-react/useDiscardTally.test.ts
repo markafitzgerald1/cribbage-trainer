@@ -1,8 +1,20 @@
 import { type DiscardTally, useDiscardTally } from "./useDiscardTally";
-import type {
-  HandReplacementCause,
-  RenderedAnalysis,
-} from "./useDiscardTelemetry";
+import {
+  HAND,
+  INITIAL_HAND_ID,
+  OTHER_HAND,
+  decisionsAndSkips,
+  handOf,
+  noteOrigin,
+  noteRestore,
+  renderTally,
+  renderTallyWithMutableCards,
+  replacedBy,
+  reportScore,
+  reportScoreTimes,
+  scopeFor,
+  startWithUnknownOrigin,
+} from "./useDiscardTally.test.common";
 import { act, renderHook } from "@testing-library/react";
 import {
   clearDiscardTally,
@@ -11,123 +23,16 @@ import {
 } from "../ui/discardTally";
 import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
-import { parseHand } from "../game/Card";
-import { toDealtCards } from "../game/toDealtCards";
 
-const HAND = "AH,2H,3H,4H,5H,6H";
-const OTHER_HAND = "7S,8S,9S,10S,JS,QS";
+type MutableCardsHarness = ReturnType<typeof renderTallyWithMutableCards>;
 
-// Telemetry's own identifier for the hand a page load starts with. Fixed across tests: each starts from a fresh tally, so nothing shares a hand across them.
-const INITIAL_HAND_ID = "initial-hand-id";
-
-// Each hand discards its own first two cards, so every dealt set is consistent and no lookup can miss.
-const discardFor = (hand: string) => (hand === HAND ? "AH,2H" : "7S,8S");
-
-// A hand with its two cards chosen, or one still untouched — which is what separates a decision from a hand walked away from.
-const handOf = (hand: string, discarded = true) =>
-  toDealtCards(parseHand(hand), discarded ? parseHand(discardFor(hand)) : null);
-
-const scoredAnalysis: RenderedAnalysis = {
-  cribRole: CribRole.Dealer,
-  quality: { expectedPointsLoss: 2, isOptimal: false },
-};
-
-// Reporting a score sets state, so every call goes through act rather than each test remembering to.
-const reportScore = (
-  tally: DiscardTally,
-  analysis: RenderedAnalysis = scoredAnalysis,
+// Performs an action against the currently open hand, then rerenders HAND as the complete dealt cards, so the hook's own completion effect fires against whatever that action just established.
+const completeHandUnder = (
+  harness: MutableCardsHarness,
+  perform: () => void,
 ) => {
-  act(() => {
-    tally.reportAnalysisRendered(analysis);
-  });
-};
-
-// Each hand replacement opens its own telemetry scope, so deriving the identifier from the cards keeps every hand distinct without a parameter at each call.
-const scopeFor = (hand: string) => `${hand}-scope`;
-
-const noteOrigin = (
-  tally: DiscardTally,
-  hand: string,
-  cause: HandReplacementCause,
-) => {
-  act(() => {
-    tally.reportHandOrigin(handOf(hand), cause, {
-      cribRole: CribRole.Dealer,
-      handId: scopeFor(hand),
-    });
-  });
-};
-
-/*
- * Defaults to restoring the scope the page load opened, which is what a
- * same-hand navigation looks like. Passing another identifier is what
- * separates a genuine restore of a different occurrence of the same cards.
- */
-const noteRestore = (
-  tally: DiscardTally,
-  hand: string,
-  {
-    cribRole = CribRole.Dealer,
-    handId = INITIAL_HAND_ID,
-  }: { cribRole?: CribRole | null; handId?: string | null } = {},
-) => {
-  act(() => {
-    tally.reportHandRestored(handOf(hand), { cribRole, handId });
-  });
-};
-
-const renderTally = (
-  hand: string,
-  { discarded = true, isSeededSession = false, wasDeepLinked = false } = {},
-) => {
-  clearDiscardTally();
-  return renderHook(() =>
-    useDiscardTally({
-      cribRole: CribRole.Dealer,
-      dealtCards: handOf(hand, discarded),
-      initialHandId: INITIAL_HAND_ID,
-      isSeededSession,
-      wasDeepLinked,
-    }),
-  );
-};
-
-const replacedBy = (
-  hand: string,
-  cause: HandReplacementCause,
-  options?: { readonly isSeededSession: boolean },
-) => {
-  const rendered = renderTally(hand, options);
-  noteOrigin(rendered.result.current, hand, cause);
-  return rendered;
-};
-
-const startWithUnknownOrigin = () => {
-  const rendered = renderHook(
-    ({ hand }: { hand: string }) =>
-      useDiscardTally({
-        cribRole: CribRole.Dealer,
-        dealtCards: handOf(hand),
-        initialHandId: INITIAL_HAND_ID,
-        isSeededSession: false,
-        wasDeepLinked: false,
-      }),
-    { initialProps: { hand: HAND } },
-  );
-  clearDiscardTally();
-  rendered.rerender({ hand: OTHER_HAND });
-  return rendered;
-};
-
-const reportScoreTimes = (tally: DiscardTally, times: number) => {
-  [...Array(times).keys()].forEach(() => {
-    reportScore(tally);
-  });
-};
-
-const decisionsAndSkips = () => {
-  const summary = readDiscardTally(Date.now());
-  return [summary.decisions, summary.skippedHands];
+  act(perform);
+  harness.rerender({ dealtCards: handOf(HAND, true) });
 };
 
 describe("discard tally hook", () => {
@@ -410,6 +315,82 @@ describe("discard tally hook", () => {
 
     expect(decisionsAndSkips()).toStrictEqual([0, 1]);
   });
+
+  /*
+   * Two ways completion can be remembered under an identity other than the
+   * abandoned hand's own key, and what each does to the skip that follows.
+   *
+   * A skip must still be charged when the hand abandoned shares its record
+   * key with an earlier, different occurrence that was already decided.
+   * Remembering completion by that key alone let a practiced hand's
+   * completion stand in for a later, coincidentally identical authentic
+   * deal's — so walking away from the genuine deal recorded no skip at all,
+   * because the key already looked decided. Telemetry's own per-hand scope is
+   * what tells the two occurrences apart, the same signal that already
+   * separates a same-hand restore from a different scope's.
+   *
+   * The record key still stands in for identity when no scope is known at
+   * all, the same fallback the record itself and provenance already use.
+   * Reachable in practice: a restore's role comes from the URL and its scope
+   * from `history.state` independently, so an entry from before this build
+   * tracked scopes can carry one without the other.
+   */
+  it.each([
+    {
+      expected: [0, 1],
+      // A manual entry of HAND completes: practice, remembered under its own scope.
+      firstAction: (harness: MutableCardsHarness) => {
+        harness.result.current.reportHandOrigin(handOf(HAND), "manual", {
+          cribRole: CribRole.Dealer,
+          handId: "practice-scope",
+        });
+      },
+      name: "abandoned after a same-key hand was decided",
+      // The same cards are genuinely dealt later, under a different scope.
+      thenAlso: (harness: MutableCardsHarness) => {
+        act(() => {
+          harness.result.current.reportHandOrigin(handOf(HAND), "deal", {
+            cribRole: CribRole.Dealer,
+            handId: "authentic-scope",
+          });
+        });
+      },
+    },
+    {
+      expected: [0, 0],
+      firstAction: (harness: MutableCardsHarness) => {
+        harness.result.current.reportHandRestored(handOf(HAND), {
+          cribRole: CribRole.Dealer,
+          handId: null,
+        });
+      },
+      name: "restored with no scope to fall back on",
+      thenAlso: () => {
+        // Nothing further: the restore alone is what this row exercises.
+      },
+    },
+  ])(
+    "counts $expected for a hand $name",
+    ({ firstAction, thenAlso, expected }) => {
+      /*
+       * The initial hand is complete, so its own abandonment below is
+       * excused before either hand-origin call this test cares about runs.
+       */
+      const harness = renderTallyWithMutableCards(handOf(OTHER_HAND, true));
+      completeHandUnder(harness, () => firstAction(harness));
+      thenAlso(harness);
+
+      // Abandoned without a discard.
+      act(() => {
+        harness.result.current.reportHandOrigin(handOf(OTHER_HAND), "deal", {
+          cribRole: CribRole.Dealer,
+          handId: "elsewhere-scope",
+        });
+      });
+
+      expect(decisionsAndSkips()).toStrictEqual(expected);
+    },
+  );
 
   it("records nothing until a discard has been scored", () => {
     const { result } = renderTally(HAND);
