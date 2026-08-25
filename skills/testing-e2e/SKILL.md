@@ -130,11 +130,12 @@ baselines so CI agrees with what was generated locally.
     `CI=true` matters here, not only for parity with `docker:run-e2e-only`:
     without it `playwright.config.ts` sets `forbidOnly` to `false`, so a
     stray `test.only` left in a spec silently runs just that one test and
-    still exits 0 — confirmed by leaving one in place and running both
-    ways, exit 0 either way, but only the `CI=true` run fails on the `.only`
-    itself. That is worse paired with the advice two paragraphs down to
-    judge a run by its exit code rather than its count: without `CI=true`
-    there is no count to catch it either.
+    still exits 0. Confirmed by leaving one in place and running both ways:
+    without `CI=true` it reports `1 passed`, exit 0; with `CI=true` it
+    fails immediately on the `.only` itself, exit 1. That is worse paired
+    with the advice two paragraphs down to judge a run by its exit code
+    rather than its count: without `CI=true` there is no count to catch it
+    either.
 
     That exits 0 with all 167 tests passing; comparing the pixels instead
     exits 1, with 29 of them failing on screenshot diffs and 138 passing.
