@@ -413,6 +413,24 @@ be inferred from repository changes.
   Setting only the consent key produces a browser that answered an earlier
   policy, which re-opens the banner — every screenshot baseline would shift
   and the fade-timer race the helper exists to avoid would come back.
+- **A consent banner cannot be verified in production from a browser that
+  has opened a PR preview.** Every stored consent key is scoped by origin
+  alone, and a preview shares production's origin — same host, different
+  path — so answering a policy on a preview records that answer for
+  production too. On 2026-08-25 the decision-quality update banner appeared
+  nowhere across three of Mark's clients minutes after it deployed. Nothing
+  was wrong: each had opened #738's preview, which is stacked on #732 and so
+  already carried `PRIVACY_POLICY_VERSION` `2026-08-22`, and
+  `analyticsPolicyAnswered` read exactly that. Real users, who touch no
+  preview, hold no such key and are asked correctly. Check the key before
+  believing the banner is broken, and clear only it —
+  `localStorage.removeItem("analyticsPolicyAnswered")` — to restore the
+  returning-user state without discarding the analytics consent underneath
+  it. An installed PWA needs its bundle checked as well, by reading the
+  policy's own date on screen, since a stale cache presents identically.
+  Whether these keys _should_ be deployment-scoped the way `discardTally` is
+  remains open: preview and production report to one GA property, so shared
+  consent is arguably correct and only the test procedure needs the caveat.
 - The e2e build gets a test measurement ID from `playwright.config.ts`'s
   `webServer.env`, and `tests-e2e/blockGoogleAnalytics.ts` aborts every
   request to the Google hosts. Both halves are load-bearing. Without an ID
