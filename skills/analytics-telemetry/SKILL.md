@@ -271,11 +271,16 @@ be inferred from repository changes.
   one depends on the caller's ordering, which this module deliberately does
   not assume — it takes the best score with `Math.max` rather than trusting
   position — though the trainer does pass them in net-score order, so there
-  it would be the top-ranked option. The rule to carry: where a partial
-  state can satisfy a subset test, prefer the direction that demands
-  positive evidence of the choice over the one satisfied by an absence of
-  evidence against it. It is a shared module because #19/#24 must agree with
-  analytics about what a decision cost.
+  it would be the top-ranked option. The rule to carry, and the condition
+  that carries it: this direction fails closed only because every candidate
+  discard is exactly two cards and an incomplete selection holds fewer, so a
+  complete candidate cannot be a subset of an incomplete state. Mix in
+  one-card candidates and it matches one option at a single selection, where
+  the uniform set matched none. So prefer the direction demanding positive
+  evidence of the choice where candidates are equal-sized and every
+  incomplete state is strictly smaller than one, and test completeness
+  explicitly where they are not. It is a shared module because #19/#24 must
+  agree with analytics about what a decision cost.
 - The hook's latest-value ref is synced in a **layout** effect, not a
   passive one. Its reader that matters is a child's passive effect —
   `ScoredPossibleKeepDiscards` reports itself rendered from one — and child

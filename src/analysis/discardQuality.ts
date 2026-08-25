@@ -50,8 +50,10 @@ export const getDiscardQuality = (
    * chose. Which one that is depends on the caller's ordering, which this
    * function does not assume — see the Math.max below — though the trainer
    * does pass them in net-score order, making it the top-ranked one there.
-   * This test needs two specific cards actually not kept, so it matches none
-   * and yields the null below.
+   * This test needs two specific cards actually not kept, which an incomplete
+   * selection cannot supply because it holds fewer than two, so it matches
+   * none and yields the null below. That cardinality is what makes the
+   * direction safe, not the direction itself.
    */
   const chosen = scoredKeepDiscards.find((scoredKeepDiscard) =>
     scoredKeepDiscard.discard.every((card) => !card.kept),
