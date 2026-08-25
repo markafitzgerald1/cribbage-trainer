@@ -164,13 +164,18 @@ own handling and that is where it lives.
   `is_resolved`/`is_outdated` metadata. The project board has no substitute
   there — `gh project item-list` fails outright.
 - Commit signing works here (`gpg.format=ssh`, with the key supplied through
-  an agent), so do not pass `--no-gpg-sign`: sign intermediate commits,
-  because this session's stop-hook check rejects unsigned ones. The bypass
-  rule in `AGENTS.md` assumes a sandbox where no signing key is available
-  and does not apply. `git log` still reports `signed: N` afterwards because
+  an agent) — `git log` still reports `signed: N` because
   `gpg.ssh.allowedSignersFile` is unset locally; that is a local
   verification gap, not an unsigned commit, so confirm with
-  `git cat-file commit HEAD | grep gpgsig` rather than trusting `%G?`.
+  `git cat-file commit HEAD | grep gpgsig` rather than trusting `%G?`. This
+  sits in real tension with `AGENTS.md`'s Husky/hooks rule that autonomous
+  agents **MUST** bypass signing with `--no-gpg-sign` on intermediate
+  commits: this session's stop-hook check has rejected an unsigned commit
+  outright, on this exact branch, so the two instructions cannot both be
+  followed in one push here. Neither instruction wins by default: surface
+  the conflict to a human rather than silently picking a side, the way an
+  earlier version of this bullet did by inventing an unstated exception to
+  the `AGENTS.md` rule.
 - Foreground commands are capped at 600s, which the ~3 minute Docker build
   fits but not by much; commands started in the background survive across
   turns, so run the gate that way and poll its log.
