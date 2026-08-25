@@ -30,15 +30,18 @@ guidance only one tool can use.
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use; hash -r`
   (`hash -r` is required because zsh caches the old `node` path).
 - `.husky/pre-commit` runs the full `npm run docker:build-and-test-all` gate
-  synchronously on every commit — several minutes end to end. The Bash tool's
-  default 2-minute timeout is long enough for a hook that fails early (a lint
-  or coverage-threshold error partway through the Dockerfile) but not for one
-  that runs to completion, so a `git commit` that hits the timeout (exit 143,
-  "Command timed out") has not necessarily failed — it may still be running
-  server-side. Check `git log`/`git status` before concluding a timed-out
-  commit was rejected, and issue any `git commit` in this repo with
-  `run_in_background: true` rather than trusting a fixed timeout to cover a
-  passing run.
+  synchronously on every commit — several minutes end to end on a passing
+  run. The Bash tool's default 2-minute timeout is long enough for a hook
+  that fails early (a lint or coverage-threshold error partway through the
+  Dockerfile) but not for one that runs to completion. When the timeout
+  fires it sends SIGTERM to that foreground `git commit`, and because git is
+  synchronously waiting on the hook, the commit does not land — it is dead,
+  not merely slow, and `git log`/`git status` afterward will confirm nothing
+  changed. Issue every `git commit` in this repo with
+  `run_in_background: true` from the start rather than attempting it in the
+  foreground first: a fast-failing hook still returns within seconds either
+  way, and a passing run needs the extra time a second foreground attempt
+  cannot buy it.
 - Working inside a `.claude/worktrees/<name>` checkout changes what several
   tools see, and each difference has already been mistaken for a real failure:
   - `jest.config.json` ignores `/.claude/`, and the worktree's absolute path
