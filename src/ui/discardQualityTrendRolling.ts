@@ -20,14 +20,14 @@ export function chunkBounds<T>(entries: readonly T[]): readonly [T, T] {
   return [first, last];
 }
 
-export const countRollingSkips = <
+export function countRollingSkips<
   TRecord extends { readonly at: number },
   TSkip extends { readonly at: number },
 >(
   records: readonly TRecord[],
   batchSize: number,
   skipped: readonly TSkip[],
-): number[] => {
+): number[] {
   const bucketCount = Math.ceil(records.length / batchSize);
   const counts = Array.from({ length: bucketCount }, () => 0);
   const sortedSkips = sortByTimestamp(skipped);
@@ -47,4 +47,4 @@ export const countRollingSkips = <
   }
 
   return counts;
-};
+}
