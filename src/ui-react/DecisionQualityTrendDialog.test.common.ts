@@ -1,5 +1,5 @@
+import { MAX_RECORDS, type StoredTally } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
-import { type StoredTally } from "../ui/discardTally";
 
 const TALLY_START = 1_700_000_000_000;
 
@@ -25,9 +25,9 @@ export const dialogTally = (decisionCount: number): StoredTally => ({
 
 export const cappedDialogTally = (): StoredTally => ({
   lifetime: {
-    decisions: 20_001,
+    decisions: MAX_RECORDS + 1,
     expectedPointsLossTotal: 4000,
-    optimalDecisions: 10_000,
+    optimalDecisions: Math.floor(MAX_RECORDS / 2),
     skippedHands: 0,
   },
   records: Array.from({ length: 20 }, (_, index) => ({

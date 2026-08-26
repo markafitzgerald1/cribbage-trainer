@@ -205,7 +205,7 @@ describe("decision quality trend dialog", () => {
   it("displays horizon notice when tally reaches record cap", () => {
     const { getByText } = renderDialog({ tally: cappedTally });
 
-    expect(getByText(/retain up to 20,000 entries/iu)).toBeInTheDocument();
+    expect(getByText(/retain up to 10,000 entries/iu)).toBeInTheDocument();
   });
 
   it("renders cleanly with empty tally", () => {

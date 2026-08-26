@@ -61,7 +61,7 @@ export const AtRecordCap: Story = {
     tally: cappedTally,
   },
   play: async ({ canvasElement }) => {
-    await expectVisible(canvasElement, /retain up to 20,000 entries/iu);
+    await expectVisible(canvasElement, /retain up to 10,000 entries/iu);
   },
 };
 

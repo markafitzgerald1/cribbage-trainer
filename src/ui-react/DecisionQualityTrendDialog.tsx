@@ -8,7 +8,11 @@ import {
   QUARTER_POINT,
   computeDiscardQualityTrend,
 } from "../ui/discardQualityTrend";
-import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
+import {
+  MAX_RECORDS,
+  type StoredTally,
+  readTallyForDisplay,
+} from "../ui/discardTally";
 import { useCallback, useState } from "react";
 import { DecisionQualityChart } from "./DecisionQualityChart";
 import Modal from "./Modal";
@@ -324,8 +328,9 @@ export function DecisionQualityTrendDialog({
             className={classes.horizonNotice}
             role="status"
           >
-            Decision and skipped-hand history each retain up to 20,000 entries.
-            This view may not include earlier play.
+            Decision and skipped-hand history each retain up to{" "}
+            {MAX_RECORDS.toLocaleString("en-US")} entries. This view may not
+            include earlier play.
           </div>
         ) : null}
 
