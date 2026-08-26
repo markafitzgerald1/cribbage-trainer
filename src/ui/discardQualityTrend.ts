@@ -17,6 +17,7 @@ import {
 } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 
+export { MAX_RECENT_DECISIONS } from "./discardQualityTrendRolling";
 export type { DiscardDecisionPoint } from "./discardQualityTrendRolling";
 export type TrendGranularity =
   "rolling20" | "rolling50" | "day" | "week" | "month";

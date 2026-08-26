@@ -3,6 +3,7 @@ import {
   type CribRoleFilter,
   type DiscardPeriodBucket,
   type DiscardTrendGranularity,
+  MAX_RECENT_DECISIONS,
   computeDiscardQualityTrend,
 } from "../ui/discardQualityTrend";
 import {
@@ -249,6 +250,8 @@ export function DecisionQualityTrendDialog({
         )}%`
       : "—";
 
+  const isRolling = granularity === "rolling20" || granularity === "rolling50";
+
   return (
     <Modal
       onClose={onClose}
@@ -294,6 +297,13 @@ export function DecisionQualityTrendDialog({
           signal.
         </p>
 
+        {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (
+          <p className={classes.methodology}>
+            The rolling chart displays the most recent {MAX_RECENT_DECISIONS}{" "}
+            decisions with their trailing moving average.
+          </p>
+        ) : null}
+
         {roleFilter === "all" ? null : (
           <p className={classes.methodology}>
             Skipped hands are not assigned a crib role, so they are excluded
@@ -312,6 +322,7 @@ export function DecisionQualityTrendDialog({
           buckets={trend.buckets}
           decisionPoints={trend.decisionPoints}
           granularity={granularity}
+          totalDecisions={totalDecisions}
         />
 
         {renderBreakdownTable(trend.buckets)}

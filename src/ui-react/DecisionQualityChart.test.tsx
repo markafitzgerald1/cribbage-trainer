@@ -375,4 +375,22 @@ describe("decision quality chart rolling mode and points", () => {
     expect(xLabels[0]?.textContent).toBe("R#1");
     expect(xLabels[1]?.textContent).toBe("R#2");
   });
+
+  it("describes capped recent horizon when totalDecisions exceeds points length", () => {
+    const points = Array.from({ length: 100 }, (_, index) =>
+      makeDecisionPoint(index + 26, 0.25, 0.25),
+    );
+    const { container } = render(
+      <DecisionQualityChart
+        buckets={[makeBucket("b1", 0.25)]}
+        decisionPoints={points}
+        granularity="rolling20"
+        totalDecisions={125}
+      />,
+    );
+
+    expect(container.querySelector("desc")).toHaveTextContent(
+      "Trend chart with the most recent 100 of 125 decisions (20-decision rolling average). Latest average expected loss is 0.25 points.",
+    );
+  });
 });

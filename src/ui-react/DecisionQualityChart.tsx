@@ -41,6 +41,7 @@ export interface DecisionQualityChartProps {
   readonly buckets: readonly DiscardPeriodBucket[];
   readonly decisionPoints?: readonly DiscardDecisionPoint[];
   readonly granularity: DiscardTrendGranularity;
+  readonly totalDecisions?: number | null;
 }
 
 const renderTicks = (ticks: readonly ChartTick[]): React.JSX.Element[] =>
@@ -184,6 +185,7 @@ export function DecisionQualityChart({
   buckets,
   decisionPoints = EMPTY_DECISION_POINTS,
   granularity,
+  totalDecisions,
 }: DecisionQualityChartProps): React.JSX.Element {
   const chartId = useId();
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
@@ -239,8 +241,12 @@ export function DecisionQualityChart({
     decisionPoints.length,
     granularity,
   );
+  const decisionCountText =
+    typeof totalDecisions === "number" && totalDecisions > decisionPoints.length
+      ? `the most recent ${decisionPoints.length} of ${totalDecisions}`
+      : `${decisionPoints.length}`;
   const chartDesc = hasDecisionPoints
-    ? `Trend chart with ${decisionPoints.length} decisions (${rollingWindowLabel}). Latest average expected loss is ${latestLoss} points.`
+    ? `Trend chart with ${decisionCountText} decisions (${rollingWindowLabel}). Latest average expected loss is ${latestLoss} points.`
     : `Trend chart with ${buckets.length} periods. ${calendarDesc}`;
 
   return (
@@ -278,4 +284,5 @@ export function DecisionQualityChart({
 
 DecisionQualityChart.defaultProps = {
   decisionPoints: EMPTY_DECISION_POINTS,
+  totalDecisions: null,
 };

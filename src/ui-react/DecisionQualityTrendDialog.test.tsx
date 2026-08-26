@@ -6,6 +6,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
+import type { DiscardTrendGranularity } from "../ui/discardQualityTrend";
 import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
 
 const sampleTally = dialogFixtures.dialogTally(25);
@@ -102,7 +103,7 @@ const multiLossTally: Tally.StoredTally = {
 };
 
 interface RenderDialogOptions {
-  readonly initialGranularity?: "day";
+  readonly initialGranularity?: DiscardTrendGranularity;
   readonly onClose?: () => void;
   readonly show?: boolean;
   readonly tally?: Tally.StoredTally | null;
@@ -244,5 +245,18 @@ describe("decision quality trend dialog", () => {
     expect(getByText("0.00")).toHaveClass(classes.lossPillOptimal);
     expect(getByText("0.15")).toHaveClass(classes.lossPill);
     expect(getByText("0.15")).not.toHaveClass(classes.lossPillOptimal);
+  });
+
+  it("renders rolling chart horizon disclosure when decisions exceed 100", () => {
+    const { getByText } = renderDialog({
+      initialGranularity: "rolling20",
+      tally: dialogFixtures.dialogTally(120),
+    });
+
+    expect(
+      getByText(
+        "The rolling chart displays the most recent 100 decisions with their trailing moving average.",
+      ),
+    ).toBeInTheDocument();
   });
 });
