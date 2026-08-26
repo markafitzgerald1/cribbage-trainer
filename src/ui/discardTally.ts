@@ -155,10 +155,22 @@ interface MaybeDecisionRecord {
   readonly isPractice?: unknown;
 }
 
+interface StoredDecisionRecord {
+  readonly at: number;
+  readonly cribRole: CribRole;
+  readonly discardKey?: string | null;
+  readonly expectedPointsLoss: number;
+  readonly handKey: string;
+  readonly isOptimal: boolean;
+  readonly isPractice: boolean;
+}
+
 const isObject = (value: unknown): value is object =>
   typeof value === "object" && value !== null;
 
-const isDecisionRecord = (value: unknown): value is DiscardDecisionRecord => {
+const isStoredDecisionRecord = (
+  value: unknown,
+): value is StoredDecisionRecord => {
   if (!isObject(value)) {
     return false;
   }
@@ -249,7 +261,7 @@ const readStoredTally = (): StoredTally | null => {
   return {
     lifetime: parseLifetime(candidate.lifetime),
     records: Array.isArray(records)
-      ? records.filter(isDecisionRecord).map((record) => ({
+      ? records.filter(isStoredDecisionRecord).map((record) => ({
           ...record,
           // Absent in a record written before version 3, permanently unrecoverable.
           discardKey:
