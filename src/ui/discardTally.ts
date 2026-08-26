@@ -20,11 +20,12 @@ const CURRENT_VERSION = 2;
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
  * counters below. They cannot grow without limit either: this shares an origin
- * quota with everything else the app stores. At roughly eighty bytes each,
- * twenty thousand records is ~1.6MB, providing about a decade of history within
- * standard browser quotas at zero operational cost.
+ * quota with everything else the app stores. At roughly 135 serialized characters
+ * each, ten thousand records occupies ~1.35MB (well below standard 5MB browser
+ * quotas), providing roughly five years of active play history within storage
+ * budgets at zero operational cost.
  */
-export const MAX_RECORDS = 20_000;
+export const MAX_RECORDS = 10_000;
 
 export interface DiscardDecisionRecord {
   readonly at: number;
