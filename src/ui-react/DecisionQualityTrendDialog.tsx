@@ -5,9 +5,9 @@ import {
   type DiscardTrendGranularity,
   computeDiscardQualityTrend,
 } from "../ui/discardQualityTrend";
-import { DecisionQualityChart, getLossColor } from "./DecisionQualityChart";
 import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
 import { useCallback, useState } from "react";
+import { DecisionQualityChart } from "./DecisionQualityChart";
 import Modal from "./Modal";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
@@ -42,6 +42,38 @@ const ROLE_OPTIONS: {
 const PER_CENT = 100;
 const DECIMAL_PLACES = 2;
 const PERCENT_DECIMAL_PLACES = 1;
+const LOSS_TIER_QUARTER = 0.25;
+const LOSS_TIER_HALF = 0.5;
+const LOSS_TIER_ONE = 1.0;
+
+const formatSkipRate = (decisions: number, skipped: number): string => {
+  const handsFaced = decisions + skipped;
+  return handsFaced === 0
+    ? "—"
+    : `${((skipped / handsFaced) * PER_CENT).toFixed(PERCENT_DECIMAL_PLACES)}%`;
+};
+
+const formatSkippedHands = (decisions: number, skipped: number): string =>
+  `${skipped} (${formatSkipRate(decisions, skipped)})`;
+
+const getLossPillClass = (loss: number | null): string => {
+  if (loss === null) {
+    return classes.lossPillNone;
+  }
+  if (loss <= 0) {
+    return classes.lossPillOptimal;
+  }
+  if (loss <= LOSS_TIER_QUARTER) {
+    return classes.lossPillMinor;
+  }
+  if (loss <= LOSS_TIER_HALF) {
+    return classes.lossPillInside;
+  }
+  if (loss <= LOSS_TIER_ONE) {
+    return classes.lossPillOpen;
+  }
+  return classes.lossPillBlunder;
+};
 
 function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
   const avgLoss =
@@ -54,7 +86,6 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
           PERCENT_DECIMAL_PLACES,
         )}%`
       : "—";
-  const lossBackground = getLossColor(bucket.meanExpectedPointsLoss);
 
   return (
     <tr key={bucket.key}>
@@ -62,14 +93,13 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
       <td>{bucket.decisions}</td>
       <td>
         <span
-          className={classes.lossPill}
-          style={{ backgroundColor: lossBackground }}
+          className={`${classes.lossPill} ${getLossPillClass(bucket.meanExpectedPointsLoss)}`}
         >
           {avgLoss}
         </span>
       </td>
       <td>{optimalPct}</td>
-      <td>{bucket.skippedHands}</td>
+      <td>{formatSkippedHands(bucket.decisions, bucket.skippedHands)}</td>
       <td>
         <div className={classes.severityCounts}>
           <span
@@ -120,7 +150,7 @@ function renderBreakdownTable(
             <th>Decisions</th>
             <th>Avg loss</th>
             <th>Optimal</th>
-            <th>Skipped</th>
+            <th>Skipped (rate)</th>
             <th>Severity distribution</th>
           </tr>
         </thead>
@@ -134,7 +164,7 @@ function renderSummaryCards(options: {
   readonly avgLoss: string;
   readonly decisions: number;
   readonly optimalRate: string;
-  readonly skipped: number;
+  readonly skipped: number | string;
 }): React.JSX.Element {
   const metrics: { readonly label: string; readonly value: number | string }[] =
     [
@@ -177,18 +207,28 @@ function renderFilterGroup<T extends string>({
   return (
     <fieldset className={classes.filterGroup}>
       <legend>{legendText}</legend>
-      {options.map((option) => (
-        <label key={option.value}>
-          <input
-            checked={currentValue === option.value}
-            name={groupName}
-            onChange={onChange}
-            type="radio"
-            value={option.value}
-          />
-          <span className={classes.option}>{option.label}</span>
-        </label>
-      ))}
+      {options.map((option) => {
+        const id = `${groupName}-${option.value}`;
+        return (
+          <span key={option.value}>
+            <input
+              checked={currentValue === option.value}
+              className={classes.input}
+              id={id}
+              name={groupName}
+              onChange={onChange}
+              type="radio"
+              value={option.value}
+            />
+            <label
+              className={classes.option}
+              htmlFor={id}
+            >
+              {option.label}
+            </label>
+          </span>
+        );
+      })}
     </fieldset>
   );
 }
@@ -291,16 +331,30 @@ export function DecisionQualityTrendDialog({
             className={classes.horizonNotice}
             role="status"
           >
-            Storage is capped at the latest 20,000 recorded decisions. Earlier
-            history has rolled off.
+            Decision and skipped-hand history each retain up to 20,000 entries.
+            This view may not include earlier play.
           </div>
         ) : null}
+
+        <p className={classes.methodology}>
+          Average loss is the expected points left on the table by your first
+          discard, so lower is better. Rolling batches smooth small-sample
+          swings; use each calendar period&apos;s decision count to judge its
+          signal.
+        </p>
+
+        {roleFilter === "all" ? null : (
+          <p className={classes.methodology}>
+            Skipped hands are not assigned a crib role, so they are excluded
+            from this filtered view.
+          </p>
+        )}
 
         {renderSummaryCards({
           avgLoss: overallAvgLoss,
           decisions: totalDecisions,
           optimalRate: overallOptimalRate,
-          skipped: trend.totalSkippedHands,
+          skipped: formatSkippedHands(totalDecisions, trend.totalSkippedHands),
         })}
 
         <DecisionQualityChart

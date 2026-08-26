@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import * as classes from "./DecisionQualityTrendDialog.module.css";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
@@ -114,6 +115,21 @@ describe("decision quality trend dialog", () => {
     expect(getByRole("radio", { name: "All" })).toBeChecked();
   });
 
+  it("explains the metric and shows the skipped-hand rate", () => {
+    const { getByText } = render(
+      <DecisionQualityTrendDialog
+        onClose={jest.fn()}
+        show
+        tally={sampleTally}
+      />,
+    );
+
+    expect(
+      getByText(/Average loss is the expected points left on the table/iu),
+    ).toBeInTheDocument();
+    expect(getByText("1 (4.8%)")).toBeInTheDocument();
+  });
+
   it("switches granularity when another radio is selected", () => {
     const { getByRole } = render(
       <DecisionQualityTrendDialog
@@ -198,9 +214,7 @@ describe("decision quality trend dialog", () => {
       />,
     );
 
-    expect(
-      getByText(/Storage is capped at the latest 20,000/iu),
-    ).toBeInTheDocument();
+    expect(getByText(/retain up to 20,000 entries/iu)).toBeInTheDocument();
   });
 
   it("renders cleanly with empty tally", () => {
@@ -241,6 +255,77 @@ describe("decision quality trend dialog", () => {
     expect(
       getByRole("heading", { name: "Decision quality over time" }),
     ).toBeInTheDocument();
+  });
+
+  it("renders distinct loss pill classes across all loss severity tiers", () => {
+    const multiTierTally: StoredTally = {
+      lifetime: {
+        decisions: 5,
+        expectedPointsLossTotal: 2.8,
+        optimalDecisions: 1,
+        skippedHands: 0,
+      },
+      records: [
+        {
+          at: 1700000000000,
+          cribRole: CribRole.Dealer,
+          expectedPointsLoss: 0,
+          handKey: "h-opt",
+          isOptimal: true,
+          isPractice: false,
+        },
+        {
+          at: 1700000000000 + 86400000,
+          cribRole: CribRole.Dealer,
+          expectedPointsLoss: 0.15,
+          handKey: "h-minor",
+          isOptimal: false,
+          isPractice: false,
+        },
+        {
+          at: 1700000000000 + 86400000 * 2,
+          cribRole: CribRole.Dealer,
+          expectedPointsLoss: 0.35,
+          handKey: "h-inside",
+          isOptimal: false,
+          isPractice: false,
+        },
+        {
+          at: 1700000000000 + 86400000 * 3,
+          cribRole: CribRole.Dealer,
+          expectedPointsLoss: 0.75,
+          handKey: "h-open",
+          isOptimal: false,
+          isPractice: false,
+        },
+        {
+          at: 1700000000000 + 86400000 * 4,
+          cribRole: CribRole.Dealer,
+          expectedPointsLoss: 1.55,
+          handKey: "h-blunder",
+          isOptimal: false,
+          isPractice: false,
+        },
+      ],
+      revision: 1,
+      skipped: [],
+      version: 1,
+    };
+
+    const { getByText } = render(
+      <DecisionQualityTrendDialog
+        initialGranularity="day"
+        onClose={jest.fn()}
+        show
+        tally={multiTierTally}
+      />,
+    );
+
+    expect(getByText("0.00")).toHaveClass(classes.lossPillOptimal);
+    expect(getByText("0.15")).toHaveClass(classes.lossPillMinor);
+    expect(getByText("0.35")).toHaveClass(classes.lossPillInside);
+    expect(getByText("0.75")).toHaveClass(classes.lossPillOpen);
+    expect(getByText("1.55")).toHaveClass(classes.lossPillBlunder);
   });
 });
 /* jscpd:ignore-end */

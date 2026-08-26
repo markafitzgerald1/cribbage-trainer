@@ -306,7 +306,30 @@ describe("discard quality trend computation", () => {
     expect(dayBucket?.skippedHands).toBe(1);
   });
 
-  it("identifies when storage reaches record cap", () => {
+  /* jscpd:ignore-start */
+  it("assigns leading, boundary, and trailing skips to rolling buckets", () => {
+    const records = Array.from({ length: 21 }, (_, index) =>
+      testDecisionOf({
+        at: 1000 + index * 1000,
+        handKey: `decision-${index}`,
+      }),
+    );
+    const skipped = [
+      { at: 500 },
+      { at: 20_000 },
+      { at: 21_000 },
+      { at: 30_000 },
+    ];
+
+    const trend = runTrend(records, { granularity: "rolling20" }, skipped);
+
+    expect(trend.buckets).toHaveLength(2);
+    expect(trend.buckets[0]?.skippedHands).toBe(2);
+    expect(trend.buckets[1]?.skippedHands).toBe(2);
+    expect(trend.totalSkippedHands).toBe(4);
+  });
+
+  it("identifies when storage reaches record cap or has truncated lifetime history", () => {
     const fullRecords = Array.from({ length: MAX_RECORDS }, (_, index) =>
       testDecisionOf({
         at: TEST_AT + index,
@@ -321,7 +344,58 @@ describe("discard quality trend computation", () => {
     });
 
     expect(trend.isAtRecordCap).toBe(true);
+
+    const tallyWithRolledOffDecisions = {
+      lifetime: {
+        decisions: 20005,
+        expectedPointsLossTotal: 4000,
+        optimalDecisions: 10000,
+        skippedHands: 0,
+      },
+      records: [
+        testDecisionOf({
+          at: TEST_AT,
+          expectedPointsLoss: 0.2,
+          handKey: "d1",
+        }),
+      ],
+      revision: 1,
+      skipped: [],
+      version: 1,
+    };
+
+    expect(
+      computeDiscardQualityTrend(tallyWithRolledOffDecisions, {
+        granularity: "rolling20",
+      }).isAtRecordCap,
+    ).toBe(true);
+
+    const tallyWithRolledOffSkips = {
+      lifetime: {
+        decisions: 1,
+        expectedPointsLossTotal: 0,
+        optimalDecisions: 1,
+        skippedHands: 20005,
+      },
+      records: [
+        testDecisionOf({
+          at: TEST_AT,
+          expectedPointsLoss: 0,
+          handKey: "d1",
+        }),
+      ],
+      revision: 1,
+      skipped: [],
+      version: 1,
+    };
+
+    expect(
+      computeDiscardQualityTrend(tallyWithRolledOffSkips, {
+        granularity: "rolling20",
+      }).isAtRecordCap,
+    ).toBe(true);
   });
+  /* jscpd:ignore-end */
 
   it("reads trend directly from storage helper", () => {
     clearDiscardTally();

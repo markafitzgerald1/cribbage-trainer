@@ -341,6 +341,32 @@ interface RollingBucketsArgs extends BaseBucketsArgs {
   readonly granularity: "rolling20" | "rolling50";
 }
 
+const countRollingSkips = (
+  records: readonly DiscardDecisionRecord[],
+  batchSize: number,
+  skipped: readonly SkippedHand[],
+): number[] => {
+  const bucketCount = Math.ceil(records.length / batchSize);
+  const counts = Array.from({ length: bucketCount }, () => 0);
+  const sortedSkips = [...skipped].sort((one, other) => one.at - other.at);
+  let bucketIndex = 0;
+
+  for (const skip of sortedSkips) {
+    while (bucketIndex + 1 < bucketCount) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const nextBoundary = records[(bucketIndex + 1) * batchSize]!;
+      if (skip.at < nextBoundary.at) {
+        break;
+      }
+      bucketIndex += 1;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    counts.splice(bucketIndex, 1, counts.at(bucketIndex)! + 1);
+  }
+
+  return counts;
+};
+
 const buildRollingBuckets = ({
   granularity,
   records,
@@ -353,6 +379,8 @@ const buildRollingBuckets = ({
   const batchSize =
     granularity === "rolling20" ? ROLLING_TWENTY : ROLLING_FIFTY;
   const buckets: DiscardPeriodBucket[] = [];
+  const skippedCounts =
+    roleFilter === "all" ? countRollingSkips(records, batchSize, skipped) : [];
 
   for (let index = 0; index < records.length; index += batchSize) {
     const chunk = records.slice(index, index + batchSize);
@@ -364,11 +392,8 @@ const buildRollingBuckets = ({
     const endDecision = index + chunk.length;
     const startTime = first.at;
     const endTime = last.at;
-    const skippedHands =
-      roleFilter === "all"
-        ? skipped.filter((skip) => skip.at >= startTime && skip.at <= endTime)
-            .length
-        : 0;
+    const batchIndex = index / batchSize;
+    const skippedHands = skippedCounts.at(batchIndex) ?? 0;
 
     buckets.push({
       decisions: chunk.length,
@@ -432,7 +457,11 @@ export const computeDiscardQualityTrend = (
   return {
     buckets,
     earliestTimestamp: firstRecord ? firstRecord.at : null,
-    isAtRecordCap: tally.records.length >= MAX_RECORDS,
+    isAtRecordCap:
+      tally.lifetime.decisions > tally.records.length ||
+      tally.lifetime.skippedHands > tally.skipped.length ||
+      tally.records.length >= MAX_RECORDS ||
+      tally.skipped.length >= MAX_RECORDS,
     latestTimestamp: lastRecord ? lastRecord.at : null,
     totalAuthenticDecisions: authenticRecords.length,
     totalSkippedHands: roleFilter === "all" ? tally.skipped.length : 0,

@@ -94,7 +94,7 @@ export const AtRecordCap: Story = {
     const canvas = within(canvasElement);
 
     await expect(
-      canvas.getByText(/Storage is capped at the latest 20,000/iu),
+      canvas.getByText(/retain up to 20,000 entries/iu),
     ).toBeVisible();
   },
 };

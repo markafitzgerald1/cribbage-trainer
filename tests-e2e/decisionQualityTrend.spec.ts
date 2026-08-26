@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { type Page, expect, test } from "@playwright/test";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { constantHandQuery } from "./layoutMeasurements";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
@@ -19,6 +19,15 @@ const SEED_DECISIONS = 25;
 const SEED_OPTIMAL = 9;
 const SEED_TOTAL_LOSS = 10.0;
 const SEED_SKIPPED = 2;
+
+const selectTrendRadio = async (page: Page, name: string) => {
+  const dialog = page
+    .getByRole("heading", { name: "Decision quality over time" })
+    .locator("..");
+
+  await dialog.getByText(name, { exact: true }).click();
+  await expect(dialog.getByRole("radio", { exact: true, name })).toBeChecked();
+};
 
 const SEED_TALLY = {
   lifetime: {
@@ -109,20 +118,17 @@ test.describe("decision quality over time trend dialog", () => {
     await page.getByRole("button", { name: "Quality trend" }).click();
 
     // Switch to Day
-    await page.getByRole("radio", { name: "Day" }).click();
-    await expect(page.getByRole("radio", { name: "Day" })).toBeChecked();
+    await selectTrendRadio(page, "Day");
 
     // Switch to Week
-    await page.getByRole("radio", { name: "Week" }).click();
-    await expect(page.getByRole("radio", { name: "Week" })).toBeChecked();
+    await selectTrendRadio(page, "Week");
 
     // Switch to Month
-    await page.getByRole("radio", { name: "Month" }).click();
-    await expect(page.getByRole("radio", { name: "Month" })).toBeChecked();
+    await selectTrendRadio(page, "Month");
     await expect(page.getByRole("cell", { name: "Aug 2026" })).toBeVisible();
 
     // Switch to Rolling 50
-    await page.getByRole("radio", { name: "Rolling 50" }).click();
+    await selectTrendRadio(page, "Rolling 50");
     await expect(
       page.getByRole("cell", { exact: true, name: "Decisions 1–25" }),
     ).toBeVisible();
@@ -132,15 +138,13 @@ test.describe("decision quality over time trend dialog", () => {
     await page.getByRole("button", { name: "Quality trend" }).click();
 
     // Filter to Dealer
-    await page.getByRole("radio", { name: "Dealer" }).click();
-    await expect(page.getByRole("radio", { name: "Dealer" })).toBeChecked();
+    await selectTrendRadio(page, "Dealer");
     await expect(
       page.getByRole("cell", { exact: true, name: "13" }),
     ).toBeVisible();
 
     // Filter to Pone
-    await page.getByRole("radio", { name: "Pone" }).click();
-    await expect(page.getByRole("radio", { name: "Pone" })).toBeChecked();
+    await selectTrendRadio(page, "Pone");
     await expect(
       page.getByRole("cell", { exact: true, name: "12" }),
     ).toBeVisible();
