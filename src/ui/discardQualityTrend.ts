@@ -339,6 +339,7 @@ const buildCalendarBuckets = ({
 
 interface RollingBucketsArgs extends BaseBucketsArgs {
   readonly granularity: "rolling20" | "rolling50";
+  readonly hasTruncatedDecisionHistory: boolean;
 }
 
 const countRollingSkips = (
@@ -369,6 +370,7 @@ const countRollingSkips = (
 
 const buildRollingBuckets = ({
   granularity,
+  hasTruncatedDecisionHistory,
   records,
   roleFilter,
   skipped,
@@ -394,12 +396,15 @@ const buildRollingBuckets = ({
     const endTime = last.at;
     const batchIndex = index / batchSize;
     const skippedHands = skippedCounts.at(batchIndex) ?? 0;
+    const labelPrefix = hasTruncatedDecisionHistory
+      ? "Retained decisions"
+      : "Decisions";
 
     buckets.push({
       decisions: chunk.length,
       endTime,
       key: `${startDecision}-${endDecision}`,
-      label: `Decisions ${startDecision}–${endDecision}`,
+      label: `${labelPrefix} ${startDecision}–${endDecision}`,
       meanExpectedPointsLoss: meanLossOf(chunk),
       optimalDecisions: chunk.filter((record) => record.isOptimal).length,
       severity: countSeverity(chunk),
@@ -434,11 +439,14 @@ export const computeDiscardQualityTrend = (
   const authenticRecords = tally.records.filter(
     (record) => !record.isPractice && matchesRole(record, roleFilter),
   );
+  const hasTruncatedDecisionHistory =
+    tally.lifetime.decisions > tally.records.length;
 
   const buckets =
     granularity === "rolling20" || granularity === "rolling50"
       ? buildRollingBuckets({
           granularity,
+          hasTruncatedDecisionHistory,
           records: authenticRecords,
           roleFilter,
           skipped: tally.skipped,
@@ -458,7 +466,7 @@ export const computeDiscardQualityTrend = (
     buckets,
     earliestTimestamp: firstRecord ? firstRecord.at : null,
     isAtRecordCap:
-      tally.lifetime.decisions > tally.records.length ||
+      hasTruncatedDecisionHistory ||
       tally.lifetime.skippedHands > tally.skipped.length ||
       tally.records.length >= MAX_RECORDS ||
       tally.skipped.length >= MAX_RECORDS,

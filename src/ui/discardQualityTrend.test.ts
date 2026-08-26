@@ -112,6 +112,25 @@ describe("discard quality trend computation", () => {
     expect(trend.buckets[1]?.decisions).toBe(5);
   });
 
+  it("labels rolling batches as retained history after decision truncation", () => {
+    const records = Array.from({ length: 20 }, (_, index) =>
+      testDecisionOf({
+        at: TEST_AT + index * ONE_HOUR_MS,
+        handKey: `retained-${index}`,
+      }),
+    );
+    const tally = storedTallyOf(records);
+    const trend = computeDiscardQualityTrend(
+      {
+        ...tally,
+        lifetime: { ...tally.lifetime, decisions: MAX_RECORDS + 1 },
+      },
+      { granularity: "rolling20", now: TEST_AT },
+    );
+
+    expect(trend.buckets[0]?.label).toBe("Retained decisions 1–20");
+  });
+
   it("buckets decisions by calendar day and handles Today / Yesterday labels", () => {
     const today = TEST_AT;
     const yesterday = TEST_AT - ONE_DAY_MS;

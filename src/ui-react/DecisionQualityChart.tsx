@@ -120,18 +120,26 @@ const createChartTicks = (maxLossY: number): ChartTick[] => {
   });
 };
 
-const shouldDisplayXLabel = (index: number, total: number): boolean => {
+const shouldDisplayXLabel = (
+  index: number,
+  total: number,
+  granularity: DiscardTrendGranularity,
+): boolean => {
+  const isEndpointOrMidpoint =
+    index === 0 ||
+    index === Math.floor(total / HALF_DIVISOR) ||
+    index === total - 1;
+
+  if (granularity === "week") {
+    return isEndpointOrMidpoint;
+  }
   if (total <= SMALL_BUCKET_COUNT) {
     return true;
   }
   if (total <= MEDIUM_BUCKET_COUNT) {
     return index % HALF_DIVISOR === 0 || index === total - 1;
   }
-  return (
-    index === 0 ||
-    index === Math.floor(total / HALF_DIVISOR) ||
-    index === total - 1
-  );
+  return isEndpointOrMidpoint;
 };
 
 const formatShortLabel = (
@@ -139,7 +147,9 @@ const formatShortLabel = (
   granularity: DiscardTrendGranularity,
 ): string => {
   if (granularity === "rolling20" || granularity === "rolling50") {
-    return label.replace("Decisions ", "#");
+    return label
+      .replace("Decisions ", "#")
+      .replace("Retained decisions ", "Retained #");
   }
   return label;
 };
@@ -246,7 +256,7 @@ export function DecisionQualityChart({
         ))}
 
         {buckets.map((bucket, index) => {
-          if (!shouldDisplayXLabel(index, buckets.length)) {
+          if (!shouldDisplayXLabel(index, buckets.length, granularity)) {
             return null;
           }
           const xPosition = calculateX(index, buckets.length);

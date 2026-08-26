@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import * as classes from "./DecisionQualityChart.module.css";
 import {
   DecisionQualityChart,
   getLatestLoss,
@@ -103,6 +104,21 @@ describe("decision quality chart", () => {
     );
 
     expect(getByRole("img")).toBeInTheDocument();
+  });
+
+  it("thins six weekly labels to keep the axis readable", () => {
+    const buckets = Array.from({ length: 6 }, (_, index) => ({
+      ...makeBucket(`week-${index}`, 0.25),
+      label: `Aug ${index * 7 + 3}–${index * 7 + 9}, 2026`,
+    }));
+    const { container } = render(
+      <DecisionQualityChart
+        buckets={buckets}
+        granularity="week"
+      />,
+    );
+
+    expect(container.querySelectorAll(`.${classes.xLabel}`)).toHaveLength(3);
   });
 
   it("handles rolling labels format and sparse x-labels for many buckets", () => {
