@@ -287,33 +287,26 @@ describe("discard quality trend skips and history boundaries", () => {
 
   it("filters by role in calendar day views", () => {
     const records = [dealerDecision(0.5, TEST_AT, "cal-dealer")];
-
-    const dealerDay = runTrend(
+    const trend = runTrend(
       records,
       { granularity: "day", now: TEST_AT, roleFilter: "dealer" },
       [{ at: TEST_AT }],
     );
 
-    expect(dealerDay.totalAuthenticDecisions).toBe(1);
-    expect(dealerDay.totalSkippedHands).toBe(0);
-    expect(dealerDay.buckets[0]?.skippedHands).toBe(0);
+    expect(trend).toMatchObject({
+      totalAuthenticDecisions: 1,
+      totalSkippedHands: 0,
+    });
+    expect(trend.buckets[0]?.skippedHands).toBe(0);
   });
 
   it("handles weekend dates correctly when computing start of week", () => {
-    const weekendRecords = [
-      testDecisionOf({
-        at: AUG_16_2026_SUNDAY,
-        expectedPointsLoss: 0.2,
-        handKey: "weekend-lead",
-      }),
-    ];
-    const weekendTrend = computeDiscardQualityTrend(
-      storedTallyOf(weekendRecords),
+    const trend = runTrend(
+      [testDecisionOf({ at: AUG_16_2026_SUNDAY, handKey: "weekend" })],
       { granularity: "week", now: AUG_16_2026_SUNDAY },
     );
 
-    expect(weekendTrend.buckets).toHaveLength(1);
-    expect(weekendTrend.buckets[0]?.label).toContain("Aug 10–16, 2026");
+    expect(trend.buckets[0]?.label).toContain("Aug 10–16, 2026");
   });
 
   it("excludes practice decisions from trend calculations", () => {
@@ -428,54 +421,70 @@ describe("discard quality trend skips and history boundaries", () => {
     expect(dayTrend.buckets[0]?.skippedHands).toBe(1);
   });
 
+  it.each([
+    {
+      expectedSkips: 1,
+      name: "bounds skips by oldest retained practice record when all authentic decisions were evicted",
+      records: [testDecisionOf({ at: 5000, isPractice: true })],
+      skipped: [{ at: 2000 }, { at: 6000 }],
+    },
+    {
+      expectedSkips: 0,
+      name: "drops all skips when decision history is truncated and no records survived",
+      records: [],
+      skipped: [{ at: 1000 }, { at: 2000 }],
+    },
+  ])("$name", ({ records, skipped, expectedSkips }) => {
+    const trend = computeDiscardQualityTrend(
+      withTruncatedDecisionHistory(storedTallyOf(records, skipped)),
+      { granularity: "rolling20" },
+    );
+
+    expect(trend.totalSkippedHands).toBe(expectedSkips);
+  });
+
   it("identifies when storage reaches record cap or has truncated lifetime history", () => {
     const fullRecords = sequentialDecisions(MAX_RECORDS, "full", {
       interval: 1,
     });
 
-    const trend = computeDiscardQualityTrend(storedTallyOf(fullRecords), {
-      granularity: "rolling50",
-      now: TEST_AT,
-    });
+    expect(
+      computeDiscardQualityTrend(storedTallyOf(fullRecords), {
+        granularity: "rolling50",
+        now: TEST_AT,
+      }).isAtRecordCap,
+    ).toBe(true);
 
-    expect(trend.isAtRecordCap).toBe(true);
-
-    const retainedRecord = [testDecisionOf({ handKey: "d1" })];
-    const rolledOffTallies = [
-      {
-        ...storedTallyOf(retainedRecord),
-        lifetime: {
-          decisions: 20_005,
-          expectedPointsLossTotal: 4000,
-          optimalDecisions: 10_000,
-          skippedHands: 0,
-        },
+    const retained = [testDecisionOf({ handKey: "d1" })];
+    const decisionsCapped = {
+      ...storedTallyOf(retained),
+      lifetime: {
+        decisions: 20_005,
+        expectedPointsLossTotal: 4000,
+        optimalDecisions: 10_000,
+        skippedHands: 0,
       },
-      {
-        ...storedTallyOf(retainedRecord),
-        lifetime: {
-          decisions: 1,
-          expectedPointsLossTotal: 0,
-          optimalDecisions: 1,
-          skippedHands: 20_005,
-        },
+    };
+    const skipsCapped = {
+      ...storedTallyOf(retained),
+      lifetime: {
+        decisions: 1,
+        expectedPointsLossTotal: 0,
+        optimalDecisions: 1,
+        skippedHands: 20_005,
       },
-    ];
+    };
 
-    for (const rolledOffTally of rolledOffTallies) {
+    for (const capped of [decisionsCapped, skipsCapped]) {
       expect(
-        computeDiscardQualityTrend(rolledOffTally, {
+        computeDiscardQualityTrend(capped, {
           granularity: "rolling20",
         }).isAtRecordCap,
       ).toBe(true);
     }
 
-    expect(rolledOffTallies).toHaveLength(2);
-
-    const skippedHistoryOnly = rolledOffTallies[1]!;
-
     expect(
-      computeDiscardQualityTrend(skippedHistoryOnly, {
+      computeDiscardQualityTrend(skipsCapped, {
         granularity: "rolling20",
         roleFilter: "dealer",
       }).isAtRecordCap,

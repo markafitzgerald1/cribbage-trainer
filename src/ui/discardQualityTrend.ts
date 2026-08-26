@@ -444,16 +444,22 @@ const buildRollingBuckets = ({
 const matchesRole = (
   record: DiscardDecisionRecord,
   roleFilter: CribRoleFilter,
-): boolean => {
-  switch (roleFilter) {
-    case "dealer":
-      return record.cribRole === CribRole.Dealer;
-    case "pone":
-      return record.cribRole === CribRole.Pone;
-    case "all":
-    default:
-      return true;
+): boolean =>
+  roleFilter === "all" ||
+  (roleFilter === "dealer" && record.cribRole === CribRole.Dealer) ||
+  (roleFilter === "pone" && record.cribRole === CribRole.Pone);
+
+const getRetainedSkips = (
+  tally: StoredTally,
+  hasTruncatedDecisionHistory: boolean,
+): readonly SkippedHand[] => {
+  if (!hasTruncatedDecisionHistory) {
+    return tally.skipped;
   }
+  const [oldestRecord] = tally.records;
+  return oldestRecord
+    ? tally.skipped.filter((skip) => skip.at >= oldestRecord.at)
+    : [];
 };
 
 export const computeDiscardQualityTrend = (
@@ -470,10 +476,7 @@ export const computeDiscardQualityTrend = (
   const [firstRecord] = authenticRecords;
   const hasTruncatedDecisionHistory =
     tally.lifetime.decisions > retainedAuthenticRecordCount;
-  const retainedSkips =
-    hasTruncatedDecisionHistory && firstRecord
-      ? tally.skipped.filter((skip) => skip.at >= firstRecord.at)
-      : tally.skipped;
+  const retainedSkips = getRetainedSkips(tally, hasTruncatedDecisionHistory);
 
   const buckets =
     granularity === "rolling20" || granularity === "rolling50"
