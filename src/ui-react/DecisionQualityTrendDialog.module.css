@@ -1,0 +1,216 @@
+@import url("./vars.css");
+
+.dialog {
+  color: #143b18;
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  gap: 0.9rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  width: min(56rem, 100%);
+}
+
+.title {
+  color: #0b2f10;
+  font-size: 1.8rem;
+  line-height: 1;
+  margin: 0;
+  padding-right: 2rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.filter-group {
+  border: 1.5px solid color-mix(in srgb, green 35%, white);
+  border-radius: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.45rem 0.65rem 0.55rem;
+}
+
+.filter-group legend {
+  color: #1d4f22;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0 0.3rem;
+}
+
+.input {
+  appearance: none;
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  margin: 0;
+  overflow: hidden;
+  position: absolute;
+}
+
+.option {
+  background-color: #e4f4e6;
+  border: 1.5px solid #397a40;
+  border-radius: 6px;
+  color: #143b18;
+  cursor: pointer;
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing),
+    color var(--transition-duration) var(--transition-timing);
+}
+
+.option:hover {
+  background-color: #c8efcd;
+  border-color: #218838;
+}
+
+.input:checked + .option {
+  background-color: #28a745;
+  border-color: #218838;
+  color: #fff;
+}
+
+.input:focus-visible + .option {
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+}
+
+.input:checked + .option:hover {
+  background-color: #218838;
+}
+
+.horizon-notice {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.75rem;
+  text-align: center;
+}
+
+.methodology {
+  color: #315d36;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.summary-cards {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+.summary-card {
+  background-color: #f1f9f2;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.45rem 0.65rem;
+  text-align: center;
+}
+
+.summary-label {
+  color: #155724;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  color: #0b2f10;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.table-wrapper {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  font-family: var(--tabular-nums-font-family);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+}
+
+.table th {
+  background-color: #eaf3ec;
+  color: #245228;
+  font-size: 0.78rem;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid #e1ebe2;
+  padding: 0.4rem 0.5rem;
+  text-align: right;
+}
+
+.table th:first-child,
+.table td:first-child {
+  text-align: left;
+}
+
+.table tr:hover {
+  background-color: #eaf5ec;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f8faf8;
+}
+
+.loss-pill {
+  border-radius: 4px;
+  display: inline-block;
+  font-weight: 700;
+  min-width: 2.8rem;
+  padding: 0.15rem 0.35rem;
+  text-align: center;
+}
+
+.loss-pill-none {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.loss-pill-optimal {
+  background-color: #1b732f;
+  color: #fff;
+}
+
+@media (aspect-ratio < 6 / 5) {
+  .dialog {
+    font-size: 0.95rem;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

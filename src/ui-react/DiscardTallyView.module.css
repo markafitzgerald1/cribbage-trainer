@@ -49,3 +49,32 @@
   opacity: 0.8;
   text-align: right;
 }
+
+.trend-button {
+  background-color: #28a745;
+  border: 1px solid #218838;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85em;
+  font-weight: 700;
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 0.4em;
+  padding: 0.25em 0.55em;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing);
+}
+
+.trend-button:hover {
+  background-color: #34c754;
+  border-color: #34c754;
+}
+
+.trend-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+}

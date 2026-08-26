@@ -1,6 +1,7 @@
 import * as classes from "./DiscardTallyView.module.css";
 import { type DiscardTallySummary, hasTallyToShow } from "../ui/discardTally";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback, useState } from "react";
+import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 
 const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
@@ -51,6 +52,14 @@ const renderMeasure = (
 export function DiscardTallyView({
   summary,
 }: DiscardTallyViewProps): ReactNode {
+  const [showTrend, setShowTrend] = useState(false);
+  const handleOpenTrend = useCallback(() => {
+    setShowTrend(true);
+  }, []);
+  const handleCloseTrend = useCallback(() => {
+    setShowTrend(false);
+  }, []);
+
   /*
    * Nothing is shown until a hand has been either played or walked away from.
    * Skips alone are enough: a player who has only avoided hands is exactly
@@ -114,6 +123,19 @@ export function DiscardTallyView({
               : null,
             countAndShare(summary.skippedHands, faced),
           )}
+      <button
+        className={classes.trendButton}
+        onClick={handleOpenTrend}
+        type="button"
+      >
+        Quality trend
+      </button>
+      {showTrend ? (
+        <DecisionQualityTrendDialog
+          onClose={handleCloseTrend}
+          show={showTrend}
+        />
+      ) : null}
     </div>
   );
 }

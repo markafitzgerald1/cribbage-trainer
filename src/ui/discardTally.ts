@@ -15,16 +15,17 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * would make every earlier tally invisible instead, which is the same as
  * discarding it.
  */
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
  * counters below. They cannot grow without limit either: this shares an origin
- * quota with everything else the app stores. At roughly eighty bytes each the
- * cap is a small fraction of that, and a player who reaches it has a history
- * far longer than any view planned for it.
+ * quota with everything else the app stores. At roughly 135 serialized characters
+ * each, ten thousand records occupies ~1.35MB (well below standard 5MB browser
+ * quotas), providing roughly five years of active play history within storage
+ * budgets at zero operational cost.
  */
-const MAX_RECORDS = 2000;
+export const MAX_RECORDS = 10_000;
 
 export interface DiscardDecisionRecord {
   readonly at: number;
@@ -80,11 +81,11 @@ interface LifetimeTotals {
   readonly skippedHands: number;
 }
 
-interface SkippedHand {
+export interface SkippedHand {
   readonly at: number;
 }
 
-interface StoredTally {
+export interface StoredTally {
   readonly lifetime: LifetimeTotals;
   readonly records: readonly DiscardDecisionRecord[];
   /*
@@ -247,7 +248,7 @@ const readStoredTally = (): StoredTally | null => {
 };
 
 // Calendar days in the reader's own zone, which is what "today" means to them; comparing dates avoids doing arithmetic across a daylight-saving change.
-const isSameLocalDay = (one: number, other: number) =>
+export const isSameLocalDay = (one: number, other: number): boolean =>
   new Date(one).toDateString() === new Date(other).toDateString();
 
 const meanOf = (losses: readonly number[]) =>
@@ -333,7 +334,7 @@ const readTallyOrNull = (): StoredTally | null => {
   }
 };
 
-const readTallyForDisplay = (): StoredTally => {
+export const readTallyForDisplay = (): StoredTally => {
   const persisted = readTallyOrNull();
   return persisted === null ? emptyTally : basisFor(persisted);
 };

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent } from "storybook/test";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { discardTallySummary } from "./discardTally.test.common";
-import { expect } from "storybook/test";
 
 const meta = {
   component: DiscardTallyView,
@@ -79,5 +79,24 @@ export const NothingFacedYet: StoryObj<typeof meta> = {
   },
   play: async ({ canvasElement }) => {
     await expect(canvasElement.textContent).toBe("");
+  },
+};
+
+export const OpenQualityTrend: StoryObj<typeof meta> = {
+  args: {
+    summary: discardTallySummary({
+      decisions: 10,
+      meanExpectedPointsLoss: 0.25,
+      optimalDecisions: 7,
+    }),
+  },
+  play: async ({ canvas }) => {
+    const trendButton = canvas.getByRole("button", { name: "Quality trend" });
+
+    await expect(trendButton).toBeVisible();
+
+    await userEvent.click(trendButton);
+
+    await expect(canvas.getByText("Decision quality over time")).toBeVisible();
   },
 };
