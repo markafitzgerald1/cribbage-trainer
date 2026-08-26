@@ -5,6 +5,7 @@ import {
   DecisionQualityChart,
   getLatestLoss,
   getLossColor,
+  getMinLabelDistance,
 } from "./DecisionQualityChart";
 import type {
   DiscardPeriodBucket,
@@ -109,14 +110,22 @@ describe("decision quality chart", () => {
     expect(points[2]).toHaveAttribute("cx", "495");
   });
 
-  it("handles medium bucket counts (7 to 12) with alternating x-labels", () => {
-    const count = 10;
-    const buckets = Array.from({ length: count }, (_, index) =>
-      makeBucket(`b${index}`, 0.25),
-    );
-    const { getByRole } = renderChart(buckets, "day");
+  it("thins daily labels to prevent overlapping text across consecutive days", () => {
+    const dailyBuckets = Array.from({ length: 10 }, (_, dayOffset) => ({
+      ...makeBucket(`d-${dayOffset}`, 0.25),
+      label: `Aug ${dayOffset + 10}, 2026`,
+      startTime: dayOffset * 86_400_000,
+    }));
 
-    expect(getByRole("img")).toBeInTheDocument();
+    expect(countRenderedXLabels(dailyBuckets, "day")).toBeLessThan(10);
+  });
+
+  it("returns appropriate min label distance per granularity", () => {
+    expect(getMinLabelDistance("week")).toBe(100);
+    expect(getMinLabelDistance("day")).toBe(80);
+    expect(getMinLabelDistance("month")).toBe(75);
+    expect(getMinLabelDistance("rolling20")).toBe(40);
+    expect(getMinLabelDistance("rolling50")).toBe(40);
   });
 
   it("thins six weekly labels to keep the axis readable", () => {

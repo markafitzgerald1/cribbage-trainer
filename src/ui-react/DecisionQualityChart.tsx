@@ -25,6 +25,8 @@ const PLOT_HEIGHT = SVG_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
 const MIN_MAX_LOSS = 1.0;
 const LOSS_STEP = 0.5;
 const MIN_WEEKLY_LABEL_DISTANCE = 100;
+const MIN_DAILY_LABEL_DISTANCE = 80;
+const MIN_MONTHLY_LABEL_DISTANCE = 75;
 const MIN_LABEL_DISTANCE = 40;
 const HALF_DIVISOR = 2;
 const TICK_OFFSET_X = 6;
@@ -216,6 +218,23 @@ const filterSpacedLabels = (
   return chosen;
 };
 
+export const getMinLabelDistance = (
+  granularity: DiscardTrendGranularity,
+): number => {
+  switch (granularity) {
+    case "week":
+      return MIN_WEEKLY_LABEL_DISTANCE;
+    case "day":
+      return MIN_DAILY_LABEL_DISTANCE;
+    case "month":
+      return MIN_MONTHLY_LABEL_DISTANCE;
+    case "rolling20":
+    case "rolling50":
+    default:
+      return MIN_LABEL_DISTANCE;
+  }
+};
+
 const createXAxisLabels = (
   buckets: readonly DiscardPeriodBucket[],
   granularity: DiscardTrendGranularity,
@@ -236,8 +255,7 @@ const createXAxisLabels = (
     ];
   }
 
-  const minDistance =
-    granularity === "week" ? MIN_WEEKLY_LABEL_DISTANCE : MIN_LABEL_DISTANCE;
+  const minDistance = getMinLabelDistance(granularity);
 
   const positioned = buckets.map((bucket, index) => ({
     bucket,
