@@ -336,7 +336,7 @@ const buildCalendarBuckets = ({
 
 interface RollingBucketsArgs extends BaseBucketsArgs {
   readonly granularity: "rolling20" | "rolling50";
-  readonly hasTruncatedDecisionHistory: boolean;
+  readonly hasTruncatedHistory: boolean;
 }
 
 const buildSkipOnlyRollingBuckets = (
@@ -372,7 +372,7 @@ const buildSkipOnlyRollingBuckets = (
 
 const buildRollingBuckets = ({
   granularity,
-  hasTruncatedDecisionHistory,
+  hasTruncatedHistory,
   records,
   roleFilter,
   skipped,
@@ -396,7 +396,7 @@ const buildRollingBuckets = ({
     const endTime = last.at;
     const batchIndex = index / batchSize;
     const skippedHands = skippedCounts.at(batchIndex) ?? 0;
-    const labelPrefix = hasTruncatedDecisionHistory
+    const labelPrefix = hasTruncatedHistory
       ? "Retained decisions"
       : "Decisions";
 
@@ -467,6 +467,10 @@ export const computeDiscardQualityTrend = (
   ).length;
   const hasTruncatedDecisionHistory =
     tally.lifetime.decisions > retainedAuthenticRecordCount;
+  const hasTruncatedSkipHistory =
+    roleFilter === "all" && tally.lifetime.skippedHands > tally.skipped.length;
+  const hasTruncatedHistory =
+    hasTruncatedDecisionHistory || hasTruncatedSkipHistory;
   const authenticRecords = getRetainedAuthenticRecords(
     tally,
     allAuthenticRecords,
@@ -478,7 +482,7 @@ export const computeDiscardQualityTrend = (
     granularity === "rolling20" || granularity === "rolling50"
       ? buildRollingBuckets({
           granularity,
-          hasTruncatedDecisionHistory,
+          hasTruncatedHistory,
           records: authenticRecords,
           roleFilter,
           skipped: retainedSkips,
@@ -498,11 +502,9 @@ export const computeDiscardQualityTrend = (
     buckets,
     earliestTimestamp: firstRecord ? firstRecord.at : null,
     isAtRecordCap:
-      hasTruncatedDecisionHistory ||
+      hasTruncatedHistory ||
       tally.records.length >= MAX_RECORDS ||
-      (roleFilter === "all" &&
-        (tally.lifetime.skippedHands > tally.skipped.length ||
-          tally.skipped.length >= MAX_RECORDS)),
+      (roleFilter === "all" && tally.skipped.length >= MAX_RECORDS),
     latestTimestamp: lastRecord ? lastRecord.at : null,
     totalAuthenticDecisions: authenticRecords.length,
     totalSkippedHands: roleFilter === "all" ? retainedSkips.length : 0,

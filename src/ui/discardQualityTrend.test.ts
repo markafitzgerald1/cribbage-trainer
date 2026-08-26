@@ -430,7 +430,7 @@ describe("discard quality trend skips and history boundaries", () => {
     expect(trend.totalSkippedHands).toBe(expectedSkips);
   });
 
-  it("aligns authentic decisions with truncated skip history", () => {
+  it("aligns authentic decisions and labels batches as retained with truncated skip history", () => {
     const records = [
       testDecisionOf({ at: 1000, handKey: "old" }),
       testDecisionOf({ at: 6000, handKey: "recent" }),
@@ -441,6 +441,7 @@ describe("discard quality trend skips and history boundaries", () => {
     );
 
     expect(trend).toMatchObject({
+      buckets: [expect.objectContaining({ label: "Retained decisions 1–1" })],
       totalAuthenticDecisions: 1,
       totalSkippedHands: 1,
     });

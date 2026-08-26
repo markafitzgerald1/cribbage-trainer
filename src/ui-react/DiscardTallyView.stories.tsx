@@ -96,5 +96,7 @@ export const OpenQualityTrend: StoryObj<typeof meta> = {
     await expect(trendButton).toBeVisible();
 
     await userEvent.click(trendButton);
+
+    await expect(canvas.getByText("Decision quality over time")).toBeVisible();
   },
 };
