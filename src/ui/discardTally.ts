@@ -15,7 +15,7 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * would make every earlier tally invisible instead, which is the same as
  * discarding it.
  */
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the

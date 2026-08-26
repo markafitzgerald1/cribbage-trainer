@@ -233,7 +233,7 @@ describe("discard tally recovery", () => {
   it.each([
     ...junkValues(),
     // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
-    { name: "a newer version", stored: asJson(storedWith({ version: 2 })) },
+    { name: "a newer version", stored: asJson(storedWith({ version: 3 })) },
     { name: "no counters", stored: asJson(storedOmitting("lifetime")) },
     {
       name: "counters that are not an object",
@@ -274,7 +274,7 @@ describe("discard tally recovery", () => {
     { name: "a decision", record: () => recordDiscardDecision(decisionOf()) },
     { name: "a skipped hand", record: () => recordSkippedHand(AT) },
   ])("refuses to record $name over a newer version", ({ record }) => {
-    const newer = asJson(storedWith({ version: 2 }));
+    const newer = asJson(storedWith({ version: 3 }));
     storeRaw(newer);
     record();
 
@@ -282,9 +282,16 @@ describe("discard tally recovery", () => {
   });
 
   it("reports nothing while a newer version is present", () => {
-    storeRaw(asJson(storedWith({ version: 2 })));
+    storeRaw(asJson(storedWith({ version: 3 })));
 
     expect(recordDiscardDecision(decisionOf())).toStrictEqual(EMPTY);
+  });
+
+  it("migrates a version-1 tally to current version on write", () => {
+    storeRaw(asJson(storedWith({ version: 1 })));
+    recordDiscardDecision(decisionOf({ handKey: "v1-migrated" }));
+
+    expect(localStorage.getItem(discardTallyKey)).toContain('"version":2');
   });
 
   /*
