@@ -321,10 +321,20 @@ describe("discard tally recovery", () => {
     };
     const v3Null = { ...v2Record, discardKey: null, handKey: "v3-null" };
     const v3String = { ...v2Record, discardKey: "AH,2H", handKey: "v3-string" };
+    const v3Corrupt = {
+      ...v2Record,
+      discardKey: "corrupt",
+      handKey: "v3-corrupt",
+    };
+    const v3Three = {
+      ...v2Record,
+      discardKey: "AH,2H,3H",
+      handKey: "v3-three",
+    };
     storeRaw(
       asJson(
         storedWith({
-          records: [v2Record, v3Null, v3String],
+          records: [v2Record, v3Null, v3String, v3Corrupt, v3Three],
           version: 2,
         }),
       ),
@@ -334,6 +344,8 @@ describe("discard tally recovery", () => {
       { ...v2Record, discardKey: null },
       v3Null,
       v3String,
+      { ...v3Corrupt, discardKey: null },
+      { ...v3Three, discardKey: null },
     ]);
   });
 
@@ -365,6 +377,10 @@ describe("discard tally recovery", () => {
       records: [{ ...validRecord, isPractice: "no" }],
     },
     { name: "missing a role", records: [{ ...validRecord, cribRole: 3 }] },
+    {
+      name: "holding an unrecognized role string",
+      records: [{ ...validRecord, cribRole: "Bad" }],
+    },
     {
       name: "holding an invalid discardKey type",
       records: [{ ...validRecord, discardKey: 123 }],

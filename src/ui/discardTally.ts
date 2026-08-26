@@ -1,5 +1,7 @@
-import type { CribRole } from "../game/expectedCribPoints";
+import { CARDS_PER_DISCARD } from "../game/facts";
+import { CribRole } from "../game/expectedCribPoints";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
+import { parseHand } from "../game/Card";
 
 /*
  * Scoped to the deployment that wrote it. A PR preview and production share
@@ -181,11 +183,25 @@ const isStoredDecisionRecord = (
     typeof candidate.expectedPointsLoss === "number" &&
     typeof candidate.isOptimal === "boolean" &&
     typeof candidate.isPractice === "boolean" &&
-    typeof candidate.cribRole === "string" &&
+    (candidate.cribRole === CribRole.Dealer ||
+      candidate.cribRole === CribRole.Pone) &&
     (typeof candidate.discardKey === "undefined" ||
       candidate.discardKey === null ||
       typeof candidate.discardKey === "string")
   );
+};
+
+const normalizeDiscardKey = (discardKey: unknown): string | null => {
+  if (typeof discardKey !== "string") {
+    return null;
+  }
+  try {
+    return parseHand(discardKey).length === CARDS_PER_DISCARD
+      ? discardKey
+      : null;
+  } catch {
+    return null;
+  }
 };
 
 const isSkippedHand = (value: unknown): value is SkippedHand =>
@@ -263,9 +279,8 @@ const readStoredTally = (): StoredTally | null => {
     records: Array.isArray(records)
       ? records.filter(isStoredDecisionRecord).map((record) => ({
           ...record,
-          // Absent in a record written before version 3, permanently unrecoverable.
-          discardKey:
-            typeof record.discardKey === "string" ? record.discardKey : null,
+          // Absent in a record written before version 3, or invalid, permanently null.
+          discardKey: normalizeDiscardKey(record.discardKey),
         }))
       : [],
     // Absent in a tally written before revisions were kept, which simply starts the count.
