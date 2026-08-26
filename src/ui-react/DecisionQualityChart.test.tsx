@@ -46,6 +46,14 @@ const renderChart = (
     />,
   );
 
+const countRenderedXLabels = (
+  buckets: readonly DiscardPeriodBucket[],
+  granularity: DiscardTrendGranularity,
+): number => {
+  const { container } = renderChart(buckets, granularity);
+  return container.querySelectorAll(`.${classes.xLabel}`).length;
+};
+
 describe("decision quality chart", () => {
   it("renders empty-state message when buckets array is empty", () => {
     const { getByText } = renderChart([], "rolling20");
@@ -115,10 +123,32 @@ describe("decision quality chart", () => {
     const buckets = Array.from({ length: 6 }, (_, index) => ({
       ...makeBucket(`week-${index}`, 0.25),
       label: `Aug ${index * 7 + 3}–${index * 7 + 9}, 2026`,
+      startTime: index * 7 * 86_400_000,
     }));
-    const { container } = renderChart(buckets, "week");
 
-    expect(container.querySelectorAll(`.${classes.xLabel}`)).toHaveLength(3);
+    expect(countRenderedXLabels(buckets, "week")).toBe(3);
+  });
+
+  it("skips overlapping weekly labels in sparse calendar history", () => {
+    const buckets = [
+      {
+        ...makeBucket("w1", 0.2),
+        label: "Jan 1–7, 2026",
+        startTime: 0,
+      },
+      {
+        ...makeBucket("w2", 0.3),
+        label: "Jan 8–14, 2026",
+        startTime: 7 * 86_400_000,
+      },
+      {
+        ...makeBucket("w3", 0.4),
+        label: "Dec 1–7, 2026",
+        startTime: 334 * 86_400_000,
+      },
+    ];
+
+    expect(countRenderedXLabels(buckets, "week")).toBe(2);
   });
 
   it("handles rolling labels format and sparse x-labels for many buckets", () => {

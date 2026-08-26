@@ -219,7 +219,9 @@ describe("discard quality trend computation", () => {
     expect(monthTrend.buckets[0]?.meanExpectedPointsLoss).toBe(0.2);
     expect(monthTrend.buckets[1]?.meanExpectedPointsLoss).toBe(0.4);
   });
+});
 
+describe("discard quality trend skips and history boundaries", () => {
   it("handles periods with skipped hands and no decisions", () => {
     const skippedDay = TEST_AT - 5 * ONE_DAY_MS;
     const skipped = [{ at: skippedDay }];
@@ -387,9 +389,43 @@ describe("discard quality trend computation", () => {
 
     expectBucketCount(trend, 2);
 
-    expect(trend.buckets[0]?.skippedHands).toBe(1);
+    expect(trend.buckets[0]?.skippedHands).toBe(2);
     expect(trend.buckets[1]?.skippedHands).toBe(2);
-    expect(trend.totalSkippedHands).toBe(3);
+    expect(trend.totalSkippedHands).toBe(4);
+  });
+
+  it("preserves leading skips before the first decision when history is not truncated", () => {
+    const records = sequentialDecisions(1, "leading-preserved", {
+      startAt: 5000,
+    });
+    const skipped = [{ at: 1000 }, { at: 2000 }];
+
+    const trend = runTrend(records, { granularity: "rolling20" }, skipped);
+
+    expect(trend.totalAuthenticDecisions).toBe(1);
+    expect(trend.totalSkippedHands).toBe(2);
+    expect(trend.buckets[0]?.skippedHands).toBe(2);
+  });
+
+  it("aligns calendar skips with the retained decision horizon when decision history is truncated", () => {
+    const records = sequentialDecisions(1, "truncated-calendar-lead", {
+      startAt: AUG_10_2026,
+    });
+    const skipped = [
+      { at: AUG_10_2026 - 10 * ONE_DAY_MS },
+      { at: AUG_10_2026 + ONE_HOUR_MS },
+    ];
+    const tally = storedTallyOf(records, skipped);
+    const truncatedTally = withTruncatedDecisionHistory(tally);
+
+    const dayTrend = computeDiscardQualityTrend(truncatedTally, {
+      granularity: "day",
+      now: AUG_10_2026,
+    });
+
+    expect(dayTrend.totalSkippedHands).toBe(1);
+    expect(dayTrend.buckets).toHaveLength(1);
+    expect(dayTrend.buckets[0]?.skippedHands).toBe(1);
   });
 
   it("identifies when storage reaches record cap or has truncated lifetime history", () => {
@@ -458,7 +494,9 @@ describe("discard quality trend computation", () => {
       now: TEST_AT + ONE_DAY_MS,
     });
 
-    expect(trend.totalAuthenticDecisions).toBe(1);
-    expect(trend.totalSkippedHands).toBe(1);
+    expect(trend).toMatchObject({
+      totalAuthenticDecisions: 1,
+      totalSkippedHands: 1,
+    });
   });
 });

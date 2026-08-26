@@ -24,8 +24,8 @@ const PLOT_HEIGHT = SVG_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
 
 const MIN_MAX_LOSS = 1.0;
 const LOSS_STEP = 0.5;
-const SMALL_BUCKET_COUNT = 6;
-const MEDIUM_BUCKET_COUNT = 12;
+const MIN_WEEKLY_LABEL_DISTANCE = 100;
+const MIN_LABEL_DISTANCE = 40;
 const HALF_DIVISOR = 2;
 const TICK_OFFSET_X = 6;
 const TICK_OFFSET_Y = 3.5;
@@ -162,28 +162,6 @@ const createChartTicks = (maxLossY: number): ChartTick[] => {
   });
 };
 
-const shouldDisplayXLabel = (
-  index: number,
-  total: number,
-  granularity: DiscardTrendGranularity,
-): boolean => {
-  const isEndpointOrMidpoint =
-    index === 0 ||
-    index === Math.floor(total / HALF_DIVISOR) ||
-    index === total - 1;
-
-  if (granularity === "week") {
-    return isEndpointOrMidpoint;
-  }
-  if (total <= SMALL_BUCKET_COUNT) {
-    return true;
-  }
-  if (total <= MEDIUM_BUCKET_COUNT) {
-    return index % HALF_DIVISOR === 0 || index === total - 1;
-  }
-  return isEndpointOrMidpoint;
-};
-
 const formatShortLabel = (
   label: string,
   granularity: DiscardTrendGranularity,
@@ -194,6 +172,85 @@ const formatShortLabel = (
       .replace("Retained decisions ", "Retained #");
   }
   return label;
+};
+
+interface ChartXLabel {
+  readonly key: string;
+  readonly label: string;
+  readonly xPosition: number;
+}
+
+interface PositionedBucket {
+  readonly bucket: DiscardPeriodBucket;
+  readonly xPosition: number;
+}
+
+const filterSpacedLabels = (
+  positioned: readonly PositionedBucket[],
+  minDistance: number,
+): PositionedBucket[] => {
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const first = positioned[0]!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const last = positioned.at(LAST_INDEX)!;
+  const chosen: PositionedBucket[] = [first];
+
+  for (let index = 1; index < positioned.length - 1; index += 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const candidate = positioned.at(index)!;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const lastChosen = chosen.at(LAST_INDEX)!;
+    const distFromPrev = candidate.xPosition - lastChosen.xPosition;
+    const distToLast = last.xPosition - candidate.xPosition;
+    if (distFromPrev >= minDistance && distToLast >= minDistance) {
+      chosen.push(candidate);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const lastChosen = chosen.at(LAST_INDEX)!;
+  if (last.xPosition - lastChosen.xPosition >= minDistance) {
+    chosen.push(last);
+  }
+
+  return chosen;
+};
+
+const createXAxisLabels = (
+  buckets: readonly DiscardPeriodBucket[],
+  granularity: DiscardTrendGranularity,
+): readonly ChartXLabel[] => {
+  const [single] = buckets;
+  if (buckets.length === 1 && single) {
+    return [
+      {
+        key: single.key,
+        label: formatShortLabel(single.label, granularity),
+        xPosition: calculateX({
+          bucket: single,
+          buckets,
+          granularity,
+          index: 0,
+        }),
+      },
+    ];
+  }
+
+  const minDistance =
+    granularity === "week" ? MIN_WEEKLY_LABEL_DISTANCE : MIN_LABEL_DISTANCE;
+
+  const positioned = buckets.map((bucket, index) => ({
+    bucket,
+    xPosition: calculateX({ bucket, buckets, granularity, index }),
+  }));
+
+  return filterSpacedLabels(positioned, minDistance).map(
+    ({ bucket, xPosition }) => ({
+      key: bucket.key,
+      label: formatShortLabel(bucket.label, granularity),
+      xPosition,
+    }),
+  );
 };
 
 export const getLatestLoss = (points: readonly ChartPoint[]): string => {
@@ -231,6 +288,7 @@ export function DecisionQualityChart({
   const ticks = createChartTicks(maxLossY);
   const pathData = formatPathData(points);
   const latestLoss = getLatestLoss(points);
+  const xLabels = createXAxisLabels(buckets, granularity);
 
   return (
     <div className={classes.container}>
@@ -297,22 +355,16 @@ export function DecisionQualityChart({
           </circle>
         ))}
 
-        {buckets.map((bucket, index) => {
-          if (!shouldDisplayXLabel(index, buckets.length, granularity)) {
-            return null;
-          }
-          const xPosition = calculateX({ bucket, buckets, granularity, index });
-          return (
-            <text
-              className={classes.xLabel}
-              key={bucket.key}
-              x={xPosition}
-              y={MARGIN_TOP + PLOT_HEIGHT + X_LABEL_OFFSET_Y}
-            >
-              {formatShortLabel(bucket.label, granularity)}
-            </text>
-          );
-        })}
+        {xLabels.map((xLabel) => (
+          <text
+            className={classes.xLabel}
+            key={xLabel.key}
+            x={xLabel.xPosition}
+            y={MARGIN_TOP + PLOT_HEIGHT + X_LABEL_OFFSET_Y}
+          >
+            {xLabel.label}
+          </text>
+        ))}
       </svg>
     </div>
   );

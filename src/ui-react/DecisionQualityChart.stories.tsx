@@ -73,21 +73,17 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const expectChart = async (
-  canvasElement: HTMLElement,
-  expectedRole: "img" | "presentation",
-): Promise<void> => {
+const expectChart = async (canvasElement: HTMLElement): Promise<void> => {
   const chart = within(canvasElement).getByRole("img", {
     name: "Decision quality over time trend chart",
   });
 
   await expect(chart).toBeVisible();
-  await expect(chart).toHaveAttribute("role", expectedRole);
 };
 
 export const Default: Story = {
   play: async ({ canvasElement }) => {
-    await expectChart(canvasElement, "img");
+    await expectChart(canvasElement);
   },
 };
 

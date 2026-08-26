@@ -470,13 +470,9 @@ export const computeDiscardQualityTrend = (
   const [firstRecord] = authenticRecords;
   const hasTruncatedDecisionHistory =
     tally.lifetime.decisions > retainedAuthenticRecordCount;
-  const rollingSkips =
-    roleFilter === "all" && firstRecord
+  const retainedSkips =
+    hasTruncatedDecisionHistory && firstRecord
       ? tally.skipped.filter((skip) => skip.at >= firstRecord.at)
-      : tally.skipped;
-  const skipsForCurrentView =
-    granularity === "rolling20" || granularity === "rolling50"
-      ? rollingSkips
       : tally.skipped;
 
   const buckets =
@@ -486,14 +482,14 @@ export const computeDiscardQualityTrend = (
           hasTruncatedDecisionHistory,
           records: authenticRecords,
           roleFilter,
-          skipped: rollingSkips,
+          skipped: retainedSkips,
         })
       : buildCalendarBuckets({
           granularity,
           now,
           records: authenticRecords,
           roleFilter,
-          skipped: tally.skipped,
+          skipped: retainedSkips,
         });
 
   const lastRecord = authenticRecords[authenticRecords.length - 1];
@@ -509,7 +505,7 @@ export const computeDiscardQualityTrend = (
           tally.skipped.length >= MAX_RECORDS)),
     latestTimestamp: lastRecord ? lastRecord.at : null,
     totalAuthenticDecisions: authenticRecords.length,
-    totalSkippedHands: roleFilter === "all" ? skipsForCurrentView.length : 0,
+    totalSkippedHands: roleFilter === "all" ? retainedSkips.length : 0,
   };
 };
 

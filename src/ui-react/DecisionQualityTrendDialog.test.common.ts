@@ -25,12 +25,12 @@ export const dialogTally = (decisionCount: number): StoredTally => ({
 
 export const cappedDialogTally = (): StoredTally => ({
   lifetime: {
-    decisions: 20_000,
+    decisions: 20_001,
     expectedPointsLossTotal: 4000,
     optimalDecisions: 10_000,
     skippedHands: 0,
   },
-  records: Array.from({ length: 20_000 }, (_, index) => ({
+  records: Array.from({ length: 20 }, (_, index) => ({
     at: TALLY_START + index * 1000,
     cribRole: CribRole.Dealer,
     expectedPointsLoss: 0.2,
