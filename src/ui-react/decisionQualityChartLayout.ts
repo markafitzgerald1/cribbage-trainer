@@ -15,6 +15,23 @@ export const PLOT_HEIGHT = SVG_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
 
 export const MIN_MAX_LOSS = 1.0;
 export const LOSS_STEP = 0.5;
+export const MAX_TICK_INTERVALS = 5;
+export const TICK_STEP_HALF = 0.5;
+export const TICK_STEP_ONE = 1.0;
+export const TICK_STEP_TWO = 2.0;
+export const TICK_STEP_FIVE = 5.0;
+export const TICK_STEP_TEN = 10.0;
+export const TICK_STEP_TWENTY = 20.0;
+
+export const CANDIDATE_TICK_STEPS = [
+  TICK_STEP_HALF,
+  TICK_STEP_ONE,
+  TICK_STEP_TWO,
+  TICK_STEP_FIVE,
+  TICK_STEP_TEN,
+  TICK_STEP_TWENTY,
+] as const;
+
 export const CHAR_WIDTH = 5.6;
 export const LABEL_SAFETY_MARGIN = 8;
 export const ENDPOINT_ANCHOR_THRESHOLD = 20;
@@ -135,10 +152,31 @@ export const formatPathData = (
     })
     .join(" ");
 
-export const createChartTicks = (maxLossY: number): ChartTick[] => {
-  const tickCount = Math.round(maxLossY / LOSS_STEP);
+export const selectTickStep = (highestLoss: number): number => {
+  const boundedLoss = Math.max(highestLoss, MIN_MAX_LOSS);
+  for (const candidate of CANDIDATE_TICK_STEPS) {
+    if (Math.ceil(boundedLoss / candidate) <= MAX_TICK_INTERVALS) {
+      return candidate;
+    }
+  }
+  return TICK_STEP_TWENTY;
+};
+
+export const calculateMaxLossY = (
+  highestLoss: number,
+  step: number,
+): number => {
+  const boundedLoss = Math.max(highestLoss, MIN_MAX_LOSS);
+  return Math.ceil(boundedLoss / step) * step;
+};
+
+export const createChartTicks = (
+  maxLossY: number,
+  step: number,
+): ChartTick[] => {
+  const tickCount = Math.round(maxLossY / step);
   return Array.from({ length: tickCount + 1 }, (_, index) => {
-    const value = index * LOSS_STEP;
+    const value = index * step;
     return {
       isOptimal: value === 0,
       label: value === 0 ? "0.0 (Opt)" : value.toFixed(1),
@@ -146,6 +184,15 @@ export const createChartTicks = (maxLossY: number): ChartTick[] => {
       yPosition: calculateY(value, maxLossY),
     };
   });
+};
+
+export const createAdaptiveChartTicks = (
+  highestLoss: number,
+): { readonly maxLossY: number; readonly ticks: readonly ChartTick[] } => {
+  const step = selectTickStep(highestLoss);
+  const maxLossY = calculateMaxLossY(highestLoss, step);
+  const ticks = createChartTicks(maxLossY, step);
+  return { maxLossY, ticks };
 };
 
 export const formatShortLabel = (

@@ -3,7 +3,6 @@ import {
   type ChartPoint,
   type ChartTick,
   DECIMAL_PLACES,
-  LOSS_STEP,
   MARGIN_LEFT,
   MARGIN_TOP,
   MIN_MAX_LOSS,
@@ -17,8 +16,8 @@ import {
   X_LABEL_OFFSET_Y,
   calculateIndexedX,
   calculateY,
+  createAdaptiveChartTicks,
   createChartPoints,
-  createChartTicks,
   createRollingXAxisLabels,
   createXAxisLabels,
   formatPathData,
@@ -214,8 +213,7 @@ export function DecisionQualityChart({
         (bucket) => bucket.meanExpectedPointsLoss!,
       );
   const highestLoss = Math.max(...allLosses, MIN_MAX_LOSS);
-  const maxLossY = Math.ceil(highestLoss / LOSS_STEP) * LOSS_STEP;
-  const ticks = createChartTicks(maxLossY);
+  const { maxLossY, ticks } = createAdaptiveChartTicks(highestLoss);
   const calendarPoints = createChartPoints(buckets, granularity, maxLossY);
   const xLabels = hasDecisionPoints
     ? createRollingXAxisLabels(decisionPoints)

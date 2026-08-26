@@ -6,11 +6,15 @@ import {
   DecisionQualityChart,
   OPTIMAL_POINT_COLOR,
   type PositionedLabel,
+  calculateMaxLossY,
+  createAdaptiveChartTicks,
+  createChartTicks,
   filterSpacedLabels,
   getLabelBounds,
   getLatestLoss,
   getLossPointColor,
   getXLabelAnchor,
+  selectTickStep,
 } from "./DecisionQualityChart";
 import type {
   DiscardDecisionPoint,
@@ -392,5 +396,51 @@ describe("decision quality chart rolling mode and points", () => {
     expect(container.querySelector("desc")).toHaveTextContent(
       "Trend chart with the most recent 100 of 125 decisions (20-decision rolling average). Latest average expected loss is 0.25 points.",
     );
+  });
+
+  it.each([
+    { expectedStep: 0.5, loss: 0.2 },
+    { expectedStep: 0.5, loss: 1.0 },
+    { expectedStep: 0.5, loss: 2.5 },
+    { expectedStep: 1.0, loss: 3.0 },
+    { expectedStep: 2.0, loss: 8.5 },
+    { expectedStep: 5.0, loss: 18.86 },
+    { expectedStep: 10.0, loss: 45 },
+    { expectedStep: 20.0, loss: 85 },
+    { expectedStep: 20.0, loss: 250 },
+  ])(
+    "selects adaptive tick step $expectedStep for loss $loss",
+    ({ expectedStep, loss }) => {
+      expect(selectTickStep(loss)).toBe(expectedStep);
+    },
+  );
+
+  it("calculates max loss and creates high loss ticks with step", () => {
+    expect(calculateMaxLossY(0.4, 0.5)).toBe(1.0);
+    expect(calculateMaxLossY(18.86, 5.0)).toBe(20.0);
+
+    const highLossTicks = createChartTicks(20.0, 5.0);
+
+    expect(highLossTicks).toHaveLength(5);
+    expect(highLossTicks[0]?.label).toBe("0.0 (Opt)");
+    expect(highLossTicks[4]?.label).toBe("20.0");
+  });
+
+  it("creates adaptive chart ticks combining step, bounds, and ticks", () => {
+    const { maxLossY, ticks } = createAdaptiveChartTicks(18.86);
+
+    expect(maxLossY).toBe(20.0);
+    expect(ticks).toHaveLength(5);
+    expect(ticks[1]?.label).toBe("5.0");
+  });
+
+  it("renders legible tick count in chart when decision loss is very high", () => {
+    const { container } = renderChart([makeBucket("b1", 18.86)], "rolling20", [
+      makeDecisionPoint(1, 18.86, 18.86),
+    ]);
+
+    const tickLines = container.querySelectorAll(`.${classes.gridLine}`);
+
+    expect(tickLines.length).toBeLessThanOrEqual(5);
   });
 });
