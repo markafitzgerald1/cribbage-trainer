@@ -157,6 +157,7 @@ export default [
             "compat",
             "cookieless",
             "cpus",
+            "cx",
             "deeplink",
             "discardable",
             "ecma",

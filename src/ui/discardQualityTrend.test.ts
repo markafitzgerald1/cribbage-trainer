@@ -10,6 +10,7 @@ import {
   dealerDecision,
   expectBucketCount,
   poneDecision,
+  rollingTrendOf,
   runTrend,
   sequentialDecisions,
   storedTallyOf,
@@ -115,12 +116,20 @@ describe("discard quality trend computation", () => {
 
   it("labels rolling batches as retained history after decision truncation", () => {
     const tally = storedTallyOf(sequentialDecisions(20, "retained"));
-    const trend = computeDiscardQualityTrend(
-      withTruncatedDecisionHistory(tally),
-      { granularity: "rolling20", now: TEST_AT },
-    );
+    const trend = rollingTrendOf(withTruncatedDecisionHistory(tally));
 
     expect(trend.buckets[0]?.label).toBe("Retained decisions 1–20");
+  });
+
+  it("recognizes truncated authentic history despite retained practice records", () => {
+    const scoredRecord = testDecisionOf({ handKey: "retained-authentic" });
+    const practiceRecord = testDecisionOf({
+      handKey: "retained-practice",
+      isPractice: true,
+    });
+    const trend = rollingTrendOf(storedTallyOf([scoredRecord, practiceRecord]));
+
+    expect(trend.buckets[0]?.label).toBe("Retained decisions 1–1");
   });
 
   it("buckets decisions by calendar day and handles Today / Yesterday labels", () => {

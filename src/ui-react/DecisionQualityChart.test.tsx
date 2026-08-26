@@ -6,8 +6,11 @@ import {
   getLatestLoss,
   getLossColor,
 } from "./DecisionQualityChart";
+import type {
+  DiscardPeriodBucket,
+  DiscardTrendGranularity,
+} from "../ui/discardQualityTrend";
 import { describe, expect, it } from "@jest/globals";
-import type { DiscardPeriodBucket } from "../ui/discardQualityTrend";
 import { render } from "@testing-library/react";
 
 const makeBucket = (
@@ -34,7 +37,7 @@ const makeBucket = (
 
 const renderChart = (
   buckets: readonly DiscardPeriodBucket[],
-  granularity: "day" | "rolling20" | "week",
+  granularity: DiscardTrendGranularity,
 ) =>
   render(
     <DecisionQualityChart
@@ -82,6 +85,20 @@ describe("decision quality chart", () => {
 
     expect(container.querySelector("path")).toBeInTheDocument();
     expect(container.querySelectorAll("circle")).toHaveLength(3);
+  });
+
+  it("spaces calendar chart points by elapsed time", () => {
+    const buckets = [
+      { ...makeBucket("January", 0.2), startTime: 0 },
+      { ...makeBucket("February", 0.4), startTime: 10 },
+      { ...makeBucket("December", 0.6), startTime: 110 },
+    ];
+    const { container } = renderChart(buckets, "month");
+    const points = container.querySelectorAll("circle");
+
+    expect(points[0]).toHaveAttribute("cx", "45");
+    expect(points[1]).toHaveAttribute("cx", expect.stringContaining("85."));
+    expect(points[2]).toHaveAttribute("cx", "495");
   });
 
   it("handles medium bucket counts (7 to 12) with alternating x-labels", () => {

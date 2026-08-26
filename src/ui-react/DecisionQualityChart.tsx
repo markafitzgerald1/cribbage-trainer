@@ -33,6 +33,7 @@ const X_LABEL_OFFSET_Y = 22;
 const DECIMAL_PLACES = 2;
 const TICK_LABEL_X = MARGIN_LEFT - TICK_OFFSET_X;
 const POINT_RADIUS = 4.5;
+const LAST_INDEX = -1;
 
 export const getLossColor = (loss: number | null): string => {
   if (loss === null) {
@@ -68,12 +69,52 @@ interface ChartTick {
   readonly yPosition: number;
 }
 
-const calculateX = (index: number, total: number): number => {
+const calculateIndexedX = (index: number, total: number): number => {
   if (total === 1) {
     return MARGIN_LEFT + PLOT_WIDTH / HALF_DIVISOR;
   }
   return MARGIN_LEFT + (index / (total - 1)) * PLOT_WIDTH;
 };
+
+const calculateCalendarX = (
+  timestamp: number,
+  buckets: readonly DiscardPeriodBucket[],
+): number => {
+  const [firstBucket] = buckets;
+  const lastBucket = buckets.at(LAST_INDEX);
+
+  if (
+    !firstBucket ||
+    !lastBucket ||
+    firstBucket.startTime === lastBucket.startTime
+  ) {
+    return MARGIN_LEFT + PLOT_WIDTH / HALF_DIVISOR;
+  }
+
+  return (
+    MARGIN_LEFT +
+    ((timestamp - firstBucket.startTime) /
+      (lastBucket.startTime - firstBucket.startTime)) *
+      PLOT_WIDTH
+  );
+};
+
+interface CalculateXOptions {
+  readonly bucket: DiscardPeriodBucket;
+  readonly buckets: readonly DiscardPeriodBucket[];
+  readonly granularity: DiscardTrendGranularity;
+  readonly index: number;
+}
+
+const calculateX = ({
+  bucket,
+  buckets,
+  granularity,
+  index,
+}: CalculateXOptions): number =>
+  granularity === "rolling20" || granularity === "rolling50"
+    ? calculateIndexedX(index, buckets.length)
+    : calculateCalendarX(bucket.startTime, buckets);
 
 const calculateY = (loss: number, maxLossY: number): number => {
   const clamped = Math.max(0, Math.min(loss, maxLossY));
@@ -82,6 +123,7 @@ const calculateY = (loss: number, maxLossY: number): number => {
 
 const createChartPoints = (
   buckets: readonly DiscardPeriodBucket[],
+  granularity: DiscardTrendGranularity,
   maxLossY: number,
 ): ChartPoint[] =>
   buckets.flatMap((bucket, index) => {
@@ -93,7 +135,7 @@ const createChartPoints = (
         bucket,
         color: getLossColor(bucket.meanExpectedPointsLoss),
         loss: bucket.meanExpectedPointsLoss,
-        xPosition: calculateX(index, buckets.length),
+        xPosition: calculateX({ bucket, buckets, granularity, index }),
         yPosition: calculateY(bucket.meanExpectedPointsLoss, maxLossY),
       },
     ];
@@ -185,7 +227,7 @@ export function DecisionQualityChart({
   );
   const highestLoss = Math.max(...losses, MIN_MAX_LOSS);
   const maxLossY = Math.ceil(highestLoss / LOSS_STEP) * LOSS_STEP;
-  const points = createChartPoints(buckets, maxLossY);
+  const points = createChartPoints(buckets, granularity, maxLossY);
   const ticks = createChartTicks(maxLossY);
   const pathData = formatPathData(points);
   const latestLoss = getLatestLoss(points);
@@ -259,7 +301,7 @@ export function DecisionQualityChart({
           if (!shouldDisplayXLabel(index, buckets.length, granularity)) {
             return null;
           }
-          const xPosition = calculateX(index, buckets.length);
+          const xPosition = calculateX({ bucket, buckets, granularity, index });
           return (
             <text
               className={classes.xLabel}

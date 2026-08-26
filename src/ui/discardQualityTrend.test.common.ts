@@ -115,6 +115,12 @@ export const runTrend = (
 ): DiscardQualityTrend =>
   computeDiscardQualityTrend(storedTallyOf(records, skipped), options);
 
+export const rollingTrendOf = (tally: StoredTally): DiscardQualityTrend =>
+  computeDiscardQualityTrend(tally, {
+    granularity: "rolling20",
+    now: TEST_AT,
+  });
+
 export const assertSingleBucketLoss = (
   trend: DiscardQualityTrend,
   expectedLoss: number | null,

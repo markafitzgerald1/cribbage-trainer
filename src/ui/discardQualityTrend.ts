@@ -464,9 +464,12 @@ export const computeDiscardQualityTrend = (
   const authenticRecords = tally.records.filter(
     (record) => !record.isPractice && matchesRole(record, roleFilter),
   );
+  const retainedAuthenticRecordCount = tally.records.filter(
+    (record) => !record.isPractice,
+  ).length;
   const [firstRecord] = authenticRecords;
   const hasTruncatedDecisionHistory =
-    tally.lifetime.decisions > tally.records.length;
+    tally.lifetime.decisions > retainedAuthenticRecordCount;
   const rollingSkips =
     roleFilter === "all" && firstRecord
       ? tally.skipped.filter((skip) => skip.at >= firstRecord.at)
