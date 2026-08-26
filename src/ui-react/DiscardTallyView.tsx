@@ -132,10 +132,12 @@ export function DiscardTallyView({
           Quality trend
         </button>
       </div>
-      <DecisionQualityTrendDialog
-        onClose={handleCloseTrend}
-        show={showTrend}
-      />
+      {showTrend ? (
+        <DecisionQualityTrendDialog
+          onClose={handleCloseTrend}
+          show={showTrend}
+        />
+      ) : null}
     </>
   );
 }

@@ -207,12 +207,6 @@ export function DecisionQualityTrendDialog({
 
   useCloseOnEscape(show, onClose);
 
-  const sourceTally = tally ?? readTallyForDisplay();
-  const trend = computeDiscardQualityTrend(sourceTally, {
-    granularity,
-    roleFilter,
-  });
-
   const changeGranularity = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setGranularity(event.currentTarget.value as DiscardTrendGranularity);
@@ -226,6 +220,23 @@ export function DecisionQualityTrendDialog({
     },
     [],
   );
+
+  if (!show) {
+    return (
+      <Modal
+        onClose={onClose}
+        show={false}
+      >
+        <div />
+      </Modal>
+    );
+  }
+
+  const sourceTally = tally ?? readTallyForDisplay();
+  const trend = computeDiscardQualityTrend(sourceTally, {
+    granularity,
+    roleFilter,
+  });
 
   const totalDecisions = trend.totalAuthenticDecisions;
   const optimalDecisions = trend.buckets.reduce(

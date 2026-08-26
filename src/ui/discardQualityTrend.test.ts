@@ -243,6 +243,7 @@ describe("discard quality trend computation", () => {
     );
 
     expect(dealerDay.totalAuthenticDecisions).toBe(1);
+    expect(dealerDay.totalSkippedHands).toBe(0);
     expect(dealerDay.buckets[0]?.skippedHands).toBe(0);
   });
 

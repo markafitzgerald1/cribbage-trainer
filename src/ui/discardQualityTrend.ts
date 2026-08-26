@@ -55,7 +55,6 @@ const ROLLING_FIFTY = 50;
 const QUARTER_POINT = 0.25;
 const HALF_POINT = 0.5;
 const ONE_POINT = 1.0;
-const ONE_DAY_MS = 86_400_000;
 const DAYS_IN_WEEK = 7;
 const PAD_THRESHOLD = 10;
 const END_OF_DAY_HOUR = 23;
@@ -120,11 +119,21 @@ const toMonthKey = (date: Date): string =>
 const toLocalDayKey = (date: Date): string =>
   `${toMonthKey(date)}-${padTwo(date.getDate())}`;
 
+const getYesterdayDate = (now: number): Date => {
+  const nowDate = new Date(now);
+  return new Date(
+    nowDate.getFullYear(),
+    nowDate.getMonth(),
+    nowDate.getDate() - 1,
+  );
+};
+
 const toLocalDayLabel = (date: Date, now: number): string => {
   if (isSameLocalDay(date.getTime(), now)) {
     return "Today";
   }
-  if (isSameLocalDay(date.getTime(), now - ONE_DAY_MS)) {
+  const yesterday = getYesterdayDate(now);
+  if (isSameLocalDay(date.getTime(), yesterday.getTime())) {
     return "Yesterday";
   }
   return date.toLocaleDateString("en-US", {
@@ -426,7 +435,7 @@ export const computeDiscardQualityTrend = (
     isAtRecordCap: tally.records.length >= MAX_RECORDS,
     latestTimestamp: lastRecord ? lastRecord.at : null,
     totalAuthenticDecisions: authenticRecords.length,
-    totalSkippedHands: tally.skipped.length,
+    totalSkippedHands: roleFilter === "all" ? tally.skipped.length : 0,
   };
 };
 

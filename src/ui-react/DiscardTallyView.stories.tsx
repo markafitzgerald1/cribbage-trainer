@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent } from "storybook/test";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { discardTallySummary } from "./discardTally.test.common";
-import { expect } from "storybook/test";
 
 const meta = {
   component: DiscardTallyView,
@@ -94,5 +94,7 @@ export const OpenQualityTrend: StoryObj<typeof meta> = {
     const trendButton = canvas.getByRole("button", { name: "Quality trend" });
 
     await expect(trendButton).toBeVisible();
+
+    await userEvent.click(trendButton);
   },
 };
