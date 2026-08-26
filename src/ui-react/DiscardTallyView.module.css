@@ -69,13 +69,12 @@
     box-shadow var(--transition-duration) var(--transition-timing);
 }
 
-.trend-button:hover,
-.trend-button:focus {
+.trend-button:hover {
   background-color: #34c754;
   border-color: #34c754;
-  outline: none;
 }
 
 .trend-button:focus-visible {
+  outline: none;
   box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
 }
