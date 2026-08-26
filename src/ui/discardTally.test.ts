@@ -1,6 +1,7 @@
 import {
   type DiscardDecisionRecord,
   type DiscardTallySummary,
+  MAX_RECORDS,
   clearDiscardTally,
   discardTallyKey,
   readDiscardTally,
@@ -449,16 +450,29 @@ describe("discard tally recovery", () => {
     },
   );
 
-  /*
-   * The cap is what makes the redundant counters necessary: once records are
-   * trimmed, an average recomputed from survivors would silently change.
-   */
   it("keeps the average correct after records are trimmed", () => {
     clearDiscardTally();
-    // Indices come from the iterator so no unused element parameter is declared.
-    const overflowing = [...Array(2_010).keys()].map((index) =>
-      decisionOf({ expectedPointsLoss: 2, handKey: `hand-${index}` }),
+    const makeDecisions = (count: number, prefix: string) =>
+      Array.from({ length: count }, (_, index) =>
+        decisionOf({ expectedPointsLoss: 2, handKey: `${prefix}-${index}` }),
+      );
+    const initialRecords = makeDecisions(MAX_RECORDS, "initial");
+    const initialLossTotal = MAX_RECORDS * 2;
+    storeRaw(
+      asJson(
+        storedWith({
+          lifetime: {
+            decisions: MAX_RECORDS,
+            expectedPointsLossTotal: initialLossTotal,
+            optimalDecisions: 0,
+            skippedHands: 0,
+          },
+          records: initialRecords,
+        }),
+      ),
     );
+    const extraDecisions = 10;
+    const overflowing = makeDecisions(extraDecisions, "extra");
     let summary = readDiscardTally(AT);
     for (const decision of overflowing) {
       summary = recordDiscardDecision(decision);
@@ -466,14 +480,17 @@ describe("discard tally recovery", () => {
 
     /*
      * Today is read from the records, which are capped, so it reports the
-     * 2000 that survived rather than the 2010 the counters know about. A
+     * 20000 that survived rather than the 20010 the counters know about. A
      * single day past the cap is not a case any player reaches, and the
      * headline figure the counters carry stays exact either way.
      */
     expect(summary).toStrictEqual(
-      withToday(summaryOf(2_010, 2, 0), { decisions: 2_000, mean: 2 }),
+      withToday(summaryOf(MAX_RECORDS + extraDecisions, 2, 0), {
+        decisions: MAX_RECORDS,
+        mean: 2,
+      }),
     );
-    expect(storedRecords()).toHaveLength(2_000);
+    expect(storedRecords()).toHaveLength(MAX_RECORDS);
   });
 
   // A full or disabled store must cost the history, never the hand being played.
