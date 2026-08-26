@@ -24,6 +24,7 @@ import {
   formatPathData,
   getLatestLoss,
   getLossPointColor,
+  getRollingWindowLabel,
 } from "./decisionQualityChartLayout";
 import type {
   DiscardDecisionPoint,
@@ -78,7 +79,7 @@ function renderRollingPlot(
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const lastMovingPoint = movingPoints[movingPoints.length - 1]!;
   const latestLoss = lastMovingPoint.loss.toFixed(DECIMAL_PLACES);
-  const windowName = granularity === "rolling50" ? "50" : "20";
+  const windowLabel = getRollingWindowLabel(total, granularity);
 
   return (
     <>
@@ -137,7 +138,7 @@ function renderRollingPlot(
         fill={lastMovingPoint.color}
         r={POINT_RADIUS}
       >
-        <title>{`Latest ${windowName}-decision rolling average: ${latestLoss} points loss`}</title>
+        <title>{`Latest ${windowLabel}: ${latestLoss} points loss`}</title>
       </circle>
     </>
   );
@@ -218,7 +219,6 @@ export function DecisionQualityChart({
     ? createRollingXAxisLabels(decisionPoints)
     : createXAxisLabels(buckets, granularity);
 
-  const windowName = granularity === "rolling50" ? "50" : "20";
   const latestLoss = hasDecisionPoints
     ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       decisionPoints[decisionPoints.length - 1]!.rollingMeanLoss.toFixed(
@@ -235,8 +235,12 @@ export function DecisionQualityChart({
     ? `Latest average expected loss is ${latestLoss} points.`
     : `Latest scored period (${latestScoredBucket.label}) average expected loss is ${latestLoss} points.`;
 
+  const rollingWindowLabel = getRollingWindowLabel(
+    decisionPoints.length,
+    granularity,
+  );
   const chartDesc = hasDecisionPoints
-    ? `Trend chart with ${decisionPoints.length} decisions (${windowName}-decision rolling average). Latest average expected loss is ${latestLoss} points.`
+    ? `Trend chart with ${decisionPoints.length} decisions (${rollingWindowLabel}). Latest average expected loss is ${latestLoss} points.`
     : `Trend chart with ${buckets.length} periods. ${calendarDesc}`;
 
   return (

@@ -26,6 +26,8 @@ export const DECIMAL_PLACES = 2;
 export const TICK_LABEL_X = MARGIN_LEFT - TICK_OFFSET_X;
 export const POINT_RADIUS = 4.5;
 export const LAST_INDEX = -1;
+export const ROLLING_WINDOW_20 = 20;
+export const ROLLING_WINDOW_50 = 50;
 
 export const OPTIMAL_POINT_COLOR = "#28a745";
 export const DATA_POINT_COLOR = "#70c878";
@@ -330,4 +332,14 @@ export const getLatestLoss = (points: readonly ChartPoint[]): string => {
     return "0.00";
   }
   return lastPoint.loss.toFixed(DECIMAL_PLACES);
+};
+
+export const getRollingWindowLabel = (
+  total: number,
+  granularity: DiscardTrendGranularity,
+): string => {
+  const targetWindow =
+    granularity === "rolling50" ? ROLLING_WINDOW_50 : ROLLING_WINDOW_20;
+  const actualWindow = Math.min(total, targetWindow);
+  return `${actualWindow}-decision rolling average`;
 };

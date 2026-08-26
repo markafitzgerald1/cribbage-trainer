@@ -277,7 +277,9 @@ describe("decision quality chart", () => {
       "Trend chart with 2 periods. Latest scored period (Period b1) average expected loss is 0.40 points.",
     );
   });
+});
 
+describe("decision quality chart rolling mode and points", () => {
   it("renders continuous decision points with loss stems and optimal baseline dots in rolling mode", () => {
     const buckets = [makeBucket("b1", 0.4)];
     const decisionPoints = [
@@ -306,13 +308,13 @@ describe("decision quality chart", () => {
       expectedLoss: "0.00",
       granularity: "rolling20" as const,
       loss: 0,
-      windowSize: 20,
+      windowSize: 1,
     },
     {
       expectedLoss: "0.30",
       granularity: "rolling50" as const,
       loss: 0.3,
-      windowSize: 50,
+      windowSize: 1,
     },
   ])(
     "describes single decision point under $granularity",
@@ -329,6 +331,25 @@ describe("decision quality chart", () => {
       );
     },
   );
+
+  it("describes full rolling window when decisions exceed batch size", () => {
+    const points = Array.from({ length: 25 }, (_, index) =>
+      makeDecisionPoint(index + 1, 0.2, 0.2),
+    );
+    const { container, getByText } = renderChart(
+      [makeBucket("b1", 0.2)],
+      "rolling20",
+      points,
+    );
+
+    expect(
+      getByText("Latest 20-decision rolling average: 0.20 points loss"),
+    ).toBeInTheDocument();
+
+    expect(container.querySelector("desc")).toHaveTextContent(
+      "Trend chart with 25 decisions (20-decision rolling average). Latest average expected loss is 0.20 points.",
+    );
+  });
 
   it("renders retained decision prefix in tooltips and x-axis when isRetained is true", () => {
     const points = [
