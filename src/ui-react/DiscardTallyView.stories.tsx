@@ -81,3 +81,18 @@ export const NothingFacedYet: StoryObj<typeof meta> = {
     await expect(canvasElement.textContent).toBe("");
   },
 };
+
+export const OpenQualityTrend: StoryObj<typeof meta> = {
+  args: {
+    summary: discardTallySummary({
+      decisions: 10,
+      meanExpectedPointsLoss: 0.25,
+      optimalDecisions: 7,
+    }),
+  },
+  play: async ({ canvas }) => {
+    const trendButton = canvas.getByRole("button", { name: "Quality trend" });
+
+    await expect(trendButton).toBeVisible();
+  },
+};

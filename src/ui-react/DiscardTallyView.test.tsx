@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
+import { fireEvent, render } from "@testing-library/react";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { discardTallySummary } from "./discardTally.test.common";
-import { render } from "@testing-library/react";
 
 // Typed from the builder rather than from the summary, so this file does not restate an import the stories already make.
 const renderTally = (overrides: Parameters<typeof discardTallySummary>[0]) =>
@@ -63,5 +63,27 @@ describe("discard tally view", () => {
     const { container } = renderTally(NOTHING_SCORED);
 
     expect(container.textContent).toBe("");
+  });
+
+  it("opens and closes the decision quality trend dialog", () => {
+    const { getByRole, queryByRole } = renderTally({
+      decisions: 5,
+      meanExpectedPointsLoss: 0.25,
+      optimalDecisions: 3,
+    });
+
+    const trendButton = getByRole("button", { name: "Quality trend" });
+    fireEvent.click(trendButton);
+
+    expect(
+      queryByRole("heading", { name: "Decision quality over time" }),
+    ).not.toBeNull();
+
+    const closeButton = getByRole("button", { name: "Close modal" });
+    fireEvent.click(closeButton);
+
+    expect(
+      queryByRole("heading", { name: "Decision quality over time" }),
+    ).toBeNull();
   });
 });

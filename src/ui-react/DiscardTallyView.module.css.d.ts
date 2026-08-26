@@ -1,6 +1,7 @@
-export declare const tally: string;
-export declare const withToday: string;
-export declare const allTimeOnly: string;
-export declare const figure: string;
-export declare const label: string;
-export declare const period: string;
+export const allTimeOnly: string;
+export const figure: string;
+export const label: string;
+export const period: string;
+export const tally: string;
+export const trendButton: string;
+export const withToday: string;

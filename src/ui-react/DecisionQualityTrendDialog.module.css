@@ -1,0 +1,249 @@
+@import url("./vars.css");
+
+.dialog {
+  color: #143b18;
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  gap: 0.9rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  width: min(56rem, 100%);
+}
+
+.title {
+  color: #0b2f10;
+  font-size: 1.8rem;
+  line-height: 1;
+  margin: 0;
+  padding-right: 2rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.filter-group {
+  border: 1.5px solid color-mix(in srgb, green 35%, white);
+  border-radius: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.45rem 0.65rem 0.55rem;
+}
+
+.filter-group legend {
+  color: #1d4f22;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0 0.3rem;
+}
+
+.filter-group label {
+  cursor: pointer;
+  display: block;
+}
+
+.filter-group input {
+  appearance: none;
+  block-size: 1px;
+  inline-size: 1px;
+  opacity: 0;
+  position: absolute;
+}
+
+.option {
+  background-color: #e4f4e6;
+  border: 1.5px solid #397a40;
+  border-radius: 6px;
+  color: #143b18;
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing),
+    box-shadow var(--transition-duration) var(--transition-timing),
+    color var(--transition-duration) var(--transition-timing);
+}
+
+.option:hover {
+  background-color: #c8efcd;
+  border-color: #218838;
+}
+
+.filter-group input:checked + .option {
+  background-color: #28a745;
+  border-color: #218838;
+  color: white;
+}
+
+.filter-group input:focus-visible + .option {
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+}
+
+.filter-group input:checked + .option:hover {
+  background-color: #34c754;
+  border-color: #34c754;
+}
+
+.horizon-notice {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.summary-cards {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
+.summary-card {
+  background-color: #f1f9f2;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.45rem 0.65rem;
+  text-align: center;
+}
+
+.summary-label {
+  color: #155724;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.summary-value {
+  color: #0b2f10;
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.table-wrapper {
+  border: 1.5px solid color-mix(in srgb, green 30%, white);
+  border-radius: 6px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 100%;
+  width: 100%;
+}
+
+.table th {
+  background-color: #1d4f22;
+  color: white;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 0.45rem 0.55rem;
+  position: sticky;
+  text-align: right;
+  top: 0;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.table th:first-child {
+  text-align: left;
+}
+
+.table td {
+  border-bottom: 1px solid #e1e8e2;
+  font-variant-numeric: tabular-nums;
+  padding: 0.4rem 0.55rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table td:first-child {
+  font-weight: 600;
+  text-align: left;
+}
+
+.table tr:nth-child(even) {
+  background-color: #f8faf8;
+}
+
+.table tr:hover {
+  background-color: #eaf5ec;
+}
+
+.loss-pill {
+  border-radius: 4px;
+  color: white;
+  display: inline-block;
+  font-weight: 700;
+  min-width: 2.8rem;
+  padding: 0.15rem 0.35rem;
+  text-align: center;
+}
+
+.severity-counts {
+  display: inline-flex;
+  gap: 0.3rem;
+  justify-content: flex-end;
+}
+
+.severity-badge {
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.1rem 0.25rem;
+}
+
+.badge-optimal {
+  background-color: #28a745;
+  color: white;
+}
+
+.badge-minor {
+  background-color: #70c878;
+  color: white;
+}
+
+.badge-inside {
+  background-color: #f0ad4e;
+  color: #333;
+}
+
+.badge-open {
+  background-color: #e67e22;
+  color: white;
+}
+
+.badge-blunder {
+  background-color: #d9534f;
+  color: white;
+}
+
+@media (aspect-ratio < 6 / 5) {
+  .dialog {
+    font-size: 0.95rem;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

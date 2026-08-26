@@ -11,6 +11,8 @@ import { CribRole } from "../game/expectedCribPoints";
 export type TrendGranularity =
   "rolling20" | "rolling50" | "day" | "week" | "month";
 
+export type DiscardTrendGranularity = TrendGranularity;
+
 export type CribRoleFilter = "all" | "dealer" | "pone";
 
 export interface LossSeverityCounts {

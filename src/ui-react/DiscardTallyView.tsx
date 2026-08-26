@@ -1,6 +1,7 @@
 import * as classes from "./DiscardTallyView.module.css";
 import { type DiscardTallySummary, hasTallyToShow } from "../ui/discardTally";
-import type { ReactNode } from "react";
+import { type ReactNode, useCallback, useState } from "react";
+import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 
 const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
@@ -51,6 +52,14 @@ const renderMeasure = (
 export function DiscardTallyView({
   summary,
 }: DiscardTallyViewProps): ReactNode {
+  const [showTrend, setShowTrend] = useState(false);
+  const handleOpenTrend = useCallback(() => {
+    setShowTrend(true);
+  }, []);
+  const handleCloseTrend = useCallback(() => {
+    setShowTrend(false);
+  }, []);
+
   /*
    * Nothing is shown until a hand has been either played or walked away from.
    * Skips alone are enough: a player who has only avoided hands is exactly
@@ -65,55 +74,68 @@ export function DiscardTallyView({
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
   return (
-    <div className={`${classes.tally} ${columns}`}>
-      <span />
-      {hasToday ? <span className={classes.period}>today</span> : null}
-      <span className={classes.period}>all time</span>
-      {/*
-       * The decision measures are blank rather than absent when nothing has
-       * been scored, so the skip row below keeps its columns and a reader
-       * sees which figures exist rather than a table that changes shape.
-       */}
-      {/* Guarded on the mean rather than the count, which says the same thing and leaves no branch that cannot run. */}
-      {summary.meanExpectedPointsLoss === null
-        ? null
-        : renderMeasure(
-            // "Points lost per discard" wraps mid-phrase on a phone, worst where the device font is set large; this keeps the per-discard sense, which a bare "points lost" would read as a total.
-            "Lost per discard",
-            summary.todayMeanExpectedPointsLoss === null
-              ? blankWhen(hasToday)
-              : summary.todayMeanExpectedPointsLoss.toFixed(
-                  LOSS_FRACTION_DIGITS,
-                ),
-            summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
-          )}
-      {summary.decisions === 0
-        ? null
-        : renderMeasure(
-            "Best choice",
-            summary.todayDecisions === 0
-              ? blankWhen(hasToday)
-              : countAndShare(
-                  summary.todayOptimalDecisions,
-                  summary.todayDecisions,
-                ),
-            countAndShare(summary.optimalDecisions, summary.decisions),
-          )}
-      {/*
-       * Only once a hand has been abandoned, so an untouched row never implies
-       * a habit nobody has. The share is of the hands actually faced — those
-       * played plus those left — because that is the question it answers: how
-       * often a hand gets walked away from rather than decided.
-       */}
-      {summary.skippedHands === 0
-        ? null
-        : renderMeasure(
-            "Hands skipped",
-            hasToday
-              ? countAndShare(summary.todaySkippedHands, facedToday)
-              : null,
-            countAndShare(summary.skippedHands, faced),
-          )}
-    </div>
+    <>
+      <div className={`${classes.tally} ${columns}`}>
+        <span />
+        {hasToday ? <span className={classes.period}>today</span> : null}
+        <span className={classes.period}>all time</span>
+        {/*
+         * The decision measures are blank rather than absent when nothing has
+         * been scored, so the skip row below keeps its columns and a reader
+         * sees which figures exist rather than a table that changes shape.
+         */}
+        {/* Guarded on the mean rather than the count, which says the same thing and leaves no branch that cannot run. */}
+        {summary.meanExpectedPointsLoss === null
+          ? null
+          : renderMeasure(
+              // "Points lost per discard" wraps mid-phrase on a phone, worst where the device font is set large; this keeps the per-discard sense, which a bare "points lost" would read as a total.
+              "Lost per discard",
+              summary.todayMeanExpectedPointsLoss === null
+                ? blankWhen(hasToday)
+                : summary.todayMeanExpectedPointsLoss.toFixed(
+                    LOSS_FRACTION_DIGITS,
+                  ),
+              summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
+            )}
+        {summary.decisions === 0
+          ? null
+          : renderMeasure(
+              "Best choice",
+              summary.todayDecisions === 0
+                ? blankWhen(hasToday)
+                : countAndShare(
+                    summary.todayOptimalDecisions,
+                    summary.todayDecisions,
+                  ),
+              countAndShare(summary.optimalDecisions, summary.decisions),
+            )}
+        {/*
+         * Only once a hand has been abandoned, so an untouched row never implies
+         * a habit nobody has. The share is of the hands actually faced — those
+         * played plus those left — because that is the question it answers: how
+         * often a hand gets walked away from rather than decided.
+         */}
+        {summary.skippedHands === 0
+          ? null
+          : renderMeasure(
+              "Hands skipped",
+              hasToday
+                ? countAndShare(summary.todaySkippedHands, facedToday)
+                : null,
+              countAndShare(summary.skippedHands, faced),
+            )}
+        <button
+          className={classes.trendButton}
+          onClick={handleOpenTrend}
+          type="button"
+        >
+          Quality trend
+        </button>
+      </div>
+      <DecisionQualityTrendDialog
+        onClose={handleCloseTrend}
+        show={showTrend}
+      />
+    </>
   );
 }
