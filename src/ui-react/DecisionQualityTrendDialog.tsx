@@ -3,9 +3,6 @@ import {
   type CribRoleFilter,
   type DiscardPeriodBucket,
   type DiscardTrendGranularity,
-  HALF_POINT,
-  ONE_POINT,
-  QUARTER_POINT,
   computeDiscardQualityTrend,
 } from "../ui/discardQualityTrend";
 import {
@@ -64,19 +61,10 @@ const getLossPillClass = (loss: number | null): string => {
   if (loss === null) {
     return classes.lossPillNone;
   }
-  if (loss <= 0) {
+  if (loss === 0) {
     return classes.lossPillOptimal;
   }
-  if (loss <= QUARTER_POINT) {
-    return classes.lossPillMinor;
-  }
-  if (loss <= HALF_POINT) {
-    return classes.lossPillInside;
-  }
-  if (loss <= ONE_POINT) {
-    return classes.lossPillOpen;
-  }
-  return classes.lossPillBlunder;
+  return "";
 };
 
 function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
@@ -104,40 +92,6 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
       </td>
       <td>{optimalPct}</td>
       <td>{formatSkippedHands(bucket.decisions, bucket.skippedHands)}</td>
-      <td>
-        <div className={classes.severityCounts}>
-          <span
-            className={`${classes.severityBadge} ${classes.badgeOptimal}`}
-            title="Optimal (0.00)"
-          >
-            {bucket.severity.optimal}
-          </span>
-          <span
-            className={`${classes.severityBadge} ${classes.badgeMinor}`}
-            title="> 0 and ≤ 0.25 points"
-          >
-            {bucket.severity.upToQuarter}
-          </span>
-          <span
-            className={`${classes.severityBadge} ${classes.badgeInside}`}
-            title="> 0.25 and ≤ 0.50 points"
-          >
-            {bucket.severity.quarterToHalf}
-          </span>
-          <span
-            className={`${classes.severityBadge} ${classes.badgeOpen}`}
-            title="> 0.50 and ≤ 1.00 points"
-          >
-            {bucket.severity.halfToOne}
-          </span>
-          <span
-            className={`${classes.severityBadge} ${classes.badgeBlunder}`}
-            title="> 1.00 points"
-          >
-            {bucket.severity.overOne}
-          </span>
-        </div>
-      </td>
     </tr>
   );
 }
@@ -155,7 +109,6 @@ function renderBreakdownTable(
             <th>Avg loss</th>
             <th>Optimal</th>
             <th>Skipped (rate)</th>
-            <th>Severity distribution</th>
           </tr>
         </thead>
         <tbody>{buckets.map(renderBucketRow)}</tbody>

@@ -17,13 +17,6 @@ export type TrendGranularity =
   "rolling20" | "rolling50" | "day" | "week" | "month";
 export type DiscardTrendGranularity = TrendGranularity;
 export type CribRoleFilter = "all" | "dealer" | "pone";
-export interface LossSeverityCounts {
-  readonly optimal: number;
-  readonly upToQuarter: number;
-  readonly quarterToHalf: number;
-  readonly halfToOne: number;
-  readonly overOne: number;
-}
 export interface DiscardPeriodBucket {
   readonly key: string;
   readonly label: string;
@@ -33,7 +26,6 @@ export interface DiscardPeriodBucket {
   readonly meanExpectedPointsLoss: number | null;
   readonly optimalDecisions: number;
   readonly skippedHands: number;
-  readonly severity: LossSeverityCounts;
 }
 export interface DiscardQualityTrend {
   readonly buckets: readonly DiscardPeriodBucket[];
@@ -49,50 +41,12 @@ export interface DiscardQualityTrendOptions {
   readonly now?: number;
 }
 
-export const QUARTER_POINT = 0.25;
-export const HALF_POINT = 0.5;
-export const ONE_POINT = 1.0;
 const DAYS_IN_WEEK = 7;
 const PAD_THRESHOLD = 10;
 const END_OF_DAY_HOUR = 23;
 const END_OF_DAY_MINUTE = 59;
 const END_OF_DAY_SECOND = 59;
 const END_OF_DAY_MS = 999;
-
-export const emptySeverity: LossSeverityCounts = {
-  halfToOne: 0,
-  optimal: 0,
-  overOne: 0,
-  quarterToHalf: 0,
-  upToQuarter: 0,
-};
-
-const countSeverity = (
-  records: readonly DiscardDecisionRecord[],
-): LossSeverityCounts => {
-  let optimal = 0;
-  let upToQuarter = 0;
-  let quarterToHalf = 0;
-  let halfToOne = 0;
-  let overOne = 0;
-
-  for (const record of records) {
-    const loss = record.expectedPointsLoss;
-    if (loss <= 0) {
-      optimal += 1;
-    } else if (loss <= QUARTER_POINT) {
-      upToQuarter += 1;
-    } else if (loss <= HALF_POINT) {
-      quarterToHalf += 1;
-    } else if (loss <= ONE_POINT) {
-      halfToOne += 1;
-    } else {
-      overOne += 1;
-    }
-  }
-
-  return { halfToOne, optimal, overOne, quarterToHalf, upToQuarter };
-};
 
 const meanLossOf = (
   records: readonly DiscardDecisionRecord[],
@@ -331,7 +285,6 @@ const buildCalendarBuckets = ({
     label: descriptor.label,
     meanExpectedPointsLoss: meanLossOf(bucketRecords),
     optimalDecisions: bucketRecords.filter((record) => record.isOptimal).length,
-    severity: countSeverity(bucketRecords),
     skippedHands: skippedCount,
     startTime: descriptor.startTime,
   }));
@@ -369,7 +322,6 @@ const buildSkipOnlyRollingBuckets = (
         label: `${labelPrefix} ${startSkip}–${endSkip}`,
         meanExpectedPointsLoss: null,
         optimalDecisions: 0,
-        severity: emptySeverity,
         skippedHands: chunk.length,
         startTime: first.at,
       };
@@ -411,7 +363,6 @@ const buildRollingBuckets = ({
       label: `${labelPrefix} ${startDecision}–${endDecision}`,
       meanExpectedPointsLoss: meanLossOf(chunk),
       optimalDecisions: chunk.filter((record) => record.isOptimal).length,
-      severity: countSeverity(chunk),
       skippedHands,
       startTime: first.at,
     });

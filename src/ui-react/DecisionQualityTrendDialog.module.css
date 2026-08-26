@@ -199,64 +199,6 @@
   color: #fff;
 }
 
-.loss-pill-minor {
-  background-color: #d1e7dd;
-  color: #0f5132;
-}
-
-.loss-pill-inside {
-  background-color: #fff3cd;
-  color: #664d03;
-}
-
-.loss-pill-open {
-  background-color: #ffe5d0;
-  color: #8a3800;
-}
-
-.loss-pill-blunder {
-  background-color: #f8d7da;
-  color: #842029;
-}
-
-.severity-counts {
-  display: inline-flex;
-  gap: 0.3rem;
-  justify-content: flex-end;
-}
-
-.severity-badge {
-  border-radius: 3px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.1rem 0.25rem;
-}
-
-.badge-optimal {
-  background-color: #1b732f;
-  color: #fff;
-}
-
-.badge-minor {
-  background-color: #d1e7dd;
-  color: #0f5132;
-}
-
-.badge-inside {
-  background-color: #fff3cd;
-  color: #664d03;
-}
-
-.badge-open {
-  background-color: #ffe5d0;
-  color: #8a3800;
-}
-
-.badge-blunder {
-  background-color: #f8d7da;
-  color: #842029;
-}
-
 @media (aspect-ratio < 6 / 5) {
   .dialog {
     font-size: 0.95rem;

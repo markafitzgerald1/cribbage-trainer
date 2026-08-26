@@ -2,9 +2,11 @@ import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
 import * as classes from "./DecisionQualityChart.module.css";
 import {
+  DATA_POINT_COLOR,
   DecisionQualityChart,
+  OPTIMAL_POINT_COLOR,
   getLatestLoss,
-  getLossColor,
+  getLossPointColor,
   getMinLabelDistance,
   getXLabelAnchor,
 } from "./DecisionQualityChart";
@@ -26,13 +28,6 @@ const makeBucket = (
   label: `Period ${key}`,
   meanExpectedPointsLoss: loss,
   optimalDecisions: 5,
-  severity: {
-    halfToOne: 2,
-    optimal: 5,
-    overOne: 1,
-    quarterToHalf: 1,
-    upToQuarter: 1,
-  },
   skippedHands: 1,
   startTime: 1700000000000,
 });
@@ -199,16 +194,11 @@ describe("decision quality chart", () => {
     expect(getByRole("img")).toBeInTheDocument();
   });
 
-  it("maps loss values to lower severity colors correctly", () => {
-    expect(getLossColor(null)).toBe("#888888");
-    expect(getLossColor(0)).toBe("#28a745");
-    expect(getLossColor(0.2)).toBe("#70c878");
-  });
-
-  it("maps loss values to higher severity colors correctly", () => {
-    expect(getLossColor(0.4)).toBe("#f0ad4e");
-    expect(getLossColor(0.8)).toBe("#e67e22");
-    expect(getLossColor(1.5)).toBe("#d9534f");
+  it("maps loss values to point colors correctly", () => {
+    expect(getLossPointColor(null)).toBe(DATA_POINT_COLOR);
+    expect(getLossPointColor(0)).toBe(OPTIMAL_POINT_COLOR);
+    expect(getLossPointColor(0.2)).toBe(DATA_POINT_COLOR);
+    expect(getLossPointColor(1.5)).toBe(DATA_POINT_COLOR);
   });
 
   it("handles empty points array in getLatestLoss", () => {

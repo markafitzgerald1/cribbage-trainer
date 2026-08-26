@@ -1,10 +1,7 @@
 import * as classes from "./DecisionQualityChart.module.css";
-import {
-  type DiscardPeriodBucket,
-  type DiscardTrendGranularity,
-  HALF_POINT,
-  ONE_POINT,
-  QUARTER_POINT,
+import type {
+  DiscardPeriodBucket,
+  DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
 import React, { useId } from "react";
 
@@ -38,24 +35,11 @@ const TICK_LABEL_X = MARGIN_LEFT - TICK_OFFSET_X;
 const POINT_RADIUS = 4.5;
 const LAST_INDEX = -1;
 
-export const getLossColor = (loss: number | null): string => {
-  if (loss === null) {
-    return "#888888";
-  }
-  if (loss <= 0) {
-    return "#28a745";
-  }
-  if (loss <= QUARTER_POINT) {
-    return "#70c878";
-  }
-  if (loss <= HALF_POINT) {
-    return "#f0ad4e";
-  }
-  if (loss <= ONE_POINT) {
-    return "#e67e22";
-  }
-  return "#d9534f";
-};
+export const OPTIMAL_POINT_COLOR = "#28a745";
+export const DATA_POINT_COLOR = "#70c878";
+
+export const getLossPointColor = (loss: number | null): string =>
+  loss === 0 ? OPTIMAL_POINT_COLOR : DATA_POINT_COLOR;
 
 export interface ChartPoint {
   readonly bucket: DiscardPeriodBucket;
@@ -136,7 +120,7 @@ const createChartPoints = (
     return [
       {
         bucket,
-        color: getLossColor(bucket.meanExpectedPointsLoss),
+        color: getLossPointColor(bucket.meanExpectedPointsLoss),
         loss: bucket.meanExpectedPointsLoss,
         xPosition: calculateX({ bucket, buckets, granularity, index }),
         yPosition: calculateY(bucket.meanExpectedPointsLoss, maxLossY),

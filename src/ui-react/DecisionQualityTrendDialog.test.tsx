@@ -47,7 +47,7 @@ const emptyTally: Tally.StoredTally = {
 
 const cappedTally = dialogFixtures.cappedDialogTally();
 
-const multiTierTally: Tally.StoredTally = {
+const multiLossTally: Tally.StoredTally = {
   lifetime: {
     decisions: 5,
     expectedPointsLossTotal: 2.8,
@@ -67,7 +67,7 @@ const multiTierTally: Tally.StoredTally = {
       at: 1700000000000 + 86400000,
       cribRole: CribRole.Dealer,
       expectedPointsLoss: 0.15,
-      handKey: "h-minor",
+      handKey: "h-1",
       isOptimal: false,
       isPractice: false,
     },
@@ -75,7 +75,7 @@ const multiTierTally: Tally.StoredTally = {
       at: 1700000000000 + 86400000 * 2,
       cribRole: CribRole.Dealer,
       expectedPointsLoss: 0.35,
-      handKey: "h-inside",
+      handKey: "h-2",
       isOptimal: false,
       isPractice: false,
     },
@@ -83,7 +83,7 @@ const multiTierTally: Tally.StoredTally = {
       at: 1700000000000 + 86400000 * 3,
       cribRole: CribRole.Dealer,
       expectedPointsLoss: 0.75,
-      handKey: "h-open",
+      handKey: "h-3",
       isOptimal: false,
       isPractice: false,
     },
@@ -91,7 +91,7 @@ const multiTierTally: Tally.StoredTally = {
       at: 1700000000000 + 86400000 * 4,
       cribRole: CribRole.Dealer,
       expectedPointsLoss: 1.55,
-      handKey: "h-blunder",
+      handKey: "h-4",
       isOptimal: false,
       isPractice: false,
     },
@@ -233,37 +233,14 @@ describe("decision quality trend dialog", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders distinct loss pill classes across all loss severity tiers", () => {
+  it("renders optimal loss pill class for optimal decisions", () => {
     const { getByText } = renderDialog({
       initialGranularity: "day",
-      tally: multiTierTally,
+      tally: multiLossTally,
     });
 
     expect(getByText("0.00")).toHaveClass(classes.lossPillOptimal);
-    expect(getByText("0.15")).toHaveClass(classes.lossPillMinor);
-    expect(getByText("0.35")).toHaveClass(classes.lossPillInside);
-    expect(getByText("0.75")).toHaveClass(classes.lossPillOpen);
-    expect(getByText("1.55")).toHaveClass(classes.lossPillBlunder);
-  });
-
-  it("displays descriptive badge titles across all severity tiers", () => {
-    const { container } = renderDialog({
-      initialGranularity: "day",
-      tally: multiTierTally,
-    });
-
-    const titles = Array.from(container.querySelectorAll("[title]")).map((el) =>
-      el.getAttribute("title"),
-    );
-
-    expect(titles).toStrictEqual(
-      expect.arrayContaining([
-        "Optimal (0.00)",
-        "> 0 and ≤ 0.25 points",
-        "> 0.25 and ≤ 0.50 points",
-        "> 0.50 and ≤ 1.00 points",
-        "> 1.00 points",
-      ]),
-    );
+    expect(getByText("0.15")).toHaveClass(classes.lossPill);
+    expect(getByText("0.15")).not.toHaveClass(classes.lossPillOptimal);
   });
 });

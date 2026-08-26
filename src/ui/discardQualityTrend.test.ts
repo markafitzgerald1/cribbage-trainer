@@ -42,7 +42,7 @@ describe("discard quality trend computation", () => {
     expect(trend).toStrictEqual(EMPTY_TREND);
   });
 
-  it("buckets decisions into rolling 20 batches with severity distribution", () => {
+  it("buckets decisions into rolling 20 batches", () => {
     const records = [
       testDecisionOf({ expectedPointsLoss: 0, isOptimal: true }),
       testDecisionOf({ at: TEST_AT + ONE_HOUR_MS, expectedPointsLoss: 0.2 }),
@@ -73,13 +73,6 @@ describe("discard quality trend computation", () => {
       key: "1-5",
       label: "Decisions 1–5",
       optimalDecisions: 1,
-      severity: {
-        halfToOne: 1,
-        optimal: 1,
-        overOne: 1,
-        quarterToHalf: 1,
-        upToQuarter: 1,
-      },
     });
     expect(bucket?.meanExpectedPointsLoss).toBeCloseTo(0.65);
   });
