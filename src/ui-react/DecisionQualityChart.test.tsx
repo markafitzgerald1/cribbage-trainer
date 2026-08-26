@@ -1,4 +1,3 @@
-/* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
 import * as classes from "./DecisionQualityChart.module.css";
@@ -33,14 +32,20 @@ const makeBucket = (
   startTime: 1700000000000,
 });
 
+const renderChart = (
+  buckets: readonly DiscardPeriodBucket[],
+  granularity: "day" | "rolling20" | "week",
+) =>
+  render(
+    <DecisionQualityChart
+      buckets={buckets}
+      granularity={granularity}
+    />,
+  );
+
 describe("decision quality chart", () => {
   it("renders empty-state message when buckets array is empty", () => {
-    const { getByText } = render(
-      <DecisionQualityChart
-        buckets={[]}
-        granularity="rolling20"
-      />,
-    );
+    const { getByText } = renderChart([], "rolling20");
 
     expect(
       getByText("No discard decisions recorded yet for this view."),
@@ -48,12 +53,7 @@ describe("decision quality chart", () => {
   });
 
   it("renders empty-state message when all buckets have null mean loss", () => {
-    const { getByText } = render(
-      <DecisionQualityChart
-        buckets={[makeBucket("b1", null, 0)]}
-        granularity="day"
-      />,
-    );
+    const { getByText } = renderChart([makeBucket("b1", null, 0)], "day");
 
     expect(
       getByText("No discard decisions recorded yet for this view."),
@@ -61,11 +61,9 @@ describe("decision quality chart", () => {
   });
 
   it("renders SVG with role img and data points for single bucket", () => {
-    const { getByRole, container } = render(
-      <DecisionQualityChart
-        buckets={[makeBucket("b1", 0.4, 10)]}
-        granularity="day"
-      />,
+    const { getByRole, container } = renderChart(
+      [makeBucket("b1", 0.4, 10)],
+      "day",
     );
     const svg = getByRole("img");
 
@@ -80,12 +78,7 @@ describe("decision quality chart", () => {
       makeBucket("b3", 0.2),
       makeBucket("b4", 0.0),
     ];
-    const { container } = render(
-      <DecisionQualityChart
-        buckets={buckets}
-        granularity="day"
-      />,
-    );
+    const { container } = renderChart(buckets, "day");
 
     expect(container.querySelector("path")).toBeInTheDocument();
     expect(container.querySelectorAll("circle")).toHaveLength(3);
@@ -96,12 +89,7 @@ describe("decision quality chart", () => {
     const buckets = Array.from({ length: count }, (_, index) =>
       makeBucket(`b${index}`, 0.25),
     );
-    const { getByRole } = render(
-      <DecisionQualityChart
-        buckets={buckets}
-        granularity="day"
-      />,
-    );
+    const { getByRole } = renderChart(buckets, "day");
 
     expect(getByRole("img")).toBeInTheDocument();
   });
@@ -111,12 +99,7 @@ describe("decision quality chart", () => {
       ...makeBucket(`week-${index}`, 0.25),
       label: `Aug ${index * 7 + 3}–${index * 7 + 9}, 2026`,
     }));
-    const { container } = render(
-      <DecisionQualityChart
-        buckets={buckets}
-        granularity="week"
-      />,
-    );
+    const { container } = renderChart(buckets, "week");
 
     expect(container.querySelectorAll(`.${classes.xLabel}`)).toHaveLength(3);
   });
@@ -127,12 +110,7 @@ describe("decision quality chart", () => {
       ...makeBucket(`b${index}`, 0.25),
       label: `Decisions ${index * 20 + 1}–${(index + 1) * 20}`,
     }));
-    const { getByRole } = render(
-      <DecisionQualityChart
-        buckets={buckets}
-        granularity="rolling20"
-      />,
-    );
+    const { getByRole } = renderChart(buckets, "rolling20");
 
     expect(getByRole("img")).toBeInTheDocument();
   });
@@ -153,4 +131,3 @@ describe("decision quality chart", () => {
     expect(getLatestLoss([])).toBe("0.00");
   });
 });
-/* jscpd:ignore-end */

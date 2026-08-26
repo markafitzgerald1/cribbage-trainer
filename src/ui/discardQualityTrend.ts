@@ -6,15 +6,16 @@ import {
   isSameLocalDay,
   readTallyForDisplay,
 } from "./discardTally";
+import {
+  chunkBounds,
+  getRollingBatchSize,
+  sortByTimestamp,
+} from "./discardQualityTrendRolling";
 import { CribRole } from "../game/expectedCribPoints";
-
 export type TrendGranularity =
   "rolling20" | "rolling50" | "day" | "week" | "month";
-
 export type DiscardTrendGranularity = TrendGranularity;
-
 export type CribRoleFilter = "all" | "dealer" | "pone";
-
 export interface LossSeverityCounts {
   readonly optimal: number;
   readonly upToQuarter: number;
@@ -22,7 +23,6 @@ export interface LossSeverityCounts {
   readonly halfToOne: number;
   readonly overOne: number;
 }
-
 export interface DiscardPeriodBucket {
   readonly key: string;
   readonly label: string;
@@ -34,7 +34,6 @@ export interface DiscardPeriodBucket {
   readonly skippedHands: number;
   readonly severity: LossSeverityCounts;
 }
-
 export interface DiscardQualityTrend {
   readonly buckets: readonly DiscardPeriodBucket[];
   readonly earliestTimestamp: number | null;
@@ -43,15 +42,12 @@ export interface DiscardQualityTrend {
   readonly totalAuthenticDecisions: number;
   readonly totalSkippedHands: number;
 }
-
 export interface DiscardQualityTrendOptions {
   readonly granularity: TrendGranularity;
   readonly roleFilter?: CribRoleFilter;
   readonly now?: number;
 }
 
-const ROLLING_TWENTY = 20;
-const ROLLING_FIFTY = 50;
 const QUARTER_POINT = 0.25;
 const HALF_POINT = 0.5;
 const ONE_POINT = 1.0;
@@ -349,7 +345,7 @@ const countRollingSkips = (
 ): number[] => {
   const bucketCount = Math.ceil(records.length / batchSize);
   const counts = Array.from({ length: bucketCount }, () => 0);
-  const sortedSkips = [...skipped].sort((one, other) => one.at - other.at);
+  const sortedSkips = sortByTimestamp(skipped);
   let bucketIndex = 0;
 
   for (const skip of sortedSkips) {
@@ -368,6 +364,37 @@ const countRollingSkips = (
   return counts;
 };
 
+const buildSkipOnlyRollingBuckets = (
+  granularity: "rolling20" | "rolling50",
+  skipped: readonly SkippedHand[],
+): DiscardPeriodBucket[] => {
+  const batchSize = getRollingBatchSize(granularity);
+  const sortedSkips = sortByTimestamp(skipped);
+
+  return Array.from(
+    { length: Math.ceil(sortedSkips.length / batchSize) },
+    (_, batchIndex) => {
+      const startIndex = batchIndex * batchSize;
+      const chunk = sortedSkips.slice(startIndex, startIndex + batchSize);
+      const [first, last] = chunkBounds(chunk);
+      const startSkip = startIndex + 1;
+      const endSkip = startIndex + chunk.length;
+
+      return {
+        decisions: 0,
+        endTime: last.at,
+        key: `skipped-${startSkip}-${endSkip}`,
+        label: `Skipped hands ${startSkip}–${endSkip}`,
+        meanExpectedPointsLoss: null,
+        optimalDecisions: 0,
+        severity: emptySeverity,
+        skippedHands: chunk.length,
+        startTime: first.at,
+      };
+    },
+  );
+};
+
 const buildRollingBuckets = ({
   granularity,
   hasTruncatedDecisionHistory,
@@ -376,20 +403,18 @@ const buildRollingBuckets = ({
   skipped,
 }: RollingBucketsArgs): DiscardPeriodBucket[] => {
   if (records.length === 0) {
-    return [];
+    return roleFilter === "all"
+      ? buildSkipOnlyRollingBuckets(granularity, skipped)
+      : [];
   }
-  const batchSize =
-    granularity === "rolling20" ? ROLLING_TWENTY : ROLLING_FIFTY;
+  const batchSize = getRollingBatchSize(granularity);
   const buckets: DiscardPeriodBucket[] = [];
   const skippedCounts =
     roleFilter === "all" ? countRollingSkips(records, batchSize, skipped) : [];
 
   for (let index = 0; index < records.length; index += batchSize) {
     const chunk = records.slice(index, index + batchSize);
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const first = chunk[0]!;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const last = chunk[chunk.length - 1]!;
+    const [first, last] = chunkBounds(chunk);
     const startDecision = index + 1;
     const endDecision = index + chunk.length;
     const startTime = first.at;
@@ -439,8 +464,17 @@ export const computeDiscardQualityTrend = (
   const authenticRecords = tally.records.filter(
     (record) => !record.isPractice && matchesRole(record, roleFilter),
   );
+  const [firstRecord] = authenticRecords;
   const hasTruncatedDecisionHistory =
     tally.lifetime.decisions > tally.records.length;
+  const rollingSkips =
+    roleFilter === "all" && firstRecord
+      ? tally.skipped.filter((skip) => skip.at >= firstRecord.at)
+      : tally.skipped;
+  const skipsForCurrentView =
+    granularity === "rolling20" || granularity === "rolling50"
+      ? rollingSkips
+      : tally.skipped;
 
   const buckets =
     granularity === "rolling20" || granularity === "rolling50"
@@ -449,7 +483,7 @@ export const computeDiscardQualityTrend = (
           hasTruncatedDecisionHistory,
           records: authenticRecords,
           roleFilter,
-          skipped: tally.skipped,
+          skipped: rollingSkips,
         })
       : buildCalendarBuckets({
           granularity,
@@ -459,7 +493,6 @@ export const computeDiscardQualityTrend = (
           skipped: tally.skipped,
         });
 
-  const [firstRecord] = authenticRecords;
   const lastRecord = authenticRecords[authenticRecords.length - 1];
 
   return {
@@ -472,7 +505,7 @@ export const computeDiscardQualityTrend = (
       tally.skipped.length >= MAX_RECORDS,
     latestTimestamp: lastRecord ? lastRecord.at : null,
     totalAuthenticDecisions: authenticRecords.length,
-    totalSkippedHands: roleFilter === "all" ? tally.skipped.length : 0,
+    totalSkippedHands: roleFilter === "all" ? skipsForCurrentView.length : 0,
   };
 };
 

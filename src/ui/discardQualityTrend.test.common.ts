@@ -65,6 +65,30 @@ export const poneDecision = (
     handKey,
   });
 
+interface SequentialDecisionOptions {
+  readonly interval?: number;
+  readonly startAt?: number;
+}
+
+export const sequentialDecisions = (
+  count: number,
+  handKeyPrefix: string,
+  { interval = ONE_HOUR_MS, startAt = TEST_AT }: SequentialDecisionOptions = {},
+): DiscardDecisionRecord[] =>
+  Array.from({ length: count }, (_, index) =>
+    testDecisionOf({
+      at: startAt + index * interval,
+      handKey: `${handKeyPrefix}-${index}`,
+    }),
+  );
+
+export const withTruncatedDecisionHistory = (
+  tally: StoredTally,
+): StoredTally => ({
+  ...tally,
+  lifetime: { ...tally.lifetime, decisions: tally.records.length + 1 },
+});
+
 export const storedTallyOf = (
   records: readonly DiscardDecisionRecord[],
   skipped: readonly SkippedHand[] = [],
@@ -101,4 +125,11 @@ export const assertSingleBucketLoss = (
   expect(trend.totalAuthenticDecisions).toBe(expectedDecisions);
   expect(trend.buckets).toHaveLength(1);
   expect(firstBucket?.meanExpectedPointsLoss).toBe(expectedLoss);
+};
+
+export const expectBucketCount = (
+  trend: DiscardQualityTrend,
+  expectedCount: number,
+): void => {
+  expect(trend.buckets).toHaveLength(expectedCount);
 };

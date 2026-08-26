@@ -1,34 +1,16 @@
-/* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import type * as Tally from "../ui/discardTally";
 import * as classes from "./DecisionQualityTrendDialog.module.css";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
-import { type StoredTally } from "../ui/discardTally";
+import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
 
-const sampleTally: StoredTally = {
-  lifetime: {
-    decisions: 25,
-    expectedPointsLossTotal: 5.0,
-    optimalDecisions: 15,
-    skippedHands: 2,
-  },
-  records: Array.from({ length: 25 }, (_, index) => ({
-    at: 1700000000000 + index * 3600000,
-    cribRole: index % 2 === 0 ? CribRole.Dealer : CribRole.Pone,
-    expectedPointsLoss: 0.2,
-    handKey: `h-${index}`,
-    isOptimal: index % 2 === 0,
-    isPractice: false,
-  })),
-  revision: 1,
-  skipped: [{ at: 1700000000000 + 10000 }],
-  version: 1,
-};
+const sampleTally = dialogFixtures.dialogTally(25);
 
-const tallyWithSkipOnlyPeriod: StoredTally = {
+const tallyWithSkipOnlyPeriod: Tally.StoredTally = {
   lifetime: {
     decisions: 1,
     expectedPointsLossTotal: 0.5,
@@ -50,7 +32,7 @@ const tallyWithSkipOnlyPeriod: StoredTally = {
   version: 1,
 };
 
-const emptyTally: StoredTally = {
+const emptyTally: Tally.StoredTally = {
   lifetime: {
     decisions: 0,
     expectedPointsLossTotal: 0,
@@ -63,49 +45,58 @@ const emptyTally: StoredTally = {
   version: 1,
 };
 
-const cappedTally: StoredTally = {
-  lifetime: {
-    decisions: 20000,
-    expectedPointsLossTotal: 4000,
-    optimalDecisions: 10000,
-    skippedHands: 0,
-  },
-  records: Array.from({ length: 20000 }, (_, index) => ({
-    at: 1700000000000 + index * 1000,
-    cribRole: CribRole.Dealer,
-    expectedPointsLoss: 0.2,
-    handKey: `cap-${index}`,
-    isOptimal: true,
-    isPractice: false,
-  })),
-  revision: 1,
-  skipped: [],
-  version: 1,
+const cappedTally = dialogFixtures.cappedDialogTally();
+
+interface RenderDialogOptions {
+  readonly initialGranularity?: "day";
+  readonly onClose?: () => void;
+  readonly show?: boolean;
+  readonly tally?: Tally.StoredTally | null;
+  readonly useStoredTally?: boolean;
+}
+
+const renderDialog = ({
+  initialGranularity,
+  onClose = jest.fn(),
+  show = true,
+  tally = sampleTally,
+  useStoredTally = false,
+}: RenderDialogOptions = {}) =>
+  useStoredTally
+    ? render(
+        <DecisionQualityTrendDialog
+          onClose={onClose}
+          show={show}
+        />,
+      )
+    : render(
+        <DecisionQualityTrendDialog
+          initialGranularity={initialGranularity}
+          onClose={onClose}
+          show={show}
+          tally={tally}
+        />,
+      );
+
+const selectRadio = (
+  getByRole: ReturnType<typeof render>["getByRole"],
+  name: "Day" | "Dealer",
+) => {
+  const radio = getByRole("radio", { name });
+
+  fireEvent.click(radio);
+  return radio;
 };
 
 describe("decision quality trend dialog", () => {
   it("does not render content when show is false", () => {
-    const { queryByRole } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show={false}
-        tally={sampleTally}
-      />,
-    );
+    const { container } = renderDialog({ show: false });
 
-    expect(
-      queryByRole("heading", { name: "Decision quality over time" }),
-    ).toBeNull();
+    expect(container.textContent).not.toContain("Decision quality over time");
   });
 
   it("renders summary metrics, controls, chart, and breakdown table when open", () => {
-    const { getByRole, getByText } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show
-        tally={sampleTally}
-      />,
-    );
+    const { getByRole, getByText } = renderDialog();
 
     expect(
       getByRole("heading", { name: "Decision quality over time" }),
@@ -116,13 +107,7 @@ describe("decision quality trend dialog", () => {
   });
 
   it("explains the metric and shows the skipped-hand rate", () => {
-    const { getByText } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show
-        tally={sampleTally}
-      />,
-    );
+    const { getByText } = renderDialog();
 
     expect(
       getByText(/Average loss is the expected points left on the table/iu),
@@ -131,74 +116,32 @@ describe("decision quality trend dialog", () => {
   });
 
   it("switches granularity when another radio is selected", () => {
-    const { getByRole } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show
-        tally={sampleTally}
-      />,
-    );
+    const { getByRole } = renderDialog();
 
-    const dayRadio = getByRole("radio", { name: "Day" });
-    fireEvent.click(dayRadio);
-
-    expect(dayRadio).toBeChecked();
+    expect(selectRadio(getByRole, "Day")).toBeChecked();
   });
 
   it("filters by crib role when role filter is changed", () => {
-    const { getByRole } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show
-        tally={sampleTally}
-      />,
-    );
+    const { getByRole } = renderDialog();
 
-    const dealerRadio = getByRole("radio", { name: "Dealer" });
-    fireEvent.click(dealerRadio);
-
-    expect(dealerRadio).toBeChecked();
+    expect(selectRadio(getByRole, "Dealer")).toBeChecked();
   });
 
-  it("calls onClose when Escape key is pressed", () => {
+  it.each([
+    { expectedCalls: 1, key: "Escape" },
+    { expectedCalls: 0, key: "Enter" },
+  ])("closes only for the $key key", ({ expectedCalls, key }) => {
     const onClose = jest.fn();
-    render(
-      <DecisionQualityTrendDialog
-        onClose={onClose}
-        show
-        tally={sampleTally}
-      />,
-    );
+    renderDialog({ onClose });
 
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.keyDown(document, { key });
 
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("ignores keyboard events other than Escape", () => {
-    const onClose = jest.fn();
-    render(
-      <DecisionQualityTrendDialog
-        onClose={onClose}
-        show
-        tally={sampleTally}
-      />,
-    );
-
-    fireEvent.keyDown(document, { key: "Enter" });
-
-    expect(onClose).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(expectedCalls);
   });
 
   it("calls onClose when Close modal button is clicked", () => {
     const onClose = jest.fn();
-    const { getByRole } = render(
-      <DecisionQualityTrendDialog
-        onClose={onClose}
-        show
-        tally={sampleTally}
-      />,
-    );
+    const { getByRole } = renderDialog({ onClose });
 
     fireEvent.click(getByRole("button", { name: "Close modal" }));
 
@@ -206,25 +149,13 @@ describe("decision quality trend dialog", () => {
   });
 
   it("displays horizon notice when tally reaches record cap", () => {
-    const { getByText } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show
-        tally={cappedTally}
-      />,
-    );
+    const { getByText } = renderDialog({ tally: cappedTally });
 
     expect(getByText(/retain up to 20,000 entries/iu)).toBeInTheDocument();
   });
 
   it("renders cleanly with empty tally", () => {
-    const { getByText } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show
-        tally={emptyTally}
-      />,
-    );
+    const { getByText } = renderDialog({ tally: emptyTally });
 
     expect(
       getByText("No discard decisions recorded yet for this view."),
@@ -232,25 +163,16 @@ describe("decision quality trend dialog", () => {
   });
 
   it("renders periods with skipped hands and no decisions in day view", () => {
-    const { getAllByText } = render(
-      <DecisionQualityTrendDialog
-        initialGranularity="day"
-        onClose={jest.fn()}
-        show
-        tally={tallyWithSkipOnlyPeriod}
-      />,
-    );
+    const { getAllByText } = renderDialog({
+      initialGranularity: "day",
+      tally: tallyWithSkipOnlyPeriod,
+    });
 
     expect(getAllByText("—").length).toBeGreaterThan(0);
   });
 
   it("reads from storage helper when tally prop is omitted", () => {
-    const { getByRole } = render(
-      <DecisionQualityTrendDialog
-        onClose={jest.fn()}
-        show
-      />,
-    );
+    const { getByRole } = renderDialog({ useStoredTally: true });
 
     expect(
       getByRole("heading", { name: "Decision quality over time" }),
@@ -258,7 +180,7 @@ describe("decision quality trend dialog", () => {
   });
 
   it("renders distinct loss pill classes across all loss severity tiers", () => {
-    const multiTierTally: StoredTally = {
+    const multiTierTally: Tally.StoredTally = {
       lifetime: {
         decisions: 5,
         expectedPointsLossTotal: 2.8,
@@ -312,14 +234,10 @@ describe("decision quality trend dialog", () => {
       version: 1,
     };
 
-    const { getByText } = render(
-      <DecisionQualityTrendDialog
-        initialGranularity="day"
-        onClose={jest.fn()}
-        show
-        tally={multiTierTally}
-      />,
-    );
+    const { getByText } = renderDialog({
+      initialGranularity: "day",
+      tally: multiTierTally,
+    });
 
     expect(getByText("0.00")).toHaveClass(classes.lossPillOptimal);
     expect(getByText("0.15")).toHaveClass(classes.lossPillMinor);
@@ -328,4 +246,3 @@ describe("decision quality trend dialog", () => {
     expect(getByText("1.55")).toHaveClass(classes.lossPillBlunder);
   });
 });
-/* jscpd:ignore-end */

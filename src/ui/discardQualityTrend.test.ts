@@ -8,10 +8,13 @@ import {
   SEP_2_2026,
   TEST_AT,
   dealerDecision,
+  expectBucketCount,
   poneDecision,
   runTrend,
+  sequentialDecisions,
   storedTallyOf,
   testDecisionOf,
+  withTruncatedDecisionHistory,
 } from "./discardQualityTrend.test.common";
 import {
   MAX_RECORDS,
@@ -92,20 +95,18 @@ describe("discard quality trend computation", () => {
 
   it("splits rolling batches when exceeding batch size", () => {
     const count = 25;
-    const records = Array.from({ length: count }, (_, index) =>
-      testDecisionOf({
-        at: TEST_AT + index * ONE_HOUR_MS,
-        expectedPointsLoss: 0.05,
-        handKey: `batch-${index}`,
-      }),
-    );
+    const records = sequentialDecisions(count, "batch").map((record) => ({
+      ...record,
+      expectedPointsLoss: 0.05,
+    }));
 
     const trend = runTrend(records, {
       granularity: "rolling20",
       now: TEST_AT,
     });
 
-    expect(trend.buckets).toHaveLength(2);
+    expectBucketCount(trend, 2);
+
     expect(trend.buckets[0]?.label).toBe("Decisions 1–20");
     expect(trend.buckets[0]?.decisions).toBe(20);
     expect(trend.buckets[1]?.label).toBe("Decisions 21–25");
@@ -113,18 +114,9 @@ describe("discard quality trend computation", () => {
   });
 
   it("labels rolling batches as retained history after decision truncation", () => {
-    const records = Array.from({ length: 20 }, (_, index) =>
-      testDecisionOf({
-        at: TEST_AT + index * ONE_HOUR_MS,
-        handKey: `retained-${index}`,
-      }),
-    );
-    const tally = storedTallyOf(records);
+    const tally = storedTallyOf(sequentialDecisions(20, "retained"));
     const trend = computeDiscardQualityTrend(
-      {
-        ...tally,
-        lifetime: { ...tally.lifetime, decisions: MAX_RECORDS + 1 },
-      },
+      withTruncatedDecisionHistory(tally),
       { granularity: "rolling20", now: TEST_AT },
     );
 
@@ -225,10 +217,40 @@ describe("discard quality trend computation", () => {
 
     const trend = runTrend([], { granularity: "day", now: TEST_AT }, skipped);
 
-    expect(trend.buckets).toHaveLength(1);
+    expectBucketCount(trend, 1);
+
     expect(trend.buckets[0]?.decisions).toBe(0);
     expect(trend.buckets[0]?.meanExpectedPointsLoss).toBeNull();
     expect(trend.buckets[0]?.skippedHands).toBe(1);
+  });
+
+  it("builds rolling buckets for skip-only histories", () => {
+    const skipped = Array.from({ length: 21 }, (_, index) => ({
+      at: TEST_AT + index * ONE_HOUR_MS,
+    }));
+    const trend = runTrend([], { granularity: "rolling20" }, skipped);
+
+    expect(trend.totalSkippedHands).toBe(21);
+
+    expectBucketCount(trend, 2);
+
+    expect(trend.buckets[0]).toMatchObject({
+      decisions: 0,
+      label: "Skipped hands 1–20",
+      skippedHands: 20,
+    });
+    expect(trend.buckets[1]).toMatchObject({
+      label: "Skipped hands 21–21",
+      skippedHands: 1,
+    });
+
+    const roleFilteredTrend = runTrend(
+      [],
+      { granularity: "rolling20", roleFilter: "dealer" },
+      skipped,
+    );
+
+    expect(roleFilteredTrend.buckets).toStrictEqual([]);
   });
 
   it("filters by dealer and pone roles in rolling views", () => {
@@ -325,14 +347,26 @@ describe("discard quality trend computation", () => {
     expect(dayBucket?.skippedHands).toBe(1);
   });
 
-  /* jscpd:ignore-start */
-  it("assigns leading, boundary, and trailing skips to rolling buckets", () => {
-    const records = Array.from({ length: 21 }, (_, index) =>
-      testDecisionOf({
-        at: 1000 + index * 1000,
-        handKey: `decision-${index}`,
-      }),
+  it("excludes skips before retained rolling history", () => {
+    const records = sequentialDecisions(2, "retained-boundary");
+    const tally = storedTallyOf(records, [
+      { at: TEST_AT - ONE_HOUR_MS },
+      { at: TEST_AT + ONE_HOUR_MS },
+    ]);
+    const trend = computeDiscardQualityTrend(
+      withTruncatedDecisionHistory(tally),
+      { granularity: "rolling20" },
     );
+
+    expect(trend.buckets[0]).toMatchObject({ skippedHands: 1 });
+    expect(trend.totalSkippedHands).toBe(1);
+  });
+
+  it("assigns retained boundary and trailing skips to rolling buckets", () => {
+    const records = sequentialDecisions(21, "decision", {
+      interval: 1000,
+      startAt: 1000,
+    });
     const skipped = [
       { at: 500 },
       { at: 20_000 },
@@ -342,20 +376,17 @@ describe("discard quality trend computation", () => {
 
     const trend = runTrend(records, { granularity: "rolling20" }, skipped);
 
-    expect(trend.buckets).toHaveLength(2);
-    expect(trend.buckets[0]?.skippedHands).toBe(2);
+    expectBucketCount(trend, 2);
+
+    expect(trend.buckets[0]?.skippedHands).toBe(1);
     expect(trend.buckets[1]?.skippedHands).toBe(2);
-    expect(trend.totalSkippedHands).toBe(4);
+    expect(trend.totalSkippedHands).toBe(3);
   });
 
   it("identifies when storage reaches record cap or has truncated lifetime history", () => {
-    const fullRecords = Array.from({ length: MAX_RECORDS }, (_, index) =>
-      testDecisionOf({
-        at: TEST_AT + index,
-        expectedPointsLoss: 0.2,
-        handKey: `full-${index}`,
-      }),
-    );
+    const fullRecords = sequentialDecisions(MAX_RECORDS, "full", {
+      interval: 1,
+    });
 
     const trend = computeDiscardQualityTrend(storedTallyOf(fullRecords), {
       granularity: "rolling50",
@@ -364,57 +395,38 @@ describe("discard quality trend computation", () => {
 
     expect(trend.isAtRecordCap).toBe(true);
 
-    const tallyWithRolledOffDecisions = {
-      lifetime: {
-        decisions: 20005,
-        expectedPointsLossTotal: 4000,
-        optimalDecisions: 10000,
-        skippedHands: 0,
+    const retainedRecord = [testDecisionOf({ handKey: "d1" })];
+    const rolledOffTallies = [
+      {
+        ...storedTallyOf(retainedRecord),
+        lifetime: {
+          decisions: 20_005,
+          expectedPointsLossTotal: 4000,
+          optimalDecisions: 10_000,
+          skippedHands: 0,
+        },
       },
-      records: [
-        testDecisionOf({
-          at: TEST_AT,
-          expectedPointsLoss: 0.2,
-          handKey: "d1",
-        }),
-      ],
-      revision: 1,
-      skipped: [],
-      version: 1,
-    };
-
-    expect(
-      computeDiscardQualityTrend(tallyWithRolledOffDecisions, {
-        granularity: "rolling20",
-      }).isAtRecordCap,
-    ).toBe(true);
-
-    const tallyWithRolledOffSkips = {
-      lifetime: {
-        decisions: 1,
-        expectedPointsLossTotal: 0,
-        optimalDecisions: 1,
-        skippedHands: 20005,
+      {
+        ...storedTallyOf(retainedRecord),
+        lifetime: {
+          decisions: 1,
+          expectedPointsLossTotal: 0,
+          optimalDecisions: 1,
+          skippedHands: 20_005,
+        },
       },
-      records: [
-        testDecisionOf({
-          at: TEST_AT,
-          expectedPointsLoss: 0,
-          handKey: "d1",
-        }),
-      ],
-      revision: 1,
-      skipped: [],
-      version: 1,
-    };
+    ];
 
-    expect(
-      computeDiscardQualityTrend(tallyWithRolledOffSkips, {
-        granularity: "rolling20",
-      }).isAtRecordCap,
-    ).toBe(true);
+    for (const rolledOffTally of rolledOffTallies) {
+      expect(
+        computeDiscardQualityTrend(rolledOffTally, {
+          granularity: "rolling20",
+        }).isAtRecordCap,
+      ).toBe(true);
+    }
+
+    expect(rolledOffTallies).toHaveLength(2);
   });
-  /* jscpd:ignore-end */
 
   it("reads trend directly from storage helper", () => {
     clearDiscardTally();
