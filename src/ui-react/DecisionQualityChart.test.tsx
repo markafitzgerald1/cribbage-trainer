@@ -13,6 +13,7 @@ import {
   getXLabelAnchor,
 } from "./DecisionQualityChart";
 import type {
+  DiscardDecisionPoint,
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
@@ -37,10 +38,12 @@ const makeBucket = (
 const renderChart = (
   buckets: readonly DiscardPeriodBucket[],
   granularity: DiscardTrendGranularity,
+  decisionPoints?: readonly DiscardDecisionPoint[],
 ) =>
   render(
     <DecisionQualityChart
       buckets={buckets}
+      decisionPoints={decisionPoints}
       granularity={granularity}
     />,
   );
@@ -52,6 +55,18 @@ const countRenderedXLabels = (
   const { container } = renderChart(buckets, granularity);
   return container.querySelectorAll(`.${classes.xLabel}`).length;
 };
+
+const makeDecisionPoint = (
+  ordinal: number,
+  expectedPointsLoss: number,
+  rollingMeanLoss: number,
+) => ({
+  expectedPointsLoss,
+  isOptimal: expectedPointsLoss === 0,
+  ordinal,
+  rollingMeanLoss,
+  timestamp: 1700000000000 + ordinal * 1000,
+});
 
 describe("decision quality chart", () => {
   it("renders empty-state message when buckets array is empty", () => {
@@ -252,4 +267,56 @@ describe("decision quality chart", () => {
       "Trend chart with 2 periods. Latest scored period (Period b1) average expected loss is 0.40 points.",
     );
   });
+
+  it("renders continuous decision points with loss stems and optimal baseline dots in rolling mode", () => {
+    const buckets = [makeBucket("b1", 0.4)];
+    const decisionPoints = [
+      makeDecisionPoint(1, 0, 0),
+      makeDecisionPoint(2, 0.8, 0.4),
+    ];
+    const { container, getByRole } = renderChart(
+      buckets,
+      "rolling20",
+      decisionPoints,
+    );
+
+    expect(getByRole("img")).toBeInTheDocument();
+    expect(container.querySelectorAll(`.${classes.optimalDot}`)).toHaveLength(
+      1,
+    );
+    expect(container.querySelectorAll(`.${classes.lossStem}`)).toHaveLength(1);
+    expect(container.querySelectorAll(`.${classes.lossDot}`)).toHaveLength(1);
+    expect(
+      container.querySelector(`.${classes.trendLine}`),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      expectedLoss: "0.00",
+      granularity: "rolling20" as const,
+      loss: 0,
+      windowSize: 20,
+    },
+    {
+      expectedLoss: "0.30",
+      granularity: "rolling50" as const,
+      loss: 0.3,
+      windowSize: 50,
+    },
+  ])(
+    "describes single decision point under $granularity",
+    ({ expectedLoss, granularity, loss, windowSize }) => {
+      const { container, getByRole } = renderChart(
+        [makeBucket("b1", loss)],
+        granularity,
+        [makeDecisionPoint(1, loss, loss)],
+      );
+
+      expect(getByRole("img")).toBeInTheDocument();
+      expect(container.querySelector("desc")).toHaveTextContent(
+        `Trend chart with 1 decisions (${windowSize}-decision rolling average). Latest average expected loss is ${expectedLoss} points.`,
+      );
+    },
+  );
 });

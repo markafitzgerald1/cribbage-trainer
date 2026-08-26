@@ -110,7 +110,7 @@ test.describe("decision quality over time trend dialog", () => {
 
     // Table
     await expect(
-      page.getByRole("cell", { exact: true, name: "Decisions 1–20" }),
+      page.getByRole("cell", { exact: true, name: "Decisions 6–25" }),
     ).toBeVisible();
   });
 

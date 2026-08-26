@@ -1,4 +1,13 @@
 import {
+  type DiscardDecisionPoint,
+  buildContinuousDecisionPoints,
+  countRollingSkips,
+  getRollingBatchSize,
+  getRollingChunkSizes,
+  sliceIndexedChunks,
+  sortByTimestamp,
+} from "./discardQualityTrendRolling";
+import {
   type DiscardDecisionRecord,
   MAX_RECORDS,
   type SkippedHand,
@@ -6,13 +15,9 @@ import {
   isSameLocalDay,
   readTallyForDisplay,
 } from "./discardTally";
-import {
-  chunkBounds,
-  countRollingSkips,
-  getRollingBatchSize,
-  sortByTimestamp,
-} from "./discardQualityTrendRolling";
 import { CribRole } from "../game/expectedCribPoints";
+
+export type { DiscardDecisionPoint } from "./discardQualityTrendRolling";
 export type TrendGranularity =
   "rolling20" | "rolling50" | "day" | "week" | "month";
 export type DiscardTrendGranularity = TrendGranularity;
@@ -29,6 +34,7 @@ export interface DiscardPeriodBucket {
 }
 export interface DiscardQualityTrend {
   readonly buckets: readonly DiscardPeriodBucket[];
+  readonly decisionPoints: readonly DiscardDecisionPoint[];
   readonly earliestTimestamp: number | null;
   readonly isAtRecordCap: boolean;
   readonly latestTimestamp: number | null;
@@ -302,30 +308,22 @@ const buildSkipOnlyRollingBuckets = (
 ): DiscardPeriodBucket[] => {
   const batchSize = getRollingBatchSize(granularity);
   const sortedSkips = sortByTimestamp(skipped);
-  const labelPrefix = hasTruncatedHistory
+  const chunkSizes = getRollingChunkSizes(sortedSkips.length, batchSize);
+  const prefix = hasTruncatedHistory
     ? "Retained skipped hands"
     : "Skipped hands";
 
-  return Array.from(
-    { length: Math.ceil(sortedSkips.length / batchSize) },
-    (_, batchIndex) => {
-      const startIndex = batchIndex * batchSize;
-      const chunk = sortedSkips.slice(startIndex, startIndex + batchSize);
-      const [first, last] = chunkBounds(chunk);
-      const startSkip = startIndex + 1;
-      const endSkip = startIndex + chunk.length;
-
-      return {
-        decisions: 0,
-        endTime: last.at,
-        key: `skipped-${startSkip}-${endSkip}`,
-        label: `${labelPrefix} ${startSkip}–${endSkip}`,
-        meanExpectedPointsLoss: null,
-        optimalDecisions: 0,
-        skippedHands: chunk.length,
-        startTime: first.at,
-      };
-    },
+  return sliceIndexedChunks(sortedSkips, chunkSizes).map(
+    ({ endIndex, first, last, size, startIndex }) => ({
+      decisions: 0,
+      endTime: last.at,
+      key: `skipped-${startIndex}-${endIndex}`,
+      label: `${prefix} ${startIndex}–${endIndex}`,
+      meanExpectedPointsLoss: null,
+      optimalDecisions: 0,
+      skippedHands: size,
+      startTime: first.at,
+    }),
   );
 };
 
@@ -342,33 +340,24 @@ const buildRollingBuckets = ({
       : [];
   }
   const batchSize = getRollingBatchSize(granularity);
-  const buckets: DiscardPeriodBucket[] = [];
+  const chunkSizes = getRollingChunkSizes(records.length, batchSize);
   const skippedCounts =
     roleFilter === "all" ? countRollingSkips(records, batchSize, skipped) : [];
+  const prefix = hasTruncatedHistory ? "Retained decisions" : "Decisions";
 
-  for (let index = 0; index < records.length; index += batchSize) {
-    const chunk = records.slice(index, index + batchSize);
-    const [first, last] = chunkBounds(chunk);
-    const startDecision = index + 1;
-    const endDecision = index + chunk.length;
-    const skippedHands = skippedCounts.at(index / batchSize) ?? 0;
-    const labelPrefix = hasTruncatedHistory
-      ? "Retained decisions"
-      : "Decisions";
-
-    buckets.push({
-      decisions: chunk.length,
-      endTime: last.at,
-      key: `${startDecision}-${endDecision}`,
-      label: `${labelPrefix} ${startDecision}–${endDecision}`,
+  return sliceIndexedChunks(records, chunkSizes).map((item, index) => {
+    const { chunk } = item;
+    return {
+      decisions: item.size,
+      endTime: item.last.at,
+      key: `${item.startIndex}-${item.endIndex}`,
+      label: `${prefix} ${item.startIndex}–${item.endIndex}`,
       meanExpectedPointsLoss: meanLossOf(chunk),
       optimalDecisions: chunk.filter((record) => record.isOptimal).length,
-      skippedHands,
-      startTime: first.at,
-    });
-  }
-
-  return buckets;
+      skippedHands: skippedCounts.at(index) ?? 0,
+      startTime: item.first.at,
+    };
+  });
 };
 
 const matchesRole = (
@@ -448,11 +437,21 @@ export const computeDiscardQualityTrend = (
           skipped: retainedSkips,
         });
 
+  const batchSize =
+    granularity === "rolling20" || granularity === "rolling50"
+      ? getRollingBatchSize(granularity)
+      : null;
+  const decisionPoints =
+    batchSize === null
+      ? []
+      : buildContinuousDecisionPoints(authenticRecords, batchSize);
+
   const [firstRecord] = authenticRecords;
   const lastRecord = authenticRecords[authenticRecords.length - 1];
 
   return {
     buckets,
+    decisionPoints,
     earliestTimestamp: firstRecord ? firstRecord.at : null,
     isAtRecordCap:
       hasTruncatedHistory ||

@@ -81,3 +81,19 @@
   stroke: white;
   stroke-width: 2.5;
 }
+
+.loss-stem {
+  stroke: rgb(255 123 114 / 60%);
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.loss-dot {
+  cursor: pointer;
+  fill: #ff7b72;
+}
+
+.optimal-dot {
+  cursor: pointer;
+  fill: #28a745;
+}

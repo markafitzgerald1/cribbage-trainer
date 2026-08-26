@@ -26,6 +26,10 @@ import {
   recordSkippedHand,
 } from "./discardTally";
 import {
+  buildContinuousDecisionPoints,
+  countRollingSkips,
+} from "./discardQualityTrendRolling";
+import {
   computeDiscardQualityTrend,
   readDiscardQualityTrend,
 } from "./discardQualityTrend";
@@ -43,22 +47,13 @@ describe("discard quality trend computation", () => {
   });
 
   it("buckets decisions into rolling 20 batches", () => {
-    const records = [
-      testDecisionOf({ expectedPointsLoss: 0, isOptimal: true }),
-      testDecisionOf({ at: TEST_AT + ONE_HOUR_MS, expectedPointsLoss: 0.2 }),
+    const records = [0, 0.2, 0.45, 0.85, 1.75].map((loss, index) =>
       testDecisionOf({
-        at: TEST_AT + 2 * ONE_HOUR_MS,
-        expectedPointsLoss: 0.45,
+        at: TEST_AT + index * ONE_HOUR_MS,
+        expectedPointsLoss: loss,
+        isOptimal: loss === 0,
       }),
-      testDecisionOf({
-        at: TEST_AT + 3 * ONE_HOUR_MS,
-        expectedPointsLoss: 0.85,
-      }),
-      testDecisionOf({
-        at: TEST_AT + 4 * ONE_HOUR_MS,
-        expectedPointsLoss: 1.75,
-      }),
-    ];
+    );
 
     const trend = runTrend(records, {
       granularity: "rolling20",
@@ -91,10 +86,43 @@ describe("discard quality trend computation", () => {
 
     expectBucketCount(trend, 2);
 
-    expect(trend.buckets[0]?.label).toBe("Decisions 1–20");
-    expect(trend.buckets[0]?.decisions).toBe(20);
-    expect(trend.buckets[1]?.label).toBe("Decisions 21–25");
-    expect(trend.buckets[1]?.decisions).toBe(5);
+    expect(trend.buckets[0]?.label).toBe("Decisions 1–5");
+    expect(trend.buckets[0]?.decisions).toBe(5);
+    expect(trend.buckets[1]?.label).toBe("Decisions 6–25");
+    expect(trend.buckets[1]?.decisions).toBe(20);
+  });
+
+  it("computes continuous decision points with trailing moving average", () => {
+    const records = [
+      testDecisionOf({
+        expectedPointsLoss: 0,
+        handKey: "c-1",
+        isOptimal: true,
+      }),
+      testDecisionOf({ expectedPointsLoss: 0.4, handKey: "c-2" }),
+      testDecisionOf({ expectedPointsLoss: 0.2, handKey: "c-3" }),
+    ];
+    const trend = runTrend(records, { granularity: "rolling20" });
+
+    expect(trend.decisionPoints).toHaveLength(3);
+    expect(trend.decisionPoints[0]).toMatchObject({
+      expectedPointsLoss: 0,
+      isOptimal: true,
+      ordinal: 1,
+      rollingMeanLoss: 0,
+    });
+    expect(trend.decisionPoints[1]).toMatchObject({
+      expectedPointsLoss: 0.4,
+      isOptimal: false,
+      ordinal: 2,
+      rollingMeanLoss: 0.2,
+    });
+    expect(trend.decisionPoints[2]?.rollingMeanLoss).toBeCloseTo(0.2);
+  });
+
+  it("handles empty arrays for continuous decision points and rolling skips", () => {
+    expect(buildContinuousDecisionPoints([], 20)).toStrictEqual([]);
+    expect(countRollingSkips([], 20, [{ at: 1000 }])).toStrictEqual([]);
   });
 
   it("labels rolling batches as retained history after decision truncation", () => {
@@ -197,8 +225,8 @@ describe("discard quality trend skips and history boundaries", () => {
 
     expect(trend.totalSkippedHands).toBe(21);
     expect(trend.buckets).toMatchObject([
-      { decisions: 0, label: "Skipped hands 1–20", skippedHands: 20 },
-      { decisions: 0, label: "Skipped hands 21–21", skippedHands: 1 },
+      { decisions: 0, label: "Skipped hands 1–1", skippedHands: 1 },
+      { decisions: 0, label: "Skipped hands 2–21", skippedHands: 20 },
     ]);
     expect(
       runTrend([], { granularity: "rolling20", roleFilter: "dealer" }, skipped)
@@ -339,8 +367,8 @@ describe("discard quality trend skips and history boundaries", () => {
 
     expectBucketCount(trend, 2);
 
-    expect(trend.buckets[0]?.skippedHands).toBe(2);
-    expect(trend.buckets[1]?.skippedHands).toBe(2);
+    expect(trend.buckets[0]?.skippedHands).toBe(1);
+    expect(trend.buckets[1]?.skippedHands).toBe(3);
     expect(trend.totalSkippedHands).toBe(4);
   });
 

@@ -1,7 +1,10 @@
+import type {
+  DiscardDecisionPoint,
+  DiscardPeriodBucket,
+} from "../ui/discardQualityTrend";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { DecisionQualityChart } from "./DecisionQualityChart";
-import type { DiscardPeriodBucket } from "../ui/discardQualityTrend";
 
 const sampleBuckets: DiscardPeriodBucket[] = [
   {
@@ -60,10 +63,12 @@ const expectChart = async (canvasElement: HTMLElement): Promise<void> => {
   await expect(chart).toBeVisible();
 };
 
+const playExpectChart: Story["play"] = async ({ canvasElement }) => {
+  await expectChart(canvasElement);
+};
+
 export const Default: Story = {
-  play: async ({ canvasElement }) => {
-    await expectChart(canvasElement);
-  },
+  play: playExpectChart,
 };
 
 export const SinglePeriod: Story = {
@@ -71,6 +76,29 @@ export const SinglePeriod: Story = {
     buckets: [sampleBuckets[0]!],
     granularity: "rolling20",
   },
+};
+
+const sampleDecisionPoints: DiscardDecisionPoint[] = [
+  { loss: 0, mean: 0 },
+  { loss: 0.5, mean: 0.25 },
+  { loss: 1.2, mean: 0.57 },
+  { loss: 0, mean: 0.43 },
+  { loss: 0.25, mean: 0.39 },
+].map(({ loss, mean }, index) => ({
+  expectedPointsLoss: loss,
+  isOptimal: loss === 0,
+  ordinal: index + 1,
+  rollingMeanLoss: mean,
+  timestamp: 1700000000000 + index * 100000,
+}));
+
+export const WithDecisionPoints: Story = {
+  args: {
+    buckets: sampleBuckets,
+    decisionPoints: sampleDecisionPoints,
+    granularity: "rolling20",
+  },
+  play: playExpectChart,
 };
 
 export const Empty: Story = {

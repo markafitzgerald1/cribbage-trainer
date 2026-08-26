@@ -23,6 +23,7 @@ export const DEC_31_2025 = new Date(2025, 11, 31, 12, 0, 0).getTime();
 
 export const EMPTY_TREND: DiscardQualityTrend = {
   buckets: [],
+  decisionPoints: [],
   earliestTimestamp: null,
   isAtRecordCap: false,
   latestTimestamp: null,

@@ -155,7 +155,8 @@ describe("decision quality trend dialog", () => {
     expect(
       getByRole("heading", { name: "Decision quality over time" }),
     ).toBeInTheDocument();
-    expect(getByText("Decisions 1–20")).toBeInTheDocument();
+    expect(getByText("Decisions 6–25")).toBeInTheDocument();
+    expect(getByText("Decisions 1–5")).toBeInTheDocument();
     expect(getByRole("radio", { name: "Rolling 20" })).toBeChecked();
     expect(getByRole("radio", { name: "All" })).toBeChecked();
   });
@@ -166,7 +167,8 @@ describe("decision quality trend dialog", () => {
     expect(
       getByText(/Average loss is the expected points left on the table/iu),
     ).toBeInTheDocument();
-    expect(getByText("1 (4.8%)")).toBeInTheDocument();
+    expect(getByText("1 (16.7%)")).toBeInTheDocument();
+    expect(getByText("1 (3.8%)")).toBeInTheDocument();
   });
 
   it("switches granularity when another radio is selected", () => {

@@ -310,6 +310,7 @@ export function DecisionQualityTrendDialog({
 
         <DecisionQualityChart
           buckets={trend.buckets}
+          decisionPoints={trend.decisionPoints}
           granularity={granularity}
         />
 

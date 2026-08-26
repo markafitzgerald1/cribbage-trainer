@@ -1,320 +1,199 @@
 import * as classes from "./DecisionQualityChart.module.css";
+import {
+  type ChartPoint,
+  type ChartTick,
+  DECIMAL_PLACES,
+  LOSS_STEP,
+  MARGIN_LEFT,
+  MARGIN_TOP,
+  MIN_MAX_LOSS,
+  PLOT_HEIGHT,
+  PLOT_WIDTH,
+  POINT_RADIUS,
+  SVG_HEIGHT,
+  SVG_WIDTH,
+  TICK_LABEL_X,
+  TICK_OFFSET_Y,
+  X_LABEL_OFFSET_Y,
+  calculateIndexedX,
+  calculateY,
+  createChartPoints,
+  createChartTicks,
+  createRollingXAxisLabels,
+  createXAxisLabels,
+  formatPathData,
+  getLatestLoss,
+  getLossPointColor,
+} from "./decisionQualityChartLayout";
 import type {
+  DiscardDecisionPoint,
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
 import React, { useId } from "react";
 
+export * from "./decisionQualityChartLayout";
+
+const EMPTY_DECISION_POINTS: readonly DiscardDecisionPoint[] = [];
+
 export interface DecisionQualityChartProps {
   readonly buckets: readonly DiscardPeriodBucket[];
+  readonly decisionPoints?: readonly DiscardDecisionPoint[];
   readonly granularity: DiscardTrendGranularity;
 }
 
-const SVG_WIDTH = 520;
-const SVG_HEIGHT = 200;
-const MARGIN_TOP = 20;
-const MARGIN_BOTTOM = 45;
-const MARGIN_LEFT = 45;
-const MARGIN_RIGHT = 25;
-const PLOT_WIDTH = SVG_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
-const PLOT_HEIGHT = SVG_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
+const renderTicks = (ticks: readonly ChartTick[]): React.JSX.Element[] =>
+  ticks.map((tick) => (
+    <g key={tick.value}>
+      <line
+        className={tick.isOptimal ? classes.optimalBaseline : classes.gridLine}
+        x1={MARGIN_LEFT}
+        x2={MARGIN_LEFT + PLOT_WIDTH}
+        y1={tick.yPosition}
+        y2={tick.yPosition}
+      />
+      <text
+        className={classes.axisLabel}
+        x={TICK_LABEL_X}
+        y={tick.yPosition + TICK_OFFSET_Y}
+      >
+        {tick.label}
+      </text>
+    </g>
+  ));
 
-const MIN_MAX_LOSS = 1.0;
-const LOSS_STEP = 0.5;
-const CHAR_WIDTH = 5.6;
-const LABEL_SAFETY_MARGIN = 8;
-const ENDPOINT_ANCHOR_THRESHOLD = 20;
-const HALF_DIVISOR = 2;
-const TICK_OFFSET_X = 6;
-const TICK_OFFSET_Y = 3.5;
-const X_LABEL_OFFSET_Y = 22;
-const DECIMAL_PLACES = 2;
-const TICK_LABEL_X = MARGIN_LEFT - TICK_OFFSET_X;
-const POINT_RADIUS = 4.5;
-const LAST_INDEX = -1;
-
-export const OPTIMAL_POINT_COLOR = "#28a745";
-export const DATA_POINT_COLOR = "#70c878";
-
-export const getLossPointColor = (loss: number | null): string =>
-  loss === 0 ? OPTIMAL_POINT_COLOR : DATA_POINT_COLOR;
-
-export interface ChartPoint {
-  readonly bucket: DiscardPeriodBucket;
-  readonly color: string;
-  readonly loss: number;
-  readonly xPosition: number;
-  readonly yPosition: number;
-}
-
-interface ChartTick {
-  readonly isOptimal: boolean;
-  readonly label: string;
-  readonly value: number;
-  readonly yPosition: number;
-}
-
-const calculateIndexedX = (index: number, total: number): number => {
-  if (total === 1) {
-    return MARGIN_LEFT + PLOT_WIDTH / HALF_DIVISOR;
-  }
-  return MARGIN_LEFT + (index / (total - 1)) * PLOT_WIDTH;
-};
-
-const calculateCalendarX = (
-  timestamp: number,
-  buckets: readonly DiscardPeriodBucket[],
-): number => {
-  const [firstBucket] = buckets;
-  const lastBucket = buckets.at(LAST_INDEX);
-
-  if (
-    !firstBucket ||
-    !lastBucket ||
-    firstBucket.startTime === lastBucket.startTime
-  ) {
-    return MARGIN_LEFT + PLOT_WIDTH / HALF_DIVISOR;
-  }
+function renderRollingPlot(
+  decisionPoints: readonly DiscardDecisionPoint[],
+  maxLossY: number,
+  granularity: DiscardTrendGranularity,
+): React.JSX.Element {
+  const total = decisionPoints.length;
+  const movingPoints = decisionPoints.map((point, index) => ({
+    color: getLossPointColor(point.rollingMeanLoss),
+    loss: point.rollingMeanLoss,
+    xPosition: calculateIndexedX(index, total),
+    yPosition: calculateY(point.rollingMeanLoss, maxLossY),
+  }));
+  const movingPath = formatPathData(movingPoints);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const lastMovingPoint = movingPoints[movingPoints.length - 1]!;
+  const latestLoss = lastMovingPoint.loss.toFixed(DECIMAL_PLACES);
+  const windowName = granularity === "rolling50" ? "50" : "20";
 
   return (
-    MARGIN_LEFT +
-    ((timestamp - firstBucket.startTime) /
-      (lastBucket.startTime - firstBucket.startTime)) *
-      PLOT_WIDTH
+    <>
+      {decisionPoints.map((point, index) => {
+        const xPosition = calculateIndexedX(index, total);
+        const yStem = calculateY(point.expectedPointsLoss, maxLossY);
+        const yZero = calculateY(0, maxLossY);
+        if (point.isOptimal) {
+          return (
+            <circle
+              className={classes.optimalDot}
+              cx={xPosition}
+              cy={yZero}
+              key={`decision-${point.ordinal}`}
+              r={1.5}
+            >
+              <title>{`Decision #${point.ordinal}: 0.00 points loss (optimal)`}</title>
+            </circle>
+          );
+        }
+        return (
+          <g key={`decision-${point.ordinal}`}>
+            <line
+              className={classes.lossStem}
+              x1={xPosition}
+              x2={xPosition}
+              y1={yZero}
+              y2={yStem}
+            />
+            <circle
+              className={classes.lossDot}
+              cx={xPosition}
+              cy={yStem}
+              r={2}
+            >
+              <title>{`Decision #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
+                DECIMAL_PLACES,
+              )} points loss`}</title>
+            </circle>
+          </g>
+        );
+      })}
+
+      {movingPoints.length > 1 ? (
+        <path
+          className={classes.trendLine}
+          d={movingPath}
+        />
+      ) : null}
+
+      <circle
+        className={classes.dataPoint}
+        cx={lastMovingPoint.xPosition}
+        cy={lastMovingPoint.yPosition}
+        fill={lastMovingPoint.color}
+        r={POINT_RADIUS}
+      >
+        <title>{`Latest ${windowName}-decision rolling average: ${latestLoss} points loss`}</title>
+      </circle>
+    </>
   );
-};
-
-interface CalculateXOptions {
-  readonly bucket: DiscardPeriodBucket;
-  readonly buckets: readonly DiscardPeriodBucket[];
-  readonly granularity: DiscardTrendGranularity;
-  readonly index: number;
 }
 
-const calculateX = ({
-  bucket,
-  buckets,
-  granularity,
-  index,
-}: CalculateXOptions): number =>
-  granularity === "rolling20" || granularity === "rolling50"
-    ? calculateIndexedX(index, buckets.length)
-    : calculateCalendarX(bucket.startTime, buckets);
+function renderCalendarPlot(points: readonly ChartPoint[]): React.JSX.Element {
+  return (
+    <>
+      {points.length > 1 ? (
+        <path
+          className={classes.trendLine}
+          d={formatPathData(points)}
+        />
+      ) : null}
 
-const calculateY = (loss: number, maxLossY: number): number => {
-  const clamped = Math.max(0, Math.min(loss, maxLossY));
-  return MARGIN_TOP + PLOT_HEIGHT - (clamped / maxLossY) * PLOT_HEIGHT;
-};
-
-const createChartPoints = (
-  buckets: readonly DiscardPeriodBucket[],
-  granularity: DiscardTrendGranularity,
-  maxLossY: number,
-): ChartPoint[] =>
-  buckets.flatMap((bucket, index) => {
-    if (bucket.meanExpectedPointsLoss === null) {
-      return [];
-    }
-    return [
-      {
-        bucket,
-        color: getLossPointColor(bucket.meanExpectedPointsLoss),
-        loss: bucket.meanExpectedPointsLoss,
-        xPosition: calculateX({ bucket, buckets, granularity, index }),
-        yPosition: calculateY(bucket.meanExpectedPointsLoss, maxLossY),
-      },
-    ];
-  });
-
-const formatPathData = (points: readonly ChartPoint[]): string =>
-  points
-    .map((point, index) => {
-      const command = index === 0 ? "M" : "L";
-      return `${command} ${point.xPosition.toFixed(1)},${point.yPosition.toFixed(1)}`;
-    })
-    .join(" ");
-
-const createChartTicks = (maxLossY: number): ChartTick[] => {
-  const tickCount = Math.round(maxLossY / LOSS_STEP);
-  return Array.from({ length: tickCount + 1 }, (_, index) => {
-    const value = index * LOSS_STEP;
-    return {
-      isOptimal: value === 0,
-      label: value === 0 ? "0.0 (Opt)" : value.toFixed(1),
-      value,
-      yPosition: calculateY(value, maxLossY),
-    };
-  });
-};
-
-export const formatShortLabel = (
-  label: string,
-  granularity: DiscardTrendGranularity,
-): string => {
-  if (granularity === "rolling20" || granularity === "rolling50") {
-    return label
-      .replace("Decisions ", "#")
-      .replace("Retained decisions ", "Retained #")
-      .replace("Skipped hands ", "Skipped #")
-      .replace("Retained skipped hands ", "Retained skipped #");
-  }
-  return label;
-};
-
-export interface ChartXLabel {
-  readonly anchor: "end" | "middle" | "start";
-  readonly key: string;
-  readonly label: string;
-  readonly xPosition: number;
-}
-
-export interface PositionedLabel {
-  readonly bucket: DiscardPeriodBucket;
-  readonly label: string;
-  readonly xPosition: number;
-}
-
-export const getLabelBounds = (
-  label: string,
-  xPosition: number,
-  anchor: "end" | "middle" | "start",
-): { readonly left: number; readonly right: number } => {
-  const width = label.length * CHAR_WIDTH + LABEL_SAFETY_MARGIN;
-  if (anchor === "start") {
-    return { left: xPosition, right: xPosition + width };
-  }
-  if (anchor === "end") {
-    return { left: xPosition - width, right: xPosition };
-  }
-  return {
-    left: xPosition - width / HALF_DIVISOR,
-    right: xPosition + width / HALF_DIVISOR,
-  };
-};
-
-export const getXLabelAnchor = (
-  xPosition: number,
-  index: number,
-  totalLabels: number,
-): "end" | "middle" | "start" => {
-  if (totalLabels <= 1) {
-    return "middle";
-  }
-  if (index === 0 && xPosition <= MARGIN_LEFT + ENDPOINT_ANCHOR_THRESHOLD) {
-    return "start";
-  }
-  if (
-    index === totalLabels - 1 &&
-    xPosition >= MARGIN_LEFT + PLOT_WIDTH - ENDPOINT_ANCHOR_THRESHOLD
-  ) {
-    return "end";
-  }
-  return "middle";
-};
-
-export const filterSpacedLabels = (
-  positioned: readonly PositionedLabel[],
-): PositionedLabel[] => {
-  if (positioned.length <= 1) {
-    return [...positioned];
-  }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const first = positioned[0]!;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const last = positioned.at(LAST_INDEX)!;
-
-  const firstAnchor = getXLabelAnchor(first.xPosition, 0, positioned.length);
-  const firstBounds = getLabelBounds(first.label, first.xPosition, firstAnchor);
-  const lastAnchor = getXLabelAnchor(
-    last.xPosition,
-    positioned.length - 1,
-    positioned.length,
+      {points.map((point) => (
+        <circle
+          className={classes.dataPoint}
+          cx={point.xPosition}
+          cy={point.yPosition}
+          fill={point.color}
+          key={point.bucket.key}
+          r={POINT_RADIUS}
+        >
+          <title>
+            {`${point.bucket.label}: ${point.bucket.meanExpectedPointsLoss?.toFixed(
+              DECIMAL_PLACES,
+            )} points loss (${point.bucket.decisions} decisions, ${
+              point.bucket.optimalDecisions
+            } optimal${
+              point.bucket.skippedHands > 0
+                ? `, ${point.bucket.skippedHands} skipped`
+                : ""
+            })`}
+          </title>
+        </circle>
+      ))}
+    </>
   );
-  const lastBounds = getLabelBounds(last.label, last.xPosition, lastAnchor);
-
-  const chosen: PositionedLabel[] = [first];
-  let lastChosenRight = firstBounds.right;
-
-  for (let index = 1; index < positioned.length - 1; index += 1) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const candidate = positioned.at(index)!;
-    const candidateBounds = getLabelBounds(
-      candidate.label,
-      candidate.xPosition,
-      "middle",
-    );
-    if (
-      candidateBounds.left >= lastChosenRight &&
-      candidateBounds.right <= lastBounds.left
-    ) {
-      chosen.push(candidate);
-      lastChosenRight = candidateBounds.right;
-    }
-  }
-
-  if (lastBounds.left >= lastChosenRight) {
-    chosen.push(last);
-  }
-
-  return chosen;
-};
-
-const createXAxisLabels = (
-  buckets: readonly DiscardPeriodBucket[],
-  granularity: DiscardTrendGranularity,
-): readonly ChartXLabel[] => {
-  const [single] = buckets;
-  if (buckets.length === 1 && single) {
-    return [
-      {
-        anchor: "middle",
-        key: single.key,
-        label: formatShortLabel(single.label, granularity),
-        xPosition: calculateX({
-          bucket: single,
-          buckets,
-          granularity,
-          index: 0,
-        }),
-      },
-    ];
-  }
-
-  const positioned: PositionedLabel[] = buckets.map((bucket, index) => ({
-    bucket,
-    label: formatShortLabel(bucket.label, granularity),
-    xPosition: calculateX({ bucket, buckets, granularity, index }),
-  }));
-
-  const filtered = filterSpacedLabels(positioned);
-  const total = filtered.length;
-
-  return filtered.map(({ bucket, label, xPosition }, index) => ({
-    anchor: getXLabelAnchor(xPosition, index, total),
-    key: bucket.key,
-    label,
-    xPosition,
-  }));
-};
-
-export const getLatestLoss = (points: readonly ChartPoint[]): string => {
-  const lastPoint = points[points.length - 1];
-  if (!lastPoint) {
-    return "0.00";
-  }
-  return lastPoint.loss.toFixed(DECIMAL_PLACES);
-};
+}
 
 export function DecisionQualityChart({
   buckets,
+  decisionPoints = EMPTY_DECISION_POINTS,
   granularity,
 }: DecisionQualityChartProps): React.JSX.Element {
   const chartId = useId();
+  const isRolling = granularity === "rolling20" || granularity === "rolling50";
+  const hasDecisionPoints = isRolling && decisionPoints.length > 0;
   const scoredBuckets = buckets.filter(
     (bucket) => bucket.meanExpectedPointsLoss !== null,
   );
 
-  if (buckets.length === 0 || scoredBuckets.length === 0) {
+  if (
+    buckets.length === 0 ||
+    (!hasDecisionPoints && scoredBuckets.length === 0)
+  ) {
     return (
       <div className={classes.empty}>
         No discard decisions recorded yet for this view.
@@ -322,25 +201,42 @@ export function DecisionQualityChart({
     );
   }
 
-  const losses = scoredBuckets.map(
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    (bucket) => bucket.meanExpectedPointsLoss!,
-  );
-  const highestLoss = Math.max(...losses, MIN_MAX_LOSS);
+  const allLosses = hasDecisionPoints
+    ? decisionPoints.map((point) =>
+        Math.max(point.expectedPointsLoss, point.rollingMeanLoss),
+      )
+    : scoredBuckets.map(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        (bucket) => bucket.meanExpectedPointsLoss!,
+      );
+  const highestLoss = Math.max(...allLosses, MIN_MAX_LOSS);
   const maxLossY = Math.ceil(highestLoss / LOSS_STEP) * LOSS_STEP;
-  const points = createChartPoints(buckets, granularity, maxLossY);
   const ticks = createChartTicks(maxLossY);
-  const pathData = formatPathData(points);
-  const latestLoss = getLatestLoss(points);
-  const xLabels = createXAxisLabels(buckets, granularity);
+  const calendarPoints = createChartPoints(buckets, granularity, maxLossY);
+  const xLabels = hasDecisionPoints
+    ? createRollingXAxisLabels(decisionPoints)
+    : createXAxisLabels(buckets, granularity);
+
+  const windowName = granularity === "rolling50" ? "50" : "20";
+  const latestLoss = hasDecisionPoints
+    ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      decisionPoints[decisionPoints.length - 1]!.rollingMeanLoss.toFixed(
+        DECIMAL_PLACES,
+      )
+    : getLatestLoss(calendarPoints);
+
   const latestScoredBucket = scoredBuckets[
     scoredBuckets.length - 1
   ] as DiscardPeriodBucket;
   const isLatestBucketScored =
     latestScoredBucket.key === buckets[buckets.length - 1]?.key;
-  const latestDesc = isLatestBucketScored
+  const calendarDesc = isLatestBucketScored
     ? `Latest average expected loss is ${latestLoss} points.`
     : `Latest scored period (${latestScoredBucket.label}) average expected loss is ${latestLoss} points.`;
+
+  const chartDesc = hasDecisionPoints
+    ? `Trend chart with ${decisionPoints.length} decisions (${windowName}-decision rolling average). Latest average expected loss is ${latestLoss} points.`
+    : `Trend chart with ${buckets.length} periods. ${calendarDesc}`;
 
   return (
     <div className={classes.container}>
@@ -351,60 +247,13 @@ export function DecisionQualityChart({
         role="img"
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
       >
-        <desc id={`${chartId}-desc`}>
-          {`Trend chart with ${buckets.length} periods. ${latestDesc}`}
-        </desc>
+        <desc id={`${chartId}-desc`}>{chartDesc}</desc>
 
-        {ticks.map((tick) => (
-          <g key={tick.value}>
-            <line
-              className={
-                tick.isOptimal ? classes.optimalBaseline : classes.gridLine
-              }
-              x1={MARGIN_LEFT}
-              x2={MARGIN_LEFT + PLOT_WIDTH}
-              y1={tick.yPosition}
-              y2={tick.yPosition}
-            />
-            <text
-              className={classes.axisLabel}
-              x={TICK_LABEL_X}
-              y={tick.yPosition + TICK_OFFSET_Y}
-            >
-              {tick.label}
-            </text>
-          </g>
-        ))}
+        {renderTicks(ticks)}
 
-        {points.length > 1 && (
-          <path
-            className={classes.trendLine}
-            d={pathData}
-          />
-        )}
-
-        {points.map((point) => (
-          <circle
-            className={classes.dataPoint}
-            cx={point.xPosition}
-            cy={point.yPosition}
-            fill={point.color}
-            key={point.bucket.key}
-            r={POINT_RADIUS}
-          >
-            <title>
-              {`${point.bucket.label}: ${point.bucket.meanExpectedPointsLoss?.toFixed(
-                DECIMAL_PLACES,
-              )} points loss (${point.bucket.decisions} decisions, ${
-                point.bucket.optimalDecisions
-              } optimal${
-                point.bucket.skippedHands > 0
-                  ? `, ${point.bucket.skippedHands} skipped`
-                  : ""
-              })`}
-            </title>
-          </circle>
-        ))}
+        {hasDecisionPoints
+          ? renderRollingPlot(decisionPoints, maxLossY, granularity)
+          : renderCalendarPlot(calendarPoints)}
 
         {xLabels.map((xLabel) => (
           <text
@@ -421,3 +270,7 @@ export function DecisionQualityChart({
     </div>
   );
 }
+
+DecisionQualityChart.defaultProps = {
+  decisionPoints: EMPTY_DECISION_POINTS,
+};
