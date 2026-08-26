@@ -291,7 +291,8 @@ export function DecisionQualityTrendDialog({
             className={classes.horizonNotice}
             role="status"
           >
-            Showing the latest 20,000 decisions. Earlier history has rolled off.
+            Storage is capped at the latest 20,000 recorded decisions. Earlier
+            history has rolled off.
           </div>
         ) : null}
 

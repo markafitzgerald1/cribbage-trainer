@@ -199,7 +199,7 @@ describe("decision quality trend dialog", () => {
     );
 
     expect(
-      getByText(/Showing the latest 20,000 decisions/iu),
+      getByText(/Storage is capped at the latest 20,000/iu),
     ).toBeInTheDocument();
   });
 
