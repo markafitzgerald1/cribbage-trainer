@@ -15,7 +15,7 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * would make every earlier tally invisible instead, which is the same as
  * discarding it.
  */
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
@@ -30,6 +30,13 @@ export const MAX_RECORDS = 10_000;
 export interface DiscardDecisionRecord {
   readonly at: number;
   readonly cribRole: CribRole;
+  /*
+   * The discard chosen by the player (e.g. "5H,5D"), serialized in deal order.
+   * Absent (null) on records written before version 3, which is permanent:
+   * earlier versions did not record which cards were discarded and the choice
+   * cannot be reconstructed.
+   */
+  readonly discardKey: string | null;
   /*
    * The hand this decision was made from, which is what makes recording
    * idempotent. The trainer shows every option ranked before a discard is
@@ -141,6 +148,7 @@ interface MaybeLifetime {
 interface MaybeDecisionRecord {
   readonly at?: unknown;
   readonly cribRole?: unknown;
+  readonly discardKey?: unknown;
   readonly handKey?: unknown;
   readonly expectedPointsLoss?: unknown;
   readonly isOptimal?: unknown;
@@ -161,7 +169,10 @@ const isDecisionRecord = (value: unknown): value is DiscardDecisionRecord => {
     typeof candidate.expectedPointsLoss === "number" &&
     typeof candidate.isOptimal === "boolean" &&
     typeof candidate.isPractice === "boolean" &&
-    typeof candidate.cribRole === "string"
+    typeof candidate.cribRole === "string" &&
+    (typeof candidate.discardKey === "undefined" ||
+      candidate.discardKey === null ||
+      typeof candidate.discardKey === "string")
   );
 };
 
@@ -237,7 +248,14 @@ const readStoredTally = (): StoredTally | null => {
   const { records } = candidate;
   return {
     lifetime: parseLifetime(candidate.lifetime),
-    records: Array.isArray(records) ? records.filter(isDecisionRecord) : [],
+    records: Array.isArray(records)
+      ? records.filter(isDecisionRecord).map((record) => ({
+          ...record,
+          // Absent in a record written before version 3, permanently unrecoverable.
+          discardKey:
+            typeof record.discardKey === "string" ? record.discardKey : null,
+        }))
+      : [],
     // Absent in a tally written before revisions were kept, which simply starts the count.
     revision: typeof candidate.revision === "number" ? candidate.revision : 0,
     skipped: Array.isArray(candidate.skipped)

@@ -36,6 +36,7 @@ export const testDecisionOf = (
 ): DiscardDecisionRecord => ({
   at: TEST_AT,
   cribRole: CribRole.Dealer,
+  discardKey: "5H,6H",
   expectedPointsLoss: 0.15,
   handKey: "AH,2H,3H,4H,5H,6H",
   isOptimal: false,
