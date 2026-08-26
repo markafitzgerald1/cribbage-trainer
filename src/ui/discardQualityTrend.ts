@@ -444,7 +444,11 @@ export const computeDiscardQualityTrend = (
   const decisionPoints =
     batchSize === null
       ? []
-      : buildContinuousDecisionPoints(authenticRecords, batchSize);
+      : buildContinuousDecisionPoints(
+          authenticRecords,
+          batchSize,
+          hasTruncatedHistory,
+        );
 
   const [firstRecord] = authenticRecords;
   const lastRecord = authenticRecords[authenticRecords.length - 1];

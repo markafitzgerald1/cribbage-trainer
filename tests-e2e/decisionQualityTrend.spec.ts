@@ -94,7 +94,6 @@ test.describe("decision quality over time trend dialog", () => {
     });
     await expect(dialogHeading).toBeVisible();
 
-    // Summary cards & table headers
     await expect(
       page.getByRole("columnheader", { name: "Decisions" }),
     ).toBeVisible();
@@ -102,13 +101,11 @@ test.describe("decision quality over time trend dialog", () => {
       page.getByRole("cell", { exact: true, name: "20" }),
     ).toBeVisible();
 
-    // Chart SVG
     const chart = page.getByRole("img", {
       name: "Decision quality over time trend chart",
     });
     await expect(chart).toBeVisible();
 
-    // Table
     await expect(
       page.getByRole("cell", { exact: true, name: "Decisions 6–25" }),
     ).toBeVisible();
@@ -117,17 +114,11 @@ test.describe("decision quality over time trend dialog", () => {
   test("switches between period views and updates view", async ({ page }) => {
     await page.getByRole("button", { name: "Quality trend" }).click();
 
-    // Switch to Day
     await selectTrendRadio(page, "Day");
-
-    // Switch to Week
     await selectTrendRadio(page, "Week");
-
-    // Switch to Month
     await selectTrendRadio(page, "Month");
     await expect(page.getByRole("cell", { name: "Aug 2026" })).toBeVisible();
 
-    // Switch to Rolling 50
     await selectTrendRadio(page, "Rolling 50");
     await expect(
       page.getByRole("cell", { exact: true, name: "Decisions 1–25" }),
@@ -137,13 +128,11 @@ test.describe("decision quality over time trend dialog", () => {
   test("filters decisions by crib role", async ({ page }) => {
     await page.getByRole("button", { name: "Quality trend" }).click();
 
-    // Filter to Dealer
     await selectTrendRadio(page, "Dealer");
     await expect(
       page.getByRole("cell", { exact: true, name: "13" }),
     ).toBeVisible();
 
-    // Filter to Pone
     await selectTrendRadio(page, "Pone");
     await expect(
       page.getByRole("cell", { exact: true, name: "12" }),
@@ -159,11 +148,9 @@ test.describe("decision quality over time trend dialog", () => {
     });
     await expect(dialogHeading).toBeVisible();
 
-    // Close via button
     await page.getByRole("button", { name: "Close modal" }).click();
     await expect(dialogHeading).toBeHidden();
 
-    // Reopen and close via Escape
     await page.getByRole("button", { name: "Quality trend" }).click();
     await expect(dialogHeading).toBeVisible();
     await page.keyboard.press("Escape");

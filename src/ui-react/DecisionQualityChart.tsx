@@ -86,6 +86,7 @@ function renderRollingPlot(
         const xPosition = calculateIndexedX(index, total);
         const yStem = calculateY(point.expectedPointsLoss, maxLossY);
         const yZero = calculateY(0, maxLossY);
+        const prefix = point.isRetained ? "Retained decision" : "Decision";
         if (point.isOptimal) {
           return (
             <circle
@@ -95,7 +96,7 @@ function renderRollingPlot(
               key={`decision-${point.ordinal}`}
               r={1.5}
             >
-              <title>{`Decision #${point.ordinal}: 0.00 points loss (optimal)`}</title>
+              <title>{`${prefix} #${point.ordinal}: 0.00 points loss (optimal)`}</title>
             </circle>
           );
         }
@@ -114,7 +115,7 @@ function renderRollingPlot(
               cy={yStem}
               r={2}
             >
-              <title>{`Decision #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
+              <title>{`${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
                 DECIMAL_PLACES,
               )} points loss`}</title>
             </circle>

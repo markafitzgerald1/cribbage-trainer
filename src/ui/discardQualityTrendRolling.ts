@@ -109,6 +109,7 @@ export function countRollingSkips<
 export interface DiscardDecisionPoint {
   readonly expectedPointsLoss: number;
   readonly isOptimal: boolean;
+  readonly isRetained: boolean;
   readonly ordinal: number;
   readonly rollingMeanLoss: number;
   readonly timestamp: number;
@@ -117,7 +118,7 @@ export interface DiscardDecisionPoint {
 export function buildContinuousDecisionPoints(
   records: readonly DiscardDecisionRecord[],
   batchSize: number,
-  offset = 0,
+  isRetained = false,
 ): readonly DiscardDecisionPoint[] {
   if (records.length === 0) {
     return [];
@@ -138,7 +139,8 @@ export function buildContinuousDecisionPoints(
     return {
       expectedPointsLoss: record.expectedPointsLoss,
       isOptimal: record.isOptimal,
-      ordinal: offset + globalIndex + 1,
+      isRetained,
+      ordinal: globalIndex + 1,
       rollingMeanLoss,
       timestamp: record.at,
     };

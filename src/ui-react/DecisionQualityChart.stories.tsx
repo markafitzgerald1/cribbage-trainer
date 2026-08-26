@@ -87,6 +87,7 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
 ].map(({ loss, mean }, index) => ({
   expectedPointsLoss: loss,
   isOptimal: loss === 0,
+  isRetained: false,
   ordinal: index + 1,
   rollingMeanLoss: mean,
   timestamp: 1700000000000 + index * 100000,

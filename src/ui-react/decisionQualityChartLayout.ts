@@ -306,29 +306,20 @@ export const createRollingXAxisLabels = (
   decisionPoints: readonly DiscardDecisionPoint[],
 ): readonly ChartXLabel[] => {
   const total = decisionPoints.length;
-  if (total === 1) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const single = decisionPoints[0]!;
-    return [
-      {
-        anchor: "middle",
-        key: `decision-${single.ordinal}`,
-        label: `#${single.ordinal}`,
-        xPosition: calculateIndexedX(0, 1),
-      },
-    ];
-  }
-
-  const positioned: PositionedLabel[] = decisionPoints.map((point, index) => ({
-    bucket: {
-      endTime: point.timestamp,
-      key: `decision-${point.ordinal}`,
-      label: `#${point.ordinal}`,
-      startTime: point.timestamp,
-    } as unknown as DiscardPeriodBucket,
-    label: `#${point.ordinal}`,
-    xPosition: calculateIndexedX(index, total),
-  }));
+  const positioned: PositionedLabel[] = decisionPoints.map((point, index) => {
+    const prefix = point.isRetained ? "R#" : "#";
+    const label = `${prefix}${point.ordinal}`;
+    return {
+      bucket: {
+        endTime: point.timestamp,
+        key: `decision-${point.ordinal}`,
+        label,
+        startTime: point.timestamp,
+      } as unknown as DiscardPeriodBucket,
+      label,
+      xPosition: calculateIndexedX(index, total),
+    };
+  });
 
   return mapPositionedToXLabels(positioned);
 };

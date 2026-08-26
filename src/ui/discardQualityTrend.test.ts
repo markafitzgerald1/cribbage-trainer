@@ -108,12 +108,14 @@ describe("discard quality trend computation", () => {
     expect(trend.decisionPoints[0]).toMatchObject({
       expectedPointsLoss: 0,
       isOptimal: true,
+      isRetained: false,
       ordinal: 1,
       rollingMeanLoss: 0,
     });
     expect(trend.decisionPoints[1]).toMatchObject({
       expectedPointsLoss: 0.4,
       isOptimal: false,
+      isRetained: false,
       ordinal: 2,
       rollingMeanLoss: 0.2,
     });
@@ -130,6 +132,7 @@ describe("discard quality trend computation", () => {
     const trend = rollingTrendOf(withTruncatedDecisionHistory(tally));
 
     expect(trend.buckets[0]?.label).toBe("Retained decisions 1–20");
+    expect(trend.decisionPoints[0]?.isRetained).toBe(true);
   });
 
   it("recognizes truncated authentic history despite retained practice records", () => {

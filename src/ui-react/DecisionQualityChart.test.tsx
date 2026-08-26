@@ -63,9 +63,19 @@ const makeDecisionPoint = (
 ) => ({
   expectedPointsLoss,
   isOptimal: expectedPointsLoss === 0,
+  isRetained: false,
   ordinal,
   rollingMeanLoss,
   timestamp: 1700000000000 + ordinal * 1000,
+});
+
+const makeRetainedDecisionPoint = (
+  ordinal: number,
+  expectedPointsLoss: number,
+  rollingMeanLoss: number,
+) => ({
+  ...makeDecisionPoint(ordinal, expectedPointsLoss, rollingMeanLoss),
+  isRetained: true,
 });
 
 describe("decision quality chart", () => {
@@ -319,4 +329,29 @@ describe("decision quality chart", () => {
       );
     },
   );
+
+  it("renders retained decision prefix in tooltips and x-axis when isRetained is true", () => {
+    const points = [
+      makeRetainedDecisionPoint(1, 0, 0),
+      makeRetainedDecisionPoint(2, 0.45, 0.22),
+    ];
+    const { container, getByText } = renderChart(
+      [makeBucket("b1", 0.22)],
+      "rolling20",
+      points,
+    );
+
+    expect(
+      getByText("Retained decision #1: 0.00 points loss (optimal)"),
+    ).toBeInTheDocument();
+
+    expect(
+      getByText("Retained decision #2: 0.45 points loss"),
+    ).toBeInTheDocument();
+
+    const xLabels = container.querySelectorAll(`.${classes.xLabel}`);
+
+    expect(xLabels[0]?.textContent).toBe("R#1");
+    expect(xLabels[1]?.textContent).toBe("R#2");
+  });
 });
