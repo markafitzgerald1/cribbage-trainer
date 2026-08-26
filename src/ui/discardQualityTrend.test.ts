@@ -213,6 +213,16 @@ describe("discard quality trend skips and history boundaries", () => {
     ).toStrictEqual([]);
   });
 
+  it("labels skip-only rolling batches as retained skips after skip truncation", () => {
+    const skipped = [{ at: TEST_AT }];
+    const trend = computeDiscardQualityTrend(
+      withTruncatedSkipHistory(storedTallyOf([], skipped)),
+      { granularity: "rolling20", now: TEST_AT },
+    );
+
+    expect(trend.buckets[0]?.label).toBe("Retained skipped hands 1–1");
+  });
+
   it("filters by dealer and pone roles in rolling views", () => {
     const records = [
       dealerDecision(0.5, TEST_AT, "deal-role"),

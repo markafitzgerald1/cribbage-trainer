@@ -344,10 +344,14 @@ interface RollingBucketsArgs extends BaseBucketsArgs {
 
 const buildSkipOnlyRollingBuckets = (
   granularity: "rolling20" | "rolling50",
+  hasTruncatedHistory: boolean,
   skipped: readonly SkippedHand[],
 ): DiscardPeriodBucket[] => {
   const batchSize = getRollingBatchSize(granularity);
   const sortedSkips = sortByTimestamp(skipped);
+  const labelPrefix = hasTruncatedHistory
+    ? "Retained skipped hands"
+    : "Skipped hands";
 
   return Array.from(
     { length: Math.ceil(sortedSkips.length / batchSize) },
@@ -362,7 +366,7 @@ const buildSkipOnlyRollingBuckets = (
         decisions: 0,
         endTime: last.at,
         key: `skipped-${startSkip}-${endSkip}`,
-        label: `Skipped hands ${startSkip}–${endSkip}`,
+        label: `${labelPrefix} ${startSkip}–${endSkip}`,
         meanExpectedPointsLoss: null,
         optimalDecisions: 0,
         severity: emptySeverity,
@@ -382,7 +386,7 @@ const buildRollingBuckets = ({
 }: RollingBucketsArgs): DiscardPeriodBucket[] => {
   if (records.length === 0) {
     return roleFilter === "all"
-      ? buildSkipOnlyRollingBuckets(granularity, skipped)
+      ? buildSkipOnlyRollingBuckets(granularity, hasTruncatedHistory, skipped)
       : [];
   }
   const batchSize = getRollingBatchSize(granularity);
@@ -395,24 +399,21 @@ const buildRollingBuckets = ({
     const [first, last] = chunkBounds(chunk);
     const startDecision = index + 1;
     const endDecision = index + chunk.length;
-    const startTime = first.at;
-    const endTime = last.at;
-    const batchIndex = index / batchSize;
-    const skippedHands = skippedCounts.at(batchIndex) ?? 0;
+    const skippedHands = skippedCounts.at(index / batchSize) ?? 0;
     const labelPrefix = hasTruncatedHistory
       ? "Retained decisions"
       : "Decisions";
 
     buckets.push({
       decisions: chunk.length,
-      endTime,
+      endTime: last.at,
       key: `${startDecision}-${endDecision}`,
       label: `${labelPrefix} ${startDecision}–${endDecision}`,
       meanExpectedPointsLoss: meanLossOf(chunk),
       optimalDecisions: chunk.filter((record) => record.isOptimal).length,
       severity: countSeverity(chunk),
       skippedHands,
-      startTime,
+      startTime: first.at,
     });
   }
 
@@ -465,11 +466,9 @@ export const computeDiscardQualityTrend = (
   const allAuthenticRecords = tally.records.filter(
     (record) => !record.isPractice && matchesRole(record, roleFilter),
   );
-  const retainedAuthenticRecordCount = tally.records.filter(
-    (record) => !record.isPractice,
-  ).length;
   const hasTruncatedDecisionHistory =
-    tally.lifetime.decisions > retainedAuthenticRecordCount;
+    tally.lifetime.decisions >
+    tally.records.filter((record) => !record.isPractice).length;
   const hasTruncatedHistory =
     hasTruncatedDecisionHistory ||
     (roleFilter === "all" &&
