@@ -120,6 +120,11 @@
 
 - Node: use version specified in `.nvmrc` (install via `nvm install` if available).
 - Install deps: `npm install`.
+- Run that install on the pinned Node. An older npm rewrites
+  `package-lock.json` as a side effect of installing — npm 10 strips the
+  `libc` fields npm 11 wrote, 75 lines of them, with no warning and no
+  prompting from the task at hand. Check `git status` after installing and
+  restore the file unless the lockfile change is the point of the work.
 
 ## Core commands
 
