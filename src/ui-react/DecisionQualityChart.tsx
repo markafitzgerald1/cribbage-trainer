@@ -365,7 +365,6 @@ export function DecisionQualityChart({
             fill={point.color}
             key={point.bucket.key}
             r={POINT_RADIUS}
-            tabIndex={0}
           >
             <title>
               {`${point.bucket.label}: ${point.bucket.meanExpectedPointsLoss?.toFixed(
