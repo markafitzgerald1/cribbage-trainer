@@ -2,6 +2,7 @@ import {
   AUG_10_2026,
   AUG_16_2026_SUNDAY,
   AUG_31_2026,
+  DEC_31_2025,
   EMPTY_TREND,
   ONE_DAY_MS,
   ONE_HOUR_MS,
@@ -43,31 +44,19 @@ describe("discard quality trend computation", () => {
 
   it("buckets decisions into rolling 20 batches with severity distribution", () => {
     const records = [
-      testDecisionOf({
-        at: TEST_AT,
-        expectedPointsLoss: 0,
-        handKey: "optimal-cut",
-        isOptimal: true,
-      }),
-      testDecisionOf({
-        at: TEST_AT + ONE_HOUR_MS,
-        expectedPointsLoss: 0.2,
-        handKey: "minor-cut",
-      }),
+      testDecisionOf({ expectedPointsLoss: 0, isOptimal: true }),
+      testDecisionOf({ at: TEST_AT + ONE_HOUR_MS, expectedPointsLoss: 0.2 }),
       testDecisionOf({
         at: TEST_AT + 2 * ONE_HOUR_MS,
         expectedPointsLoss: 0.45,
-        handKey: "medium-cut",
       }),
       testDecisionOf({
         at: TEST_AT + 3 * ONE_HOUR_MS,
         expectedPointsLoss: 0.85,
-        handKey: "major-cut",
       }),
       testDecisionOf({
         at: TEST_AT + 4 * ONE_HOUR_MS,
         expectedPointsLoss: 1.75,
-        handKey: "blunder-cut",
       }),
     ];
 
@@ -135,26 +124,10 @@ describe("discard quality trend computation", () => {
 
   it("buckets decisions by calendar day and handles Today / Yesterday labels", () => {
     const today = TEST_AT;
-    const yesterday = TEST_AT - ONE_DAY_MS;
-    const pastDay = TEST_AT - 3 * ONE_DAY_MS;
-
     const records = [
-      testDecisionOf({
-        at: pastDay,
-        expectedPointsLoss: 0.3,
-        handKey: "d-past",
-      }),
-      testDecisionOf({
-        at: yesterday,
-        expectedPointsLoss: 0.1,
-        handKey: "d-yest",
-      }),
-      testDecisionOf({
-        at: today,
-        expectedPointsLoss: 0,
-        handKey: "d-today",
-        isOptimal: true,
-      }),
+      testDecisionOf({ at: today - 3 * ONE_DAY_MS, expectedPointsLoss: 0.3 }),
+      testDecisionOf({ at: today - ONE_DAY_MS, expectedPointsLoss: 0.1 }),
+      testDecisionOf({ at: today, expectedPointsLoss: 0, isOptimal: true }),
     ];
 
     const trend = runTrend(records, {
@@ -170,21 +143,9 @@ describe("discard quality trend computation", () => {
 
   it("buckets decisions by calendar week including cross-month spans", () => {
     const records = [
-      testDecisionOf({
-        at: AUG_10_2026,
-        expectedPointsLoss: 0.1,
-        handKey: "week-ten",
-      }),
-      testDecisionOf({
-        at: AUG_31_2026,
-        expectedPointsLoss: 0.2,
-        handKey: "week-late",
-      }),
-      testDecisionOf({
-        at: SEP_2_2026,
-        expectedPointsLoss: 0.4,
-        handKey: "week-next",
-      }),
+      testDecisionOf({ at: AUG_10_2026, expectedPointsLoss: 0.1 }),
+      testDecisionOf({ at: AUG_31_2026, expectedPointsLoss: 0.2 }),
+      testDecisionOf({ at: SEP_2_2026, expectedPointsLoss: 0.4 }),
     ];
 
     const weekTrend = runTrend(records, {
@@ -257,19 +218,16 @@ describe("discard quality trend skips and history boundaries", () => {
       dealerDecision(0.5, TEST_AT, "deal-role"),
       poneDecision(0.1, TEST_AT + ONE_HOUR_MS, "pone-role"),
     ];
+    const dealerLoss = runTrend(records, {
+      granularity: "rolling20",
+      roleFilter: "dealer",
+    }).buckets[0]?.meanExpectedPointsLoss;
+    const poneLoss = runTrend(records, {
+      granularity: "rolling20",
+      roleFilter: "pone",
+    }).buckets[0]?.meanExpectedPointsLoss;
 
-    expect(
-      runTrend(records, {
-        granularity: "rolling20",
-        roleFilter: "dealer",
-      }).buckets[0]?.meanExpectedPointsLoss,
-    ).toBe(0.5);
-    expect(
-      runTrend(records, {
-        granularity: "rolling20",
-        roleFilter: "pone",
-      }).buckets[0]?.meanExpectedPointsLoss,
-    ).toBe(0.1);
+    expect([dealerLoss, poneLoss]).toStrictEqual([0.5, 0.1]);
   });
 
   it("filters by role in calendar day views", () => {
@@ -294,6 +252,15 @@ describe("discard quality trend skips and history boundaries", () => {
     );
 
     expect(trend.buckets[0]?.label).toContain("Aug 10–16, 2026");
+  });
+
+  it("includes both years in weekly labels spanning New Year", () => {
+    const trend = runTrend(
+      [testDecisionOf({ at: DEC_31_2025, handKey: "new-year" })],
+      { granularity: "week", now: DEC_31_2025 },
+    );
+
+    expect(trend.buckets[0]?.label).toBe("Dec 29, 2025 – Jan 4, 2026");
   });
 
   it("excludes practice decisions from trend calculations", () => {

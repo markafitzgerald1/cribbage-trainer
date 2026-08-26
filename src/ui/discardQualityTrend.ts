@@ -173,11 +173,14 @@ const getEndOfWeek = (startDate: Date): Date => {
 const toWeekLabel = (startDate: Date, endDate: Date): string => {
   const startMonth = startDate.toLocaleDateString("en-US", { month: "short" });
   const endMonth = endDate.toLocaleDateString("en-US", { month: "short" });
-  const year = endDate.getFullYear();
-  if (startMonth === endMonth) {
-    return `${startMonth} ${startDate.getDate()}–${endDate.getDate()}, ${year}`;
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+  if (startYear !== endYear) {
+    return `${startMonth} ${startDate.getDate()}, ${startYear} – ${endMonth} ${endDate.getDate()}, ${endYear}`;
   }
-  return `${startMonth} ${startDate.getDate()} – ${endMonth} ${endDate.getDate()}, ${year}`;
+  return startMonth === endMonth
+    ? `${startMonth} ${startDate.getDate()}–${endDate.getDate()}, ${endYear}`
+    : `${startMonth} ${startDate.getDate()} – ${endMonth} ${endDate.getDate()}, ${endYear}`;
 };
 
 const toMonthLabel = (date: Date): string =>
@@ -467,10 +470,10 @@ export const computeDiscardQualityTrend = (
   ).length;
   const hasTruncatedDecisionHistory =
     tally.lifetime.decisions > retainedAuthenticRecordCount;
-  const hasTruncatedSkipHistory =
-    roleFilter === "all" && tally.lifetime.skippedHands > tally.skipped.length;
   const hasTruncatedHistory =
-    hasTruncatedDecisionHistory || hasTruncatedSkipHistory;
+    hasTruncatedDecisionHistory ||
+    (roleFilter === "all" &&
+      tally.lifetime.skippedHands > tally.skipped.length);
   const authenticRecords = getRetainedAuthenticRecords(
     tally,
     allAuthenticRecords,

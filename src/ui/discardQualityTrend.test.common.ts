@@ -19,6 +19,7 @@ export const AUG_10_2026 = new Date(2026, 7, 10, 12, 0, 0).getTime();
 export const AUG_31_2026 = new Date(2026, 7, 31, 12, 0, 0).getTime();
 export const SEP_2_2026 = new Date(2026, 8, 2, 12, 0, 0).getTime();
 export const AUG_16_2026_SUNDAY = new Date(2026, 7, 16, 14, 0, 0).getTime();
+export const DEC_31_2025 = new Date(2025, 11, 31, 12, 0, 0).getTime();
 
 export const EMPTY_TREND: DiscardQualityTrend = {
   buckets: [],
