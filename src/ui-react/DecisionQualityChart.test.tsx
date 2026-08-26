@@ -6,6 +6,7 @@ import {
   getLatestLoss,
   getLossColor,
   getMinLabelDistance,
+  getXLabelAnchor,
 } from "./DecisionQualityChart";
 import type {
   DiscardPeriodBucket,
@@ -158,6 +159,33 @@ describe("decision quality chart", () => {
     ];
 
     expect(countRenderedXLabels(buckets, "week")).toBe(2);
+  });
+
+  it("aligns endpoint labels with start and end anchors to keep text inside chart", () => {
+    const buckets = [
+      {
+        ...makeBucket("w1", 0.2),
+        label: "Dec 29, 2025 – Jan 4, 2026",
+        startTime: 0,
+      },
+      {
+        ...makeBucket("w2", 0.4),
+        label: "Aug 10–16, 2026",
+        startTime: 200 * 86_400_000,
+      },
+    ];
+    const { container } = renderChart(buckets, "week");
+    const labels = container.querySelectorAll(`.${classes.xLabel}`);
+
+    expect(labels[0]).toHaveAttribute("text-anchor", "start");
+    expect(labels[1]).toHaveAttribute("text-anchor", "end");
+  });
+
+  it("calculates x-label anchors based on position and endpoint bounds", () => {
+    expect(getXLabelAnchor(45, 0, 1)).toBe("middle");
+    expect(getXLabelAnchor(45, 0, 3)).toBe("start");
+    expect(getXLabelAnchor(270, 1, 3)).toBe("middle");
+    expect(getXLabelAnchor(495, 2, 3)).toBe("end");
   });
 
   it("handles rolling labels format and sparse x-labels for many buckets", () => {

@@ -28,6 +28,7 @@ const MIN_WEEKLY_LABEL_DISTANCE = 100;
 const MIN_DAILY_LABEL_DISTANCE = 80;
 const MIN_MONTHLY_LABEL_DISTANCE = 75;
 const MIN_LABEL_DISTANCE = 40;
+const ENDPOINT_ANCHOR_THRESHOLD = 20;
 const HALF_DIVISOR = 2;
 const TICK_OFFSET_X = 6;
 const TICK_OFFSET_Y = 3.5;
@@ -176,7 +177,8 @@ const formatShortLabel = (
   return label;
 };
 
-interface ChartXLabel {
+export interface ChartXLabel {
+  readonly anchor: "end" | "middle" | "start";
   readonly key: string;
   readonly label: string;
   readonly xPosition: number;
@@ -235,6 +237,26 @@ export const getMinLabelDistance = (
   }
 };
 
+export const getXLabelAnchor = (
+  xPosition: number,
+  index: number,
+  totalLabels: number,
+): "end" | "middle" | "start" => {
+  if (totalLabels <= 1) {
+    return "middle";
+  }
+  if (index === 0 && xPosition <= MARGIN_LEFT + ENDPOINT_ANCHOR_THRESHOLD) {
+    return "start";
+  }
+  if (
+    index === totalLabels - 1 &&
+    xPosition >= MARGIN_LEFT + PLOT_WIDTH - ENDPOINT_ANCHOR_THRESHOLD
+  ) {
+    return "end";
+  }
+  return "middle";
+};
+
 const createXAxisLabels = (
   buckets: readonly DiscardPeriodBucket[],
   granularity: DiscardTrendGranularity,
@@ -243,6 +265,7 @@ const createXAxisLabels = (
   if (buckets.length === 1 && single) {
     return [
       {
+        anchor: "middle",
         key: single.key,
         label: formatShortLabel(single.label, granularity),
         xPosition: calculateX({
@@ -262,13 +285,15 @@ const createXAxisLabels = (
     xPosition: calculateX({ bucket, buckets, granularity, index }),
   }));
 
-  return filterSpacedLabels(positioned, minDistance).map(
-    ({ bucket, xPosition }) => ({
-      key: bucket.key,
-      label: formatShortLabel(bucket.label, granularity),
-      xPosition,
-    }),
-  );
+  const filtered = filterSpacedLabels(positioned, minDistance);
+  const total = filtered.length;
+
+  return filtered.map(({ bucket, xPosition }, index) => ({
+    anchor: getXLabelAnchor(xPosition, index, total),
+    key: bucket.key,
+    label: formatShortLabel(bucket.label, granularity),
+    xPosition,
+  }));
 };
 
 export const getLatestLoss = (points: readonly ChartPoint[]): string => {
@@ -384,6 +409,7 @@ export function DecisionQualityChart({
           <text
             className={classes.xLabel}
             key={xLabel.key}
+            textAnchor={xLabel.anchor}
             x={xLabel.xPosition}
             y={MARGIN_TOP + PLOT_HEIGHT + X_LABEL_OFFSET_Y}
           >
