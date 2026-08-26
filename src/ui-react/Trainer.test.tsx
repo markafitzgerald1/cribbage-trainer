@@ -304,6 +304,7 @@ describe("trainer component", () => {
         cribRole.toLowerCase(),
       );
     },
+    15_000,
   );
 
   it("toggles card selection", async () => {

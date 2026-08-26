@@ -5,9 +5,11 @@ import {
   DATA_POINT_COLOR,
   DecisionQualityChart,
   OPTIMAL_POINT_COLOR,
+  type PositionedLabel,
+  filterSpacedLabels,
+  getLabelBounds,
   getLatestLoss,
   getLossPointColor,
-  getMinLabelDistance,
   getXLabelAnchor,
 } from "./DecisionQualityChart";
 import type {
@@ -116,14 +118,6 @@ describe("decision quality chart", () => {
     expect(countRenderedXLabels(dailyBuckets, "day")).toBeLessThan(10);
   });
 
-  it("returns appropriate min label distance per granularity", () => {
-    expect(getMinLabelDistance("week")).toBe(100);
-    expect(getMinLabelDistance("day")).toBe(80);
-    expect(getMinLabelDistance("month")).toBe(75);
-    expect(getMinLabelDistance("rolling20")).toBe(40);
-    expect(getMinLabelDistance("rolling50")).toBe(40);
-  });
-
   it("thins six weekly labels to keep the axis readable", () => {
     const buckets = Array.from({ length: 6 }, (_, index) => ({
       ...makeBucket(`week-${index}`, 0.25),
@@ -181,6 +175,50 @@ describe("decision quality chart", () => {
     expect(getXLabelAnchor(45, 0, 3)).toBe("start");
     expect(getXLabelAnchor(270, 1, 3)).toBe("middle");
     expect(getXLabelAnchor(495, 2, 3)).toBe("end");
+  });
+
+  it("calculates label bounding intervals based on text length and anchor", () => {
+    const startBounds = getLabelBounds(
+      "Dec 29, 2025 – Jan 4, 2026",
+      45,
+      "start",
+    );
+
+    expect(startBounds.left).toBe(45);
+    expect(startBounds.right).toBeGreaterThan(150);
+
+    const endBounds = getLabelBounds("Aug 10–16, 2026", 495, "end");
+
+    expect(endBounds.right).toBe(495);
+    expect(endBounds.left).toBeLessThan(495);
+  });
+
+  it("prevents overlapping x-labels even with wide cross-year weekly labels", () => {
+    const firstBucket = {
+      ...makeBucket("w0", 0.2),
+      label: "Dec 29, 2025 – Jan 4, 2026",
+      startTime: 0,
+    };
+    const otherBuckets = Array.from({ length: 9 }, (_, index) => ({
+      ...makeBucket(`w${index + 1}`, 0.2),
+      label: `Week ${index + 2}, 2026`,
+      startTime: (index + 1) * 7 * 86_400_000,
+    }));
+    const buckets = [firstBucket, ...otherBuckets];
+
+    expect(countRenderedXLabels(buckets, "week")).toBeGreaterThanOrEqual(2);
+  });
+
+  it("handles empty and single-item arrays in filterSpacedLabels", () => {
+    expect(filterSpacedLabels([])).toStrictEqual([]);
+
+    const single: PositionedLabel = {
+      bucket: makeBucket("1", 0.2),
+      label: "Jan 1, 2026",
+      xPosition: 45,
+    };
+
+    expect(filterSpacedLabels([single])).toStrictEqual([single]);
   });
 
   it("handles rolling labels format and sparse x-labels for many buckets", () => {

@@ -21,10 +21,8 @@ const PLOT_HEIGHT = SVG_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
 
 const MIN_MAX_LOSS = 1.0;
 const LOSS_STEP = 0.5;
-const MIN_WEEKLY_LABEL_DISTANCE = 100;
-const MIN_DAILY_LABEL_DISTANCE = 80;
-const MIN_MONTHLY_LABEL_DISTANCE = 75;
-const MIN_LABEL_DISTANCE = 40;
+const CHAR_WIDTH = 5.6;
+const LABEL_SAFETY_MARGIN = 8;
 const ENDPOINT_ANCHOR_THRESHOLD = 20;
 const HALF_DIVISOR = 2;
 const TICK_OFFSET_X = 6;
@@ -149,14 +147,16 @@ const createChartTicks = (maxLossY: number): ChartTick[] => {
   });
 };
 
-const formatShortLabel = (
+export const formatShortLabel = (
   label: string,
   granularity: DiscardTrendGranularity,
 ): string => {
   if (granularity === "rolling20" || granularity === "rolling50") {
     return label
       .replace("Decisions ", "#")
-      .replace("Retained decisions ", "Retained #");
+      .replace("Retained decisions ", "Retained #")
+      .replace("Skipped hands ", "Skipped #")
+      .replace("Retained skipped hands ", "Retained skipped #");
   }
   return label;
 };
@@ -168,57 +168,28 @@ export interface ChartXLabel {
   readonly xPosition: number;
 }
 
-interface PositionedBucket {
+export interface PositionedLabel {
   readonly bucket: DiscardPeriodBucket;
+  readonly label: string;
   readonly xPosition: number;
 }
 
-const filterSpacedLabels = (
-  positioned: readonly PositionedBucket[],
-  minDistance: number,
-): PositionedBucket[] => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const first = positioned[0]!;
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const last = positioned.at(LAST_INDEX)!;
-  const chosen: PositionedBucket[] = [first];
-
-  for (let index = 1; index < positioned.length - 1; index += 1) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const candidate = positioned.at(index)!;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const lastChosen = chosen.at(LAST_INDEX)!;
-    const distFromPrev = candidate.xPosition - lastChosen.xPosition;
-    const distToLast = last.xPosition - candidate.xPosition;
-    if (distFromPrev >= minDistance && distToLast >= minDistance) {
-      chosen.push(candidate);
-    }
+export const getLabelBounds = (
+  label: string,
+  xPosition: number,
+  anchor: "end" | "middle" | "start",
+): { readonly left: number; readonly right: number } => {
+  const width = label.length * CHAR_WIDTH + LABEL_SAFETY_MARGIN;
+  if (anchor === "start") {
+    return { left: xPosition, right: xPosition + width };
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const lastChosen = chosen.at(LAST_INDEX)!;
-  if (last.xPosition - lastChosen.xPosition >= minDistance) {
-    chosen.push(last);
+  if (anchor === "end") {
+    return { left: xPosition - width, right: xPosition };
   }
-
-  return chosen;
-};
-
-export const getMinLabelDistance = (
-  granularity: DiscardTrendGranularity,
-): number => {
-  switch (granularity) {
-    case "week":
-      return MIN_WEEKLY_LABEL_DISTANCE;
-    case "day":
-      return MIN_DAILY_LABEL_DISTANCE;
-    case "month":
-      return MIN_MONTHLY_LABEL_DISTANCE;
-    case "rolling20":
-    case "rolling50":
-    default:
-      return MIN_LABEL_DISTANCE;
-  }
+  return {
+    left: xPosition - width / HALF_DIVISOR,
+    right: xPosition + width / HALF_DIVISOR,
+  };
 };
 
 export const getXLabelAnchor = (
@@ -239,6 +210,53 @@ export const getXLabelAnchor = (
     return "end";
   }
   return "middle";
+};
+
+export const filterSpacedLabels = (
+  positioned: readonly PositionedLabel[],
+): PositionedLabel[] => {
+  if (positioned.length <= 1) {
+    return [...positioned];
+  }
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const first = positioned[0]!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const last = positioned.at(LAST_INDEX)!;
+
+  const firstAnchor = getXLabelAnchor(first.xPosition, 0, positioned.length);
+  const firstBounds = getLabelBounds(first.label, first.xPosition, firstAnchor);
+  const lastAnchor = getXLabelAnchor(
+    last.xPosition,
+    positioned.length - 1,
+    positioned.length,
+  );
+  const lastBounds = getLabelBounds(last.label, last.xPosition, lastAnchor);
+
+  const chosen: PositionedLabel[] = [first];
+  let lastChosenRight = firstBounds.right;
+
+  for (let index = 1; index < positioned.length - 1; index += 1) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const candidate = positioned.at(index)!;
+    const candidateBounds = getLabelBounds(
+      candidate.label,
+      candidate.xPosition,
+      "middle",
+    );
+    if (
+      candidateBounds.left >= lastChosenRight &&
+      candidateBounds.right <= lastBounds.left
+    ) {
+      chosen.push(candidate);
+      lastChosenRight = candidateBounds.right;
+    }
+  }
+
+  if (lastBounds.left >= lastChosenRight) {
+    chosen.push(last);
+  }
+
+  return chosen;
 };
 
 const createXAxisLabels = (
@@ -262,20 +280,19 @@ const createXAxisLabels = (
     ];
   }
 
-  const minDistance = getMinLabelDistance(granularity);
-
-  const positioned = buckets.map((bucket, index) => ({
+  const positioned: PositionedLabel[] = buckets.map((bucket, index) => ({
     bucket,
+    label: formatShortLabel(bucket.label, granularity),
     xPosition: calculateX({ bucket, buckets, granularity, index }),
   }));
 
-  const filtered = filterSpacedLabels(positioned, minDistance);
+  const filtered = filterSpacedLabels(positioned);
   const total = filtered.length;
 
-  return filtered.map(({ bucket, xPosition }, index) => ({
+  return filtered.map(({ bucket, label, xPosition }, index) => ({
     anchor: getXLabelAnchor(xPosition, index, total),
     key: bucket.key,
-    label: formatShortLabel(bucket.label, granularity),
+    label,
     xPosition,
   }));
 };
