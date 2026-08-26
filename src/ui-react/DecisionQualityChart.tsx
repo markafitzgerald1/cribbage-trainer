@@ -2,6 +2,9 @@ import * as classes from "./DecisionQualityChart.module.css";
 import {
   type DiscardPeriodBucket,
   type DiscardTrendGranularity,
+  HALF_POINT,
+  ONE_POINT,
+  QUARTER_POINT,
 } from "../ui/discardQualityTrend";
 import React, { useId } from "react";
 
@@ -21,9 +24,6 @@ const PLOT_HEIGHT = SVG_HEIGHT - MARGIN_TOP - MARGIN_BOTTOM;
 
 const MIN_MAX_LOSS = 1.0;
 const LOSS_STEP = 0.5;
-const LOSS_TIER_QUARTER = 0.25;
-const LOSS_TIER_HALF = 0.5;
-const LOSS_TIER_ONE = 1.0;
 const SMALL_BUCKET_COUNT = 6;
 const MEDIUM_BUCKET_COUNT = 12;
 const HALF_DIVISOR = 2;
@@ -42,13 +42,13 @@ export const getLossColor = (loss: number | null): string => {
   if (loss <= 0) {
     return "#28a745";
   }
-  if (loss <= LOSS_TIER_QUARTER) {
+  if (loss <= QUARTER_POINT) {
     return "#70c878";
   }
-  if (loss <= LOSS_TIER_HALF) {
+  if (loss <= HALF_POINT) {
     return "#f0ad4e";
   }
-  if (loss <= LOSS_TIER_ONE) {
+  if (loss <= ONE_POINT) {
     return "#e67e22";
   }
   return "#d9534f";

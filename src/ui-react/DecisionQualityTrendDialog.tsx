@@ -3,6 +3,9 @@ import {
   type CribRoleFilter,
   type DiscardPeriodBucket,
   type DiscardTrendGranularity,
+  HALF_POINT,
+  ONE_POINT,
+  QUARTER_POINT,
   computeDiscardQualityTrend,
 } from "../ui/discardQualityTrend";
 import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
@@ -42,9 +45,6 @@ const ROLE_OPTIONS: {
 const PER_CENT = 100;
 const DECIMAL_PLACES = 2;
 const PERCENT_DECIMAL_PLACES = 1;
-const LOSS_TIER_QUARTER = 0.25;
-const LOSS_TIER_HALF = 0.5;
-const LOSS_TIER_ONE = 1.0;
 
 const formatSkipRate = (decisions: number, skipped: number): string => {
   const handsFaced = decisions + skipped;
@@ -63,13 +63,13 @@ const getLossPillClass = (loss: number | null): string => {
   if (loss <= 0) {
     return classes.lossPillOptimal;
   }
-  if (loss <= LOSS_TIER_QUARTER) {
+  if (loss <= QUARTER_POINT) {
     return classes.lossPillMinor;
   }
-  if (loss <= LOSS_TIER_HALF) {
+  if (loss <= HALF_POINT) {
     return classes.lossPillInside;
   }
-  if (loss <= LOSS_TIER_ONE) {
+  if (loss <= ONE_POINT) {
     return classes.lossPillOpen;
   }
   return classes.lossPillBlunder;
@@ -239,7 +239,7 @@ export function DecisionQualityTrendDialog({
   onClose,
   show,
   tally = null,
-}: DecisionQualityTrendDialogProps): React.JSX.Element {
+}: DecisionQualityTrendDialogProps): React.JSX.Element | null {
   const [granularity, setGranularity] =
     useState<DiscardTrendGranularity>(initialGranularity);
   const [roleFilter, setRoleFilter] =
@@ -262,14 +262,7 @@ export function DecisionQualityTrendDialog({
   );
 
   if (!show) {
-    return (
-      <Modal
-        onClose={onClose}
-        show={false}
-      >
-        <div />
-      </Modal>
-    );
+    return null;
   }
 
   const sourceTally = tally ?? readTallyForDisplay();

@@ -48,9 +48,9 @@ export interface DiscardQualityTrendOptions {
   readonly now?: number;
 }
 
-const QUARTER_POINT = 0.25;
-const HALF_POINT = 0.5;
-const ONE_POINT = 1.0;
+export const QUARTER_POINT = 0.25;
+export const HALF_POINT = 0.5;
+export const ONE_POINT = 1.0;
 const DAYS_IN_WEEK = 7;
 const PAD_THRESHOLD = 10;
 const END_OF_DAY_HOUR = 23;
@@ -503,9 +503,10 @@ export const computeDiscardQualityTrend = (
     earliestTimestamp: firstRecord ? firstRecord.at : null,
     isAtRecordCap:
       hasTruncatedDecisionHistory ||
-      tally.lifetime.skippedHands > tally.skipped.length ||
       tally.records.length >= MAX_RECORDS ||
-      tally.skipped.length >= MAX_RECORDS,
+      (roleFilter === "all" &&
+        (tally.lifetime.skippedHands > tally.skipped.length ||
+          tally.skipped.length >= MAX_RECORDS)),
     latestTimestamp: lastRecord ? lastRecord.at : null,
     totalAuthenticDecisions: authenticRecords.length,
     totalSkippedHands: roleFilter === "all" ? skipsForCurrentView.length : 0,

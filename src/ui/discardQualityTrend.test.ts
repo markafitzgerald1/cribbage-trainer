@@ -435,6 +435,15 @@ describe("discard quality trend computation", () => {
     }
 
     expect(rolledOffTallies).toHaveLength(2);
+
+    const skippedHistoryOnly = rolledOffTallies[1]!;
+
+    expect(
+      computeDiscardQualityTrend(skippedHistoryOnly, {
+        granularity: "rolling20",
+        roleFilter: "dealer",
+      }).isAtRecordCap,
+    ).toBe(false);
   });
 
   it("reads trend directly from storage helper", () => {
