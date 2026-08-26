@@ -19,3 +19,32 @@ export function chunkBounds<T>(entries: readonly T[]): readonly [T, T] {
 
   return [first, last];
 }
+
+export const countRollingSkips = <
+  TRecord extends { readonly at: number },
+  TSkip extends { readonly at: number },
+>(
+  records: readonly TRecord[],
+  batchSize: number,
+  skipped: readonly TSkip[],
+): number[] => {
+  const bucketCount = Math.ceil(records.length / batchSize);
+  const counts = Array.from({ length: bucketCount }, () => 0);
+  const sortedSkips = sortByTimestamp(skipped);
+  let bucketIndex = 0;
+
+  for (const skip of sortedSkips) {
+    while (bucketIndex + 1 < bucketCount) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const nextBoundary = records[(bucketIndex + 1) * batchSize]!;
+      if (skip.at < nextBoundary.at) {
+        break;
+      }
+      bucketIndex += 1;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    counts.splice(bucketIndex, 1, counts.at(bucketIndex)! + 1);
+  }
+
+  return counts;
+};

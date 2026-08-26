@@ -47,6 +47,60 @@ const emptyTally: Tally.StoredTally = {
 
 const cappedTally = dialogFixtures.cappedDialogTally();
 
+const multiTierTally: Tally.StoredTally = {
+  lifetime: {
+    decisions: 5,
+    expectedPointsLossTotal: 2.8,
+    optimalDecisions: 1,
+    skippedHands: 0,
+  },
+  records: [
+    {
+      at: 1700000000000,
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 0,
+      handKey: "h-opt",
+      isOptimal: true,
+      isPractice: false,
+    },
+    {
+      at: 1700000000000 + 86400000,
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 0.15,
+      handKey: "h-minor",
+      isOptimal: false,
+      isPractice: false,
+    },
+    {
+      at: 1700000000000 + 86400000 * 2,
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 0.35,
+      handKey: "h-inside",
+      isOptimal: false,
+      isPractice: false,
+    },
+    {
+      at: 1700000000000 + 86400000 * 3,
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 0.75,
+      handKey: "h-open",
+      isOptimal: false,
+      isPractice: false,
+    },
+    {
+      at: 1700000000000 + 86400000 * 4,
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 1.55,
+      handKey: "h-blunder",
+      isOptimal: false,
+      isPractice: false,
+    },
+  ],
+  revision: 1,
+  skipped: [],
+  version: 1,
+};
+
 interface RenderDialogOptions {
   readonly initialGranularity?: "day";
   readonly onClose?: () => void;
@@ -180,60 +234,6 @@ describe("decision quality trend dialog", () => {
   });
 
   it("renders distinct loss pill classes across all loss severity tiers", () => {
-    const multiTierTally: Tally.StoredTally = {
-      lifetime: {
-        decisions: 5,
-        expectedPointsLossTotal: 2.8,
-        optimalDecisions: 1,
-        skippedHands: 0,
-      },
-      records: [
-        {
-          at: 1700000000000,
-          cribRole: CribRole.Dealer,
-          expectedPointsLoss: 0,
-          handKey: "h-opt",
-          isOptimal: true,
-          isPractice: false,
-        },
-        {
-          at: 1700000000000 + 86400000,
-          cribRole: CribRole.Dealer,
-          expectedPointsLoss: 0.15,
-          handKey: "h-minor",
-          isOptimal: false,
-          isPractice: false,
-        },
-        {
-          at: 1700000000000 + 86400000 * 2,
-          cribRole: CribRole.Dealer,
-          expectedPointsLoss: 0.35,
-          handKey: "h-inside",
-          isOptimal: false,
-          isPractice: false,
-        },
-        {
-          at: 1700000000000 + 86400000 * 3,
-          cribRole: CribRole.Dealer,
-          expectedPointsLoss: 0.75,
-          handKey: "h-open",
-          isOptimal: false,
-          isPractice: false,
-        },
-        {
-          at: 1700000000000 + 86400000 * 4,
-          cribRole: CribRole.Dealer,
-          expectedPointsLoss: 1.55,
-          handKey: "h-blunder",
-          isOptimal: false,
-          isPractice: false,
-        },
-      ],
-      revision: 1,
-      skipped: [],
-      version: 1,
-    };
-
     const { getByText } = renderDialog({
       initialGranularity: "day",
       tally: multiTierTally,
@@ -244,5 +244,26 @@ describe("decision quality trend dialog", () => {
     expect(getByText("0.35")).toHaveClass(classes.lossPillInside);
     expect(getByText("0.75")).toHaveClass(classes.lossPillOpen);
     expect(getByText("1.55")).toHaveClass(classes.lossPillBlunder);
+  });
+
+  it("displays descriptive badge titles across all severity tiers", () => {
+    const { container } = renderDialog({
+      initialGranularity: "day",
+      tally: multiTierTally,
+    });
+
+    const titles = Array.from(container.querySelectorAll("[title]")).map((el) =>
+      el.getAttribute("title"),
+    );
+
+    expect(titles).toStrictEqual(
+      expect.arrayContaining([
+        "Optimal (0.00)",
+        "> 0 and ≤ 0.25 points",
+        "> 0.25 and ≤ 0.50 points",
+        "> 0.50 and ≤ 1.00 points",
+        "> 1.00 points",
+      ]),
+    );
   });
 });

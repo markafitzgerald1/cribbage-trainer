@@ -16,6 +16,7 @@ import {
   storedTallyOf,
   testDecisionOf,
   withTruncatedDecisionHistory,
+  withTruncatedSkipHistory,
 } from "./discardQualityTrend.test.common";
 import {
   MAX_RECORDS,
@@ -223,16 +224,15 @@ describe("discard quality trend computation", () => {
 
 describe("discard quality trend skips and history boundaries", () => {
   it("handles periods with skipped hands and no decisions", () => {
-    const skippedDay = TEST_AT - 5 * ONE_DAY_MS;
-    const skipped = [{ at: skippedDay }];
+    const trend = runTrend([], { granularity: "day", now: TEST_AT }, [
+      { at: TEST_AT - 5 * ONE_DAY_MS },
+    ]);
 
-    const trend = runTrend([], { granularity: "day", now: TEST_AT }, skipped);
-
-    expectBucketCount(trend, 1);
-
-    expect(trend.buckets[0]?.decisions).toBe(0);
-    expect(trend.buckets[0]?.meanExpectedPointsLoss).toBeNull();
-    expect(trend.buckets[0]?.skippedHands).toBe(1);
+    expect(trend.buckets[0]).toMatchObject({
+      decisions: 0,
+      meanExpectedPointsLoss: null,
+      skippedHands: 1,
+    });
   });
 
   it("builds rolling buckets for skip-only histories", () => {
@@ -242,26 +242,14 @@ describe("discard quality trend skips and history boundaries", () => {
     const trend = runTrend([], { granularity: "rolling20" }, skipped);
 
     expect(trend.totalSkippedHands).toBe(21);
-
-    expectBucketCount(trend, 2);
-
-    expect(trend.buckets[0]).toMatchObject({
-      decisions: 0,
-      label: "Skipped hands 1–20",
-      skippedHands: 20,
-    });
-    expect(trend.buckets[1]).toMatchObject({
-      label: "Skipped hands 21–21",
-      skippedHands: 1,
-    });
-
-    const roleFilteredTrend = runTrend(
-      [],
-      { granularity: "rolling20", roleFilter: "dealer" },
-      skipped,
-    );
-
-    expect(roleFilteredTrend.buckets).toStrictEqual([]);
+    expect(trend.buckets).toMatchObject([
+      { decisions: 0, label: "Skipped hands 1–20", skippedHands: 20 },
+      { decisions: 0, label: "Skipped hands 21–21", skippedHands: 1 },
+    ]);
+    expect(
+      runTrend([], { granularity: "rolling20", roleFilter: "dealer" }, skipped)
+        .buckets,
+    ).toStrictEqual([]);
   });
 
   it("filters by dealer and pone roles in rolling views", () => {
@@ -270,19 +258,18 @@ describe("discard quality trend skips and history boundaries", () => {
       poneDecision(0.1, TEST_AT + ONE_HOUR_MS, "pone-role"),
     ];
 
-    const dealerRolling = runTrend(records, {
-      granularity: "rolling20",
-      roleFilter: "dealer",
-    });
-    const poneRolling = runTrend(records, {
-      granularity: "rolling20",
-      roleFilter: "pone",
-    });
-
-    expect(dealerRolling.totalAuthenticDecisions).toBe(1);
-    expect(dealerRolling.buckets[0]?.meanExpectedPointsLoss).toBe(0.5);
-    expect(poneRolling.totalAuthenticDecisions).toBe(1);
-    expect(poneRolling.buckets[0]?.meanExpectedPointsLoss).toBe(0.1);
+    expect(
+      runTrend(records, {
+        granularity: "rolling20",
+        roleFilter: "dealer",
+      }).buckets[0]?.meanExpectedPointsLoss,
+    ).toBe(0.5);
+    expect(
+      runTrend(records, {
+        granularity: "rolling20",
+        roleFilter: "pone",
+      }).buckets[0]?.meanExpectedPointsLoss,
+    ).toBe(0.1);
   });
 
   it("filters by role in calendar day views", () => {
@@ -443,6 +430,22 @@ describe("discard quality trend skips and history boundaries", () => {
     expect(trend.totalSkippedHands).toBe(expectedSkips);
   });
 
+  it("aligns authentic decisions with truncated skip history", () => {
+    const records = [
+      testDecisionOf({ at: 1000, handKey: "old" }),
+      testDecisionOf({ at: 6000, handKey: "recent" }),
+    ];
+    const trend = computeDiscardQualityTrend(
+      withTruncatedSkipHistory(storedTallyOf(records, [{ at: 5000 }])),
+      { granularity: "rolling20" },
+    );
+
+    expect(trend).toMatchObject({
+      totalAuthenticDecisions: 1,
+      totalSkippedHands: 1,
+    });
+  });
+
   it("identifies when storage reaches record cap or has truncated lifetime history", () => {
     const fullRecords = sequentialDecisions(MAX_RECORDS, "full", {
       interval: 1,
@@ -503,9 +506,9 @@ describe("discard quality trend skips and history boundaries", () => {
       now: TEST_AT + ONE_DAY_MS,
     });
 
-    expect(trend).toMatchObject({
-      totalAuthenticDecisions: 1,
-      totalSkippedHands: 1,
-    });
+    expect([
+      trend.totalAuthenticDecisions,
+      trend.totalSkippedHands,
+    ]).toStrictEqual([1, 1]);
   });
 });

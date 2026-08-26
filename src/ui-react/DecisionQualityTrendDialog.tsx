@@ -110,19 +110,19 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
           </span>
           <span
             className={`${classes.severityBadge} ${classes.badgeMinor}`}
-            title="≤ 0.25 points"
+            title="> 0 and ≤ 0.25 points"
           >
             {bucket.severity.upToQuarter}
           </span>
           <span
             className={`${classes.severityBadge} ${classes.badgeInside}`}
-            title="0.25 - 0.50 points"
+            title="> 0.25 and ≤ 0.50 points"
           >
             {bucket.severity.quarterToHalf}
           </span>
           <span
             className={`${classes.severityBadge} ${classes.badgeOpen}`}
-            title="0.50 - 1.00 points"
+            title="> 0.50 and ≤ 1.00 points"
           >
             {bucket.severity.halfToOne}
           </span>

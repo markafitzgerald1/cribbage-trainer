@@ -177,4 +177,14 @@ describe("decision quality chart", () => {
   it("handles empty points array in getLatestLoss", () => {
     expect(getLatestLoss([])).toBe("0.00");
   });
+
+  it("describes the latest scored period when the most recent period is skip-only", () => {
+    const buckets = [makeBucket("b1", 0.4), makeBucket("b2", null, 0)];
+    const { container } = renderChart(buckets, "day");
+    const desc = container.querySelector("desc");
+
+    expect(desc).toHaveTextContent(
+      "Trend chart with 2 periods. Latest scored period (Period b1) average expected loss is 0.40 points.",
+    );
+  });
 });

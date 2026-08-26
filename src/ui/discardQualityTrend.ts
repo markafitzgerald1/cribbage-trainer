@@ -8,6 +8,7 @@ import {
 } from "./discardTally";
 import {
   chunkBounds,
+  countRollingSkips,
   getRollingBatchSize,
   sortByTimestamp,
 } from "./discardQualityTrendRolling";
@@ -338,32 +339,6 @@ interface RollingBucketsArgs extends BaseBucketsArgs {
   readonly hasTruncatedDecisionHistory: boolean;
 }
 
-const countRollingSkips = (
-  records: readonly DiscardDecisionRecord[],
-  batchSize: number,
-  skipped: readonly SkippedHand[],
-): number[] => {
-  const bucketCount = Math.ceil(records.length / batchSize);
-  const counts = Array.from({ length: bucketCount }, () => 0);
-  const sortedSkips = sortByTimestamp(skipped);
-  let bucketIndex = 0;
-
-  for (const skip of sortedSkips) {
-    while (bucketIndex + 1 < bucketCount) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const nextBoundary = records[(bucketIndex + 1) * batchSize]!;
-      if (skip.at < nextBoundary.at) {
-        break;
-      }
-      bucketIndex += 1;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    counts.splice(bucketIndex, 1, counts.at(bucketIndex)! + 1);
-  }
-
-  return counts;
-};
-
 const buildSkipOnlyRollingBuckets = (
   granularity: "rolling20" | "rolling50",
   skipped: readonly SkippedHand[],
@@ -462,20 +437,41 @@ const getRetainedSkips = (
     : [];
 };
 
+const getRetainedAuthenticRecords = (
+  tally: StoredTally,
+  authenticRecords: readonly DiscardDecisionRecord[],
+  roleFilter: CribRoleFilter,
+): readonly DiscardDecisionRecord[] => {
+  if (
+    roleFilter !== "all" ||
+    tally.lifetime.skippedHands <= tally.skipped.length
+  ) {
+    return authenticRecords;
+  }
+  const [oldestSkip] = tally.skipped;
+  return oldestSkip
+    ? authenticRecords.filter((record) => record.at >= oldestSkip.at)
+    : [];
+};
+
 export const computeDiscardQualityTrend = (
   tally: StoredTally,
   options: DiscardQualityTrendOptions,
 ): DiscardQualityTrend => {
   const { granularity, roleFilter = "all", now = Date.now() } = options;
-  const authenticRecords = tally.records.filter(
+  const allAuthenticRecords = tally.records.filter(
     (record) => !record.isPractice && matchesRole(record, roleFilter),
   );
   const retainedAuthenticRecordCount = tally.records.filter(
     (record) => !record.isPractice,
   ).length;
-  const [firstRecord] = authenticRecords;
   const hasTruncatedDecisionHistory =
     tally.lifetime.decisions > retainedAuthenticRecordCount;
+  const authenticRecords = getRetainedAuthenticRecords(
+    tally,
+    allAuthenticRecords,
+    roleFilter,
+  );
   const retainedSkips = getRetainedSkips(tally, hasTruncatedDecisionHistory);
 
   const buckets =
@@ -495,6 +491,7 @@ export const computeDiscardQualityTrend = (
           skipped: retainedSkips,
         });
 
+  const [firstRecord] = authenticRecords;
   const lastRecord = authenticRecords[authenticRecords.length - 1];
 
   return {

@@ -289,6 +289,14 @@ export function DecisionQualityChart({
   const pathData = formatPathData(points);
   const latestLoss = getLatestLoss(points);
   const xLabels = createXAxisLabels(buckets, granularity);
+  const latestScoredBucket = scoredBuckets[
+    scoredBuckets.length - 1
+  ] as DiscardPeriodBucket;
+  const isLatestBucketScored =
+    latestScoredBucket.key === buckets[buckets.length - 1]?.key;
+  const latestDesc = isLatestBucketScored
+    ? `Latest average expected loss is ${latestLoss} points.`
+    : `Latest scored period (${latestScoredBucket.label}) average expected loss is ${latestLoss} points.`;
 
   return (
     <div className={classes.container}>
@@ -300,7 +308,7 @@ export function DecisionQualityChart({
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
       >
         <desc id={`${chartId}-desc`}>
-          {`Trend chart with ${buckets.length} periods. Latest average expected loss is ${latestLoss} points.`}
+          {`Trend chart with ${buckets.length} periods. ${latestDesc}`}
         </desc>
 
         {ticks.map((tick) => (

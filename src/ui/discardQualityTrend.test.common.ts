@@ -89,6 +89,11 @@ export const withTruncatedDecisionHistory = (
   lifetime: { ...tally.lifetime, decisions: tally.records.length + 1 },
 });
 
+export const withTruncatedSkipHistory = (tally: StoredTally): StoredTally => ({
+  ...tally,
+  lifetime: { ...tally.lifetime, skippedHands: tally.skipped.length + 1 },
+});
+
 export const storedTallyOf = (
   records: readonly DiscardDecisionRecord[],
   skipped: readonly SkippedHand[] = [],
