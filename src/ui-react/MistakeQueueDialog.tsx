@@ -314,7 +314,12 @@ export function MistakeQueueDialog({
     [],
   );
 
-  const activeTally = tally ?? readTallyForDisplay();
+  /*
+   * `readTallyForDisplay` reconstructs the stored object on every call. Keep
+   * that snapshot stable while the dialog is open so pagination does not
+   * rebuild and re-sort the entire queue just because its visible page grew.
+   */
+  const activeTally = useMemo(() => tally ?? readTallyForDisplay(), [tally]);
   const queueData = useMemo(
     () =>
       computeMistakeDialogData(activeTally, {
