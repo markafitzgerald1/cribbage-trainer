@@ -5,15 +5,36 @@ import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { discardTallySummary } from "./discardTally.test.common";
+/* jscpd:ignore-end */
 
-// Typed from the builder rather than from the summary, so this file does not restate an import the stories already make.
-const renderTally = (overrides: Parameters<typeof discardTallySummary>[0]) =>
-  render(<DiscardTallyView summary={discardTallySummary(overrides)} />);
+const renderTally = (summary: Parameters<typeof discardTallySummary>[0]) =>
+  render(<DiscardTallyView summary={discardTallySummary(summary)} />);
 
 const NOTHING_SCORED = {
   decisions: 0,
   meanExpectedPointsLoss: null,
   optimalDecisions: 0,
+};
+
+const verifyModalOpenAndClose = (
+  openButtonName: string,
+  headingName: string,
+  renderedView: ReturnType<typeof renderTally>,
+): boolean => {
+  const { getByRole, queryByRole } = renderedView;
+  const openButton = getByRole("button", { name: openButtonName });
+
+  fireEvent.click(openButton);
+
+  const headingPresent = queryByRole("heading", { name: headingName }) !== null;
+
+  const closeButton = getByRole("button", { name: "Close modal" });
+
+  fireEvent.click(closeButton);
+
+  const headingClosed = queryByRole("heading", { name: headingName }) === null;
+
+  return headingPresent && headingClosed;
 };
 
 describe("discard tally view", () => {
@@ -69,27 +90,17 @@ describe("discard tally view", () => {
   });
 
   it("opens and closes the decision quality trend dialog", () => {
-    const { getByRole, queryByRole } = renderTally({
-      decisions: 5,
-      meanExpectedPointsLoss: 0.25,
-      optimalDecisions: 3,
-    });
+    const success = verifyModalOpenAndClose(
+      "Quality trend",
+      "Decision quality over time",
+      renderTally({
+        decisions: 5,
+        meanExpectedPointsLoss: 0.25,
+        optimalDecisions: 3,
+      }),
+    );
 
-    const trendButton = getByRole("button", { name: "Quality trend" });
-
-    fireEvent.click(trendButton);
-
-    expect(
-      queryByRole("heading", { name: "Decision quality over time" }),
-    ).not.toBeNull();
-
-    const closeButton = getByRole("button", { name: "Close modal" });
-
-    fireEvent.click(closeButton);
-
-    expect(
-      queryByRole("heading", { name: "Decision quality over time" }),
-    ).toBeNull();
+    expect(success).toBe(true);
   });
 
   it("hides mistake queue button when summary has no sub-optimal decisions", () => {
@@ -115,23 +126,16 @@ describe("discard tally view", () => {
       isPractice: false,
     });
 
-    const { getByRole, queryByRole } = renderTally({
-      decisions: 1,
-      meanExpectedPointsLoss: 1.5,
-      optimalDecisions: 0,
-    });
+    const success = verifyModalOpenAndClose(
+      "Mistake queue",
+      "Mistake queue",
+      renderTally({
+        decisions: 1,
+        meanExpectedPointsLoss: 1.5,
+        optimalDecisions: 0,
+      }),
+    );
 
-    const queueButton = getByRole("button", { name: "Mistake queue" });
-
-    fireEvent.click(queueButton);
-
-    expect(queryByRole("heading", { name: "Mistake queue" })).not.toBeNull();
-
-    const closeButton = getByRole("button", { name: "Close modal" });
-
-    fireEvent.click(closeButton);
-
-    expect(queryByRole("heading", { name: "Mistake queue" })).toBeNull();
+    expect(success).toBe(true);
   });
 });
-/* jscpd:ignore-end */

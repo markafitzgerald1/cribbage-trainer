@@ -1,6 +1,8 @@
+/* jscpd:ignore-start */
 import { describe, expect, it } from "@jest/globals";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import { render } from "@testing-library/react";
+/* jscpd:ignore-end */
 
 const mockSummaryClasses = {
   summaryCard: "mock-summary-card",

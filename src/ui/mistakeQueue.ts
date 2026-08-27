@@ -1,22 +1,34 @@
+import { type DiscardDecisionRecord, type StoredTally } from "./discardTally";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { PracticeRecord } from "./practiceLedger";
-import type { StoredTally } from "./discardTally";
 import { parseHandKey } from "./handKey";
 
-export type LossQuantile = "high" | "medium" | "low";
-export type MistakeQueueSortOrder = "priority" | "highestLoss" | "mostRecent";
-export type MistakeQueueStatusFilter = "all" | "active" | "mastered";
-export type MistakeQueueQuantileFilter = "all" | LossQuantile;
+export const MIN_DISTINCT_LOSSES_FOR_QUANTILES = 3;
+const OFFSET_HIGH_QUANTILE = 2;
+const FRACTION_ONE_THIRD_DIVISOR = 3;
+const FRACTION_TWO_THIRDS_NUMERATOR = 2;
+const FRACTION_TWO_THIRDS_DENOMINATOR = 3;
+const FRACTION_TWO_THIRDS =
+  FRACTION_TWO_THIRDS_NUMERATOR / FRACTION_TWO_THIRDS_DENOMINATOR;
+const SUCCESSES_FOR_MASTERY = 2;
+const SORT_BEFORE = -1;
+const SORT_AFTER = 1;
+
+export type MistakeQueueSortOrder = "highestLoss" | "mostRecent" | "priority";
+
+export type MistakeQueueStatusFilter = "active" | "all" | "mastered";
+
 export type MistakeQueueRoleFilter = "all" | "dealer" | "pone";
 
-export const MASTERY_CONSECUTIVE_SUCCESSES = 2;
-const NUMERATOR_TWO = 2;
-const DENOMINATOR_THREE = 3;
-const FRACTION_ONE_THIRD = 1 / DENOMINATOR_THREE;
-const FRACTION_TWO_THIRDS = NUMERATOR_TWO / DENOMINATOR_THREE;
-const COMPARATOR_LESS = -1;
-const MIN_DISTINCT_LOSSES_FOR_QUANTILES = 3;
+export type MistakeQueueQuantileFilter = "all" | "high" | "low" | "medium";
+
+export type LossQuantile = "high" | "low" | "medium";
+
+export interface MistakeQueueQuantileThresholds {
+  readonly highThreshold: number;
+  readonly mediumThreshold: number;
+}
 
 export interface MistakeQueueItem {
   readonly attempts: number;
@@ -29,21 +41,10 @@ export interface MistakeQueueItem {
   readonly lossIfWrong: number;
   readonly lossQuantile: LossQuantile;
   readonly originalDecisionAt: number;
+  readonly pWrong: number;
   readonly previousDiscard: string | null;
   readonly priority: number;
-  readonly pWrong: number;
   readonly wrong: number;
-}
-
-export interface MistakeQueueQuantileThresholds {
-  readonly highThreshold: number;
-  readonly mediumThreshold: number;
-}
-
-export interface MistakeQueueFilterOptions {
-  readonly quantileFilter?: MistakeQueueQuantileFilter;
-  readonly roleFilter?: MistakeQueueRoleFilter;
-  readonly statusFilter?: MistakeQueueStatusFilter;
 }
 
 export const computeLossQuantileThresholds = (
@@ -53,29 +54,30 @@ export const computeLossQuantileThresholds = (
     return { highThreshold: 0, mediumThreshold: 0 };
   }
   const uniqueLosses = new Set(losses);
-  const sorted = [...losses].sort((one, other) => one - other);
-
   if (uniqueLosses.size < MIN_DISTINCT_LOSSES_FOR_QUANTILES) {
     return { highThreshold: 0, mediumThreshold: 0 };
   }
 
+  const sortedDistinct = Array.from(uniqueLosses).sort(
+    (one, other) => one - other,
+  );
+
   const mediumIndex = Math.min(
-    sorted.length - 1,
-    Math.floor(sorted.length * FRACTION_ONE_THIRD),
+    sortedDistinct.length - OFFSET_HIGH_QUANTILE,
+    Math.max(1, Math.floor(sortedDistinct.length / FRACTION_ONE_THIRD_DIVISOR)),
   );
   const highIndex = Math.min(
-    sorted.length - 1,
-    Math.floor(sorted.length * FRACTION_TWO_THIRDS),
+    sortedDistinct.length - 1,
+    Math.max(
+      mediumIndex + 1,
+      Math.floor(sortedDistinct.length * FRACTION_TWO_THIRDS),
+    ),
   );
 
   // eslint-disable-next-line security/detect-object-injection
-  const highThreshold = Number(sorted[highIndex]);
+  const highThreshold = Number(sortedDistinct[highIndex]);
   // eslint-disable-next-line security/detect-object-injection
-  const mediumThreshold = Number(sorted[mediumIndex]);
-
-  if (highThreshold <= mediumThreshold) {
-    return { highThreshold: 0, mediumThreshold: 0 };
-  }
+  const mediumThreshold = Number(sortedDistinct[mediumIndex]);
 
   return {
     highThreshold,
@@ -94,6 +96,7 @@ export const classifyLossQuantile = (
   ) {
     return "low";
   }
+
   if (loss >= thresholds.highThreshold) {
     return "high";
   }
@@ -103,25 +106,133 @@ export const classifyLossQuantile = (
   return "low";
 };
 
-interface PriorityComputationOptions {
-  readonly lossIfWrong: number;
-  readonly pWrong: number;
+export const computePriority = (lossIfWrong: number, pWrong: number): number =>
+  lossIfWrong * pWrong;
+
+interface HandAggregate {
+  at: number;
+  cribRole: CribRole;
+  discardKey: string | null;
+  expectedPointsLoss: number;
+  handKey: string;
 }
 
-const computePriority = ({
-  lossIfWrong,
-  pWrong,
-}: PriorityComputationOptions): number => lossIfWrong * pWrong;
+const aggregateMistakeRecords = (
+  records: readonly DiscardDecisionRecord[],
+): Map<string, HandAggregate> => {
+  const map = new Map<string, HandAggregate>();
+
+  for (const record of records) {
+    const isMistake =
+      !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
+    if (isMistake) {
+      const existing = map.get(record.handKey);
+      if (!existing || record.at >= existing.at) {
+        map.set(record.handKey, {
+          at: record.at,
+          cribRole: record.cribRole,
+          discardKey: record.discardKey,
+          expectedPointsLoss: record.expectedPointsLoss,
+          handKey: record.handKey,
+        });
+      }
+    }
+  }
+
+  return map;
+};
+
+interface CandidateParams {
+  aggregate: HandAggregate;
+  cards: readonly Card[];
+  practice?: PracticeRecord | undefined;
+}
+
+const createCandidateQueueItem = ({
+  aggregate,
+  cards,
+  practice,
+}: CandidateParams) => {
+  const consecutiveSuccesses = practice?.consecutiveSuccesses ?? 0;
+  const isMastered = consecutiveSuccesses >= SUCCESSES_FOR_MASTERY;
+  const attempts = (practice?.attempts ?? 0) + 1;
+  const wrong = (practice?.wrong ?? 0) + 1;
+  const pWrong = wrong / attempts;
+
+  const totalWrongLoss =
+    (practice?.totalWrongLoss ?? 0) + aggregate.expectedPointsLoss;
+  const lossIfWrong = totalWrongLoss / wrong;
+  const priority = computePriority(lossIfWrong, pWrong);
+  const lastAttemptAt = practice?.lastAttemptAt ?? aggregate.at;
+
+  return {
+    attempts,
+    cards,
+    consecutiveSuccesses,
+    cribRole: aggregate.cribRole,
+    handKey: aggregate.handKey,
+    isMastered,
+    lastAttemptAt,
+    lossIfWrong,
+    originalDecisionAt: aggregate.at,
+    pWrong,
+    previousDiscard: aggregate.discardKey,
+    priority,
+    wrong,
+  };
+};
+
+export const buildMistakeQueue = (
+  tally: StoredTally,
+): readonly MistakeQueueItem[] => {
+  const mistakeMap = aggregateMistakeRecords(tally.records);
+  if (mistakeMap.size === 0) {
+    return [];
+  }
+
+  const practiceMap = new Map(
+    (tally.practice ?? []).map((item) => [item.handKey, item]),
+  );
+
+  const candidateItems: ReturnType<typeof createCandidateQueueItem>[] = [];
+
+  for (const aggregate of mistakeMap.values()) {
+    const parsedKey = parseHandKey(aggregate.handKey);
+    if (parsedKey) {
+      candidateItems.push(
+        createCandidateQueueItem({
+          aggregate,
+          cards: parsedKey.cards,
+          practice: practiceMap.get(aggregate.handKey),
+        }),
+      );
+    }
+  }
+
+  const losses = candidateItems
+    .map((item) => item.lossIfWrong)
+    .sort((one, other) => one - other);
+  const thresholds = computeLossQuantileThresholds(losses);
+
+  return candidateItems.map((item) => ({
+    ...item,
+    lossQuantile: classifyLossQuantile(item.lossIfWrong, thresholds),
+  }));
+};
 
 export const filterMistakeQueue = (
   items: readonly MistakeQueueItem[],
-  options: MistakeQueueFilterOptions,
+  filters: {
+    readonly quantileFilter?: MistakeQueueQuantileFilter;
+    readonly roleFilter?: MistakeQueueRoleFilter;
+    readonly statusFilter?: MistakeQueueStatusFilter;
+  },
 ): readonly MistakeQueueItem[] => {
   const {
     quantileFilter = "all",
     roleFilter = "all",
     statusFilter = "all",
-  } = options;
+  } = filters;
 
   return items.filter((item) => {
     if (statusFilter === "active" && item.isMastered) {
@@ -130,15 +241,18 @@ export const filterMistakeQueue = (
     if (statusFilter === "mastered" && !item.isMastered) {
       return false;
     }
+
     if (roleFilter === "dealer" && item.cribRole !== CribRole.Dealer) {
       return false;
     }
     if (roleFilter === "pone" && item.cribRole !== CribRole.Pone) {
       return false;
     }
+
     if (quantileFilter !== "all" && item.lossQuantile !== quantileFilter) {
       return false;
     }
+
     return true;
   });
 };
@@ -147,127 +261,29 @@ export const sortMistakeQueue = (
   items: readonly MistakeQueueItem[],
   sortOrder: MistakeQueueSortOrder,
 ): readonly MistakeQueueItem[] => {
-  const copy = [...items];
-  switch (sortOrder) {
-    case "highestLoss":
-      return copy.sort(
-        (one, other) =>
-          other.lossIfWrong - one.lossIfWrong ||
-          other.priority - one.priority ||
-          other.lastAttemptAt - one.lastAttemptAt ||
-          one.handKey.localeCompare(other.handKey),
-      );
-    case "mostRecent":
-      return copy.sort(
-        (one, other) =>
-          other.lastAttemptAt - one.lastAttemptAt ||
-          other.priority - one.priority ||
-          other.lossIfWrong - one.lossIfWrong ||
-          one.handKey.localeCompare(other.handKey),
-      );
-    case "priority":
-    default:
-      return copy.sort((one, other) => {
-        if (one.isMastered !== other.isMastered) {
-          return one.isMastered ? 1 : COMPARATOR_LESS;
-        }
-        return (
-          other.priority - one.priority ||
-          other.lossIfWrong - one.lossIfWrong ||
-          other.lastAttemptAt - one.lastAttemptAt ||
-          one.handKey.localeCompare(other.handKey)
-        );
-      });
-  }
-};
+  const sorted = [...items];
 
-export const buildMistakeQueue = (
-  tally: StoredTally,
-): readonly MistakeQueueItem[] => {
-  const practiceMap = new Map<string, PracticeRecord>();
-  for (const practice of tally.practice) {
-    practiceMap.set(practice.handKey, practice);
-  }
-
-  // Authentic mistakes only: non-practice decisions with sub-optimal outcomes.
-  const authenticMistakes = tally.records.filter(
-    (record) => !record.isPractice && !record.isOptimal,
-  );
-
-  // Group by handKey to ensure uniqueness.
-  const uniqueMistakesByHandKey = new Map<
-    string,
-    (typeof authenticMistakes)[number]
-  >();
-  for (const record of authenticMistakes) {
-    if (!uniqueMistakesByHandKey.has(record.handKey)) {
-      uniqueMistakesByHandKey.set(record.handKey, record);
-    }
-  }
-
-  const validMistakeRecords = Array.from(uniqueMistakesByHandKey.values())
-    .map((record) => {
-      const parsed = parseHandKey(record.handKey);
-      if (parsed === null) {
-        return null;
+  sorted.sort((firstItem, secondItem) => {
+    if (sortOrder === "priority") {
+      if (firstItem.isMastered !== secondItem.isMastered) {
+        return firstItem.isMastered ? SORT_AFTER : SORT_BEFORE;
       }
-      return {
-        cards: parsed.cards,
-        cribRole: record.cribRole,
-        handKey: record.handKey,
-        lossIfWrong: record.expectedPointsLoss,
-        originalDecisionAt: record.at,
-        previousDiscard: record.discardKey,
-      };
-    })
-    .filter(
-      (record): record is Exclude<typeof record, null> => record !== null,
-    );
+      if (secondItem.priority !== firstItem.priority) {
+        return secondItem.priority - firstItem.priority;
+      }
+    } else if (sortOrder === "highestLoss") {
+      if (secondItem.lossIfWrong !== firstItem.lossIfWrong) {
+        return secondItem.lossIfWrong - firstItem.lossIfWrong;
+      }
+    } else if (secondItem.lastAttemptAt !== firstItem.lastAttemptAt) {
+      return secondItem.lastAttemptAt - firstItem.lastAttemptAt;
+    }
 
-  const items: MistakeQueueItem[] = validMistakeRecords.map((record) => {
-    const practice = practiceMap.get(record.handKey);
-    const practiceAttempts = practice?.attempts ?? 0;
-    const practiceWrong = practice?.wrong ?? 0;
-    const consecutiveSuccesses = practice?.consecutiveSuccesses ?? 0;
-    const lastAttemptAt = practice?.lastAttemptAt ?? record.originalDecisionAt;
-
-    const totalAttempts = 1 + practiceAttempts;
-    const totalWrong = 1 + practiceWrong;
-    const totalWrongLoss = record.lossIfWrong + (practice?.totalWrongLoss ?? 0);
-    const pooledLossIfWrong = totalWrongLoss / totalWrong;
-    const isMastered = consecutiveSuccesses >= MASTERY_CONSECUTIVE_SUCCESSES;
-    const pWrong = totalWrong / totalAttempts;
-    const priority = computePriority({
-      lossIfWrong: pooledLossIfWrong,
-      pWrong,
-    });
-
-    return {
-      attempts: totalAttempts,
-      cards: record.cards,
-      consecutiveSuccesses,
-      cribRole: record.cribRole,
-      handKey: record.handKey,
-      isMastered,
-      lastAttemptAt,
-      lossIfWrong: pooledLossIfWrong,
-      lossQuantile: "low",
-      originalDecisionAt: record.originalDecisionAt,
-      pWrong,
-      previousDiscard: record.previousDiscard,
-      priority,
-      wrong: totalWrong,
-    };
+    if (secondItem.originalDecisionAt !== firstItem.originalDecisionAt) {
+      return secondItem.originalDecisionAt - firstItem.originalDecisionAt;
+    }
+    return firstItem.handKey.localeCompare(secondItem.handKey);
   });
 
-  const thresholds = computeLossQuantileThresholds(
-    items.map((item) => item.lossIfWrong),
-  );
-
-  const itemsWithQuantiles = items.map((item) => ({
-    ...item,
-    lossQuantile: classifyLossQuantile(item.lossIfWrong, thresholds),
-  }));
-
-  return sortMistakeQueue(itemsWithQuantiles, "priority");
+  return sorted;
 };

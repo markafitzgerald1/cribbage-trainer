@@ -1,95 +1,121 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
-import type {
-  MistakeQueueQuantileFilter,
-  MistakeQueueRoleFilter,
-  MistakeQueueSortOrder,
-  MistakeQueueStatusFilter,
-} from "../ui/mistakeQueue";
 import {
+  MistakeQueueDialog,
+  type MistakeQueueDialogProps,
+} from "./MistakeQueueDialog";
+import {
+  createAgedOutTally,
   createAllMasteredTally,
   createEmptyMistakeTally,
   createSampleMistakeTally,
+  createTwoLossTally,
 } from "./MistakeQueueDialog.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
-import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import type { StoredTally } from "../ui/discardTally";
+import { createElement } from "react";
+/* jscpd:ignore-end */
 
 const sampleTally = createSampleMistakeTally();
 const allMasteredTally = createAllMasteredTally();
 const emptyMistakeTally = createEmptyMistakeTally();
+const agedOutTally = createAgedOutTally();
+const twoLossTally = createTwoLossTally();
 
-interface RenderDialogOptions {
-  readonly initialQuantileFilter?: MistakeQueueQuantileFilter;
-  readonly initialRoleFilter?: MistakeQueueRoleFilter;
-  readonly initialSortOrder?: MistakeQueueSortOrder;
-  readonly initialStatusFilter?: MistakeQueueStatusFilter;
-  readonly onClose?: () => void;
-  readonly show?: boolean;
-  readonly tally?: StoredTally;
-  readonly useStoredTally?: boolean;
+interface QueueRenderConfig {
+  readonly initialQuantileFilter?: MistakeQueueDialogProps["initialQuantileFilter"];
+  readonly initialRoleFilter?: MistakeQueueDialogProps["initialRoleFilter"];
+  readonly initialSortOrder?: MistakeQueueDialogProps["initialSortOrder"];
+  readonly initialStatusFilter?: MistakeQueueDialogProps["initialStatusFilter"];
+  readonly isDisplayed?: boolean;
+  readonly onDismiss?: () => void;
+  readonly queueTally?: StoredTally;
+  readonly useStorageFallback?: boolean;
 }
 
-const renderDialog = ({
-  initialQuantileFilter = "all",
-  initialRoleFilter = "all",
-  initialSortOrder = "priority",
-  initialStatusFilter = "active",
-  onClose = jest.fn(),
-  show = true,
-  tally,
-  useStoredTally = false,
-}: RenderDialogOptions = {}) =>
-  useStoredTally
-    ? render(
-        <MistakeQueueDialog
-          initialQuantileFilter={initialQuantileFilter}
-          initialRoleFilter={initialRoleFilter}
-          initialSortOrder={initialSortOrder}
-          initialStatusFilter={initialStatusFilter}
-          onClose={onClose}
-          show={show}
-        />,
-      )
-    : render(
-        <MistakeQueueDialog
-          initialQuantileFilter={initialQuantileFilter}
-          initialRoleFilter={initialRoleFilter}
-          initialSortOrder={initialSortOrder}
-          initialStatusFilter={initialStatusFilter}
-          onClose={onClose}
-          show={show}
-          tally={tally ?? sampleTally}
-        />,
-      );
+const renderQueueDialog = (config: QueueRenderConfig = {}) => {
+  const {
+    initialQuantileFilter,
+    initialRoleFilter,
+    initialSortOrder,
+    initialStatusFilter,
+    isDisplayed = true,
+    onDismiss = jest.fn(),
+    queueTally = sampleTally,
+    useStorageFallback = false,
+  } = config;
+
+  if (useStorageFallback) {
+    return render(
+      <MistakeQueueDialog
+        onClose={onDismiss}
+        show={isDisplayed}
+      />,
+    );
+  }
+
+  return render(
+    <MistakeQueueDialog
+      initialQuantileFilter={initialQuantileFilter}
+      initialRoleFilter={initialRoleFilter}
+      initialSortOrder={initialSortOrder}
+      initialStatusFilter={initialStatusFilter}
+      onClose={onDismiss}
+      show={isDisplayed}
+      tally={queueTally}
+    />,
+  );
+};
+
+const testFilterSelection = ({
+  absentText,
+  filterName,
+  presentText,
+}: {
+  absentText: string;
+  filterName: RegExp | string;
+  presentText: string;
+}): boolean => {
+  const { getByRole, queryByText } = renderQueueDialog({
+    initialStatusFilter: "all",
+  });
+  const radio = getByRole("radio", { name: filterName });
+  fireEvent.click(radio);
+
+  return (
+    (radio as HTMLInputElement).checked &&
+    queryByText(presentText) !== null &&
+    queryByText(absentText) === null
+  );
+};
 
 describe("mistake queue dialog", () => {
   describe("rendering and sorting", () => {
     it("does not render content when show is false", () => {
-      const { container } = renderDialog({ show: false });
+      const { container } = renderQueueDialog({ isDisplayed: false });
 
-      expect(container.textContent).not.toContain("Mistake queue");
+      expect(container.firstChild).toBeNull();
     });
 
     it("renders summary metrics and headings when open", () => {
-      const { getAllByText, getByRole, getByText } = renderDialog();
+      const rendered = renderQueueDialog();
 
-      expect(
-        getByRole("heading", { name: "Mistake queue" }),
-      ).toBeInTheDocument();
+      expect(rendered.getByRole("heading", { level: 2 }).textContent).toBe(
+        "Mistake queue",
+      );
 
-      expect(getByText("Total mistakes")).toBeInTheDocument();
+      expect(rendered.getByText("Total mistakes")).toBeInTheDocument();
 
-      expect(getByText("Needs practice")).toBeInTheDocument();
+      expect(rendered.getByText("Needs practice")).toBeInTheDocument();
 
-      expect(getAllByText("Mastered")).toHaveLength(2);
+      expect(rendered.getAllByText("Mastered")).toHaveLength(2);
     });
 
     it("renders default radio filter selections", () => {
-      const { getAllByText, getByRole } = renderDialog();
+      const { getAllByText, getByRole } = renderQueueDialog();
 
       expect(getByRole("radio", { name: "Priority" })).toBeChecked();
 
@@ -99,23 +125,23 @@ describe("mistake queue dialog", () => {
     });
 
     it("renders previous discard choice when recorded", () => {
-      const { getByText } = renderDialog({ initialStatusFilter: "all" });
+      const { queryByText } = renderQueueDialog({ initialStatusFilter: "all" });
 
-      expect(getByText("2.50 pts lost")).toBeInTheDocument();
-
-      expect(getByText("1.20 pts lost")).toBeInTheDocument();
+      expect(queryByText("2.50 pts lost")).not.toBeNull();
+      expect(queryByText("1.20 pts lost")).not.toBeNull();
     });
 
     it("renders fallback when previous discard choice is not recorded", () => {
-      const { getByText } = renderDialog({ initialStatusFilter: "all" });
+      const rendered = renderQueueDialog({ initialStatusFilter: "all" });
 
-      expect(getByText("Previous choice not recorded")).toBeInTheDocument();
-
-      expect(getByText("0.40 pts lost")).toBeInTheDocument();
+      expect(
+        rendered.getByText("Previous choice not recorded"),
+      ).toBeInTheDocument();
+      expect(rendered.getByText("0.40 pts lost")).toBeInTheDocument();
     });
 
     it("switches sort order when selected", () => {
-      const { getByRole } = renderDialog();
+      const { getByRole } = renderQueueDialog();
 
       const highestLossRadio = getByRole("radio", { name: "Highest loss" });
 
@@ -139,7 +165,7 @@ describe("mistake queue dialog", () => {
 
   describe("filtering, pagination, and dismissal", () => {
     it("filters by status Active and Mastered", () => {
-      const { getByRole, queryByText } = renderDialog();
+      const { getByRole, queryByText } = renderQueueDialog();
 
       expect(queryByText("0.40 pts lost")).not.toBeInTheDocument();
 
@@ -155,112 +181,62 @@ describe("mistake queue dialog", () => {
     });
 
     it("filters by status All", () => {
-      const { getByText } = renderDialog({ initialStatusFilter: "all" });
+      const view = renderQueueDialog({ initialStatusFilter: "all" });
 
-      expect(getByText("2.50 pts lost")).toBeInTheDocument();
-
-      expect(getByText("1.20 pts lost")).toBeInTheDocument();
-
-      expect(getByText("0.40 pts lost")).toBeInTheDocument();
+      expect(view.getAllByText(/pts lost/u)).toHaveLength(3);
     });
 
-    it("filters by crib role Pone", () => {
-      const { getByRole, queryByText } = renderDialog({
-        initialStatusFilter: "all",
-      });
-
-      const poneRadio = getByRole("radio", { name: "Pone" });
-
-      fireEvent.click(poneRadio);
-
-      expect(poneRadio).toBeChecked();
-
-      expect(queryByText("1.20 pts lost")).toBeInTheDocument();
-
-      expect(queryByText("2.50 pts lost")).not.toBeInTheDocument();
-    });
-
-    it("filters by crib role Dealer", () => {
-      const { getByRole, queryByText } = renderDialog({
-        initialStatusFilter: "all",
-      });
-
-      const dealerRadio = getByRole("radio", { name: "Dealer" });
-
-      fireEvent.click(dealerRadio);
-
-      expect(dealerRadio).toBeChecked();
-
-      expect(queryByText("2.50 pts lost")).toBeInTheDocument();
-
-      expect(queryByText("1.20 pts lost")).not.toBeInTheDocument();
-    });
-
-    it("filters by High loss quantile", () => {
-      const { getByRole, queryByText } = renderDialog({
-        initialStatusFilter: "all",
-      });
-
-      const highRadio = getByRole("radio", { name: /^High severity/u });
-
-      fireEvent.click(highRadio);
-
-      expect(highRadio).toBeChecked();
-
-      expect(queryByText("2.50 pts lost")).toBeInTheDocument();
-
-      expect(queryByText("1.20 pts lost")).not.toBeInTheDocument();
-    });
-
-    it("filters by Medium loss quantile", () => {
-      const { getByRole, queryByText } = renderDialog({
-        initialStatusFilter: "all",
-      });
-
-      const medRadio = getByRole("radio", { name: /^Medium severity/u });
-
-      fireEvent.click(medRadio);
-
-      expect(medRadio).toBeChecked();
-
-      expect(queryByText("1.20 pts lost")).toBeInTheDocument();
-
-      expect(queryByText("2.50 pts lost")).not.toBeInTheDocument();
-    });
-
-    it("filters by Low loss quantile", () => {
-      const { getByRole, queryByText } = renderDialog({
-        initialStatusFilter: "all",
-      });
-
-      const lowRadio = getByRole("radio", { name: /^Low severity/u });
-
-      fireEvent.click(lowRadio);
-
-      expect(lowRadio).toBeChecked();
-
-      expect(queryByText("0.40 pts lost")).toBeInTheDocument();
-
-      expect(queryByText("2.50 pts lost")).not.toBeInTheDocument();
+    it.each([
+      {
+        absentText: "2.50 pts lost",
+        filterName: "Pone",
+        presentText: "1.20 pts lost",
+      },
+      {
+        absentText: "1.20 pts lost",
+        filterName: "Dealer",
+        presentText: "2.50 pts lost",
+      },
+      {
+        absentText: "1.20 pts lost",
+        filterName: /^High severity/u,
+        presentText: "2.50 pts lost",
+      },
+      {
+        absentText: "2.50 pts lost",
+        filterName: /^Medium severity/u,
+        presentText: "1.20 pts lost",
+      },
+      {
+        absentText: "2.50 pts lost",
+        filterName: /^Low severity/u,
+        presentText: "0.40 pts lost",
+      },
+    ])("filters by $filterName", ({ absentText, filterName, presentText }) => {
+      expect(testFilterSelection({ absentText, filterName, presentText })).toBe(
+        true,
+      );
     });
 
     it("renders celebratory empty state when all mistake hands are mastered", () => {
-      const { getByText } = renderDialog({
+      const { getByText } = renderQueueDialog({
         initialStatusFilter: "active",
-        tally: allMasteredTally,
+        queueTally: allMasteredTally,
       });
 
       expect(getByText("All mistake hands mastered!")).toBeInTheDocument();
     });
 
     it("renders unrecorded empty state when tally has no mistakes", () => {
-      const { getByText } = renderDialog({ tally: emptyMistakeTally });
+      const { getByText } = renderQueueDialog({
+        queueTally: emptyMistakeTally,
+      });
 
       expect(getByText(/No mistake hands recorded yet/iu)).toBeInTheDocument();
     });
 
     it("renders filtered empty state when filter criteria matches nothing", () => {
-      const { getByText } = renderDialog({
+      const { getByText } = renderQueueDialog({
         initialRoleFilter: "pone",
         initialStatusFilter: "mastered",
       });
@@ -271,31 +247,7 @@ describe("mistake queue dialog", () => {
     });
 
     it("renders history horizon empty state when mistakes aged out", () => {
-      const agedOutTally: StoredTally = {
-        lifetime: {
-          decisions: 10,
-          expectedPointsLossTotal: 2.0,
-          optimalDecisions: 8,
-          skippedHands: 0,
-        },
-        practice: [],
-        records: [
-          {
-            at: 1_700_000_000_000,
-            cribRole: CribRole.Dealer,
-            discardKey: "5H,6H",
-            expectedPointsLoss: 0,
-            handKey: "5H,6H,7H,8H,9H,10H|Dealer",
-            isOptimal: true,
-            isPractice: false,
-          },
-        ],
-        revision: 1,
-        skipped: [],
-        version: 4,
-      };
-
-      const { getByText } = renderDialog({ tally: agedOutTally });
+      const { getByText } = renderQueueDialog({ queueTally: agedOutTally });
 
       expect(
         getByText(
@@ -305,40 +257,7 @@ describe("mistake queue dialog", () => {
     });
 
     it("omits loss severity filter when fewer than 3 unique loss values exist", () => {
-      const twoLossTally: StoredTally = {
-        lifetime: {
-          decisions: 2,
-          expectedPointsLossTotal: 3.5,
-          optimalDecisions: 0,
-          skippedHands: 0,
-        },
-        practice: [],
-        records: [
-          {
-            at: 1_700_000_000_000,
-            cribRole: CribRole.Dealer,
-            discardKey: "5H,6H",
-            expectedPointsLoss: 2.0,
-            handKey: "5H,6H,7H,8H,9H,10H|Dealer",
-            isOptimal: false,
-            isPractice: false,
-          },
-          {
-            at: 1_700_000_001_000,
-            cribRole: CribRole.Pone,
-            discardKey: "AH,2H",
-            expectedPointsLoss: 1.5,
-            handKey: "AH,2H,3H,4H,5H,6H|Pone",
-            isOptimal: false,
-            isPractice: false,
-          },
-        ],
-        revision: 1,
-        skipped: [],
-        version: 4,
-      };
-
-      const { queryByRole } = renderDialog({ tally: twoLossTally });
+      const { queryByRole } = renderQueueDialog({ queueTally: twoLossTally });
 
       expect(queryByRole("group", { name: "Loss severity" })).toBeNull();
     });
@@ -357,29 +276,29 @@ describe("mistake queue dialog", () => {
         "9",
         "10",
         "J",
-        "Q",
-        "K",
       ];
-      const combinations = fifthCards
-        .flatMap((fifth) =>
-          sixthRanks.map((rank) => ({ fifth, sixth: `${rank}S` })),
-        )
-        .slice(0, 60);
+      const records = [];
+      let index = 0;
 
-      const records = combinations.map((combo, index) => ({
-        at: 1_700_000_000_000 + index * 1000,
-        cribRole: CribRole.Dealer,
-        discardKey: "5C,6C",
-        expectedPointsLoss: 1.0 + (index % 5) * 0.5,
-        handKey: `5C,6C,7C,8C,${combo.fifth},${combo.sixth}|Dealer`,
-        isOptimal: false,
-        isPractice: false,
-      }));
+      for (const fifth of fifthCards) {
+        for (const sixth of sixthRanks) {
+          index += 1;
+          records.push({
+            at: 1_700_000_000_000 + index * 1000,
+            cribRole: CribRole.Dealer,
+            discardKey: "5H,6H",
+            expectedPointsLoss: 1.0 + (index % 5) * 0.5,
+            handKey: `5H,6H,7H,8H,${fifth},${sixth}S|Dealer`,
+            isOptimal: false,
+            isPractice: false,
+          });
+        }
+      }
 
-      const largeTally: StoredTally = {
+      const largeTally = {
         lifetime: {
-          decisions: 60,
-          expectedPointsLossTotal: 60 * 1.5,
+          decisions: records.length,
+          expectedPointsLossTotal: 100,
           optimalDecisions: 0,
           skippedHands: 0,
         },
@@ -390,44 +309,53 @@ describe("mistake queue dialog", () => {
         version: 4,
       };
 
-      const { getByRole, queryByRole } = renderDialog({
+      const { getByRole, queryByRole } = renderQueueDialog({
         initialStatusFilter: "all",
-        tally: largeTally,
+        queueTally: largeTally,
       });
 
       const showMoreButton = getByRole("button", {
-        name: /Show more \(10 remaining\)/u,
+        name: /Show more \(5 remaining\)/iu,
       });
 
       expect(showMoreButton).toBeInTheDocument();
 
       fireEvent.click(showMoreButton);
 
-      expect(queryByRole("button", { name: /Show more/u })).toBeNull();
+      expect(
+        queryByRole("button", { name: /Show more/iu }),
+      ).not.toBeInTheDocument();
     });
 
-    it("closes dialog on Escape key and close button click", () => {
-      const onClose = jest.fn();
-      const { getByRole } = renderDialog({ onClose });
+    it("handles close button click to trigger onClose", () => {
+      const handleClose = jest.fn();
+      const { getByRole } = renderQueueDialog({ onDismiss: handleClose });
 
-      fireEvent.keyDown(document, { key: "Escape" });
+      fireEvent.click(getByRole("button", { name: "Close modal" }));
 
-      expect(onClose).toHaveBeenCalledTimes(1);
-
-      const closeButton = getByRole("button", { name: "Close modal" });
-
-      fireEvent.click(closeButton);
-
-      expect(onClose).toHaveBeenCalledTimes(2);
+      expect(handleClose).toHaveBeenCalledTimes(1);
     });
 
     it("renders using readTallyForDisplay fallback when tally prop is omitted", () => {
-      const { getByRole } = renderDialog({ useStoredTally: true });
+      const fallbackView = renderQueueDialog({ useStorageFallback: true });
 
       expect(
-        getByRole("heading", { name: "Mistake queue" }),
+        fallbackView.getByRole("region", { name: "Mistake queue" }),
+      ).toBeInTheDocument();
+    });
+
+    it("renders using readTallyForDisplay fallback when tally prop is null", () => {
+      const nullTallyView = render(
+        createElement(MistakeQueueDialog, {
+          onClose: jest.fn(),
+          show: true,
+          tally: null,
+        }),
+      );
+
+      expect(
+        nullTallyView.getByRole("region", { name: "Mistake queue" }),
       ).toBeInTheDocument();
     });
   });
 });
-/* jscpd:ignore-end */

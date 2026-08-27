@@ -1,8 +1,10 @@
 /* jscpd:ignore-start */
+import type { DiscardDecisionRecord, StoredTally } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { MistakeQueueItem } from "./mistakeQueue";
-import type { StoredTally } from "./discardTally";
+import type { PracticeRecord } from "./practiceLedger";
 import { parseHand } from "../game/Card";
+/* jscpd:ignore-end */
 
 export const NOW = 1_700_000_000_000;
 export const ONE_DAY_MS = 86_400_000;
@@ -21,6 +23,31 @@ export const createMockTally = (
   revision: 1,
   skipped: [],
   version: 4,
+  ...overrides,
+});
+
+export const createTestMistakeRecord = (
+  overrides?: Partial<DiscardDecisionRecord>,
+): DiscardDecisionRecord => ({
+  at: NOW - ONE_DAY_MS,
+  cribRole: CribRole.Pone,
+  discardKey: "AH,2H",
+  expectedPointsLoss: 1.25,
+  handKey: "AH,2H,3H,4H,5H,6H|Pone",
+  isOptimal: false,
+  isPractice: false,
+  ...overrides,
+});
+
+export const createTestPracticeRecord = (
+  overrides?: Partial<PracticeRecord>,
+): PracticeRecord => ({
+  attempts: 1,
+  consecutiveSuccesses: 0,
+  handKey: "AH,2H,3H,4H,5H,6H|Pone",
+  lastAttemptAt: NOW,
+  totalWrongLoss: 0,
+  wrong: 0,
   ...overrides,
 });
 
@@ -74,4 +101,3 @@ export const mockItemMastered: MistakeQueueItem = {
   priority: 1.0,
   wrong: 1,
 };
-/* jscpd:ignore-end */

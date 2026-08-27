@@ -1,6 +1,10 @@
+/* jscpd:ignore-start */
+import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/jest-globals";
 import { DIALOG_ROLE_OPTIONS, DialogFilterGroup } from "./DialogFilterGroup";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
+/* jscpd:ignore-end */
 
 const mockFilterClasses = {
   filterGroup: "mock-filter-group",
@@ -28,8 +32,9 @@ describe("dialogFilterGroup", () => {
     expect((allRadio as HTMLInputElement).checked).toBe(true);
     expect((dealerRadio as HTMLInputElement).checked).toBe(false);
 
-    fireEvent.click(getByLabelText("Dealer"));
+    fireEvent.click(dealerRadio);
 
     expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(getByLabelText("Dealer")).toBeInTheDocument();
   });
 });
