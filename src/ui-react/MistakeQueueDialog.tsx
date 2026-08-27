@@ -1,5 +1,6 @@
 import * as classes from "./MistakeQueueDialog.module.css";
 import { type Card, parseHand } from "../game/Card";
+import { DIALOG_ROLE_OPTIONS, DialogFilterGroup } from "./DialogFilterGroup";
 import {
   type LossQuantile,
   type MistakeQueueItem,
@@ -17,6 +18,7 @@ import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
 import { useCallback, useState } from "react";
 import { CardLabel } from "./CardLabel";
 import { CribRole } from "../game/expectedCribPoints";
+import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
@@ -30,6 +32,7 @@ export interface MistakeQueueDialogProps {
   readonly show: boolean;
   readonly tally?: StoredTally | null;
 }
+/* jscpd:ignore-end */
 
 const SORT_OPTIONS: {
   readonly label: string;
@@ -48,16 +51,6 @@ const STATUS_OPTIONS: {
   { label: "Mastered", value: "mastered" },
   { label: "All", value: "all" },
 ];
-
-const ROLE_OPTIONS: {
-  readonly label: string;
-  readonly value: MistakeQueueRoleFilter;
-}[] = [
-  { label: "All", value: "all" },
-  { label: "Dealer", value: "dealer" },
-  { label: "Pone", value: "pone" },
-];
-/* jscpd:ignore-end */
 
 const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
@@ -97,78 +90,6 @@ const buildQuantileOptions = (
 
   return options;
 };
-
-/* jscpd:ignore-start */
-interface FilterGroupProps<T extends string> {
-  readonly currentValue: T;
-  readonly groupName: string;
-  readonly legendText: string;
-  readonly onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  readonly options: readonly { readonly label: string; readonly value: T }[];
-}
-
-function renderFilterGroup<T extends string>({
-  currentValue,
-  groupName,
-  legendText,
-  onChange,
-  options,
-}: FilterGroupProps<T>): React.JSX.Element {
-  return (
-    <fieldset className={classes.filterGroup}>
-      <legend>{legendText}</legend>
-      {options.map((option) => {
-        const id = `${groupName}-${option.value}`;
-        return (
-          <span key={option.value}>
-            <input
-              checked={currentValue === option.value}
-              className={classes.input}
-              id={id}
-              name={groupName}
-              onChange={onChange}
-              type="radio"
-              value={option.value}
-            />
-            <label
-              className={classes.option}
-              htmlFor={id}
-            >
-              {option.label}
-            </label>
-          </span>
-        );
-      })}
-    </fieldset>
-  );
-}
-
-function renderSummaryCards(options: {
-  readonly active: number;
-  readonly mastered: number;
-  readonly total: number;
-}): React.JSX.Element {
-  const metrics: { readonly label: string; readonly value: number }[] = [
-    { label: "Total mistakes", value: options.total },
-    { label: "Needs practice", value: options.active },
-    { label: "Mastered", value: options.mastered },
-  ];
-
-  return (
-    <div className={classes.summaryCards}>
-      {metrics.map((metric) => (
-        <div
-          className={classes.summaryCard}
-          key={metric.label}
-        >
-          <span className={classes.summaryLabel}>{metric.label}</span>
-          <span className={classes.summaryValue}>{metric.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-/* jscpd:ignore-end */
 
 /* jscpd:ignore-start */
 function renderCardsRow(cards: readonly Card[]): React.JSX.Element {
@@ -415,41 +336,48 @@ export function MistakeQueueDialog({
         </p>
 
         <div className={classes.controls}>
-          {renderFilterGroup({
-            currentValue: sortOrder,
-            groupName: "mistake-sort-order",
-            legendText: "Sort by",
-            onChange: changeSortOrder,
-            options: SORT_OPTIONS,
-          })}
-          {renderFilterGroup({
-            currentValue: statusFilter,
-            groupName: "mistake-status-filter",
-            legendText: "Status",
-            onChange: changeStatusFilter,
-            options: STATUS_OPTIONS,
-          })}
-          {renderFilterGroup({
-            currentValue: roleFilter,
-            groupName: "mistake-role-filter",
-            legendText: "Crib role",
-            onChange: changeRoleFilter,
-            options: ROLE_OPTIONS,
-          })}
-          {renderFilterGroup({
-            currentValue: quantileFilter,
-            groupName: "mistake-quantile-filter",
-            legendText: "Loss severity",
-            onChange: changeQuantileFilter,
-            options: quantileOptions,
-          })}
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={sortOrder}
+            groupName="mistake-sort-order"
+            legendText="Sort by"
+            onChange={changeSortOrder}
+            options={SORT_OPTIONS}
+          />
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={statusFilter}
+            groupName="mistake-status-filter"
+            legendText="Status"
+            onChange={changeStatusFilter}
+            options={STATUS_OPTIONS}
+          />
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={roleFilter}
+            groupName="mistake-role-filter"
+            legendText="Crib role"
+            onChange={changeRoleFilter}
+            options={DIALOG_ROLE_OPTIONS}
+          />
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={quantileFilter}
+            groupName="mistake-quantile-filter"
+            legendText="Loss severity"
+            onChange={changeQuantileFilter}
+            options={quantileOptions}
+          />
         </div>
 
-        {renderSummaryCards({
-          active: activeCount,
-          mastered: masteredCount,
-          total: totalCount,
-        })}
+        <DialogSummaryCards
+          classes={classes}
+          metrics={[
+            { label: "Total mistakes", value: totalCount },
+            { label: "Needs practice", value: activeCount },
+            { label: "Mastered", value: masteredCount },
+          ]}
+        />
 
         <div className={classes.itemsList}>
           {sortedItems.length === 0

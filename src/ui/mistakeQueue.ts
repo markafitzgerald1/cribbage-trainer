@@ -20,6 +20,7 @@ const DENOMINATOR_THREE = 3;
 const FRACTION_ONE_THIRD = 1 / DENOMINATOR_THREE;
 const FRACTION_TWO_THIRDS = NUMERATOR_TWO / DENOMINATOR_THREE;
 const COMPARATOR_LESS = -1;
+const MIN_DISTINCT_LOSSES_FOR_QUANTILES = 3;
 
 export interface MistakeQueueItem {
   readonly attempts: number;
@@ -63,7 +64,14 @@ export const computeLossQuantileThresholds = (
   if (losses.length === 0) {
     return { highThreshold: 0, mediumThreshold: 0 };
   }
+  const uniqueLosses = new Set(losses);
   const sorted = [...losses].sort((one, other) => one - other);
+
+  if (uniqueLosses.size < MIN_DISTINCT_LOSSES_FOR_QUANTILES) {
+    const maxLoss = Number(sorted[sorted.length - 1]);
+    return { highThreshold: maxLoss, mediumThreshold: maxLoss };
+  }
+
   const mediumIndex = Math.min(
     sorted.length - 1,
     Math.floor(sorted.length * FRACTION_ONE_THIRD),
@@ -156,12 +164,15 @@ export const sortMistakeQueue = (
         (one, other) =>
           other.lossIfWrong - one.lossIfWrong ||
           other.priority - one.priority ||
+          other.lastAttemptAt - one.lastAttemptAt ||
           one.handKey.localeCompare(other.handKey),
       );
     case "mostRecent":
       return copy.sort(
         (one, other) =>
           other.lastAttemptAt - one.lastAttemptAt ||
+          other.priority - one.priority ||
+          other.lossIfWrong - one.lossIfWrong ||
           one.handKey.localeCompare(other.handKey),
       );
     case "priority":
@@ -172,6 +183,8 @@ export const sortMistakeQueue = (
         }
         return (
           other.priority - one.priority ||
+          other.lossIfWrong - one.lossIfWrong ||
+          other.lastAttemptAt - one.lastAttemptAt ||
           one.handKey.localeCompare(other.handKey)
         );
       });

@@ -3,12 +3,10 @@ import {
   type DiscardTallySummary,
   type StoredTally,
   hasTallyToShow,
-  readTallyForDisplay,
 } from "../ui/discardTally";
 import { type ReactNode, useCallback, useState } from "react";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
-import { buildMistakeQueue } from "../ui/mistakeQueue";
 
 const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
@@ -91,8 +89,7 @@ export function DiscardTallyView({
   const facedToday = summary.todayDecisions + summary.todaySkippedHands;
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
-  const tally = injectedTally ?? readTallyForDisplay();
-  const hasMistakes = buildMistakeQueue(tally).length > 0;
+  const hasMistakes = summary.decisions > summary.optimalDecisions;
 
   return (
     <div className={`${classes.tally} ${columns}`}>
@@ -172,7 +169,7 @@ export function DiscardTallyView({
         <MistakeQueueDialog
           onClose={handleCloseQueue}
           show={showQueue}
-          tally={tally}
+          tally={injectedTally}
         />
       ) : null}
     </div>

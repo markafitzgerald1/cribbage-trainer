@@ -57,6 +57,17 @@ describe("mistakeQueue", () => {
         mediumThreshold: 1.5,
       });
     });
+
+    it("collapses thresholds when fewer than 3 unique loss values exist", () => {
+      expect(computeLossQuantileThresholds([1.0, 2.0])).toStrictEqual({
+        highThreshold: 2.0,
+        mediumThreshold: 2.0,
+      });
+      expect(computeLossQuantileThresholds([1.0, 1.0, 2.0])).toStrictEqual({
+        highThreshold: 2.0,
+        mediumThreshold: 2.0,
+      });
+    });
   });
 
   describe("classifyLossQuantile", () => {
