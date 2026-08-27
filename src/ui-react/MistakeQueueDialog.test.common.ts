@@ -24,6 +24,7 @@ export const createSampleMistakeTally = (): StoredTally =>
         consecutiveSuccesses: 1,
         handKey: "AH,2H,3H,4H,5H,6H|Pone",
         lastAttemptAt: BASE_TIME - ONE_DAY_MS,
+        totalWrongLoss: 0,
         wrong: 0,
       },
       {
@@ -31,6 +32,7 @@ export const createSampleMistakeTally = (): StoredTally =>
         consecutiveSuccesses: 2,
         handKey: "2C,3C,4C,5C,6C,7C|Dealer",
         lastAttemptAt: BASE_TIME,
+        totalWrongLoss: 0,
         wrong: 0,
       },
     ],
@@ -89,6 +91,7 @@ export const createAllMasteredTally = (): StoredTally => {
         consecutiveSuccesses: 2,
         handKey,
         lastAttemptAt: BASE_TIME,
+        totalWrongLoss: 0,
         wrong: 0,
       },
     ],

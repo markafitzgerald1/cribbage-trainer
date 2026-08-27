@@ -5,7 +5,7 @@ export interface PracticeRecord {
   readonly consecutiveSuccesses: number;
   readonly handKey: string;
   readonly lastAttemptAt: number;
-  readonly totalWrongLoss?: number;
+  readonly totalWrongLoss: number;
   readonly wrong: number;
 }
 
@@ -54,10 +54,9 @@ export const isStoredPracticeRecord = (
   }
 
   const isTotalWrongLossValid =
-    typeof candidate.totalWrongLoss === "undefined" ||
-    (typeof candidate.totalWrongLoss === "number" &&
-      Number.isFinite(candidate.totalWrongLoss) &&
-      candidate.totalWrongLoss >= 0);
+    typeof candidate.totalWrongLoss === "number" &&
+    Number.isFinite(candidate.totalWrongLoss) &&
+    candidate.totalWrongLoss >= 0;
 
   return (
     typeof candidate.handKey === "string" &&
@@ -88,7 +87,7 @@ export const updatePracticeRecords = (
           : 0,
         handKey: attempt.handKey,
         lastAttemptAt: attempt.at,
-        totalWrongLoss: (existing.totalWrongLoss ?? 0) + loss,
+        totalWrongLoss: existing.totalWrongLoss + loss,
         wrong: existing.wrong + (attempt.isOptimal ? 0 : 1),
       }
     : {

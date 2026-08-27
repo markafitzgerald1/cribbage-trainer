@@ -114,10 +114,10 @@ describe("practiceLedger", () => {
     });
 
     it.each([
-      { totalWrongLoss: -1, wrong: 1 },
-      { totalWrongLoss: Infinity, wrong: 1 },
-      { totalWrongLoss: NaN, wrong: 1 },
-      { totalWrongLoss: "invalid", wrong: 1 },
+      { totalWrongLoss: -1 },
+      { totalWrongLoss: Infinity },
+      { totalWrongLoss: NaN },
+      { totalWrongLoss: "invalid" },
       { handKey: "corruptKey" },
       { handKey: 123 },
       { lastAttemptAt: "invalid" },
@@ -128,6 +128,13 @@ describe("practiceLedger", () => {
       expect(isStoredPracticeRecord({ ...makeRecord(), ...overrides })).toBe(
         false,
       );
+    });
+
+    it("rejects records omitting totalWrongLoss", () => {
+      const incompleteRecord: Partial<PracticeRecord> = { ...makeRecord() };
+      Reflect.deleteProperty(incompleteRecord, "totalWrongLoss");
+
+      expect(isStoredPracticeRecord(incompleteRecord)).toBe(false);
     });
 
     it("returns true for a valid practice record", () => {
@@ -180,21 +187,22 @@ describe("practiceLedger", () => {
         initial: [twoAttemptSuccessRecord],
       },
       {
-        description: "handles legacy existing records without totalWrongLoss",
+        description:
+          "accumulates loss on non-optimal attempt for existing record",
         expected: makeRecord({
           attempts: 2,
           consecutiveSuccesses: 0,
-          totalWrongLoss: 1.5,
+          totalWrongLoss: 2.5,
           wrong: 2,
         }),
         initial: [
-          {
+          makeRecord({
             attempts: 1,
             consecutiveSuccesses: 0,
-            handKey: VALID_HAND_KEY,
             lastAttemptAt: AT - 1000,
+            totalWrongLoss: 1.0,
             wrong: 1,
-          },
+          }),
         ],
       },
     ])("$description", ({ expected, initial }) => {
