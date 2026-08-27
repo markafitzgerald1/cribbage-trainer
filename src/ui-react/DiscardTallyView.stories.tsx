@@ -5,6 +5,7 @@ import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { createSampleMistakeTally } from "./MistakeQueueDialog.test.common";
 import { discardTallySummary } from "./discardTally.test.common";
+/* jscpd:ignore-end */
 
 const sampleMistakeTally = createSampleMistakeTally();
 
@@ -86,13 +87,15 @@ export const NothingFacedYet: StoryObj<typeof meta> = {
   },
 };
 
+const summaryWithMistakes = discardTallySummary({
+  decisions: 10,
+  meanExpectedPointsLoss: 0.25,
+  optimalDecisions: 7,
+});
+
 export const OpenQualityTrend: StoryObj<typeof meta> = {
   args: {
-    summary: discardTallySummary({
-      decisions: 10,
-      meanExpectedPointsLoss: 0.25,
-      optimalDecisions: 7,
-    }),
+    summary: summaryWithMistakes,
   },
   play: async ({ canvas }) => {
     const trendButton = canvas.getByRole("button", { name: "Quality trend" });
@@ -107,11 +110,7 @@ export const OpenQualityTrend: StoryObj<typeof meta> = {
 
 export const OpenMistakeQueue: StoryObj<typeof meta> = {
   args: {
-    summary: discardTallySummary({
-      decisions: 10,
-      meanExpectedPointsLoss: 0.25,
-      optimalDecisions: 7,
-    }),
+    summary: summaryWithMistakes,
     tally: sampleMistakeTally,
   },
   play: async ({ canvas }) => {
@@ -126,4 +125,3 @@ export const OpenMistakeQueue: StoryObj<typeof meta> = {
     ).toBeVisible();
   },
 };
-/* jscpd:ignore-end */

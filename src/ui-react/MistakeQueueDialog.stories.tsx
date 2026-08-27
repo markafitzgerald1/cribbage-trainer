@@ -8,12 +8,13 @@ import {
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import dialogFixtures from "./MistakeQueueDialog.test.common";
 import { fn } from "storybook/test";
+/* jscpd:ignore-end */
 
 const sampleTally = dialogFixtures.createSampleMistakeTally();
 const allMasteredTally = dialogFixtures.createAllMasteredTally();
 const emptyMistakeTally = dialogFixtures.createEmptyMistakeTally();
 
-const meta = {
+const meta: Meta<typeof MistakeQueueDialog> = {
   args: {
     initialQuantileFilter: "all",
     initialRoleFilter: "all",
@@ -26,13 +27,12 @@ const meta = {
   component: MistakeQueueDialog,
   tags: ["autodocs"],
   title: "MistakeQueueDialog",
-} satisfies Meta<typeof MistakeQueueDialog>;
+};
 
 export default meta;
-type Story = StoryObj<typeof meta>;
-/* jscpd:ignore-end */
+type QueueStory = StoryObj<typeof meta>;
 
-export const DefaultOpen: Story = {
+export const DefaultOpen: QueueStory = {
   play: async ({ canvasElement }) => {
     await expectStoryTextVisible(canvasElement, "Mistake queue");
     await selectStoryRadioOption(canvasElement, "Highest loss");
@@ -40,19 +40,19 @@ export const DefaultOpen: Story = {
   },
 };
 
-export const FilterByRole: Story = {
+export const FilterByRole: QueueStory = {
   play: async ({ canvasElement }) => {
     await selectStoryRadioOption(canvasElement, "Dealer");
   },
 };
 
-export const FilterByStatus: Story = {
+export const FilterByStatus: QueueStory = {
   play: async ({ canvasElement }) => {
     await selectStoryRadioOption(canvasElement, "Mastered");
   },
 };
 
-export const FilterByQuantile: Story = {
+export const FilterByQuantile: QueueStory = {
   args: {
     initialStatusFilter: "all",
   },
@@ -61,7 +61,7 @@ export const FilterByQuantile: Story = {
   },
 };
 
-export const AllMasteredEmptyState: Story = {
+export const AllMasteredEmptyState: QueueStory = {
   args: {
     tally: allMasteredTally,
   },
@@ -70,7 +70,7 @@ export const AllMasteredEmptyState: Story = {
   },
 };
 
-export const EmptyQueueNotice: Story = {
+export const EmptyQueueNotice: QueueStory = {
   args: {
     tally: emptyMistakeTally,
   },
@@ -82,6 +82,6 @@ export const EmptyQueueNotice: Story = {
   },
 };
 
-export const DismissWithEscape: Story = {
+export const DismissWithEscape: QueueStory = {
   play: playStoryEscape,
 };
