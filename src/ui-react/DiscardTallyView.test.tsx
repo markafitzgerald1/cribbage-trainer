@@ -1,5 +1,8 @@
+/* jscpd:ignore-start */
+import { clearDiscardTally, recordDiscardDecision } from "../ui/discardTally";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
+import { CribRole } from "../game/expectedCribPoints";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { discardTallySummary } from "./discardTally.test.common";
 
@@ -73,6 +76,7 @@ describe("discard tally view", () => {
     });
 
     const trendButton = getByRole("button", { name: "Quality trend" });
+
     fireEvent.click(trendButton);
 
     expect(
@@ -80,10 +84,54 @@ describe("discard tally view", () => {
     ).not.toBeNull();
 
     const closeButton = getByRole("button", { name: "Close modal" });
+
     fireEvent.click(closeButton);
 
     expect(
       queryByRole("heading", { name: "Decision quality over time" }),
     ).toBeNull();
   });
+
+  it("hides mistake queue button when no mistakes exist in storage", () => {
+    clearDiscardTally();
+    const { queryByRole } = renderTally({
+      decisions: 3,
+      meanExpectedPointsLoss: 0,
+      optimalDecisions: 3,
+    });
+
+    expect(queryByRole("button", { name: "Mistake queue" })).toBeNull();
+  });
+
+  it("opens and closes mistake queue dialog when mistakes exist in storage", () => {
+    clearDiscardTally();
+    recordDiscardDecision({
+      at: 1_700_000_000_000,
+      cribRole: CribRole.Dealer,
+      discardKey: "5H,6H",
+      expectedPointsLoss: 1.5,
+      handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+      isOptimal: false,
+      isPractice: false,
+    });
+
+    const { getByRole, queryByRole } = renderTally({
+      decisions: 1,
+      meanExpectedPointsLoss: 1.5,
+      optimalDecisions: 0,
+    });
+
+    const queueButton = getByRole("button", { name: "Mistake queue" });
+
+    fireEvent.click(queueButton);
+
+    expect(queryByRole("heading", { name: "Mistake queue" })).not.toBeNull();
+
+    const closeButton = getByRole("button", { name: "Close modal" });
+
+    fireEvent.click(closeButton);
+
+    expect(queryByRole("heading", { name: "Mistake queue" })).toBeNull();
+  });
 });
+/* jscpd:ignore-end */

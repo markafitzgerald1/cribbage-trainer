@@ -1,8 +1,12 @@
+/* jscpd:ignore-start */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent } from "storybook/test";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
+import { createSampleMistakeTally } from "./MistakeQueueDialog.test.common";
 import { discardTallySummary } from "./discardTally.test.common";
+
+const sampleMistakeTally = createSampleMistakeTally();
 
 const meta = {
   component: DiscardTallyView,
@@ -100,3 +104,26 @@ export const OpenQualityTrend: StoryObj<typeof meta> = {
     await expect(canvas.getByText("Decision quality over time")).toBeVisible();
   },
 };
+
+export const OpenMistakeQueue: StoryObj<typeof meta> = {
+  args: {
+    summary: discardTallySummary({
+      decisions: 10,
+      meanExpectedPointsLoss: 0.25,
+      optimalDecisions: 7,
+    }),
+    tally: sampleMistakeTally,
+  },
+  play: async ({ canvas }) => {
+    const queueButton = canvas.getByRole("button", { name: "Mistake queue" });
+
+    await expect(queueButton).toBeVisible();
+
+    await userEvent.click(queueButton);
+
+    await expect(
+      canvas.getByRole("heading", { name: "Mistake queue" }),
+    ).toBeVisible();
+  },
+};
+/* jscpd:ignore-end */

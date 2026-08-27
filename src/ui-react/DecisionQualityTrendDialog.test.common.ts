@@ -10,6 +10,7 @@ export const dialogTally = (decisionCount: number): StoredTally => ({
     optimalDecisions: Math.ceil(decisionCount / 2),
     skippedHands: 1,
   },
+  practice: [],
   records: Array.from({ length: decisionCount }, (_, index) => ({
     at: TALLY_START + index * 3_600_000,
     cribRole: index % 2 === 0 ? CribRole.Dealer : CribRole.Pone,
@@ -31,6 +32,7 @@ export const cappedDialogTally = (): StoredTally => ({
     optimalDecisions: Math.floor(MAX_RECORDS / 2),
     skippedHands: 0,
   },
+  practice: [],
   records: Array.from({ length: 20 }, (_, index) => ({
     at: TALLY_START + index * 1000,
     cribRole: CribRole.Dealer,

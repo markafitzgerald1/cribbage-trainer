@@ -50,6 +50,15 @@
   text-align: right;
 }
 
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 0.4em;
+}
+
 .trend-button {
   background-color: #28a745;
   border: 1px solid #218838;
@@ -59,9 +68,6 @@
   font-family: inherit;
   font-size: 0.85em;
   font-weight: 700;
-  grid-column: 1 / -1;
-  justify-self: start;
-  margin-top: 0.4em;
   padding: 0.25em 0.55em;
   transition:
     background-color var(--transition-duration) var(--transition-timing),
