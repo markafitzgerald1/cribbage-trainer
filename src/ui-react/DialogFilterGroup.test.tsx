@@ -22,7 +22,7 @@ describe("dialogFilterGroup", () => {
       />,
     );
 
-    const allRadio = getByRole("radio", { name: "All" });
+    const allRadio = getByRole("radio", { name: "All roles" });
     const dealerRadio = getByRole("radio", { name: "Dealer" });
 
     expect((allRadio as HTMLInputElement).checked).toBe(true);

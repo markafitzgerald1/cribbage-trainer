@@ -71,7 +71,7 @@ export const FilterByQuantile: Story = {
     initialStatusFilter: "all",
   },
   play: async ({ canvasElement }) => {
-    await selectOption(canvasElement, /^High \(/u);
+    await selectOption(canvasElement, /^High severity/u);
   },
 };
 

@@ -92,7 +92,7 @@ describe("discard tally view", () => {
     ).toBeNull();
   });
 
-  it("hides mistake queue button when no mistakes exist in storage", () => {
+  it("hides mistake queue button when summary has no sub-optimal decisions", () => {
     clearDiscardTally();
     const { queryByRole } = renderTally({
       decisions: 3,
@@ -103,7 +103,7 @@ describe("discard tally view", () => {
     expect(queryByRole("button", { name: "Mistake queue" })).toBeNull();
   });
 
-  it("opens and closes mistake queue dialog when mistakes exist in storage", () => {
+  it("opens and closes mistake queue dialog when sub-optimal decisions are present", () => {
     clearDiscardTally();
     recordDiscardDecision({
       at: 1_700_000_000_000,

@@ -191,7 +191,7 @@ describe("mistake queue dialog", () => {
       initialStatusFilter: "all",
     });
 
-    const highRadio = getByRole("radio", { name: /^High \(/u });
+    const highRadio = getByRole("radio", { name: /^High severity/u });
 
     fireEvent.click(highRadio);
 
@@ -207,7 +207,7 @@ describe("mistake queue dialog", () => {
       initialStatusFilter: "all",
     });
 
-    const medRadio = getByRole("radio", { name: /^Med \(/u });
+    const medRadio = getByRole("radio", { name: /^Medium severity/u });
 
     fireEvent.click(medRadio);
 
@@ -223,7 +223,7 @@ describe("mistake queue dialog", () => {
       initialStatusFilter: "all",
     });
 
-    const lowRadio = getByRole("radio", { name: /^Low \(/u });
+    const lowRadio = getByRole("radio", { name: /^Low severity/u });
 
     fireEvent.click(lowRadio);
 
@@ -256,7 +256,7 @@ describe("mistake queue dialog", () => {
 
     fireEvent.click(poneRadio);
 
-    const lowRadio = getByRole("radio", { name: /^Low \(/u });
+    const lowRadio = getByRole("radio", { name: /^Low severity/u });
 
     fireEvent.click(lowRadio);
 
@@ -270,6 +270,40 @@ describe("mistake queue dialog", () => {
 
     expect(
       getByText(/No mistake hands recorded yet. Play authentic hands/iu),
+    ).toBeInTheDocument();
+  });
+
+  it("renders history horizon empty state when mistakes exist in lifetime totals but aged out of records", () => {
+    const agedOutTally: StoredTally = {
+      lifetime: {
+        decisions: 10_005,
+        expectedPointsLossTotal: 5.0,
+        optimalDecisions: 10_000,
+        skippedHands: 0,
+      },
+      practice: [],
+      records: [
+        {
+          at: 1_700_000_000_000,
+          cribRole: sampleTally.records[0]!.cribRole,
+          discardKey: "5H,6H",
+          expectedPointsLoss: 0,
+          handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+          isOptimal: true,
+          isPractice: false,
+        },
+      ],
+      revision: 1,
+      skipped: [],
+      version: 4,
+    };
+
+    const { getByText } = renderDialog({ tally: agedOutTally });
+
+    expect(
+      getByText(
+        /All recorded mistake hands have aged out of the recent history window/iu,
+      ),
     ).toBeInTheDocument();
   });
 

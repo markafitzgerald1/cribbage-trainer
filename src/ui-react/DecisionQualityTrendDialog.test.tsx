@@ -169,7 +169,7 @@ describe("decision quality trend dialog", () => {
     expect(getByText("Decisions 6–25")).toBeInTheDocument();
     expect(getByText("Decisions 1–5")).toBeInTheDocument();
     expect(getByRole("radio", { name: "Rolling 20" })).toBeChecked();
-    expect(getByRole("radio", { name: "All" })).toBeChecked();
+    expect(getByRole("radio", { name: "All roles" })).toBeChecked();
   });
 
   it("explains the metric and shows the skipped-hand rate", () => {

@@ -68,7 +68,7 @@ export const createSampleMistakeTally = (): StoredTally => ({
   ],
   revision: 1,
   skipped: [],
-  version: 3,
+  version: 4,
 });
 
 export const createAllMasteredTally = (): StoredTally => ({
@@ -100,7 +100,7 @@ export const createAllMasteredTally = (): StoredTally => ({
   ],
   revision: 1,
   skipped: [],
-  version: 3,
+  version: 4,
 });
 
 export const createEmptyMistakeTally = (): StoredTally => ({
@@ -124,7 +124,7 @@ export const createEmptyMistakeTally = (): StoredTally => ({
   ],
   revision: 1,
   skipped: [],
-  version: 3,
+  version: 4,
 });
 
 export default {

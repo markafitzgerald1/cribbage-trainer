@@ -1,6 +1,7 @@
 import type React from "react";
 
 export interface DialogFilterOption<T extends string> {
+  readonly ariaLabel?: string;
   readonly label: string;
   readonly value: T;
 }
@@ -34,6 +35,7 @@ export function DialogFilterGroup<T extends string>({
         return (
           <span key={option.value}>
             <input
+              aria-label={option.ariaLabel}
               checked={currentValue === option.value}
               className={classes.input}
               id={id}
@@ -58,7 +60,7 @@ export function DialogFilterGroup<T extends string>({
 export const DIALOG_ROLE_OPTIONS: readonly DialogFilterOption<
   "all" | "dealer" | "pone"
 >[] = [
-  { label: "All", value: "all" },
+  { ariaLabel: "All roles", label: "All", value: "all" },
   { label: "Dealer", value: "dealer" },
   { label: "Pone", value: "pone" },
 ];

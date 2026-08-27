@@ -1,6 +1,10 @@
 import * as classes from "./MistakeQueueDialog.module.css";
 import { type Card, parseHand } from "../game/Card";
-import { DIALOG_ROLE_OPTIONS, DialogFilterGroup } from "./DialogFilterGroup";
+import {
+  DIALOG_ROLE_OPTIONS,
+  DialogFilterGroup,
+  type DialogFilterOption,
+} from "./DialogFilterGroup";
 import {
   type LossQuantile,
   type MistakeQueueItem,
@@ -34,23 +38,18 @@ export interface MistakeQueueDialogProps {
 }
 /* jscpd:ignore-end */
 
-const SORT_OPTIONS: {
-  readonly label: string;
-  readonly value: MistakeQueueSortOrder;
-}[] = [
+const SORT_OPTIONS: readonly DialogFilterOption<MistakeQueueSortOrder>[] = [
   { label: "Priority", value: "priority" },
   { label: "Highest loss", value: "highestLoss" },
   { label: "Most recent", value: "mostRecent" },
 ];
 
-const STATUS_OPTIONS: {
-  readonly label: string;
-  readonly value: MistakeQueueStatusFilter;
-}[] = [
-  { label: "Active", value: "active" },
-  { label: "Mastered", value: "mastered" },
-  { label: "All", value: "all" },
-];
+const STATUS_OPTIONS: readonly DialogFilterOption<MistakeQueueStatusFilter>[] =
+  [
+    { label: "Active", value: "active" },
+    { label: "Mastered", value: "mastered" },
+    { ariaLabel: "All statuses", label: "All", value: "all" },
+  ];
 
 const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
@@ -69,22 +68,34 @@ const getQuantileBadgeClass = (quantile: LossQuantile): string => {
 
 const buildQuantileOptions = (
   thresholds: MistakeQueueQuantileThresholds,
-): { readonly label: string; readonly value: MistakeQueueQuantileFilter }[] => {
+): readonly DialogFilterOption<MistakeQueueQuantileFilter>[] => {
   if (thresholds.highThreshold === 0 && thresholds.mediumThreshold === 0) {
-    return [{ label: "All", value: "all" }];
+    return [{ ariaLabel: "All loss tiers", label: "All", value: "all" }];
   }
   const highLabel = thresholds.highThreshold.toFixed(DECIMAL_DIGITS);
   const mediumLabel = thresholds.mediumThreshold.toFixed(DECIMAL_DIGITS);
 
-  const options: { label: string; value: MistakeQueueQuantileFilter }[] = [
-    { label: "All", value: "all" },
-    { label: `High (≥ ${highLabel})`, value: "high" },
+  const options: DialogFilterOption<MistakeQueueQuantileFilter>[] = [
+    { ariaLabel: "All loss tiers", label: "All", value: "all" },
+    {
+      ariaLabel: `High severity (≥ ${highLabel})`,
+      label: `High (≥ ${highLabel})`,
+      value: "high",
+    },
   ];
 
   if (thresholds.highThreshold !== thresholds.mediumThreshold) {
     options.push(
-      { label: `Med (${mediumLabel}–${highLabel})`, value: "medium" },
-      { label: `Low (< ${mediumLabel})`, value: "low" },
+      {
+        ariaLabel: `Medium severity (${mediumLabel}–${highLabel})`,
+        label: `Med (${mediumLabel}–${highLabel})`,
+        value: "medium",
+      },
+      {
+        ariaLabel: `Low severity (< ${mediumLabel})`,
+        label: `Low (< ${mediumLabel})`,
+        value: "low",
+      },
     );
   }
 
@@ -174,21 +185,10 @@ function renderItemCard(item: MistakeQueueItem): React.JSX.Element {
 }
 
 function renderEmptyState(options: {
-  readonly hasTotalMistakes: boolean;
+  readonly hasLifetimeMistakes: boolean;
   readonly isAllMastered: boolean;
+  readonly totalCount: number;
 }): React.JSX.Element {
-  if (!options.hasTotalMistakes) {
-    return (
-      <div
-        className={classes.emptyState}
-        role="status"
-      >
-        No mistake hands recorded yet. Play authentic hands to build your
-        practice queue.
-      </div>
-    );
-  }
-
   if (options.isAllMastered) {
     return (
       <div
@@ -206,12 +206,19 @@ function renderEmptyState(options: {
     );
   }
 
+  let message = "No mistake hands match the selected filters.";
+  if (options.totalCount === 0) {
+    message = options.hasLifetimeMistakes
+      ? "All recorded mistake hands have aged out of the recent history window. Play more hands to add new mistakes to your practice queue."
+      : "No mistake hands recorded yet. Play authentic hands to build your practice queue.";
+  }
+
   return (
     <div
       className={classes.emptyState}
       role="status"
     >
-      No mistake hands match the selected filters.
+      {message}
     </div>
   );
 }
@@ -238,9 +245,12 @@ function computeMistakeDialogData(
   const masteredCount = allItems.filter((item) => item.isMastered).length;
   const isAllMastered =
     filters.statusFilter === "active" && totalCount > 0 && activeCount === 0;
+  const hasLifetimeMistakes =
+    tally.lifetime.decisions > tally.lifetime.optimalDecisions;
 
   return {
     activeCount,
+    hasLifetimeMistakes,
     isAllMastered,
     masteredCount,
     quantileOptions: buildQuantileOptions(thresholds),
@@ -308,6 +318,7 @@ export function MistakeQueueDialog({
   /* jscpd:ignore-end */
   const {
     activeCount,
+    hasLifetimeMistakes,
     isAllMastered,
     masteredCount,
     quantileOptions,
@@ -382,8 +393,9 @@ export function MistakeQueueDialog({
         <div className={classes.itemsList}>
           {sortedItems.length === 0
             ? renderEmptyState({
-                hasTotalMistakes: totalCount > 0,
+                hasLifetimeMistakes,
                 isAllMastered,
+                totalCount,
               })
             : sortedItems.map(renderItemCard)}
         </div>
