@@ -20,10 +20,11 @@ import {
 } from "../ui/mistakeQueue";
 import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
 import { useCallback, useState } from "react";
-import { CardLabel } from "./CardLabel";
 import { CribRole } from "../game/expectedCribPoints";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
+import { SortOrder } from "../ui/SortOrder";
+import { SortedCardLabels } from "./SortedCardLabels";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
 const SORT_OPTIONS: readonly DialogFilterOption<MistakeQueueSortOrder>[] = [
@@ -49,6 +50,7 @@ export type MistakeQueueDialogProps = {
   readonly initialStatusFilter?: MistakeQueueStatusFilter;
   readonly onClose: () => void;
   readonly show: boolean;
+  readonly sortOrder?: SortOrder;
   readonly tally?: StoredTally | null | undefined;
 };
 
@@ -64,16 +66,16 @@ const getQuantileBadgeClass = (quantile: LossQuantile): string => {
   }
 };
 
-const renderCardsList = (cards: readonly Card[]): React.JSX.Element => (
+const renderCardsList = (
+  cards: readonly Card[],
+  sortOrder: SortOrder,
+): React.JSX.Element => (
   <div className={classes.cardsRow}>
-    {cards.map((card, cardIndex) => (
-      <CardLabel
-        // eslint-disable-next-line react/no-array-index-key
-        key={`queue-card-${cardIndex}-${card.rank}`}
-        rank={card.rank}
-        suit={card.suit}
-      />
-    ))}
+    <SortedCardLabels
+      cards={cards}
+      keyPrefix="queue"
+      sortOrder={sortOrder}
+    />
   </div>
 );
 
@@ -112,6 +114,7 @@ const buildQuantileOptions = (
 
 function renderPreviousDiscard(
   previousDiscard: string | null,
+  sortOrder: SortOrder,
 ): React.JSX.Element {
   return (
     <div className={classes.previousDiscard}>
@@ -121,13 +124,16 @@ function renderPreviousDiscard(
           Previous choice not recorded
         </span>
       ) : (
-        renderCardsList(parseHand(previousDiscard))
+        renderCardsList(parseHand(previousDiscard), sortOrder)
       )}
     </div>
   );
 }
 
-function renderItemCard(item: MistakeQueueItem): React.JSX.Element {
+function renderItemCard(
+  item: MistakeQueueItem,
+  sortOrder: SortOrder,
+): React.JSX.Element {
   const roleLabel = item.cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const errorRatePercent = (item.pWrong * PERCENT_MULTIPLIER).toFixed(0);
 
@@ -161,10 +167,10 @@ function renderItemCard(item: MistakeQueueItem): React.JSX.Element {
         </div>
       </div>
 
-      {renderCardsList(item.cards)}
+      {renderCardsList(item.cards, sortOrder)}
 
       <div className={classes.itemFooter}>
-        {renderPreviousDiscard(item.previousDiscard)}
+        {renderPreviousDiscard(item.previousDiscard, sortOrder)}
         <div className={classes.itemStats}>
           <span>Attempts: {item.attempts}</span>
           <span>Error rate: {errorRatePercent}%</span>
@@ -259,6 +265,7 @@ export function MistakeQueueDialog({
   initialStatusFilter = "active",
   onClose,
   show,
+  sortOrder = SortOrder.Descending,
   tally = null,
 }: MistakeQueueDialogProps): React.JSX.Element | null {
   const [filters, setFilters] = useState({
@@ -398,7 +405,9 @@ export function MistakeQueueDialog({
             })
           ) : (
             <>
-              {sortedItems.slice(0, visibleCount).map(renderItemCard)}
+              {sortedItems
+                .slice(0, visibleCount)
+                .map((item) => renderItemCard(item, sortOrder))}
               {sortedItems.length > visibleCount && (
                 <div className={classes.paginationRow}>
                   <button
@@ -423,5 +432,6 @@ MistakeQueueDialog.defaultProps = {
   initialRoleFilter: "all",
   initialSortOrder: "priority",
   initialStatusFilter: "active",
+  sortOrder: SortOrder.Descending,
   tally: null,
 };

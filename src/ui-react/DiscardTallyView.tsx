@@ -7,6 +7,7 @@ import {
 import { type ReactNode, useCallback, useState } from "react";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
+import { SortOrder } from "../ui/SortOrder";
 
 const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
@@ -27,6 +28,7 @@ const countAndShare = (part: number, whole: number) =>
 const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
 
 interface DiscardTallyViewProps {
+  readonly sortOrder?: SortOrder;
   readonly summary: DiscardTallySummary;
   readonly tally?: StoredTally | null;
 }
@@ -56,6 +58,7 @@ const renderMeasure = (
  * room, which on a phone turned two rows into four ragged ones.
  */
 export function DiscardTallyView({
+  sortOrder = SortOrder.Descending,
   summary,
   tally: injectedTally = null,
 }: DiscardTallyViewProps): ReactNode {
@@ -169,6 +172,7 @@ export function DiscardTallyView({
         <MistakeQueueDialog
           onClose={handleCloseQueue}
           show={showQueue}
+          sortOrder={sortOrder}
           tally={injectedTally}
         />
       ) : null}
@@ -177,5 +181,6 @@ export function DiscardTallyView({
 }
 
 DiscardTallyView.defaultProps = {
+  sortOrder: SortOrder.Descending,
   tally: null,
 };

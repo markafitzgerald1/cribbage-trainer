@@ -4,6 +4,7 @@ import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { DiscardTallyView } from "./DiscardTallyView";
+import { SortOrder } from "../ui/SortOrder";
 import { discardTallySummary } from "./discardTally.test.common";
 /* jscpd:ignore-end */
 
@@ -14,6 +15,19 @@ const NOTHING_SCORED = {
   decisions: 0,
   meanExpectedPointsLoss: null,
   optimalDecisions: 0,
+};
+
+const seedMistakeDecision = () => {
+  clearDiscardTally();
+  recordDiscardDecision({
+    at: 1_700_000_000_000,
+    cribRole: CribRole.Dealer,
+    discardKey: "5H,6H",
+    expectedPointsLoss: 1.5,
+    handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+    isOptimal: false,
+    isPractice: false,
+  });
 };
 
 const verifyModalOpenAndClose = (
@@ -115,16 +129,7 @@ describe("discard tally view", () => {
   });
 
   it("opens and closes mistake queue dialog when sub-optimal decisions are present", () => {
-    clearDiscardTally();
-    recordDiscardDecision({
-      at: 1_700_000_000_000,
-      cribRole: CribRole.Dealer,
-      discardKey: "5H,6H",
-      expectedPointsLoss: 1.5,
-      handKey: "5H,6H,7H,8H,9H,10H|Dealer",
-      isOptimal: false,
-      isPractice: false,
-    });
+    seedMistakeDecision();
 
     const success = verifyModalOpenAndClose(
       "Mistake queue",
@@ -137,5 +142,24 @@ describe("discard tally view", () => {
     );
 
     expect(success).toBe(true);
+  });
+
+  it("forwards sortOrder to the mistake queue dialog", () => {
+    seedMistakeDecision();
+
+    const { getByRole, queryByText } = render(
+      <DiscardTallyView
+        sortOrder={SortOrder.Ascending}
+        summary={discardTallySummary({
+          decisions: 1,
+          meanExpectedPointsLoss: 1.5,
+          optimalDecisions: 0,
+        })}
+      />,
+    );
+
+    fireEvent.click(getByRole("button", { name: "Mistake queue" }));
+
+    expect(queryByText("Previous discard:")).not.toBeNull();
   });
 });

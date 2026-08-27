@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import * as classes from "./MistakeQueueDialog.module.css";
 import {
   MistakeQueueDialog,
   type MistakeQueueDialogProps,
@@ -15,6 +16,7 @@ import {
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
+import { SortOrder } from "../ui/SortOrder";
 import type { StoredTally } from "../ui/discardTally";
 import { createElement } from "react";
 /* jscpd:ignore-end */
@@ -33,6 +35,7 @@ interface QueueRenderConfig {
   readonly isDisplayed?: boolean;
   readonly onDismiss?: () => void;
   readonly queueTally?: StoredTally;
+  readonly sortOrder?: MistakeQueueDialogProps["sortOrder"];
   readonly useStorageFallback?: boolean;
 }
 
@@ -45,6 +48,7 @@ const renderQueueDialog = (config: QueueRenderConfig = {}) => {
     isDisplayed = true,
     onDismiss = jest.fn(),
     queueTally = sampleTally,
+    sortOrder,
     useStorageFallback = false,
   } = config;
 
@@ -65,6 +69,7 @@ const renderQueueDialog = (config: QueueRenderConfig = {}) => {
       initialStatusFilter={initialStatusFilter}
       onClose={onDismiss}
       show={isDisplayed}
+      sortOrder={sortOrder}
       tally={queueTally}
     />,
   );
@@ -343,6 +348,33 @@ describe("mistake queue dialog", () => {
         fallbackView.getByRole("region", { name: "Mistake queue" }),
       ).toBeInTheDocument();
     });
+
+    it.each([
+      {
+        expectedCards: "10♥9♥8♥7♥6♥5♥",
+        expectedDiscard: "Previous discard:6♥5♥",
+        name: "descending",
+        sortOrder: SortOrder.Descending,
+      },
+      {
+        expectedCards: "5♥6♥7♥8♥9♥10♥",
+        expectedDiscard: "Previous discard:5♥6♥",
+        name: "ascending",
+        sortOrder: SortOrder.Ascending,
+      },
+    ])(
+      "renders hand cards and discards in $name order",
+      ({ expectedCards, expectedDiscard, sortOrder }) => {
+        const { container } = renderQueueDialog({ sortOrder });
+
+        expect(
+          container.querySelector(`.${classes.cardsRow}`),
+        ).toHaveTextContent(expectedCards);
+        expect(
+          container.querySelector(`.${classes.previousDiscard}`),
+        ).toHaveTextContent(expectedDiscard);
+      },
+    );
 
     it("renders using readTallyForDisplay fallback when tally prop is null", () => {
       const nullTallyView = render(

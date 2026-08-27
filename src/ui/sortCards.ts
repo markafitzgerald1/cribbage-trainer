@@ -32,6 +32,23 @@ const compare = Object.fromEntries(
   SORT_ORDER_NAMES.map((key) => [key, createCompare(SortOrder[key])]),
 );
 
+export const toComparableCards = (
+  cards: readonly { readonly rank: Rank; readonly suit?: Suit | undefined }[],
+): ComparableCard[] =>
+  cards.map((card, dealOrder) => {
+    if (typeof card.suit !== "undefined") {
+      return {
+        dealOrder,
+        rank: card.rank,
+        suit: card.suit,
+      };
+    }
+    return {
+      dealOrder,
+      rank: card.rank,
+    };
+  });
+
 export const sortCards = <T extends ComparableCard>(
   dealtCards: readonly T[],
   sortOrder: SortOrder,
