@@ -110,6 +110,7 @@ export const storedTallyOf = (
     optimalDecisions: records.filter((record) => record.isOptimal).length,
     skippedHands: skipped.length,
   },
+  practice: [],
   records: [...records],
   revision: 1,
   skipped: [...skipped],

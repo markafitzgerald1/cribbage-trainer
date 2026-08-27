@@ -1,7 +1,15 @@
+import {
+  type PracticeAttempt,
+  type PracticeRecord,
+  isStoredPracticeRecord,
+  updatePracticeRecords,
+} from "./practiceLedger";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 import { parseHand } from "../game/Card";
+
+export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
 
 /*
  * Scoped to the deployment that wrote it. A PR preview and production share
@@ -32,29 +40,13 @@ export const MAX_RECORDS = 10_000;
 export interface DiscardDecisionRecord {
   readonly at: number;
   readonly cribRole: CribRole;
-  /*
-   * The discard chosen by the player (e.g. "5H,5D"), serialized in deal order.
-   * Absent (null) on records written before version 3, which is permanent:
-   * earlier versions did not record which cards were discarded and the choice
-   * cannot be reconstructed.
-   */
+  // Serialized in deal order; null on records from versions before 3.
   readonly discardKey: string | null;
-  /*
-   * The hand this decision was made from, which is what makes recording
-   * idempotent. The trainer shows every option ranked before a discard is
-   * chosen, so only a hand's first completed discard is an instinct; a second
-   * one is a choice made after reading the answer. Re-renders from Back,
-   * Forward, a re-sort, or a reload of the same URL all arrive here as the
-   * same hand, and all of them must count once.
-   */
+  // Cards and role; collapses re-renders from Back/Forward/sorts/reloads.
   readonly handKey: string;
   readonly expectedPointsLoss: number;
   readonly isOptimal: boolean;
-  /*
-   * Seeded, deep-linked, and manually entered hands are study rather than play
-   * made under uncertainty, so they are kept but excluded from the headline.
-   * Letting them move it would make the number mean less than it claims.
-   */
+  // Seeded, deep-linked, and manually entered hands are kept but excluded from headline averages.
   readonly isPractice: boolean;
 }
 
@@ -62,24 +54,12 @@ export interface DiscardTallySummary {
   readonly decisions: number;
   readonly meanExpectedPointsLoss: number | null;
   readonly optimalDecisions: number;
-  /*
-   * Today is read from the records rather than from a counter, because a
-   * counter would have to be reset by something and nothing here runs at
-   * midnight. It is the one slice #19 shows: two numbers are a comparison a
-   * reader can make at a glance, where a run of them is a trend and needs the
-   * chart #719 owns.
-   */
+  // Read from records rather than counters to compare today against all time without midnight resets.
   readonly todayDecisions: number;
   readonly todayMeanExpectedPointsLoss: number | null;
   readonly todayOptimalDecisions: number;
   readonly todaySkippedHands: number;
-  /*
-   * Hands dealt and left without a discard. Nothing scores them, so they
-   * cannot enter the averages — but a player who abandons the hands they
-   * find hard would otherwise post a flattering average and a high share of
-   * best choices, and the statistic would reward avoidance. Counting them
-   * where they can be seen leaves the averages honest about what they omit.
-   */
+  // Hands dealt and abandoned without a discard; counted so averages stay honest about omissions.
   readonly skippedHands: number;
 }
 
@@ -96,6 +76,7 @@ export interface SkippedHand {
 
 export interface StoredTally {
   readonly lifetime: LifetimeTotals;
+  readonly practice: readonly PracticeRecord[];
   readonly records: readonly DiscardDecisionRecord[];
   /*
    * Incremented on every write, and the only thing compared when deciding
@@ -119,6 +100,7 @@ const emptyLifetime: LifetimeTotals = {
 
 const emptyTally: StoredTally = {
   lifetime: emptyLifetime,
+  practice: [],
   records: [],
   revision: 0,
   skipped: [],
@@ -134,6 +116,7 @@ const emptyTally: StoredTally = {
  */
 interface MaybeTally {
   readonly lifetime?: unknown;
+  readonly practice?: unknown;
   readonly records?: unknown;
   readonly revision?: unknown;
   readonly skipped?: unknown;
@@ -227,16 +210,9 @@ const parseLifetime = (value: unknown): LifetimeTotals => {
 };
 
 /*
- * A stored version newer than this build is left untouched and read as empty.
- * The alternative is to overwrite it, which would destroy a richer history
- * because one tab happens to be running an older deploy.
- */
-/*
- * Only a version this build can name as newer earns write protection.
- * Anything else it cannot read — not an object, no version, a version that is
- * not a number — is junk rather than a richer history. Protecting that too
- * would leave the tally empty and refusing every write until someone cleared
- * storage by hand, which is a worse failure than the overwrite it guards.
+ * Only a version this build can name as newer earns write protection (leaving it
+ * untouched and reading as empty, so a newer deploy's history is not overwritten).
+ * Anything else it cannot read is junk rather than a richer history.
  */
 const isFromNewerBuild = (parsed: unknown): boolean =>
   isObject(parsed) &&
@@ -276,6 +252,9 @@ const readStoredTally = (): StoredTally | null => {
   const { records } = candidate;
   return {
     lifetime: parseLifetime(candidate.lifetime),
+    practice: Array.isArray(candidate.practice)
+      ? candidate.practice.filter(isStoredPracticeRecord)
+      : [],
     records: Array.isArray(records)
       ? records.filter(isStoredDecisionRecord).map((record) => ({
           ...record,
@@ -327,20 +306,9 @@ const summarize = (
 };
 
 /*
- * Malformed storage reads as an empty tally rather than throwing, matching
- * how analytics consent already treats a value it cannot trust: a corrupt
- * statistic is worth losing, a working deal is not.
- */
-/*
- * Held only when a write fails. Storage is otherwise the single source of
- * truth, but a browser refusing writes would re-read the same stale tally
- * before every decision, so a session's second hand would replace its first
- * rather than add to it.
- *
- * The value it was derived from is kept beside it. If storage has moved on
- * since — another tab recording while this one could not write — the
- * fallback is a branch off a history that no longer exists, and extending it
- * would overwrite that tab's hands with this one's stale copy.
+ * In-memory fallback held only when a write fails, so a browser refusing writes
+ * accumulates on top of pending session hands rather than resetting to stale storage.
+ * If storage moves on independently, the stale branch is dropped to protect other tabs.
  */
 let unsavedTally: StoredTally | null = null;
 let unsavedBase: StoredTally | null = null;
@@ -466,15 +434,40 @@ const extendStoredTally = (
 export const recordDiscardDecision = (
   decision: DiscardDecisionRecord,
 ): DiscardTallySummary =>
-  extendStoredTally(decision.at, (tally) =>
-    tally.records.some((record) => record.handKey === decision.handKey)
-      ? tally
-      : {
-          ...tally,
-          lifetime: addToLifetime(tally.lifetime, decision),
-          records: [...tally.records, decision].slice(-MAX_RECORDS),
-        },
-  );
+  extendStoredTally(decision.at, (tally) => {
+    const existing = tally.records.find(
+      (record) => record.handKey === decision.handKey,
+    );
+    if (existing) {
+      return existing.isOptimal
+        ? tally
+        : {
+            ...tally,
+            practice: updatePracticeRecords(
+              tally.practice,
+              {
+                at: decision.at,
+                handKey: decision.handKey,
+                isOptimal: decision.isOptimal,
+              },
+              MAX_RECORDS,
+            ),
+          };
+    }
+    return {
+      ...tally,
+      lifetime: addToLifetime(tally.lifetime, decision),
+      records: [...tally.records, decision].slice(-MAX_RECORDS),
+    };
+  });
+
+export const recordPracticeAttempt = (
+  attempt: PracticeAttempt,
+): DiscardTallySummary =>
+  extendStoredTally(attempt.at, (tally) => ({
+    ...tally,
+    practice: updatePracticeRecords(tally.practice, attempt, MAX_RECORDS),
+  }));
 
 /*
  * A hand the player asked for and left without a discard. Recorded rather
