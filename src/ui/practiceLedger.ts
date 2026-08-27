@@ -25,6 +25,12 @@ interface MaybePracticeRecord {
   readonly wrong?: unknown;
 }
 
+const isCountBoundedBy = (count: unknown, max: number): boolean =>
+  typeof count === "number" &&
+  Number.isInteger(count) &&
+  count >= 0 &&
+  count <= max;
+
 export const isStoredPracticeRecord = (
   value: unknown,
 ): value is PracticeRecord => {
@@ -32,23 +38,27 @@ export const isStoredPracticeRecord = (
     return false;
   }
   const candidate = value as MaybePracticeRecord;
+  const isAttemptsValid =
+    typeof candidate.attempts === "number" &&
+    Number.isInteger(candidate.attempts) &&
+    candidate.attempts > 0;
+  if (!isAttemptsValid) {
+    return false;
+  }
+
   const isTotalWrongLossValid =
     typeof candidate.totalWrongLoss === "undefined" ||
     (typeof candidate.totalWrongLoss === "number" &&
-      !Number.isNaN(candidate.totalWrongLoss) &&
+      Number.isFinite(candidate.totalWrongLoss) &&
       candidate.totalWrongLoss >= 0);
 
   return (
     typeof candidate.handKey === "string" &&
-    typeof candidate.attempts === "number" &&
-    candidate.attempts > 0 &&
-    typeof candidate.wrong === "number" &&
-    candidate.wrong >= 0 &&
-    candidate.wrong <= candidate.attempts &&
-    typeof candidate.consecutiveSuccesses === "number" &&
-    candidate.consecutiveSuccesses >= 0 &&
-    candidate.consecutiveSuccesses <= candidate.attempts &&
+    isCountBoundedBy(candidate.wrong, candidate.attempts) &&
+    isCountBoundedBy(candidate.consecutiveSuccesses, candidate.attempts) &&
     typeof candidate.lastAttemptAt === "number" &&
+    Number.isFinite(candidate.lastAttemptAt) &&
+    candidate.lastAttemptAt >= 0 &&
     isTotalWrongLossValid &&
     parseHandKey(candidate.handKey) !== null
   );

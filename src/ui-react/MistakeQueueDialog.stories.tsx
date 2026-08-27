@@ -1,8 +1,13 @@
 /* jscpd:ignore-start */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import {
+  expectStoryTextVisible,
+  playStoryEscape,
+  selectStoryRadioOption,
+} from "./stories.common";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import dialogFixtures from "./MistakeQueueDialog.test.common";
+import { fn } from "storybook/test";
 
 const sampleTally = dialogFixtures.createSampleMistakeTally();
 const allMasteredTally = dialogFixtures.createAllMasteredTally();
@@ -25,44 +30,25 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-const selectOption = async (
-  canvasElement: HTMLElement,
-  optionName: RegExp | string,
-): Promise<void> => {
-  const option = within(canvasElement).getByRole("radio", {
-    name: optionName,
-  });
-
-  await userEvent.click(option);
-
-  await expect(option).toBeChecked();
-};
-
-const expectVisible = async (
-  canvasElement: HTMLElement,
-  text: RegExp | string,
-): Promise<void> => {
-  await expect(within(canvasElement).getByText(text)).toBeVisible();
-};
+/* jscpd:ignore-end */
 
 export const DefaultOpen: Story = {
   play: async ({ canvasElement }) => {
-    await expectVisible(canvasElement, "Mistake queue");
-
-    await selectOption(canvasElement, "Highest loss");
+    await expectStoryTextVisible(canvasElement, "Mistake queue");
+    await selectStoryRadioOption(canvasElement, "Highest loss");
+    await selectStoryRadioOption(canvasElement, "Priority");
   },
 };
 
 export const FilterByRole: Story = {
   play: async ({ canvasElement }) => {
-    await selectOption(canvasElement, "Dealer");
+    await selectStoryRadioOption(canvasElement, "Dealer");
   },
 };
 
 export const FilterByStatus: Story = {
   play: async ({ canvasElement }) => {
-    await selectOption(canvasElement, "Mastered");
+    await selectStoryRadioOption(canvasElement, "Mastered");
   },
 };
 
@@ -71,7 +57,7 @@ export const FilterByQuantile: Story = {
     initialStatusFilter: "all",
   },
   play: async ({ canvasElement }) => {
-    await selectOption(canvasElement, /^High severity/u);
+    await selectStoryRadioOption(canvasElement, /^High severity/u);
   },
 };
 
@@ -80,7 +66,7 @@ export const AllMasteredEmptyState: Story = {
     tally: allMasteredTally,
   },
   play: async ({ canvasElement }) => {
-    await expectVisible(canvasElement, "All mistake hands mastered!");
+    await expectStoryTextVisible(canvasElement, "All mistake hands mastered!");
   },
 };
 
@@ -89,15 +75,13 @@ export const EmptyQueueNotice: Story = {
     tally: emptyMistakeTally,
   },
   play: async ({ canvasElement }) => {
-    await expectVisible(canvasElement, /No mistake hands recorded yet/iu);
+    await expectStoryTextVisible(
+      canvasElement,
+      /No mistake hands recorded yet/iu,
+    );
   },
 };
 
 export const DismissWithEscape: Story = {
-  play: async ({ args }) => {
-    await userEvent.keyboard("{Escape}");
-
-    await expect(args.onClose).toHaveBeenCalledTimes(1);
-  },
+  play: playStoryEscape,
 };
-/* jscpd:ignore-end */

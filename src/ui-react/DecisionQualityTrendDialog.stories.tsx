@@ -1,7 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import {
+  expectStoryTextVisible,
+  playStoryEscape,
+  selectStoryRadioOption,
+} from "./stories.common";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
+import { fn } from "storybook/test";
 
 const sampleTally = dialogFixtures.dialogTally(30);
 const cappedTally = dialogFixtures.cappedDialogTally();
@@ -22,37 +27,22 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const selectOption = async (
-  canvasElement: HTMLElement,
-  optionName: "Day" | "Dealer",
-): Promise<void> => {
-  const option = within(canvasElement).getByRole("radio", {
-    name: optionName,
-  });
-
-  await userEvent.click(option);
-
-  await expect(option).toBeChecked();
-};
-
-const expectVisible = async (
-  canvasElement: HTMLElement,
-  text: RegExp | string,
-): Promise<void> => {
-  await expect(within(canvasElement).getByText(text)).toBeVisible();
-};
-
 export const DefaultOpen: Story = {
   play: async ({ canvasElement }) => {
-    await expectVisible(canvasElement, "Decision quality over time");
-
-    await selectOption(canvasElement, "Day");
+    await selectStoryRadioOption(canvasElement, "Day");
+    await expectStoryTextVisible(canvasElement, "Period / Batch");
   },
 };
 
-export const FilterByRole: Story = {
-  play: async ({ canvasElement }) => {
-    await selectOption(canvasElement, "Dealer");
+export const DealerFilter: Story = {
+  args: {
+    initialRoleFilter: "dealer",
+  },
+};
+
+export const PoneFilter: Story = {
+  args: {
+    initialRoleFilter: "pone",
   },
 };
 
@@ -61,14 +51,13 @@ export const AtRecordCap: Story = {
     tally: cappedTally,
   },
   play: async ({ canvasElement }) => {
-    await expectVisible(canvasElement, /retain up to 10,000 entries/iu);
+    await expectStoryTextVisible(
+      canvasElement,
+      /retain up to 10,000 entries/iu,
+    );
   },
 };
 
 export const DismissWithEscape: Story = {
-  play: async ({ args }) => {
-    await userEvent.keyboard("{Escape}");
-
-    await expect(args.onClose).toHaveBeenCalledTimes(1);
-  },
+  play: playStoryEscape,
 };

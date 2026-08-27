@@ -95,12 +95,18 @@ describe("practiceLedger", () => {
       expect(isStoredPracticeRecord(42)).toBe(false);
     });
 
-    it("returns false when numeric count fields are invalid or negative", () => {
-      expect(isStoredPracticeRecord(makeRecord({ attempts: 0 }))).toBe(false);
-      expect(
-        isStoredPracticeRecord(makeRecord({ consecutiveSuccesses: -1 })),
-      ).toBe(false);
-      expect(isStoredPracticeRecord(makeRecord({ wrong: -1 }))).toBe(false);
+    it.each([
+      { attempts: 0 },
+      { attempts: 1.5 },
+      { attempts: Infinity },
+      { consecutiveSuccesses: -1 },
+      { consecutiveSuccesses: 0.5 },
+      { consecutiveSuccesses: Infinity },
+      { wrong: -1 },
+      { wrong: 0.5 },
+      { wrong: NaN },
+    ])("rejects malformed count values %j", (overrides) => {
+      expect(isStoredPracticeRecord(makeRecord(overrides))).toBe(false);
     });
 
     it("returns false when counts violate attempt bounds", () => {
@@ -110,34 +116,21 @@ describe("practiceLedger", () => {
       ).toBe(false);
     });
 
-    it("returns false when totalWrongLoss is invalid", () => {
-      expect(
-        isStoredPracticeRecord(makeRecord({ totalWrongLoss: -1, wrong: 1 })),
-      ).toBe(false);
-      expect(
-        isStoredPracticeRecord({
-          ...makeRecord({ wrong: 1 }),
-          totalWrongLoss: "invalid",
-        }),
-      ).toBe(false);
-    });
-
-    it("returns false when handKey is invalid or types are malformed", () => {
-      expect(
-        isStoredPracticeRecord(makeRecord({ handKey: "corruptKey" })),
-      ).toBe(false);
-      expect(
-        isStoredPracticeRecord({
-          ...makeRecord(),
-          handKey: 123,
-        }),
-      ).toBe(false);
-      expect(
-        isStoredPracticeRecord({
-          ...makeRecord(),
-          lastAttemptAt: "invalid",
-        }),
-      ).toBe(false);
+    it.each([
+      { totalWrongLoss: -1, wrong: 1 },
+      { totalWrongLoss: Infinity, wrong: 1 },
+      { totalWrongLoss: NaN, wrong: 1 },
+      { totalWrongLoss: "invalid", wrong: 1 },
+      { handKey: "corruptKey" },
+      { handKey: 123 },
+      { lastAttemptAt: "invalid" },
+      { lastAttemptAt: -1 },
+      { lastAttemptAt: Infinity },
+      { lastAttemptAt: NaN },
+    ])("rejects invalid metadata and loss %j", (overrides) => {
+      expect(isStoredPracticeRecord({ ...makeRecord(), ...overrides })).toBe(
+        false,
+      );
     });
 
     it("returns true for a valid practice record", () => {
