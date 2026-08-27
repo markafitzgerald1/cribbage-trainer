@@ -21,7 +21,7 @@ export type MistakeQueueRoleFilter = "all" | "dealer" | "pone";
 
 export type MistakeQueueQuantileFilter = "all" | "high" | "low" | "medium";
 
-export type LossQuantile = "high" | "low" | "medium";
+export type LossQuantile = "high" | "low" | "medium" | null;
 
 export interface MistakeQueueQuantileThresholds {
   readonly highThreshold: number;
@@ -92,7 +92,7 @@ export const classifyLossQuantile = (
     thresholds.mediumThreshold === 0 ||
     thresholds.highThreshold <= thresholds.mediumThreshold
   ) {
-    return "low";
+    return null;
   }
 
   if (loss >= thresholds.highThreshold) {

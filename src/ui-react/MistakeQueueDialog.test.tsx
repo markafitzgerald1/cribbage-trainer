@@ -261,10 +261,15 @@ describe("mistake queue dialog", () => {
       ).toBeInTheDocument();
     });
 
-    it("omits loss severity filter when fewer than 3 unique loss values exist", () => {
-      const { queryByRole } = renderQueueDialog({ queueTally: twoLossTally });
+    it("omits loss severity filter and item badges when fewer than 3 unique loss values exist", () => {
+      const { queryByRole, queryByText } = renderQueueDialog({
+        queueTally: twoLossTally,
+      });
 
       expect(queryByRole("group", { name: "Loss severity" })).toBeNull();
+      expect(queryByText("low")).toBeNull();
+      expect(queryByText("medium")).toBeNull();
+      expect(queryByText("high")).toBeNull();
     });
 
     it("paginates list and renders more items when Show more is clicked", () => {

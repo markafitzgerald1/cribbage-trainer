@@ -55,15 +55,13 @@ export type MistakeQueueDialogProps = {
 };
 
 const getQuantileBadgeClass = (quantile: LossQuantile): string => {
-  switch (quantile) {
-    case "high":
-      return classes.quantileHigh;
-    case "medium":
-      return classes.quantileMedium;
-    case "low":
-    default:
-      return classes.quantileLow;
+  if (quantile === "high") {
+    return classes.quantileHigh;
   }
+  if (quantile === "medium") {
+    return classes.quantileMedium;
+  }
+  return classes.quantileLow;
 };
 
 const renderCardsList = (
@@ -148,11 +146,13 @@ function renderItemCard(
           <span className={classes.lossBadge}>
             {item.lossIfWrong.toFixed(DECIMAL_DIGITS)} pts lost
           </span>
-          <span
-            className={`${classes.quantileBadge} ${getQuantileBadgeClass(item.lossQuantile)}`}
-          >
-            {item.lossQuantile}
-          </span>
+          {item.lossQuantile !== null && (
+            <span
+              className={`${classes.quantileBadge} ${getQuantileBadgeClass(item.lossQuantile)}`}
+            >
+              {item.lossQuantile}
+            </span>
+          )}
         </div>
         <div>
           {item.isMastered ? (

@@ -92,13 +92,13 @@ describe("mistakeQueue", () => {
   });
 
   describe("classifyLossQuantile", () => {
-    it("returns low when thresholds are zero or collapsed", () => {
+    it("returns null when thresholds are zero or collapsed", () => {
       expect(
         classifyLossQuantile(1.5, { highThreshold: 0, mediumThreshold: 0 }),
-      ).toBe("low");
+      ).toBeNull();
       expect(
         classifyLossQuantile(1.5, { highThreshold: 1.5, mediumThreshold: 1.5 }),
-      ).toBe("low");
+      ).toBeNull();
     });
 
     it("classifies high, medium, and low correctly", () => {
@@ -150,12 +150,38 @@ describe("mistakeQueue", () => {
         handKey: "5H,6H,7H,8H,9H,10H|Dealer",
         isMastered: false,
         lossIfWrong: 1.5,
-        lossQuantile: "low",
+        lossQuantile: null,
         pWrong: 1,
         priority: 1.5,
         wrong: 1,
       });
       expect(item.cards).toHaveLength(6);
+    });
+
+    it("assigns loss quantiles when 3 or more distinct loss values exist", () => {
+      const tally = createMockTally({
+        records: [
+          createTestMistakeRecord({
+            expectedPointsLoss: 1.0,
+            handKey: "AH,2H,3H,4H,5H,6H|Pone",
+          }),
+          createTestMistakeRecord({
+            expectedPointsLoss: 2.0,
+            handKey: "2C,3C,4C,5C,6C,7C|Dealer",
+          }),
+          createTestMistakeRecord({
+            expectedPointsLoss: 3.0,
+            handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+          }),
+        ],
+      });
+
+      const queue = buildMistakeQueue(tally);
+      const quantiles = queue.map((item) => item.lossQuantile);
+
+      expect(quantiles).toContain("low");
+      expect(quantiles).toContain("medium");
+      expect(quantiles).toContain("high");
     });
 
     it("joins with practice ledger and marks mastered when consecutive successes reach 2", () => {
