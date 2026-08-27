@@ -44,8 +44,10 @@ export const isStoredPracticeRecord = (
     candidate.attempts > 0 &&
     typeof candidate.wrong === "number" &&
     candidate.wrong >= 0 &&
+    candidate.wrong <= candidate.attempts &&
     typeof candidate.consecutiveSuccesses === "number" &&
     candidate.consecutiveSuccesses >= 0 &&
+    candidate.consecutiveSuccesses <= candidate.attempts &&
     typeof candidate.lastAttemptAt === "number" &&
     isTotalWrongLossValid &&
     parseHandKey(candidate.handKey) !== null

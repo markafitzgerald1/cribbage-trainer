@@ -46,12 +46,6 @@ export interface MistakeQueueFilterOptions {
   readonly statusFilter?: MistakeQueueStatusFilter;
 }
 
-interface PriorityComputationOptions {
-  readonly isMastered: boolean;
-  readonly lossIfWrong: number;
-  readonly pWrong: number;
-}
-
 export const computeLossQuantileThresholds = (
   losses: readonly number[],
 ): MistakeQueueQuantileThresholds => {
@@ -109,16 +103,15 @@ export const classifyLossQuantile = (
   return "low";
 };
 
+interface PriorityComputationOptions {
+  readonly lossIfWrong: number;
+  readonly pWrong: number;
+}
+
 const computePriority = ({
-  isMastered,
   lossIfWrong,
   pWrong,
-}: PriorityComputationOptions): number => {
-  if (isMastered) {
-    return 0;
-  }
-  return lossIfWrong * pWrong;
-};
+}: PriorityComputationOptions): number => lossIfWrong * pWrong;
 
 export const filterMistakeQueue = (
   items: readonly MistakeQueueItem[],
@@ -245,7 +238,6 @@ export const buildMistakeQueue = (
     const isMastered = consecutiveSuccesses >= MASTERY_CONSECUTIVE_SUCCESSES;
     const pWrong = totalWrong / totalAttempts;
     const priority = computePriority({
-      isMastered,
       lossIfWrong: pooledLossIfWrong,
       pWrong,
     });

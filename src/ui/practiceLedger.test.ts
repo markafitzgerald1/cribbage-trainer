@@ -30,7 +30,7 @@ describe("practiceLedger", () => {
       expect(isStoredPracticeRecord(42)).toBe(false);
     });
 
-    it("returns false when numeric count fields or totalWrongLoss are invalid", () => {
+    it("returns false when numeric count fields are invalid or negative", () => {
       expect(
         isStoredPracticeRecord({
           attempts: 0,
@@ -60,7 +60,31 @@ describe("practiceLedger", () => {
           wrong: -1,
         }),
       ).toBe(false);
+    });
 
+    it("returns false when counts violate attempt bounds", () => {
+      expect(
+        isStoredPracticeRecord({
+          attempts: 1,
+          consecutiveSuccesses: 0,
+          handKey: VALID_HAND_KEY,
+          lastAttemptAt: AT,
+          wrong: 2,
+        }),
+      ).toBe(false);
+
+      expect(
+        isStoredPracticeRecord({
+          attempts: 1,
+          consecutiveSuccesses: 2,
+          handKey: VALID_HAND_KEY,
+          lastAttemptAt: AT,
+          wrong: 0,
+        }),
+      ).toBe(false);
+    });
+
+    it("returns false when totalWrongLoss is invalid", () => {
       expect(
         isStoredPracticeRecord({
           attempts: 1,

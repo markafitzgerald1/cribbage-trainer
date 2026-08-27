@@ -71,7 +71,7 @@ export const mockItemMastered: MistakeQueueItem = {
   originalDecisionAt: NOW - 5 * ONE_DAY_MS,
   pWrong: 0.33,
   previousDiscard: "AH,2H",
-  priority: 0,
+  priority: 1.0,
   wrong: 1,
 };
 /* jscpd:ignore-end */

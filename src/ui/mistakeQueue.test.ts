@@ -206,7 +206,7 @@ describe("mistakeQueue", () => {
         lossIfWrong: 2.0,
         pWrong: 0.5,
         previousDiscard: null,
-        priority: 0,
+        priority: 1.0,
         wrong: 2,
       });
     });

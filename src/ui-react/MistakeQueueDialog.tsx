@@ -26,18 +26,6 @@ import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
-/* jscpd:ignore-start */
-export interface MistakeQueueDialogProps {
-  readonly initialQuantileFilter?: MistakeQueueQuantileFilter;
-  readonly initialRoleFilter?: MistakeQueueRoleFilter;
-  readonly initialSortOrder?: MistakeQueueSortOrder;
-  readonly initialStatusFilter?: MistakeQueueStatusFilter;
-  readonly onClose: () => void;
-  readonly show: boolean;
-  readonly tally?: StoredTally | null;
-}
-/* jscpd:ignore-end */
-
 const SORT_OPTIONS: readonly DialogFilterOption<MistakeQueueSortOrder>[] = [
   { label: "Priority", value: "priority" },
   { label: "Highest loss", value: "highestLoss" },
@@ -54,6 +42,16 @@ const STATUS_OPTIONS: readonly DialogFilterOption<MistakeQueueStatusFilter>[] =
 const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
 
+export type MistakeQueueDialogProps = {
+  readonly initialQuantileFilter?: MistakeQueueQuantileFilter;
+  readonly initialRoleFilter?: MistakeQueueRoleFilter;
+  readonly initialSortOrder?: MistakeQueueSortOrder;
+  readonly initialStatusFilter?: MistakeQueueStatusFilter;
+  readonly onClose: () => void;
+  readonly show: boolean;
+  readonly tally?: StoredTally | null | undefined;
+};
+
 const getQuantileBadgeClass = (quantile: LossQuantile): string => {
   switch (quantile) {
     case "high":
@@ -65,6 +63,19 @@ const getQuantileBadgeClass = (quantile: LossQuantile): string => {
       return classes.quantileLow;
   }
 };
+
+const renderCardsList = (cards: readonly Card[]): React.JSX.Element => (
+  <div className={classes.cardsRow}>
+    {cards.map((card, cardIndex) => (
+      <CardLabel
+        // eslint-disable-next-line react/no-array-index-key
+        key={`queue-card-${cardIndex}-${card.rank}`}
+        rank={card.rank}
+        suit={card.suit}
+      />
+    ))}
+  </div>
+);
 
 const buildQuantileOptions = (
   thresholds: MistakeQueueQuantileThresholds,
@@ -99,23 +110,6 @@ const buildQuantileOptions = (
   ];
 };
 
-/* jscpd:ignore-start */
-function renderCardsRow(cards: readonly Card[]): React.JSX.Element {
-  return (
-    <div className={classes.cardsRow}>
-      {cards.map((card, index) => (
-        <CardLabel
-          // eslint-disable-next-line react/no-array-index-key
-          key={`${card.rank}-${card.suit}-${index}`}
-          rank={card.rank}
-          suit={card.suit}
-        />
-      ))}
-    </div>
-  );
-}
-/* jscpd:ignore-end */
-
 function renderPreviousDiscard(
   previousDiscard: string | null,
 ): React.JSX.Element {
@@ -127,7 +121,7 @@ function renderPreviousDiscard(
           Previous choice not recorded
         </span>
       ) : (
-        renderCardsRow(parseHand(previousDiscard))
+        renderCardsList(parseHand(previousDiscard))
       )}
     </div>
   );
@@ -167,7 +161,7 @@ function renderItemCard(item: MistakeQueueItem): React.JSX.Element {
         </div>
       </div>
 
-      {renderCardsRow(item.cards)}
+      {renderCardsList(item.cards)}
 
       <div className={classes.itemFooter}>
         {renderPreviousDiscard(item.previousDiscard)}
@@ -267,49 +261,48 @@ export function MistakeQueueDialog({
   show,
   tally = null,
 }: MistakeQueueDialogProps): React.JSX.Element | null {
-  const [sortOrder, setSortOrder] =
-    useState<MistakeQueueSortOrder>(initialSortOrder);
-  const [statusFilter, setStatusFilter] =
-    useState<MistakeQueueStatusFilter>(initialStatusFilter);
-  const [roleFilter, setRoleFilter] =
-    useState<MistakeQueueRoleFilter>(initialRoleFilter);
-  const [quantileFilter, setQuantileFilter] =
-    useState<MistakeQueueQuantileFilter>(initialQuantileFilter);
+  const [filters, setFilters] = useState({
+    quantile: initialQuantileFilter,
+    role: initialRoleFilter,
+    sort: initialSortOrder,
+    status: initialStatusFilter,
+  });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useCloseOnEscape(show, onClose);
 
-  /* jscpd:ignore-start */
   const handleShowMore = useCallback(() => {
     setVisibleCount((current) => current + PAGE_SIZE);
   }, []);
 
-  const changeSortOrder = useCallback(
+  const handleSortChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setSortOrder(event.currentTarget.value as MistakeQueueSortOrder);
+      const selectedSort = event.target.value as MistakeQueueSortOrder;
+      setFilters((prev) => ({ ...prev, sort: selectedSort }));
     },
     [],
   );
 
-  const changeStatusFilter = useCallback(
+  const handleStatusChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setStatusFilter(event.currentTarget.value as MistakeQueueStatusFilter);
+      const selectedStatus = event.target.value as MistakeQueueStatusFilter;
+      setFilters((prev) => ({ ...prev, status: selectedStatus }));
     },
     [],
   );
 
-  const changeRoleFilter = useCallback(
+  const handleRoleChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setRoleFilter(event.currentTarget.value as MistakeQueueRoleFilter);
+      const selectedRole = event.target.value as MistakeQueueRoleFilter;
+      setFilters((prev) => ({ ...prev, role: selectedRole }));
     },
     [],
   );
 
-  const changeQuantileFilter = useCallback(
+  const handleQuantileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setQuantileFilter(
-        event.currentTarget.value as MistakeQueueQuantileFilter,
-      );
+      const selectedQuantile = event.target.value as MistakeQueueQuantileFilter;
+      setFilters((prev) => ({ ...prev, quantile: selectedQuantile }));
     },
     [],
   );
@@ -318,8 +311,13 @@ export function MistakeQueueDialog({
     return null;
   }
 
-  const sourceTally = tally ?? readTallyForDisplay();
-  /* jscpd:ignore-end */
+  const activeTally = tally ?? readTallyForDisplay();
+  const queueData = computeMistakeDialogData(activeTally, {
+    quantileFilter: filters.quantile,
+    roleFilter: filters.role,
+    sortOrder: filters.sort,
+    statusFilter: filters.status,
+  });
   const {
     activeCount,
     hasLifetimeMistakes,
@@ -328,12 +326,7 @@ export function MistakeQueueDialog({
     quantileOptions,
     sortedItems,
     totalCount,
-  } = computeMistakeDialogData(sourceTally, {
-    quantileFilter,
-    roleFilter,
-    sortOrder,
-    statusFilter,
-  });
+  } = queueData;
 
   return (
     <Modal
@@ -350,43 +343,6 @@ export function MistakeQueueDialog({
           choosing the optimal discard 2 consecutive times in practice.
         </p>
 
-        <div className={classes.controls}>
-          <DialogFilterGroup
-            classes={classes}
-            currentValue={sortOrder}
-            groupName="mistake-sort-order"
-            legendText="Sort by"
-            onChange={changeSortOrder}
-            options={SORT_OPTIONS}
-          />
-          <DialogFilterGroup
-            classes={classes}
-            currentValue={statusFilter}
-            groupName="mistake-status-filter"
-            legendText="Status"
-            onChange={changeStatusFilter}
-            options={STATUS_OPTIONS}
-          />
-          <DialogFilterGroup
-            classes={classes}
-            currentValue={roleFilter}
-            groupName="mistake-role-filter"
-            legendText="Crib role"
-            onChange={changeRoleFilter}
-            options={DIALOG_ROLE_OPTIONS}
-          />
-          {quantileOptions.length > 0 && (
-            <DialogFilterGroup
-              classes={classes}
-              currentValue={quantileFilter}
-              groupName="mistake-quantile-filter"
-              legendText="Loss severity"
-              onChange={changeQuantileFilter}
-              options={quantileOptions}
-            />
-          )}
-        </div>
-
         <DialogSummaryCards
           classes={classes}
           metrics={[
@@ -395,6 +351,43 @@ export function MistakeQueueDialog({
             { label: "Mastered", value: masteredCount },
           ]}
         />
+
+        <div className={classes.controls}>
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={filters.sort}
+            groupName="mistake-sort-order"
+            legendText="Sort by"
+            onChange={handleSortChange}
+            options={SORT_OPTIONS}
+          />
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={filters.status}
+            groupName="mistake-status-filter"
+            legendText="Status"
+            onChange={handleStatusChange}
+            options={STATUS_OPTIONS}
+          />
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={filters.role}
+            groupName="mistake-role-filter"
+            legendText="Crib role"
+            onChange={handleRoleChange}
+            options={DIALOG_ROLE_OPTIONS}
+          />
+          {quantileOptions.length > 0 && (
+            <DialogFilterGroup
+              classes={classes}
+              currentValue={filters.quantile}
+              groupName="mistake-quantile-filter"
+              legendText="Loss severity"
+              onChange={handleQuantileChange}
+              options={quantileOptions}
+            />
+          )}
+        </div>
 
         <div className={classes.itemsList}>
           {sortedItems.length === 0 ? (
