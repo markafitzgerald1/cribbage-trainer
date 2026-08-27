@@ -129,7 +129,7 @@ describe("discard tally recovery", () => {
   it.each([
     ...junkValues(),
     // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
-    { name: "a newer version", stored: asJson(storedWith({ version: 4 })) },
+    { name: "a newer version", stored: asJson(storedWith({ version: 5 })) },
     { name: "no counters", stored: asJson(storedOmitting("lifetime")) },
     {
       name: "counters that are not an object",
@@ -170,7 +170,7 @@ describe("discard tally recovery", () => {
     { name: "a decision", record: () => recordDiscardDecision(decisionOf()) },
     { name: "a skipped hand", record: () => recordSkippedHand(AT) },
   ])("refuses to record $name over a newer version", ({ record }) => {
-    const newer = asJson(storedWith({ version: 4 }));
+    const newer = asJson(storedWith({ version: 5 }));
     storeRaw(newer);
     record();
 
@@ -178,7 +178,7 @@ describe("discard tally recovery", () => {
   });
 
   it("reports nothing while a newer version is present", () => {
-    storeRaw(asJson(storedWith({ version: 4 })));
+    storeRaw(asJson(storedWith({ version: 5 })));
 
     expect(recordDiscardDecision(decisionOf())).toStrictEqual(EMPTY);
   });
@@ -187,7 +187,7 @@ describe("discard tally recovery", () => {
     storeRaw(asJson(storedWith({ version: 1 })));
     recordDiscardDecision(decisionOf({ handKey: "v1-migrated" }));
 
-    expect(localStorage.getItem(discardTallyKey)).toContain('"version":3');
+    expect(localStorage.getItem(discardTallyKey)).toContain('"version":4');
   });
 
   /*
@@ -347,6 +347,38 @@ describe("discard tally recovery", () => {
       { ...v3Corrupt, discardKey: null },
       { ...v3Three, discardKey: null },
     ]);
+  });
+
+  it("accepts a v3 tally without practice field and migrates with empty practice list and version 4", () => {
+    storeRaw(
+      asJson({
+        lifetime: {
+          decisions: 1,
+          expectedPointsLossTotal: 1.5,
+          optimalDecisions: 0,
+          skippedHands: 0,
+        },
+        records: [
+          {
+            at: AT,
+            cribRole: CribRole.Dealer,
+            discardKey: "5H,6H",
+            expectedPointsLoss: 1.5,
+            handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+            isOptimal: false,
+            isPractice: false,
+          },
+        ],
+        revision: 1,
+        skipped: [],
+        version: 3,
+      }),
+    );
+
+    const tally = readTallyForDisplay();
+
+    expect(tally.version).toBe(4);
+    expect(tally.practice).toStrictEqual([]);
   });
 
   it("keeps counting onto a recovered tally", () => {

@@ -28,7 +28,7 @@ const createMockTally = (
   records: [],
   revision: 1,
   skipped: [],
-  version: 3,
+  version: 4,
   ...overrides,
 });
 
@@ -90,7 +90,7 @@ describe("mistakeQueue", () => {
 
   describe("buildMistakeQueue", () => {
     it("returns an empty queue when tally has no records", () => {
-      expect(buildMistakeQueue(createMockTally(), NOW)).toStrictEqual([]);
+      expect(buildMistakeQueue(createMockTally())).toStrictEqual([]);
     });
 
     it("filters out optimal and practice records", () => {
@@ -117,7 +117,7 @@ describe("mistakeQueue", () => {
         ],
       });
 
-      expect(buildMistakeQueue(tally, NOW)).toStrictEqual([]);
+      expect(buildMistakeQueue(tally)).toStrictEqual([]);
     });
 
     it("silently drops records with invalid handKeys", () => {
@@ -135,7 +135,7 @@ describe("mistakeQueue", () => {
         ],
       });
 
-      expect(buildMistakeQueue(tally, NOW)).toStrictEqual([]);
+      expect(buildMistakeQueue(tally)).toStrictEqual([]);
     });
 
     it("builds queue items for authentic mistakes without practice records", () => {
@@ -153,7 +153,7 @@ describe("mistakeQueue", () => {
         ],
       });
 
-      const queue = buildMistakeQueue(tally, NOW);
+      const queue = buildMistakeQueue(tally);
 
       expect(queue).toHaveLength(1);
       expect(queue[0]).toMatchObject({
@@ -170,7 +170,7 @@ describe("mistakeQueue", () => {
         previousDiscard: "5H,6H",
         wrong: 1,
       });
-      expect(queue[0]?.priority).toBeGreaterThan(0);
+      expect(queue[0]?.priority).toBe(1.5);
       expect(queue[0]?.cards).toHaveLength(6);
     });
 
@@ -199,7 +199,7 @@ describe("mistakeQueue", () => {
         ],
       });
 
-      const queue = buildMistakeQueue(tally, NOW);
+      const queue = buildMistakeQueue(tally);
 
       expect(queue).toHaveLength(1);
       expect(queue[0]).toMatchObject({
@@ -215,12 +215,21 @@ describe("mistakeQueue", () => {
       });
     });
 
-    it("clamps future lastAttemptAt timestamp interval to 0", () => {
+    it("computes priority as expected points loss (lossIfWrong * pWrong)", () => {
       const handKey = "5H,6H,7H,8H,9H,10H|Dealer";
       const tally = createMockTally({
+        practice: [
+          {
+            attempts: 1,
+            consecutiveSuccesses: 0,
+            handKey,
+            lastAttemptAt: NOW,
+            wrong: 1,
+          },
+        ],
         records: [
           {
-            at: NOW + ONE_DAY_MS,
+            at: NOW - ONE_DAY_MS,
             cribRole: CribRole.Dealer,
             discardKey: "5H,6H",
             expectedPointsLoss: 2.0,
@@ -231,7 +240,7 @@ describe("mistakeQueue", () => {
         ],
       });
 
-      const queue = buildMistakeQueue(tally, NOW);
+      const queue = buildMistakeQueue(tally);
 
       expect(queue).toHaveLength(1);
       expect(queue[0]?.priority).toBe(2.0);
@@ -262,7 +271,7 @@ describe("mistakeQueue", () => {
         ],
       });
 
-      expect(buildMistakeQueue(tally, NOW)).toHaveLength(1);
+      expect(buildMistakeQueue(tally)).toHaveLength(1);
     });
   });
 

@@ -25,7 +25,7 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * would make every earlier tally invisible instead, which is the same as
  * discarding it.
  */
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
@@ -439,20 +439,7 @@ export const recordDiscardDecision = (
       (record) => record.handKey === decision.handKey,
     );
     if (existing) {
-      return existing.isOptimal
-        ? tally
-        : {
-            ...tally,
-            practice: updatePracticeRecords(
-              tally.practice,
-              {
-                at: decision.at,
-                handKey: decision.handKey,
-                isOptimal: decision.isOptimal,
-              },
-              MAX_RECORDS,
-            ),
-          };
+      return tally;
     }
     return {
       ...tally,

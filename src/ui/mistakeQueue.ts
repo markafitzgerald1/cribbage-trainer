@@ -11,10 +11,6 @@ export type MistakeQueueQuantileFilter = "all" | LossQuantile;
 export type MistakeQueueRoleFilter = "all" | "dealer" | "pone";
 
 export const MASTERY_CONSECUTIVE_SUCCESSES = 2;
-const HALF_LIFE_DAYS = 30;
-const MS_PER_DAY = 86_400_000;
-const RECENCY_DECAY_PERIOD_MS = HALF_LIFE_DAYS * MS_PER_DAY;
-const HALF_LIFE_BASE = 0.5;
 const NUMERATOR_TWO = 2;
 const DENOMINATOR_THREE = 3;
 const FRACTION_ONE_THIRD = 1 / DENOMINATOR_THREE;
@@ -52,9 +48,7 @@ export interface MistakeQueueFilterOptions {
 
 interface PriorityComputationOptions {
   readonly isMastered: boolean;
-  readonly lastAttemptAt: number;
   readonly lossIfWrong: number;
-  readonly now: number;
   readonly pWrong: number;
 }
 
@@ -110,17 +104,13 @@ export const classifyLossQuantile = (
 
 const computePriority = ({
   isMastered,
-  lastAttemptAt,
   lossIfWrong,
-  now,
   pWrong,
 }: PriorityComputationOptions): number => {
   if (isMastered) {
     return 0;
   }
-  const ageMs = Math.max(0, now - lastAttemptAt);
-  const recency = HALF_LIFE_BASE ** (ageMs / RECENCY_DECAY_PERIOD_MS);
-  return lossIfWrong * pWrong * recency;
+  return lossIfWrong * pWrong;
 };
 
 export const filterMistakeQueue = (
@@ -193,7 +183,6 @@ export const sortMistakeQueue = (
 
 export const buildMistakeQueue = (
   tally: StoredTally,
-  now: number = Date.now(),
 ): readonly MistakeQueueItem[] => {
   const practiceMap = new Map<string, PracticeRecord>();
   for (const practice of tally.practice) {
@@ -252,9 +241,7 @@ export const buildMistakeQueue = (
     const pWrong = totalWrong / totalAttempts;
     const priority = computePriority({
       isMastered,
-      lastAttemptAt,
       lossIfWrong: record.lossIfWrong,
-      now,
       pWrong,
     });
     const lossQuantile = classifyLossQuantile(record.lossIfWrong, thresholds);

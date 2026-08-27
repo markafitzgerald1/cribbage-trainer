@@ -248,7 +248,7 @@ describe("practiceLedger", () => {
       ]);
     });
 
-    it("updates practice ledger when re-encountering an authentic mistake", () => {
+    it("updates practice ledger when recording practice attempts", () => {
       clearDiscardTally();
       recordDiscardDecision(
         decisionOf({
@@ -260,13 +260,11 @@ describe("practiceLedger", () => {
 
       expect(readTallyForDisplay().practice).toStrictEqual([]);
 
-      recordDiscardDecision(
-        decisionOf({
-          expectedPointsLoss: 0,
-          handKey: VALID_HAND_KEY,
-          isOptimal: true,
-        }),
-      );
+      recordPracticeAttempt({
+        at: AT,
+        handKey: VALID_HAND_KEY,
+        isOptimal: true,
+      });
 
       expect(readTallyForDisplay().practice).toStrictEqual([
         {
@@ -278,27 +276,6 @@ describe("practiceLedger", () => {
         },
       ]);
       expect(readTallyForDisplay().lifetime.decisions).toBe(1);
-    });
-
-    it("leaves practice ledger empty when re-encountering an already optimal hand", () => {
-      clearDiscardTally();
-      recordDiscardDecision(
-        decisionOf({
-          expectedPointsLoss: 0,
-          handKey: VALID_HAND_KEY,
-          isOptimal: true,
-        }),
-      );
-
-      recordDiscardDecision(
-        decisionOf({
-          expectedPointsLoss: 0,
-          handKey: VALID_HAND_KEY,
-          isOptimal: true,
-        }),
-      );
-
-      expect(readTallyForDisplay().practice).toStrictEqual([]);
     });
 
     it("parses stored practice ledger and filters invalid practice entries", () => {
@@ -341,45 +318,6 @@ describe("practiceLedger", () => {
         handKey: VALID_HAND_KEY,
         isOptimal: true,
       });
-
-      expect(readTallyForDisplay().practice).toStrictEqual([
-        {
-          attempts: 1,
-          consecutiveSuccesses: 1,
-          handKey: VALID_HAND_KEY,
-          lastAttemptAt: AT,
-          wrong: 0,
-        },
-      ]);
-    });
-
-    it("initializes practice array on re-encountering mistake when legacy stored tally omits practice", () => {
-      storeRaw(
-        asJson(
-          storedWith({
-            records: [
-              {
-                at: AT - 1000,
-                cribRole: "Dealer",
-                discardKey: "5H,6H",
-                expectedPointsLoss: 1.5,
-                handKey: VALID_HAND_KEY,
-                isOptimal: false,
-                isPractice: false,
-              },
-            ],
-          }),
-        ),
-      );
-
-      recordDiscardDecision(
-        decisionOf({
-          at: AT,
-          expectedPointsLoss: 0,
-          handKey: VALID_HAND_KEY,
-          isOptimal: true,
-        }),
-      );
 
       expect(readTallyForDisplay().practice).toStrictEqual([
         {
