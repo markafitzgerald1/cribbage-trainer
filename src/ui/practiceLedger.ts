@@ -70,11 +70,44 @@ export const isStoredPracticeRecord = (
   );
 };
 
+const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
+  if (typeof attempt !== "object" || attempt === null) {
+    return false;
+  }
+  const candidate = attempt as Partial<PracticeAttempt>;
+  if (
+    typeof candidate.handKey !== "string" ||
+    parseHandKey(candidate.handKey) === null ||
+    typeof candidate.at !== "number" ||
+    !Number.isFinite(candidate.at) ||
+    candidate.at < 0
+  ) {
+    return false;
+  }
+  if (candidate.isOptimal === true) {
+    return (
+      !("expectedPointsLoss" in candidate) ||
+      typeof candidate.expectedPointsLoss === "undefined"
+    );
+  }
+  if (candidate.isOptimal === false) {
+    return (
+      typeof candidate.expectedPointsLoss === "number" &&
+      Number.isFinite(candidate.expectedPointsLoss) &&
+      candidate.expectedPointsLoss >= 0
+    );
+  }
+  return false;
+};
+
 export const updatePracticeRecords = (
   practice: readonly PracticeRecord[],
   attempt: PracticeAttempt,
   maxRecords: number,
 ): readonly PracticeRecord[] => {
+  if (!isValidAttempt(attempt) || maxRecords <= 0) {
+    return practice;
+  }
   const existing = practice.find(
     (recordItem) => recordItem.handKey === attempt.handKey,
   );

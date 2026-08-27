@@ -243,6 +243,66 @@ describe("practiceLedger", () => {
         VALID_HAND_KEY,
       ]);
     });
+
+    it.each([
+      { at: -1 },
+      { at: NaN },
+      { at: Infinity },
+      { at: "invalid" as unknown as number },
+      { expectedPointsLoss: 1.0, isOptimal: true },
+      { expectedPointsLoss: -1, isOptimal: false },
+      { expectedPointsLoss: NaN, isOptimal: false },
+      { expectedPointsLoss: Infinity, isOptimal: false },
+      { expectedPointsLoss: "invalid" as unknown as number, isOptimal: false },
+      { handKey: "corruptKey" },
+      { handKey: "" },
+      { handKey: 123 as unknown as string },
+      { isOptimal: "invalid" as unknown as boolean },
+      { isOptimal: "" as unknown as boolean },
+    ])(
+      "rejects malformed attempt payload %j without mutating practice ledger",
+      (overrides) => {
+        const initial = [singleSuccessRecord];
+        const attempt = {
+          at: AT,
+          expectedPointsLoss: 1.0,
+          handKey: VALID_HAND_KEY,
+          isOptimal: false,
+          ...overrides,
+        } as Parameters<typeof updatePracticeRecords>[1];
+
+        const result = updatePracticeRecords(initial, attempt, 100);
+
+        expect(result).toBe(initial);
+      },
+    );
+
+    it.each([null, "invalid"])(
+      "rejects non-object attempt %j without mutating practice ledger",
+      (nonObjectAttempt) => {
+        const initial = [singleSuccessRecord];
+        const result = updatePracticeRecords(
+          initial,
+          nonObjectAttempt as unknown as Parameters<
+            typeof updatePracticeRecords
+          >[1],
+          100,
+        );
+
+        expect(result).toBe(initial);
+      },
+    );
+
+    it("rejects attempt when maxRecords is non-positive", () => {
+      const initial = [singleSuccessRecord];
+      const result = updatePracticeRecords(
+        initial,
+        { at: AT, handKey: VALID_HAND_KEY, isOptimal: true },
+        0,
+      );
+
+      expect(result).toBe(initial);
+    });
   });
 
   describe("storage integration", () => {
