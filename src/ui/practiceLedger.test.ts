@@ -13,6 +13,7 @@ import {
 } from "./discardTally.test.common";
 import {
   clearDiscardTally,
+  readDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
   recordPracticeAttempt,
@@ -352,6 +353,32 @@ describe("practiceLedger", () => {
       expect(expectPracticeLedger([twoAttemptSuccessRecord])).toBe(true);
     });
 
+    it("preserves newer lastAttemptAt when attempt timestamp is earlier than existing record", () => {
+      const initial: PracticeRecord[] = [
+        makeRecord({
+          attempts: 1,
+          consecutiveSuccesses: 1,
+          handKey: VALID_HAND_KEY,
+          lastAttemptAt: AT + 5000,
+          totalWrongLoss: 0,
+          wrong: 0,
+        }),
+      ];
+
+      const updated = updatePracticeRecords(
+        initial,
+        {
+          at: AT,
+          handKey: VALID_HAND_KEY,
+          isOptimal: true,
+        },
+        100,
+      );
+
+      expect(updated[0]?.lastAttemptAt).toBe(AT + 5000);
+      expect(updated[0]?.attempts).toBe(2);
+    });
+
     it("initializes practice array on recordPracticeAttempt when legacy stored tally omits practice", () => {
       storeRaw(asJson(storedOmitting("practice")));
       recordTestAttempt();
@@ -361,17 +388,23 @@ describe("practiceLedger", () => {
       ]);
     });
 
-    it("does not mutate storage when recordPracticeAttempt receives an invalid attempt payload", () => {
-      clearDiscardTally();
-      const initialTally = readTallyForDisplay();
+    it.each([
+      { attempt: { at: -1, handKey: "invalid", isOptimal: true } },
+      { attempt: { at: AT, handKey: "invalid", isOptimal: true } },
+    ])(
+      "does not mutate storage when recordPracticeAttempt receives invalid attempt %j",
+      ({ attempt }) => {
+        clearDiscardTally();
+        const initialTally = readTallyForDisplay();
+        const initialSummary = readDiscardTally(Date.now());
 
-      recordPracticeAttempt({
-        at: -1,
-        handKey: "invalid",
-        isOptimal: true,
-      } as unknown as Parameters<typeof recordPracticeAttempt>[0]);
+        const summary = recordPracticeAttempt(
+          attempt as unknown as Parameters<typeof recordPracticeAttempt>[0],
+        );
 
-      expect(readTallyForDisplay()).toStrictEqual(initialTally);
-    });
+        expect(readTallyForDisplay()).toStrictEqual(initialTally);
+        expect(summary.todayDecisions).toBe(initialSummary.todayDecisions);
+      },
+    );
   });
 });

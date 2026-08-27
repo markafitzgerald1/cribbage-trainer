@@ -119,7 +119,7 @@ export const updatePracticeRecords = (
           ? existing.consecutiveSuccesses + 1
           : 0,
         handKey: attempt.handKey,
-        lastAttemptAt: attempt.at,
+        lastAttemptAt: Math.max(existing.lastAttemptAt, attempt.at),
         totalWrongLoss: existing.totalWrongLoss + loss,
         wrong: existing.wrong + (attempt.isOptimal ? 0 : 1),
       }
