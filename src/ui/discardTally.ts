@@ -451,10 +451,20 @@ export const recordDiscardDecision = (
 export const recordPracticeAttempt = (
   attempt: PracticeAttempt,
 ): DiscardTallySummary =>
-  extendStoredTally(attempt.at, (tally) => ({
-    ...tally,
-    practice: updatePracticeRecords(tally.practice, attempt, MAX_RECORDS),
-  }));
+  extendStoredTally(attempt.at, (tally) => {
+    const nextPractice = updatePracticeRecords(
+      tally.practice,
+      attempt,
+      MAX_RECORDS,
+    );
+    if (nextPractice === tally.practice) {
+      return tally;
+    }
+    return {
+      ...tally,
+      practice: nextPractice,
+    };
+  });
 
 /*
  * A hand the player asked for and left without a discard. Recorded rather

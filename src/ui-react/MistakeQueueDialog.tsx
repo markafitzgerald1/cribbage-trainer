@@ -235,7 +235,13 @@ function computeMistakeDialogData(
   const thresholds = computeLossQuantileThresholds(
     allItems.map((item) => item.lossIfWrong),
   );
-  const filteredItems = filterMistakeQueue(allItems, filters);
+  const quantileOptions = buildQuantileOptions(thresholds);
+  const effectiveQuantileFilter =
+    quantileOptions.length > 0 ? filters.quantileFilter : "all";
+  const filteredItems = filterMistakeQueue(allItems, {
+    ...filters,
+    quantileFilter: effectiveQuantileFilter,
+  });
   const sortedItems = sortMistakeQueue(filteredItems, filters.sortOrder);
   const totalCount = allItems.length;
   const activeCount = allItems.filter((item) => !item.isMastered).length;
@@ -250,7 +256,7 @@ function computeMistakeDialogData(
     hasLifetimeMistakes,
     isAllMastered,
     masteredCount,
-    quantileOptions: buildQuantileOptions(thresholds),
+    quantileOptions,
     sortedItems,
     totalCount,
   };

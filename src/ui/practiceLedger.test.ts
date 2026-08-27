@@ -360,5 +360,18 @@ describe("practiceLedger", () => {
         singleSuccessRecord,
       ]);
     });
+
+    it("does not mutate storage when recordPracticeAttempt receives an invalid attempt payload", () => {
+      clearDiscardTally();
+      const initialTally = readTallyForDisplay();
+
+      recordPracticeAttempt({
+        at: -1,
+        handKey: "invalid",
+        isOptimal: true,
+      } as unknown as Parameters<typeof recordPracticeAttempt>[0]);
+
+      expect(readTallyForDisplay()).toStrictEqual(initialTally);
+    });
   });
 });
