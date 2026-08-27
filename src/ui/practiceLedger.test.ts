@@ -353,31 +353,48 @@ describe("practiceLedger", () => {
       expect(expectPracticeLedger([twoAttemptSuccessRecord])).toBe(true);
     });
 
-    it("preserves newer lastAttemptAt when attempt timestamp is earlier than existing record", () => {
-      const initial: PracticeRecord[] = [
-        makeRecord({
-          attempts: 1,
-          consecutiveSuccesses: 1,
+    it.each([
+      {
+        attempt: {
+          at: AT,
+          expectedPointsLoss: 1.5,
           handKey: VALID_HAND_KEY,
-          lastAttemptAt: AT + 5000,
-          totalWrongLoss: 0,
-          wrong: 0,
-        }),
-      ];
-
-      const updated = updatePracticeRecords(
-        initial,
-        {
+          isOptimal: false as const,
+        },
+        expectedConsecutive: 1,
+        expectedWrong: 1,
+      },
+      {
+        attempt: {
           at: AT,
           handKey: VALID_HAND_KEY,
-          isOptimal: true,
+          isOptimal: true as const,
         },
-        100,
-      );
+        expectedConsecutive: 1,
+        expectedWrong: 0,
+      },
+    ])(
+      "preserves newer lastAttemptAt and consecutiveSuccesses when attempt timestamp is earlier",
+      ({ attempt, expectedConsecutive, expectedWrong }) => {
+        const initial: PracticeRecord[] = [
+          makeRecord({
+            attempts: 1,
+            consecutiveSuccesses: 1,
+            handKey: VALID_HAND_KEY,
+            lastAttemptAt: AT + 5000,
+            totalWrongLoss: 0,
+            wrong: 0,
+          }),
+        ];
 
-      expect(updated[0]?.lastAttemptAt).toBe(AT + 5000);
-      expect(updated[0]?.attempts).toBe(2);
-    });
+        const updated = updatePracticeRecords(initial, attempt, 100);
+
+        expect(updated[0]?.lastAttemptAt).toBe(AT + 5000);
+        expect(updated[0]?.consecutiveSuccesses).toBe(expectedConsecutive);
+        expect(updated[0]?.wrong).toBe(expectedWrong);
+        expect(updated[0]?.attempts).toBe(2);
+      },
+    );
 
     it("initializes practice array on recordPracticeAttempt when legacy stored tally omits practice", () => {
       storeRaw(asJson(storedOmitting("practice")));

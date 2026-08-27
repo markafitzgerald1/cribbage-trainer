@@ -100,6 +100,19 @@ const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
   return false;
 };
 
+const computeConsecutiveSuccesses = (
+  existing: PracticeRecord | undefined,
+  attempt: PracticeAttempt,
+): number => {
+  if (!existing) {
+    return attempt.isOptimal ? 1 : 0;
+  }
+  if (attempt.at < existing.lastAttemptAt) {
+    return existing.consecutiveSuccesses;
+  }
+  return attempt.isOptimal ? existing.consecutiveSuccesses + 1 : 0;
+};
+
 export const updatePracticeRecords = (
   practice: readonly PracticeRecord[],
   attempt: PracticeAttempt,
@@ -112,12 +125,11 @@ export const updatePracticeRecords = (
     (recordItem) => recordItem.handKey === attempt.handKey,
   );
   const loss = attempt.isOptimal ? 0 : attempt.expectedPointsLoss;
+  const consecutiveSuccesses = computeConsecutiveSuccesses(existing, attempt);
   const nextRecord: PracticeRecord = existing
     ? {
         attempts: existing.attempts + 1,
-        consecutiveSuccesses: attempt.isOptimal
-          ? existing.consecutiveSuccesses + 1
-          : 0,
+        consecutiveSuccesses,
         handKey: attempt.handKey,
         lastAttemptAt: Math.max(existing.lastAttemptAt, attempt.at),
         totalWrongLoss: existing.totalWrongLoss + loss,
@@ -125,7 +137,7 @@ export const updatePracticeRecords = (
       }
     : {
         attempts: 1,
-        consecutiveSuccesses: attempt.isOptimal ? 1 : 0,
+        consecutiveSuccesses,
         handKey: attempt.handKey,
         lastAttemptAt: attempt.at,
         totalWrongLoss: loss,
