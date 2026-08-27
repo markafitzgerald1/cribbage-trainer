@@ -98,8 +98,8 @@ const buildQuantileOptions = (
       value: "high",
     },
     {
-      ariaLabel: `Medium severity (${mediumLabel}–${highLabel})`,
-      label: `Med (${mediumLabel}–${highLabel})`,
+      ariaLabel: `Medium severity (≥ ${mediumLabel}, < ${highLabel})`,
+      label: `Med (≥ ${mediumLabel}, < ${highLabel})`,
       value: "medium",
     },
     {

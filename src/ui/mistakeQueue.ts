@@ -209,9 +209,7 @@ export const buildMistakeQueue = (
     }
   }
 
-  const losses = candidateItems
-    .map((item) => item.lossIfWrong)
-    .sort((one, other) => one - other);
+  const losses = candidateItems.map((item) => item.lossIfWrong);
   const thresholds = computeLossQuantileThresholds(losses);
 
   return candidateItems.map((item) => ({
