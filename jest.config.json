@@ -5,6 +5,7 @@
     "!src/**/*.d.ts",
     "!src/game/parseCards.common.ts",
     "!src/ui/discardQualityTrend.test.common.ts",
+    "!src/ui/discardTally.test.common.ts",
     "!src/ui-react/DecisionQualityTrendDialog.test.common.ts",
     "!src/ui-react/handToSortedString.test.common.ts",
     "!src/ui-react/discardTally.test.common.ts",

@@ -22,6 +22,7 @@ const tallyWithSkipOnlyPeriod: Tally.StoredTally = {
     {
       at: 1700000000000,
       cribRole: CribRole.Dealer,
+      discardKey: null,
       expectedPointsLoss: 0.5,
       handKey: "h1",
       isOptimal: false,
@@ -59,6 +60,7 @@ const multiLossTally: Tally.StoredTally = {
     {
       at: 1700000000000,
       cribRole: CribRole.Dealer,
+      discardKey: "5H,6H",
       expectedPointsLoss: 0,
       handKey: "h-opt",
       isOptimal: true,
@@ -67,6 +69,7 @@ const multiLossTally: Tally.StoredTally = {
     {
       at: 1700000000000 + 86400000,
       cribRole: CribRole.Dealer,
+      discardKey: "5H,6H",
       expectedPointsLoss: 0.15,
       handKey: "h-1",
       isOptimal: false,
@@ -75,6 +78,7 @@ const multiLossTally: Tally.StoredTally = {
     {
       at: 1700000000000 + 86400000 * 2,
       cribRole: CribRole.Dealer,
+      discardKey: "5H,6H",
       expectedPointsLoss: 0.35,
       handKey: "h-2",
       isOptimal: false,
@@ -83,6 +87,7 @@ const multiLossTally: Tally.StoredTally = {
     {
       at: 1700000000000 + 86400000 * 3,
       cribRole: CribRole.Dealer,
+      discardKey: "5H,6H",
       expectedPointsLoss: 0.75,
       handKey: "h-3",
       isOptimal: false,
@@ -91,6 +96,7 @@ const multiLossTally: Tally.StoredTally = {
     {
       at: 1700000000000 + 86400000 * 4,
       cribRole: CribRole.Dealer,
+      discardKey: "5H,6H",
       expectedPointsLoss: 1.55,
       handKey: "h-4",
       isOptimal: false,

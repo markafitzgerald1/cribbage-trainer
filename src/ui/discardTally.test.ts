@@ -1,134 +1,30 @@
 import {
-  type DiscardDecisionRecord,
-  type DiscardTallySummary,
+  AT,
+  DAYS_EARLIER,
+  EMPTY,
+  asJson,
+  decisionOf,
+  junkValues,
+  storeRaw,
+  storedOmitting,
+  storedRecords,
+  storedWith,
+  summaryOf,
+  validRecord,
+  withFailingWrite,
+  withToday,
+} from "./discardTally.test.common";
+import {
   MAX_RECORDS,
   clearDiscardTally,
   discardTallyKey,
   readDiscardTally,
+  readTallyForDisplay,
   recordDiscardDecision,
   recordSkippedHand,
 } from "./discardTally";
-import { describe, expect, it, jest } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
-
-const AT = 1_700_000_000_000;
-
-/*
- * Every decision these tests record carries AT, so whatever counts toward the
- * lifetime figures counts toward today as well unless a case says otherwise.
- */
-const summaryOf = (
-  decisions: number,
-  meanExpectedPointsLoss: number | null,
-  optimalDecisions: number,
-) => ({
-  decisions,
-  meanExpectedPointsLoss,
-  optimalDecisions,
-  skippedHands: 0,
-  todayDecisions: decisions,
-  todayMeanExpectedPointsLoss: meanExpectedPointsLoss,
-  todayOptimalDecisions: optimalDecisions,
-  todaySkippedHands: 0,
-});
-
-// For the cases where today and the lifetime figures genuinely differ.
-const withToday = (
-  summary: ReturnType<typeof summaryOf>,
-  today: { readonly decisions: number; readonly mean: number | null },
-) => ({
-  ...summary,
-  todayDecisions: today.decisions,
-  todayMeanExpectedPointsLoss: today.mean,
-  todayOptimalDecisions: 0,
-});
-
-const EMPTY = summaryOf(0, null, 0);
-
-// The spy is restored by this wrapper rather than by the test, so the test can still end on its assertion.
-const withFailingWrite = (
-  run: () => DiscardTallySummary,
-): DiscardTallySummary => {
-  const setItem = jest
-    .spyOn(Storage.prototype, "setItem")
-    .mockImplementation(() => {
-      throw new Error("quota");
-    });
-  try {
-    return run();
-  } finally {
-    setItem.mockRestore();
-  }
-};
-
-const decisionOf = (
-  overrides: Partial<DiscardDecisionRecord> = {},
-): DiscardDecisionRecord => ({
-  at: AT,
-  cribRole: CribRole.Dealer,
-  expectedPointsLoss: 1.5,
-  handKey: "AH,2H,3H,4H,5H,6H",
-  isOptimal: false,
-  isPractice: false,
-  ...overrides,
-});
-
-const storeRaw = (value: string) => {
-  clearDiscardTally();
-  localStorage.setItem(discardTallyKey, value);
-};
-
-const asJson = (value: unknown) => JSON.stringify(value);
-
-/*
- * Dated well before AT, so a tally recovered from storage contributes to the
- * lifetime figures without also counting as today's play — which is what the
- * stored history of any returning player actually looks like.
- */
-const DAYS_EARLIER = 10 * 24 * 60 * 60 * 1_000;
-const validRecord = decisionOf({ at: AT - DAYS_EARLIER, handKey: "earlier" });
-
-const storedRecords = (): readonly unknown[] =>
-  (
-    JSON.parse(localStorage.getItem(discardTallyKey) as string) as {
-      records: readonly unknown[];
-    }
-  ).records;
-
-const storedWith = (overrides: Record<string, unknown>) => ({
-  lifetime: {
-    decisions: 2,
-    expectedPointsLossTotal: 3,
-    optimalDecisions: 1,
-    skippedHands: 0,
-  },
-  records: [validRecord],
-  version: 1,
-  ...overrides,
-});
-
-// Absence is expressed by dropping the key, which is what a real earlier shape would look like.
-const storedOmitting = (missing: string) =>
-  Object.fromEntries(
-    Object.entries(storedWith({})).filter(([key]) => key !== missing),
-  );
-
-/*
- * Values this build cannot read and may freely replace. Shared by the two
- * questions asked of them — that they read as empty, and that a later hand
- * can still be written over them — because listing each case twice is the
- * duplication those two tests would otherwise be.
- */
-const junkValues = () => [
-  { name: "text that is not JSON", stored: "{" },
-  { name: "a JSON null", stored: "null" },
-  { name: "a bare number", stored: "7" },
-  { name: "no version", stored: asJson(storedOmitting("version")) },
-  {
-    name: "a non-numeric version",
-    stored: asJson(storedWith({ version: "1" })),
-  },
-];
 
 describe("discard tally storage", () => {
   it("reads a browser with no history as empty", () => {
@@ -233,7 +129,7 @@ describe("discard tally recovery", () => {
   it.each([
     ...junkValues(),
     // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
-    { name: "a newer version", stored: asJson(storedWith({ version: 3 })) },
+    { name: "a newer version", stored: asJson(storedWith({ version: 4 })) },
     { name: "no counters", stored: asJson(storedOmitting("lifetime")) },
     {
       name: "counters that are not an object",
@@ -274,7 +170,7 @@ describe("discard tally recovery", () => {
     { name: "a decision", record: () => recordDiscardDecision(decisionOf()) },
     { name: "a skipped hand", record: () => recordSkippedHand(AT) },
   ])("refuses to record $name over a newer version", ({ record }) => {
-    const newer = asJson(storedWith({ version: 3 }));
+    const newer = asJson(storedWith({ version: 4 }));
     storeRaw(newer);
     record();
 
@@ -282,7 +178,7 @@ describe("discard tally recovery", () => {
   });
 
   it("reports nothing while a newer version is present", () => {
-    storeRaw(asJson(storedWith({ version: 3 })));
+    storeRaw(asJson(storedWith({ version: 4 })));
 
     expect(recordDiscardDecision(decisionOf())).toStrictEqual(EMPTY);
   });
@@ -291,7 +187,7 @@ describe("discard tally recovery", () => {
     storeRaw(asJson(storedWith({ version: 1 })));
     recordDiscardDecision(decisionOf({ handKey: "v1-migrated" }));
 
-    expect(localStorage.getItem(discardTallyKey)).toContain('"version":2');
+    expect(localStorage.getItem(discardTallyKey)).toContain('"version":3');
   });
 
   /*
@@ -414,10 +310,43 @@ describe("discard tally recovery", () => {
     ).toBe(3);
   });
 
-  it("accepts a tally from an older version", () => {
-    storeRaw(asJson(storedWith({ version: 0 })));
+  it("accepts a tally from an older version and reads absent discardKey as null", () => {
+    const v2Record = {
+      at: AT - DAYS_EARLIER,
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 1.5,
+      handKey: "v2-record",
+      isOptimal: false,
+      isPractice: false,
+    };
+    const v3Null = { ...v2Record, discardKey: null, handKey: "v3-null" };
+    const v3String = { ...v2Record, discardKey: "AH,2H", handKey: "v3-string" };
+    const v3Corrupt = {
+      ...v2Record,
+      discardKey: "corrupt",
+      handKey: "v3-corrupt",
+    };
+    const v3Three = {
+      ...v2Record,
+      discardKey: "AH,2H,3H",
+      handKey: "v3-three",
+    };
+    storeRaw(
+      asJson(
+        storedWith({
+          records: [v2Record, v3Null, v3String, v3Corrupt, v3Three],
+          version: 2,
+        }),
+      ),
+    );
 
-    expect(readDiscardTally(AT).decisions).toBe(2);
+    expect(readTallyForDisplay().records).toStrictEqual([
+      { ...v2Record, discardKey: null },
+      v3Null,
+      v3String,
+      { ...v3Corrupt, discardKey: null },
+      { ...v3Three, discardKey: null },
+    ]);
   });
 
   it("keeps counting onto a recovered tally", () => {
@@ -448,6 +377,14 @@ describe("discard tally recovery", () => {
       records: [{ ...validRecord, isPractice: "no" }],
     },
     { name: "missing a role", records: [{ ...validRecord, cribRole: 3 }] },
+    {
+      name: "holding an unrecognized role string",
+      records: [{ ...validRecord, cribRole: "Bad" }],
+    },
+    {
+      name: "holding an invalid discardKey type",
+      records: [{ ...validRecord, discardKey: 123 }],
+    },
   ])(
     "drops records that are $name while keeping the counters",
     ({ records }) => {

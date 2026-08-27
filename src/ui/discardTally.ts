@@ -1,5 +1,7 @@
-import type { CribRole } from "../game/expectedCribPoints";
+import { CARDS_PER_DISCARD } from "../game/facts";
+import { CribRole } from "../game/expectedCribPoints";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
+import { parseHand } from "../game/Card";
 
 /*
  * Scoped to the deployment that wrote it. A PR preview and production share
@@ -15,7 +17,7 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * would make every earlier tally invisible instead, which is the same as
  * discarding it.
  */
-const CURRENT_VERSION = 2;
+const CURRENT_VERSION = 3;
 
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
@@ -30,6 +32,13 @@ export const MAX_RECORDS = 10_000;
 export interface DiscardDecisionRecord {
   readonly at: number;
   readonly cribRole: CribRole;
+  /*
+   * The discard chosen by the player (e.g. "5H,5D"), serialized in deal order.
+   * Absent (null) on records written before version 3, which is permanent:
+   * earlier versions did not record which cards were discarded and the choice
+   * cannot be reconstructed.
+   */
+  readonly discardKey: string | null;
   /*
    * The hand this decision was made from, which is what makes recording
    * idempotent. The trainer shows every option ranked before a discard is
@@ -141,16 +150,29 @@ interface MaybeLifetime {
 interface MaybeDecisionRecord {
   readonly at?: unknown;
   readonly cribRole?: unknown;
+  readonly discardKey?: unknown;
   readonly handKey?: unknown;
   readonly expectedPointsLoss?: unknown;
   readonly isOptimal?: unknown;
   readonly isPractice?: unknown;
 }
 
+interface StoredDecisionRecord {
+  readonly at: number;
+  readonly cribRole: CribRole;
+  readonly discardKey?: string | null;
+  readonly expectedPointsLoss: number;
+  readonly handKey: string;
+  readonly isOptimal: boolean;
+  readonly isPractice: boolean;
+}
+
 const isObject = (value: unknown): value is object =>
   typeof value === "object" && value !== null;
 
-const isDecisionRecord = (value: unknown): value is DiscardDecisionRecord => {
+const isStoredDecisionRecord = (
+  value: unknown,
+): value is StoredDecisionRecord => {
   if (!isObject(value)) {
     return false;
   }
@@ -161,8 +183,25 @@ const isDecisionRecord = (value: unknown): value is DiscardDecisionRecord => {
     typeof candidate.expectedPointsLoss === "number" &&
     typeof candidate.isOptimal === "boolean" &&
     typeof candidate.isPractice === "boolean" &&
-    typeof candidate.cribRole === "string"
+    (candidate.cribRole === CribRole.Dealer ||
+      candidate.cribRole === CribRole.Pone) &&
+    (typeof candidate.discardKey === "undefined" ||
+      candidate.discardKey === null ||
+      typeof candidate.discardKey === "string")
   );
+};
+
+const normalizeDiscardKey = (discardKey: unknown): string | null => {
+  if (typeof discardKey !== "string") {
+    return null;
+  }
+  try {
+    return parseHand(discardKey).length === CARDS_PER_DISCARD
+      ? discardKey
+      : null;
+  } catch {
+    return null;
+  }
 };
 
 const isSkippedHand = (value: unknown): value is SkippedHand =>
@@ -237,7 +276,13 @@ const readStoredTally = (): StoredTally | null => {
   const { records } = candidate;
   return {
     lifetime: parseLifetime(candidate.lifetime),
-    records: Array.isArray(records) ? records.filter(isDecisionRecord) : [],
+    records: Array.isArray(records)
+      ? records.filter(isStoredDecisionRecord).map((record) => ({
+          ...record,
+          // Absent in a record written before version 3, or invalid, permanently null.
+          discardKey: normalizeDiscardKey(record.discardKey),
+        }))
+      : [],
     // Absent in a tally written before revisions were kept, which simply starts the count.
     revision: typeof candidate.revision === "number" ? candidate.revision : 0,
     skipped: Array.isArray(candidate.skipped)

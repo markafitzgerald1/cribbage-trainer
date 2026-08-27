@@ -13,6 +13,7 @@ import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { serializeHand } from "../game/Card";
+import { toHandKey } from "../ui/handKey";
 
 interface UseDiscardTallyProps {
   readonly cribRole: CribRole;
@@ -63,26 +64,6 @@ export interface DiscardTally {
   readonly reportHandRestored: ReportHandRestored;
   readonly summary: DiscardTallySummary;
 }
-
-/*
- * Deal order rather than the displayed order, so re-sorting the six cards
- * cannot make one hand look like two, and the crib role alongside them,
- * because the same six cards played as dealer and as pone are two different
- * decisions with two different best answers. Cards alone let a hand entered
- * to study the opposite role suppress the dealt hand's own decision.
- *
- * Not a complete identity by itself: the same cards entered by hand can
- * later coincide with a genuinely dealt hand under the same role, and only
- * one of the two occurrences is practice. What tells them apart is
- * telemetry's own per-hand scope, tracked alongside this key as the open
- * hand's identity (see `OpenHand` below) — the key alone is what a stored
- * record is keyed by and what provenance is looked up by, but which
- * occurrence a history restore names is decided by scope, not by key.
- */
-const toHandKey = (
-  dealtCards: readonly DealtCard[],
-  cribRole: CribRole,
-): string => `${serializeHand(dealtCards)}|${cribRole}`;
 
 /*
  * The hand currently on screen: its record key, and telemetry's own
@@ -280,10 +261,12 @@ export const useDiscardTally = ({
         return;
       }
       const handKey = toHandKey(dealtCards, scoredRole);
+      const discardKey = serializeHand(dealtCards.filter((card) => !card.kept));
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
           cribRole: scoredRole,
+          discardKey,
           expectedPointsLoss: quality.expectedPointsLoss,
           handKey,
           isOptimal: quality.isOptimal,

@@ -256,6 +256,7 @@ describe("discard tally hook", () => {
     recordDiscardDecision({
       at: Date.now(),
       cribRole: CribRole.Dealer,
+      discardKey: "AH,2H",
       expectedPointsLoss: 1,
       handKey: "written-elsewhere",
       isOptimal: false,
