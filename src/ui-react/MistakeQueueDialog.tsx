@@ -319,19 +319,24 @@ export function MistakeQueueDialog({
    * that snapshot stable while the dialog is open so pagination does not
    * rebuild and re-sort the entire queue just because its visible page grew.
    */
-  const activeTally = useMemo(() => tally ?? readTallyForDisplay(), [tally]);
+  const activeTally = useMemo(
+    () => (show ? (tally ?? readTallyForDisplay()) : null),
+    [show, tally],
+  );
   const queueData = useMemo(
     () =>
-      computeMistakeDialogData(activeTally, {
-        quantileFilter: filters.quantile,
-        roleFilter: filters.role,
-        sortOrder: filters.sort,
-        statusFilter: filters.status,
-      }),
-    [activeTally, filters],
+      show && activeTally !== null
+        ? computeMistakeDialogData(activeTally, {
+            quantileFilter: filters.quantile,
+            roleFilter: filters.role,
+            sortOrder: filters.sort,
+            statusFilter: filters.status,
+          })
+        : null,
+    [activeTally, filters, show],
   );
 
-  if (!show) {
+  if (!show || queueData === null) {
     return null;
   }
   const {
