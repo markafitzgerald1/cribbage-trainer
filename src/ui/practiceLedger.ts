@@ -5,11 +5,13 @@ export interface PracticeRecord {
   readonly consecutiveSuccesses: number;
   readonly handKey: string;
   readonly lastAttemptAt: number;
+  readonly totalWrongLoss?: number;
   readonly wrong: number;
 }
 
 export interface PracticeAttempt {
   readonly at: number;
+  readonly expectedPointsLoss?: number;
   readonly handKey: string;
   readonly isOptimal: boolean;
 }
@@ -19,6 +21,7 @@ interface MaybePracticeRecord {
   readonly consecutiveSuccesses?: unknown;
   readonly handKey?: unknown;
   readonly lastAttemptAt?: unknown;
+  readonly totalWrongLoss?: unknown;
   readonly wrong?: unknown;
 }
 
@@ -29,6 +32,12 @@ export const isStoredPracticeRecord = (
     return false;
   }
   const candidate = value as MaybePracticeRecord;
+  const isTotalWrongLossValid =
+    typeof candidate.totalWrongLoss === "undefined" ||
+    (typeof candidate.totalWrongLoss === "number" &&
+      !Number.isNaN(candidate.totalWrongLoss) &&
+      candidate.totalWrongLoss >= 0);
+
   return (
     typeof candidate.handKey === "string" &&
     typeof candidate.attempts === "number" &&
@@ -38,6 +47,7 @@ export const isStoredPracticeRecord = (
     typeof candidate.consecutiveSuccesses === "number" &&
     candidate.consecutiveSuccesses >= 0 &&
     typeof candidate.lastAttemptAt === "number" &&
+    isTotalWrongLossValid &&
     parseHandKey(candidate.handKey) !== null
   );
 };
@@ -50,6 +60,7 @@ export const updatePracticeRecords = (
   const existing = practice.find(
     (recordItem) => recordItem.handKey === attempt.handKey,
   );
+  const loss = attempt.isOptimal ? 0 : (attempt.expectedPointsLoss ?? 0);
   const nextRecord: PracticeRecord = existing
     ? {
         attempts: existing.attempts + 1,
@@ -58,6 +69,7 @@ export const updatePracticeRecords = (
           : 0,
         handKey: attempt.handKey,
         lastAttemptAt: attempt.at,
+        totalWrongLoss: (existing.totalWrongLoss ?? 0) + loss,
         wrong: existing.wrong + (attempt.isOptimal ? 0 : 1),
       }
     : {
@@ -65,6 +77,7 @@ export const updatePracticeRecords = (
         consecutiveSuccesses: attempt.isOptimal ? 1 : 0,
         handKey: attempt.handKey,
         lastAttemptAt: attempt.at,
+        totalWrongLoss: loss,
         wrong: attempt.isOptimal ? 0 : 1,
       };
 

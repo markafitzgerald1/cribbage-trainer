@@ -69,37 +69,34 @@ const getQuantileBadgeClass = (quantile: LossQuantile): string => {
 const buildQuantileOptions = (
   thresholds: MistakeQueueQuantileThresholds,
 ): readonly DialogFilterOption<MistakeQueueQuantileFilter>[] => {
-  if (thresholds.highThreshold === 0 && thresholds.mediumThreshold === 0) {
-    return [{ ariaLabel: "All loss tiers", label: "All", value: "all" }];
+  if (
+    thresholds.highThreshold === 0 ||
+    thresholds.mediumThreshold === 0 ||
+    thresholds.highThreshold <= thresholds.mediumThreshold
+  ) {
+    return [];
   }
   const highLabel = thresholds.highThreshold.toFixed(DECIMAL_DIGITS);
   const mediumLabel = thresholds.mediumThreshold.toFixed(DECIMAL_DIGITS);
 
-  const options: DialogFilterOption<MistakeQueueQuantileFilter>[] = [
+  return [
     { ariaLabel: "All loss tiers", label: "All", value: "all" },
     {
       ariaLabel: `High severity (≥ ${highLabel})`,
       label: `High (≥ ${highLabel})`,
       value: "high",
     },
+    {
+      ariaLabel: `Medium severity (${mediumLabel}–${highLabel})`,
+      label: `Med (${mediumLabel}–${highLabel})`,
+      value: "medium",
+    },
+    {
+      ariaLabel: `Low severity (< ${mediumLabel})`,
+      label: `Low (< ${mediumLabel})`,
+      value: "low",
+    },
   ];
-
-  if (thresholds.highThreshold !== thresholds.mediumThreshold) {
-    options.push(
-      {
-        ariaLabel: `Medium severity (${mediumLabel}–${highLabel})`,
-        label: `Med (${mediumLabel}–${highLabel})`,
-        value: "medium",
-      },
-      {
-        ariaLabel: `Low severity (< ${mediumLabel})`,
-        label: `Low (< ${mediumLabel})`,
-        value: "low",
-      },
-    );
-  }
-
-  return options;
 };
 
 /* jscpd:ignore-start */
@@ -259,6 +256,8 @@ function computeMistakeDialogData(
   };
 }
 
+const PAGE_SIZE = 50;
+
 export function MistakeQueueDialog({
   initialQuantileFilter = "all",
   initialRoleFilter = "all",
@@ -276,10 +275,15 @@ export function MistakeQueueDialog({
     useState<MistakeQueueRoleFilter>(initialRoleFilter);
   const [quantileFilter, setQuantileFilter] =
     useState<MistakeQueueQuantileFilter>(initialQuantileFilter);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useCloseOnEscape(show, onClose);
 
   /* jscpd:ignore-start */
+  const handleShowMore = useCallback(() => {
+    setVisibleCount((current) => current + PAGE_SIZE);
+  }, []);
+
   const changeSortOrder = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setSortOrder(event.currentTarget.value as MistakeQueueSortOrder);
@@ -371,14 +375,16 @@ export function MistakeQueueDialog({
             onChange={changeRoleFilter}
             options={DIALOG_ROLE_OPTIONS}
           />
-          <DialogFilterGroup
-            classes={classes}
-            currentValue={quantileFilter}
-            groupName="mistake-quantile-filter"
-            legendText="Loss severity"
-            onChange={changeQuantileFilter}
-            options={quantileOptions}
-          />
+          {quantileOptions.length > 0 && (
+            <DialogFilterGroup
+              classes={classes}
+              currentValue={quantileFilter}
+              groupName="mistake-quantile-filter"
+              legendText="Loss severity"
+              onChange={changeQuantileFilter}
+              options={quantileOptions}
+            />
+          )}
         </div>
 
         <DialogSummaryCards
@@ -391,13 +397,28 @@ export function MistakeQueueDialog({
         />
 
         <div className={classes.itemsList}>
-          {sortedItems.length === 0
-            ? renderEmptyState({
-                hasLifetimeMistakes,
-                isAllMastered,
-                totalCount,
-              })
-            : sortedItems.map(renderItemCard)}
+          {sortedItems.length === 0 ? (
+            renderEmptyState({
+              hasLifetimeMistakes,
+              isAllMastered,
+              totalCount,
+            })
+          ) : (
+            <>
+              {sortedItems.slice(0, visibleCount).map(renderItemCard)}
+              {sortedItems.length > visibleCount && (
+                <div className={classes.paginationRow}>
+                  <button
+                    className={classes.showMoreButton}
+                    onClick={handleShowMore}
+                    type="button"
+                  >
+                    Show more ({sortedItems.length - visibleCount} remaining)
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
     </Modal>

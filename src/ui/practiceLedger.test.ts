@@ -30,7 +30,7 @@ describe("practiceLedger", () => {
       expect(isStoredPracticeRecord(42)).toBe(false);
     });
 
-    it("returns false when numeric count fields are invalid", () => {
+    it("returns false when numeric count fields or totalWrongLoss are invalid", () => {
       expect(
         isStoredPracticeRecord({
           attempts: 0,
@@ -58,6 +58,28 @@ describe("practiceLedger", () => {
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
           wrong: -1,
+        }),
+      ).toBe(false);
+
+      expect(
+        isStoredPracticeRecord({
+          attempts: 1,
+          consecutiveSuccesses: 0,
+          handKey: VALID_HAND_KEY,
+          lastAttemptAt: AT,
+          totalWrongLoss: -1,
+          wrong: 1,
+        }),
+      ).toBe(false);
+
+      expect(
+        isStoredPracticeRecord({
+          attempts: 1,
+          consecutiveSuccesses: 0,
+          handKey: VALID_HAND_KEY,
+          lastAttemptAt: AT,
+          totalWrongLoss: "invalid",
+          wrong: 1,
         }),
       ).toBe(false);
     });
@@ -101,6 +123,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 1,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 0,
           wrong: 0,
         }),
       ).toBe(true);
@@ -121,6 +144,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 1,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 0,
           wrong: 0,
         },
       ]);
@@ -129,7 +153,12 @@ describe("practiceLedger", () => {
     it("creates a new record on first sub-optimal attempt", () => {
       const updated = updatePracticeRecords(
         [],
-        { at: AT, handKey: VALID_HAND_KEY, isOptimal: false },
+        {
+          at: AT,
+          expectedPointsLoss: 1.5,
+          handKey: VALID_HAND_KEY,
+          isOptimal: false,
+        },
         100,
       );
 
@@ -139,6 +168,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 0,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 1.5,
           wrong: 1,
         },
       ]);
@@ -150,6 +180,7 @@ describe("practiceLedger", () => {
         consecutiveSuccesses: 0,
         handKey: VALID_HAND_KEY,
         lastAttemptAt: AT - 1000,
+        totalWrongLoss: 2.0,
         wrong: 1,
       };
 
@@ -165,23 +196,30 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 1,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 2.0,
           wrong: 1,
         },
       ]);
     });
 
-    it("resets consecutive successes on wrong attempt", () => {
+    it("resets consecutive successes on wrong attempt and adds to totalWrongLoss", () => {
       const existing: PracticeRecord = {
         attempts: 2,
         consecutiveSuccesses: 1,
         handKey: VALID_HAND_KEY,
         lastAttemptAt: AT - 1000,
+        totalWrongLoss: 2.0,
         wrong: 1,
       };
 
       const updated = updatePracticeRecords(
         [existing],
-        { at: AT, handKey: VALID_HAND_KEY, isOptimal: false },
+        {
+          at: AT,
+          expectedPointsLoss: 1.5,
+          handKey: VALID_HAND_KEY,
+          isOptimal: false,
+        },
         100,
       );
 
@@ -191,7 +229,60 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 0,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 3.5,
           wrong: 2,
+        },
+      ]);
+    });
+
+    it("handles legacy existing records without totalWrongLoss and attempts without expectedPointsLoss", () => {
+      const legacy: PracticeRecord = {
+        attempts: 1,
+        consecutiveSuccesses: 0,
+        handKey: VALID_HAND_KEY,
+        lastAttemptAt: AT - 1000,
+        wrong: 1,
+      };
+
+      const updated = updatePracticeRecords(
+        [legacy],
+        {
+          at: AT,
+          handKey: VALID_HAND_KEY,
+          isOptimal: false,
+        },
+        100,
+      );
+
+      expect(updated).toStrictEqual([
+        {
+          attempts: 2,
+          consecutiveSuccesses: 0,
+          handKey: VALID_HAND_KEY,
+          lastAttemptAt: AT,
+          totalWrongLoss: 0,
+          wrong: 2,
+        },
+      ]);
+
+      const freshNonOptimalWithoutLoss = updatePracticeRecords(
+        [],
+        {
+          at: AT,
+          handKey: VALID_HAND_KEY,
+          isOptimal: false,
+        },
+        100,
+      );
+
+      expect(freshNonOptimalWithoutLoss).toStrictEqual([
+        {
+          attempts: 1,
+          consecutiveSuccesses: 0,
+          handKey: VALID_HAND_KEY,
+          lastAttemptAt: AT,
+          totalWrongLoss: 0,
+          wrong: 1,
         },
       ]);
     });
@@ -203,6 +294,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 0,
           handKey: "AH,2H,3H,4H,5H,6H|Dealer",
           lastAttemptAt: AT - 5000,
+          totalWrongLoss: 1.0,
           wrong: 1,
         },
         {
@@ -210,6 +302,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 0,
           handKey: "2H,3H,4H,5H,6H,7H|Dealer",
           lastAttemptAt: AT - 3000,
+          totalWrongLoss: 1.0,
           wrong: 1,
         },
       ];
@@ -243,6 +336,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 1,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 0,
           wrong: 0,
         },
       ]);
@@ -262,6 +356,7 @@ describe("practiceLedger", () => {
 
       recordPracticeAttempt({
         at: AT,
+        expectedPointsLoss: 0,
         handKey: VALID_HAND_KEY,
         isOptimal: true,
       });
@@ -272,6 +367,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 1,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 0,
           wrong: 0,
         },
       ]);
@@ -288,6 +384,7 @@ describe("practiceLedger", () => {
                 consecutiveSuccesses: 1,
                 handKey: VALID_HAND_KEY,
                 lastAttemptAt: AT,
+                totalWrongLoss: 2.0,
                 wrong: 1,
               },
               {
@@ -305,6 +402,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 1,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 2.0,
           wrong: 1,
         },
       ]);
@@ -325,6 +423,7 @@ describe("practiceLedger", () => {
           consecutiveSuccesses: 1,
           handKey: VALID_HAND_KEY,
           lastAttemptAt: AT,
+          totalWrongLoss: 0,
           wrong: 0,
         },
       ]);

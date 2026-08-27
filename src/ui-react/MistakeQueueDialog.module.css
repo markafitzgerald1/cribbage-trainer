@@ -316,6 +316,35 @@
   margin: 0;
 }
 
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  margin: 0.5rem 0;
+}
+
+.show-more-button {
+  background-color: #e4f4e6;
+  border: 1.5px solid #397a40;
+  border-radius: 6px;
+  color: #143b18;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.show-more-button:hover {
+  background-color: #c8efcd;
+  border-color: #218838;
+}
+
+.show-more-button:focus-visible {
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+}
+
 @media (aspect-ratio < 6 / 5) {
   .dialog {
     font-size: 0.95rem;

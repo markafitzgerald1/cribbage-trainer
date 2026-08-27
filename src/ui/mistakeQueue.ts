@@ -62,8 +62,7 @@ export const computeLossQuantileThresholds = (
   const sorted = [...losses].sort((one, other) => one - other);
 
   if (uniqueLosses.size < MIN_DISTINCT_LOSSES_FOR_QUANTILES) {
-    const maxLoss = Number(sorted[sorted.length - 1]);
-    return { highThreshold: maxLoss, mediumThreshold: maxLoss };
+    return { highThreshold: 0, mediumThreshold: 0 };
   }
 
   const mediumIndex = Math.min(
@@ -80,6 +79,10 @@ export const computeLossQuantileThresholds = (
   // eslint-disable-next-line security/detect-object-injection
   const mediumThreshold = Number(sorted[mediumIndex]);
 
+  if (highThreshold <= mediumThreshold) {
+    return { highThreshold: 0, mediumThreshold: 0 };
+  }
+
   return {
     highThreshold,
     mediumThreshold,
@@ -90,8 +93,12 @@ export const classifyLossQuantile = (
   loss: number,
   thresholds: MistakeQueueQuantileThresholds,
 ): LossQuantile => {
-  if (thresholds.highThreshold === thresholds.mediumThreshold) {
-    return "high";
+  if (
+    thresholds.highThreshold === 0 ||
+    thresholds.mediumThreshold === 0 ||
+    thresholds.highThreshold <= thresholds.mediumThreshold
+  ) {
+    return "low";
   }
   if (loss >= thresholds.highThreshold) {
     return "high";
@@ -224,10 +231,6 @@ export const buildMistakeQueue = (
       (record): record is Exclude<typeof record, null> => record !== null,
     );
 
-  const thresholds = computeLossQuantileThresholds(
-    validMistakeRecords.map((mistakeRecord) => mistakeRecord.lossIfWrong),
-  );
-
   const items: MistakeQueueItem[] = validMistakeRecords.map((record) => {
     const practice = practiceMap.get(record.handKey);
     const practiceAttempts = practice?.attempts ?? 0;
@@ -237,14 +240,15 @@ export const buildMistakeQueue = (
 
     const totalAttempts = 1 + practiceAttempts;
     const totalWrong = 1 + practiceWrong;
+    const totalWrongLoss = record.lossIfWrong + (practice?.totalWrongLoss ?? 0);
+    const pooledLossIfWrong = totalWrongLoss / totalWrong;
     const isMastered = consecutiveSuccesses >= MASTERY_CONSECUTIVE_SUCCESSES;
     const pWrong = totalWrong / totalAttempts;
     const priority = computePriority({
       isMastered,
-      lossIfWrong: record.lossIfWrong,
+      lossIfWrong: pooledLossIfWrong,
       pWrong,
     });
-    const lossQuantile = classifyLossQuantile(record.lossIfWrong, thresholds);
 
     return {
       attempts: totalAttempts,
@@ -254,8 +258,8 @@ export const buildMistakeQueue = (
       handKey: record.handKey,
       isMastered,
       lastAttemptAt,
-      lossIfWrong: record.lossIfWrong,
-      lossQuantile,
+      lossIfWrong: pooledLossIfWrong,
+      lossQuantile: "low",
       originalDecisionAt: record.originalDecisionAt,
       pWrong,
       previousDiscard: record.previousDiscard,
@@ -264,5 +268,14 @@ export const buildMistakeQueue = (
     };
   });
 
-  return sortMistakeQueue(items, "priority");
+  const thresholds = computeLossQuantileThresholds(
+    items.map((item) => item.lossIfWrong),
+  );
+
+  const itemsWithQuantiles = items.map((item) => ({
+    ...item,
+    lossQuantile: classifyLossQuantile(item.lossIfWrong, thresholds),
+  }));
+
+  return sortMistakeQueue(itemsWithQuantiles, "priority");
 };

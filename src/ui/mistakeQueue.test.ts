@@ -7,30 +7,16 @@ import {
   filterMistakeQueue,
   sortMistakeQueue,
 } from "./mistakeQueue";
+import {
+  NOW,
+  ONE_DAY_MS,
+  createMockTally,
+  mockItemA,
+  mockItemB,
+  mockItemMastered,
+} from "./mistakeQueue.test.common";
 import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
-import type { StoredTally } from "./discardTally";
-import { parseHand } from "../game/Card";
-
-const NOW = 1_700_000_000_000;
-const ONE_DAY_MS = 86_400_000;
-
-const createMockTally = (
-  overrides: Partial<StoredTally> = {},
-): StoredTally => ({
-  lifetime: {
-    decisions: 0,
-    expectedPointsLossTotal: 0,
-    optimalDecisions: 0,
-    skippedHands: 0,
-  },
-  practice: [],
-  records: [],
-  revision: 1,
-  skipped: [],
-  version: 4,
-  ...overrides,
-});
 
 describe("mistakeQueue", () => {
   describe("computeLossQuantileThresholds", () => {
@@ -53,28 +39,37 @@ describe("mistakeQueue", () => {
 
     it("handles single-element or equal-element arrays", () => {
       expect(computeLossQuantileThresholds([1.5])).toStrictEqual({
-        highThreshold: 1.5,
-        mediumThreshold: 1.5,
+        highThreshold: 0,
+        mediumThreshold: 0,
       });
     });
 
-    it("collapses thresholds when fewer than 3 unique loss values exist", () => {
+    it("returns zero thresholds when fewer than 3 unique loss values exist or thresholds collapse", () => {
       expect(computeLossQuantileThresholds([1.0, 2.0])).toStrictEqual({
-        highThreshold: 2.0,
-        mediumThreshold: 2.0,
+        highThreshold: 0,
+        mediumThreshold: 0,
       });
       expect(computeLossQuantileThresholds([1.0, 1.0, 2.0])).toStrictEqual({
-        highThreshold: 2.0,
-        mediumThreshold: 2.0,
+        highThreshold: 0,
+        mediumThreshold: 0,
+      });
+      expect(
+        computeLossQuantileThresholds([1.0, 2.0, 2.0, 2.0, 2.0, 3.0]),
+      ).toStrictEqual({
+        highThreshold: 0,
+        mediumThreshold: 0,
       });
     });
   });
 
   describe("classifyLossQuantile", () => {
-    it("returns high when highThreshold equals mediumThreshold", () => {
+    it("returns low when thresholds are zero or collapsed", () => {
+      expect(
+        classifyLossQuantile(1.5, { highThreshold: 0, mediumThreshold: 0 }),
+      ).toBe("low");
       expect(
         classifyLossQuantile(1.5, { highThreshold: 1.5, mediumThreshold: 1.5 }),
-      ).toBe("high");
+      ).toBe("low");
     });
 
     it("classifies high, medium, and low correctly", () => {
@@ -164,7 +159,7 @@ describe("mistakeQueue", () => {
         isMastered: false,
         lastAttemptAt: NOW - ONE_DAY_MS,
         lossIfWrong: 1.5,
-        lossQuantile: "high",
+        lossQuantile: "low",
         originalDecisionAt: NOW - ONE_DAY_MS,
         pWrong: 1,
         previousDiscard: "5H,6H",
@@ -183,6 +178,7 @@ describe("mistakeQueue", () => {
             consecutiveSuccesses: 2,
             handKey,
             lastAttemptAt: NOW,
+            totalWrongLoss: 2.0,
             wrong: 1,
           },
         ],
@@ -224,6 +220,7 @@ describe("mistakeQueue", () => {
             consecutiveSuccesses: 0,
             handKey,
             lastAttemptAt: NOW,
+            totalWrongLoss: 2.0,
             wrong: 1,
           },
         ],
@@ -244,6 +241,44 @@ describe("mistakeQueue", () => {
 
       expect(queue).toHaveLength(1);
       expect(queue[0]?.priority).toBe(2.0);
+    });
+
+    it("pools practice attempt losses with original mistake loss", () => {
+      const handKey = "5H,6H,7H,8H,9H,10H|Dealer";
+      const tally = createMockTally({
+        practice: [
+          {
+            attempts: 2,
+            consecutiveSuccesses: 0,
+            handKey,
+            lastAttemptAt: NOW,
+            totalWrongLoss: 3.0,
+            wrong: 1,
+          },
+        ],
+        records: [
+          {
+            at: NOW - ONE_DAY_MS,
+            cribRole: CribRole.Dealer,
+            discardKey: "5H,6H",
+            expectedPointsLoss: 1.0,
+            handKey,
+            isOptimal: false,
+            isPractice: false,
+          },
+        ],
+      });
+
+      const queue = buildMistakeQueue(tally);
+
+      expect(queue).toHaveLength(1);
+      expect(queue[0]).toMatchObject({
+        attempts: 3,
+        lossIfWrong: 2.0,
+        wrong: 2,
+      });
+      expect(queue[0]?.pWrong).toBeCloseTo(2 / 3);
+      expect(queue[0]?.priority).toBeCloseTo((2 / 3) * 2.0);
     });
 
     it("collapses multiple records with the same handKey", () => {
@@ -277,54 +312,9 @@ describe("mistakeQueue", () => {
 
   describe("filterMistakeQueue", () => {
     const mockItems: MistakeQueueItem[] = [
-      {
-        attempts: 1,
-        cards: parseHand("5H,6H,7H,8H,9H,10H"),
-        consecutiveSuccesses: 0,
-        cribRole: CribRole.Dealer,
-        handKey: "5H,6H,7H,8H,9H,10H|Dealer",
-        isMastered: false,
-        lastAttemptAt: NOW - ONE_DAY_MS,
-        lossIfWrong: 2.5,
-        lossQuantile: "high",
-        originalDecisionAt: NOW - ONE_DAY_MS,
-        pWrong: 1,
-        previousDiscard: "5H,6H",
-        priority: 2.0,
-        wrong: 1,
-      },
-      {
-        attempts: 3,
-        cards: parseHand("AH,2H,3H,4H,5H,6H"),
-        consecutiveSuccesses: 2,
-        cribRole: CribRole.Pone,
-        handKey: "AH,2H,3H,4H,5H,6H|Pone",
-        isMastered: true,
-        lastAttemptAt: NOW,
-        lossIfWrong: 1.2,
-        lossQuantile: "medium",
-        originalDecisionAt: NOW - 5 * ONE_DAY_MS,
-        pWrong: 0.33,
-        previousDiscard: "AH,2H",
-        priority: 0,
-        wrong: 1,
-      },
-      {
-        attempts: 2,
-        cards: parseHand("2C,3C,4C,5C,6C,7C"),
-        consecutiveSuccesses: 0,
-        cribRole: CribRole.Dealer,
-        handKey: "2C,3C,4C,5C,6C,7C|Dealer",
-        isMastered: false,
-        lastAttemptAt: NOW - 2 * ONE_DAY_MS,
-        lossIfWrong: 0.4,
-        lossQuantile: "low",
-        originalDecisionAt: NOW - 2 * ONE_DAY_MS,
-        pWrong: 1,
-        previousDiscard: null,
-        priority: 0.4,
-        wrong: 2,
-      },
+      mockItemA,
+      mockItemMastered,
+      mockItemB,
     ];
 
     it("filters by status", () => {
@@ -357,108 +347,60 @@ describe("mistakeQueue", () => {
       ).toHaveLength(3);
       expect(
         filterMistakeQueue(mockItems, { quantileFilter: "high" }),
-      ).toHaveLength(1);
+      ).toHaveLength(2);
       expect(
         filterMistakeQueue(mockItems, { quantileFilter: "medium" }),
       ).toHaveLength(1);
       expect(
         filterMistakeQueue(mockItems, { quantileFilter: "low" }),
-      ).toHaveLength(1);
+      ).toHaveLength(0);
     });
   });
 
   describe("sortMistakeQueue", () => {
-    const itemA: MistakeQueueItem = {
-      attempts: 1,
-      cards: parseHand("5H,6H,7H,8H,9H,10H"),
-      consecutiveSuccesses: 0,
-      cribRole: CribRole.Dealer,
-      handKey: "5H,6H,7H,8H,9H,10H|Dealer",
-      isMastered: false,
-      lastAttemptAt: NOW - 2 * ONE_DAY_MS,
-      lossIfWrong: 1.0,
-      lossQuantile: "medium",
-      originalDecisionAt: NOW - 2 * ONE_DAY_MS,
-      pWrong: 1,
-      previousDiscard: "5H,6H",
-      priority: 0.8,
-      wrong: 1,
-    };
-
-    const itemB: MistakeQueueItem = {
-      attempts: 1,
-      cards: parseHand("2C,3C,4C,5C,6C,7C"),
-      consecutiveSuccesses: 0,
-      cribRole: CribRole.Dealer,
-      handKey: "2C,3C,4C,5C,6C,7C|Dealer",
-      isMastered: false,
-      lastAttemptAt: NOW - ONE_DAY_MS,
-      lossIfWrong: 2.0,
-      lossQuantile: "high",
-      originalDecisionAt: NOW - ONE_DAY_MS,
-      pWrong: 1,
-      previousDiscard: null,
-      priority: 1.9,
-      wrong: 1,
-    };
-
-    const itemMastered: MistakeQueueItem = {
-      attempts: 3,
-      cards: parseHand("AH,2H,3H,4H,5H,6H"),
-      consecutiveSuccesses: 2,
-      cribRole: CribRole.Pone,
-      handKey: "AH,2H,3H,4H,5H,6H|Pone",
-      isMastered: true,
-      lastAttemptAt: NOW,
-      lossIfWrong: 3.0,
-      lossQuantile: "high",
-      originalDecisionAt: NOW - 5 * ONE_DAY_MS,
-      pWrong: 0.33,
-      previousDiscard: "AH,2H",
-      priority: 0,
-      wrong: 1,
-    };
-
     it("sorts by priority by default putting unmastered first", () => {
-      const sorted = sortMistakeQueue([itemA, itemMastered, itemB], "priority");
+      const sorted = sortMistakeQueue(
+        [mockItemA, mockItemMastered, mockItemB],
+        "priority",
+      );
 
-      expect(sorted[0]?.handKey).toBe(itemB.handKey);
-      expect(sorted[1]?.handKey).toBe(itemA.handKey);
-      expect(sorted[2]?.handKey).toBe(itemMastered.handKey);
+      expect(sorted[0]?.handKey).toBe(mockItemB.handKey);
+      expect(sorted[1]?.handKey).toBe(mockItemA.handKey);
+      expect(sorted[2]?.handKey).toBe(mockItemMastered.handKey);
     });
 
     it("sorts by highest loss", () => {
       const sorted = sortMistakeQueue(
-        [itemA, itemB, itemMastered],
+        [mockItemA, mockItemB, mockItemMastered],
         "highestLoss",
       );
 
-      expect(sorted[0]?.handKey).toBe(itemMastered.handKey);
-      expect(sorted[1]?.handKey).toBe(itemB.handKey);
-      expect(sorted[2]?.handKey).toBe(itemA.handKey);
+      expect(sorted[0]?.handKey).toBe(mockItemMastered.handKey);
+      expect(sorted[1]?.handKey).toBe(mockItemB.handKey);
+      expect(sorted[2]?.handKey).toBe(mockItemA.handKey);
     });
 
     it("sorts by most recent", () => {
       const sorted = sortMistakeQueue(
-        [itemA, itemB, itemMastered],
+        [mockItemA, mockItemB, mockItemMastered],
         "mostRecent",
       );
 
-      expect(sorted[0]?.handKey).toBe(itemMastered.handKey);
-      expect(sorted[1]?.handKey).toBe(itemB.handKey);
-      expect(sorted[2]?.handKey).toBe(itemA.handKey);
+      expect(sorted[0]?.handKey).toBe(mockItemMastered.handKey);
+      expect(sorted[1]?.handKey).toBe(mockItemB.handKey);
+      expect(sorted[2]?.handKey).toBe(mockItemA.handKey);
     });
 
     it("breaks ties deterministically across all sort orders", () => {
       const itemTie1: MistakeQueueItem = {
-        ...itemA,
+        ...mockItemA,
         handKey: "AH,2H,3H,4H,5H,6H|Dealer",
         lastAttemptAt: NOW,
         lossIfWrong: 2.0,
         priority: 1.0,
       };
       const itemTie2: MistakeQueueItem = {
-        ...itemB,
+        ...mockItemB,
         handKey: "KH,QH,JH,10H,9H,8H|Dealer",
         lastAttemptAt: NOW,
         lossIfWrong: 2.0,
@@ -477,8 +419,14 @@ describe("mistakeQueue", () => {
 
       expect(byPriority[0]?.handKey).toBe(itemTie1.handKey);
 
-      const masteredTie1 = { ...itemTie1, isMastered: true };
-      const masteredTie2 = { ...itemTie2, isMastered: true };
+      const masteredTie1: MistakeQueueItem = {
+        ...itemTie1,
+        isMastered: true,
+      };
+      const masteredTie2: MistakeQueueItem = {
+        ...itemTie2,
+        isMastered: true,
+      };
       const byPriorityMastered = sortMistakeQueue(
         [masteredTie2, masteredTie1],
         "priority",
