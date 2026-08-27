@@ -19,7 +19,7 @@ import {
   sortMistakeQueue,
 } from "../ui/mistakeQueue";
 import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CribRole } from "../game/expectedCribPoints";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
@@ -314,17 +314,21 @@ export function MistakeQueueDialog({
     [],
   );
 
+  const activeTally = tally ?? readTallyForDisplay();
+  const queueData = useMemo(
+    () =>
+      computeMistakeDialogData(activeTally, {
+        quantileFilter: filters.quantile,
+        roleFilter: filters.role,
+        sortOrder: filters.sort,
+        statusFilter: filters.status,
+      }),
+    [activeTally, filters],
+  );
+
   if (!show) {
     return null;
   }
-
-  const activeTally = tally ?? readTallyForDisplay();
-  const queueData = computeMistakeDialogData(activeTally, {
-    quantileFilter: filters.quantile,
-    roleFilter: filters.role,
-    sortOrder: filters.sort,
-    statusFilter: filters.status,
-  });
   const {
     activeCount,
     hasLifetimeMistakes,

@@ -212,6 +212,17 @@ describe("mistakeQueue", () => {
       expect(item.priority).toBeCloseTo((2 / 3) * 2.0);
     });
 
+    it("sets lastAttemptAt to the max of practice and authentic mistake times", () => {
+      const item = buildSingleQueueItem({
+        mistakeLoss: 1.5,
+        practice: {
+          lastAttemptAt: NOW - 5 * ONE_DAY_MS,
+        },
+      });
+
+      expect(item.lastAttemptAt).toBe(NOW - ONE_DAY_MS);
+    });
+
     it("collapses multiple records with the same handKey", () => {
       const handKey = "5H,6H,7H,8H,9H,10H|Dealer";
       const tally = createMockTally({
@@ -290,15 +301,15 @@ describe("mistakeQueue", () => {
   });
 
   describe("sortMistakeQueue", () => {
-    it("sorts by priority by default putting unmastered first", () => {
+    it("sorts by priority descending across all items", () => {
       const sorted = sortMistakeQueue(
         [mockItemA, mockItemMastered, mockItemB],
         "priority",
       );
 
       expect(sorted[0]?.handKey).toBe(mockItemB.handKey);
-      expect(sorted[1]?.handKey).toBe(mockItemA.handKey);
-      expect(sorted[2]?.handKey).toBe(mockItemMastered.handKey);
+      expect(sorted[1]?.handKey).toBe(mockItemMastered.handKey);
+      expect(sorted[2]?.handKey).toBe(mockItemA.handKey);
     });
 
     it("sorts by highest loss", () => {
@@ -314,15 +325,29 @@ describe("mistakeQueue", () => {
       ]);
     });
 
-    it("sorts by most recent", () => {
-      const recentSorted = sortMistakeQueue(
-        [mockItemB, mockItemA, mockItemMastered],
-        "mostRecent",
-      );
+    it.each([
+      {
+        description: "priority ties using lossIfWrong",
+        item1: { ...mockItemA, lossIfWrong: 1.0, priority: 1.0 },
+        item2: { ...mockItemB, lossIfWrong: 2.0, priority: 1.0 },
+        order: "priority" as const,
+      },
+      {
+        description: "highestLoss ties using priority",
+        item1: { ...mockItemA, lossIfWrong: 2.0, priority: 1.0 },
+        item2: { ...mockItemB, lossIfWrong: 2.0, priority: 2.0 },
+        order: "highestLoss" as const,
+      },
+      {
+        description: "mostRecent ties using priority",
+        item1: { ...mockItemA, lastAttemptAt: NOW, priority: 1.0 },
+        item2: { ...mockItemB, lastAttemptAt: NOW, priority: 2.0 },
+        order: "mostRecent" as const,
+      },
+    ])("breaks $description", ({ item1, item2, order }) => {
+      const sorted = sortMistakeQueue([item1, item2], order);
 
-      expect(recentSorted[0]).toBe(mockItemMastered);
-      expect(recentSorted[1]).toBe(mockItemB);
-      expect(recentSorted[2]).toBe(mockItemA);
+      expect(sorted[0]?.handKey).toBe(item2.handKey);
     });
 
     it("breaks ties deterministically across all sort orders", () => {

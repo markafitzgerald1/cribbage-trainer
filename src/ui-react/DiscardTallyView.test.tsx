@@ -1,4 +1,6 @@
 /* jscpd:ignore-start */
+import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/jest-globals";
 import { clearDiscardTally, recordDiscardDecision } from "../ui/discardTally";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
@@ -147,9 +149,9 @@ describe("discard tally view", () => {
   it("forwards sortOrder to the mistake queue dialog", () => {
     seedMistakeDecision();
 
-    const { getByRole, queryByText } = render(
+    const { container, getByRole } = render(
       <DiscardTallyView
-        sortOrder={SortOrder.Ascending}
+        sortOrder={SortOrder.Descending}
         summary={discardTallySummary({
           decisions: 1,
           meanExpectedPointsLoss: 1.5,
@@ -160,6 +162,7 @@ describe("discard tally view", () => {
 
     fireEvent.click(getByRole("button", { name: "Mistake queue" }));
 
-    expect(queryByText("Previous discard:")).not.toBeNull();
+    expect(container).toHaveTextContent("10♥9♥8♥7♥6♥5♥");
+    expect(container).toHaveTextContent("Previous discard:6♥5♥");
   });
 });

@@ -12,8 +12,6 @@ const FRACTION_TWO_THIRDS_DENOMINATOR = 3;
 const FRACTION_TWO_THIRDS =
   FRACTION_TWO_THIRDS_NUMERATOR / FRACTION_TWO_THIRDS_DENOMINATOR;
 const SUCCESSES_FOR_MASTERY = 2;
-const SORT_BEFORE = -1;
-const SORT_AFTER = 1;
 
 export type MistakeQueueSortOrder = "highestLoss" | "mostRecent" | "priority";
 
@@ -163,7 +161,9 @@ const createCandidateQueueItem = ({
     (practice?.totalWrongLoss ?? 0) + aggregate.expectedPointsLoss;
   const lossIfWrong = totalWrongLoss / wrong;
   const priority = computePriority(lossIfWrong, pWrong);
-  const lastAttemptAt = practice?.lastAttemptAt ?? aggregate.at;
+  const lastAttemptAt = practice
+    ? Math.max(practice.lastAttemptAt, aggregate.at)
+    : aggregate.at;
 
   return {
     attempts,
@@ -257,6 +257,29 @@ export const filterMistakeQueue = (
   });
 };
 
+const getSortDeltas = (
+  firstItem: MistakeQueueItem,
+  secondItem: MistakeQueueItem,
+  sortOrder: MistakeQueueSortOrder,
+): { primaryDelta: number; secondaryDelta: number } => {
+  if (sortOrder === "priority") {
+    return {
+      primaryDelta: secondItem.priority - firstItem.priority,
+      secondaryDelta: secondItem.lossIfWrong - firstItem.lossIfWrong,
+    };
+  }
+  if (sortOrder === "highestLoss") {
+    return {
+      primaryDelta: secondItem.lossIfWrong - firstItem.lossIfWrong,
+      secondaryDelta: secondItem.priority - firstItem.priority,
+    };
+  }
+  return {
+    primaryDelta: secondItem.lastAttemptAt - firstItem.lastAttemptAt,
+    secondaryDelta: secondItem.priority - firstItem.priority,
+  };
+};
+
 export const sortMistakeQueue = (
   items: readonly MistakeQueueItem[],
   sortOrder: MistakeQueueSortOrder,
@@ -264,23 +287,20 @@ export const sortMistakeQueue = (
   const sorted = [...items];
 
   sorted.sort((firstItem, secondItem) => {
-    if (sortOrder === "priority") {
-      if (firstItem.isMastered !== secondItem.isMastered) {
-        return firstItem.isMastered ? SORT_AFTER : SORT_BEFORE;
-      }
-      if (secondItem.priority !== firstItem.priority) {
-        return secondItem.priority - firstItem.priority;
-      }
-    } else if (sortOrder === "highestLoss") {
-      if (secondItem.lossIfWrong !== firstItem.lossIfWrong) {
-        return secondItem.lossIfWrong - firstItem.lossIfWrong;
-      }
-    } else if (secondItem.lastAttemptAt !== firstItem.lastAttemptAt) {
-      return secondItem.lastAttemptAt - firstItem.lastAttemptAt;
-    }
+    const { primaryDelta, secondaryDelta } = getSortDeltas(
+      firstItem,
+      secondItem,
+      sortOrder,
+    );
 
-    if (secondItem.originalDecisionAt !== firstItem.originalDecisionAt) {
-      return secondItem.originalDecisionAt - firstItem.originalDecisionAt;
+    if (primaryDelta !== 0) {
+      return primaryDelta;
+    }
+    if (secondaryDelta !== 0) {
+      return secondaryDelta;
+    }
+    if (secondItem.lastAttemptAt !== firstItem.lastAttemptAt) {
+      return secondItem.lastAttemptAt - firstItem.lastAttemptAt;
     }
     return firstItem.handKey.localeCompare(secondItem.handKey);
   });

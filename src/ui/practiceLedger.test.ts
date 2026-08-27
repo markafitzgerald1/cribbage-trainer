@@ -42,7 +42,7 @@ const twoAttemptSuccessRecord = makeRecord({
 
 const performUpdate = ({
   at = AT,
-  expectedPointsLoss,
+  expectedPointsLoss = 1.0,
   handKey = VALID_HAND_KEY,
   initial = [],
   isOptimal = true,
@@ -57,9 +57,9 @@ const performUpdate = ({
 } = {}) =>
   updatePracticeRecords(
     initial,
-    typeof expectedPointsLoss === "number"
-      ? { at, expectedPointsLoss, handKey, isOptimal }
-      : { at, handKey, isOptimal },
+    isOptimal
+      ? { at, handKey, isOptimal: true }
+      : { at, expectedPointsLoss, handKey, isOptimal: false },
     maxRecords,
   );
 
@@ -72,14 +72,11 @@ const expectUpdateResult = (
   return JSON.stringify(actual) === JSON.stringify(expected);
 };
 
-const recordTestAttempt = (
-  overrides?: Partial<Parameters<typeof recordPracticeAttempt>[0]>,
-) =>
+const recordTestAttempt = () =>
   recordPracticeAttempt({
     at: AT,
     handKey: VALID_HAND_KEY,
     isOptimal: true,
-    ...overrides,
   });
 
 const expectPracticeLedger = (expected: PracticeRecord[]): boolean => {
@@ -170,51 +167,44 @@ describe("practiceLedger", () => {
       expect(matched).toBe(true);
     });
 
-    it("resets consecutive successes on wrong attempt and adds to totalWrongLoss", () => {
-      const matched = expectUpdateResult(
-        [twoAttemptSuccessRecord],
-        { expectedPointsLoss: 1.5, isOptimal: false },
-        [
-          makeRecord({
-            attempts: 3,
+    it.each([
+      {
+        description:
+          "resets consecutive successes on wrong attempt and adds to totalWrongLoss",
+        expected: makeRecord({
+          attempts: 3,
+          consecutiveSuccesses: 0,
+          totalWrongLoss: 3.5,
+          wrong: 2,
+        }),
+        initial: [twoAttemptSuccessRecord],
+      },
+      {
+        description: "handles legacy existing records without totalWrongLoss",
+        expected: makeRecord({
+          attempts: 2,
+          consecutiveSuccesses: 0,
+          totalWrongLoss: 1.5,
+          wrong: 2,
+        }),
+        initial: [
+          {
+            attempts: 1,
             consecutiveSuccesses: 0,
-            totalWrongLoss: 3.5,
-            wrong: 2,
-          }),
+            handKey: VALID_HAND_KEY,
+            lastAttemptAt: AT - 1000,
+            wrong: 1,
+          },
         ],
+      },
+    ])("$description", ({ expected, initial }) => {
+      const matched = expectUpdateResult(
+        initial,
+        { expectedPointsLoss: 1.5, isOptimal: false },
+        [expected],
       );
 
       expect(matched).toBe(true);
-    });
-
-    it("handles legacy existing records without totalWrongLoss and attempts without expectedPointsLoss", () => {
-      const legacy: PracticeRecord = {
-        attempts: 1,
-        consecutiveSuccesses: 0,
-        handKey: VALID_HAND_KEY,
-        lastAttemptAt: AT - 1000,
-        wrong: 1,
-      };
-
-      const matched = expectUpdateResult([legacy], { isOptimal: false }, [
-        makeRecord({
-          attempts: 2,
-          consecutiveSuccesses: 0,
-          totalWrongLoss: 0,
-          wrong: 2,
-        }),
-      ]);
-
-      expect(matched).toBe(true);
-
-      const freshNonOptimalWithoutLoss = performUpdate({ isOptimal: false });
-
-      expect(freshNonOptimalWithoutLoss).toStrictEqual([
-        makeRecord({
-          totalWrongLoss: 0,
-          wrong: 1,
-        }),
-      ]);
     });
 
     it("trims least-recently-attempted records when exceeding maxRecords", () => {
@@ -270,7 +260,7 @@ describe("practiceLedger", () => {
 
       expect(expectPracticeLedger([])).toBe(true);
 
-      recordTestAttempt({ expectedPointsLoss: 0 });
+      recordTestAttempt();
 
       expect(expectPracticeLedger([singleSuccessRecord])).toBe(true);
       expect(readTallyForDisplay().lifetime.decisions).toBe(1);

@@ -16,10 +16,9 @@ export function SortedCardLabels({
 }: SortedCardLabelsProps): React.JSX.Element {
   return (
     <>
-      {sortCards(toComparableCards(cards), sortOrder).map((card, index) => (
+      {sortCards(toComparableCards(cards), sortOrder).map((card) => (
         <CardLabel
-          // eslint-disable-next-line react/no-array-index-key
-          key={`${keyPrefix}-${index}-${card.rank}-${card.suit}`}
+          key={`${keyPrefix}-${card.suit}-${card.rank}`}
           rank={card.rank}
           suit={card.suit}
         />

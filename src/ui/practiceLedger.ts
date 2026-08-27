@@ -9,12 +9,19 @@ export interface PracticeRecord {
   readonly wrong: number;
 }
 
-export interface PracticeAttempt {
-  readonly at: number;
-  readonly expectedPointsLoss?: number;
-  readonly handKey: string;
-  readonly isOptimal: boolean;
-}
+export type PracticeAttempt =
+  | {
+      readonly at: number;
+      readonly expectedPointsLoss?: undefined;
+      readonly handKey: string;
+      readonly isOptimal: true;
+    }
+  | {
+      readonly at: number;
+      readonly expectedPointsLoss: number;
+      readonly handKey: string;
+      readonly isOptimal: false;
+    };
 
 interface MaybePracticeRecord {
   readonly attempts?: unknown;
@@ -72,7 +79,7 @@ export const updatePracticeRecords = (
   const existing = practice.find(
     (recordItem) => recordItem.handKey === attempt.handKey,
   );
-  const loss = attempt.isOptimal ? 0 : (attempt.expectedPointsLoss ?? 0);
+  const loss = attempt.isOptimal ? 0 : attempt.expectedPointsLoss;
   const nextRecord: PracticeRecord = existing
     ? {
         attempts: existing.attempts + 1,
