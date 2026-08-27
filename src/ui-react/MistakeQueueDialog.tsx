@@ -220,44 +220,33 @@ function renderEmptyState(options: {
   );
 }
 
-interface MistakeDialogFilters {
-  readonly quantileFilter: MistakeQueueQuantileFilter;
-  readonly roleFilter: MistakeQueueRoleFilter;
-  readonly sortOrder: MistakeQueueSortOrder;
-  readonly statusFilter: MistakeQueueStatusFilter;
+interface MistakeQueueBaseData {
+  readonly activeCount: number;
+  readonly allItems: readonly MistakeQueueItem[];
+  readonly hasLifetimeMistakes: boolean;
+  readonly masteredCount: number;
+  readonly quantileOptions: readonly DialogFilterOption<MistakeQueueQuantileFilter>[];
+  readonly totalCount: number;
 }
 
-function computeMistakeDialogData(
-  tally: StoredTally,
-  filters: MistakeDialogFilters,
-) {
+function buildMistakeQueueBaseData(tally: StoredTally): MistakeQueueBaseData {
   const allItems = buildMistakeQueue(tally);
   const thresholds = computeLossQuantileThresholds(
     allItems.map((item) => item.lossIfWrong),
   );
   const quantileOptions = buildQuantileOptions(thresholds);
-  const effectiveQuantileFilter =
-    quantileOptions.length > 0 ? filters.quantileFilter : "all";
-  const filteredItems = filterMistakeQueue(allItems, {
-    ...filters,
-    quantileFilter: effectiveQuantileFilter,
-  });
-  const sortedItems = sortMistakeQueue(filteredItems, filters.sortOrder);
   const totalCount = allItems.length;
   const activeCount = allItems.filter((item) => !item.isMastered).length;
   const masteredCount = allItems.filter((item) => item.isMastered).length;
-  const isAllMastered =
-    filters.statusFilter === "active" && totalCount > 0 && activeCount === 0;
   const hasLifetimeMistakes =
     tally.lifetime.decisions > tally.lifetime.optimalDecisions;
 
   return {
     activeCount,
+    allItems,
     hasLifetimeMistakes,
-    isAllMastered,
     masteredCount,
     quantileOptions,
-    sortedItems,
     totalCount,
   };
 }
@@ -329,31 +318,51 @@ export function MistakeQueueDialog({
     () => (show ? (tally ?? readTallyForDisplay()) : null),
     [show, tally],
   );
-  const queueData = useMemo(
+  const baseQueueData = useMemo(
     () =>
-      show && activeTally !== null
-        ? computeMistakeDialogData(activeTally, {
-            quantileFilter: filters.quantile,
-            roleFilter: filters.role,
-            sortOrder: filters.sort,
-            statusFilter: filters.status,
-          })
-        : null,
-    [activeTally, filters, show],
+      activeTally === null ? null : buildMistakeQueueBaseData(activeTally),
+    [activeTally],
   );
+  const derivedQueueData = useMemo(() => {
+    if (baseQueueData === null) {
+      return null;
+    }
+    const effectiveQuantileFilter =
+      baseQueueData.quantileOptions.length > 0 ? filters.quantile : "all";
+    const filteredItems = filterMistakeQueue(baseQueueData.allItems, {
+      quantileFilter: effectiveQuantileFilter,
+      roleFilter: filters.role,
+      statusFilter: filters.status,
+    });
+    const sortedItems = sortMistakeQueue(filteredItems, filters.sort);
+    const isAllMastered =
+      filters.status === "active" &&
+      baseQueueData.totalCount > 0 &&
+      baseQueueData.activeCount === 0;
 
-  if (!show || queueData === null) {
+    return {
+      isAllMastered,
+      sortedItems,
+    };
+  }, [
+    baseQueueData,
+    filters.quantile,
+    filters.role,
+    filters.sort,
+    filters.status,
+  ]);
+
+  if (!show || baseQueueData === null || derivedQueueData === null) {
     return null;
   }
   const {
     activeCount,
     hasLifetimeMistakes,
-    isAllMastered,
     masteredCount,
     quantileOptions,
-    sortedItems,
     totalCount,
-  } = queueData;
+  } = baseQueueData;
+  const { isAllMastered, sortedItems } = derivedQueueData;
 
   return (
     <Modal
