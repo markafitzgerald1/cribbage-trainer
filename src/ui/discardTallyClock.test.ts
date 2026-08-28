@@ -1,7 +1,8 @@
 /* jscpd:ignore-start */
-import { AT, decisionOf } from "./discardTally.test.common";
+import { AT, DAYS_EARLIER, decisionOf } from "./discardTally.test.common";
 import {
   clearDiscardTally,
+  readDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
   recordPracticeAttempt,
@@ -9,9 +10,9 @@ import {
 import { describe, expect, it } from "@jest/globals";
 /* jscpd:ignore-end */
 
-const recordFutureSkewedDecision = (handKey: string) => {
+const recordFutureSkewedDecision = (handKey: string, at = AT + 5000) => {
   clearDiscardTally();
-  recordDiscardDecision(decisionOf({ at: AT + 5000, handKey }));
+  recordDiscardDecision(decisionOf({ at, handKey }));
 };
 
 const recordCorrectedDecision = (handKey: string) =>
@@ -20,15 +21,18 @@ const recordCorrectedDecision = (handKey: string) =>
 const getRecordedAt = (index: number) =>
   readTallyForDisplay().records[index]?.at;
 
+const getRecordedRecencyAt = (index: number) =>
+  readTallyForDisplay().records[index]?.recencyAt;
+
 describe("discard tally clock ordering", () => {
   it("orders an authentic decision after a corrected device clock", () => {
-    recordFutureSkewedDecision("first");
+    const futureAt = AT + DAYS_EARLIER;
+    recordFutureSkewedDecision("first", futureAt);
     recordCorrectedDecision("second");
 
-    expect([getRecordedAt(0), getRecordedAt(1)]).toStrictEqual([
-      AT + 5000,
-      AT + 5001,
-    ]);
+    expect([getRecordedAt(0), getRecordedAt(1)]).toStrictEqual([futureAt, AT]);
+    expect(getRecordedRecencyAt(1)).toBe(futureAt + 1);
+    expect(readDiscardTally(AT).todayDecisions).toBe(1);
   });
 
   it("orders an authentic decision after a future-skewed practice attempt", () => {
@@ -41,7 +45,8 @@ describe("discard tally clock ordering", () => {
     });
     recordCorrectedDecision("second");
 
-    expect(getRecordedAt(1)).toBe(AT + 5002);
+    expect(getRecordedAt(1)).toBe(AT);
+    expect(getRecordedRecencyAt(1)).toBe(AT + 5002);
   });
 
   it("orders a practice attempt after a future-skewed authentic decision", () => {

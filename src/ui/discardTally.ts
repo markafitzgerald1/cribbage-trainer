@@ -8,9 +8,7 @@ import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 import { parseHand } from "../game/Card";
-
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
-
 /*
  * Scoped to the deployment that wrote it. A PR preview and production share
  * an origin — both are pages on the same host, differing only by path — and
@@ -18,15 +16,13 @@ export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
  * preview being tested write into the player's real history, permanently.
  */
 export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BASE_URL}`;
-
 /*
  * The version travels inside the value rather than in the key, so a future
  * shape can read what came before it and migrate. A version-suffixed key
  * would make every earlier tally invisible instead, which is the same as
  * discarding it.
  */
-const CURRENT_VERSION = 4;
-
+const CURRENT_VERSION = 5;
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
  * counters below. They cannot grow without limit either: this shares an origin
@@ -36,7 +32,6 @@ const CURRENT_VERSION = 4;
  * budgets at zero operational cost.
  */
 export const MAX_RECORDS = 10_000;
-
 export interface DiscardDecisionRecord {
   readonly at: number;
   readonly cribRole: CribRole;
@@ -48,8 +43,9 @@ export interface DiscardDecisionRecord {
   readonly isOptimal: boolean;
   // Seeded, deep-linked, and manually entered hands are kept but excluded from headline averages.
   readonly isPractice: boolean;
+  // Monotonic recording order for queue recency; `at` remains the calendar event time.
+  readonly recencyAt?: number;
 }
-
 export interface DiscardTallySummary {
   readonly decisions: number;
   readonly meanExpectedPointsLoss: number | null;
@@ -62,18 +58,15 @@ export interface DiscardTallySummary {
   // Hands dealt and abandoned without a discard; counted so averages stay honest about omissions.
   readonly skippedHands: number;
 }
-
 interface LifetimeTotals {
   readonly decisions: number;
   readonly expectedPointsLossTotal: number;
   readonly optimalDecisions: number;
   readonly skippedHands: number;
 }
-
 export interface SkippedHand {
   readonly at: number;
 }
-
 export interface StoredTally {
   readonly lifetime: LifetimeTotals;
   readonly practice: readonly PracticeRecord[];
@@ -90,14 +83,12 @@ export interface StoredTally {
   readonly skipped: readonly SkippedHand[];
   readonly version: number;
 }
-
 const emptyLifetime: LifetimeTotals = {
   decisions: 0,
   expectedPointsLossTotal: 0,
   optimalDecisions: 0,
   skippedHands: 0,
 };
-
 const emptyTally: StoredTally = {
   lifetime: emptyLifetime,
   practice: [],
@@ -138,6 +129,7 @@ interface MaybeDecisionRecord {
   readonly expectedPointsLoss?: unknown;
   readonly isOptimal?: unknown;
   readonly isPractice?: unknown;
+  readonly recencyAt?: unknown;
 }
 
 interface StoredDecisionRecord {
@@ -148,6 +140,7 @@ interface StoredDecisionRecord {
   readonly handKey: string;
   readonly isOptimal: boolean;
   readonly isPractice: boolean;
+  readonly recencyAt?: number;
 }
 
 const isObject = (value: unknown): value is object =>
@@ -186,6 +179,11 @@ const normalizeDiscardKey = (discardKey: unknown): string | null => {
     return null;
   }
 };
+
+const normalizeRecencyAt = (recencyAt: unknown, at: number): number =>
+  typeof recencyAt === "number" && Number.isFinite(recencyAt) && recencyAt >= 0
+    ? recencyAt
+    : at;
 
 const isSkippedHand = (value: unknown): value is SkippedHand =>
   isObject(value) && typeof (value as SkippedHand).at === "number";
@@ -260,6 +258,8 @@ const readStoredTally = (): StoredTally | null => {
           ...record,
           // Absent in a record written before version 3, or invalid, permanently null.
           discardKey: normalizeDiscardKey(record.discardKey),
+          // Absent in a record written before version 5, fall back to calendar order.
+          recencyAt: normalizeRecencyAt(record.recencyAt, record.at),
         }))
       : [],
     // Absent in a tally written before revisions were kept, which simply starts the count.
@@ -441,14 +441,18 @@ export const recordDiscardDecision = (
     if (existing) {
       return tally;
     }
-    const recordedAt = tally.practice.reduce(
+    const recencyAt = tally.practice.reduce(
       (latestAt, record) => Math.max(latestAt, record.lastAttemptAt + 1),
       tally.records.reduce(
-        (latestAt, record) => Math.max(latestAt, record.at + 1),
+        (latestAt, record) =>
+          Math.max(
+            latestAt,
+            normalizeRecencyAt(record.recencyAt, record.at) + 1,
+          ),
         decision.at,
       ),
     );
-    const recordedDecision = { ...decision, at: recordedAt };
+    const recordedDecision = { ...decision, recencyAt };
     return {
       ...tally,
       lifetime: addToLifetime(tally.lifetime, recordedDecision),

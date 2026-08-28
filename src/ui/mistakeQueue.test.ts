@@ -249,6 +249,25 @@ describe("mistakeQueue", () => {
       expect(item.lastAttemptAt).toBe(NOW - ONE_DAY_MS);
     });
 
+    it("uses monotonic recency without changing the original decision time", () => {
+      const originalDecisionAt = NOW - ONE_DAY_MS;
+      const queue = buildMistakeQueue(
+        createMockTally({
+          records: [
+            createTestMistakeRecord({
+              at: originalDecisionAt,
+              recencyAt: NOW,
+            }),
+          ],
+        }),
+      );
+
+      expect(queue[0]).toMatchObject({
+        lastAttemptAt: NOW,
+        originalDecisionAt,
+      });
+    });
+
     it("collapses multiple records with the same handKey", () => {
       const handKey = "5H,6H,7H,8H,9H,10H|Dealer";
       const tally = createMockTally({

@@ -22,7 +22,7 @@ export const createMockTally = (
   records: [],
   revision: 1,
   skipped: [],
-  version: 4,
+  version: 5,
   ...overrides,
 });
 

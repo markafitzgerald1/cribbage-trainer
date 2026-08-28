@@ -113,6 +113,7 @@ interface HandAggregate {
   discardKey: string | null;
   expectedPointsLoss: number;
   handKey: string;
+  recencyAt: number;
 }
 
 const aggregateMistakeRecords = (
@@ -125,13 +126,15 @@ const aggregateMistakeRecords = (
       !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
     if (isMistake) {
       const existing = map.get(record.handKey);
-      if (!existing || record.at >= existing.at) {
+      const recencyAt = record.recencyAt ?? record.at;
+      if (!existing || recencyAt >= existing.recencyAt) {
         map.set(record.handKey, {
           at: record.at,
           cribRole: record.cribRole,
           discardKey: record.discardKey,
           expectedPointsLoss: record.expectedPointsLoss,
           handKey: record.handKey,
+          recencyAt,
         });
       }
     }
@@ -162,8 +165,8 @@ const createCandidateQueueItem = ({
   const lossIfWrong = totalWrongLoss / wrong;
   const priority = computePriority(lossIfWrong, pWrong);
   const lastAttemptAt = practice
-    ? Math.max(practice.lastAttemptAt, aggregate.at)
-    : aggregate.at;
+    ? Math.max(practice.lastAttemptAt, aggregate.recencyAt)
+    : aggregate.recencyAt;
 
   return {
     attempts,
