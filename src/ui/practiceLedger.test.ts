@@ -24,23 +24,19 @@ import { createTestPracticeRecord } from "./mistakeQueue.test.common";
 
 const AT = 1_700_000_000_000;
 const VALID_HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
-
 const makeRecord = (overrides?: Partial<PracticeRecord>): PracticeRecord =>
   createTestPracticeRecord({
     handKey: VALID_HAND_KEY,
     lastAttemptAt: AT,
     ...overrides,
   });
-
 const singleSuccessRecord = makeRecord({ consecutiveSuccesses: 1 });
-
 const twoAttemptSuccessRecord = makeRecord({
   attempts: 2,
   consecutiveSuccesses: 1,
   totalWrongLoss: 2.0,
   wrong: 1,
 });
-
 const performUpdate = ({
   at = AT,
   expectedPointsLoss = 1.0,
@@ -52,7 +48,7 @@ const performUpdate = ({
   at?: number;
   expectedPointsLoss?: number;
   handKey?: string;
-  initial?: PracticeRecord[];
+  initial?: readonly PracticeRecord[];
   isOptimal?: boolean;
   maxRecords?: number;
 } = {}) =>
@@ -210,6 +206,7 @@ describe("practiceLedger", () => {
         expected: makeRecord({
           attempts: 3,
           consecutiveSuccesses: 0,
+          lastAttemptAt: AT + 1,
           totalWrongLoss: 3.5,
           wrong: 2,
         }),
@@ -294,6 +291,44 @@ describe("practiceLedger", () => {
         ).toMatchObject({ lastAttemptAt: expectedLastAttemptAt });
       },
     );
+
+    it("retains a practiced existing record after a clock rollback at capacity", () => {
+      const subsequentHandKey = "2H,3H,4H,5H,6H,7H|Dealer";
+      const initial: PracticeRecord[] = [
+        makeRecord({
+          handKey: "AH,2H,3H,4H,5H,6H|Dealer",
+          lastAttemptAt: AT + 5000,
+          totalWrongLoss: 1.0,
+          wrong: 1,
+        }),
+        makeRecord({
+          lastAttemptAt: AT + 3000,
+          totalWrongLoss: 1.0,
+          wrong: 1,
+        }),
+      ];
+
+      const updatedExisting = performUpdate({
+        initial,
+        isOptimal: true,
+        maxRecords: 2,
+      });
+      const updated = performUpdate({
+        handKey: subsequentHandKey,
+        initial: updatedExisting,
+        isOptimal: true,
+        maxRecords: 2,
+      });
+
+      expect(updated.map((recordItem) => recordItem.handKey)).toStrictEqual([
+        VALID_HAND_KEY,
+        subsequentHandKey,
+      ]);
+      expect(updated[0]).toMatchObject({
+        attempts: 2,
+        lastAttemptAt: AT + 5001,
+      });
+    });
 
     it.each([
       { at: -1 },
@@ -413,6 +448,7 @@ describe("practiceLedger", () => {
           isOptimal: false as const,
         },
         expectedConsecutive: 0,
+        expectedLastAttemptAt: AT + 5001,
         expectedWrong: 1,
       },
       {
@@ -422,11 +458,17 @@ describe("practiceLedger", () => {
           isOptimal: true as const,
         },
         expectedConsecutive: 2,
+        expectedLastAttemptAt: AT + 5001,
         expectedWrong: 0,
       },
     ])(
-      "keeps newer lastAttemptAt while applying later-recorded outcomes to the streak",
-      ({ attempt, expectedConsecutive, expectedWrong }) => {
+      "orders later-recorded outcomes ahead of a clock rollback while updating the streak",
+      ({
+        attempt,
+        expectedConsecutive,
+        expectedLastAttemptAt,
+        expectedWrong,
+      }) => {
         const initial: PracticeRecord[] = [
           makeRecord({
             attempts: 1,
@@ -440,7 +482,7 @@ describe("practiceLedger", () => {
 
         const updated = updatePracticeRecords(initial, attempt, 100);
 
-        expect(updated[0]?.lastAttemptAt).toBe(AT + 5000);
+        expect(updated[0]?.lastAttemptAt).toBe(expectedLastAttemptAt);
         expect(updated[0]?.consecutiveSuccesses).toBe(expectedConsecutive);
         expect(updated[0]?.wrong).toBe(expectedWrong);
         expect(updated[0]?.attempts).toBe(2);
