@@ -94,7 +94,7 @@ const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
     return (
       typeof candidate.expectedPointsLoss === "number" &&
       Number.isFinite(candidate.expectedPointsLoss) &&
-      candidate.expectedPointsLoss >= 0
+      candidate.expectedPointsLoss > 0
     );
   }
   return false;

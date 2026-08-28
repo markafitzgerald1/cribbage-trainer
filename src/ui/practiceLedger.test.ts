@@ -252,6 +252,7 @@ describe("practiceLedger", () => {
       { at: "invalid" as unknown as number },
       { expectedPointsLoss: 1.0, isOptimal: true },
       { expectedPointsLoss: -1, isOptimal: false },
+      { expectedPointsLoss: 0, isOptimal: false },
       { expectedPointsLoss: NaN, isOptimal: false },
       { expectedPointsLoss: Infinity, isOptimal: false },
       { expectedPointsLoss: "invalid" as unknown as number, isOptimal: false },
