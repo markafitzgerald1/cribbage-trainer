@@ -1,12 +1,10 @@
 import * as classes from "./MistakeQueueDialog.module.css";
-import { type Card, parseHand } from "../game/Card";
 import {
   DIALOG_ROLE_OPTIONS,
   DialogFilterGroup,
   type DialogFilterOption,
 } from "./DialogFilterGroup";
 import {
-  type LossQuantile,
   type MistakeQueueItem,
   type MistakeQueueQuantileFilter,
   type MistakeQueueQuantileThresholds,
@@ -18,13 +16,16 @@ import {
   filterMistakeQueue,
   sortMistakeQueue,
 } from "../ui/mistakeQueue";
+import type {
+  StartAutoDrillHandler,
+  StartDrillHandler,
+} from "./usePracticeDrill";
 import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
 import { useCallback, useMemo, useState } from "react";
-import { CribRole } from "../game/expectedCribPoints";
 import { DialogSummaryCards } from "./DialogSummaryCards";
+import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import Modal from "./Modal";
 import { SortOrder } from "../ui/SortOrder";
-import { SortedCardLabels } from "./SortedCardLabels";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
 const SORT_OPTIONS: readonly DialogFilterOption<MistakeQueueSortOrder>[] = [
@@ -40,7 +41,6 @@ const STATUS_OPTIONS: readonly DialogFilterOption<MistakeQueueStatusFilter>[] =
     { ariaLabel: "All statuses", label: "All", value: "all" },
   ];
 
-const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
 
 export type MistakeQueueDialogProps = {
@@ -49,33 +49,12 @@ export type MistakeQueueDialogProps = {
   readonly initialSortOrder?: MistakeQueueSortOrder;
   readonly initialStatusFilter?: MistakeQueueStatusFilter;
   readonly onClose: () => void;
+  readonly onStartDrill?: StartDrillHandler;
+  readonly onStartAutoDrill?: StartAutoDrillHandler;
   readonly show: boolean;
   readonly sortOrder?: SortOrder;
   readonly tally?: StoredTally | null | undefined;
 };
-
-const getQuantileBadgeClass = (quantile: LossQuantile): string => {
-  if (quantile === "high") {
-    return classes.quantileHigh;
-  }
-  if (quantile === "medium") {
-    return classes.quantileMedium;
-  }
-  return classes.quantileLow;
-};
-
-const renderCardsList = (
-  cards: readonly Card[],
-  sortOrder: SortOrder,
-): React.JSX.Element => (
-  <div className={classes.cardsRow}>
-    <SortedCardLabels
-      cards={cards}
-      keyPrefix="queue"
-      sortOrder={sortOrder}
-    />
-  </div>
-);
 
 const buildQuantileOptions = (
   thresholds: MistakeQueueQuantileThresholds,
@@ -109,77 +88,6 @@ const buildQuantileOptions = (
     },
   ];
 };
-
-function renderPreviousDiscard(
-  previousDiscard: string | null,
-  sortOrder: SortOrder,
-): React.JSX.Element {
-  return (
-    <div className={classes.previousDiscard}>
-      <span className={classes.previousDiscardLabel}>Previous discard:</span>
-      {previousDiscard === null ? (
-        <span className={classes.noPreviousDiscard}>
-          Previous choice not recorded
-        </span>
-      ) : (
-        renderCardsList(parseHand(previousDiscard), sortOrder)
-      )}
-    </div>
-  );
-}
-
-function renderItemCard(
-  item: MistakeQueueItem,
-  sortOrder: SortOrder,
-): React.JSX.Element {
-  const roleLabel = item.cribRole === CribRole.Dealer ? "Dealer" : "Pone";
-  const errorRatePercent = (item.pWrong * PERCENT_MULTIPLIER).toFixed(0);
-
-  return (
-    <div
-      className={classes.itemCard}
-      key={item.handKey}
-    >
-      <div className={classes.itemHeader}>
-        <div className={classes.itemBadges}>
-          <span className={classes.roleBadge}>{roleLabel}</span>
-          <span className={classes.lossBadge}>
-            {item.lossIfWrong.toFixed(DECIMAL_DIGITS)} pts lost
-          </span>
-          {item.lossQuantile !== null && (
-            <span
-              className={`${classes.quantileBadge} ${getQuantileBadgeClass(item.lossQuantile)}`}
-            >
-              {item.lossQuantile}
-            </span>
-          )}
-        </div>
-        <div>
-          {item.isMastered ? (
-            <span className={`${classes.statusBadge} ${classes.masteredBadge}`}>
-              Mastered
-            </span>
-          ) : (
-            <span className={`${classes.statusBadge} ${classes.activeBadge}`}>
-              {item.consecutiveSuccesses}/2 successes
-            </span>
-          )}
-        </div>
-      </div>
-
-      {renderCardsList(item.cards, sortOrder)}
-
-      <div className={classes.itemFooter}>
-        {renderPreviousDiscard(item.previousDiscard, sortOrder)}
-        <div className={classes.itemStats}>
-          <span>Attempts: {item.attempts}</span>
-          <span>Error rate: {errorRatePercent}%</span>
-          <span>Priority: {item.priority.toFixed(DECIMAL_DIGITS)}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function renderEmptyState(options: {
   readonly hasLifetimeMistakes: boolean;
@@ -259,6 +167,8 @@ export function MistakeQueueDialog({
   initialSortOrder = "priority",
   initialStatusFilter = "active",
   onClose,
+  onStartAutoDrill = null,
+  onStartDrill = null,
   show,
   sortOrder = SortOrder.Descending,
   tally = null,
@@ -374,6 +284,26 @@ export function MistakeQueueDialog({
         className={classes.dialog}
       >
         <h2 className={classes.title}>Mistake queue</h2>
+        {/* Primary and secondary actions sit above the summary and filters so the way out of the dialog is on screen before the list is scrolled (AGENTS.md short-screen rule). */}
+        <div className={classes.actionBar}>
+          {onStartAutoDrill === null ? null : (
+            <button
+              className={classes.startDrillButton}
+              disabled={activeCount === 0}
+              onClick={onStartAutoDrill}
+              type="button"
+            >
+              Start drill
+            </button>
+          )}
+          <button
+            className={classes.doneButton}
+            onClick={onClose}
+            type="button"
+          >
+            Done
+          </button>
+        </div>
         <p className={classes.subtitle}>
           Hands where you previously discarded sub-optimally. Master a hand by
           choosing the optimal discard 2 consecutive times in practice.
@@ -434,9 +364,14 @@ export function MistakeQueueDialog({
             })
           ) : (
             <>
-              {sortedItems
-                .slice(0, visibleCount)
-                .map((item) => renderItemCard(item, sortOrder))}
+              {sortedItems.slice(0, visibleCount).map((item) => (
+                <MistakeQueueItemCard
+                  item={item}
+                  key={item.handKey}
+                  onPractice={onStartDrill}
+                  sortOrder={sortOrder}
+                />
+              ))}
               {sortedItems.length > visibleCount && (
                 <div className={classes.paginationRow}>
                   <button
@@ -461,6 +396,8 @@ MistakeQueueDialog.defaultProps = {
   initialRoleFilter: "all",
   initialSortOrder: "priority",
   initialStatusFilter: "active",
+  onStartAutoDrill: null,
+  onStartDrill: null,
   sortOrder: SortOrder.Descending,
   tally: null,
 };

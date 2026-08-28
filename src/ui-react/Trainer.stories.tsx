@@ -21,7 +21,9 @@ import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { Trainer } from "./Trainer";
 import { createGenerator } from "../game/randomNumberGenerator";
+import { discardTallyKey } from "../ui/discardTally";
 import { getSortOrderName } from "../ui/SortOrderName";
+import mistakeFixtures from "./MistakeQueueDialog.test.common";
 
 const SEED = "1";
 
@@ -210,12 +212,15 @@ export const DealNewHandReplacesCards = {
 const expectAnalysisColumnHeaders = (canvasElement: HTMLElement) =>
   expectColumnHeaders(canvasElement, ["Hand", "Crib", "Play", "Net"]);
 
+const clickFirstTwoCheckboxes = async (canvasElement: HTMLElement) => {
+  const checkboxes = within(canvasElement).getAllByRole("checkbox");
+  await fireEvent.click(checkboxes[0]!);
+  await fireEvent.click(checkboxes[1]!);
+};
+
 export const DiscardShowsScoredPossibilities = {
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const checkboxes = within(canvasElement).getAllByRole("checkbox");
-
-    await fireEvent.click(checkboxes[0]!);
-    await fireEvent.click(checkboxes[1]!);
+    await clickFirstTwoCheckboxes(canvasElement);
 
     await expectAnalysisColumnHeaders(canvasElement);
   },
@@ -363,4 +368,34 @@ export const UnchangedManualEntryCloses = {
 export const ChangedManualEntryApplies = {
   args: WithInitialCards.args,
   play: createManualEntryPlay(["A♠", "A♣"]),
+};
+
+export const PracticeDrillFromMistakeQueue = {
+  beforeEach: () => {
+    localStorage.setItem(
+      discardTallyKey,
+      JSON.stringify(mistakeFixtures.createSampleMistakeTally()),
+    );
+    return () => {
+      localStorage.removeItem(discardTallyKey);
+    };
+  },
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    await fireEvent.click(getButton(canvasElement, "Mistake queue"));
+    const canvas = within(canvasElement);
+    await fireEvent.click(
+      canvas.getAllByRole("button", { name: "Practice this" })[0]!,
+    );
+
+    await clickFirstTwoCheckboxes(canvasElement);
+    await fireEvent.click(getButton(canvasElement, "Check discard"));
+
+    await expect(
+      await canvas.findByRole("button", { name: "Draw another" }),
+    ).toBeVisible();
+
+    await fireEvent.click(getButton(canvasElement, "Draw another"));
+
+    await expect(canvas.getByLabelText("Practice drill")).toBeVisible();
+  },
 };

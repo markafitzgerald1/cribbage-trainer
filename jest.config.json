@@ -8,6 +8,7 @@
     "!src/ui/discardTally.test.common.ts",
     "!src/ui-react/DecisionQualityTrendDialog.test.common.ts",
     "!src/ui-react/MistakeQueueDialog.test.common.ts",
+    "!src/ui-react/PracticeDrillPanel.test.common.ts",
     "!src/ui-react/handToSortedString.test.common.ts",
     "!src/ui-react/discardTally.test.common.ts",
     "!src/ui-react/Trainer.test.common.tsx",

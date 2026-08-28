@@ -3,11 +3,41 @@ import {
   CribRole,
   type CribRole as CribRoleType,
 } from "../game/expectedCribPoints";
+import {
+  PracticeDrillPanel,
+  type PracticeDrillPanelProps,
+} from "./PracticeDrillPanel";
 import { DealButton } from "./DealButton";
 import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
+
+export type InteractiveHandDrill = Omit<PracticeDrillPanelProps, "sortOrder">;
+
+const renderDrillPanel = (
+  {
+    canCommit,
+    hasNextHand,
+    onCommit,
+    onExit,
+    onNextHand,
+    phase,
+    verdict,
+  }: InteractiveHandDrill,
+  sortOrder: SortOrder,
+): React.JSX.Element => (
+  <PracticeDrillPanel
+    canCommit={canCommit}
+    hasNextHand={hasNextHand}
+    onCommit={onCommit}
+    onExit={onExit}
+    onNextHand={onNextHand}
+    phase={phase}
+    sortOrder={sortOrder}
+    verdict={verdict}
+  />
+);
 
 interface InteractiveHandProps {
   readonly cribRole: CribRoleType;
@@ -17,6 +47,7 @@ interface InteractiveHandProps {
   readonly onSortOrderChange: (sortOrder: SortOrder) => void;
   readonly onDeal: () => void;
   readonly onEnterCards: () => void;
+  readonly practiceDrill?: InteractiveHandDrill | null;
 }
 
 export function InteractiveHand({
@@ -27,6 +58,7 @@ export function InteractiveHand({
   onSortOrderChange,
   onDeal,
   onEnterCards,
+  practiceDrill = null,
 }: InteractiveHandProps) {
   const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const roleContext =
@@ -59,6 +91,11 @@ export function InteractiveHand({
         onChange={onCardChange}
         sortOrder={sortOrder}
       />
+      {practiceDrill ? renderDrillPanel(practiceDrill, sortOrder) : null}
     </div>
   );
 }
+
+InteractiveHand.defaultProps = {
+  practiceDrill: null,
+};

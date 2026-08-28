@@ -488,6 +488,38 @@ mcr.microsoft.com/playwright:<tag>`.
   initialize-once mutable hook state, seed an eager
   `useRef(create(...))` instead (re-render results are discarded), and keep
   latest-prop reads for timer callbacks in a ref updated by an effect.
+- `no-undefined` is on everywhere, so an optional prop cannot default to the
+  `undefined` literal. With `plugin:react/all` also demanding a `defaultProps`
+  entry, the working idiom is `prop?: T | null` with `= null` in the
+  destructure and `defaultProps: { prop: null }`. Intersecting or `extends`-ing
+  a shared props interface confuses the plugin's prop-types detection
+  (`default-props-match-prop-types` fires with "no corresponding propTypes");
+  keep the members inline and collapse a jscpd clone between two such prop
+  lists by naming the field types (`type StartDrillHandler = …`) and ordering
+  the two members differently in each file.
+- `react/jsx-handler-names` only checks handler values that are **member
+  expressions** (`props.onFoo`, `drill.onFoo`) passed to a JSX `onX` attribute
+  — it wants those to start with `handle`. A plain local identifier is not
+  checked (`checkLocalVariables` defaults off), so destructure the handler
+  into a local, or return it from a hook already named `handleX`, before the
+  JSX. Building a plain object literal from `drill.onFoo` fields is fine; only
+  JSX attributes are inspected.
+- The test/story ESLint override (`files: ["**/*.test.ts*", …]`) turns off
+  `react/jsx-no-bind` but **not** `react/jsx-props-no-spreading`. Inline
+  arrows in JSX are fine in specs and stories; `{...props}` spreads are not,
+  even in a render helper — build the element with explicit attributes.
+- Every new `*.module.css` needs a hand-written `*.module.css.d.ts` sidecar
+  listing the camelCased class names. There is no generator in
+  `vite.config.js`; the `declare module "*.css"` fallback in `styles.d.ts`
+  types the import as `any`, which `@typescript-eslint/no-unsafe-member-access`
+  then rejects on every `classes.x`.
+- Storybook coverage (`vite.config.js` `test.coverage.thresholds`, ~88%) is a
+  gate separate from Jest's 100%. A hook or helper covered only by Jest drags
+  the browser-mode aggregate below threshold; the fix is a story that drives
+  the feature end to end — a `Trainer` story whose `play` seeds `localStorage`
+  and clicks through the flow lifted `usePracticeDrill` 45%→80% and
+  `practiceLedger` 19%→80%. Retune the numbers only from a Docker
+  `storybook:test:coverage` run, never the local one.
 
 - TypeScript/React with Vite; keep types sound.
 - Avoid single unconstrained generic arrow functions such as `<T>(...) => ...`

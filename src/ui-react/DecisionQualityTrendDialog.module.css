@@ -139,14 +139,19 @@
 
 .table-wrapper {
   max-height: 220px;
-  overflow-y: auto;
+  overflow: auto;
 }
 
+/*
+ * A floor wide enough for all five columns, so a phone-width dialog scrolls
+ * the table sideways to reach Optimal and Skipped rather than clipping them.
+ */
 .table {
   border-collapse: collapse;
   font-family: var(--tabular-nums-font-family);
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
+  min-width: 30rem;
   width: 100%;
 }
 
@@ -212,5 +217,15 @@
 
   .summary-cards {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /*
+   * Tighter cells so the five-column table needs less sideways scrolling on a
+   * phone. Qualified with .dialog to stay level with the .table *:first-child
+   * rule above and keep stylelint's no-descending-specificity satisfied.
+   */
+  .dialog .table th,
+  .dialog .table td {
+    padding: 0.3rem 0.35rem;
   }
 }

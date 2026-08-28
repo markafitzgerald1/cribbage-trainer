@@ -32,6 +32,7 @@ import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
 import { useAnalysisReporting } from "./useAnalysisReporting";
+import { usePracticeDrill } from "./usePracticeDrill";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -154,10 +155,6 @@ export function Trainer({
   initialSortOrder = null,
   isSeededSession = false,
 }: TrainerProps) {
-  const dealHandWithGenerator = useCallback(
-    () => dealHand(generator),
-    [generator],
-  );
   const createDealState = useCallback(
     (cards: DealtCard[]): DealState => ({
       cribRole: randomCribRole(generator),
@@ -168,7 +165,7 @@ export function Trainer({
   const [dealState, setDealState] = useState<DealState>(() => {
     const dealtCards = initialCards
       ? toDealtCards(initialCards, initialDiscards)
-      : dealHandWithGenerator();
+      : dealHand(generator);
     return {
       cribRole: initialCribRole ?? randomCribRole(generator),
       dealtCards,
@@ -280,16 +277,24 @@ export function Trainer({
   }, [dealtCards]);
   const applyManualHand = useCallback(
     (state: DealState) => {
+      // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
+      markHistoryUpdate();
       reportHandReplaced(state.dealtCards, "manual", state.cribRole);
       setDealState(state);
     },
-    [reportHandReplaced],
+    [markHistoryUpdate, reportHandReplaced],
   );
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
     applyManualHand,
     markHistoryUpdate,
   );
+  const drill = usePracticeDrill({
+    dealtCards,
+    generateRandomNumber: generator,
+    loadHand: applyManualHand,
+    onAnalysisRendered: reportAnalysisRendered,
+  });
 
   const toggleKept = useCallback(
     (dealOrderIndex: number) => {
@@ -311,15 +316,10 @@ export function Trainer({
 
   const dealNewHand = useCallback(() => {
     markHistoryUpdate();
-    const newDealState = createDealState(dealHandWithGenerator());
+    const newDealState = createDealState(dealHand(generator));
     reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
     setDealState(newDealState);
-  }, [
-    createDealState,
-    dealHandWithGenerator,
-    markHistoryUpdate,
-    reportHandReplaced,
-  ]);
+  }, [createDealState, generator, markHistoryUpdate, reportHandReplaced]);
 
   const changeSortOrder = useCallback(
     (newSortOrder: SortOrder) => {
@@ -355,6 +355,19 @@ export function Trainer({
           onDeal={dealNewHand}
           onEnterCards={enterCardsDialog.handleOpen}
           onSortOrderChange={changeSortOrder}
+          practiceDrill={
+            drill.isActive
+              ? {
+                  canCommit: discardIsComplete(dealtCards),
+                  hasNextHand: drill.hasNextHand,
+                  onCommit: drill.onCommit,
+                  onExit: drill.onExit,
+                  onNextHand: drill.onNextHand,
+                  phase: drill.phase,
+                  verdict: drill.verdict,
+                }
+              : null
+          }
           sortOrder={sortOrder}
         />
         <EnterCardsDialog
@@ -366,17 +379,20 @@ export function Trainer({
           show={enterCardsDialog.show}
           sortOrder={sortOrder}
         />
-        {discardIsComplete(dealtCards) && (
-          <ScoredPossibleKeepDiscards
-            cribRole={cribRole}
-            dealtCards={dealtCards}
-            onAnalysisRendered={reportAnalysisRendered}
-            onScoreSortKeyChange={changeScoreSortKey}
-            scoreSortKey={scoreSortKey}
-            sortOrder={sortOrder}
-          />
-        )}
+        {discardIsComplete(dealtCards) &&
+          (!drill.isActive || drill.phase === "revealed") && (
+            <ScoredPossibleKeepDiscards
+              cribRole={cribRole}
+              dealtCards={dealtCards}
+              onAnalysisRendered={drill.handleAnalysisRendered}
+              onScoreSortKeyChange={changeScoreSortKey}
+              scoreSortKey={scoreSortKey}
+              sortOrder={sortOrder}
+            />
+          )}
         <DiscardTallyView
+          onStartAutoDrill={drill.handleStartAutoDrill}
+          onStartDrill={drill.handleStartDrill}
           sortOrder={sortOrder}
           summary={tallySummary}
         />

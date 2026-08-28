@@ -1,0 +1,154 @@
+@import url("./vars.css");
+
+/*
+ * The panel sits inside InteractiveHand, which is the min-content left column
+ * in side-by-side mode. Every text run wraps and every button breaks to
+ * normal flow so the panel's min-content width stays below the six cards
+ * above it and never widens the column into the analysis table's share.
+ */
+.panel {
+  border: 1.5px solid #2f7d3a;
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--text-font-family);
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  width: 100%;
+}
+
+.badge {
+  align-self: flex-start;
+  background-color: #2f7d3a;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.4rem;
+  text-transform: uppercase;
+}
+
+.choosing,
+.verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.prompt {
+  font-size: 0.85rem;
+  line-height: 1.3;
+  margin: 0;
+  opacity: 0.9;
+  overflow-wrap: anywhere;
+}
+
+.verdict-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.verdict-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 3.2rem;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.discard-cards {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.not-recorded {
+  font-size: 0.8rem;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.verdict-loss {
+  font-family: var(--card-font-family);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+.outcome-good,
+.outcome-mastered,
+.outcome-miss {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.outcome-good,
+.outcome-mastered {
+  color: #7ff0a0;
+}
+
+.outcome-miss {
+  color: #ffbdbd;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.primary,
+.secondary {
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--text-font-family);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35em 0.7em;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+  white-space: normal;
+}
+
+.primary {
+  background-color: #197536;
+  border: 2px solid #0f5527;
+  color: #fff;
+}
+
+.primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.primary:hover:not(:disabled),
+.primary:focus-visible:not(:disabled) {
+  background-color: #34c754;
+  border-color: #34c754;
+  outline: none;
+}
+
+.secondary {
+  background-color: transparent;
+  border: 2px solid #6c8f74;
+  color: var(--text-color);
+}
+
+.secondary:hover,
+.secondary:focus-visible {
+  border-color: #a7c7ad;
+  outline: none;
+}

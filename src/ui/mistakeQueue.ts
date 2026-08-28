@@ -308,6 +308,54 @@ const getSortDeltas = (
   };
 };
 
+/*
+ * `index` is always within `[0, items.length)` at every call site below —
+ * each is derived from `items.length` — so the assertion states a fact the
+ * bounded arithmetic already guarantees rather than papering over a real
+ * chance of undefined.
+ */
+const itemAt = (
+  items: readonly MistakeQueueItem[],
+  index: number,
+): MistakeQueueItem =>
+  // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
+  items[index]!;
+
+/*
+ * Draws one active (non-mastered) hand weighted by `priority` — the expected
+ * points a single correct drill of that hand recovers, the same quantity the
+ * "priority" sort order ranks by, so the browse list and the auto-deal share
+ * one function. `random` is a uniform value in [0, 1); callers pass their
+ * existing generator. When every active hand still has priority 0 (no wrong
+ * attempt has cost anything yet) the draw falls back to uniform so a hand is
+ * still dealt. Returns null only when no active hand exists.
+ */
+export const sampleMistakeQueueByPriority = (
+  items: readonly MistakeQueueItem[],
+  random: number,
+): MistakeQueueItem | null => {
+  const active = items.filter((item) => !item.isMastered);
+  if (active.length === 0) {
+    return null;
+  }
+  const clampedRandom = Math.min(Math.max(random, 0), 1 - Number.EPSILON);
+  const totalPriority = active.reduce((sum, item) => sum + item.priority, 0);
+  if (totalPriority <= 0) {
+    return itemAt(active, Math.floor(clampedRandom * active.length));
+  }
+
+  const target = clampedRandom * totalPriority;
+  let cumulative = 0;
+  // The last item carries whatever weight the loop did not consume, including any left by floating-point drift in the running sum.
+  for (let index = 0; index < active.length - 1; index += 1) {
+    cumulative += itemAt(active, index).priority;
+    if (target < cumulative) {
+      return itemAt(active, index);
+    }
+  }
+  return itemAt(active, active.length - 1);
+};
+
 export const sortMistakeQueue = (
   items: readonly MistakeQueueItem[],
   sortOrder: MistakeQueueSortOrder,
