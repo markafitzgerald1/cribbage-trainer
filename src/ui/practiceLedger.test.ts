@@ -59,7 +59,6 @@ const performUpdate = ({
       : { at, expectedPointsLoss, handKey, isOptimal: false },
     maxRecords,
   );
-
 const expectUpdateResult = (
   initial: PracticeRecord[],
   update: Parameters<typeof performUpdate>[0],
@@ -407,6 +406,7 @@ describe("practiceLedger", () => {
       clearDiscardTally();
       recordDiscardDecision(
         decisionOf({
+          at: AT - 1000,
           expectedPointsLoss: 2,
           handKey: VALID_HAND_KEY,
           isOptimal: false,

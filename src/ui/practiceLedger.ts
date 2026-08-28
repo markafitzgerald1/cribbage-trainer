@@ -127,21 +127,40 @@ const computeConsecutiveSuccesses = (
   return (existing?.consecutiveSuccesses ?? 0) + 1;
 };
 
+const BEFORE_FIRST_TIMESTAMP = -1;
+
+interface PracticeRecordUpdateOptions {
+  readonly latestDecisionAt: number;
+  readonly maxRecords: number;
+}
+
+const toUpdateOptions = (
+  maxRecordsOrOptions: number | PracticeRecordUpdateOptions,
+): PracticeRecordUpdateOptions =>
+  typeof maxRecordsOrOptions === "number"
+    ? {
+        latestDecisionAt: BEFORE_FIRST_TIMESTAMP,
+        maxRecords: maxRecordsOrOptions,
+      }
+    : maxRecordsOrOptions;
+
 const getNextAttemptAt = (
   practice: readonly PracticeRecord[],
   attemptAt: number,
+  latestDecisionAt: number,
 ): number =>
   practice.reduce(
     (latestAttemptAt, recordItem) =>
       Math.max(latestAttemptAt, recordItem.lastAttemptAt + 1),
-    attemptAt,
+    Math.max(attemptAt, latestDecisionAt + 1),
   );
 
 export const updatePracticeRecords = (
   practice: readonly PracticeRecord[],
   attempt: PracticeAttempt,
-  maxRecords: number,
+  maxRecordsOrOptions: number | PracticeRecordUpdateOptions,
 ): readonly PracticeRecord[] => {
+  const { latestDecisionAt, maxRecords } = toUpdateOptions(maxRecordsOrOptions);
   if (!isValidAttempt(attempt) || maxRecords <= 0) {
     return practice;
   }
@@ -150,7 +169,11 @@ export const updatePracticeRecords = (
   );
   const loss = attempt.isOptimal ? 0 : attempt.expectedPointsLoss;
   const consecutiveSuccesses = computeConsecutiveSuccesses(existing, attempt);
-  const lastAttemptAt = getNextAttemptAt(practice, attempt.at);
+  const lastAttemptAt = getNextAttemptAt(
+    practice,
+    attempt.at,
+    latestDecisionAt,
+  );
   const nextRecord: PracticeRecord = existing
     ? {
         attempts: existing.attempts + 1,

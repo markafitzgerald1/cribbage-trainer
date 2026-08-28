@@ -21,6 +21,7 @@ import {
   readDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
+  recordPracticeAttempt,
   recordSkippedHand,
 } from "./discardTally";
 import { describe, expect, it } from "@jest/globals";
@@ -79,6 +80,18 @@ describe("discard tally storage", () => {
         }),
       ),
     ).toStrictEqual(summaryOf(1, 4, 0));
+  });
+
+  it("orders a practice attempt after a future-skewed authentic decision", () => {
+    const handKey = "5H,6H,7H,8H,9H,10H|Dealer";
+    clearDiscardTally();
+    recordDiscardDecision(decisionOf({ at: AT + 5000, handKey }));
+
+    recordPracticeAttempt({ at: AT, handKey, isOptimal: true });
+
+    expect(readTallyForDisplay().practice).toMatchObject([
+      { lastAttemptAt: AT + 5001 },
+    ]);
   });
 
   /*

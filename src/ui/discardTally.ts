@@ -459,11 +459,14 @@ export const recordPracticeAttempt = (
     return readDiscardTally(Date.now());
   }
   return extendStoredTally(attempt.at, (tally) => {
-    const nextPractice = updatePracticeRecords(
-      tally.practice,
-      attempt,
-      MAX_RECORDS,
+    const latestDecisionAt = tally.records.reduce(
+      (latestAt, record) => Math.max(latestAt, record.at),
+      attempt.at - 1,
     );
+    const nextPractice = updatePracticeRecords(tally.practice, attempt, {
+      latestDecisionAt,
+      maxRecords: MAX_RECORDS,
+    });
     if (nextPractice === tally.practice) {
       return tally;
     }
