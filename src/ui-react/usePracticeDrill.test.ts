@@ -329,6 +329,10 @@ describe("usePracticeDrill", () => {
       board: { cards: SAME_CARDS, role: CribRole.Pone },
       name: "the same cards under the opposite role",
     },
+    {
+      board: { cards: SAME_CARDS, role: DRILL_ROLE },
+      name: "the drilled hand with its checked discard reset by Back",
+    },
   ])(
     "reports inactive and records nothing when the board holds $name",
     ({ board }) => {

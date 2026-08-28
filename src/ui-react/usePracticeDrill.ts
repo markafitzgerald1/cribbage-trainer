@@ -10,6 +10,7 @@ import { useCallback, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
+import { discardIsComplete } from "../game/discardIsComplete";
 import { serializeHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
@@ -107,6 +108,19 @@ export const usePracticeDrill = ({
     cribRole === activeItem.cribRole &&
     serializeHand(dealtCards) === serializeHand(activeItem.cards);
 
+  /*
+   * The drill's own six cards carry a zero-discard history entry, and Back
+   * onto it after a commit passes `boardHoldsDrill` (serializeHand ignores
+   * the kept flags) while resetting the selection. Rather than leave a
+   * revealed panel showing a stale verdict over frozen, now-empty cards,
+   * the drill is over once its checked discard is gone — the hand stays on
+   * the board and the analysis is simply shown, the same degradation a
+   * reload already gives.
+   */
+  const drillLive =
+    boardHoldsDrill &&
+    !(phase === "revealed" && !discardIsComplete(dealtCards));
+
   const beginWith = useCallback(
     (item: MistakeQueueItem) => {
       recordedRef.current = false;
@@ -161,7 +175,7 @@ export const usePracticeDrill = ({
       onAnalysisRendered(analysis);
       if (
         activeItem === null ||
-        !boardHoldsDrill ||
+        !drillLive ||
         analysis.cribRole !== activeItem.cribRole ||
         phase !== "revealed" ||
         recordedRef.current ||
@@ -195,20 +209,20 @@ export const usePracticeDrill = ({
         previousLoss: activeItem.previousDiscardLoss,
       });
     },
-    [activeItem, boardHoldsDrill, dealtCards, onAnalysisRendered, phase],
+    [activeItem, dealtCards, drillLive, onAnalysisRendered, phase],
   );
 
   return {
-    activeItem: boardHoldsDrill ? activeItem : null,
+    activeItem: drillLive ? activeItem : null,
     handleAnalysisRendered,
     handleStartAutoDrill: startAutoDrill,
     handleStartDrill: beginWith,
-    hasNextHand: boardHoldsDrill && hasNextHand,
-    isActive: boardHoldsDrill,
+    hasNextHand: drillLive && hasNextHand,
+    isActive: drillLive,
     onCommit,
     onExit,
     onNextHand,
-    phase: boardHoldsDrill ? phase : "choosing",
-    verdict: boardHoldsDrill ? verdict : null,
+    phase: drillLive ? phase : "choosing",
+    verdict: drillLive ? verdict : null,
   };
 };

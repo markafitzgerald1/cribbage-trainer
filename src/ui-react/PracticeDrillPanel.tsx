@@ -157,7 +157,13 @@ const renderBody = (props: PracticeDrillPanelProps): React.JSX.Element => {
     return renderChoosing(props);
   }
   if (props.verdict === null) {
-    return <p className={classes.prompt}>Checking your discard…</p>;
+    // Exit stays reachable here: if the tables never load there is no verdict and no other way out of the drill.
+    return (
+      <div className={classes.choosing}>
+        <p className={classes.prompt}>Checking your discard…</p>
+        {renderActions(null, props.onExit)}
+      </div>
+    );
   }
   return renderVerdict(props.verdict, props);
 };

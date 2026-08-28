@@ -59,10 +59,19 @@ describe("practiceDrillPanel", () => {
     expect(onExit).toHaveBeenCalledTimes(1);
   });
 
-  it("shows an interim message after commit while the answer loads", () => {
-    const { getByText } = renderPanel({ phase: "revealed", verdict: null });
+  it("keeps Exit reachable while the answer is still loading", () => {
+    const onExit = jest.fn();
+    const { getByText, getByRole } = renderPanel({
+      onExit,
+      phase: "revealed",
+      verdict: null,
+    });
 
     expect(getByText("Checking your discard…")).toBeInTheDocument();
+
+    fireEvent.click(getByRole("button", { name: "Exit drill" }));
+
+    expect(onExit).toHaveBeenCalledTimes(1);
   });
 
   it("reports an optimal choice and its mastery progress", () => {
