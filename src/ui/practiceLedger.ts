@@ -1,3 +1,4 @@
+import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { parseHandKey } from "./handKey";
 
 export interface PracticeRecord {
@@ -37,9 +38,6 @@ const isCountBoundedBy = (count: unknown, max: number): count is number =>
   Number.isInteger(count) &&
   count >= 0 &&
   count <= max;
-
-const isValidTotalWrongLoss = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value) && value >= 0;
 
 const hasConsistentWrongLoss = (
   wrong: number,
@@ -81,7 +79,7 @@ export const isStoredPracticeRecord = (
     typeof candidate.lastAttemptAt === "number" &&
     Number.isFinite(candidate.lastAttemptAt) &&
     candidate.lastAttemptAt >= 0 &&
-    isValidTotalWrongLoss(candidate.totalWrongLoss) &&
+    isFiniteNonNegative(candidate.totalWrongLoss) &&
     hasConsistentWrongLoss(candidate.wrong, candidate.totalWrongLoss) &&
     parseHandKey(candidate.handKey) !== null
   );

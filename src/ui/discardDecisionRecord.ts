@@ -1,5 +1,6 @@
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
+import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHand } from "../game/Card";
 
@@ -47,6 +48,13 @@ interface StoredDecisionRecord {
   readonly recencyAt?: number;
 }
 
+/*
+ * Finite and non-negative, not just a JavaScript `number`: NaN and Infinity
+ * both satisfy that bare type, and either one poisons every later record's
+ * recencyAt once it reaches normalizeStoredRecords below, since Math.max
+ * with a NaN argument returns NaN and each record's monotonic floor is
+ * derived from the one before it.
+ */
 const isStoredDecisionRecord = (
   value: unknown,
 ): value is StoredDecisionRecord => {
@@ -55,9 +63,9 @@ const isStoredDecisionRecord = (
   }
   const candidate = value as MaybeDecisionRecord;
   return (
-    typeof candidate.at === "number" &&
+    isFiniteNonNegative(candidate.at) &&
     typeof candidate.handKey === "string" &&
-    typeof candidate.expectedPointsLoss === "number" &&
+    isFiniteNonNegative(candidate.expectedPointsLoss) &&
     typeof candidate.isOptimal === "boolean" &&
     typeof candidate.isPractice === "boolean" &&
     (candidate.cribRole === CribRole.Dealer ||

@@ -349,8 +349,26 @@ const extendStoredTally = (
  */
 export const recordDiscardDecision = (
   decision: DiscardDecisionRecord,
-): DiscardTallySummary =>
-  extendStoredTally(decision.at, (tally) => {
+): DiscardTallySummary => {
+  /*
+   * Rejects a non-finite or negative `at`/`expectedPointsLoss` before either
+   * reaches recency math, the same boundary recordPracticeAttempt already
+   * guards below. Without this, a bad caller payload's NaN or Infinity would
+   * poison recencyAt via Math.max and, because each later decision's recency
+   * floor is derived from the one before it, corrupt every decision recorded
+   * afterward too — not just this one.
+   */
+  if (
+    typeof decision.at !== "number" ||
+    !Number.isFinite(decision.at) ||
+    decision.at < 0 ||
+    typeof decision.expectedPointsLoss !== "number" ||
+    !Number.isFinite(decision.expectedPointsLoss) ||
+    decision.expectedPointsLoss < 0
+  ) {
+    return readDiscardTally(Date.now());
+  }
+  return extendStoredTally(decision.at, (tally) => {
     const existing = tally.records.find(
       (record) => record.handKey === decision.handKey,
     );
@@ -368,6 +386,7 @@ export const recordDiscardDecision = (
       records: [...tally.records, recordedDecision].slice(-MAX_RECORDS),
     };
   });
+};
 
 export const recordPracticeAttempt = (
   attempt: PracticeAttempt,
