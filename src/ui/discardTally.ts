@@ -441,10 +441,18 @@ export const recordDiscardDecision = (
     if (existing) {
       return tally;
     }
+    const recordedAt = tally.practice.reduce(
+      (latestAt, record) => Math.max(latestAt, record.lastAttemptAt + 1),
+      tally.records.reduce(
+        (latestAt, record) => Math.max(latestAt, record.at + 1),
+        decision.at,
+      ),
+    );
+    const recordedDecision = { ...decision, at: recordedAt };
     return {
       ...tally,
-      lifetime: addToLifetime(tally.lifetime, decision),
-      records: [...tally.records, decision].slice(-MAX_RECORDS),
+      lifetime: addToLifetime(tally.lifetime, recordedDecision),
+      records: [...tally.records, recordedDecision].slice(-MAX_RECORDS),
     };
   });
 
