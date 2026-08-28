@@ -323,7 +323,7 @@ describe("mistake queue dialog", () => {
         records,
         revision: 1,
         skipped: [],
-        version: 4,
+        version: 5,
       };
 
       const { getByRole, queryByRole } = renderQueueDialog({
