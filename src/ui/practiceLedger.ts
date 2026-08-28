@@ -104,13 +104,10 @@ const computeConsecutiveSuccesses = (
   existing: PracticeRecord | undefined,
   attempt: PracticeAttempt,
 ): number => {
-  if (!existing) {
-    return attempt.isOptimal ? 1 : 0;
+  if (!attempt.isOptimal) {
+    return 0;
   }
-  if (attempt.at < existing.lastAttemptAt) {
-    return existing.consecutiveSuccesses;
-  }
-  return attempt.isOptimal ? existing.consecutiveSuccesses + 1 : 0;
+  return (existing?.consecutiveSuccesses ?? 0) + 1;
 };
 
 export const updatePracticeRecords = (

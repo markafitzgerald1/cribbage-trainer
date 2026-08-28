@@ -361,7 +361,7 @@ describe("practiceLedger", () => {
           handKey: VALID_HAND_KEY,
           isOptimal: false as const,
         },
-        expectedConsecutive: 1,
+        expectedConsecutive: 0,
         expectedWrong: 1,
       },
       {
@@ -370,11 +370,11 @@ describe("practiceLedger", () => {
           handKey: VALID_HAND_KEY,
           isOptimal: true as const,
         },
-        expectedConsecutive: 1,
+        expectedConsecutive: 2,
         expectedWrong: 0,
       },
     ])(
-      "preserves newer lastAttemptAt and consecutiveSuccesses when attempt timestamp is earlier",
+      "keeps newer lastAttemptAt while applying later-recorded outcomes to the streak",
       ({ attempt, expectedConsecutive, expectedWrong }) => {
         const initial: PracticeRecord[] = [
           makeRecord({
