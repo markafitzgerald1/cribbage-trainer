@@ -121,6 +121,22 @@ export const usePracticeDrill = ({
     boardHoldsDrill &&
     !(phase === "revealed" && !discardIsComplete(dealtCards));
 
+  /*
+   * When the drill stops holding the board it is finished, not merely
+   * hidden: clearing the retained phase and verdict here — React's
+   * sanctioned "adjust state while rendering" path, which it retries
+   * without committing the discarded output — is what stops selecting two
+   * cards on a Back-restored hand from resurrecting the old drill with its
+   * stale verdict. `beginWith` resets `recordedRef` before the next drill,
+   * so it needs no reset here.
+   */
+  if (activeItem !== null && !drillLive) {
+    setActiveItem(null);
+    setPhase("choosing");
+    setVerdict(null);
+    setHasNextHand(false);
+  }
+
   const beginWith = useCallback(
     (item: MistakeQueueItem) => {
       recordedRef.current = false;
@@ -175,7 +191,6 @@ export const usePracticeDrill = ({
       onAnalysisRendered(analysis);
       if (
         activeItem === null ||
-        !drillLive ||
         analysis.cribRole !== activeItem.cribRole ||
         phase !== "revealed" ||
         recordedRef.current ||
@@ -209,20 +224,25 @@ export const usePracticeDrill = ({
         previousLoss: activeItem.previousDiscardLoss,
       });
     },
-    [activeItem, dealtCards, drillLive, onAnalysisRendered, phase],
+    [activeItem, dealtCards, onAnalysisRendered, phase],
   );
 
+  /*
+   * The render-time reset above guarantees `activeItem` is null in every
+   * committed render where the drill no longer holds the board, so the raw
+   * state is already the masked state — no `drillLive` gate is needed here.
+   */
   return {
-    activeItem: drillLive ? activeItem : null,
+    activeItem,
     handleAnalysisRendered,
     handleStartAutoDrill: startAutoDrill,
     handleStartDrill: beginWith,
-    hasNextHand: drillLive && hasNextHand,
-    isActive: drillLive,
+    hasNextHand,
+    isActive: activeItem !== null,
     onCommit,
     onExit,
     onNextHand,
-    phase: drillLive ? phase : "choosing",
-    verdict: drillLive ? verdict : null,
+    phase,
+    verdict,
   };
 };

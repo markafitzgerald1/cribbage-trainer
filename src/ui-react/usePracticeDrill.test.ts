@@ -174,6 +174,12 @@ const expectNoVerdictRecorded = (harness: Harness) => {
   expect(readTallyForDisplay().practice).toHaveLength(0);
 };
 
+const expectDrillFinished = (harness: Harness) => {
+  expectDrillState(harness, false, "choosing");
+
+  expect(harness.drill().verdict).toBeNull();
+};
+
 describe("usePracticeDrill", () => {
   it("loads a mistake face-up, then reveals the analysis only on commit", () => {
     const harness = freshHarness();
@@ -278,9 +284,7 @@ describe("usePracticeDrill", () => {
 
     harness.exit();
 
-    expectDrillState(harness, false, "choosing");
-
-    expect(harness.drill().verdict).toBeNull();
+    expectDrillFinished(harness);
   });
 
   it.each([
@@ -351,6 +355,21 @@ describe("usePracticeDrill", () => {
     });
 
     expect(harness.drill().verdict).not.toBeNull();
+  });
+
+  it("stays finished after Back reopens a scored discard, even once two cards are chosen again", () => {
+    const harness = drilledThrough(analysisOf(false, 0.5));
+
+    // Back restores the drilled six cards with the checked discard cleared.
+    harness.replaceBoard({ cards: SAME_CARDS, role: DRILL_ROLE });
+    expectDrillFinished(harness);
+
+    // Choosing a fresh discard on the restored hand must not revive the drill.
+    harness.replaceBoard({
+      cards: toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), parseHand("9H,10H")),
+      role: DRILL_ROLE,
+    });
+    expectDrillFinished(harness);
   });
 
   it("records nothing when the analysis was scored for the other role", () => {
