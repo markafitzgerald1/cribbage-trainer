@@ -51,6 +51,11 @@ const buildSingleQueueItem = (
   return queue[0] as MistakeQueueItem;
 };
 
+const buildFirstQueueItem = (
+  records: readonly ReturnType<typeof createTestMistakeRecord>[],
+): MistakeQueueItem =>
+  buildMistakeQueue(createMockTally({ records }))[0] as MistakeQueueItem;
+
 describe("mistakeQueue", () => {
   describe("computeLossQuantileThresholds", () => {
     it.each([
@@ -159,16 +164,12 @@ describe("mistakeQueue", () => {
     });
 
     it("derives cribRole from handKey rather than a stored record whose cribRole field disagrees", () => {
-      const tally = createMockTally({
-        records: [
-          createTestMistakeRecord({
-            cribRole: CribRole.Dealer,
-            handKey: "AH,2H,3H,4H,5H,6H|Pone",
-          }),
-        ],
-      });
-
-      const item = buildMistakeQueue(tally)[0] as MistakeQueueItem;
+      const item = buildFirstQueueItem([
+        createTestMistakeRecord({
+          cribRole: CribRole.Dealer,
+          handKey: "AH,2H,3H,4H,5H,6H|Pone",
+        }),
+      ]);
 
       expect(item.cribRole).toBe(CribRole.Pone);
     });
@@ -310,6 +311,19 @@ describe("mistakeQueue", () => {
       };
 
       expect(buildMistakeQueue(tallyWithoutPractice as never)).toHaveLength(1);
+    });
+
+    it("keeps the earliest at as originalDecisionAt when duplicate handKeys collapse", () => {
+      const handKey = "5H,6H,7H,8H,9H,10H|Dealer";
+      const earliestAt = NOW - 2 * ONE_DAY_MS;
+
+      const item = buildFirstQueueItem([
+        createTestMistakeRecord({ at: NOW - ONE_DAY_MS, handKey }),
+        createTestMistakeRecord({ at: earliestAt, handKey }),
+        createTestMistakeRecord({ at: NOW, handKey }),
+      ]);
+
+      expect(item.originalDecisionAt).toBe(earliestAt);
     });
   });
 

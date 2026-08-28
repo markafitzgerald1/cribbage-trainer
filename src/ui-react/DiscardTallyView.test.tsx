@@ -149,9 +149,16 @@ describe("discard tally view", () => {
   it("forwards sortOrder to the mistake queue dialog", () => {
     seedMistakeDecision();
 
+    /*
+     * Ascending, not DiscardTallyView's and MistakeQueueDialog's shared
+     * Descending default: a default-matching sortOrder cannot tell
+     * "forwarded correctly" apart from "never forwarded, dialog fell back
+     * to its own default" — only a non-default value that changes the
+     * rendered order proves the prop actually crossed the boundary.
+     */
     const { container, getByRole } = render(
       <DiscardTallyView
-        sortOrder={SortOrder.Descending}
+        sortOrder={SortOrder.Ascending}
         summary={discardTallySummary({
           decisions: 1,
           meanExpectedPointsLoss: 1.5,
@@ -162,7 +169,7 @@ describe("discard tally view", () => {
 
     fireEvent.click(getByRole("button", { name: "Mistake queue" }));
 
-    expect(container).toHaveTextContent("10♥9♥8♥7♥6♥5♥");
-    expect(container).toHaveTextContent("Previous discard:6♥5♥");
+    expect(container).toHaveTextContent("5♥6♥7♥8♥9♥10♥");
+    expect(container).toHaveTextContent("Previous discard:5♥6♥");
   });
 });

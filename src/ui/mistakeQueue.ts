@@ -108,10 +108,10 @@ export const computePriority = (lossIfWrong: number, pWrong: number): number =>
   lossIfWrong * pWrong;
 
 interface HandAggregate {
-  at: number;
   discardKey: string | null;
   expectedPointsLoss: number;
   handKey: string;
+  originalAt: number;
   recencyAt: number;
 }
 
@@ -124,6 +124,17 @@ interface HandAggregate {
  * source its cards already come from, rather than from a redundant field
  * that a divergent record could have set to something else.
  */
+/*
+ * `originalAt` tracks the earliest `at` seen for a handKey across every
+ * duplicate, independently of which duplicate's other fields win below.
+ * Normal play never records two DiscardDecisionRecords for one handKey —
+ * recordDiscardDecision is idempotent by handKey — so duplicates arise only
+ * from a genuinely rare cross-tab race or from hand-edited/legacy storage.
+ * The rest of the aggregate (loss, discard, recency) still tracks whichever
+ * duplicate is most recent, since that is the mistake's current state; only
+ * the moment the player first made it stays fixed to the earliest record,
+ * which is what MistakeQueueItem.originalDecisionAt promises callers.
+ */
 const aggregateMistakeRecords = (
   records: readonly DiscardDecisionRecord[],
 ): Map<string, HandAggregate> => {
@@ -135,15 +146,21 @@ const aggregateMistakeRecords = (
     if (isMistake) {
       const existing = map.get(record.handKey);
       const recencyAt = record.recencyAt ?? record.at;
-      if (!existing || recencyAt >= existing.recencyAt) {
-        map.set(record.handKey, {
-          at: record.at,
-          discardKey: record.discardKey,
-          expectedPointsLoss: record.expectedPointsLoss,
-          handKey: record.handKey,
-          recencyAt,
-        });
-      }
+      const originalAt = existing
+        ? Math.min(existing.originalAt, record.at)
+        : record.at;
+      map.set(
+        record.handKey,
+        !existing || recencyAt >= existing.recencyAt
+          ? {
+              discardKey: record.discardKey,
+              expectedPointsLoss: record.expectedPointsLoss,
+              handKey: record.handKey,
+              originalAt,
+              recencyAt,
+            }
+          : { ...existing, originalAt },
+      );
     }
   }
 
@@ -186,7 +203,7 @@ const createCandidateQueueItem = ({
     isMastered,
     lastAttemptAt,
     lossIfWrong,
-    originalDecisionAt: aggregate.at,
+    originalDecisionAt: aggregate.originalAt,
     pWrong,
     previousDiscard: aggregate.discardKey,
     priority,
