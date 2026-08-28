@@ -342,10 +342,10 @@ describe("discard tally recovery", () => {
 
     expect(readTallyForDisplay().records).toStrictEqual([
       { ...v2Record, discardKey: null, recencyAt: v2Record.at },
-      { ...v3Null, recencyAt: v3Null.at },
-      { ...v3String, recencyAt: v3String.at },
-      { ...v3Corrupt, discardKey: null, recencyAt: v3Corrupt.at },
-      { ...v3Three, discardKey: null, recencyAt: v3Three.at },
+      { ...v3Null, recencyAt: v3Null.at + 1 },
+      { ...v3String, recencyAt: v3String.at + 2 },
+      { ...v3Corrupt, discardKey: null, recencyAt: v3Corrupt.at + 3 },
+      { ...v3Three, discardKey: null, recencyAt: v3Three.at + 4 },
     ]);
   });
 

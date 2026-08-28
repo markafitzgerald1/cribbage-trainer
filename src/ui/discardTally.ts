@@ -1,13 +1,17 @@
 import {
+  type DiscardDecisionRecord,
+  latestDecisionRecencyAt,
+  normalizeStoredRecords,
+} from "./discardDecisionRecord";
+import {
   type PracticeAttempt,
   type PracticeRecord,
   isStoredPracticeRecord,
   updatePracticeRecords,
 } from "./practiceLedger";
-import { CARDS_PER_DISCARD } from "../game/facts";
-import { CribRole } from "../game/expectedCribPoints";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
-import { parseHand } from "../game/Card";
+import { isObject } from "./isObject";
+export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
 /*
  * Scoped to the deployment that wrote it. A PR preview and production share
@@ -32,20 +36,6 @@ const CURRENT_VERSION = 5;
  * budgets at zero operational cost.
  */
 export const MAX_RECORDS = 10_000;
-export interface DiscardDecisionRecord {
-  readonly at: number;
-  readonly cribRole: CribRole;
-  // Serialized in deal order; null on records from versions before 3.
-  readonly discardKey: string | null;
-  // Cards and role; collapses re-renders from Back/Forward/sorts/reloads.
-  readonly handKey: string;
-  readonly expectedPointsLoss: number;
-  readonly isOptimal: boolean;
-  // Seeded, deep-linked, and manually entered hands are kept but excluded from headline averages.
-  readonly isPractice: boolean;
-  // Monotonic recording order for queue recency; `at` remains the calendar event time.
-  readonly recencyAt?: number;
-}
 export interface DiscardTallySummary {
   readonly decisions: number;
   readonly meanExpectedPointsLoss: number | null;
@@ -118,79 +108,6 @@ interface MaybeLifetime {
   readonly optimalDecisions?: unknown;
   readonly skippedHands?: unknown;
 }
-interface MaybeDecisionRecord {
-  readonly at?: unknown;
-  readonly cribRole?: unknown;
-  readonly discardKey?: unknown;
-  readonly handKey?: unknown;
-  readonly expectedPointsLoss?: unknown;
-  readonly isOptimal?: unknown;
-  readonly isPractice?: unknown;
-  readonly recencyAt?: unknown;
-}
-
-interface StoredDecisionRecord {
-  readonly at: number;
-  readonly cribRole: CribRole;
-  readonly discardKey?: string | null;
-  readonly expectedPointsLoss: number;
-  readonly handKey: string;
-  readonly isOptimal: boolean;
-  readonly isPractice: boolean;
-  readonly recencyAt?: number;
-}
-
-const isObject = (value: unknown): value is object =>
-  typeof value === "object" && value !== null;
-
-const isStoredDecisionRecord = (
-  value: unknown,
-): value is StoredDecisionRecord => {
-  if (!isObject(value)) {
-    return false;
-  }
-  const candidate = value as MaybeDecisionRecord;
-  return (
-    typeof candidate.at === "number" &&
-    typeof candidate.handKey === "string" &&
-    typeof candidate.expectedPointsLoss === "number" &&
-    typeof candidate.isOptimal === "boolean" &&
-    typeof candidate.isPractice === "boolean" &&
-    (candidate.cribRole === CribRole.Dealer ||
-      candidate.cribRole === CribRole.Pone) &&
-    (typeof candidate.discardKey === "undefined" ||
-      candidate.discardKey === null ||
-      typeof candidate.discardKey === "string")
-  );
-};
-
-const normalizeDiscardKey = (discardKey: unknown): string | null => {
-  if (typeof discardKey !== "string") {
-    return null;
-  }
-  try {
-    return parseHand(discardKey).length === CARDS_PER_DISCARD
-      ? discardKey
-      : null;
-  } catch {
-    return null;
-  }
-};
-
-const normalizeRecencyAt = (recencyAt: unknown, at: number): number =>
-  typeof recencyAt === "number" && Number.isFinite(recencyAt) && recencyAt >= 0
-    ? recencyAt
-    : at;
-
-const latestDecisionRecencyAt = (
-  records: readonly DiscardDecisionRecord[],
-  fallback: number,
-): number =>
-  records.reduce(
-    (latestAt, record) =>
-      Math.max(latestAt, normalizeRecencyAt(record.recencyAt, record.at)),
-    fallback,
-  );
 
 const isSkippedHand = (value: unknown): value is SkippedHand =>
   isObject(value) && typeof (value as SkippedHand).at === "number";
@@ -260,15 +177,7 @@ const readStoredTally = (): StoredTally | null => {
     practice: Array.isArray(candidate.practice)
       ? candidate.practice.filter(isStoredPracticeRecord)
       : [],
-    records: Array.isArray(records)
-      ? records.filter(isStoredDecisionRecord).map((record) => ({
-          ...record,
-          // Absent in a record written before version 3, or invalid, permanently null.
-          discardKey: normalizeDiscardKey(record.discardKey),
-          // Absent in a record written before version 5, fall back to calendar order.
-          recencyAt: normalizeRecencyAt(record.recencyAt, record.at),
-        }))
-      : [],
+    records: Array.isArray(records) ? normalizeStoredRecords(records) : [],
     // Absent in a tally written before revisions were kept, which simply starts the count.
     revision: typeof candidate.revision === "number" ? candidate.revision : 0,
     skipped: Array.isArray(candidate.skipped)

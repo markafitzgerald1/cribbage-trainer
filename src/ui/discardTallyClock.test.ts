@@ -1,5 +1,12 @@
 /* jscpd:ignore-start */
-import { AT, DAYS_EARLIER, decisionOf } from "./discardTally.test.common";
+import {
+  AT,
+  DAYS_EARLIER,
+  asJson,
+  decisionOf,
+  storeRaw,
+  storedWith,
+} from "./discardTally.test.common";
 import {
   clearDiscardTally,
   readDiscardTally,
@@ -33,6 +40,25 @@ describe("discard tally clock ordering", () => {
     expect([getRecordedAt(0), getRecordedAt(1)]).toStrictEqual([futureAt, AT]);
     expect(getRecordedRecencyAt(1)).toBe(futureAt + 1);
     expect(readDiscardTally(AT).todayDecisions).toBe(1);
+  });
+
+  it("migrates legacy records in their recorded order", () => {
+    const futureAt = AT + DAYS_EARLIER;
+    storeRaw(
+      asJson(
+        storedWith({
+          records: [
+            decisionOf({ at: futureAt, handKey: "first" }),
+            decisionOf({ at: AT, handKey: "second" }),
+          ],
+          version: 4,
+        }),
+      ),
+    );
+
+    expect(
+      readTallyForDisplay().records.map((record) => record.recencyAt),
+    ).toStrictEqual([futureAt, futureAt + 1]);
   });
 
   it("orders an authentic decision after a future-skewed practice attempt", () => {
