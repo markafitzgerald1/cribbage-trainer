@@ -115,6 +115,13 @@ describe("practiceLedger", () => {
     });
 
     it.each([
+      { attempts: 2, consecutiveSuccesses: 2, totalWrongLoss: 2, wrong: 2 },
+      { attempts: 2, consecutiveSuccesses: 1, totalWrongLoss: 0, wrong: 0 },
+    ])("rejects impossible success streaks %j", (overrides) => {
+      expect(isStoredPracticeRecord(makeRecord(overrides))).toBe(false);
+    });
+
+    it.each([
       { totalWrongLoss: -1 },
       { totalWrongLoss: Infinity },
       { totalWrongLoss: NaN },

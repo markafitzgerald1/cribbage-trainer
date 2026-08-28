@@ -46,6 +46,14 @@ const hasConsistentWrongLoss = (
   totalWrongLoss: number,
 ): boolean => (wrong === 0) === (totalWrongLoss === 0);
 
+const hasConsistentSuccessStreak = (
+  attempts: number,
+  wrong: number,
+  consecutiveSuccesses: number,
+): boolean =>
+  consecutiveSuccesses <= attempts - wrong &&
+  (wrong !== 0 || consecutiveSuccesses === attempts);
+
 export const isStoredPracticeRecord = (
   value: unknown,
 ): value is PracticeRecord => {
@@ -65,6 +73,11 @@ export const isStoredPracticeRecord = (
     typeof candidate.handKey === "string" &&
     isCountBoundedBy(candidate.wrong, candidate.attempts) &&
     isCountBoundedBy(candidate.consecutiveSuccesses, candidate.attempts) &&
+    hasConsistentSuccessStreak(
+      candidate.attempts,
+      candidate.wrong,
+      candidate.consecutiveSuccesses,
+    ) &&
     typeof candidate.lastAttemptAt === "number" &&
     Number.isFinite(candidate.lastAttemptAt) &&
     candidate.lastAttemptAt >= 0 &&
