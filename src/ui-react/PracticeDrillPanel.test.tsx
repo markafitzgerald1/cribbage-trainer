@@ -99,7 +99,7 @@ describe("practiceDrillPanel", () => {
     });
 
     expect(
-      getByText("−0.42 against the best discard. Streak reset."),
+      getByText("0.42 behind the best discard — streak reset."),
     ).toBeInTheDocument();
     expect(getByText("not recorded")).toBeInTheDocument();
   });

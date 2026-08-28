@@ -1,6 +1,10 @@
 import * as classes from "./MistakeQueueDialog.module.css";
 import { type Card, parseHand } from "../game/Card";
-import type { LossQuantile, MistakeQueueItem } from "../ui/mistakeQueue";
+import {
+  type LossQuantile,
+  type MistakeQueueItem,
+  SUCCESSES_FOR_MASTERY,
+} from "../ui/mistakeQueue";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
@@ -61,7 +65,7 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
     </span>
   ) : (
     <span className={`${classes.statusBadge} ${classes.activeBadge}`}>
-      {item.consecutiveSuccesses}/2 successes
+      {item.consecutiveSuccesses}/{SUCCESSES_FOR_MASTERY} successes
     </span>
   );
 

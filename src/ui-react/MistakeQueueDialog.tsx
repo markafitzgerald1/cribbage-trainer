@@ -11,6 +11,7 @@ import {
   type MistakeQueueRoleFilter,
   type MistakeQueueSortOrder,
   type MistakeQueueStatusFilter,
+  SUCCESSES_FOR_MASTERY,
   buildMistakeQueue,
   computeLossQuantileThresholds,
   filterMistakeQueue,
@@ -306,7 +307,8 @@ export function MistakeQueueDialog({
         </div>
         <p className={classes.subtitle}>
           Hands where you previously discarded sub-optimally. Master a hand by
-          choosing the optimal discard 2 consecutive times in practice.
+          choosing the optimal discard {SUCCESSES_FOR_MASTERY} consecutive times
+          in practice.
         </p>
 
         <DialogSummaryCards

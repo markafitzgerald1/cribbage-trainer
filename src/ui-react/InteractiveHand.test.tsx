@@ -1,18 +1,22 @@
+import { InteractiveHand, type InteractiveHandDrill } from "./InteractiveHand";
 import { SORT_ORDER_NAMES, type SortOrderName } from "../ui/SortOrderName";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
-import { InteractiveHand } from "./InteractiveHand";
 import { SortLabel } from "./SortOrderInput";
 import { SortOrder } from "../ui/SortOrder";
 import { act } from "react";
+import { basePanelArgs } from "./PracticeDrillPanel.test.common";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { dealHand } from "../game/dealHand";
 import { handToSortedString } from "./handToSortedString.test.common";
 import { render } from "@testing-library/react";
 
 describe("sortable hand input component", () => {
-  function renderComponent(initialSortOrder: SortOrder = SortOrder.Ascending) {
+  function renderComponent(
+    initialSortOrder: SortOrder = SortOrder.Ascending,
+    practiceDrill: InteractiveHandDrill | null = null,
+  ) {
     const handCards = dealHand(createGenerator());
     const onCardChange = jest.fn();
     const onDeal = jest.fn();
@@ -27,6 +31,7 @@ describe("sortable hand input component", () => {
           onDeal={onDeal}
           onEnterCards={onEnterCards}
           onSortOrderChange={onSortOrderChange}
+          practiceDrill={practiceDrill}
           sortOrder={initialSortOrder}
         />,
       ),
@@ -89,6 +94,27 @@ describe("sortable hand input component", () => {
       });
 
       expect(onCardChange).toHaveBeenCalledWith(dealOrderIndex);
+    },
+  );
+
+  it.each([
+    { calls: 1, phase: "choosing" as const },
+    { calls: 0, phase: "revealed" as const },
+  ])(
+    "fires a card change $calls time(s) while a drill is $phase",
+    ({ calls, phase }) => {
+      const {
+        component: { container },
+        onCardChange,
+      } = renderComponent(SortOrder.DealOrder, basePanelArgs({ phase }));
+
+      act(() => {
+        container
+          .querySelector<HTMLInputElement>("input[type='checkbox']")
+          ?.click();
+      });
+
+      expect(onCardChange).toHaveBeenCalledTimes(calls);
     },
   );
 

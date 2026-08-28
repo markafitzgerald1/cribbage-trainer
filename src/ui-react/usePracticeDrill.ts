@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import {
   type MistakeQueueItem,
+  SUCCESSES_FOR_MASTERY,
   buildMistakeQueue,
   sampleMistakeQueueByPriority,
 } from "../ui/mistakeQueue";
@@ -12,8 +13,6 @@ import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { serializeHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
-
-const SUCCESSES_FOR_MASTERY = 2;
 
 // Draw one specific mistake, or let the sampler pick; both optional, exposed by the tally view and its queue dialog.
 export type StartDrillHandler = ((item: MistakeQueueItem) => void) | null;
@@ -143,11 +142,19 @@ export const usePracticeDrill = ({
   const handleAnalysisRendered = useCallback(
     (analysis: RenderedAnalysis) => {
       onAnalysisRendered(analysis);
+      /*
+       * The last clause guards against the board being swapped mid-drill
+       * (Deal, Enter cards, a history move) without an explicit exit: without
+       * it, the replacement hand's score would be recorded against this
+       * drill's `activeItem` — an unrelated mistake. `serializeHand` ignores
+       * the kept flags, so selecting the discards does not trip it.
+       */
       if (
         activeItem === null ||
         phase !== "revealed" ||
         recordedRef.current ||
-        analysis.quality === null
+        analysis.quality === null ||
+        serializeHand(dealtCards) !== serializeHand(activeItem.cards)
       ) {
         return;
       }

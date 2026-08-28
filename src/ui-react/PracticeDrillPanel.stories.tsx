@@ -55,6 +55,6 @@ export const MissVerdict: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    await expectStoryTextVisible(canvasElement, /against the best discard/u);
+    await expectStoryTextVisible(canvasElement, /behind the best discard/u);
   },
 };

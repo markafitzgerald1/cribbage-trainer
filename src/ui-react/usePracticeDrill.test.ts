@@ -13,6 +13,7 @@ import {
 } from "../ui/discardTally";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
+import type { DealtCard } from "../game/DealtCard";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { mockItemA } from "../ui/mistakeQueue.test.common";
 import { parseHand } from "../game/Card";
@@ -68,8 +69,11 @@ interface Harness {
   readonly loadHandCalls: number;
   readonly next: () => void;
   readonly render: (analysis: RenderedAnalysis) => void;
+  readonly replaceBoard: (cards: readonly DealtCard[]) => void;
   readonly start: () => void;
 }
+
+const OTHER_HAND = toDealtCards(parseHand("2C,3D,4S,5H,6C,7D"), []);
 
 const setupHarness = (): Harness => {
   const loadedHands: PracticeDrillHand[] = [];
@@ -77,13 +81,18 @@ const setupHarness = (): Harness => {
   const loadHand = jest.fn<(hand: PracticeDrillHand) => void>((hand) => {
     loadedHands.push(hand);
   });
-  const { result } = renderHook(() =>
-    usePracticeDrill({
-      dealtCards,
-      generateRandomNumber: () => 0,
-      loadHand,
-      onAnalysisRendered: (analysis) => forwardedAnalyses.push(analysis),
-    }),
+  const { rerender, result } = renderHook<
+    PracticeDrill,
+    { cards: readonly DealtCard[] }
+  >(
+    ({ cards }) =>
+      usePracticeDrill({
+        dealtCards: cards,
+        generateRandomNumber: () => 0,
+        loadHand,
+        onAnalysisRendered: (analysis) => forwardedAnalyses.push(analysis),
+      }),
+    { initialProps: { cards: dealtCards } },
   );
   const step = (action: (drill: PracticeDrill) => void) => {
     act(() => {
@@ -107,6 +116,11 @@ const setupHarness = (): Harness => {
     next: () => step((drill) => drill.onNextHand()),
     render: (analysis) =>
       step((drill) => drill.handleAnalysisRendered(analysis)),
+    replaceBoard: (cards) => {
+      act(() => {
+        rerender({ cards });
+      });
+    },
     start: () => step((drill) => drill.handleStartDrill(mockItemA)),
   };
 };
@@ -119,11 +133,24 @@ const freshHarness = ({ seed = false } = {}): Harness => {
   return setupHarness();
 };
 
-const drilledThrough = (analysis: RenderedAnalysis): Harness => {
+const committedHarness = (): Harness => {
   const harness = freshHarness({ seed: true });
   harness.start();
   harness.commit();
+  return harness;
+};
+
+const drilledThrough = (analysis: RenderedAnalysis): Harness => {
+  const harness = committedHarness();
   harness.render(analysis);
+  return harness;
+};
+
+// A drill committed while `board` sits on screen in place of the drilled hand.
+const drilledOnBoard = (board: readonly DealtCard[]): Harness => {
+  const harness = committedHarness();
+  harness.replaceBoard(board);
+  harness.render(analysisOf(false, 0.5));
   return harness;
 };
 
@@ -288,5 +315,17 @@ describe("usePracticeDrill", () => {
     harness.start();
 
     expect(harness.drill().hasNextHand).toBe(true);
+  });
+
+  it("records nothing when the board was swapped away from the drill hand", () => {
+    expectNoVerdictRecorded(drilledOnBoard(OTHER_HAND));
+  });
+
+  it("still records after a selection change on the same six cards", () => {
+    const harness = drilledOnBoard(
+      toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), parseHand("7H,8H")),
+    );
+
+    expect(harness.drill().verdict).not.toBeNull();
   });
 });

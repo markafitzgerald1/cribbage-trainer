@@ -11,7 +11,8 @@ const FRACTION_TWO_THIRDS_NUMERATOR = 2;
 const FRACTION_TWO_THIRDS_DENOMINATOR = 3;
 const FRACTION_TWO_THIRDS =
   FRACTION_TWO_THIRDS_NUMERATOR / FRACTION_TWO_THIRDS_DENOMINATOR;
-const SUCCESSES_FOR_MASTERY = 2;
+// Two consecutive optimal choices since the last error; the one place the copy and the state machine both read.
+export const SUCCESSES_FOR_MASTERY = 2;
 
 export type MistakeQueueSortOrder = "highestLoss" | "mostRecent" | "priority";
 

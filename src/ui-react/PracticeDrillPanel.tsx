@@ -1,12 +1,11 @@
 import * as classes from "./PracticeDrillPanel.module.css";
 import type { PracticeDrillPhase, PracticeVerdict } from "./usePracticeDrill";
+import { SUCCESSES_FOR_MASTERY } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { parseHand } from "../game/Card";
 
 const LOSS_DIGITS = 2;
-// U+2212, digit-width under tabular figures, matching how the analysis table already renders signed points.
-const MINUS = "−";
 
 export interface PracticeDrillPanelProps {
   readonly canCommit: boolean;
@@ -27,13 +26,11 @@ interface VerdictRow {
 }
 
 /*
- * Rounded to display precision before the sign is applied, so a loss that
- * rounds to zero reads as a plain "0.00" rather than a signed near-zero.
+ * A plain magnitude, matching how "Lost per discard" and the trend view's
+ * "Avg loss" already show what a discard gave up: it is a cost, never a gain,
+ * so a sign would only be noise.
  */
-const formatLoss = (loss: number): string => {
-  const rounded = loss.toFixed(LOSS_DIGITS);
-  return rounded === (0).toFixed(LOSS_DIGITS) ? rounded : `${MINUS}${rounded}`;
-};
+const formatLoss = (loss: number): string => loss.toFixed(LOSS_DIGITS);
 
 const renderDiscard = (
   discard: string | null,
@@ -71,13 +68,14 @@ const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
   if (verdict.isOptimal) {
     return (
       <p className={classes.outcomeGood}>
-        Optimal — {verdict.consecutiveSuccesses} of 2 toward mastery.
+        Optimal — {verdict.consecutiveSuccesses} of {SUCCESSES_FOR_MASTERY}{" "}
+        toward mastery.
       </p>
     );
   }
   return (
     <p className={classes.outcomeMiss}>
-      {formatLoss(verdict.chosenLoss)} against the best discard. Streak reset.
+      {formatLoss(verdict.chosenLoss)} behind the best discard — streak reset.
     </p>
   );
 };
