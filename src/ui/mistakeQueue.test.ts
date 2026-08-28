@@ -158,6 +158,21 @@ describe("mistakeQueue", () => {
       expect(item.cards).toHaveLength(6);
     });
 
+    it("derives cribRole from handKey rather than a stored record whose cribRole field disagrees", () => {
+      const tally = createMockTally({
+        records: [
+          createTestMistakeRecord({
+            cribRole: CribRole.Dealer,
+            handKey: "AH,2H,3H,4H,5H,6H|Pone",
+          }),
+        ],
+      });
+
+      const item = buildMistakeQueue(tally)[0] as MistakeQueueItem;
+
+      expect(item.cribRole).toBe(CribRole.Pone);
+    });
+
     it("assigns loss quantiles when 3 or more distinct loss values exist", () => {
       const tally = createMockTally({
         records: [

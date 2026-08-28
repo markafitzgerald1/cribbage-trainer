@@ -109,13 +109,21 @@ export const computePriority = (lossIfWrong: number, pWrong: number): number =>
 
 interface HandAggregate {
   at: number;
-  cribRole: CribRole;
   discardKey: string | null;
   expectedPointsLoss: number;
   handKey: string;
   recencyAt: number;
 }
 
+/*
+ * The role is deliberately not carried here even though every source record
+ * has a cribRole: handKey already encodes it (`${cards}|${cribRole}`), so a
+ * second copy could only ever agree with the parsed key or, on corrupt or
+ * hand-edited storage, silently disagree with it. Below, the item's cribRole
+ * comes from parsing the same handKey this aggregate is keyed by, the same
+ * source its cards already come from, rather than from a redundant field
+ * that a divergent record could have set to something else.
+ */
 const aggregateMistakeRecords = (
   records: readonly DiscardDecisionRecord[],
 ): Map<string, HandAggregate> => {
@@ -130,7 +138,6 @@ const aggregateMistakeRecords = (
       if (!existing || recencyAt >= existing.recencyAt) {
         map.set(record.handKey, {
           at: record.at,
-          cribRole: record.cribRole,
           discardKey: record.discardKey,
           expectedPointsLoss: record.expectedPointsLoss,
           handKey: record.handKey,
@@ -146,12 +153,14 @@ const aggregateMistakeRecords = (
 interface CandidateParams {
   aggregate: HandAggregate;
   cards: readonly Card[];
+  cribRole: CribRole;
   practice?: PracticeRecord | undefined;
 }
 
 const createCandidateQueueItem = ({
   aggregate,
   cards,
+  cribRole,
   practice,
 }: CandidateParams) => {
   const consecutiveSuccesses = practice?.consecutiveSuccesses ?? 0;
@@ -172,7 +181,7 @@ const createCandidateQueueItem = ({
     attempts,
     cards,
     consecutiveSuccesses,
-    cribRole: aggregate.cribRole,
+    cribRole,
     handKey: aggregate.handKey,
     isMastered,
     lastAttemptAt,
@@ -206,6 +215,7 @@ export const buildMistakeQueue = (
         createCandidateQueueItem({
           aggregate,
           cards: parsedKey.cards,
+          cribRole: parsedKey.cribRole,
           practice: practiceMap.get(aggregate.handKey),
         }),
       );
