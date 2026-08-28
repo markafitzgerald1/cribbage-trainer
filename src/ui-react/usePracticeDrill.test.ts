@@ -69,11 +69,17 @@ interface Harness {
   readonly loadHandCalls: number;
   readonly next: () => void;
   readonly render: (analysis: RenderedAnalysis) => void;
-  readonly replaceBoard: (cards: readonly DealtCard[]) => void;
+  readonly replaceBoard: (props: BoardProps) => void;
   readonly start: () => void;
 }
 
+interface BoardProps {
+  readonly cards: readonly DealtCard[];
+  readonly role: CribRole;
+}
+
 const OTHER_HAND = toDealtCards(parseHand("2C,3D,4S,5H,6C,7D"), []);
+const DRILL_ROLE = mockItemA.cribRole;
 
 const setupHarness = (): Harness => {
   const loadedHands: PracticeDrillHand[] = [];
@@ -81,18 +87,16 @@ const setupHarness = (): Harness => {
   const loadHand = jest.fn<(hand: PracticeDrillHand) => void>((hand) => {
     loadedHands.push(hand);
   });
-  const { rerender, result } = renderHook<
-    PracticeDrill,
-    { cards: readonly DealtCard[] }
-  >(
-    ({ cards }) =>
+  const { rerender, result } = renderHook<PracticeDrill, BoardProps>(
+    ({ cards, role }) =>
       usePracticeDrill({
+        cribRole: role,
         dealtCards: cards,
         generateRandomNumber: () => 0,
         loadHand,
         onAnalysisRendered: (analysis) => forwardedAnalyses.push(analysis),
       }),
-    { initialProps: { cards: dealtCards } },
+    { initialProps: { cards: dealtCards, role: DRILL_ROLE } },
   );
   const step = (action: (drill: PracticeDrill) => void) => {
     act(() => {
@@ -116,9 +120,9 @@ const setupHarness = (): Harness => {
     next: () => step((drill) => drill.onNextHand()),
     render: (analysis) =>
       step((drill) => drill.handleAnalysisRendered(analysis)),
-    replaceBoard: (cards) => {
+    replaceBoard: (props) => {
       act(() => {
-        rerender({ cards });
+        rerender(props);
       });
     },
     start: () => step((drill) => drill.handleStartDrill(mockItemA)),
@@ -146,8 +150,10 @@ const drilledThrough = (analysis: RenderedAnalysis): Harness => {
   return harness;
 };
 
+const SAME_CARDS = toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), []);
+
 // A drill committed while `board` sits on screen in place of the drilled hand.
-const drilledOnBoard = (board: readonly DealtCard[]): Harness => {
+const drilledOnBoard = (board: BoardProps): Harness => {
   const harness = committedHarness();
   harness.replaceBoard(board);
   harness.render(analysisOf(false, 0.5));
@@ -231,7 +237,7 @@ describe("usePracticeDrill", () => {
 
     expect(verdict?.chosenDiscard).toBe("5H,6H");
     expect(verdict?.previousDiscard).toBe(mockItemA.previousDiscard);
-    expect(verdict?.previousLoss).toBe(mockItemA.lossIfWrong);
+    expect(verdict?.previousLoss).toBe(mockItemA.previousDiscardLoss);
   });
 
   it.each([
@@ -317,15 +323,40 @@ describe("usePracticeDrill", () => {
     expect(harness.drill().hasNextHand).toBe(true);
   });
 
-  it("records nothing when the board was swapped away from the drill hand", () => {
-    expectNoVerdictRecorded(drilledOnBoard(OTHER_HAND));
-  });
+  it.each([
+    { board: { cards: OTHER_HAND, role: DRILL_ROLE }, name: "different cards" },
+    {
+      board: { cards: SAME_CARDS, role: CribRole.Pone },
+      name: "the same cards under the opposite role",
+    },
+  ])(
+    "reports inactive and records nothing when the board holds $name",
+    ({ board }) => {
+      const harness = drilledOnBoard(board);
+
+      expect(harness.drill().isActive).toBe(false);
+
+      expectNoVerdictRecorded(harness);
+    },
+  );
 
   it("still records after a selection change on the same six cards", () => {
-    const harness = drilledOnBoard(
-      toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), parseHand("7H,8H")),
-    );
+    const harness = drilledOnBoard({
+      cards: toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), parseHand("7H,8H")),
+      role: DRILL_ROLE,
+    });
 
     expect(harness.drill().verdict).not.toBeNull();
+  });
+
+  it("records nothing when the analysis was scored for the other role", () => {
+    const harness = committedHarness();
+
+    harness.render({
+      cribRole: CribRole.Pone,
+      quality: { expectedPointsLoss: 0.5, isOptimal: false },
+    });
+
+    expectNoVerdictRecorded(harness);
   });
 });

@@ -42,6 +42,8 @@ export interface MistakeQueueItem {
   readonly originalDecisionAt: number;
   readonly pWrong: number;
   readonly previousDiscard: string | null;
+  // The cost of `previousDiscard` itself, from the same record — not `lossIfWrong`, which averages every wrong attempt.
+  readonly previousDiscardLoss: number;
   readonly priority: number;
   readonly wrong: number;
 }
@@ -207,6 +209,7 @@ const createCandidateQueueItem = ({
     originalDecisionAt: aggregate.originalAt,
     pWrong,
     previousDiscard: aggregate.discardKey,
+    previousDiscardLoss: aggregate.expectedPointsLoss,
     priority,
     wrong,
   };

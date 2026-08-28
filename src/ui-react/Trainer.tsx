@@ -290,6 +290,7 @@ export function Trainer({
     markHistoryUpdate,
   );
   const drill = usePracticeDrill({
+    cribRole,
     dealtCards,
     generateRandomNumber: generator,
     loadHand: applyManualHand,

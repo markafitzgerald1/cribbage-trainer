@@ -58,6 +58,8 @@ export interface PracticeDrill {
 }
 
 interface UsePracticeDrillArgs {
+  // The crib role on the board, so the drill can tell its own hand from the same six cards resubmitted under the opposite role.
+  readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
   readonly generateRandomNumber: () => number;
   // The manual hand-load path, so the loaded hand is flagged practice and never enters the headline averages.
@@ -78,6 +80,7 @@ const activeHandsExist = (): boolean =>
   buildMistakeQueue(readTallyForDisplay()).some((item) => !item.isMastered);
 
 export const usePracticeDrill = ({
+  cribRole,
   dealtCards,
   generateRandomNumber,
   loadHand,
@@ -89,6 +92,20 @@ export const usePracticeDrill = ({
   const [hasNextHand, setHasNextHand] = useState(false);
   // Guards a single record per committed choice; onAnalysisRendered re-fires on every re-sort.
   const recordedRef = useRef(false);
+
+  /*
+   * A drill owns the board only while its own six cards and crib role are on
+   * it. Deal, a history move, or an Enter-cards submission (which can even
+   * resubmit the same cards under the opposite role) replaces the board
+   * without an explicit exit; reporting the drill inactive then keeps its
+   * panel from lingering over an unrelated hand and its recorder from
+   * scoring one. `serializeHand` ignores the kept flags, so choosing the
+   * discards does not trip it.
+   */
+  const boardHoldsDrill =
+    activeItem !== null &&
+    cribRole === activeItem.cribRole &&
+    serializeHand(dealtCards) === serializeHand(activeItem.cards);
 
   const beginWith = useCallback(
     (item: MistakeQueueItem) => {
@@ -142,19 +159,13 @@ export const usePracticeDrill = ({
   const handleAnalysisRendered = useCallback(
     (analysis: RenderedAnalysis) => {
       onAnalysisRendered(analysis);
-      /*
-       * The last clause guards against the board being swapped mid-drill
-       * (Deal, Enter cards, a history move) without an explicit exit: without
-       * it, the replacement hand's score would be recorded against this
-       * drill's `activeItem` — an unrelated mistake. `serializeHand` ignores
-       * the kept flags, so selecting the discards does not trip it.
-       */
       if (
         activeItem === null ||
+        !boardHoldsDrill ||
+        analysis.cribRole !== activeItem.cribRole ||
         phase !== "revealed" ||
         recordedRef.current ||
-        analysis.quality === null ||
-        serializeHand(dealtCards) !== serializeHand(activeItem.cards)
+        analysis.quality === null
       ) {
         return;
       }
@@ -181,23 +192,23 @@ export const usePracticeDrill = ({
         isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
         isOptimal,
         previousDiscard: activeItem.previousDiscard,
-        previousLoss: activeItem.lossIfWrong,
+        previousLoss: activeItem.previousDiscardLoss,
       });
     },
-    [activeItem, dealtCards, onAnalysisRendered, phase],
+    [activeItem, boardHoldsDrill, dealtCards, onAnalysisRendered, phase],
   );
 
   return {
-    activeItem,
+    activeItem: boardHoldsDrill ? activeItem : null,
     handleAnalysisRendered,
     handleStartAutoDrill: startAutoDrill,
     handleStartDrill: beginWith,
-    hasNextHand,
-    isActive: activeItem !== null,
+    hasNextHand: boardHoldsDrill && hasNextHand,
+    isActive: boardHoldsDrill,
     onCommit,
     onExit,
     onNextHand,
-    phase,
-    verdict,
+    phase: boardHoldsDrill ? phase : "choosing",
+    verdict: boardHoldsDrill ? verdict : null,
   };
 };
