@@ -94,16 +94,43 @@ describe("practiceLedger", () => {
     });
 
     it.each([
-      { attempts: 0 },
-      { attempts: 1.5 },
-      { attempts: Infinity },
-      { consecutiveSuccesses: -1 },
-      { consecutiveSuccesses: 0.5 },
-      { consecutiveSuccesses: Infinity },
-      { wrong: -1 },
-      { wrong: 0.5 },
-      { wrong: NaN },
-    ])("rejects malformed count values %j", (overrides) => {
+      { name: "zero attempts", overrides: { attempts: 0 } },
+      { name: "fractional attempts", overrides: { attempts: 1.5 } },
+      { name: "infinite attempts", overrides: { attempts: Infinity } },
+      {
+        name: "negative consecutive successes",
+        overrides: { consecutiveSuccesses: -1 },
+      },
+      {
+        name: "fractional consecutive successes",
+        overrides: { consecutiveSuccesses: 0.5 },
+      },
+      {
+        name: "infinite consecutive successes",
+        overrides: { consecutiveSuccesses: Infinity },
+      },
+      { name: "negative wrong count", overrides: { wrong: -1 } },
+      { name: "fractional wrong count", overrides: { wrong: 0.5 } },
+      { name: "NaN wrong count", overrides: { wrong: NaN } },
+      {
+        name: "a streak with no successful attempts",
+        overrides: {
+          attempts: 2,
+          consecutiveSuccesses: 2,
+          totalWrongLoss: 2,
+          wrong: 2,
+        },
+      },
+      {
+        name: "a partial streak after no wrong attempts",
+        overrides: {
+          attempts: 2,
+          consecutiveSuccesses: 1,
+          totalWrongLoss: 0,
+          wrong: 0,
+        },
+      },
+    ])("rejects invalid stored practice record: $name", ({ overrides }) => {
       expect(isStoredPracticeRecord(makeRecord(overrides))).toBe(false);
     });
 
@@ -112,13 +139,6 @@ describe("practiceLedger", () => {
       expect(
         isStoredPracticeRecord(makeRecord({ consecutiveSuccesses: 2 })),
       ).toBe(false);
-    });
-
-    it.each([
-      { attempts: 2, consecutiveSuccesses: 2, totalWrongLoss: 2, wrong: 2 },
-      { attempts: 2, consecutiveSuccesses: 1, totalWrongLoss: 0, wrong: 0 },
-    ])("rejects impossible success streaks %j", (overrides) => {
-      expect(isStoredPracticeRecord(makeRecord(overrides))).toBe(false);
     });
 
     it.each([
