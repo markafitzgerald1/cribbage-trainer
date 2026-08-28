@@ -190,22 +190,21 @@ describe("practiceLedger", () => {
       ]);
     });
 
-    it("updates existing record on success", () => {
-      const existing = makeRecord({
-        lastAttemptAt: AT - 1000,
-        totalWrongLoss: 2.0,
-        wrong: 1,
-      });
-
-      const matched = expectUpdateResult([existing], { isOptimal: true }, [
-        twoAttemptSuccessRecord,
-      ]);
-
-      expect(matched).toBe(true);
-    });
-
     it.each([
       {
+        attempt: { isOptimal: true },
+        description: "updates an existing record on success",
+        expected: twoAttemptSuccessRecord,
+        initial: [
+          makeRecord({
+            lastAttemptAt: AT - 1000,
+            totalWrongLoss: 2.0,
+            wrong: 1,
+          }),
+        ],
+      },
+      {
+        attempt: { expectedPointsLoss: 1.5, isOptimal: false },
         description:
           "resets consecutive successes on wrong attempt and adds to totalWrongLoss",
         expected: makeRecord({
@@ -217,6 +216,7 @@ describe("practiceLedger", () => {
         initial: [twoAttemptSuccessRecord],
       },
       {
+        attempt: { expectedPointsLoss: 1.5, isOptimal: false },
         description:
           "accumulates loss on non-optimal attempt for existing record",
         expected: makeRecord({
@@ -235,44 +235,65 @@ describe("practiceLedger", () => {
           }),
         ],
       },
-    ])("$description", ({ expected, initial }) => {
-      const matched = expectUpdateResult(
-        initial,
-        { expectedPointsLoss: 1.5, isOptimal: false },
-        [expected],
-      );
+    ])("$description", ({ attempt, expected, initial }) => {
+      const matched = expectUpdateResult(initial, attempt, [expected]);
 
       expect(matched).toBe(true);
     });
 
-    it("trims least-recently-attempted records when exceeding maxRecords", () => {
-      const initial: PracticeRecord[] = [
-        makeRecord({
-          handKey: "AH,2H,3H,4H,5H,6H|Dealer",
-          lastAttemptAt: AT - 5000,
-          totalWrongLoss: 1.0,
-          wrong: 1,
-        }),
-        makeRecord({
-          handKey: "2H,3H,4H,5H,6H,7H|Dealer",
-          lastAttemptAt: AT - 3000,
-          totalWrongLoss: 1.0,
-          wrong: 1,
-        }),
-      ];
+    it.each([
+      {
+        description: "when the new attempt is most recent",
+        expectedHandKeys: ["2H,3H,4H,5H,6H,7H|Dealer", VALID_HAND_KEY],
+        expectedLastAttemptAt: AT,
+        firstAttemptAt: AT - 5000,
+        secondAttemptAt: AT - 3000,
+      },
+      {
+        description: "after a clock rollback",
+        expectedHandKeys: ["AH,2H,3H,4H,5H,6H|Dealer", VALID_HAND_KEY],
+        expectedLastAttemptAt: AT + 5001,
+        firstAttemptAt: AT + 5000,
+        secondAttemptAt: AT + 3000,
+      },
+    ])(
+      "retains the latest practice evidence $description",
+      ({
+        expectedHandKeys,
+        expectedLastAttemptAt,
+        firstAttemptAt,
+        secondAttemptAt,
+      }) => {
+        const initial: PracticeRecord[] = [
+          makeRecord({
+            handKey: "AH,2H,3H,4H,5H,6H|Dealer",
+            lastAttemptAt: firstAttemptAt,
+            totalWrongLoss: 1.0,
+            wrong: 1,
+          }),
+          makeRecord({
+            handKey: "2H,3H,4H,5H,6H,7H|Dealer",
+            lastAttemptAt: secondAttemptAt,
+            totalWrongLoss: 1.0,
+            wrong: 1,
+          }),
+        ];
 
-      const updated = performUpdate({
-        initial,
-        isOptimal: true,
-        maxRecords: 2,
-      });
+        const updated = performUpdate({
+          initial,
+          isOptimal: true,
+          maxRecords: 2,
+        });
 
-      expect(updated).toHaveLength(2);
-      expect(updated.map((recordItem) => recordItem.handKey)).toStrictEqual([
-        "2H,3H,4H,5H,6H,7H|Dealer",
-        VALID_HAND_KEY,
-      ]);
-    });
+        expect(updated).toHaveLength(2);
+        expect(updated.map((recordItem) => recordItem.handKey)).toStrictEqual(
+          expectedHandKeys,
+        );
+        expect(
+          updated.find((recordItem) => recordItem.handKey === VALID_HAND_KEY),
+        ).toMatchObject({ lastAttemptAt: expectedLastAttemptAt });
+      },
+    );
 
     it.each([
       { at: -1 },
