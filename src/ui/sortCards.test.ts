@@ -1,8 +1,8 @@
 import { Rank, CARDS as card } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
+import { sortCards, toComparableCards } from "./sortCards";
 import type { HandCard } from "../game/HandCard";
 import { SortOrder } from "./SortOrder";
-import { sortCards } from "./sortCards";
 const INVALID_SORT_ORDER = -1 as SortOrder;
 
 describe("sortCards", () => {
@@ -63,6 +63,15 @@ describe("sortCards", () => {
       expect(() => sortCards([], INVALID_SORT_ORDER)).toThrow(
         "Invalid sortOrder: -1",
       );
+    });
+
+    it("converts cards to comparable cards preserving indices as dealOrder", () => {
+      const cards = [{ rank: Rank.ACE }, { rank: Rank.KING }];
+
+      expect(toComparableCards(cards)).toStrictEqual([
+        { dealOrder: 0, rank: Rank.ACE },
+        { dealOrder: 1, rank: Rank.KING },
+      ]);
     });
   });
 });

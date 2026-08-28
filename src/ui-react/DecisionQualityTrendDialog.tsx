@@ -6,6 +6,7 @@ import {
   MAX_RECENT_DECISIONS,
   computeDiscardQualityTrend,
 } from "../ui/discardQualityTrend";
+import { DIALOG_ROLE_OPTIONS, DialogFilterGroup } from "./DialogFilterGroup";
 import {
   MAX_RECORDS,
   type StoredTally,
@@ -13,6 +14,7 @@ import {
 } from "../ui/discardTally";
 import { useCallback, useState } from "react";
 import { DecisionQualityChart } from "./DecisionQualityChart";
+import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
@@ -33,15 +35,6 @@ const GRANULARITY_OPTIONS: {
   { label: "Day", value: "day" },
   { label: "Week", value: "week" },
   { label: "Month", value: "month" },
-];
-
-const ROLE_OPTIONS: {
-  readonly label: string;
-  readonly value: CribRoleFilter;
-}[] = [
-  { label: "All", value: "all" },
-  { label: "Dealer", value: "dealer" },
-  { label: "Pone", value: "pone" },
 ];
 
 const PER_CENT = 100;
@@ -118,79 +111,6 @@ function renderBreakdownTable(
   );
 }
 
-function renderSummaryCards(options: {
-  readonly avgLoss: string;
-  readonly decisions: number;
-  readonly optimalRate: string;
-  readonly skipped: number | string;
-}): React.JSX.Element {
-  const metrics: { readonly label: string; readonly value: number | string }[] =
-    [
-      { label: "Decisions", value: options.decisions },
-      { label: "Avg loss", value: options.avgLoss },
-      { label: "Best choice", value: options.optimalRate },
-      { label: "Skipped", value: options.skipped },
-    ];
-
-  return (
-    <div className={classes.summaryCards}>
-      {metrics.map((metric) => (
-        <div
-          className={classes.summaryCard}
-          key={metric.label}
-        >
-          <span className={classes.summaryLabel}>{metric.label}</span>
-          <span className={classes.summaryValue}>{metric.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-interface FilterGroupProps<T extends string> {
-  readonly currentValue: T;
-  readonly groupName: string;
-  readonly legendText: string;
-  readonly onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  readonly options: readonly { readonly label: string; readonly value: T }[];
-}
-
-function renderFilterGroup<T extends string>({
-  currentValue,
-  groupName,
-  legendText,
-  onChange,
-  options,
-}: FilterGroupProps<T>): React.JSX.Element {
-  return (
-    <fieldset className={classes.filterGroup}>
-      <legend>{legendText}</legend>
-      {options.map((option) => {
-        const id = `${groupName}-${option.value}`;
-        return (
-          <span key={option.value}>
-            <input
-              checked={currentValue === option.value}
-              className={classes.input}
-              id={id}
-              name={groupName}
-              onChange={onChange}
-              type="radio"
-              value={option.value}
-            />
-            <label
-              className={classes.option}
-              htmlFor={id}
-            >
-              {option.label}
-            </label>
-          </span>
-        );
-      })}
-    </fieldset>
-  );
-}
-
 export function DecisionQualityTrendDialog({
   initialGranularity = "rolling20",
   initialRoleFilter = "all",
@@ -263,20 +183,22 @@ export function DecisionQualityTrendDialog({
       >
         <h2 className={classes.title}>Decision quality over time</h2>
         <div className={classes.controls}>
-          {renderFilterGroup({
-            currentValue: granularity,
-            groupName: "trend-granularity",
-            legendText: "Granularity",
-            onChange: changeGranularity,
-            options: GRANULARITY_OPTIONS,
-          })}
-          {renderFilterGroup({
-            currentValue: roleFilter,
-            groupName: "trend-role-filter",
-            legendText: "Crib role",
-            onChange: changeRoleFilter,
-            options: ROLE_OPTIONS,
-          })}
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={granularity}
+            groupName="trend-granularity"
+            legendText="Granularity"
+            onChange={changeGranularity}
+            options={GRANULARITY_OPTIONS}
+          />
+          <DialogFilterGroup
+            classes={classes}
+            currentValue={roleFilter}
+            groupName="trend-role-filter"
+            legendText="Crib role"
+            onChange={changeRoleFilter}
+            options={DIALOG_ROLE_OPTIONS}
+          />
         </div>
 
         {trend.isAtRecordCap ? (
@@ -311,12 +233,21 @@ export function DecisionQualityTrendDialog({
           </p>
         )}
 
-        {renderSummaryCards({
-          avgLoss: overallAvgLoss,
-          decisions: totalDecisions,
-          optimalRate: overallOptimalRate,
-          skipped: formatSkippedHands(totalDecisions, trend.totalSkippedHands),
-        })}
+        <DialogSummaryCards
+          classes={classes}
+          metrics={[
+            { label: "Decisions", value: totalDecisions },
+            { label: "Avg loss", value: overallAvgLoss },
+            { label: "Best choice", value: overallOptimalRate },
+            {
+              label: "Skipped",
+              value: formatSkippedHands(
+                totalDecisions,
+                trend.totalSkippedHands,
+              ),
+            },
+          ]}
+        />
 
         <DecisionQualityChart
           buckets={trend.buckets}

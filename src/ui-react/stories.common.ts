@@ -1,10 +1,39 @@
-import { expect, fireEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 import type { Card } from "../game/Card";
 import type { DealtCard } from "../game/DealtCard";
 
 export type { Meta, StoryObj } from "@storybook/react-vite";
 export { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 export { SortOrder } from "../ui/SortOrder";
+
+export const selectStoryRadioOption = async (
+  canvasElement: HTMLElement,
+  optionName: RegExp | string,
+): Promise<void> => {
+  const option = within(canvasElement).getByRole("radio", {
+    name: optionName,
+  });
+
+  await userEvent.click(option);
+
+  await expect(option).toBeChecked();
+};
+
+export const expectStoryTextVisible = async (
+  canvasElement: HTMLElement,
+  text: RegExp | string,
+): Promise<void> => {
+  await expect(within(canvasElement).getByText(text)).toBeVisible();
+};
+
+export const playStoryEscape = async ({
+  args,
+}: {
+  readonly args: { readonly onClose: () => void };
+}): Promise<void> => {
+  await userEvent.keyboard("{Escape}");
+  await expect(args.onClose).toHaveBeenCalledTimes(1);
+};
 
 export const createArgTypes = (property: string, labels: string[]) => ({
   [property]: {

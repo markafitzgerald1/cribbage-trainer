@@ -153,6 +153,9 @@ const testDiscardTallyScreenshot = () =>
       },
     );
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
+    await expect(
+      page.getByRole("button", { exact: true, name: "Mistake queue" }),
+    ).toBeVisible();
 
     /*
      * The tally itself rather than the page. It sits below a clipped analysis

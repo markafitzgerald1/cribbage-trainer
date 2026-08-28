@@ -1,16 +1,56 @@
+/* jscpd:ignore-start */
+import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/jest-globals";
+import { clearDiscardTally, recordDiscardDecision } from "../ui/discardTally";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
+import { CribRole } from "../game/expectedCribPoints";
 import { DiscardTallyView } from "./DiscardTallyView";
+import { SortOrder } from "../ui/SortOrder";
 import { discardTallySummary } from "./discardTally.test.common";
+/* jscpd:ignore-end */
 
-// Typed from the builder rather than from the summary, so this file does not restate an import the stories already make.
-const renderTally = (overrides: Parameters<typeof discardTallySummary>[0]) =>
-  render(<DiscardTallyView summary={discardTallySummary(overrides)} />);
+const renderTally = (summary: Parameters<typeof discardTallySummary>[0]) =>
+  render(<DiscardTallyView summary={discardTallySummary(summary)} />);
 
 const NOTHING_SCORED = {
   decisions: 0,
   meanExpectedPointsLoss: null,
   optimalDecisions: 0,
+};
+
+const seedMistakeDecision = () => {
+  clearDiscardTally();
+  recordDiscardDecision({
+    at: 1_700_000_000_000,
+    cribRole: CribRole.Dealer,
+    discardKey: "5H,6H",
+    expectedPointsLoss: 1.5,
+    handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+    isOptimal: false,
+    isPractice: false,
+  });
+};
+
+const verifyModalOpenAndClose = (
+  openButtonName: string,
+  headingName: string,
+  renderedView: ReturnType<typeof renderTally>,
+): boolean => {
+  const { getByRole, queryByRole } = renderedView;
+  const openButton = getByRole("button", { name: openButtonName });
+
+  fireEvent.click(openButton);
+
+  const headingPresent = queryByRole("heading", { name: headingName }) !== null;
+
+  const closeButton = getByRole("button", { name: "Close modal" });
+
+  fireEvent.click(closeButton);
+
+  const headingClosed = queryByRole("heading", { name: headingName }) === null;
+
+  return headingPresent && headingClosed;
 };
 
 describe("discard tally view", () => {
@@ -66,24 +106,70 @@ describe("discard tally view", () => {
   });
 
   it("opens and closes the decision quality trend dialog", () => {
-    const { getByRole, queryByRole } = renderTally({
-      decisions: 5,
-      meanExpectedPointsLoss: 0.25,
+    const success = verifyModalOpenAndClose(
+      "Quality trend",
+      "Decision quality over time",
+      renderTally({
+        decisions: 5,
+        meanExpectedPointsLoss: 0.25,
+        optimalDecisions: 3,
+      }),
+    );
+
+    expect(success).toBe(true);
+  });
+
+  it("hides mistake queue button when summary has no sub-optimal decisions", () => {
+    clearDiscardTally();
+    const { queryByRole } = renderTally({
+      decisions: 3,
+      meanExpectedPointsLoss: 0,
       optimalDecisions: 3,
     });
 
-    const trendButton = getByRole("button", { name: "Quality trend" });
-    fireEvent.click(trendButton);
+    expect(queryByRole("button", { name: "Mistake queue" })).toBeNull();
+  });
 
-    expect(
-      queryByRole("heading", { name: "Decision quality over time" }),
-    ).not.toBeNull();
+  it("opens and closes mistake queue dialog when sub-optimal decisions are present", () => {
+    seedMistakeDecision();
 
-    const closeButton = getByRole("button", { name: "Close modal" });
-    fireEvent.click(closeButton);
+    const success = verifyModalOpenAndClose(
+      "Mistake queue",
+      "Mistake queue",
+      renderTally({
+        decisions: 1,
+        meanExpectedPointsLoss: 1.5,
+        optimalDecisions: 0,
+      }),
+    );
 
-    expect(
-      queryByRole("heading", { name: "Decision quality over time" }),
-    ).toBeNull();
+    expect(success).toBe(true);
+  });
+
+  it("forwards sortOrder to the mistake queue dialog", () => {
+    seedMistakeDecision();
+
+    /*
+     * Ascending, not DiscardTallyView's and MistakeQueueDialog's shared
+     * Descending default: a default-matching sortOrder cannot tell
+     * "forwarded correctly" apart from "never forwarded, dialog fell back
+     * to its own default" — only a non-default value that changes the
+     * rendered order proves the prop actually crossed the boundary.
+     */
+    const { container, getByRole } = render(
+      <DiscardTallyView
+        sortOrder={SortOrder.Ascending}
+        summary={discardTallySummary({
+          decisions: 1,
+          meanExpectedPointsLoss: 1.5,
+          optimalDecisions: 0,
+        })}
+      />,
+    );
+
+    fireEvent.click(getByRole("button", { name: "Mistake queue" }));
+
+    expect(container).toHaveTextContent("5♥6♥7♥8♥9♥10♥");
+    expect(container).toHaveTextContent("Previous discard:5♥6♥");
   });
 });

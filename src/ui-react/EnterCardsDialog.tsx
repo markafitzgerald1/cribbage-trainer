@@ -7,10 +7,9 @@ import {
 import { useCallback, useState } from "react";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { CardGridPicker } from "./CardGridPicker";
-import { CardLabel } from "./CardLabel";
 import Modal from "./Modal";
-import { SortOrder } from "../ui/SortOrder";
-import { sortCards } from "../ui/sortCards";
+import { type SortOrder } from "../ui/SortOrder";
+import { SortedCardLabels } from "./SortedCardLabels";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
 export interface EnterCardsDialogProps {
@@ -82,16 +81,11 @@ export function EnterCardsDialog({
       className={classes.selected}
     >
       <span className={classes.count}>{selectedCards.length} of 6</span>
-      {sortCards(
-        selectedCards.map((card, dealOrder) => ({ ...card, dealOrder })),
-        sortOrder,
-      ).map((card) => (
-        <CardLabel
-          key={`${card.rank}-${card.suit}`}
-          rank={card.rank}
-          suit={card.suit}
-        />
-      ))}
+      <SortedCardLabels
+        cards={selectedCards}
+        keyPrefix="entered"
+        sortOrder={sortOrder}
+      />
     </div>
   );
 

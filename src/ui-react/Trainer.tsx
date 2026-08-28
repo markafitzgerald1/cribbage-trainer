@@ -376,7 +376,10 @@ export function Trainer({
             sortOrder={sortOrder}
           />
         )}
-        <DiscardTallyView summary={tallySummary} />
+        <DiscardTallyView
+          sortOrder={sortOrder}
+          summary={tallySummary}
+        />
         <AnalyticsConsentDialog
           consent={choice.consented}
           decisionQualityConsented={choice.decisionQualityConsented}

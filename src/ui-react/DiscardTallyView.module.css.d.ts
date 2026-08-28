@@ -1,3 +1,4 @@
+export const actionsRow: string;
 export const allTimeOnly: string;
 export const figure: string;
 export const label: string;

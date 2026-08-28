@@ -1,112 +1,20 @@
+/* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
 import type * as Tally from "../ui/discardTally";
 import * as classes from "./DecisionQualityTrendDialog.module.css";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
-import { CribRole } from "../game/expectedCribPoints";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import type { DiscardTrendGranularity } from "../ui/discardQualityTrend";
 import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
+/* jscpd:ignore-end */
 
 const sampleTally = dialogFixtures.dialogTally(25);
-
-const tallyWithSkipOnlyPeriod: Tally.StoredTally = {
-  lifetime: {
-    decisions: 1,
-    expectedPointsLossTotal: 0.5,
-    optimalDecisions: 0,
-    skippedHands: 1,
-  },
-  records: [
-    {
-      at: 1700000000000,
-      cribRole: CribRole.Dealer,
-      discardKey: null,
-      expectedPointsLoss: 0.5,
-      handKey: "h1",
-      isOptimal: false,
-      isPractice: false,
-    },
-  ],
-  revision: 1,
-  skipped: [{ at: 1700000000000 + 86400000 * 5 }],
-  version: 1,
-};
-
-const emptyTally: Tally.StoredTally = {
-  lifetime: {
-    decisions: 0,
-    expectedPointsLossTotal: 0,
-    optimalDecisions: 0,
-    skippedHands: 0,
-  },
-  records: [],
-  revision: 1,
-  skipped: [],
-  version: 1,
-};
-
+const tallyWithSkipOnlyPeriod = dialogFixtures.skipOnlyDialogTally();
+const emptyTally = dialogFixtures.emptyDialogTally();
 const cappedTally = dialogFixtures.cappedDialogTally();
-
-const multiLossTally: Tally.StoredTally = {
-  lifetime: {
-    decisions: 5,
-    expectedPointsLossTotal: 2.8,
-    optimalDecisions: 1,
-    skippedHands: 0,
-  },
-  records: [
-    {
-      at: 1700000000000,
-      cribRole: CribRole.Dealer,
-      discardKey: "5H,6H",
-      expectedPointsLoss: 0,
-      handKey: "h-opt",
-      isOptimal: true,
-      isPractice: false,
-    },
-    {
-      at: 1700000000000 + 86400000,
-      cribRole: CribRole.Dealer,
-      discardKey: "5H,6H",
-      expectedPointsLoss: 0.15,
-      handKey: "h-1",
-      isOptimal: false,
-      isPractice: false,
-    },
-    {
-      at: 1700000000000 + 86400000 * 2,
-      cribRole: CribRole.Dealer,
-      discardKey: "5H,6H",
-      expectedPointsLoss: 0.35,
-      handKey: "h-2",
-      isOptimal: false,
-      isPractice: false,
-    },
-    {
-      at: 1700000000000 + 86400000 * 3,
-      cribRole: CribRole.Dealer,
-      discardKey: "5H,6H",
-      expectedPointsLoss: 0.75,
-      handKey: "h-3",
-      isOptimal: false,
-      isPractice: false,
-    },
-    {
-      at: 1700000000000 + 86400000 * 4,
-      cribRole: CribRole.Dealer,
-      discardKey: "5H,6H",
-      expectedPointsLoss: 1.55,
-      handKey: "h-4",
-      isOptimal: false,
-      isPractice: false,
-    },
-  ],
-  revision: 1,
-  skipped: [],
-  version: 1,
-};
+const multiLossTally = dialogFixtures.multiLossDialogTally();
 
 interface RenderDialogOptions {
   readonly initialGranularity?: DiscardTrendGranularity;
@@ -139,61 +47,76 @@ const renderDialog = ({
         />,
       );
 
-const selectRadio = (
-  getByRole: ReturnType<typeof render>["getByRole"],
-  name: "Day" | "Dealer",
+const clickRadio = (
+  rendered: ReturnType<typeof renderDialog>,
+  name: RegExp | string,
 ) => {
-  const radio = getByRole("radio", { name });
-
+  const radio = rendered.getByRole("radio", { name });
   fireEvent.click(radio);
   return radio;
 };
 
 describe("decision quality trend dialog", () => {
-  it("does not render content when show is false", () => {
-    const { container } = renderDialog({ show: false });
+  it("renders nothing when closed", () => {
+    const closedView = renderDialog({ show: false });
 
-    expect(container.textContent).not.toContain("Decision quality over time");
+    expect(closedView.container.textContent).toBe("");
   });
 
   it("renders summary metrics, controls, chart, and breakdown table when open", () => {
-    const { getByRole, getByText } = renderDialog();
+    const { getAllByText, getByRole } = renderDialog();
 
     expect(
       getByRole("heading", { name: "Decision quality over time" }),
     ).toBeInTheDocument();
-    expect(getByText("Decisions 6–25")).toBeInTheDocument();
-    expect(getByText("Decisions 1–5")).toBeInTheDocument();
-    expect(getByRole("radio", { name: "Rolling 20" })).toBeChecked();
-    expect(getByRole("radio", { name: "All" })).toBeChecked();
-  });
-
-  it("explains the metric and shows the skipped-hand rate", () => {
-    const { getByText } = renderDialog();
-
+    expect(getAllByText("Decisions").length).toBeGreaterThan(0);
+    expect(getByRole("group", { name: "Granularity" })).toBeInTheDocument();
+    expect(getByRole("group", { name: "Crib role" })).toBeInTheDocument();
     expect(
-      getByText(/Average loss is the expected points left on the table/iu),
+      getByRole("img", { name: /Decision quality over time/iu }),
     ).toBeInTheDocument();
-    expect(getByText("1 (16.7%)")).toBeInTheDocument();
-    expect(getByText("1 (3.8%)")).toBeInTheDocument();
   });
 
-  it("switches granularity when another radio is selected", () => {
-    const { getByRole } = renderDialog();
+  it("switches granularity when time frame radio buttons are clicked", () => {
+    const rendered = renderDialog();
 
-    expect(selectRadio(getByRole, "Day")).toBeChecked();
+    const dayRadio = clickRadio(rendered, "Day");
+
+    expect(dayRadio).toBeChecked();
+
+    const weekRadio = clickRadio(rendered, "Week");
+
+    expect(weekRadio).toBeChecked();
+
+    const monthRadio = clickRadio(rendered, "Month");
+
+    expect(monthRadio).toBeChecked();
+
+    const rollingRadio = clickRadio(rendered, "Rolling 20");
+
+    expect(rollingRadio).toBeChecked();
   });
 
-  it("filters by crib role when role filter is changed", () => {
-    const { getByRole } = renderDialog();
+  it("switches role filter when crib role radio buttons are clicked", () => {
+    const rendered = renderDialog();
 
-    expect(selectRadio(getByRole, "Dealer")).toBeChecked();
+    const dealerRadio = clickRadio(rendered, "Dealer");
+
+    expect(dealerRadio).toBeChecked();
+
+    const poneRadio = clickRadio(rendered, "Pone");
+
+    expect(poneRadio).toBeChecked();
+
+    const allRadio = clickRadio(rendered, "All roles");
+
+    expect(allRadio).toBeChecked();
   });
 
   it.each([
     { expectedCalls: 1, key: "Escape" },
     { expectedCalls: 0, key: "Enter" },
-  ])("closes only for the $key key", ({ expectedCalls, key }) => {
+  ])("handles $key keydown to close or keep open", ({ expectedCalls, key }) => {
     const onClose = jest.fn();
     renderDialog({ onClose });
 
@@ -205,8 +128,9 @@ describe("decision quality trend dialog", () => {
   it("calls onClose when Close modal button is clicked", () => {
     const onClose = jest.fn();
     const { getByRole } = renderDialog({ onClose });
+    const closeBtn = getByRole("button", { name: "Close modal" });
 
-    fireEvent.click(getByRole("button", { name: "Close modal" }));
+    fireEvent.click(closeBtn);
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

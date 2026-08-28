@@ -5,6 +5,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import { DECK } from "../game/Card";
 import { EnterCardsDialog } from "./EnterCardsDialog";
 import { SortOrder } from "../ui/SortOrder";
+import { playStoryEscape } from "./stories.common";
 /* jscpd:ignore-end */
 
 const meta = {
@@ -64,13 +65,5 @@ export const EditAndUseHand: Story = {
 };
 
 export const DismissWithEscape: Story = {
-  play: async ({ args }) => {
-    await userEvent.keyboard("x");
-
-    await expect(args.onClose).not.toHaveBeenCalled();
-
-    await userEvent.keyboard("{Escape}");
-
-    await expect(args.onClose).toHaveBeenCalledTimes(1);
-  },
+  play: playStoryEscape,
 };

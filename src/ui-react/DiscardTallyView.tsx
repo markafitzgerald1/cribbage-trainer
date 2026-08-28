@@ -1,7 +1,13 @@
 import * as classes from "./DiscardTallyView.module.css";
-import { type DiscardTallySummary, hasTallyToShow } from "../ui/discardTally";
+import {
+  type DiscardTallySummary,
+  type StoredTally,
+  hasTallyToShow,
+} from "../ui/discardTally";
 import { type ReactNode, useCallback, useState } from "react";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
+import { MistakeQueueDialog } from "./MistakeQueueDialog";
+import { SortOrder } from "../ui/SortOrder";
 
 const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
@@ -22,7 +28,9 @@ const countAndShare = (part: number, whole: number) =>
 const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
 
 interface DiscardTallyViewProps {
+  readonly sortOrder?: SortOrder;
   readonly summary: DiscardTallySummary;
+  readonly tally?: StoredTally | null;
 }
 
 const renderMeasure = (
@@ -50,14 +58,25 @@ const renderMeasure = (
  * room, which on a phone turned two rows into four ragged ones.
  */
 export function DiscardTallyView({
+  sortOrder = SortOrder.Descending,
   summary,
+  tally: injectedTally = null,
 }: DiscardTallyViewProps): ReactNode {
   const [showTrend, setShowTrend] = useState(false);
+  const [showQueue, setShowQueue] = useState(false);
+
   const handleOpenTrend = useCallback(() => {
     setShowTrend(true);
   }, []);
   const handleCloseTrend = useCallback(() => {
     setShowTrend(false);
+  }, []);
+
+  const handleOpenQueue = useCallback(() => {
+    setShowQueue(true);
+  }, []);
+  const handleCloseQueue = useCallback(() => {
+    setShowQueue(false);
   }, []);
 
   /*
@@ -73,6 +92,8 @@ export function DiscardTallyView({
   const facedToday = summary.todayDecisions + summary.todaySkippedHands;
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
+  const hasMistakes = summary.decisions > summary.optimalDecisions;
+
   return (
     <div className={`${classes.tally} ${columns}`}>
       <span />
@@ -123,19 +144,43 @@ export function DiscardTallyView({
               : null,
             countAndShare(summary.skippedHands, faced),
           )}
-      <button
-        className={classes.trendButton}
-        onClick={handleOpenTrend}
-        type="button"
-      >
-        Quality trend
-      </button>
+      <div className={classes.actionsRow}>
+        <button
+          className={classes.trendButton}
+          onClick={handleOpenTrend}
+          type="button"
+        >
+          Quality trend
+        </button>
+        {hasMistakes ? (
+          <button
+            className={classes.trendButton}
+            onClick={handleOpenQueue}
+            type="button"
+          >
+            Mistake queue
+          </button>
+        ) : null}
+      </div>
       {showTrend ? (
         <DecisionQualityTrendDialog
           onClose={handleCloseTrend}
           show={showTrend}
         />
       ) : null}
+      {showQueue ? (
+        <MistakeQueueDialog
+          onClose={handleCloseQueue}
+          show={showQueue}
+          sortOrder={sortOrder}
+          tally={injectedTally}
+        />
+      ) : null}
     </div>
   );
 }
+
+DiscardTallyView.defaultProps = {
+  sortOrder: SortOrder.Descending,
+  tally: null,
+};
