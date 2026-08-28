@@ -119,6 +119,8 @@ describe("practiceLedger", () => {
       { totalWrongLoss: Infinity },
       { totalWrongLoss: NaN },
       { totalWrongLoss: "invalid" },
+      { totalWrongLoss: 0, wrong: 1 },
+      { totalWrongLoss: 1, wrong: 0 },
       { handKey: "corruptKey" },
       { handKey: 123 },
       { lastAttemptAt: "invalid" },

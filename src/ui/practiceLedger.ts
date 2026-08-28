@@ -32,11 +32,19 @@ interface MaybePracticeRecord {
   readonly wrong?: unknown;
 }
 
-const isCountBoundedBy = (count: unknown, max: number): boolean =>
+const isCountBoundedBy = (count: unknown, max: number): count is number =>
   typeof count === "number" &&
   Number.isInteger(count) &&
   count >= 0 &&
   count <= max;
+
+const isValidTotalWrongLoss = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0;
+
+const hasConsistentWrongLoss = (
+  wrong: number,
+  totalWrongLoss: number,
+): boolean => (wrong === 0) === (totalWrongLoss === 0);
 
 export const isStoredPracticeRecord = (
   value: unknown,
@@ -53,11 +61,6 @@ export const isStoredPracticeRecord = (
     return false;
   }
 
-  const isTotalWrongLossValid =
-    typeof candidate.totalWrongLoss === "number" &&
-    Number.isFinite(candidate.totalWrongLoss) &&
-    candidate.totalWrongLoss >= 0;
-
   return (
     typeof candidate.handKey === "string" &&
     isCountBoundedBy(candidate.wrong, candidate.attempts) &&
@@ -65,7 +68,8 @@ export const isStoredPracticeRecord = (
     typeof candidate.lastAttemptAt === "number" &&
     Number.isFinite(candidate.lastAttemptAt) &&
     candidate.lastAttemptAt >= 0 &&
-    isTotalWrongLossValid &&
+    isValidTotalWrongLoss(candidate.totalWrongLoss) &&
+    hasConsistentWrongLoss(candidate.wrong, candidate.totalWrongLoss) &&
     parseHandKey(candidate.handKey) !== null
   );
 };
