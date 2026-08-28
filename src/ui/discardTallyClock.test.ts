@@ -52,10 +52,12 @@ describe("discard tally clock ordering", () => {
   it("orders a practice attempt after a future-skewed authentic decision", () => {
     const handKey = "5H,6H,7H,8H,9H,10H|Dealer";
     recordFutureSkewedDecision(handKey);
+    recordCorrectedDecision("second");
+    recordCorrectedDecision("third");
     recordPracticeAttempt({ at: AT, handKey, isOptimal: true });
 
     expect(readTallyForDisplay().practice).toMatchObject([
-      { lastAttemptAt: AT + 5001 },
+      { lastAttemptAt: AT + 5003 },
     ]);
   });
 });

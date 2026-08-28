@@ -97,7 +97,6 @@ const emptyTally: StoredTally = {
   skipped: [],
   version: CURRENT_VERSION,
 };
-
 /*
  * Parsed storage is described by interfaces with unknown-typed optional
  * fields rather than by an index signature. An index signature would force
@@ -113,14 +112,12 @@ interface MaybeTally {
   readonly skipped?: unknown;
   readonly version?: unknown;
 }
-
 interface MaybeLifetime {
   readonly decisions?: unknown;
   readonly expectedPointsLossTotal?: unknown;
   readonly optimalDecisions?: unknown;
   readonly skippedHands?: unknown;
 }
-
 interface MaybeDecisionRecord {
   readonly at?: unknown;
   readonly cribRole?: unknown;
@@ -184,6 +181,16 @@ const normalizeRecencyAt = (recencyAt: unknown, at: number): number =>
   typeof recencyAt === "number" && Number.isFinite(recencyAt) && recencyAt >= 0
     ? recencyAt
     : at;
+
+const latestDecisionRecencyAt = (
+  records: readonly DiscardDecisionRecord[],
+  fallback: number,
+): number =>
+  records.reduce(
+    (latestAt, record) =>
+      Math.max(latestAt, normalizeRecencyAt(record.recencyAt, record.at)),
+    fallback,
+  );
 
 const isSkippedHand = (value: unknown): value is SkippedHand =>
   isObject(value) && typeof (value as SkippedHand).at === "number";
@@ -443,14 +450,7 @@ export const recordDiscardDecision = (
     }
     const recencyAt = tally.practice.reduce(
       (latestAt, record) => Math.max(latestAt, record.lastAttemptAt + 1),
-      tally.records.reduce(
-        (latestAt, record) =>
-          Math.max(
-            latestAt,
-            normalizeRecencyAt(record.recencyAt, record.at) + 1,
-          ),
-        decision.at,
-      ),
+      latestDecisionRecencyAt(tally.records, decision.at - 1) + 1,
     );
     const recordedDecision = { ...decision, recencyAt };
     return {
@@ -471,8 +471,8 @@ export const recordPracticeAttempt = (
     return readDiscardTally(Date.now());
   }
   return extendStoredTally(attempt.at, (tally) => {
-    const latestDecisionAt = tally.records.reduce(
-      (latestAt, record) => Math.max(latestAt, record.at),
+    const latestDecisionAt = latestDecisionRecencyAt(
+      tally.records,
       attempt.at - 1,
     );
     const nextPractice = updatePracticeRecords(tally.practice, attempt, {
