@@ -155,13 +155,6 @@ export function Trainer({
   initialSortOrder = null,
   isSeededSession = false,
 }: TrainerProps) {
-  const createDealState = useCallback(
-    (cards: DealtCard[]): DealState => ({
-      cribRole: randomCribRole(generator),
-      dealtCards: cards,
-    }),
-    [generator],
-  );
   const [dealState, setDealState] = useState<DealState>(() => {
     const dealtCards = initialCards
       ? toDealtCards(initialCards, initialDiscards)
@@ -203,6 +196,29 @@ export function Trainer({
   });
   const isMergingHistoryEntry = useRef(false);
   const shouldPushHistory = useRef(false);
+
+  // Preserve the current history entry only when its state is stable.
+  // Transient single-card selections get replaced, so Back skips them.
+  const markHistoryUpdate = useCallback(() => {
+    shouldPushHistory.current = isStableDiscardState(dealtCards);
+  }, [dealtCards]);
+  const applyManualHand = useCallback(
+    (state: DealState) => {
+      // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
+      markHistoryUpdate();
+      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
+      setDealState(state);
+    },
+    [markHistoryUpdate, reportHandReplaced],
+  );
+  const drill = usePracticeDrill({
+    cribRole,
+    dealtCards,
+    generateRandomNumber: generator,
+    loadHand: applyManualHand,
+    onAnalysisRendered: reportAnalysisRendered,
+  });
+  const exitDrill = drill.onExit;
 
   useEffect(() => {
     const url = serializeUrlAnalysisState(window.location.search, {
@@ -251,6 +267,14 @@ export function Trainer({
             getHistoryEntryState()?.handScope ?? null,
             urlState.cribRole,
           );
+          /*
+           * A user Back onto the drilled hand's own six cards — same cards
+           * and role — is indistinguishable from an in-drill selection to
+           * the hook, so end the drill here where the history move is
+           * known: the restored hand and its analysis stand on their own,
+           * the reload-style degradation the drill already accepts.
+           */
+          exitDrill();
         }
         setDealState((previous) => ({
           cribRole: urlState.cribRole ?? previous.cribRole,
@@ -268,34 +292,13 @@ export function Trainer({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [reportHistoryNavigation]);
+  }, [exitDrill, reportHistoryNavigation]);
 
-  // Preserve the current history entry only when its state is stable.
-  // Transient single-card selections get replaced, so Back skips them.
-  const markHistoryUpdate = useCallback(() => {
-    shouldPushHistory.current = isStableDiscardState(dealtCards);
-  }, [dealtCards]);
-  const applyManualHand = useCallback(
-    (state: DealState) => {
-      // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
-      markHistoryUpdate();
-      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
-      setDealState(state);
-    },
-    [markHistoryUpdate, reportHandReplaced],
-  );
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
     applyManualHand,
     markHistoryUpdate,
   );
-  const drill = usePracticeDrill({
-    cribRole,
-    dealtCards,
-    generateRandomNumber: generator,
-    loadHand: applyManualHand,
-    onAnalysisRendered: reportAnalysisRendered,
-  });
 
   const toggleKept = useCallback(
     (dealOrderIndex: number) => {
@@ -317,10 +320,15 @@ export function Trainer({
 
   const dealNewHand = useCallback(() => {
     markHistoryUpdate();
-    const newDealState = createDealState(dealHand(generator));
+    // The deal draw is consumed before the role draw, matching the original helper's call order.
+    const dealtNewCards = dealHand(generator);
+    const newDealState: DealState = {
+      cribRole: randomCribRole(generator),
+      dealtCards: dealtNewCards,
+    };
     reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
     setDealState(newDealState);
-  }, [createDealState, generator, markHistoryUpdate, reportHandReplaced]);
+  }, [generator, markHistoryUpdate, reportHandReplaced]);
 
   const changeSortOrder = useCallback(
     (newSortOrder: SortOrder) => {

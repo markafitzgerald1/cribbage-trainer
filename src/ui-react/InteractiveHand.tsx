@@ -12,7 +12,6 @@ import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
-import { useCallback } from "react";
 
 export type InteractiveHandDrill = Omit<PracticeDrillPanelProps, "sortOrder">;
 
@@ -64,16 +63,8 @@ export function InteractiveHand({
   const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const roleContext =
     cribRole === CribRole.Dealer ? "your crib" : "opponent crib";
-  // Once a drill choice is checked, the analysis is scored against that selection; freezing the cards keeps a late toggle from scoring an uncommitted one.
-  const cardsFrozen = practiceDrill?.phase === "revealed";
-  const handleCardChange = useCallback(
-    (dealOrderIndex: number) => {
-      if (!cardsFrozen) {
-        onCardChange(dealOrderIndex);
-      }
-    },
-    [cardsFrozen, onCardChange],
-  );
+  // Once a drill choice is checked, the analysis is scored against it; disabling the card inputs keeps a late toggle from scoring an uncommitted selection and stops the frozen state reading as editable.
+  const cardsLocked = practiceDrill?.phase === "revealed";
 
   return (
     <div className={classes.interactiveHand}>
@@ -99,7 +90,8 @@ export function InteractiveHand({
       </div>
       <Hand
         dealtCards={dealtCards}
-        onChange={handleCardChange}
+        locked={cardsLocked}
+        onChange={onCardChange}
         sortOrder={sortOrder}
       />
       {practiceDrill ? renderDrillPanel(practiceDrill, sortOrder) : null}

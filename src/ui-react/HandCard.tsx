@@ -5,6 +5,8 @@ import { useCallback } from "react";
 
 export interface CardProps {
   readonly dealOrderIndex: number;
+  // Locks the checkbox once a drill choice is checked, so the frozen selection reads as non-editable to pointer and screen-reader users rather than silently ignoring input.
+  readonly disabled?: boolean;
   readonly kept: boolean;
   readonly onChange: (dealOrderIndex: number) => void;
   readonly rank: Rank;
@@ -13,6 +15,7 @@ export interface CardProps {
 
 export function HandCard({
   dealOrderIndex,
+  disabled = false,
   onChange,
   kept,
   rank,
@@ -24,7 +27,9 @@ export function HandCard({
 
   return (
     <label
-      className={`${classes.handCard}${kept ? "" : ` ${classes.discarded}`}`}
+      className={`${classes.handCard}${kept ? "" : ` ${classes.discarded}`}${
+        disabled ? ` ${classes.locked}` : ""
+      }`}
     >
       <CardLabel
         isHandCard
@@ -34,6 +39,7 @@ export function HandCard({
       {}
       <input
         checked={kept}
+        disabled={disabled}
         onChange={handleChange}
         type="checkbox"
       />
@@ -42,6 +48,7 @@ export function HandCard({
 }
 
 HandCard.defaultProps = {
+  disabled: false,
   // eslint-disable-next-line no-undefined
   suit: undefined,
 };

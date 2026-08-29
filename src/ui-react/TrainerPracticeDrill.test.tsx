@@ -10,9 +10,9 @@ import {
   renderTrainerWithInitialProps,
 } from "./Trainer.test.common";
 import { describe, expect, it } from "@jest/globals";
+import { fireEvent, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { parseHand } from "../game/Card";
-import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 /* jscpd:ignore-end */
 
@@ -91,5 +91,20 @@ describe("trainer practice drill", () => {
 
     expect(view.queryByRole("button", { name: "Check discard" })).toBeNull();
     expect(view.getAllByRole("checkbox")).toHaveLength(6);
+  });
+
+  it("ends a choosing-phase drill when Back restores the same hand", async () => {
+    const { view } = await openDrillFromQueue();
+
+    // Back onto the completed state that preceded the drill: same six cards and role, its original discard restored.
+    window.history.replaceState(
+      null,
+      "",
+      `?hand=${MISTAKE_HAND}&role=dealer&discard=5H,6H`,
+    );
+    fireEvent.popState(window);
+
+    expect(screen.queryByLabelText("Practice drill")).toBeNull();
+    expect(view.getByRole("table")).toBeInTheDocument();
   });
 });

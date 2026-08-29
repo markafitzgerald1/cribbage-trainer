@@ -3,7 +3,12 @@ import { HandCard } from "./HandCard";
 import type { HandProps } from "./HandProps";
 import { sortCards } from "../ui/sortCards";
 
-export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
+export function Hand({
+  dealtCards,
+  locked = false,
+  sortOrder,
+  onChange,
+}: HandProps) {
   return (
     <figure className={classes.figure}>
       <figcaption className={classes.figcaption}>Hand</figcaption>
@@ -11,6 +16,7 @@ export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
         {sortCards(dealtCards, sortOrder).map((dealtCard) => (
           <HandCard
             dealOrderIndex={dealtCard.dealOrder}
+            disabled={locked}
             kept={dealtCard.kept}
             key={dealtCard.dealOrder}
             onChange={onChange}
@@ -22,3 +28,7 @@ export function Hand({ dealtCards, sortOrder, onChange }: HandProps) {
     </figure>
   );
 }
+
+Hand.defaultProps = {
+  locked: false,
+};

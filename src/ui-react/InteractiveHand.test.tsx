@@ -98,23 +98,25 @@ describe("sortable hand input component", () => {
   );
 
   it.each([
-    { calls: 1, phase: "choosing" as const },
-    { calls: 0, phase: "revealed" as const },
+    { calls: 1, locked: false, phase: "choosing" as const },
+    { calls: 0, locked: true, phase: "revealed" as const },
   ])(
-    "fires a card change $calls time(s) while a drill is $phase",
-    ({ calls, phase }) => {
+    "fires a card change $calls time(s) and locks the cards $locked while a drill is $phase",
+    ({ calls, locked, phase }) => {
       const {
         component: { container },
         onCardChange,
       } = renderComponent(SortOrder.DealOrder, basePanelArgs({ phase }));
+      const checkbox = container.querySelector<HTMLInputElement>(
+        "input[type='checkbox']",
+      );
 
       act(() => {
-        container
-          .querySelector<HTMLInputElement>("input[type='checkbox']")
-          ?.click();
+        checkbox?.click();
       });
 
       expect(onCardChange).toHaveBeenCalledTimes(calls);
+      expect(checkbox?.disabled).toBe(locked);
     },
   );
 

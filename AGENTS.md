@@ -249,6 +249,24 @@ mcr.microsoft.com/playwright:<tag>`.
 - On short screens, place a modal's primary and secondary actions before a
   long scrolling picker and keep the action row sticky. Users should see how
   to complete the dialog without first discovering an off-screen footer.
+- Freezing a control by swallowing its `onChange` leaves it focusable, still
+  showing a pointer cursor, and announced as editable — a control that lies
+  about being interactive. Lock it with the native `disabled` attribute
+  (thread a prop down to the `<input>`) and a `cursor` override on its
+  label. The practice drill's post-commit card lock does this through
+  `Hand`/`HandCard`'s `disabled`; a test then asserts `checkbox.disabled`,
+  not just that the handler went uncalled.
+- A transient board-scoped mode (the practice drill) cannot self-detect a
+  history restore of its own hand: `Back` onto the drilled six cards under
+  the same role reads identically to an in-drill card selection —
+  `serializeHand` ignores `kept`, and in the choosing phase the discard
+  count carries no signal either. The component that owns the navigation
+  must end the mode explicitly. `Trainer`'s `popstate` handler calls
+  `drill.onExit()` in its non-merge branch; the hook's own render-time
+  reset only covers what it _can_ see (the cards or role differ, or a
+  committed discard was cleared). Guard the exit with the same
+  `!isInternalMerge` check the history-navigation report uses, or a
+  mind-change settle inside the drill ends it.
 
 ## Responsive layout invariants
 
