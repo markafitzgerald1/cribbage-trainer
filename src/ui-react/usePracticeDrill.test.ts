@@ -269,6 +269,25 @@ describe("usePracticeDrill", () => {
     expect(stored?.wrong).toBe(wrong);
   });
 
+  it("takes the streak from storage, not the drill's start snapshot", () => {
+    const harness = freshHarness({ seed: true });
+    // Another tab advances the stored streak after this drill's item was captured at zero.
+    recordPracticeAttempt({
+      at: Date.now(),
+      handKey: HAND_KEY,
+      isOptimal: true,
+    });
+
+    harness.start();
+    harness.commit();
+    harness.render(analysisOf(true, 0));
+
+    const { verdict } = harness.drill();
+
+    expect(verdict?.consecutiveSuccesses).toBe(2);
+    expect(verdict?.isMastered).toBe(true);
+  });
+
   it("records only once even as the analysis re-renders", () => {
     const harness = drilledThrough(analysisOf(false, 0.5));
 

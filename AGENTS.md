@@ -267,6 +267,14 @@ mcr.microsoft.com/playwright:<tag>`.
   committed discard was cleared). Guard the exit with the same
   `!isInternalMerge` check the history-navigation report uses, or a
   mind-change settle inside the drill ends it.
+- A field snapshotted into a UI mode (the drill's `activeItem`, taken from
+  the queue when the drill starts) goes stale against `localStorage`
+  another tab can mutate. `recordPracticeAttempt` merges against the
+  stored record as it stands at write time, so the streak it persists is
+  not one more than the snapshot's. Derive anything shown after such a
+  write by re-reading storage for that record, never from the snapshot —
+  otherwise a concurrent miss elsewhere lets this tab show two successes
+  and declare mastery over a stored streak of one.
 
 ## Responsive layout invariants
 
