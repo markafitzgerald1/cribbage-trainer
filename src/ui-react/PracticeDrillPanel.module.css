@@ -152,3 +152,57 @@
   border-color: #a7c7ad;
   outline: none;
 }
+
+/*
+ * In side-by-side mode the panel sits below the controls and cards inside
+ * Trainer's fixed-height, non-scrolling left grid column. Every rem here is
+ * a lower bound that grows with the device font-size setting while the cards
+ * stay viewport-sized, so on a short landscape at a large root font the
+ * uncapped rhythm and text push Check/Exit — or the consent controls
+ * beneath — off screen. Cap each with a viewport unit chosen so the
+ * default-scale size is unchanged (see the same trap in AGENTS.md's
+ * responsive invariants). A large-root e2e guard covers the drill state.
+ */
+@media (aspect-ratio >= 6 / 5) {
+  .panel {
+    gap: min(0.4rem, 0.9vw);
+    margin-top: min(0.5rem, 1vw);
+    padding: min(0.5rem, 1vw) min(0.6rem, 1.2vw);
+  }
+
+  .badge {
+    font-size: min(0.7rem, 1.35vw);
+  }
+
+  .choosing,
+  .verdict {
+    gap: min(0.4rem, 0.9vw);
+  }
+
+  .prompt,
+  .verdict-loss,
+  .outcome-good,
+  .outcome-mastered,
+  .outcome-miss,
+  .primary,
+  .secondary {
+    font-size: min(0.85rem, 1.65vw);
+  }
+
+  .verdict-row {
+    gap: min(0.35rem, 0.7vw);
+  }
+
+  .verdict-label {
+    font-size: min(0.75rem, 1.45vw);
+    min-width: min(3.2rem, 6.1vw);
+  }
+
+  .not-recorded {
+    font-size: min(0.8rem, 1.55vw);
+  }
+
+  .actions {
+    gap: min(0.4rem, 0.9vw);
+  }
+}

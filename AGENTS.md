@@ -319,6 +319,16 @@ mcr.microsoft.com/playwright:<tag>`.
   default-scale size unchanged, and guard it the way portrait already does:
   the same measurement repeated at a 28px root font. That guard failed on
   all five browser projects before the fix and passes after it.
+- Anything new added below the controls and cards in the side-by-side
+  left column inherits that trap. The practice-drill panel
+  (`PracticeDrillPanel.module.css`) went in with every gap, margin,
+  padding, and font in bare rem; inside Trainer's fixed-height,
+  non-scrolling column a 28px root font grew it until Check/Exit dropped
+  below a 844x390 viewport (measured at y425). Its landscape `@media`
+  block now caps each rem with a `min(…rem, …vw)` sized to leave the
+  default scale untouched, and `practiceDrill.spec.ts` asserts both drill
+  buttons stay within the landscape viewport at a 28px root — negative-
+  checked to fail against the uncapped CSS.
 - `line-height: normal` is not proportional across font sizes (font-metric
   pixel rounding differs), so pin an explicit line-height wherever an
   aspect-ratio invariant depends on text height.

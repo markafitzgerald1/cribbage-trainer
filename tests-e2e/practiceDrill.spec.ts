@@ -4,10 +4,15 @@ import {
   answeredPolicyVersionKey,
 } from "../src/ui/analyticsConsent";
 import { type Page, expect, test } from "@playwright/test";
+import {
+  phoneLandscapeViewport,
+  phonePortraitViewport,
+} from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
-import { phonePortraitViewport } from "./layoutMeasurements";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
+
+const LARGE_ROOT_FONT = "html { font-size: 28px; }";
 
 const MISTAKE_HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
 const BASE_AT = 1_700_000_000_000;
@@ -160,6 +165,27 @@ test.describe("practice drill", () => {
     const bounds = await startDrill.boundingBox();
     expect(bounds?.y ?? Number.MAX_SAFE_INTEGER).toBeLessThan(
       phonePortraitViewport.height,
+    );
+  });
+
+  test("drill actions stay on a short landscape screen at a large root font", async ({
+    page,
+  }) => {
+    await page.setViewportSize(phoneLandscapeViewport);
+    await page.addStyleTag({ content: LARGE_ROOT_FONT });
+    await startDrillOnFirstMistake(page);
+
+    const check = page.getByRole("button", { name: "Check discard" });
+    const exit = page.getByRole("button", { name: "Exit drill" });
+    await expect(check).toBeVisible();
+
+    const checkBox = await check.boundingBox();
+    const exitBox = await exit.boundingBox();
+    expect((checkBox?.y ?? 0) + (checkBox?.height ?? 0)).toBeLessThanOrEqual(
+      phoneLandscapeViewport.height,
+    );
+    expect((exitBox?.y ?? 0) + (exitBox?.height ?? 0)).toBeLessThanOrEqual(
+      phoneLandscapeViewport.height,
     );
   });
 
