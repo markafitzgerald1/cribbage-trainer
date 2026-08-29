@@ -97,7 +97,7 @@ describe("practiceDrillPanel", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the signed loss and a missing previous discard on a miss", () => {
+  it("shows the loss magnitude and a missing previous discard on a miss", () => {
     const { getByText } = renderPanel({
       phase: "revealed",
       verdict: sampleVerdict({
