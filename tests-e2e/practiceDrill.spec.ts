@@ -171,9 +171,14 @@ test.describe("practice drill", () => {
   test("drill actions stay on a short landscape screen at a large root font", async ({
     page,
   }) => {
+    /*
+     * Start the drill at the default viewport where the queue dialog fits,
+     * then squeeze to a short landscape with a large root font so the panel's
+     * rem rhythm is under test rather than the dialog interaction.
+     */
+    await startDrillOnFirstMistake(page);
     await page.setViewportSize(phoneLandscapeViewport);
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
-    await startDrillOnFirstMistake(page);
 
     const check = page.getByRole("button", { name: "Check discard" });
     const exit = page.getByRole("button", { name: "Exit drill" });
