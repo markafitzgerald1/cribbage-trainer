@@ -216,14 +216,21 @@ export const usePracticeDrill = ({
        * merges against whatever another tab has stored since, so the snapshot's
        * consecutiveSuccesses can be stale (an external miss can have reset it,
        * which would otherwise let this tab display two successes and declare
-       * mastery over a stored streak of one). A valid attempt for this handKey
-       * is always persisted above, so the record is present.
+       * mastery over a stored streak of one).
+       *
+       * The record is absent only when recordPracticeAttempt refused the write
+       * to protect a newer-build tally another tab left in localStorage; the
+       * local estimate is the honest fallback there, matching the read-only
+       * state the rest of the tally is already in.
        */
+      const localStreakEstimate = isOptimal
+        ? activeItem.consecutiveSuccesses + 1
+        : 0;
       const stored = readTallyForDisplay().practice.find(
         (record) => record.handKey === activeItem.handKey,
       );
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { consecutiveSuccesses } = stored!;
+      const consecutiveSuccesses =
+        stored?.consecutiveSuccesses ?? localStreakEstimate;
       setHasNextHand(activeHandsExist());
       setVerdict({
         chosenDiscard: serializeHand(dealtCards.filter((card) => !card.kept)),

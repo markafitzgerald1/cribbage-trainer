@@ -274,7 +274,13 @@ mcr.microsoft.com/playwright:<tag>`.
   not one more than the snapshot's. Derive anything shown after such a
   write by re-reading storage for that record, never from the snapshot —
   otherwise a concurrent miss elsewhere lets this tab show two successes
-  and declare mastery over a stored streak of one.
+  and declare mastery over a stored streak of one. But do not then assume
+  the re-read `find` succeeds: `recordPracticeAttempt` deliberately
+  refuses to write when a newer-build tally is in storage (the version
+  guard), and `readTallyForDisplay()` returns the empty fallback there, so
+  the record is genuinely absent. Fall back to the local estimate rather
+  than asserting the record non-null — the whole tally is read-only in
+  that tab until reload anyway.
 
 ## Responsive layout invariants
 

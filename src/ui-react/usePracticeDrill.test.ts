@@ -2,20 +2,22 @@ import {
   type PracticeDrill,
   type PracticeDrillHand,
   type PracticeDrillPhase,
+  type PracticeVerdict,
   usePracticeDrill,
 } from "./usePracticeDrill";
 import { act, renderHook } from "@testing-library/react";
 import {
   clearDiscardTally,
+  discardTallyKey,
   readTallyForDisplay,
   recordDiscardDecision,
   recordPracticeAttempt,
 } from "../ui/discardTally";
+import { createMockTally, mockItemA } from "../ui/mistakeQueue.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
-import { mockItemA } from "../ui/mistakeQueue.test.common";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 
@@ -144,10 +146,21 @@ const committedHarness = (): Harness => {
   return harness;
 };
 
-const drilledThrough = (analysis: RenderedAnalysis): Harness => {
-  const harness = committedHarness();
+const drillAndScore = (harness: Harness, analysis: RenderedAnalysis) => {
+  harness.start();
+  harness.commit();
   harness.render(analysis);
+};
+
+const drilledThrough = (analysis: RenderedAnalysis): Harness => {
+  const harness = freshHarness({ seed: true });
+  drillAndScore(harness, analysis);
   return harness;
+};
+
+const scoredOptimalVerdict = (harness: Harness): PracticeVerdict | null => {
+  drillAndScore(harness, analysisOf(true, 0));
+  return harness.drill().verdict;
 };
 
 const SAME_CARDS = toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), []);
@@ -278,14 +291,24 @@ describe("usePracticeDrill", () => {
       isOptimal: true,
     });
 
-    harness.start();
-    harness.commit();
-    harness.render(analysisOf(true, 0));
-
-    const { verdict } = harness.drill();
+    const verdict = scoredOptimalVerdict(harness);
 
     expect(verdict?.consecutiveSuccesses).toBe(2);
     expect(verdict?.isMastered).toBe(true);
+  });
+
+  it("uses a local streak estimate when a newer-build tally refuses the write", () => {
+    const harness = freshHarness({ seed: true });
+    // A newer deployment's tally in another tab: recordPracticeAttempt leaves it untouched, so nothing is stored to read back.
+    localStorage.setItem(
+      discardTallyKey,
+      JSON.stringify(createMockTally({ version: 999 })),
+    );
+
+    const verdict = scoredOptimalVerdict(harness);
+
+    expect(verdict).not.toBeNull();
+    expect(verdict?.consecutiveSuccesses).toBe(1);
   });
 
   it("records only once even as the analysis re-renders", () => {
