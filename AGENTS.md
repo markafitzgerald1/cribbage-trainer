@@ -262,7 +262,9 @@ mcr.microsoft.com/playwright:<tag>`.
   `serializeHand` ignores `kept`, and in the choosing phase the discard
   count carries no signal either. The component that owns the navigation
   must end the mode explicitly. `Trainer`'s `popstate` handler calls
-  `drill.onExit()` in its non-merge branch; the hook's own render-time
+  `drill.clearDrill()` in its non-merge branch — the bare state reset,
+  not `drill.onExit()`, which also deals a fresh hand and would
+  overwrite the hand Back just restored. The hook's own render-time
   reset only covers what it _can_ see (the cards or role differ, or a
   committed discard was cleared). Guard the exit with the same
   `!isInternalMerge` check the history-navigation report uses, or a
