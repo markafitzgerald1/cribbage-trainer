@@ -45,6 +45,8 @@ export type PracticeDrillPhase = "choosing" | "revealed";
 
 export interface PracticeDrill {
   readonly activeItem: MistakeQueueItem | null;
+  // Drops the retained drill state without touching the board — for a history restore, which brings its own hand back.
+  readonly clearDrill: () => void;
   // Forwards to the caller's own analysis handler, then records the drill attempt once the answer is on screen.
   readonly handleAnalysisRendered: (analysis: RenderedAnalysis) => void;
   readonly handleStartAutoDrill: () => void;
@@ -52,6 +54,7 @@ export interface PracticeDrill {
   readonly hasNextHand: boolean;
   readonly isActive: boolean;
   readonly onCommit: () => void;
+  // The "Exit drill" action: leaves practice and deals a fresh authentic hand.
   readonly onExit: () => void;
   readonly onNextHand: () => void;
   readonly phase: PracticeDrillPhase;
@@ -61,6 +64,8 @@ export interface PracticeDrill {
 interface UsePracticeDrillArgs {
   // The crib role on the board, so the drill can tell its own hand from the same six cards resubmitted under the opposite role.
   readonly cribRole: CribRole;
+  // Deals a fresh authentic hand — how "Exit drill" and an exhausted queue return the player to normal play.
+  readonly dealFreshHand: () => void;
   readonly dealtCards: readonly DealtCard[];
   readonly generateRandomNumber: () => number;
   // The manual hand-load path, so the loaded hand is flagged practice and never enters the headline averages.
@@ -82,6 +87,7 @@ const activeHandsExist = (): boolean =>
 
 export const usePracticeDrill = ({
   cribRole,
+  dealFreshHand,
   dealtCards,
   generateRandomNumber,
   loadHand,
@@ -102,23 +108,18 @@ export const usePracticeDrill = ({
    * panel from lingering over an unrelated hand and its recorder from
    * scoring one. `serializeHand` ignores the kept flags, so choosing the
    * discards does not trip it.
-   */
-  const boardHoldsDrill =
-    activeItem !== null &&
-    cribRole === activeItem.cribRole &&
-    serializeHand(dealtCards) === serializeHand(activeItem.cards);
-
-  /*
-   * The drill's own six cards carry a zero-discard history entry, and Back
-   * onto it after a commit passes `boardHoldsDrill` (serializeHand ignores
-   * the kept flags) while resetting the selection. Rather than leave a
-   * revealed panel showing a stale verdict over frozen, now-empty cards,
-   * the drill is over once its checked discard is gone — the hand stays on
-   * the board and the analysis is simply shown, the same degradation a
-   * reload already gives.
+   *
+   * The one hole that leaves: the drill's own six cards carry a zero-discard
+   * history entry, so Back onto it after a commit still matches (same cards,
+   * same role) while resetting the selection. Rather than leave a revealed
+   * panel showing a stale verdict over frozen, now-empty cards, the drill is
+   * also over once its checked discard is gone — the hand stays on the board
+   * and the analysis is simply shown, the same degradation a reload gives.
    */
   const drillLive =
-    boardHoldsDrill &&
+    activeItem !== null &&
+    cribRole === activeItem.cribRole &&
+    serializeHand(dealtCards) === serializeHand(activeItem.cards) &&
     !(phase === "revealed" && !discardIsComplete(dealtCards));
 
   /*
@@ -150,22 +151,23 @@ export const usePracticeDrill = ({
   );
 
   const drawNext = useCallback(
-    () =>
+    (excludeHandKey: string | null) =>
       sampleMistakeQueueByPriority(
         buildMistakeQueue(readTallyForDisplay()),
         generateRandomNumber(),
+        excludeHandKey,
       ),
     [generateRandomNumber],
   );
 
   const startAutoDrill = useCallback(() => {
-    const next = drawNext();
+    const next = drawNext(null);
     if (next !== null) {
       beginWith(next);
     }
   }, [beginWith, drawNext]);
 
-  const onExit = useCallback(() => {
+  const clearDrill = useCallback(() => {
     recordedRef.current = false;
     setActiveItem(null);
     setPhase("choosing");
@@ -173,18 +175,28 @@ export const usePracticeDrill = ({
     setHasNextHand(false);
   }, []);
 
+  // "Exit drill": drop practice and deal a fresh authentic hand rather than leaving the drilled study hand on the board.
+  const onExit = useCallback(() => {
+    clearDrill();
+    dealFreshHand();
+  }, [clearDrill, dealFreshHand]);
+
   const onCommit = useCallback(() => {
     setPhase("revealed");
   }, []);
 
   const onNextHand = useCallback(() => {
-    const next = drawNext();
+    if (activeItem === null) {
+      return;
+    }
+    // Exclude the hand just drilled so "Draw another" interleaves rather than repeating it back to back.
+    const next = drawNext(activeItem.handKey);
     if (next === null) {
       onExit();
       return;
     }
     beginWith(next);
-  }, [beginWith, drawNext, onExit]);
+  }, [activeItem, beginWith, drawNext, onExit]);
 
   const handleAnalysisRendered = useCallback(
     (analysis: RenderedAnalysis) => {
@@ -252,6 +264,7 @@ export const usePracticeDrill = ({
    */
   return {
     activeItem,
+    clearDrill,
     handleAnalysisRendered,
     handleStartAutoDrill: startAutoDrill,
     handleStartDrill: beginWith,

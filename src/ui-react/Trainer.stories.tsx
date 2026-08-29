@@ -397,5 +397,11 @@ export const PracticeDrillFromMistakeQueue = {
     await fireEvent.click(getButton(canvasElement, "Draw another"));
 
     await expect(canvas.getByLabelText("Practice drill")).toBeVisible();
+
+    // Exit deals a fresh authentic hand: the panel goes away and normal play resumes.
+    await fireEvent.click(getButton(canvasElement, "Exit drill"));
+
+    await expect(canvas.queryByLabelText("Practice drill")).toBeNull();
+    await expect(getButton(canvasElement, "Deal")).toBeVisible();
   },
 };

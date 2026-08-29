@@ -1,14 +1,18 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import {
+  DEALER_RANDOM_VALUE,
+  clickIndices,
+  createRoleRandomValues,
+  createSequenceGenerator,
+  getHandText,
+  renderTrainerWithInitialProps,
+} from "./Trainer.test.common";
+import {
   clearDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
 } from "../ui/discardTally";
-import {
-  clickIndices,
-  renderTrainerWithInitialProps,
-} from "./Trainer.test.common";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
@@ -43,6 +47,9 @@ const openDrillFromQueue = async () => {
   seedMistakeHand();
   const user = userEvent.setup();
   const view = renderTrainerWithInitialProps({
+    generateRandomNumber: createSequenceGenerator(
+      createRoleRandomValues([DEALER_RANDOM_VALUE]),
+    ),
     initialCards: parseHand(MISTAKE_HAND),
     initialCribRole: CribRole.Dealer,
     initialDiscards: parseHand("5H,6H"),
@@ -84,12 +91,15 @@ describe("trainer practice drill", () => {
     expect(tally.lifetime.decisions).toBe(1);
   });
 
-  it("leaves the hand on the board after exiting the drill", async () => {
+  it("deals a fresh authentic hand after exiting the drill", async () => {
     const { user, view } = await openDrillFromQueue();
+    const drilledHandText = getHandText(view.container);
 
     await clickDrillButton(view, user, "Exit drill");
 
+    expect(screen.queryByLabelText("Practice drill")).toBeNull();
     expect(view.queryByRole("button", { name: "Check discard" })).toBeNull();
+    expect(getHandText(view.container)).not.toBe(drilledHandText);
     expect(view.getAllByRole("checkbox")).toHaveLength(6);
   });
 

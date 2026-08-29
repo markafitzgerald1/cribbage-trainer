@@ -40,16 +40,18 @@ const NO_QUALITY: RenderedAnalysis = {
   quality: null,
 };
 
-const seedMistake = () =>
+const seedMistake = (handKey = HAND_KEY, discardKey = "5H,6H") =>
   recordDiscardDecision({
     at: Date.now(),
     cribRole: CribRole.Dealer,
-    discardKey: "5H,6H",
+    discardKey,
     expectedPointsLoss: 1.5,
-    handKey: HAND_KEY,
+    handKey,
     isOptimal: false,
     isPractice: false,
   });
+
+const OTHER_KEY = "2C,3D,4S,5H,6C,7D|Pone";
 
 const masterSeededHand = () => {
   seedMistake();
@@ -63,7 +65,9 @@ const masterSeededHand = () => {
 
 interface Harness {
   readonly auto: () => void;
+  readonly clear: () => void;
   readonly commit: () => void;
+  readonly dealFreshHandCalls: number;
   readonly drill: () => PracticeDrill;
   readonly exit: () => void;
   readonly forwardedAnalyses: readonly RenderedAnalysis[];
@@ -83,16 +87,26 @@ interface BoardProps {
 const OTHER_HAND = toDealtCards(parseHand("2C,3D,4S,5H,6C,7D"), []);
 const DRILL_ROLE = mockItemA.cribRole;
 
-const setupHarness = (): Harness => {
+const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
   const loadedHands: PracticeDrillHand[] = [];
   const forwardedAnalyses: RenderedAnalysis[] = [];
+  // Trainer's real loadHand swaps the board to the drilled hand; opt in when a test needs that follow-through (a Draw-another to different cards).
+  const boardControls: { rerender?: (props: BoardProps) => void } = {};
   const loadHand = jest.fn<(hand: PracticeDrillHand) => void>((hand) => {
     loadedHands.push(hand);
+    if (followLoadedHand) {
+      boardControls.rerender?.({
+        cards: hand.dealtCards,
+        role: hand.cribRole,
+      });
+    }
   });
+  const dealFreshHand = jest.fn<() => void>();
   const { rerender, result } = renderHook<PracticeDrill, BoardProps>(
     ({ cards, role }) =>
       usePracticeDrill({
         cribRole: role,
+        dealFreshHand,
         dealtCards: cards,
         generateRandomNumber: () => 0,
         loadHand,
@@ -100,6 +114,7 @@ const setupHarness = (): Harness => {
       }),
     { initialProps: { cards: dealtCards, role: DRILL_ROLE } },
   );
+  boardControls.rerender = rerender;
   const step = (action: (drill: PracticeDrill) => void) => {
     act(() => {
       action(result.current);
@@ -107,7 +122,11 @@ const setupHarness = (): Harness => {
   };
   return {
     auto: () => step((drill) => drill.handleStartAutoDrill()),
+    clear: () => step((drill) => drill.clearDrill()),
     commit: () => step((drill) => drill.onCommit()),
+    get dealFreshHandCalls() {
+      return dealFreshHand.mock.calls.length;
+    },
     drill: () => result.current,
     exit: () => step((drill) => drill.onExit()),
     get forwardedAnalyses() {
@@ -191,6 +210,21 @@ const expectDrillFinished = (harness: Harness) => {
   expectDrillState(harness, false, "choosing");
 
   expect(harness.drill().verdict).toBeNull();
+};
+
+const expectNoDrillStarted = (harness: Harness) => {
+  expect(harness.drill().isActive).toBe(false);
+  expect(harness.loadHandCalls).toBe(0);
+  expect(harness.dealFreshHandCalls).toBe(0);
+};
+
+const startedThenNext = (
+  options: { readonly followLoadedHand?: boolean } = {},
+): Harness => {
+  const harness = setupHarness(options);
+  harness.start();
+  harness.next();
+  return harness;
 };
 
 describe("usePracticeDrill", () => {
@@ -321,12 +355,43 @@ describe("usePracticeDrill", () => {
     expect(stored?.attempts).toBe(1);
   });
 
-  it("clears drill state on exit", () => {
+  it("deals a fresh authentic hand on Exit drill", () => {
     const harness = drilledThrough(analysisOf(true, 0));
 
     harness.exit();
 
     expectDrillFinished(harness);
+
+    expect(harness.dealFreshHandCalls).toBe(1);
+  });
+
+  it("clears drill state without dealing on a history restore", () => {
+    const harness = drilledThrough(analysisOf(true, 0));
+
+    harness.clear();
+
+    expectDrillFinished(harness);
+
+    expect(harness.dealFreshHandCalls).toBe(0);
+  });
+
+  it.each([
+    {
+      advance: (harness: Harness) => harness.next(),
+      name: "Draw another is pressed with no active drill",
+      seed: true,
+    },
+    {
+      advance: (harness: Harness) => harness.auto(),
+      name: "auto-draw runs with no mistakes recorded",
+      seed: false,
+    },
+  ])("does nothing when $name", ({ advance, seed }) => {
+    const harness = freshHarness({ seed });
+
+    advance(harness);
+
+    expectNoDrillStarted(harness);
   });
 
   it.each([
@@ -341,24 +406,24 @@ describe("usePracticeDrill", () => {
     expectDrillState(harness, true, "choosing");
   });
 
-  it("does nothing on auto-draw when there are no mistakes", () => {
-    const harness = freshHarness();
+  it("interleaves — Draw another skips the hand just drilled when others are active", () => {
+    clearDiscardTally();
+    seedMistake();
+    seedMistake(OTHER_KEY, "2C,3D");
 
-    harness.auto();
+    const harness = startedThenNext({ followLoadedHand: true });
 
-    expect(harness.drill().isActive).toBe(false);
-    expect(harness.loadHandCalls).toBe(0);
+    expect(harness.drill().activeItem?.handKey).toBe(OTHER_KEY);
   });
 
-  it("exits when Draw another finds nothing left to drill", () => {
+  it("exits to a fresh hand when Draw another finds nothing left to drill", () => {
     clearDiscardTally();
     masterSeededHand();
-    const harness = setupHarness();
 
-    harness.start();
-    harness.next();
+    const harness = startedThenNext();
 
     expect(harness.drill().isActive).toBe(false);
+    expect(harness.dealFreshHandCalls).toBe(1);
   });
 
   it("reports whether another active hand is available", () => {

@@ -81,4 +81,29 @@ describe("sampleMistakeQueueByPriority", () => {
       );
     },
   );
+
+  it.each([
+    {
+      exclude: mockItemA.handKey,
+      expected: mockItemB.handKey,
+      name: "skips the excluded hand while another is active",
+      queue: [mockItemA, mockItemB],
+    },
+    {
+      exclude: mockItemA.handKey,
+      expected: mockItemA.handKey,
+      name: "re-draws the excluded hand when it is the only one active",
+      queue: [mockItemA, mockItemMastered],
+    },
+    {
+      exclude: "not-in-queue|Dealer",
+      expected: mockItemA.handKey,
+      name: "ignores an exclusion that matches no active hand",
+      queue: [mockItemA, mockItemB],
+    },
+  ])("$name", ({ exclude, expected, queue }) => {
+    expect(sampleMistakeQueueByPriority(queue, 0, exclude)?.handKey).toBe(
+      expected,
+    );
+  });
 });

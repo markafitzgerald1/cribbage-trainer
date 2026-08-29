@@ -211,14 +211,27 @@ export function Trainer({
     },
     [markHistoryUpdate, reportHandReplaced],
   );
+  const dealNewHand = useCallback(() => {
+    markHistoryUpdate();
+    // The deal draw is consumed before the role draw, matching the original helper's call order.
+    const dealtNewCards = dealHand(generator);
+    const newDealState: DealState = {
+      cribRole: randomCribRole(generator),
+      dealtCards: dealtNewCards,
+    };
+    reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
+    setDealState(newDealState);
+  }, [generator, markHistoryUpdate, reportHandReplaced]);
   const drill = usePracticeDrill({
     cribRole,
+    dealFreshHand: dealNewHand,
     dealtCards,
     generateRandomNumber: generator,
     loadHand: applyManualHand,
     onAnalysisRendered: reportAnalysisRendered,
   });
-  const exitDrill = drill.onExit;
+  // The pure clear, for the history-restore path below — a Back brings its own hand, so it must not deal a new one.
+  const exitDrill = drill.clearDrill;
 
   useEffect(() => {
     const url = serializeUrlAnalysisState(window.location.search, {
@@ -317,18 +330,6 @@ export function Trainer({
     },
     [cribRole, dealtCards, markHistoryUpdate, reportCardToggled],
   );
-
-  const dealNewHand = useCallback(() => {
-    markHistoryUpdate();
-    // The deal draw is consumed before the role draw, matching the original helper's call order.
-    const dealtNewCards = dealHand(generator);
-    const newDealState: DealState = {
-      cribRole: randomCribRole(generator),
-      dealtCards: dealtNewCards,
-    };
-    reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
-    setDealState(newDealState);
-  }, [generator, markHistoryUpdate, reportHandReplaced]);
 
   const changeSortOrder = useCallback(
     (newSortOrder: SortOrder) => {
