@@ -11,7 +11,8 @@ const FRACTION_TWO_THIRDS_NUMERATOR = 2;
 const FRACTION_TWO_THIRDS_DENOMINATOR = 3;
 const FRACTION_TWO_THIRDS =
   FRACTION_TWO_THIRDS_NUMERATOR / FRACTION_TWO_THIRDS_DENOMINATOR;
-const SUCCESSES_FOR_MASTERY = 2;
+// Two consecutive optimal choices since the last error; the one place the copy and the state machine both read.
+export const SUCCESSES_FOR_MASTERY = 2;
 
 export type MistakeQueueSortOrder = "highestLoss" | "mostRecent" | "priority";
 
@@ -41,6 +42,8 @@ export interface MistakeQueueItem {
   readonly originalDecisionAt: number;
   readonly pWrong: number;
   readonly previousDiscard: string | null;
+  // The cost of `previousDiscard` itself, from the same record — not `lossIfWrong`, which averages every wrong attempt.
+  readonly previousDiscardLoss: number;
   readonly priority: number;
   readonly wrong: number;
 }
@@ -206,6 +209,7 @@ const createCandidateQueueItem = ({
     originalDecisionAt: aggregate.originalAt,
     pWrong,
     previousDiscard: aggregate.discardKey,
+    previousDiscardLoss: aggregate.expectedPointsLoss,
     priority,
     wrong,
   };
@@ -306,6 +310,61 @@ const getSortDeltas = (
     primaryDelta: secondItem.lastAttemptAt - firstItem.lastAttemptAt,
     secondaryDelta: secondItem.priority - firstItem.priority,
   };
+};
+
+/*
+ * `index` is always within `[0, items.length)` at every call site below —
+ * each is derived from `items.length` — so the assertion states a fact the
+ * bounded arithmetic already guarantees rather than papering over a real
+ * chance of undefined.
+ */
+const itemAt = (
+  items: readonly MistakeQueueItem[],
+  index: number,
+): MistakeQueueItem =>
+  // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
+  items[index]!;
+
+/*
+ * Draws one active (non-mastered) hand weighted by `priority` — the expected
+ * points a single correct drill of that hand recovers, the same quantity the
+ * "priority" sort order ranks by, so the browse list and the auto-deal share
+ * one function. `random` is a uniform value in [0, 1); callers pass their
+ * existing generator. When every active hand still has priority 0 (no wrong
+ * attempt has cost anything yet) the draw falls back to uniform so a hand is
+ * still dealt. `excludeHandKey` drops the hand just drilled so a run never
+ * deals it twice in a row, unless it is the only active hand left. Returns
+ * null only when no active hand exists.
+ */
+export const sampleMistakeQueueByPriority = (
+  items: readonly MistakeQueueItem[],
+  random: number,
+  excludeHandKey: string | null = null,
+): MistakeQueueItem | null => {
+  const active = items.filter((item) => !item.isMastered);
+  if (active.length === 0) {
+    return null;
+  }
+  const eligible =
+    excludeHandKey === null || active.length === 1
+      ? active
+      : active.filter((item) => item.handKey !== excludeHandKey);
+  const clampedRandom = Math.min(Math.max(random, 0), 1 - Number.EPSILON);
+  const totalPriority = eligible.reduce((sum, item) => sum + item.priority, 0);
+  if (totalPriority <= 0) {
+    return itemAt(eligible, Math.floor(clampedRandom * eligible.length));
+  }
+
+  const target = clampedRandom * totalPriority;
+  let cumulative = 0;
+  // The last item carries whatever weight the loop did not consume, including any left by floating-point drift in the running sum.
+  for (let index = 0; index < eligible.length - 1; index += 1) {
+    cumulative += itemAt(eligible, index).priority;
+    if (target < cumulative) {
+      return itemAt(eligible, index);
+    }
+  }
+  return itemAt(eligible, eligible.length - 1);
 };
 
 export const sortMistakeQueue = (

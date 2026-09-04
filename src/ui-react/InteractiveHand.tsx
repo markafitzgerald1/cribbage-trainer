@@ -3,11 +3,41 @@ import {
   CribRole,
   type CribRole as CribRoleType,
 } from "../game/expectedCribPoints";
+import {
+  PracticeDrillPanel,
+  type PracticeDrillPanelProps,
+} from "./PracticeDrillPanel";
 import { DealButton } from "./DealButton";
 import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
+
+export type InteractiveHandDrill = Omit<PracticeDrillPanelProps, "sortOrder">;
+
+const renderDrillPanel = (
+  {
+    canCommit,
+    hasNextHand,
+    onCommit,
+    onExit,
+    onNextHand,
+    phase,
+    verdict,
+  }: InteractiveHandDrill,
+  sortOrder: SortOrder,
+): React.JSX.Element => (
+  <PracticeDrillPanel
+    canCommit={canCommit}
+    hasNextHand={hasNextHand}
+    onCommit={onCommit}
+    onExit={onExit}
+    onNextHand={onNextHand}
+    phase={phase}
+    sortOrder={sortOrder}
+    verdict={verdict}
+  />
+);
 
 interface InteractiveHandProps {
   readonly cribRole: CribRoleType;
@@ -17,6 +47,9 @@ interface InteractiveHandProps {
   readonly onSortOrderChange: (sortOrder: SortOrder) => void;
   readonly onDeal: () => void;
   readonly onEnterCards: () => void;
+  readonly practiceDrill?: InteractiveHandDrill | null;
+  // Briefly true after "Exit drill" so the board can say it dealt a fresh hand.
+  readonly showFreshHandNotice?: boolean;
 }
 
 export function InteractiveHand({
@@ -27,10 +60,14 @@ export function InteractiveHand({
   onSortOrderChange,
   onDeal,
   onEnterCards,
+  practiceDrill,
+  showFreshHandNotice,
 }: InteractiveHandProps) {
   const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const roleContext =
     cribRole === CribRole.Dealer ? "your crib" : "opponent crib";
+  // Once a drill choice is checked, the analysis is scored against it; disabling the card inputs keeps a late toggle from scoring an uncommitted selection and stops the frozen state reading as editable.
+  const cardsLocked = practiceDrill?.phase === "revealed";
 
   return (
     <div className={classes.interactiveHand}>
@@ -56,9 +93,24 @@ export function InteractiveHand({
       </div>
       <Hand
         dealtCards={dealtCards}
+        locked={cardsLocked}
         onChange={onCardChange}
         sortOrder={sortOrder}
       />
+      {practiceDrill ? renderDrillPanel(practiceDrill, sortOrder) : null}
+      {showFreshHandNotice && !practiceDrill ? (
+        <p
+          className={classes.freshHandNotice}
+          role="status"
+        >
+          Practice ended — fresh hand dealt.
+        </p>
+      ) : null}
     </div>
   );
 }
+
+InteractiveHand.defaultProps = {
+  practiceDrill: null,
+  showFreshHandNotice: false,
+};

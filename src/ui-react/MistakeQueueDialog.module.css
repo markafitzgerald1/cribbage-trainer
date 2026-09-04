@@ -27,6 +27,63 @@
   margin: 0;
 }
 
+/*
+ * Sticky and first, so the way to start a drill or leave the dialog is on
+ * screen before the summary cards and four filter groups are scrolled past
+ * — the same short-screen rule already applied to the enter-cards dialog.
+ */
+.action-bar {
+  background-color: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.start-drill-button {
+  background-color: #197536;
+  border: 2px solid #0f5527;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.start-drill-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.start-drill-button:hover:not(:disabled),
+.start-drill-button:focus-visible:not(:disabled) {
+  background-color: #218838;
+  border-color: #218838;
+}
+
+.done-button {
+  background-color: transparent;
+  border: 2px solid #6c8f74;
+  border-radius: 8px;
+  color: #143b18;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+}
+
+.done-button:hover,
+.done-button:focus-visible {
+  border-color: #218838;
+}
+
 .controls {
   background-color: #f7faf8;
   border-bottom: 1px solid #d0e5d4;
@@ -35,7 +92,7 @@
   gap: 0.6rem;
   padding: 0.5rem 0;
   position: sticky;
-  top: 0;
+  top: 2.6rem;
   z-index: 2;
 }
 
@@ -345,6 +402,27 @@
   box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
 }
 
+.practice-button {
+  align-self: flex-start;
+  background-color: #e4f4e6;
+  border: 1.5px solid #397a40;
+  border-radius: 6px;
+  color: #143b18;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.practice-button:hover,
+.practice-button:focus-visible {
+  background-color: #c8efcd;
+  border-color: #218838;
+}
+
 @media (aspect-ratio < 6 / 5) {
   .dialog {
     font-size: 0.95rem;
@@ -354,6 +432,14 @@
 
   .title {
     font-size: 1.5rem;
+  }
+
+  /*
+   * Only the action bar stays pinned on a phone; stacking a second sticky
+   * row below it eats the short viewport the pin is meant to protect.
+   */
+  .controls {
+    position: static;
   }
 
   .summary-cards {

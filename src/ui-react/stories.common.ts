@@ -26,6 +26,16 @@ export const expectStoryTextVisible = async (
   await expect(within(canvasElement).getByText(text)).toBeVisible();
 };
 
+export const clickStoryButtonExpectingCall = async (
+  canvasElement: HTMLElement,
+  buttonName: RegExp | string,
+  mock: unknown,
+): Promise<void> => {
+  within(canvasElement).getByRole("button", { name: buttonName }).click();
+
+  await expect(mock).toHaveBeenCalledTimes(1);
+};
+
 export const playStoryEscape = async ({
   args,
 }: {

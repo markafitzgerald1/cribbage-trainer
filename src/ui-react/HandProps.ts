@@ -7,6 +7,8 @@ export interface DiscardableComparableCard extends ComparableCard {
 
 export interface HandProps {
   readonly dealtCards: readonly DiscardableComparableCard[];
+  // Locks every card checkbox — see HandCard's `disabled`.
+  readonly locked?: boolean;
   readonly onChange: (dealOrderIndex: number) => void;
   readonly sortOrder: SortOrder;
 }

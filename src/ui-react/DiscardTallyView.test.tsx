@@ -2,16 +2,51 @@
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
 import { clearDiscardTally, recordDiscardDecision } from "../ui/discardTally";
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { DiscardTallyView } from "./DiscardTallyView";
+import type { MistakeQueueItem } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 import { discardTallySummary } from "./discardTally.test.common";
 /* jscpd:ignore-end */
 
+const MISTAKE_SUMMARY = {
+  decisions: 1,
+  meanExpectedPointsLoss: 1.5,
+  optimalDecisions: 0,
+};
+
 const renderTally = (summary: Parameters<typeof discardTallySummary>[0]) =>
   render(<DiscardTallyView summary={discardTallySummary(summary)} />);
+
+type RenderedTally = ReturnType<typeof render>;
+
+const clickButton = (view: RenderedTally, name: string) => {
+  fireEvent.click(view.getByRole("button", { name }));
+};
+
+const clickFirstPractice = (view: RenderedTally) => {
+  fireEvent.click(view.getAllByRole("button", { name: "Practice this" })[0]!);
+};
+
+const queueHeadingGone = (view: RenderedTally) =>
+  view.queryByRole("heading", { name: "Mistake queue" }) === null;
+
+const openQueueForDrill = (
+  onStartDrill: ((item: MistakeQueueItem) => void) | null,
+  onStartAutoDrill: (() => void) | null,
+): RenderedTally => {
+  const view = render(
+    <DiscardTallyView
+      onStartAutoDrill={onStartAutoDrill}
+      onStartDrill={onStartDrill}
+      summary={discardTallySummary(MISTAKE_SUMMARY)}
+    />,
+  );
+  clickButton(view, "Mistake queue");
+  return view;
+};
 
 const NOTHING_SCORED = {
   decisions: 0,
@@ -144,6 +179,34 @@ describe("discard tally view", () => {
     );
 
     expect(success).toBe(true);
+  });
+
+  it("forwards the drill start actions and closes the queue behind them", () => {
+    seedMistakeDecision();
+    const onStartDrill = jest.fn();
+    const onStartAutoDrill = jest.fn();
+    const view = openQueueForDrill(onStartDrill, onStartAutoDrill);
+
+    clickFirstPractice(view);
+
+    expect(onStartDrill).toHaveBeenCalledTimes(1);
+    expect(queueHeadingGone(view)).toBe(true);
+
+    clickButton(view, "Mistake queue");
+    clickButton(view, "Start drill");
+
+    expect(onStartAutoDrill).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes the queue even when no drill handler is wired", () => {
+    seedMistakeDecision();
+    const view = openQueueForDrill(null, null);
+
+    clickButton(view, "Start drill");
+    clickButton(view, "Mistake queue");
+    clickFirstPractice(view);
+
+    expect(queueHeadingGone(view)).toBe(true);
   });
 
   it("forwards sortOrder to the mistake queue dialog", () => {

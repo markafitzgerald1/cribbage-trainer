@@ -5,8 +5,13 @@ import {
   hasTallyToShow,
 } from "../ui/discardTally";
 import { type ReactNode, useCallback, useState } from "react";
+import type {
+  StartAutoDrillHandler,
+  StartDrillHandler,
+} from "./usePracticeDrill";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
+import type { MistakeQueueItem } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 
 const LOSS_FRACTION_DIGITS = 2;
@@ -28,6 +33,8 @@ const countAndShare = (part: number, whole: number) =>
 const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
 
 interface DiscardTallyViewProps {
+  readonly onStartAutoDrill?: StartAutoDrillHandler;
+  readonly onStartDrill?: StartDrillHandler;
   readonly sortOrder?: SortOrder;
   readonly summary: DiscardTallySummary;
   readonly tally?: StoredTally | null;
@@ -58,6 +65,8 @@ const renderMeasure = (
  * room, which on a phone turned two rows into four ragged ones.
  */
 export function DiscardTallyView({
+  onStartAutoDrill = null,
+  onStartDrill = null,
   sortOrder = SortOrder.Descending,
   summary,
   tally: injectedTally = null,
@@ -78,6 +87,19 @@ export function DiscardTallyView({
   const handleCloseQueue = useCallback(() => {
     setShowQueue(false);
   }, []);
+
+  // Close the browser before the board changes under it, so the drill starts on a clean screen.
+  const handleStartDrill = useCallback(
+    (item: MistakeQueueItem) => {
+      setShowQueue(false);
+      onStartDrill?.(item);
+    },
+    [onStartDrill],
+  );
+  const handleStartAutoDrill = useCallback(() => {
+    setShowQueue(false);
+    onStartAutoDrill?.();
+  }, [onStartAutoDrill]);
 
   /*
    * Nothing is shown until a hand has been either played or walked away from.
@@ -171,6 +193,8 @@ export function DiscardTallyView({
       {showQueue ? (
         <MistakeQueueDialog
           onClose={handleCloseQueue}
+          onStartAutoDrill={handleStartAutoDrill}
+          onStartDrill={handleStartDrill}
           show={showQueue}
           sortOrder={sortOrder}
           tally={injectedTally}
@@ -181,6 +205,8 @@ export function DiscardTallyView({
 }
 
 DiscardTallyView.defaultProps = {
+  onStartAutoDrill: null,
+  onStartDrill: null,
   sortOrder: SortOrder.Descending,
   tally: null,
 };

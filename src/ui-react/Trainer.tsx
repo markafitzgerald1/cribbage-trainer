@@ -32,6 +32,8 @@ import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
 import { useAnalysisReporting } from "./useAnalysisReporting";
+import { useDealHand } from "./useDealHand";
+import { usePracticeDrill } from "./usePracticeDrill";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -154,21 +156,10 @@ export function Trainer({
   initialSortOrder = null,
   isSeededSession = false,
 }: TrainerProps) {
-  const dealHandWithGenerator = useCallback(
-    () => dealHand(generator),
-    [generator],
-  );
-  const createDealState = useCallback(
-    (cards: DealtCard[]): DealState => ({
-      cribRole: randomCribRole(generator),
-      dealtCards: cards,
-    }),
-    [generator],
-  );
   const [dealState, setDealState] = useState<DealState>(() => {
     const dealtCards = initialCards
       ? toDealtCards(initialCards, initialDiscards)
-      : dealHandWithGenerator();
+      : dealHand(generator);
     return {
       cribRole: initialCribRole ?? randomCribRole(generator),
       dealtCards,
@@ -206,6 +197,41 @@ export function Trainer({
   });
   const isMergingHistoryEntry = useRef(false);
   const shouldPushHistory = useRef(false);
+
+  // Preserve the current history entry only when its state is stable.
+  // Transient single-card selections get replaced, so Back skips them.
+  const markHistoryUpdate = useCallback(() => {
+    shouldPushHistory.current = isStableDiscardState(dealtCards);
+  }, [dealtCards]);
+  const applyManualHand = useCallback(
+    (state: DealState) => {
+      // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
+      markHistoryUpdate();
+      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
+      setDealState(state);
+    },
+    [markHistoryUpdate, reportHandReplaced],
+  );
+  const {
+    deal: dealNewHand,
+    dealForDrillExit,
+    freshHandNoticeShown,
+  } = useDealHand({
+    generateRandomNumber: generator,
+    markHistoryUpdate,
+    reportHandReplaced,
+    setDealState,
+  });
+  const drill = usePracticeDrill({
+    cribRole,
+    dealFreshHand: dealForDrillExit,
+    dealtCards,
+    generateRandomNumber: generator,
+    loadHand: applyManualHand,
+    onAnalysisRendered: reportAnalysisRendered,
+  });
+  // The pure clear, for the history-restore path below — a Back brings its own hand, so it must not deal a new one.
+  const exitDrill = drill.clearDrill;
 
   useEffect(() => {
     const url = serializeUrlAnalysisState(window.location.search, {
@@ -254,6 +280,14 @@ export function Trainer({
             getHistoryEntryState()?.handScope ?? null,
             urlState.cribRole,
           );
+          /*
+           * A user Back onto the drilled hand's own six cards — same cards
+           * and role — is indistinguishable from an in-drill selection to
+           * the hook, so end the drill here where the history move is
+           * known: the restored hand and its analysis stand on their own,
+           * the reload-style degradation the drill already accepts.
+           */
+          exitDrill();
         }
         setDealState((previous) => ({
           cribRole: urlState.cribRole ?? previous.cribRole,
@@ -271,20 +305,8 @@ export function Trainer({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [reportHistoryNavigation]);
+  }, [exitDrill, reportHistoryNavigation]);
 
-  // Preserve the current history entry only when its state is stable.
-  // Transient single-card selections get replaced, so Back skips them.
-  const markHistoryUpdate = useCallback(() => {
-    shouldPushHistory.current = isStableDiscardState(dealtCards);
-  }, [dealtCards]);
-  const applyManualHand = useCallback(
-    (state: DealState) => {
-      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
-      setDealState(state);
-    },
-    [reportHandReplaced],
-  );
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
     applyManualHand,
@@ -308,18 +330,6 @@ export function Trainer({
     },
     [cribRole, dealtCards, markHistoryUpdate, reportCardToggled],
   );
-
-  const dealNewHand = useCallback(() => {
-    markHistoryUpdate();
-    const newDealState = createDealState(dealHandWithGenerator());
-    reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
-    setDealState(newDealState);
-  }, [
-    createDealState,
-    dealHandWithGenerator,
-    markHistoryUpdate,
-    reportHandReplaced,
-  ]);
 
   const changeSortOrder = useCallback(
     (newSortOrder: SortOrder) => {
@@ -355,6 +365,20 @@ export function Trainer({
           onDeal={dealNewHand}
           onEnterCards={enterCardsDialog.handleOpen}
           onSortOrderChange={changeSortOrder}
+          practiceDrill={
+            drill.isActive
+              ? {
+                  canCommit: discardIsComplete(dealtCards),
+                  hasNextHand: drill.hasNextHand,
+                  onCommit: drill.onCommit,
+                  onExit: drill.onExit,
+                  onNextHand: drill.onNextHand,
+                  phase: drill.phase,
+                  verdict: drill.verdict,
+                }
+              : null
+          }
+          showFreshHandNotice={freshHandNoticeShown}
           sortOrder={sortOrder}
         />
         <EnterCardsDialog
@@ -366,17 +390,20 @@ export function Trainer({
           show={enterCardsDialog.show}
           sortOrder={sortOrder}
         />
-        {discardIsComplete(dealtCards) && (
-          <ScoredPossibleKeepDiscards
-            cribRole={cribRole}
-            dealtCards={dealtCards}
-            onAnalysisRendered={reportAnalysisRendered}
-            onScoreSortKeyChange={changeScoreSortKey}
-            scoreSortKey={scoreSortKey}
-            sortOrder={sortOrder}
-          />
-        )}
+        {discardIsComplete(dealtCards) &&
+          (!drill.isActive || drill.phase === "revealed") && (
+            <ScoredPossibleKeepDiscards
+              cribRole={cribRole}
+              dealtCards={dealtCards}
+              onAnalysisRendered={drill.handleAnalysisRendered}
+              onScoreSortKeyChange={changeScoreSortKey}
+              scoreSortKey={scoreSortKey}
+              sortOrder={sortOrder}
+            />
+          )}
         <DiscardTallyView
+          onStartAutoDrill={drill.handleStartAutoDrill}
+          onStartDrill={drill.handleStartDrill}
           sortOrder={sortOrder}
           summary={tallySummary}
         />

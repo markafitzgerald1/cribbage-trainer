@@ -64,3 +64,8 @@
   margin-top: 0.4em;
   margin-bottom: 0;
 }
+
+/* The selection is committed once a drill choice is checked; the label should stop inviting a click. */
+.locked {
+  cursor: default;
+}
