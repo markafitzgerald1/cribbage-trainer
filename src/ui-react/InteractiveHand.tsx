@@ -48,6 +48,8 @@ interface InteractiveHandProps {
   readonly onDeal: () => void;
   readonly onEnterCards: () => void;
   readonly practiceDrill?: InteractiveHandDrill | null;
+  // Briefly true after "Exit drill" so the board can say it dealt a fresh hand.
+  readonly showFreshHandNotice?: boolean;
 }
 
 export function InteractiveHand({
@@ -59,6 +61,7 @@ export function InteractiveHand({
   onDeal,
   onEnterCards,
   practiceDrill,
+  showFreshHandNotice,
 }: InteractiveHandProps) {
   const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const roleContext =
@@ -95,10 +98,19 @@ export function InteractiveHand({
         sortOrder={sortOrder}
       />
       {practiceDrill ? renderDrillPanel(practiceDrill, sortOrder) : null}
+      {showFreshHandNotice && !practiceDrill ? (
+        <p
+          className={classes.freshHandNotice}
+          role="status"
+        >
+          Practice ended — fresh hand dealt.
+        </p>
+      ) : null}
     </div>
   );
 }
 
 InteractiveHand.defaultProps = {
   practiceDrill: null,
+  showFreshHandNotice: false,
 };

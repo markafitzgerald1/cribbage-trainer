@@ -16,6 +16,7 @@ describe("sortable hand input component", () => {
   function renderComponent(
     initialSortOrder: SortOrder = SortOrder.Ascending,
     practiceDrill: InteractiveHandDrill | null = null,
+    showFreshHandNotice = false,
   ) {
     const handCards = dealHand(createGenerator());
     const onCardChange = jest.fn();
@@ -32,6 +33,7 @@ describe("sortable hand input component", () => {
           onEnterCards={onEnterCards}
           onSortOrderChange={onSortOrderChange}
           practiceDrill={practiceDrill}
+          showFreshHandNotice={showFreshHandNotice}
           sortOrder={initialSortOrder}
         />,
       ),
@@ -117,6 +119,27 @@ describe("sortable hand input component", () => {
 
       expect(onCardChange).toHaveBeenCalledTimes(calls);
       expect(checkbox?.disabled).toBe(locked);
+    },
+  );
+
+  it.each([
+    { drill: null, shown: true, visible: true },
+    {
+      drill: basePanelArgs({ phase: "choosing" }),
+      shown: true,
+      visible: false,
+    },
+    { drill: null, shown: false, visible: false },
+  ])(
+    "shows the fresh-hand notice only after an exit, never during a drill",
+    ({ drill, shown, visible }) => {
+      const {
+        component: { queryByText },
+      } = renderComponent(SortOrder.DealOrder, drill, shown);
+
+      expect(queryByText("Practice ended — fresh hand dealt.") !== null).toBe(
+        visible,
+      );
     },
   );
 

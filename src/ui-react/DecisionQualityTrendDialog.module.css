@@ -137,7 +137,16 @@
   font-weight: 700;
 }
 
+/*
+ * `.dialog` is a fixed-height flex column that scrolls its own overflow, and a
+ * scroll container's flex item has an automatic minimum size of 0. Without
+ * `flex-shrink: 0` this wrapper collapsed to zero height whenever the chart
+ * above it filled the dialog — on a short landscape viewport the whole table
+ * became unreachable, not merely scrolled past. Holding its box lets the
+ * dialog scroll down to it instead.
+ */
 .table-wrapper {
+  flex-shrink: 0;
   max-height: 220px;
   overflow: auto;
 }

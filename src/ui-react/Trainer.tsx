@@ -32,6 +32,7 @@ import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
 import { useAnalysisReporting } from "./useAnalysisReporting";
+import { useDealHand } from "./useDealHand";
 import { usePracticeDrill } from "./usePracticeDrill";
 
 export interface TrainerProps {
@@ -211,20 +212,19 @@ export function Trainer({
     },
     [markHistoryUpdate, reportHandReplaced],
   );
-  const dealNewHand = useCallback(() => {
-    markHistoryUpdate();
-    // The deal draw is consumed before the role draw, matching the original helper's call order.
-    const dealtNewCards = dealHand(generator);
-    const newDealState: DealState = {
-      cribRole: randomCribRole(generator),
-      dealtCards: dealtNewCards,
-    };
-    reportHandReplaced(newDealState.dealtCards, "deal", newDealState.cribRole);
-    setDealState(newDealState);
-  }, [generator, markHistoryUpdate, reportHandReplaced]);
+  const {
+    deal: dealNewHand,
+    dealForDrillExit,
+    freshHandNoticeShown,
+  } = useDealHand({
+    generateRandomNumber: generator,
+    markHistoryUpdate,
+    reportHandReplaced,
+    setDealState,
+  });
   const drill = usePracticeDrill({
     cribRole,
-    dealFreshHand: dealNewHand,
+    dealFreshHand: dealForDrillExit,
     dealtCards,
     generateRandomNumber: generator,
     loadHand: applyManualHand,
@@ -378,6 +378,7 @@ export function Trainer({
                 }
               : null
           }
+          showFreshHandNotice={freshHandNoticeShown}
           sortOrder={sortOrder}
         />
         <EnterCardsDialog

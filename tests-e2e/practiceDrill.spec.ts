@@ -207,4 +207,29 @@ test.describe("practice drill", () => {
 
     await expect(skippedHeader).toBeInViewport();
   });
+
+  test("the quality trend table stays reachable below the chart on a short screen", async ({
+    page,
+  }) => {
+    await page.setViewportSize(phoneLandscapeViewport);
+    await page.getByRole("button", { name: "Quality trend" }).click();
+
+    const table = page.getByRole("table");
+    /*
+     * The dialog scrolls its own overflow on a short landscape viewport, and a
+     * flex item that is itself a scroll container has an automatic minimum
+     * size of zero: without `flex-shrink: 0` the wrapper collapsed to no
+     * height once the chart filled the dialog, putting the whole table out of
+     * reach rather than merely scrolled past.
+     */
+    const wrapperHeight = await table.evaluate(
+      (element) => element.parentElement?.clientHeight ?? 0,
+    );
+    expect(wrapperHeight).toBeGreaterThan(0);
+
+    const firstBucketRow = table.locator("tbody tr").first();
+    await firstBucketRow.scrollIntoViewIfNeeded();
+
+    await expect(firstBucketRow).toBeInViewport();
+  });
 });

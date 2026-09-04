@@ -26,7 +26,7 @@
   background-color: #2f7d3a;
   border-radius: 4px;
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   padding: 0.1rem 0.4rem;
@@ -42,7 +42,7 @@
 }
 
 .prompt {
-  font-size: 0.85rem;
+  font-size: 1rem;
   line-height: 1.3;
   margin: 0;
   opacity: 0.9;
@@ -58,28 +58,37 @@
 }
 
 .verdict-label {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  min-width: 3.2rem;
+  min-width: 3.4rem;
   opacity: 0.85;
   text-transform: uppercase;
 }
 
+/*
+ * The mini keep/discard labels are bare rank+suit glyphs (#222 / #c41e3a),
+ * which all but vanish on the panel's green. A near-white pill puts them on
+ * the same ground a real card gives them.
+ */
 .discard-cards {
   align-items: center;
+  background-color: #f4f8f4;
+  border-radius: 4px;
+  color: #143b18;
   display: inline-flex;
   gap: 0.25rem;
+  padding: 0.1rem 0.3rem;
 }
 
 .not-recorded {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-style: italic;
   opacity: 0.7;
 }
 
 .verdict-loss {
   font-family: var(--card-font-family);
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
   margin-left: auto;
 }
@@ -87,7 +96,7 @@
 .outcome-good,
 .outcome-mastered,
 .outcome-miss {
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.3;
   margin: 0;
@@ -114,7 +123,7 @@
   border-radius: 8px;
   cursor: pointer;
   font-family: var(--text-font-family);
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 700;
   padding: 0.35em 0.7em;
   transition:
@@ -159,9 +168,10 @@
  * a lower bound that grows with the device font-size setting while the cards
  * stay viewport-sized, so on a short landscape at a large root font the
  * uncapped rhythm and text push Check/Exit — or the consent controls
- * beneath — off screen. Cap each with a viewport unit chosen so the
- * default-scale size is unchanged (see the same trap in AGENTS.md's
- * responsive invariants). A large-root e2e guard covers the drill state.
+ * beneath — off screen. The rem term is the default-scale size; the vw term
+ * is the ceiling a large root font cannot exceed and is left untouched by
+ * type-scale changes so the large-root e2e guard keeps measuring the same
+ * bound (see the same trap in AGENTS.md's responsive invariants).
  */
 @media (aspect-ratio >= 6 / 5) {
   .panel {
@@ -171,7 +181,7 @@
   }
 
   .badge {
-    font-size: min(0.7rem, 1.35vw);
+    font-size: min(0.78rem, 1.35vw);
   }
 
   .choosing,
@@ -186,7 +196,11 @@
   .outcome-miss,
   .primary,
   .secondary {
-    font-size: min(0.85rem, 1.65vw);
+    font-size: min(1rem, 1.65vw);
+  }
+
+  .discard-cards {
+    padding: min(0.1rem, 0.2vw) min(0.3rem, 0.6vw);
   }
 
   .verdict-row {
@@ -194,12 +208,12 @@
   }
 
   .verdict-label {
-    font-size: min(0.75rem, 1.45vw);
-    min-width: min(3.2rem, 6.1vw);
+    font-size: min(0.85rem, 1.45vw);
+    min-width: min(3.4rem, 6.1vw);
   }
 
   .not-recorded {
-    font-size: min(0.8rem, 1.55vw);
+    font-size: min(0.9rem, 1.55vw);
   }
 
   .actions {

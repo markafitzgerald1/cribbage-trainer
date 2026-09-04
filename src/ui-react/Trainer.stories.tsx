@@ -403,5 +403,8 @@ export const PracticeDrillFromMistakeQueue = {
 
     await expect(canvas.queryByLabelText("Practice drill")).toBeNull();
     await expect(getButton(canvasElement, "Deal")).toBeVisible();
+    await expect(
+      canvas.getByText("Practice ended — fresh hand dealt."),
+    ).toBeVisible();
   },
 };

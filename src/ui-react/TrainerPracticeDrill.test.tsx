@@ -101,6 +101,9 @@ describe("trainer practice drill", () => {
     expect(view.queryByRole("button", { name: "Check discard" })).toBeNull();
     expect(getHandText(view.container)).not.toBe(drilledHandText);
     expect(view.getAllByRole("checkbox")).toHaveLength(6);
+    expect(
+      screen.getByText("Practice ended — fresh hand dealt."),
+    ).toBeInTheDocument();
   });
 
   it("ends a choosing-phase drill when Back restores the same hand", async () => {
