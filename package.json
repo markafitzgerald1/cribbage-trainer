@@ -13,7 +13,7 @@
     "lint:tsc": "tsc",
     "lint:jscpd": "jscpd",
     "lint:actionlint": "actionlint .github/workflows/*.yml",
-    "lint:audit": "better-npm-audit audit",
+    "lint:audit": "node scripts/lintAudit.mjs",
     "lint:outdated": "(check-outdated || true)",
     "lint": "concurrently --names 'ESLINT,STYLE,MARKDOWNLINT,PRETTIER,CSPELL,TSC,JSCPD,ACTIONLINT,AUDIT,OUTDATED' \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdownlint\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:lint:actionlint\" \"npm:lint:audit\" \"npm:lint:outdated\"",
     "prettier:fix": "prettier --write .",
@@ -37,6 +37,7 @@
     "table:update": "node scripts/updateExpectedPointsTables.mjs",
     "table:update:crib": "node scripts/updateExpectedCribPointsTable.mjs",
     "table:update:play": "node scripts/updateExpectedPlayPointsTable.mjs",
+    "test:lint-audit": "node --test scripts/lintAudit.test.mjs",
     "test:pages-content-merge": "node --test scripts/pagesContentMerge.test.mjs",
     "test:skill-paths": "node --test scripts/skillPaths.test.mjs"
   },
