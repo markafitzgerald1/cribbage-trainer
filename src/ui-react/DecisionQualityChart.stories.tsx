@@ -81,15 +81,16 @@ export const SinglePeriod: Story = {
 };
 
 const sampleDecisionPoints: DiscardDecisionPoint[] = [
-  { loss: 0, mean: 0 },
-  { loss: 0.5, mean: 0.25 },
-  { loss: 1.2, mean: 0.57 },
-  { loss: 0, mean: 0.43 },
-  { loss: 0.25, mean: 0.39 },
-].map(({ loss, mean }, index) => ({
+  { loss: 0, mastered: false, mean: 0 },
+  { loss: 0.5, mastered: true, mean: 0.25 },
+  { loss: 1.2, mastered: false, mean: 0.57 },
+  { loss: 0, mastered: false, mean: 0.43 },
+  { loss: 0.25, mastered: false, mean: 0.39 },
+].map(({ loss, mastered, mean }, index) => ({
   discardKey: "5H,6H",
   expectedPointsLoss: loss,
   handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+  isMastered: mastered,
   isOptimal: loss === 0,
   isRetained: false,
   ordinal: index + 1,

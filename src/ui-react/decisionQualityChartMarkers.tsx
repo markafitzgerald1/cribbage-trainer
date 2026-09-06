@@ -33,9 +33,10 @@ export interface LossEntry {
 
 export const lossPointTitle = (point: DiscardDecisionPoint): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
+  const mastered = point.isMastered ? ", mastered since" : "";
   return `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
     DECIMAL_PLACES,
-  )} points loss`;
+  )} points loss${mastered}`;
 };
 
 /*
@@ -96,10 +97,16 @@ export function renderLossPoint(
   },
   selectedRecencyAt: number | null,
 ): React.JSX.Element {
+  const baseDotClass = point.isMastered
+    ? `${classes.lossDot} ${classes.lossDotMastered}`
+    : classes.lossDot;
   const dotClass =
     point.recencyAt === selectedRecencyAt
-      ? `${classes.lossDot} ${classes.lossDotSelected}`
-      : classes.lossDot;
+      ? `${baseDotClass} ${classes.lossDotSelected}`
+      : baseDotClass;
+  const stemClass = point.isMastered
+    ? `${classes.lossStem} ${classes.lossStemMastered}`
+    : classes.lossStem;
   return (
     <g
       // The hover title lives on the hit band that covers this marker; here it would only duplicate it.
@@ -112,7 +119,7 @@ export function renderLossPoint(
       tabIndex={0}
     >
       <line
-        className={classes.lossStem}
+        className={stemClass}
         x1={geometry.cx}
         x2={geometry.cx}
         y1={geometry.yZero}

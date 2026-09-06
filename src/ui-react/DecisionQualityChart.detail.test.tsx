@@ -10,6 +10,7 @@ import {
   type RenderChart,
   makeBucket,
   makeDecisionPoint,
+  makeMasteredDecisionPoint,
   makeRetainedDecisionPoint,
   renderChart,
 } from "./DecisionQualityChart.test.common";
@@ -26,6 +27,28 @@ const OPTIMAL_THEN_LOSS: ChartPoints = [
   makeDecisionPoint(1, 0, 0),
   makeDecisionPoint(2, 0.45, 0.22),
 ];
+
+const MASTERED_THEN_LOSS: ChartPoints = [
+  makeMasteredDecisionPoint(1, 0.6, 0.3),
+  makeDecisionPoint(2, 0.45, 0.22),
+];
+
+const renderWith = ({
+  onPracticeDecision = null,
+  sortOrder = SortOrder.DealOrder,
+}: {
+  readonly onPracticeDecision?: PracticeDecisionHandler;
+  readonly sortOrder?: SortOrder;
+}): RenderChart =>
+  render(
+    <DecisionQualityChart
+      buckets={BUCKETS}
+      decisionPoints={OPTIMAL_THEN_LOSS}
+      granularity="rolling20"
+      onPracticeDecision={onPracticeDecision}
+      sortOrder={sortOrder}
+    />,
+  );
 
 const markerFor = (view: RenderChart, ordinal: number): Element =>
   view.container.querySelector(`[data-decision-ordinal="${ordinal}"]`)!;
@@ -277,23 +300,6 @@ describe("decision quality chart point detail", () => {
     expect(view.getByRole("region")).toHaveTextContent("0.40 lost");
   });
 
-  const renderWith = ({
-    onPracticeDecision = null,
-    sortOrder = SortOrder.DealOrder,
-  }: {
-    readonly onPracticeDecision?: PracticeDecisionHandler;
-    readonly sortOrder?: SortOrder;
-  }): RenderChart =>
-    render(
-      <DecisionQualityChart
-        buckets={BUCKETS}
-        decisionPoints={OPTIMAL_THEN_LOSS}
-        granularity="rolling20"
-        onPracticeDecision={onPracticeDecision}
-        sortOrder={sortOrder}
-      />,
-    );
-
   it("offers a practice button that forwards the tapped decision", () => {
     const onPracticeDecision = jest.fn<(point: DiscardDecisionPoint) => void>();
     const view = renderWith({ onPracticeDecision });
@@ -323,5 +329,22 @@ describe("decision quality chart point detail", () => {
     );
 
     expect(firstHandRank).toHaveTextContent("10");
+  });
+
+  it("sets a mastered mistake apart in its marker, label, and panel", () => {
+    const view = openDetailOn(MASTERED_THEN_LOSS, 1);
+    const openDot = view.container.querySelector(
+      `[data-decision-ordinal="2"] .${classes.lossDot}`,
+    );
+
+    expect(
+      view.container.querySelector(`.${classes.lossDotMastered}`),
+    ).toBeInTheDocument();
+    expect(openDot).not.toHaveClass(classes.lossDotMastered);
+    expect(markerFor(view, 1)).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining("mastered since"),
+    );
+    expect(view.getByRole("region")).toHaveTextContent("Mastered");
   });
 });

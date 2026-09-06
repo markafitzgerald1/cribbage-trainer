@@ -47,6 +47,7 @@ export const makeDecisionPoint = (
   discardKey: DISCARD_KEY,
   expectedPointsLoss,
   handKey: HAND_KEY,
+  isMastered: false,
   isOptimal: expectedPointsLoss === 0,
   isRetained: false,
   ordinal,
@@ -55,11 +56,14 @@ export const makeDecisionPoint = (
   timestamp: 1700000000000 + ordinal * 1000,
 });
 
-export const makeRetainedDecisionPoint = (
-  ordinal: number,
-  expectedPointsLoss: number,
-  rollingMeanLoss: number,
-) => ({
-  ...makeDecisionPoint(ordinal, expectedPointsLoss, rollingMeanLoss),
-  isRetained: true,
-});
+type DecisionPointFlag = "isMastered" | "isRetained";
+
+const makeDecisionPointWith =
+  (flag: DecisionPointFlag) =>
+  (ordinal: number, expectedPointsLoss: number, rollingMeanLoss: number) => ({
+    ...makeDecisionPoint(ordinal, expectedPointsLoss, rollingMeanLoss),
+    [flag]: true,
+  });
+
+export const makeMasteredDecisionPoint = makeDecisionPointWith("isMastered");
+export const makeRetainedDecisionPoint = makeDecisionPointWith("isRetained");

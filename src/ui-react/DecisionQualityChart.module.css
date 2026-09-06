@@ -93,6 +93,20 @@
   fill: #ff7b72;
 }
 
+/*
+ * A mistake whose hand has since been mastered in practice. Teal rather
+ * than a second green so it is not read as "always optimal", and teal
+ * rather than a shade of the red so a red/green-blind eye still separates
+ * the resolved spikes from the open ones.
+ */
+.loss-stem-mastered {
+  stroke: rgb(56 199 184 / 55%);
+}
+
+.loss-dot-mastered {
+  fill: #38c7b8;
+}
+
 .optimal-dot {
   cursor: pointer;
   fill: #28a745;
@@ -157,6 +171,19 @@
 .decision-detail-role {
   border: 1px solid color-mix(in srgb, green 40%, white);
   border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.35rem;
+  text-transform: uppercase;
+}
+
+/* The hand behind this mistake has since been mastered in practice; teal to match its chart marker. */
+.decision-detail-mastered {
+  background-color: color-mix(in srgb, #38c7b8 22%, transparent);
+  border: 1px solid #38c7b8;
+  border-radius: 4px;
+  color: #d6fff9;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.04em;

@@ -1,8 +1,10 @@
 import { type DiscardDecisionRecord, type StoredTally } from "./discardTally";
+import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
-import type { PracticeRecord } from "./practiceLedger";
 import { parseHandKey } from "./handKey";
+
+export { SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 
 export const MIN_DISTINCT_LOSSES_FOR_QUANTILES = 3;
 const OFFSET_HIGH_QUANTILE = 2;
@@ -11,9 +13,6 @@ const FRACTION_TWO_THIRDS_NUMERATOR = 2;
 const FRACTION_TWO_THIRDS_DENOMINATOR = 3;
 const FRACTION_TWO_THIRDS =
   FRACTION_TWO_THIRDS_NUMERATOR / FRACTION_TWO_THIRDS_DENOMINATOR;
-// Two consecutive optimal choices since the last error; the one place the copy and the state machine both read.
-export const SUCCESSES_FOR_MASTERY = 2;
-
 export type MistakeQueueSortOrder = "highestLoss" | "mostRecent" | "priority";
 
 export type MistakeQueueStatusFilter = "active" | "all" | "mastered";

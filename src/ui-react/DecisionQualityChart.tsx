@@ -115,6 +115,9 @@ function renderDecisionDetail(
         {role === null ? null : (
           <span className={classes.decisionDetailRole}>{role}</span>
         )}
+        {point.isMastered ? (
+          <span className={classes.decisionDetailMastered}>Mastered</span>
+        ) : null}
         <span className={classes.decisionDetailLoss}>
           {`${point.expectedPointsLoss.toFixed(DECIMAL_PLACES)} lost`}
         </span>
