@@ -97,3 +97,104 @@
   cursor: pointer;
   fill: #28a745;
 }
+
+.loss-marker {
+  cursor: pointer;
+}
+
+.loss-marker:focus-visible {
+  outline: 2px solid #70c878;
+  outline-offset: 2px;
+}
+
+.loss-dot-selected {
+  fill: #ffd6a5;
+  r: 3.5px;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+/*
+ * The tap-a-point detail: what hand the mistake was on and what was
+ * discarded, shown below the chart rather than as a floating popover so it
+ * is never clipped by the dialog's own scroll on a phone.
+ */
+.decision-detail {
+  background: color-mix(in srgb, #0b2f10 80%, black);
+  border: 1px solid color-mix(in srgb, green 40%, white);
+  border-radius: 8px;
+  color: #d7efdb;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--text-font-family);
+  gap: 0.4rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.decision-detail-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.decision-detail-title {
+  font-weight: 700;
+}
+
+.decision-detail-loss {
+  color: #ffbdbd;
+  font-family: var(--card-font-family);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-close {
+  background: transparent;
+  border: 1px solid #6c8f74;
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-left: auto;
+  padding: 0.15rem 0.55rem;
+}
+
+.detail-close:hover,
+.detail-close:focus-visible {
+  border-color: #a7c7ad;
+  outline: none;
+}
+
+.decision-detail-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.decision-detail-label {
+  color: #a8d5af;
+  font-family: var(--text-font-family);
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 4.2rem;
+  text-transform: uppercase;
+}
+
+/*
+ * The rank/suit glyphs use their own red/black ink, which barely reads on the
+ * dark panel, so they sit on a light chip the way the drill panel's mini
+ * keep/discard labels do.
+ */
+.decision-detail-cards {
+  align-items: center;
+  background-color: #f4f8f4;
+  border-radius: 4px;
+  color: #143b18;
+  display: inline-flex;
+  font-family: var(--card-font-family);
+  gap: 0.25rem;
+  padding: 0.1rem 0.35rem;
+}

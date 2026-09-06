@@ -17,40 +17,17 @@ import {
   selectTickStep,
 } from "./DecisionQualityChart";
 import type {
-  DiscardDecisionPoint,
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
 import { describe, expect, it } from "@jest/globals";
+import {
+  makeBucket,
+  makeDecisionPoint,
+  makeRetainedDecisionPoint,
+  renderChart,
+} from "./DecisionQualityChart.test.common";
 import { render } from "@testing-library/react";
-
-const makeBucket = (
-  key: string,
-  loss: number | null,
-  decisions = 10,
-): DiscardPeriodBucket => ({
-  decisions,
-  endTime: 1700003600000,
-  key,
-  label: `Period ${key}`,
-  meanExpectedPointsLoss: loss,
-  optimalDecisions: 5,
-  skippedHands: 1,
-  startTime: 1700000000000,
-});
-
-const renderChart = (
-  buckets: readonly DiscardPeriodBucket[],
-  granularity: DiscardTrendGranularity,
-  decisionPoints?: readonly DiscardDecisionPoint[],
-) =>
-  render(
-    <DecisionQualityChart
-      buckets={buckets}
-      decisionPoints={decisionPoints}
-      granularity={granularity}
-    />,
-  );
 
 const countRenderedXLabels = (
   buckets: readonly DiscardPeriodBucket[],
@@ -59,28 +36,6 @@ const countRenderedXLabels = (
   const { container } = renderChart(buckets, granularity);
   return container.querySelectorAll(`.${classes.xLabel}`).length;
 };
-
-const makeDecisionPoint = (
-  ordinal: number,
-  expectedPointsLoss: number,
-  rollingMeanLoss: number,
-) => ({
-  expectedPointsLoss,
-  isOptimal: expectedPointsLoss === 0,
-  isRetained: false,
-  ordinal,
-  rollingMeanLoss,
-  timestamp: 1700000000000 + ordinal * 1000,
-});
-
-const makeRetainedDecisionPoint = (
-  ordinal: number,
-  expectedPointsLoss: number,
-  rollingMeanLoss: number,
-) => ({
-  ...makeDecisionPoint(ordinal, expectedPointsLoss, rollingMeanLoss),
-  isRetained: true,
-});
 
 describe("decision quality chart", () => {
   it("renders empty-state message when buckets array is empty", () => {

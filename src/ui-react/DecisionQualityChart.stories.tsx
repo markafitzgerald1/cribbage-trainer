@@ -3,7 +3,7 @@ import type {
   DiscardPeriodBucket,
 } from "../ui/discardQualityTrend";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, fireEvent, waitFor, within } from "storybook/test";
 import { DecisionQualityChart } from "./DecisionQualityChart";
 
 const sampleBuckets: DiscardPeriodBucket[] = [
@@ -85,7 +85,9 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   { loss: 0, mean: 0.43 },
   { loss: 0.25, mean: 0.39 },
 ].map(({ loss, mean }, index) => ({
+  discardKey: "5H,6H",
   expectedPointsLoss: loss,
+  handKey: "5H,6H,7H,8H,9H,10H|Dealer",
   isOptimal: loss === 0,
   isRetained: false,
   ordinal: index + 1,
@@ -93,13 +95,62 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   timestamp: 1700000000000 + index * 100000,
 }));
 
+const rollingWithPointsArgs = {
+  buckets: sampleBuckets,
+  decisionPoints: sampleDecisionPoints,
+  granularity: "rolling20",
+} satisfies Story["args"];
+
 export const WithDecisionPoints: Story = {
-  args: {
-    buckets: sampleBuckets,
-    decisionPoints: sampleDecisionPoints,
-    granularity: "rolling20",
-  },
+  args: rollingWithPointsArgs,
   play: playExpectChart,
+};
+
+const firstLossMarker = (canvasElement: HTMLElement): Element => {
+  const marker = canvasElement.querySelector("[data-decision-ordinal]");
+  if (marker === null) {
+    throw new Error("expected a loss marker in the chart");
+  }
+  return marker;
+};
+
+const clickElement = (element: Element): void => {
+  element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+};
+
+const expectPanelGone = async (canvasElement: HTMLElement): Promise<void> => {
+  await waitFor(async () => {
+    await expect(
+      within(canvasElement).queryByRole("status"),
+    ).not.toBeInTheDocument();
+  });
+};
+
+export const DecisionDetailPopup: Story = {
+  args: rollingWithPointsArgs,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const marker = firstLossMarker(canvasElement);
+
+    clickElement(marker);
+    const panel = await canvas.findByRole("status");
+
+    await expect(panel).toHaveTextContent("lost");
+    await expect(panel).toHaveTextContent("Hand");
+    await expect(panel).toHaveTextContent("Discarded");
+
+    clickElement(marker);
+    await expectPanelGone(canvasElement);
+
+    clickElement(marker);
+    await canvas.findByRole("status");
+    await fireEvent.keyDown(window, { key: "Escape" });
+    await expectPanelGone(canvasElement);
+
+    clickElement(marker);
+    clickElement(await canvas.findByRole("button", { name: "Close" }));
+    await expectPanelGone(canvasElement);
+  },
 };
 
 export const Empty: Story = {

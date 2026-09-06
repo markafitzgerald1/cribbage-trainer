@@ -6,6 +6,7 @@
     "!src/game/parseCards.common.ts",
     "!src/ui/discardQualityTrend.test.common.ts",
     "!src/ui/discardTally.test.common.ts",
+    "!src/ui-react/DecisionQualityChart.test.common.tsx",
     "!src/ui-react/DecisionQualityTrendDialog.test.common.ts",
     "!src/ui-react/MistakeQueueDialog.test.common.ts",
     "!src/ui-react/PracticeDrillPanel.test.common.ts",

@@ -107,7 +107,15 @@ export function countRollingSkips<
 }
 
 export interface DiscardDecisionPoint {
+  /*
+   * The hand and the discard behind this decision, carried so the trend
+   * chart can show what the mistake actually was. `handKey` is the
+   * "cards|role" key; `discardKey` is the two discarded cards, null when the
+   * record predates discard capture.
+   */
+  readonly discardKey: string | null;
   readonly expectedPointsLoss: number;
+  readonly handKey: string;
   readonly isOptimal: boolean;
   readonly isRetained: boolean;
   readonly ordinal: number;
@@ -137,7 +145,9 @@ export function buildContinuousDecisionPoints(
     const rollingMeanLoss = totalLoss / window.length;
 
     return {
+      discardKey: record.discardKey,
       expectedPointsLoss: record.expectedPointsLoss,
+      handKey: record.handKey,
       isOptimal: record.isOptimal,
       isRetained,
       ordinal: globalIndex + 1,

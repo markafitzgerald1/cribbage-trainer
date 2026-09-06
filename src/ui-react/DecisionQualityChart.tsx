@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import * as classes from "./DecisionQualityChart.module.css";
 import {
   type ChartPoint,
@@ -30,7 +31,12 @@ import type {
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
-import React, { useId } from "react";
+import React, { useCallback, useEffect, useId, useState } from "react";
+import { SortOrder } from "../ui/SortOrder";
+import { SortedCardLabels } from "./SortedCardLabels";
+import { parseHand } from "../game/Card";
+import { parseHandKey } from "../ui/handKey";
+/* jscpd:ignore-end */
 
 export * from "./decisionQualityChartLayout";
 
@@ -63,10 +69,68 @@ const renderTicks = (ticks: readonly ChartTick[]): React.JSX.Element[] =>
     </g>
   ));
 
+interface RollingPlotOptions {
+  readonly granularity: DiscardTrendGranularity;
+  readonly selectedOrdinal: number | null;
+}
+
+// The larger, invisible circle behind each loss dot, so a fingertip lands on it.
+const LOSS_HIT_RADIUS = 7;
+
+function renderLossPoint(
+  point: DiscardDecisionPoint,
+  geometry: {
+    readonly cx: number;
+    readonly yStem: number;
+    readonly yZero: number;
+  },
+  selectedOrdinal: number | null,
+): React.JSX.Element {
+  const prefix = point.isRetained ? "Retained decision" : "Decision";
+  const titleText = `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
+    DECIMAL_PLACES,
+  )} points loss`;
+  const dotClass =
+    point.ordinal === selectedOrdinal
+      ? `${classes.lossDot} ${classes.lossDotSelected}`
+      : classes.lossDot;
+  return (
+    <g
+      aria-label={`${titleText}. Select to see the hand.`}
+      className={classes.lossMarker}
+      data-decision-ordinal={point.ordinal}
+      key={`decision-${point.ordinal}`}
+      role="button"
+      tabIndex={0}
+    >
+      <title>{titleText}</title>
+      <line
+        className={classes.lossStem}
+        x1={geometry.cx}
+        x2={geometry.cx}
+        y1={geometry.yZero}
+        y2={geometry.yStem}
+      />
+      <circle
+        cx={geometry.cx}
+        cy={geometry.yStem}
+        fill="transparent"
+        r={LOSS_HIT_RADIUS}
+      />
+      <circle
+        className={dotClass}
+        cx={geometry.cx}
+        cy={geometry.yStem}
+        r={2}
+      />
+    </g>
+  );
+}
+
 function renderRollingPlot(
   decisionPoints: readonly DiscardDecisionPoint[],
   maxLossY: number,
-  granularity: DiscardTrendGranularity,
+  { granularity, selectedOrdinal }: RollingPlotOptions,
 ): React.JSX.Element {
   const total = decisionPoints.length;
   const movingPoints = decisionPoints.map((point, index) => ({
@@ -101,26 +165,10 @@ function renderRollingPlot(
             </circle>
           );
         }
-        return (
-          <g key={`decision-${point.ordinal}`}>
-            <line
-              className={classes.lossStem}
-              x1={xPosition}
-              x2={xPosition}
-              y1={yZero}
-              y2={yStem}
-            />
-            <circle
-              className={classes.lossDot}
-              cx={xPosition}
-              cy={yStem}
-              r={2}
-            >
-              <title>{`${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
-                DECIMAL_PLACES,
-              )} points loss`}</title>
-            </circle>
-          </g>
+        return renderLossPoint(
+          point,
+          { cx: xPosition, yStem, yZero },
+          selectedOrdinal,
         );
       })}
 
@@ -180,6 +228,142 @@ function renderCalendarPlot(points: readonly ChartPoint[]): React.JSX.Element {
   );
 }
 
+const cardsOf = (handKey: string): ReturnType<typeof parseHand> =>
+  parseHandKey(handKey)?.cards ?? [];
+
+function renderDetailCards(
+  label: string,
+  cards: ReturnType<typeof parseHand>,
+  keyPrefix: string,
+): React.JSX.Element {
+  return (
+    <div className={classes.decisionDetailRow}>
+      <span className={classes.decisionDetailLabel}>{label}</span>
+      <span className={classes.decisionDetailCards}>
+        <SortedCardLabels
+          cards={cards}
+          keyPrefix={keyPrefix}
+          sortOrder={SortOrder.DealOrder}
+        />
+      </span>
+    </div>
+  );
+}
+
+function renderDecisionDetail(
+  point: DiscardDecisionPoint,
+  onClose: () => void,
+): React.JSX.Element {
+  const prefix = point.isRetained ? "Retained decision" : "Decision";
+  return (
+    <div
+      className={classes.decisionDetail}
+      role="status"
+    >
+      <div className={classes.decisionDetailHead}>
+        <span className={classes.decisionDetailTitle}>
+          {`${prefix} #${point.ordinal}`}
+        </span>
+        <span className={classes.decisionDetailLoss}>
+          {`${point.expectedPointsLoss.toFixed(DECIMAL_PLACES)} lost`}
+        </span>
+        <button
+          className={classes.detailClose}
+          onClick={onClose}
+          type="button"
+        >
+          Close
+        </button>
+      </div>
+      {renderDetailCards(
+        "Hand",
+        cardsOf(point.handKey),
+        `chart-hand-${point.ordinal}`,
+      )}
+      {point.discardKey === null
+        ? null
+        : renderDetailCards(
+            "Discarded",
+            parseHand(point.discardKey),
+            `chart-discard-${point.ordinal}`,
+          )}
+    </div>
+  );
+}
+
+/*
+ * The tapped decision, remembered with the granularity it was tapped
+ * under: a granularity switch reshuffles the ordinals, so the open detail
+ * is dropped rather than left pointing at the wrong hand.
+ */
+function useDecisionSelection(
+  granularity: DiscardTrendGranularity,
+  decisionPoints: readonly DiscardDecisionPoint[],
+): {
+  readonly handleChartActivate: (
+    event: React.MouseEvent | React.KeyboardEvent,
+  ) => void;
+  readonly handleCloseDetail: () => void;
+  readonly selectedPoint: DiscardDecisionPoint | null;
+} {
+  const [selection, setSelection] = useState<{
+    readonly granularity: DiscardTrendGranularity;
+    readonly ordinal: number;
+  } | null>(null);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelection(null);
+  }, []);
+
+  const handleChartActivate = useCallback(
+    (event: React.MouseEvent | React.KeyboardEvent) => {
+      if (
+        event.type === "keydown" &&
+        (event as React.KeyboardEvent).key !== "Enter" &&
+        (event as React.KeyboardEvent).key !== " "
+      ) {
+        return;
+      }
+      const marker = (event.target as Element).closest(
+        "[data-decision-ordinal]",
+      );
+      if (!marker) {
+        return;
+      }
+      event.preventDefault();
+      const ordinal = Number(marker.getAttribute("data-decision-ordinal"));
+      setSelection((current) =>
+        current?.ordinal === ordinal ? null : { granularity, ordinal },
+      );
+    },
+    [granularity],
+  );
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelection(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
+  const selectedOrdinal =
+    selection !== null && selection.granularity === granularity
+      ? selection.ordinal
+      : null;
+
+  return {
+    handleChartActivate,
+    handleCloseDetail,
+    selectedPoint:
+      decisionPoints.find((point) => point.ordinal === selectedOrdinal) ?? null,
+  };
+}
+
 export function DecisionQualityChart({
   buckets,
   decisionPoints = EMPTY_DECISION_POINTS,
@@ -187,6 +371,9 @@ export function DecisionQualityChart({
   totalDecisions,
 }: DecisionQualityChartProps): React.JSX.Element {
   const chartId = useId();
+  const { selectedPoint, handleChartActivate, handleCloseDetail } =
+    useDecisionSelection(granularity, decisionPoints);
+
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
   const hasDecisionPoints = isRolling && decisionPoints.length > 0;
   const scoredBuckets = buckets.filter(
@@ -253,6 +440,8 @@ export function DecisionQualityChart({
         aria-describedby={`${chartId}-desc`}
         aria-label="Decision quality over time trend chart"
         className={classes.chart}
+        onClick={handleChartActivate}
+        onKeyDown={handleChartActivate}
         role="img"
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
       >
@@ -261,7 +450,10 @@ export function DecisionQualityChart({
         {renderTicks(ticks)}
 
         {hasDecisionPoints
-          ? renderRollingPlot(decisionPoints, maxLossY, granularity)
+          ? renderRollingPlot(decisionPoints, maxLossY, {
+              granularity,
+              selectedOrdinal: selectedPoint?.ordinal ?? null,
+            })
           : renderCalendarPlot(calendarPoints)}
 
         {xLabels.map((xLabel) => (
@@ -276,6 +468,9 @@ export function DecisionQualityChart({
           </text>
         ))}
       </svg>
+      {selectedPoint === null
+        ? null
+        : renderDecisionDetail(selectedPoint, handleCloseDetail)}
     </div>
   );
 }
