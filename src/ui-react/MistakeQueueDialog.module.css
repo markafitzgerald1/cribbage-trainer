@@ -542,8 +542,13 @@
     gap: 0.35rem;
     padding: 0.3rem 0;
 
-    /* The action bar's own sticky offset shrinks with the smaller buttons. */
-    top: 2.1rem;
+    /*
+     * As in portrait: only the action bar stays pinned. A phone in
+     * landscape with its address bar showing is shorter still, and a second
+     * sticky row of four filter groups left no room for even one full
+     * mistake. Static here lets the filters scroll away with the content.
+     */
+    position: static;
   }
 
   .filter-group {

@@ -248,6 +248,38 @@ test.describe("practice drill", () => {
     expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(shortHeight);
   });
 
+  test("scrolls the mistake-queue filters away in landscape, keeping the action bar", async ({
+    page,
+  }) => {
+    await page.setViewportSize(phoneLandscapeViewport);
+    await page.getByRole("button", { name: "Mistake queue" }).click();
+
+    /*
+     * On a real phone a second sticky row of four filter groups below the
+     * action bar left no room for even one full mistake. Landscape now
+     * matches portrait: only the action bar stays pinned, the filters
+     * scroll away with the content. Negative-checked: the filter row reads
+     * `sticky` without the rule.
+     */
+    const filterRowPosition = await page
+      .getByRole("group", { name: "Sort by" })
+      .evaluate((group) =>
+        group.parentElement
+          ? getComputedStyle(group.parentElement).position
+          : null,
+      );
+    const actionBarPosition = await page
+      .getByRole("button", { name: "Start drill" })
+      .evaluate((button) =>
+        button.parentElement
+          ? getComputedStyle(button.parentElement).position
+          : null,
+      );
+
+    expect(filterRowPosition).toBe("static");
+    expect(actionBarPosition).toBe("sticky");
+  });
+
   test("counts no skip for the board hand when a drill starts", async ({
     page,
   }) => {
