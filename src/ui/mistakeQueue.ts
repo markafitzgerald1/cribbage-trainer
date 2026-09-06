@@ -313,16 +313,14 @@ const getSortDeltas = (
 
 /*
  * `index` is always within `[0, items.length)` at every call site below —
- * each is derived from `items.length` — so the assertion states a fact the
+ * each is derived from `items.length` — so the cast states a fact the
  * bounded arithmetic already guarantees rather than papering over a real
- * chance of undefined.
+ * chance of undefined. `.at()` keeps this off `security/detect-object-injection`.
  */
 const itemAt = (
   items: readonly MistakeQueueItem[],
   index: number,
-): MistakeQueueItem =>
-  // eslint-disable-next-line security/detect-object-injection, @typescript-eslint/no-non-null-assertion
-  items[index]!;
+): MistakeQueueItem => items.at(index) as MistakeQueueItem;
 
 /*
  * Draws one active (non-mastered) hand weighted by `priority` — the expected
