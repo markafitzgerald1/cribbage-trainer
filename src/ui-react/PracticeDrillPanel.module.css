@@ -219,4 +219,16 @@
   .actions {
     gap: min(0.4rem, 0.9vw);
   }
+
+  /*
+   * Short-screen pattern (AGENTS.md): in the revealed state the actions ride
+   * above the verdict text, so Draw another / Exit stay on screen when a
+   * large device font makes the two rows plus the outcome line overflow
+   * Trainer's fixed-height, non-scrolling left column. The verdict text can
+   * then run past the bottom; re-opening the drill shows it again, the same
+   * honest degradation a Back-restore already accepts.
+   */
+  .verdict .actions {
+    order: -1;
+  }
 }

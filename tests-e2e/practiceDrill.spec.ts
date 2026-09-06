@@ -195,30 +195,40 @@ test.describe("practice drill", () => {
     );
   });
 
+  const expectActionWithinLandscape = async (page: Page, name: string) => {
+    const button = page.getByRole("button", { name });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(
+      phoneLandscapeViewport.height,
+    );
+  };
+
   test("drill actions stay on a short landscape screen at a large root font", async ({
     page,
   }) => {
     /*
      * Start the drill at the default viewport where the queue dialog fits,
      * then squeeze to a short landscape with a large root font so the panel's
-     * rem rhythm is under test rather than the dialog interaction.
+     * rem rhythm is under test rather than the dialog interaction. Both the
+     * choosing state and the taller revealed state (two verdict rows, the
+     * outcome line, then the actions) have to keep their buttons on screen;
+     * the revealed state puts its actions first so they clear the fold even
+     * when the verdict text below runs past it.
      */
     await startDrillOnFirstMistake(page);
     await page.setViewportSize(phoneLandscapeViewport);
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
 
-    const check = page.getByRole("button", { name: "Check discard" });
-    const exit = page.getByRole("button", { name: "Exit drill" });
-    await expect(check).toBeVisible();
+    await expectActionWithinLandscape(page, "Check discard");
+    await expectActionWithinLandscape(page, "Exit drill");
 
-    const checkBox = await check.boundingBox();
-    const exitBox = await exit.boundingBox();
-    expect((checkBox?.y ?? 0) + (checkBox?.height ?? 0)).toBeLessThanOrEqual(
-      phoneLandscapeViewport.height,
-    );
-    expect((exitBox?.y ?? 0) + (exitBox?.height ?? 0)).toBeLessThanOrEqual(
-      phoneLandscapeViewport.height,
-    );
+    await selectTwoDiscards(page);
+    await page.getByRole("button", { name: "Check discard" }).click();
+    await waitForAnalysis(page);
+
+    await expectActionWithinLandscape(page, "Draw another");
+    await expectActionWithinLandscape(page, "Exit drill");
   });
 
   test("the quality trend table can be scrolled to its rightmost column", async ({
