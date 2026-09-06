@@ -23,27 +23,30 @@ export const lossPointTitle = (point: DiscardDecisionPoint): string => {
 };
 
 /*
- * A row of transparent, edge-to-edge rectangles — one per mistake, each
- * spanning to the midpoint toward its neighbors — is the pointer hit area,
- * and it is painted last so the trend path and the latest-average dot,
- * which sit on top otherwise, cannot swallow a tap. The per-marker approach
- * could not survive a dense history: at the 100-point cap the points sit
- * ~4.5 viewBox units apart, so any circular target either overlapped its
- * neighbor (wrong hand on tap) or shrank below a fingertip. Tiling bands
- * give every mistake the widest catch area the spacing allows and leave no
- * dead pixels between them; each carries the marker's own hover title.
+ * The pointer hit area is a row of transparent rectangles, painted last so
+ * the trend path and the latest-average dot — otherwise on top — cannot
+ * swallow a tap. Each mistake owns the strip from the midpoint to its
+ * previous decision to the midpoint to its next, so it gets the widest
+ * catch area the spacing allows; the strips over *optimal* decisions carry
+ * no rectangle, so tapping a green point does nothing rather than opening a
+ * neighboring mistake. The per-marker circle this replaced could not
+ * survive the 100-point cap: points ~4.5 viewBox units apart forced any
+ * circular target to either overlap its neighbor or shrink below a
+ * fingertip. Each band carries the marker's own hover title.
  */
 export function renderHitBands(
-  lossPoints: readonly LossEntry[],
+  entries: readonly LossEntry[],
   plotStart: number,
   plotEnd: number,
 ): React.JSX.Element {
   return (
     <g>
-      {lossPoints.map((entry, index) => {
-        const previous = index === 0 ? null : lossPoints[index - 1];
-        const next =
-          index === lossPoints.length - 1 ? null : lossPoints[index + 1];
+      {entries.map((entry, index) => {
+        if (entry.point.isOptimal) {
+          return null;
+        }
+        const previous = index === 0 ? null : entries[index - 1];
+        const next = index === entries.length - 1 ? null : entries[index + 1];
         const left = previous
           ? (previous.cx + entry.cx) / MIDPOINT_DIVISOR
           : plotStart;

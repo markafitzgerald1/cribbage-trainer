@@ -10,6 +10,8 @@ export interface DealState {
 }
 
 interface UseDealHandArgs {
+  // The board as it stands, so the notice retracts once a Back or an entered hand replaces the freshly dealt one.
+  readonly dealtCards: readonly DealtCard[];
   readonly generateRandomNumber: () => number;
   readonly markHistoryUpdate: () => void;
   readonly reportHandReplaced: ReportHandReplaced;
@@ -35,29 +37,35 @@ const FRESH_HAND_NOTICE_MS = 3000;
  * deal, which is where the notice attaches.
  */
 export const useDealHand = ({
+  dealtCards,
   generateRandomNumber,
   markHistoryUpdate,
   reportHandReplaced,
   setDealState,
 }: UseDealHandArgs): DealHand => {
   /*
-   * A token, not a boolean: a second drill exit within the notice window
-   * has to re-arm the 3s timer, and `setState(true)` when it is already
-   * `true` bails out — the effect's deps would not change and it would ride
-   * the first exit's timer out, clearing the second notice early.
+   * The notice is tied to the exact hand the drill exit dealt, not a boolean:
+   * a second exit within the window re-arms the 3s timer because a fresh
+   * hand is a new array reference (the effect dependency changes), and a Back or an
+   * Enter-cards hand that swaps the board to any other reference retracts it.
    */
-  const [freshHandNoticeToken, setFreshHandNoticeToken] = useState(0);
+  const [freshHandNoticeCards, setFreshHandNoticeCards] = useState<
+    readonly DealtCard[] | null
+  >(null);
 
-  const deal = useCallback(() => {
+  const deal = useCallback((): DealState => {
     markHistoryUpdate();
     // The deal draw is consumed before the role draw, matching the original helper's call order.
-    const dealtCards = dealHand(generateRandomNumber);
+    const nextCards = dealHand(generateRandomNumber);
     const state: DealState = {
       cribRole: randomCribRole(generateRandomNumber),
-      dealtCards,
+      dealtCards: nextCards,
     };
+    // A plain Deal is silent; drop any lingering "Exit drill" notice.
+    setFreshHandNoticeCards(null);
     reportHandReplaced(state.dealtCards, "deal", state.cribRole);
     setDealState(state);
+    return state;
   }, [
     generateRandomNumber,
     markHistoryUpdate,
@@ -66,27 +74,37 @@ export const useDealHand = ({
   ]);
 
   const dealForDrillExit = useCallback(() => {
-    deal();
-    setFreshHandNoticeToken((token) => token + 1);
+    setFreshHandNoticeCards(deal().dealtCards);
   }, [deal]);
 
   useEffect(() => {
-    if (freshHandNoticeToken === 0) {
+    if (freshHandNoticeCards === null) {
       return () => {
         // Nothing is scheduled while the notice is hidden.
       };
     }
     const timer = setTimeout(() => {
-      setFreshHandNoticeToken(0);
+      setFreshHandNoticeCards(null);
     }, FRESH_HAND_NOTICE_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [freshHandNoticeToken]);
+  }, [freshHandNoticeCards]);
+
+  /*
+   * A Back or an Enter-cards hand swaps the board without routing through
+   * `deal`, so the "fresh hand dealt" line would otherwise sit over a
+   * restored or typed hand until its timer lapses. Retract it the moment the
+   * board stops being the hand the notice was raised for. Render-time,
+   * mirroring usePracticeDrill's own reset.
+   */
+  if (freshHandNoticeCards !== null && freshHandNoticeCards !== dealtCards) {
+    setFreshHandNoticeCards(null);
+  }
 
   return {
     deal,
     dealForDrillExit,
-    freshHandNoticeShown: freshHandNoticeToken > 0,
+    freshHandNoticeShown: freshHandNoticeCards !== null,
   };
 };

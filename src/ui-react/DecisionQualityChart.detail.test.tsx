@@ -172,12 +172,29 @@ describe("decision quality chart point detail", () => {
     expectPanelText(view, "Decision #2");
   });
 
-  it("closes the panel when the selected decision leaves the view", () => {
+  it("forgets a selection when its decision leaves the view", () => {
     const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
 
     rerenderChart(view, [makeDecisionPoint(7, 0.6, 0.3)], "rolling20");
-
     expectNoPanel(view);
+
+    // Restoring the filter must not resurrect the panel.
+    rerenderChart(view, OPTIMAL_THEN_LOSS, "rolling20");
+    expectNoPanel(view);
+  });
+
+  it("gives an optimal decision no hit band, only the mistakes around it", () => {
+    const points: ChartPoints = [
+      makeDecisionPoint(1, 0.8, 0.4),
+      makeDecisionPoint(2, 0, 0),
+      makeDecisionPoint(3, 0.5, 0.3),
+    ];
+    const view = renderChart(BUCKETS, "rolling20", points);
+    const bandOrdinals = [
+      ...view.container.querySelectorAll(`.${classes.lossHitBand}`),
+    ].map((band) => band.getAttribute("data-decision-ordinal"));
+
+    expect(bandOrdinals).toStrictEqual(["1", "3"]);
   });
 
   it("names the crib role for the decision", () => {

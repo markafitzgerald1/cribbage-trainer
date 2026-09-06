@@ -217,6 +217,7 @@ export function Trainer({
     dealForDrillExit,
     freshHandNoticeShown,
   } = useDealHand({
+    dealtCards,
     generateRandomNumber: generator,
     markHistoryUpdate,
     reportHandReplaced,

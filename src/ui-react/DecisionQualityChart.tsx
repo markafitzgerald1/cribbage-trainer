@@ -95,9 +95,11 @@ function renderRollingPlot(
   const lastMovingPoint = movingPoints[movingPoints.length - 1]!;
   const latestLoss = lastMovingPoint.loss.toFixed(DECIMAL_PLACES);
   const windowLabel = getRollingWindowLabel(total, granularity);
-  const lossPoints = decisionPoints
-    .map((point, index) => ({ cx: calculateIndexedX(index, total), point }))
-    .filter(({ point }) => !point.isOptimal);
+  const decisionEntries = decisionPoints.map((point, index) => ({
+    cx: calculateIndexedX(index, total),
+    point,
+  }));
+  const hasMistake = decisionPoints.some((point) => !point.isOptimal);
 
   return (
     <>
@@ -143,8 +145,8 @@ function renderRollingPlot(
         <title>{`Latest ${windowLabel}: ${latestLoss} points loss`}</title>
       </circle>
 
-      {lossPoints.length > 0
-        ? renderHitBands(lossPoints, MARGIN_LEFT, MARGIN_LEFT + PLOT_WIDTH)
+      {hasMistake
+        ? renderHitBands(decisionEntries, MARGIN_LEFT, MARGIN_LEFT + PLOT_WIDTH)
         : null}
     </>
   );
@@ -316,13 +318,20 @@ function useDecisionSelection(
     };
   }, []);
 
-  return {
-    handleChartActivate,
-    handleCloseDetail,
-    selectedPoint:
-      decisionPoints.find((point) => point.recencyAt === selectedRecencyAt) ??
-      null,
-  };
+  const selectedPoint =
+    decisionPoints.find((point) => point.recencyAt === selectedRecencyAt) ??
+    null;
+  /*
+   * When a role or granularity filter drops the selected decision, forget it
+   * outright rather than only deriving `null`: otherwise restoring the filter
+   * silently reopens the panel on a decision the user had navigated away
+   * from. The render-time reset mirrors usePracticeDrill's.
+   */
+  if (selectedRecencyAt !== null && selectedPoint === null) {
+    setSelectedRecencyAt(null);
+  }
+
+  return { handleChartActivate, handleCloseDetail, selectedPoint };
 }
 
 export function DecisionQualityChart({
