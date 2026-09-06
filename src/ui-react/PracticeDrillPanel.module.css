@@ -176,7 +176,17 @@
 @media (aspect-ratio >= 6 / 5) {
   .panel {
     gap: min(0.4rem, 0.9vw);
+
+    /*
+     * Cap the panel's height and let it scroll so the revealed Now / Before
+     * comparison and the outcome line stay reachable, not clipped by
+     * Trainer's fixed-height, non-scrolling left column at a large device
+     * font. The dvh term only bites on a short phone-landscape viewport; a
+     * desktop landscape resolves the rem term and the panel never scrolls.
+     */
     margin-top: min(0.5rem, 1vw);
+    max-height: min(16rem, 34dvh);
+    overflow-y: auto;
     padding: min(0.5rem, 1vw) min(0.6rem, 1.2vw);
   }
 
@@ -222,11 +232,13 @@
 
   /*
    * Short-screen pattern (AGENTS.md): in the revealed state the actions ride
-   * above the verdict text, so Draw another / Exit stay on screen when a
-   * large device font makes the two rows plus the outcome line overflow
-   * Trainer's fixed-height, non-scrolling left column. The verdict text can
-   * then run past the bottom; re-opening the drill shows it again, the same
-   * honest degradation a Back-restore already accepts.
+   * above the verdict, so Draw another / Exit stay on screen when a large
+   * device font makes the two rows plus the outcome line tall. The panel
+   * then caps its own height and scrolls, so the Now / Before comparison
+   * and the outcome stay reachable rather than clipped by Trainer's
+   * fixed-height, non-scrolling left column. The dvh term only bites on a
+   * short phone-landscape viewport; a desktop landscape resolves the rem
+   * term and the panel never scrolls there.
    */
   .verdict .actions {
     order: -1;

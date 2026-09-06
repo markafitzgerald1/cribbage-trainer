@@ -210,11 +210,11 @@ test.describe("practice drill", () => {
     /*
      * Start the drill at the default viewport where the queue dialog fits,
      * then squeeze to a short landscape with a large root font so the panel's
-     * rem rhythm is under test rather than the dialog interaction. Both the
-     * choosing state and the taller revealed state (two verdict rows, the
-     * outcome line, then the actions) have to keep their buttons on screen;
-     * the revealed state puts its actions first so they clear the fold even
-     * when the verdict text below runs past it.
+     * rem rhythm is under test rather than the dialog interaction. The
+     * choosing state keeps its buttons on screen; the taller revealed state
+     * puts its actions first and caps the panel height so Draw another /
+     * Exit stay visible while the Now / Before comparison and the outcome
+     * line stay reachable by scrolling the panel.
      */
     await startDrillOnFirstMistake(page);
     await page.setViewportSize(phoneLandscapeViewport);
@@ -229,6 +229,28 @@ test.describe("practice drill", () => {
 
     await expectActionWithinLandscape(page, "Draw another");
     await expectActionWithinLandscape(page, "Exit drill");
+
+    /*
+     * The panel caps its own height and scrolls, so its box stays within the
+     * viewport (rather than the outcome line being clipped by Trainer's
+     * non-scrolling column) and the Now / Before comparison and outcome are
+     * reachable by scrolling the panel itself.
+     */
+    const panel = page.getByRole("region", { name: "Practice drill" });
+    const panelBox = await panel.boundingBox();
+    expect((panelBox?.y ?? 0) + (panelBox?.height ?? 0)).toBeLessThanOrEqual(
+      phoneLandscapeViewport.height,
+    );
+    const panelOverflows = await panel.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    );
+    expect(panelOverflows).toBe(true);
+
+    const outcome = page.getByText(
+      /toward mastery|behind the best discard|Mastered/u,
+    );
+    await outcome.scrollIntoViewIfNeeded();
+    await expect(outcome).toBeInViewport();
   });
 
   test("the quality trend table can be scrolled to its rightmost column", async ({
