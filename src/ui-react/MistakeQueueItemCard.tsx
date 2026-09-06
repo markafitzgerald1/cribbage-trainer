@@ -8,7 +8,7 @@ import {
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
-import { useCallback } from "react";
+import { useMemo } from "react";
 
 const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
@@ -76,11 +76,11 @@ export function MistakeQueueItemCard({
 }: MistakeQueueItemCardProps): React.JSX.Element {
   const roleLabel = item.cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const errorRatePercent = (item.pWrong * PERCENT_MULTIPLIER).toFixed(0);
-  const handlePractice = useCallback(() => {
-    // The button wired to this renders only when onPractice is set (see below).
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    onPractice!(item);
-  }, [item, onPractice]);
+  // Null when there is no drill hand-off, which is also the branch that hides the button below.
+  const handlePractice = useMemo(
+    () => (onPractice === null ? null : () => onPractice(item)),
+    [item, onPractice],
+  );
 
   return (
     <div className={classes.itemCard}>
@@ -110,7 +110,7 @@ export function MistakeQueueItemCard({
           <span>Error rate: {errorRatePercent}%</span>
           <span>Priority: {item.priority.toFixed(DECIMAL_DIGITS)}</span>
         </div>
-        {onPractice === null ? null : (
+        {handlePractice === null ? null : (
           <button
             className={classes.practiceButton}
             onClick={handlePractice}
