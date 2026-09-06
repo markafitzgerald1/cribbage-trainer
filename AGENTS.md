@@ -249,6 +249,22 @@ mcr.microsoft.com/playwright:<tag>`.
 - On short screens, place a modal's primary and secondary actions before a
   long scrolling picker and keep the action row sticky. Users should see how
   to complete the dialog without first discovering an off-screen footer.
+- `role="img"` on an `<svg>` makes every descendant presentational, so
+  focusable controls inside it (the decision-quality chart's per-mistake
+  marker buttons) never reach assistive tech even with working keyboard
+  handlers. An interactive chart SVG needs `role="group"` (keep the
+  `aria-label` / `aria-describedby`), and tests then query
+  `getByRole("group", { name })`, not `"img"` — check `tests-e2e/` for
+  `getByRole("img")` too, a `src/`-only sweep misses it.
+- A transparent SVG overlay only catches a pointer where it is the topmost
+  painted element: a hit layer drawn before the trend path and the final
+  data dot lets those swallow taps in their pixels. Paint hit targets last.
+  When one shape's identity must survive a filter that renumbers the series
+  (the chart's crib-role filter), key any stored selection by a genuinely
+  unique field — the record's monotonic `recencyAt`, never the chart
+  ordinal or wall-clock `at` — and clear it outright (render-time reset,
+  like `usePracticeDrill`) once its item leaves the filtered list, or
+  restoring the filter silently reopens the panel.
 - Freezing a control by swallowing its `onChange` leaves it focusable, still
   showing a pointer cursor, and announced as editable — a control that lies
   about being interactive. Lock it with the native `disabled` attribute
