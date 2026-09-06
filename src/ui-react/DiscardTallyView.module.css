@@ -102,6 +102,26 @@
      * uncapped so the default-scale layout stays byte-identical.
      */
     font-size: min(1em, 4.4vw);
+
+    /*
+     * Capped like the font (no-op at the default scale, where 0.7em stays
+     * below 3vw down to ~373px): the inter-column gap otherwise grows with
+     * the device font and is pure width the three columns cannot spare.
+     */
+    column-gap: min(0.7em, 3vw);
+
+    /*
+     * The font and gap caps still cannot guarantee the three columns fit:
+     * Android Chrome's minimum-font-size accessibility setting forces text
+     * above any `vw`-computed size, and there is no CSS opt-out. On a
+     * narrow phone with that set, the fixed-width all-time figures ran off
+     * the edge and `body { overflow-x: hidden }` clipped their last
+     * character. Let the row scroll its own overflow as the final backstop
+     * — no scrollbar and no layout shift whenever it already fits, so the
+     * default-scale layout is unchanged.
+     */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
   }
 
   .label,

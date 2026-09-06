@@ -166,18 +166,21 @@ test("keeps the tally labels on one line at a large device font", async ({
 
 /*
  * The tally's own font is viewport-capped, but `.dynamic-ui`'s `0.7em`
- * inline padding is not, so on a narrow phone set well above the default
- * font size the padding grew and shrank the tally row until its
- * fixed-width all-time figures ran under `body { overflow-x: hidden }` and
- * lost their last character or two. The stacked `@media` block now caps
- * that inline padding with a viewport unit. Asserting the computed value
- * rather than a clipped pixel: the clip only bites with multi-digit
- * counts, which need a seeded history this spec has no helper for.
- * Negative-checked: without the cap this reads ~0.7 * 28 = 19.6px.
+ * inline padding and the tally's `0.7em` column gap were not, so on a
+ * narrow phone set well above the default font size the row grew until
+ * its fixed-width all-time figures ran under `body { overflow-x: hidden }`
+ * and lost their last character or two. Both `em` lengths are now
+ * viewport-capped in the stacked `@media` block, and the tally itself is
+ * an `overflow-x: auto` scroll container as a final backstop for when
+ * Android Chrome's minimum-font-size setting forces text past any `vw`
+ * cap. Asserting the computed values rather than a clipped pixel: the
+ * clip only bites with multi-digit counts, which need a seeded history
+ * this spec has no helper for. Negative-checked: without the caps the
+ * padding reads ~0.7 * 28 = 19.6px and the gap likewise.
  */
-const UNCAPPED_INLINE_PADDING_PX = 16;
+const UNCAPPED_EM_PX = 16;
 
-test("caps the stacked layout's inline padding so the tally figures fit", async ({
+test("caps the stacked tally's em lengths and lets it scroll so its figures fit", async ({
   page,
 }) => {
   await page.setViewportSize({
@@ -187,13 +190,24 @@ test("caps the stacked layout's inline padding so the tally figures fit", async 
   await playOneAuthenticHand(page);
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
-  const paddingLeft = await page
-    .locator("[class*='dynamic-ui']")
-    .evaluate((element) =>
-      Number.parseFloat(getComputedStyle(element).paddingLeft),
-    );
+  const metrics = await page
+    .getByText("Lost per discard", { exact: true })
+    .evaluate((label) => {
+      const grid = label.parentElement as HTMLElement;
+      const dynamicUi = grid.closest("[class*='dynamic-ui']") as HTMLElement;
+      const styles = getComputedStyle(grid);
+      return {
+        columnGap: Number.parseFloat(styles.columnGap),
+        inlinePadding: Number.parseFloat(
+          getComputedStyle(dynamicUi).paddingLeft,
+        ),
+        overflowX: styles.overflowX,
+      };
+    });
 
-  expect(paddingLeft).toBeLessThan(UNCAPPED_INLINE_PADDING_PX);
+  expect(metrics.inlinePadding).toBeLessThan(UNCAPPED_EM_PX);
+  expect(metrics.columnGap).toBeLessThan(UNCAPPED_EM_PX);
+  expect(metrics.overflowX).toBe("auto");
 });
 
 /*
