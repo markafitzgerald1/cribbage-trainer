@@ -49,6 +49,20 @@ const openDetailOn = (points: ChartPoints, ordinal: number): RenderChart => {
 const cardLabelCount = (view: RenderChart): number =>
   view.container.querySelectorAll(`.${cardClasses.cardLabel}`).length;
 
+const rerenderChart = (
+  view: RenderChart,
+  points: ChartPoints,
+  granularity: Parameters<typeof renderChart>[1],
+): void => {
+  view.rerender(
+    <DecisionQualityChart
+      buckets={BUCKETS}
+      decisionPoints={points}
+      granularity={granularity}
+    />,
+  );
+};
+
 const expectPanelText = (view: RenderChart, text: string): void => {
   expect(view.getByRole("region")).toHaveTextContent(text);
 };
@@ -146,18 +160,44 @@ describe("decision quality chart point detail", () => {
     expectPanelText(view, "Decision #3");
   });
 
-  it("drops the panel when the granularity changes under it", () => {
+  it("keeps the panel open when the granularity changes under it", () => {
     const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
 
-    view.rerender(
-      <DecisionQualityChart
-        buckets={BUCKETS}
-        decisionPoints={OPTIMAL_THEN_LOSS}
-        granularity="rolling50"
-      />,
-    );
+    rerenderChart(view, OPTIMAL_THEN_LOSS, "rolling50");
+
+    expectPanelText(view, "Decision #2");
+  });
+
+  it("closes the panel when the selected decision leaves the view", () => {
+    const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
+
+    rerenderChart(view, [makeDecisionPoint(7, 0.6, 0.3)], "rolling20");
 
     expectNoPanel(view);
+  });
+
+  it("names the crib role for the decision", () => {
+    expectPanelText(openDetailOn(OPTIMAL_THEN_LOSS, 2), "Dealer");
+  });
+
+  it("shrinks the marker hit target as points get dense", () => {
+    const hitRadius = (view: RenderChart): number =>
+      Number(
+        view.container
+          .querySelector('[data-decision-ordinal] circle[fill="transparent"]')
+          ?.getAttribute("r"),
+      );
+    const dense = renderChart(
+      BUCKETS,
+      "rolling20",
+      Array.from({ length: 60 }, (_, index) =>
+        makeDecisionPoint(index + 1, 0.5, 0.5),
+      ),
+    );
+
+    expect(hitRadius(renderPlainChart())).toBe(7);
+    expect(hitRadius(dense)).toBeGreaterThan(2);
+    expect(hitRadius(dense)).toBeLessThan(7);
   });
 
   it("omits the discard row when no discard was recorded", () => {
@@ -175,6 +215,7 @@ describe("decision quality chart point detail", () => {
     );
 
     expect(view.getByRole("region")).toBeInTheDocument();
+    expect(view.getByRole("region")).not.toHaveTextContent("Dealer");
     expect(cardLabelCount(view)).toBe(2);
   });
 

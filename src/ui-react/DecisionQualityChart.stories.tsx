@@ -136,6 +136,7 @@ export const DecisionDetailPopup: Story = {
     const panel = await canvas.findByRole("region");
 
     await expect(panel).toHaveTextContent("lost");
+    await expect(panel).toHaveTextContent("Dealer");
     await expect(panel).toHaveTextContent("Hand");
     await expect(panel).toHaveTextContent("Discarded");
 

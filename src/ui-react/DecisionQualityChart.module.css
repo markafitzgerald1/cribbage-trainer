@@ -142,6 +142,17 @@
   font-weight: 700;
 }
 
+/* The crib role the hand was played as: the same six cards score differently as dealer and pone. */
+.decision-detail-role {
+  border: 1px solid color-mix(in srgb, green 40%, white);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.35rem;
+  text-transform: uppercase;
+}
+
 .decision-detail-loss {
   color: #ffbdbd;
   font-family: var(--card-font-family);

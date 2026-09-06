@@ -71,11 +71,14 @@ const renderTicks = (ticks: readonly ChartTick[]): React.JSX.Element[] =>
 
 interface RollingPlotOptions {
   readonly granularity: DiscardTrendGranularity;
-  readonly selectedOrdinal: number | null;
+  readonly selectedTimestamp: number | null;
 }
 
 // The larger, invisible circle behind each loss dot, so a fingertip lands on it.
 const LOSS_HIT_RADIUS = 7;
+
+// A hit circle may span at most half the gap to the next marker, so dense targets never overlap.
+const HIT_RADIUS_GAP_DIVISOR = 2;
 
 function renderLossPoint(
   point: DiscardDecisionPoint,
@@ -84,14 +87,17 @@ function renderLossPoint(
     readonly yStem: number;
     readonly yZero: number;
   },
-  selectedOrdinal: number | null,
+  marker: {
+    readonly hitRadius: number;
+    readonly selectedTimestamp: number | null;
+  },
 ): React.JSX.Element {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   const titleText = `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
     DECIMAL_PLACES,
   )} points loss`;
   const dotClass =
-    point.ordinal === selectedOrdinal
+    point.timestamp === marker.selectedTimestamp
       ? `${classes.lossDot} ${classes.lossDotSelected}`
       : classes.lossDot;
   return (
@@ -99,6 +105,7 @@ function renderLossPoint(
       aria-label={`${titleText}. Select to see the hand.`}
       className={classes.lossMarker}
       data-decision-ordinal={point.ordinal}
+      data-decision-timestamp={point.timestamp}
       key={`decision-${point.ordinal}`}
       role="button"
       tabIndex={0}
@@ -115,7 +122,7 @@ function renderLossPoint(
         cx={geometry.cx}
         cy={geometry.yStem}
         fill="transparent"
-        r={LOSS_HIT_RADIUS}
+        r={marker.hitRadius}
       />
       <circle
         className={dotClass}
@@ -130,7 +137,7 @@ function renderLossPoint(
 function renderRollingPlot(
   decisionPoints: readonly DiscardDecisionPoint[],
   maxLossY: number,
-  { granularity, selectedOrdinal }: RollingPlotOptions,
+  { granularity, selectedTimestamp }: RollingPlotOptions,
 ): React.JSX.Element {
   const total = decisionPoints.length;
   const movingPoints = decisionPoints.map((point, index) => ({
@@ -144,6 +151,19 @@ function renderRollingPlot(
   const lastMovingPoint = movingPoints[movingPoints.length - 1]!;
   const latestLoss = lastMovingPoint.loss.toFixed(DECIMAL_PLACES);
   const windowLabel = getRollingWindowLabel(total, granularity);
+  /*
+   * The hit circle is capped at half the point spacing so dense charts (up
+   * to MAX_RECENT_DECISIONS across PLOT_WIDTH) never stack overlapping
+   * transparent targets, which would let a click on one marker resolve to
+   * its neighbor painted on top.
+   */
+  const hitRadius =
+    total > 1
+      ? Math.min(
+          LOSS_HIT_RADIUS,
+          PLOT_WIDTH / (total - 1) / HIT_RADIUS_GAP_DIVISOR,
+        )
+      : LOSS_HIT_RADIUS;
 
   return (
     <>
@@ -168,7 +188,7 @@ function renderRollingPlot(
         return renderLossPoint(
           point,
           { cx: xPosition, yStem, yZero },
-          selectedOrdinal,
+          { hitRadius, selectedTimestamp },
         );
       })}
 
@@ -228,8 +248,15 @@ function renderCalendarPlot(points: readonly ChartPoint[]): React.JSX.Element {
   );
 }
 
-const cardsOf = (handKey: string): ReturnType<typeof parseHand> =>
-  parseHandKey(handKey)?.cards ?? [];
+const parsedHand = (
+  handKey: string,
+): {
+  readonly cards: ReturnType<typeof parseHand>;
+  readonly role: string | null;
+} => {
+  const parsed = parseHandKey(handKey);
+  return { cards: parsed?.cards ?? [], role: parsed?.cribRole ?? null };
+};
 
 function renderDetailCards(
   label: string,
@@ -255,6 +282,7 @@ function renderDecisionDetail(
   onClose: () => void,
 ): React.JSX.Element {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
+  const { cards, role } = parsedHand(point.handKey);
   return (
     <div
       aria-label={`${prefix} #${point.ordinal} detail`}
@@ -265,6 +293,9 @@ function renderDecisionDetail(
         <span className={classes.decisionDetailTitle}>
           {`${prefix} #${point.ordinal}`}
         </span>
+        {role === null ? null : (
+          <span className={classes.decisionDetailRole}>{role}</span>
+        )}
         <span className={classes.decisionDetailLoss}>
           {`${point.expectedPointsLoss.toFixed(DECIMAL_PLACES)} lost`}
         </span>
@@ -276,11 +307,7 @@ function renderDecisionDetail(
           Close
         </button>
       </div>
-      {renderDetailCards(
-        "Hand",
-        cardsOf(point.handKey),
-        `chart-hand-${point.ordinal}`,
-      )}
+      {renderDetailCards("Hand", cards, `chart-hand-${point.ordinal}`)}
       {point.discardKey === null
         ? null
         : renderDetailCards(
@@ -293,12 +320,13 @@ function renderDecisionDetail(
 }
 
 /*
- * The tapped decision, remembered with the granularity it was tapped
- * under: a granularity switch reshuffles the ordinals, so the open detail
- * is dropped rather than left pointing at the wrong hand.
+ * The tapped decision is held by its timestamp, a stable per-decision id,
+ * not by chart ordinal: the crib-role filter renumbers the points under the
+ * panel, so an ordinal would silently point it at a different hand. When the
+ * selected decision leaves the filtered or granularity view, `find` misses
+ * and the panel closes on its own.
  */
 function useDecisionSelection(
-  granularity: DiscardTrendGranularity,
   decisionPoints: readonly DiscardDecisionPoint[],
 ): {
   readonly handleChartActivate: (
@@ -307,13 +335,12 @@ function useDecisionSelection(
   readonly handleCloseDetail: () => void;
   readonly selectedPoint: DiscardDecisionPoint | null;
 } {
-  const [selection, setSelection] = useState<{
-    readonly granularity: DiscardTrendGranularity;
-    readonly ordinal: number;
-  } | null>(null);
+  const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(
+    null,
+  );
 
   const handleCloseDetail = useCallback(() => {
-    setSelection(null);
+    setSelectedTimestamp(null);
   }, []);
 
   const handleChartActivate = useCallback(
@@ -326,24 +353,24 @@ function useDecisionSelection(
         return;
       }
       const marker = (event.target as Element).closest(
-        "[data-decision-ordinal]",
+        "[data-decision-timestamp]",
       );
       if (!marker) {
         return;
       }
       event.preventDefault();
-      const ordinal = Number(marker.getAttribute("data-decision-ordinal"));
-      setSelection((current) =>
-        current?.ordinal === ordinal ? null : { granularity, ordinal },
+      const timestamp = Number(marker.getAttribute("data-decision-timestamp"));
+      setSelectedTimestamp((current) =>
+        current === timestamp ? null : timestamp,
       );
     },
-    [granularity],
+    [],
   );
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setSelection(null);
+        setSelectedTimestamp(null);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -352,16 +379,12 @@ function useDecisionSelection(
     };
   }, []);
 
-  const selectedOrdinal =
-    selection !== null && selection.granularity === granularity
-      ? selection.ordinal
-      : null;
-
   return {
     handleChartActivate,
     handleCloseDetail,
     selectedPoint:
-      decisionPoints.find((point) => point.ordinal === selectedOrdinal) ?? null,
+      decisionPoints.find((point) => point.timestamp === selectedTimestamp) ??
+      null,
   };
 }
 
@@ -373,7 +396,7 @@ export function DecisionQualityChart({
 }: DecisionQualityChartProps): React.JSX.Element {
   const chartId = useId();
   const { selectedPoint, handleChartActivate, handleCloseDetail } =
-    useDecisionSelection(granularity, decisionPoints);
+    useDecisionSelection(decisionPoints);
 
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
   const hasDecisionPoints = isRolling && decisionPoints.length > 0;
@@ -453,7 +476,7 @@ export function DecisionQualityChart({
         {hasDecisionPoints
           ? renderRollingPlot(decisionPoints, maxLossY, {
               granularity,
-              selectedOrdinal: selectedPoint?.ordinal ?? null,
+              selectedTimestamp: selectedPoint?.timestamp ?? null,
             })
           : renderCalendarPlot(calendarPoints)}
 

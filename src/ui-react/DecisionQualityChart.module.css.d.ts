@@ -7,6 +7,7 @@ export const decisionDetailCards: string;
 export const decisionDetailHead: string;
 export const decisionDetailLabel: string;
 export const decisionDetailLoss: string;
+export const decisionDetailRole: string;
 export const decisionDetailRow: string;
 export const decisionDetailTitle: string;
 export const detailClose: string;
