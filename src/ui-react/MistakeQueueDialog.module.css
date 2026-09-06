@@ -435,11 +435,35 @@
   }
 
   /*
-   * Only the action bar stays pinned on a phone; stacking a second sticky
-   * row below it eats the short viewport the pin is meant to protect.
+   * rem font sizes and gaps here inflate with a large device font-size
+   * setting and wrap a sort chip's label ("Most recent") to a second line
+   * or push a whole chip onto a second row (AGENTS.md's rem-floor trap).
+   * Cap each with a viewport unit that leaves the default scale untouched,
+   * and keep each chip label on one line.
    */
   .controls {
+    gap: min(0.6rem, 2.4vw);
+
+    /*
+     * Only the action bar stays pinned on a phone; stacking a second sticky
+     * row below it eats the short viewport the pin is meant to protect.
+     */
     position: static;
+  }
+
+  .filter-group {
+    gap: min(0.35rem, 1.4vw);
+    padding: min(0.4rem, 1.6vw) min(0.55rem, 2.2vw) min(0.45rem, 1.8vw);
+  }
+
+  .filter-group legend {
+    font-size: min(0.8rem, 3.4vw);
+  }
+
+  .option {
+    font-size: min(0.8rem, 3.4vw);
+    padding: min(0.25rem, 1vw) min(0.5rem, 2vw);
+    white-space: nowrap;
   }
 
   .summary-cards {

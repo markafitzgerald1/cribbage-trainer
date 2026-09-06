@@ -84,3 +84,26 @@
   outline: none;
   box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
 }
+
+/*
+ * On a phone with the device font-size set above default, the em-sized
+ * labels grow while the two figure columns take their share of the row
+ * first, squeezing the 1fr label track until "Lost per discard" and
+ * "Best choice" wrapped into several ragged lines. Cap the tally's own
+ * font and column gap with viewport units — unchanged at the default
+ * scale — and keep every label and figure on one line so a squeeze
+ * overflows predictably instead of wrapping mid-phrase (AGENTS.md's
+ * rem/em-floor trap).
+ */
+@media (aspect-ratio < 6 / 5) {
+  .tally {
+    column-gap: min(0.7em, 2vw);
+    font-size: min(1em, 4.4vw);
+  }
+
+  .label,
+  .figure,
+  .period {
+    white-space: nowrap;
+  }
+}

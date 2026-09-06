@@ -13,6 +13,8 @@ import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 const LARGE_ROOT_FONT = "html { font-size: 28px; }";
+// Same-row tolerance for the sort chips: sub-pixel drift, not a wrapped row.
+const SORT_CHIP_ROW_TOLERANCE_PX = 2;
 
 const MISTAKE_HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
 const BASE_AT = 1_700_000_000_000;
@@ -165,6 +167,31 @@ test.describe("practice drill", () => {
     const bounds = await startDrill.boundingBox();
     expect(bounds?.y ?? Number.MAX_SAFE_INTEGER).toBeLessThan(
       phonePortraitViewport.height,
+    );
+  });
+
+  test("keeps the mistake-queue sort chips on one row at a large device font", async ({
+    page,
+  }) => {
+    await page.setViewportSize(phonePortraitViewport);
+    await page.getByRole("button", { name: "Mistake queue" }).click();
+    await page.addStyleTag({ content: LARGE_ROOT_FONT });
+
+    const chipTops = await Promise.all(
+      ["Priority", "Highest loss", "Most recent"].map(async (name) => {
+        const box = await page.getByText(name, { exact: true }).boundingBox();
+        return box?.y ?? Number.NaN;
+      }),
+    );
+
+    /*
+     * A 28px device font used to wrap a chip's label ("Most recent") or push
+     * a whole chip onto a second row; the portrait cap keeps all three on one
+     * line. Negative-checked: without it "Most recent" drops a row and its
+     * top diverges from the other two by well over 2px.
+     */
+    expect(Math.max(...chipTops) - Math.min(...chipTops)).toBeLessThan(
+      SORT_CHIP_ROW_TOLERANCE_PX,
     );
   });
 
