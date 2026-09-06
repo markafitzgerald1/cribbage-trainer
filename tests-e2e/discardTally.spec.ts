@@ -1,5 +1,9 @@
 import { type Page, expect, test } from "@playwright/test";
-import { constantHandQuery, phonePortraitViewport } from "./layoutMeasurements";
+import {
+  constantHandQuery,
+  phoneLandscapeViewport,
+  phonePortraitViewport,
+} from "./layoutMeasurements";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
@@ -122,22 +126,18 @@ test("renders the tally between the analysis and the privacy links", async ({
   expect(tally?.y).toBeLessThan(privacy?.y ?? 0);
 });
 
+// Above one line but below two, with room for line-height rounding.
+const SINGLE_LINE_HEIGHT_RATIO = 1.7;
+
 /*
  * The tally labels are em-sized and share their row with the today and
  * all-time figure columns, which take their width first. A device font-size
  * setting above the default used to grow the labels until "Lost per discard"
- * and "Best choice" wrapped into ragged multi-line cells; the portrait cap
- * keeps each on one line. Negative-checked: a wrapped label is ~3x its font
- * size tall, well past the 1.7x bound, so this fails against the uncapped
- * stylesheet.
+ * and "Best choice" wrapped into ragged multi-line cells; each mode's cap
+ * keeps them on one line. A wrapped label is ~3x its font size tall, well
+ * past the 1.7x bound, so this fails against the uncapped stylesheet.
  */
-// Above one line but below two, with room for line-height rounding.
-const SINGLE_LINE_HEIGHT_RATIO = 1.7;
-
-test("keeps the tally labels on one line at a large device font", async ({
-  page,
-}) => {
-  await page.setViewportSize(phonePortraitViewport);
+const expectTallyLabelsUnwrapped = async (page: Page) => {
   await playOneAuthenticHand(page);
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
@@ -155,4 +155,24 @@ test("keeps the tally labels on one line at a large device font", async ({
   for (const { fontSize, height } of labelMetrics) {
     expect(height).toBeLessThan(fontSize * SINGLE_LINE_HEIGHT_RATIO);
   }
+};
+
+test("keeps the tally labels on one line at a large device font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phonePortraitViewport);
+  await expectTallyLabelsUnwrapped(page);
+});
+
+/*
+ * Side-by-side mode has the same trap with a worse consequence: the tally
+ * sits in the fixed-height left column, so a wrapped-label height pushes the
+ * "Quality trend" / "Mistake queue" buttons off a short phone landscape and
+ * out of reach. The landscape cap keeps the labels on one line.
+ */
+test("keeps the tally labels on one line in landscape at a large device font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phoneLandscapeViewport);
+  await expectTallyLabelsUnwrapped(page);
 });

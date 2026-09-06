@@ -110,3 +110,26 @@
     white-space: nowrap;
   }
 }
+
+/*
+ * Side-by-side mode has the same rem/em-floor trap, and worse consequences:
+ * the tally sits in the fixed-height left column below the cards, so when a
+ * large device font-size wraps "Lost per discard" and "Hands skipped" onto
+ * two or three lines each, the extra height pushes the "Quality trend" and
+ * "Mistake queue" buttons past the bottom of a short phone-landscape
+ * viewport — and Android Chrome does not always scroll the app box to
+ * reach them. Cap the tally font with a viewport unit (a no-op at the
+ * default scale, where 1em stays below 2vw) and keep every label and
+ * figure on one line so a squeeze overflows predictably instead.
+ */
+@media (aspect-ratio >= 6 / 5) {
+  .tally {
+    font-size: min(1em, 2vw);
+  }
+
+  .label,
+  .figure,
+  .period {
+    white-space: nowrap;
+  }
+}
