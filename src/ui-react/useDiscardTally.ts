@@ -207,6 +207,13 @@ export const useDiscardTally = ({
       const abandoned = openHand.current;
       if (
         abandoned !== null &&
+        /*
+         * Setting a hand aside to study it — a drill start, or a hand typed
+         * into Enter cards — is not ducking it; only pressing Deal for a
+         * fresh authentic hand is. Without this, every "Start drill" charged
+         * the hand on the board a skip whether or not a discard was chosen.
+         */
+        cause !== "manual" &&
         !decidedHands.current.has(abandoned.handId ?? abandoned.key) &&
         practiceByHand.current.get(abandoned.key) === false
       ) {

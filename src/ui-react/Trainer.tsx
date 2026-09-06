@@ -402,7 +402,8 @@ export function Trainer({
             />
           )}
         <DiscardTallyView
-          onStartAutoDrill={drill.handleStartAutoDrill}
+          // While a drill is running its own "Draw another" advances it; the queue's auto "Start drill" would just be a second, stranger route to the same thing.
+          onStartAutoDrill={drill.isActive ? null : drill.handleStartAutoDrill}
           onStartDrill={drill.handleStartDrill}
           sortOrder={sortOrder}
           summary={tallySummary}

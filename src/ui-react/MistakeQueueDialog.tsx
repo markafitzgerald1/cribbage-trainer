@@ -73,18 +73,19 @@ const buildQuantileOptions = (
   return [
     { ariaLabel: "All loss tiers", label: "All", value: "all" },
     {
-      ariaLabel: `High severity (≥ ${highLabel})`,
-      label: `High (≥ ${highLabel})`,
+      ariaLabel: `High severity (at least ${highLabel})`,
+      label: `High ≥ ${highLabel}`,
       value: "high",
     },
     {
-      ariaLabel: `Medium severity (≥ ${mediumLabel}, < ${highLabel})`,
-      label: `Med (≥ ${mediumLabel}, < ${highLabel})`,
+      // A hyphenated range rather than "(>= m, < h)": the parenthetical wrapped this chip to a second row in portrait.
+      ariaLabel: `Medium severity (${mediumLabel} to under ${highLabel})`,
+      label: `Med ${mediumLabel}-${highLabel}`,
       value: "medium",
     },
     {
-      ariaLabel: `Low severity (< ${mediumLabel})`,
-      label: `Low (< ${mediumLabel})`,
+      ariaLabel: `Low severity (under ${mediumLabel})`,
+      label: `Low < ${mediumLabel}`,
       value: "low",
     },
   ];

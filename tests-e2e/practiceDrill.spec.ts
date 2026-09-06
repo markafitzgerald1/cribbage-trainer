@@ -1,9 +1,9 @@
+import { type Locator, type Page, expect, test } from "@playwright/test";
 import {
   PRIVACY_POLICY_VERSION,
   analyticsConsentKey,
   answeredPolicyVersionKey,
 } from "../src/ui/analyticsConsent";
-import { type Page, expect, test } from "@playwright/test";
 import {
   phoneLandscapeViewport,
   phonePortraitViewport,
@@ -13,8 +13,9 @@ import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 const LARGE_ROOT_FONT = "html { font-size: 28px; }";
-// Same-row tolerance for the sort chips: sub-pixel drift, not a wrapped row.
-const SORT_CHIP_ROW_TOLERANCE_PX = 2;
+// Same-row tolerance for the filter chips: sub-pixel drift, not a wrapped row.
+const CHIP_ROW_TOLERANCE_PX = 2;
+const SORT_BY_CHIP_COUNT = 3;
 
 const MISTAKE_HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
 const BASE_AT = 1_700_000_000_000;
@@ -182,6 +183,21 @@ test.describe("practice drill", () => {
     );
   });
 
+  const expectChipsOnOneRow = async (chips: Locator, expectedCount: number) => {
+    await expect(chips).toHaveCount(expectedCount);
+    const tops = await Promise.all(
+      (await chips.all()).map(async (chip) => {
+        const box = await chip.boundingBox();
+        expect(box).not.toBeNull();
+        return box?.y ?? Number.NaN;
+      }),
+    );
+
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(
+      CHIP_ROW_TOLERANCE_PX,
+    );
+  };
+
   test("keeps the mistake-queue sort chips on one row at a large device font", async ({
     page,
   }) => {
@@ -189,22 +205,27 @@ test.describe("practice drill", () => {
     await page.getByRole("button", { name: "Mistake queue" }).click();
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
 
-    const chipTops = await Promise.all(
-      ["Priority", "Highest loss", "Most recent"].map(async (name) => {
-        const box = await page.getByText(name, { exact: true }).boundingBox();
-        return box?.y ?? Number.NaN;
-      }),
-    );
-
     /*
      * A 28px device font used to wrap a chip's label ("Most recent") or push
      * a whole chip onto a second row; the portrait cap keeps all three on one
      * line. Negative-checked: without it "Most recent" drops a row and its
      * top diverges from the other two by well over 2px.
      */
-    expect(Math.max(...chipTops) - Math.min(...chipTops)).toBeLessThan(
-      SORT_CHIP_ROW_TOLERANCE_PX,
-    );
+    const sortBy = page.getByRole("group", { name: "Sort by" });
+    await expectChipsOnOneRow(sortBy.locator("label"), SORT_BY_CHIP_COUNT);
+  });
+
+  test("counts no skip for the board hand when a drill starts", async ({
+    page,
+  }) => {
+    await startDrillOnFirstMistake(page);
+
+    /*
+     * Regression: replacing the undecided board hand to enter practice used
+     * to charge it a skip, which surfaces this row — it renders only once a
+     * skip has been recorded, and SEED_TALLY starts with none.
+     */
+    await expect(page.getByText("Hands skipped")).toHaveCount(0);
   });
 
   test("drill actions stay on a short landscape screen at a large root font", async ({

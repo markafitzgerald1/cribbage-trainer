@@ -177,9 +177,20 @@
 }
 
 .summary-label {
+  align-items: end;
   color: #155724;
+  display: flex;
   font-size: 0.72rem;
   font-weight: 600;
+  justify-content: center;
+
+  /*
+   * Reserve the two lines the longest labels wrap to, so a one-line label
+   * ("Mastered") leaves its number aligned with the wrapped cards' numbers
+   * rather than sitting a line higher.
+   */
+  min-height: 2.3em;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -426,7 +437,7 @@
 @media (aspect-ratio < 6 / 5) {
   .dialog {
     font-size: 0.95rem;
-    gap: 0.7rem;
+    gap: 0.55rem;
     width: 100%;
   }
 
@@ -452,17 +463,31 @@
   }
 
   .filter-group {
-    gap: min(0.35rem, 1.4vw);
-    padding: min(0.4rem, 1.6vw) min(0.55rem, 2.2vw) min(0.45rem, 1.8vw);
+    gap: min(0.35rem, 1vw);
+    padding: min(0.4rem, 1.4vw) min(0.55rem, 1.7vw) min(0.45rem, 1.6vw);
+  }
+
+  /*
+   * The Loss-severity group (always last) has the widest chips; give it the
+   * modal's full width rather than its shrink-wrapped size so its four
+   * options stay on one row in portrait instead of wrapping the last one.
+   */
+  .filter-group:last-child {
+    flex-basis: 100%;
   }
 
   .filter-group legend {
-    font-size: min(0.8rem, 3.4vw);
+    font-size: min(0.8rem, 3.2vw);
   }
 
+  /*
+   * Tighter than the other chips so the four Loss-severity options
+   * ("All", "High >= x", "Med x-y", "Low < x") sit on one row in portrait
+   * rather than wrapping the last one.
+   */
   .option {
-    font-size: min(0.8rem, 3.4vw);
-    padding: min(0.25rem, 1vw) min(0.5rem, 2vw);
+    font-size: min(0.8rem, 3.2vw);
+    padding: min(0.25rem, 0.9vw) min(0.5rem, 1.4vw);
     white-space: nowrap;
   }
 
