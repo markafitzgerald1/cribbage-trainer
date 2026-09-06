@@ -84,6 +84,13 @@
   border-color: #218838;
 }
 
+/*
+ * Not sticky: both responsive modes pin only the action bar and let this
+ * filter row scroll away with the content (a second sticky row eats the
+ * short-viewport space the pin protects). The `position` / `top` /
+ * `z-index` that would make it sticky live in neither media block, so
+ * they are omitted here rather than set and always overridden.
+ */
 .controls {
   background-color: #f7faf8;
   border-bottom: 1px solid #d0e5d4;
@@ -91,9 +98,6 @@
   flex-wrap: wrap;
   gap: 0.6rem;
   padding: 0.5rem 0;
-  position: sticky;
-  top: 2.6rem;
-  z-index: 2;
 }
 
 .filter-group {
