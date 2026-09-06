@@ -169,18 +169,20 @@ test("keeps the tally labels on one line at a large device font", async ({
  * inline padding and the tally's `0.7em` column gap were not, so on a
  * narrow phone set well above the default font size the row grew until
  * its fixed-width all-time figures ran under `body { overflow-x: hidden }`
- * and lost their last character or two. Both `em` lengths are now
- * viewport-capped in the stacked `@media` block, and the tally itself is
- * an `overflow-x: auto` scroll container as a final backstop for when
- * Android Chrome's minimum-font-size setting forces text past any `vw`
- * cap. Asserting the computed values rather than a clipped pixel: the
- * clip only bites with multi-digit counts, which need a seeded history
- * this spec has no helper for. Negative-checked: without the caps the
- * padding reads ~0.7 * 28 = 19.6px and the gap likewise.
+ * and lost their last character or two. Now: both `em` lengths are
+ * viewport-capped in the stacked `@media` block; below 380px the
+ * parenthesized `.share` percentage is dropped so only the raw count has
+ * to fit; and the tally is an `overflow-x: auto` container as a last
+ * backstop for when Android Chrome's minimum-font-size setting forces
+ * text past every `vw` cap. Asserting the computed values rather than a
+ * clipped pixel: the clip only bites with multi-digit counts, which need
+ * a seeded history this spec has no helper for. Negative-checked: without
+ * the caps the padding reads ~0.7 * 28 = 19.6px and the gap likewise,
+ * and the `.share` spans stay `inline`.
  */
 const UNCAPPED_EM_PX = 16;
 
-test("caps the stacked tally's em lengths and lets it scroll so its figures fit", async ({
+test("caps the stacked tally's em lengths and drops the share so its figures fit", async ({
   page,
 }) => {
   await page.setViewportSize({
@@ -195,6 +197,7 @@ test("caps the stacked tally's em lengths and lets it scroll so its figures fit"
     .evaluate((label) => {
       const grid = label.parentElement as HTMLElement;
       const dynamicUi = grid.closest("[class*='dynamic-ui']") as HTMLElement;
+      const share = grid.querySelector("[class*='share']");
       const styles = getComputedStyle(grid);
       return {
         columnGap: Number.parseFloat(styles.columnGap),
@@ -202,12 +205,14 @@ test("caps the stacked tally's em lengths and lets it scroll so its figures fit"
           getComputedStyle(dynamicUi).paddingLeft,
         ),
         overflowX: styles.overflowX,
+        shareDisplay: share ? getComputedStyle(share).display : "missing",
       };
     });
 
   expect(metrics.inlinePadding).toBeLessThan(UNCAPPED_EM_PX);
   expect(metrics.columnGap).toBeLessThan(UNCAPPED_EM_PX);
   expect(metrics.overflowX).toBe("auto");
+  expect(metrics.shareDisplay).toBe("none");
 });
 
 /*

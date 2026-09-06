@@ -26,8 +26,18 @@ const PER_CENT = 100;
 const shareOf = (part: number, whole: number) =>
   `${((part / whole) * PER_CENT).toFixed(SHARE_FRACTION_DIGITS)}%`;
 
-const countAndShare = (part: number, whole: number) =>
-  `${part}/${whole} (${shareOf(part, whole)})`;
+/*
+ * The count is the figure; the parenthesized share is a second, wider
+ * span so a phone too narrow to fit both can drop it (`.share` is hidden
+ * below ~380px in portrait) while the raw count — from which the share is
+ * derivable anyway — always stays on screen.
+ */
+const countAndShare = (part: number, whole: number): ReactNode => (
+  <>
+    {`${part}/${whole}`}
+    <span className={classes.share}>{` (${shareOf(part, whole)})`}</span>
+  </>
+);
 
 // An empty cell holds the column open; omitting it would shift every figure to its left.
 const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
@@ -42,8 +52,8 @@ interface DiscardTallyViewProps {
 
 const renderMeasure = (
   measure: string,
-  today: string | null,
-  allTime: string,
+  today: ReactNode,
+  allTime: ReactNode,
 ) => (
   <>
     <span className={classes.label}>{measure}</span>

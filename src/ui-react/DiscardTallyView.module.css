@@ -41,6 +41,11 @@
   text-align: right;
 }
 
+/* The parenthesized percentage; dropped on a phone too narrow to fit both figures with it. */
+.share {
+  white-space: nowrap;
+}
+
 .label {
   opacity: 0.8;
 }
@@ -128,6 +133,21 @@
   .figure,
   .period {
     white-space: nowrap;
+  }
+}
+
+/*
+ * Below ~380px the three columns cannot hold a count *and* its
+ * parenthesized share once the device font grows, and the share is the
+ * expendable half — it is just the count restated as a percentage. Drop
+ * it here so the raw count always stays on screen rather than being
+ * clipped or pushed into the scroll overflow. `max-width` in px is not
+ * scaled by the device font-size setting, and the 390px screenshot
+ * viewport is above the bound, so the captured layout is unchanged.
+ */
+@media (aspect-ratio < 6 / 5) and (width <= 380px) {
+  .share {
+    display: none;
   }
 }
 
