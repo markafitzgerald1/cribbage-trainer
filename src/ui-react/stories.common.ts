@@ -45,9 +45,11 @@ export const playPracticeFromDecisionMarker = async (
   canvasElement: HTMLElement,
   mock: unknown,
 ): Promise<void> => {
-  canvasElement
-    .querySelector("[data-decision-ordinal]")
-    ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  const marker = canvasElement.querySelector("[data-decision-ordinal]");
+  if (marker === null) {
+    throw new Error("expected a decision marker in the rendered chart");
+  }
+  marker.dispatchEvent(new MouseEvent("click", { bubbles: true }));
   await within(canvasElement).findByRole("region");
 
   await clickStoryButtonExpectingCall(

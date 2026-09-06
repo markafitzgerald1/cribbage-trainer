@@ -133,7 +133,14 @@ describe("useDealHand", () => {
     expectNoticeStillShown(harness);
   });
 
-  it("cancels the pending notice timer on unmount", () => {
+  /*
+   * An unmount with the 3s notice timer still pending runs the effect
+   * cleanup; the assertion is only that nothing throws and the last
+   * rendered value is intact, not that a later fire was suppressed —
+   * React 18 no longer warns on a setState after the tree is gone, so
+   * that is not observable from here.
+   */
+  it("survives an unmount while the notice timer is still pending", () => {
     const harness = afterDrillExit();
 
     harness.unmount();

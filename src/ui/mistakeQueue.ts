@@ -346,7 +346,9 @@ export const sampleMistakeQueueByPriority = (
     excludeHandKey === null || active.length === 1
       ? active
       : active.filter((item) => item.handKey !== excludeHandKey);
-  const clampedRandom = Math.min(Math.max(random, 0), 1 - Number.EPSILON);
+  // A non-finite `random` would sail through Math.min/Math.max as NaN and make every comparison below false, pinning the draw to the last item; treat it as the start of the range.
+  const safeRandom = Number.isFinite(random) ? random : 0;
+  const clampedRandom = Math.min(Math.max(safeRandom, 0), 1 - Number.EPSILON);
   const totalPriority = eligible.reduce((sum, item) => sum + item.priority, 0);
   if (totalPriority <= 0) {
     return itemAt(eligible, Math.floor(clampedRandom * eligible.length));

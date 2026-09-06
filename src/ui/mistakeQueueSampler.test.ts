@@ -39,6 +39,12 @@ describe("sampleMistakeQueueByPriority", () => {
       name: "a random at or past 1",
       random: 1.5,
     },
+    {
+      // A non-finite draw is treated as the start of the range, not left to pin every pick to the last item.
+      expected: mockItemA.handKey,
+      name: "a non-finite random",
+      random: Number.NaN,
+    },
   ])(
     "draws proportional to priority, hitting $name",
     ({ expected, random }) => {
