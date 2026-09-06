@@ -347,6 +347,19 @@ mcr.microsoft.com/playwright:<tag>`.
   default scale untouched, and `practiceDrill.spec.ts` asserts both drill
   buttons stay within the landscape viewport at a 28px root — negative-
   checked to fail against the uncapped CSS.
+- Cap **spacing** with a viewport unit in a landscape `@media` block, not
+  **font size**. A first pass at the mistake-queue landscape header
+  (`MistakeQueueDialog.module.css`) capped every option and legend with
+  `min(0.75rem, 1.9vh)`; on a real phone `1.9vh` won and rendered the
+  filter labels at ~7px, unreadable, while the emulator at 390px looked
+  fine either way. The working shape: plain readable rem for type
+  (`0.72rem` here), `min(rem, vh|vw)` only on padding / gap / margin, and
+  drop genuinely optional text outright in landscape — the subtitle there
+  went to `display: none` because the per-row "n/2 successes" badge
+  already carries the same information. A short landscape phone also has
+  roughly 50px less height than the emulated viewport once its address and
+  gesture bars show, so guard at `phoneLandscapeViewport.height - 50`, not
+  the bare 390.
 - `line-height: normal` is not proportional across font sizes (font-metric
   pixel rounding differs), so pin an explicit line-height wherever an
   aspect-ratio invariant depends on text height.
@@ -391,6 +404,24 @@ mcr.microsoft.com/playwright:<tag>`.
   projects, while looking correct in a single hand-checked viewport.
   `align-self: start` removes the stretch and leaves the geometry with an
   analysis on screen byte-identical, which is why it is the smaller change.
+- That same `> :nth-child(n + 2):nth-last-child(n + 2)` matches **two**
+  children once a discard is chosen — the analysis figure and the tally are
+  both "middle" — so both take a `grid-column: 2 / 3; grid-row: span 2`
+  slot and the tally, unable to fit the two explicit rows, auto-places into
+  an implicit row that runs past the bottom of `.dynamic-ui`. With no
+  discard selected the tally is the lone middle child and sits high enough
+  to fit, which is why "it works until I pick a discard" is the report. The
+  fix is `overflow-y: auto` + `min-height: 0` on `.dynamic-ui` in the
+  landscape block so that overflow is reachable inside a real scroll
+  container rather than spilling past the fixed-height app box; it is inert
+  at the default scale, where nothing overflows.
+- A `scrollIntoViewIfNeeded()` + `toBeInViewport()` guard for that fix
+  passes with **and** without it, because the emulator's `body` scrolls
+  (its own `overflow: auto`) where a phone's fixed-height `html`/`body`/
+  `#trainer`/`.app` chain does not. Assert the mechanism instead: at a
+  short landscape viewport with a large root font, `.dynamic-ui`'s computed
+  `overflow-y` is `auto` and its `scrollHeight` exceeds its `clientHeight`.
+  Negative-checked, that reads `visible` and equal heights.
 - Desktop engines do not model the mobile viewport, in two independent ways,
   and each has already produced a wrong fix. First, Chrome for Android has a
   toolbar that shows and hides; no desktop engine does, so `100%`, `100svh`,

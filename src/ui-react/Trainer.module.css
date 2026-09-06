@@ -134,6 +134,18 @@
     grid-template-rows: 1fr auto;
     gap: 0.4em;
     padding-block: 0.25em;
+
+    /*
+     * Once a discard is chosen the analysis figure and the tally both land
+     * in column 2 as `grid-row: span 2` items (both are "middle" children),
+     * so the tally auto-places into an implicit row that runs past the
+     * bottom of this box — on a short phone landscape its "Quality trend" /
+     * "Mistake queue" buttons then sit off screen and out of reach. Letting
+     * the grid scroll its own overflow keeps them reachable without
+     * disturbing the default-scale layout, which does not overflow.
+     */
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .dynamic-ui > :first-child,

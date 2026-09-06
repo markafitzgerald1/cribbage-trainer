@@ -176,3 +176,40 @@ test("keeps the tally labels on one line in landscape at a large device font", a
   await page.setViewportSize(phoneLandscapeViewport);
   await expectTallyLabelsUnwrapped(page);
 });
+
+/*
+ * With a discard chosen, the analysis figure and the tally both take a
+ * `grid-row: span 2` slot in column 2, so the tally auto-places into an
+ * implicit row past the bottom of a short landscape viewport. The tally
+ * font cap does not help — the figure's height is what overflows. A phone
+ * whose fixed-height html/body/app chain does not scroll then strands the
+ * "Quality trend" / "Mistake queue" buttons off screen (an emulator, whose
+ * body does scroll, cannot show this — hence the asserted mechanism rather
+ * than button geometry). `.dynamic-ui` becomes its own scroll container so
+ * the overflow is reachable there instead of spilling past the app box.
+ * Negative-checked: without the rule `.dynamic-ui` overflow is `visible`
+ * and its scrollHeight equals its clientHeight.
+ */
+const SHORT_LANDSCAPE_HEIGHT = 320;
+
+test("gives the landscape dynamic-ui its own scroll when an analysis overflows it", async ({
+  page,
+}) => {
+  await page.setViewportSize({
+    height: SHORT_LANDSCAPE_HEIGHT,
+    width: phoneLandscapeViewport.width,
+  });
+  await playOneAuthenticHand(page);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  const scrollState = await page
+    .locator(".dynamic-ui, [class*='dynamic-ui']")
+    .first()
+    .evaluate((element) => ({
+      canScroll: element.scrollHeight > element.clientHeight,
+      overflowY: getComputedStyle(element).overflowY,
+    }));
+
+  expect(scrollState.overflowY).toBe("auto");
+  expect(scrollState.canScroll).toBe(true);
+});
