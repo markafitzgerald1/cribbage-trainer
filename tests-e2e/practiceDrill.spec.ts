@@ -121,6 +121,20 @@ test.describe("practice drill", () => {
     await page.goto("/");
   });
 
+  const expectActionWithinViewport = async (
+    page: Page,
+    name: string,
+    viewportHeight: number,
+  ) => {
+    const button = page.getByRole("button", { name });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box).not.toBeNull();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(
+      viewportHeight,
+    );
+  };
+
   test("withholds the analysis until the discard is checked, then shows a verdict", async ({
     page,
   }) => {
@@ -161,11 +175,9 @@ test.describe("practice drill", () => {
     await page.setViewportSize(phonePortraitViewport);
     await page.getByRole("button", { name: "Mistake queue" }).click();
 
-    const startDrill = page.getByRole("button", { name: "Start drill" });
-    await expect(startDrill).toBeVisible();
-
-    const bounds = await startDrill.boundingBox();
-    expect(bounds?.y ?? Number.MAX_SAFE_INTEGER).toBeLessThan(
+    await expectActionWithinViewport(
+      page,
+      "Start drill",
       phonePortraitViewport.height,
     );
   });
@@ -195,15 +207,6 @@ test.describe("practice drill", () => {
     );
   });
 
-  const expectActionWithinLandscape = async (page: Page, name: string) => {
-    const button = page.getByRole("button", { name });
-    await expect(button).toBeVisible();
-    const box = await button.boundingBox();
-    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(
-      phoneLandscapeViewport.height,
-    );
-  };
-
   test("drill actions stay on a short landscape screen at a large root font", async ({
     page,
   }) => {
@@ -220,15 +223,31 @@ test.describe("practice drill", () => {
     await page.setViewportSize(phoneLandscapeViewport);
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
 
-    await expectActionWithinLandscape(page, "Check discard");
-    await expectActionWithinLandscape(page, "Exit drill");
+    await expectActionWithinViewport(
+      page,
+      "Check discard",
+      phoneLandscapeViewport.height,
+    );
+    await expectActionWithinViewport(
+      page,
+      "Exit drill",
+      phoneLandscapeViewport.height,
+    );
 
     await selectTwoDiscards(page);
     await page.getByRole("button", { name: "Check discard" }).click();
     await waitForAnalysis(page);
 
-    await expectActionWithinLandscape(page, "Draw another");
-    await expectActionWithinLandscape(page, "Exit drill");
+    await expectActionWithinViewport(
+      page,
+      "Draw another",
+      phoneLandscapeViewport.height,
+    );
+    await expectActionWithinViewport(
+      page,
+      "Exit drill",
+      phoneLandscapeViewport.height,
+    );
 
     /*
      * The panel caps its own height and scrolls, so its box stays within the
