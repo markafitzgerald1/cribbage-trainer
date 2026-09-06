@@ -40,7 +40,13 @@ export const useDealHand = ({
   reportHandReplaced,
   setDealState,
 }: UseDealHandArgs): DealHand => {
-  const [freshHandNoticeShown, setFreshHandNoticeShown] = useState(false);
+  /*
+   * A token, not a boolean: a second drill exit within the notice window
+   * has to re-arm the 3s timer, and `setState(true)` when it is already
+   * `true` bails out — the effect's deps would not change and it would ride
+   * the first exit's timer out, clearing the second notice early.
+   */
+  const [freshHandNoticeToken, setFreshHandNoticeToken] = useState(0);
 
   const deal = useCallback(() => {
     markHistoryUpdate();
@@ -61,22 +67,26 @@ export const useDealHand = ({
 
   const dealForDrillExit = useCallback(() => {
     deal();
-    setFreshHandNoticeShown(true);
+    setFreshHandNoticeToken((token) => token + 1);
   }, [deal]);
 
   useEffect(() => {
-    if (!freshHandNoticeShown) {
+    if (freshHandNoticeToken === 0) {
       return () => {
         // Nothing is scheduled while the notice is hidden.
       };
     }
     const timer = setTimeout(() => {
-      setFreshHandNoticeShown(false);
+      setFreshHandNoticeToken(0);
     }, FRESH_HAND_NOTICE_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [freshHandNoticeShown]);
+  }, [freshHandNoticeToken]);
 
-  return { deal, dealForDrillExit, freshHandNoticeShown };
+  return {
+    deal,
+    dealForDrillExit,
+    freshHandNoticeShown: freshHandNoticeToken > 0,
+  };
 };

@@ -59,6 +59,25 @@ const afterDrillExit = (): Harness => {
   return harness;
 };
 
+const advanceTime = (ms: number) => {
+  act(() => {
+    jest.advanceTimersByTime(ms);
+  });
+};
+
+const expectNoticeClearsAfterWindow = (harness: Harness) => {
+  advanceTime(FRESH_HAND_NOTICE_MS);
+  jest.useRealTimers();
+
+  expect(harness.result.current.freshHandNoticeShown).toBe(false);
+};
+
+const expectNoticeStillShown = (harness: Harness) => {
+  jest.useRealTimers();
+
+  expect(harness.result.current.freshHandNoticeShown).toBe(true);
+};
+
 describe("useDealHand", () => {
   it("deals a fresh hand through the history and telemetry seams", () => {
     const harness = afterPlainDeal();
@@ -82,20 +101,28 @@ describe("useDealHand", () => {
     expect(harness.dealStates).toHaveLength(1);
     expect(harness.result.current.freshHandNoticeShown).toBe(true);
 
-    act(() => {
-      jest.advanceTimersByTime(FRESH_HAND_NOTICE_MS);
-    });
-    jest.useRealTimers();
+    expectNoticeClearsAfterWindow(harness);
+  });
 
-    expect(harness.result.current.freshHandNoticeShown).toBe(false);
+  it("re-arms the notice timer when a second exit lands before the first clears", () => {
+    const harness = afterDrillExit();
+    const NEARLY_ELAPSED_MS = FRESH_HAND_NOTICE_MS - 1000;
+
+    advanceTime(NEARLY_ELAPSED_MS);
+    act(() => {
+      harness.result.current.dealForDrillExit();
+    });
+    // The first exit's 3s timer elapses across this advance; without the re-arm the notice would be gone.
+    advanceTime(1000);
+
+    expectNoticeStillShown(harness);
   });
 
   it("cancels the pending notice timer on unmount", () => {
     const harness = afterDrillExit();
 
     harness.unmount();
-    jest.useRealTimers();
 
-    expect(harness.result.current.freshHandNoticeShown).toBe(true);
+    expectNoticeStillShown(harness);
   });
 });
