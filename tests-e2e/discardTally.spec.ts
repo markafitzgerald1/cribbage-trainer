@@ -165,6 +165,38 @@ test("keeps the tally labels on one line at a large device font", async ({
 });
 
 /*
+ * The tally's own font is viewport-capped, but `.dynamic-ui`'s `0.7em`
+ * inline padding is not, so on a narrow phone set well above the default
+ * font size the padding grew and shrank the tally row until its
+ * fixed-width all-time figures ran under `body { overflow-x: hidden }` and
+ * lost their last character or two. The stacked `@media` block now caps
+ * that inline padding with a viewport unit. Asserting the computed value
+ * rather than a clipped pixel: the clip only bites with multi-digit
+ * counts, which need a seeded history this spec has no helper for.
+ * Negative-checked: without the cap this reads ~0.7 * 28 = 19.6px.
+ */
+const UNCAPPED_INLINE_PADDING_PX = 16;
+
+test("caps the stacked layout's inline padding so the tally figures fit", async ({
+  page,
+}) => {
+  await page.setViewportSize({
+    height: phonePortraitViewport.height,
+    width: 360,
+  });
+  await playOneAuthenticHand(page);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  const paddingLeft = await page
+    .locator("[class*='dynamic-ui']")
+    .evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).paddingLeft),
+    );
+
+  expect(paddingLeft).toBeLessThan(UNCAPPED_INLINE_PADDING_PX);
+});
+
+/*
  * Side-by-side mode has the same trap with a worse consequence: the tally
  * sits in the fixed-height left column, so a wrapped-label height pushes the
  * "Quality trend" / "Mistake queue" buttons off a short phone landscape and

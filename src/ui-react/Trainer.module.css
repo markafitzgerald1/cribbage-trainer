@@ -51,6 +51,18 @@
     grid-template-rows: auto 1fr auto;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5em;
+
+    /*
+     * The base `0.7em` inline padding grows with the device font-size
+     * setting, and the discard tally's own font is already viewport-capped,
+     * so on a phone set well above default the fixed-width tally figures
+     * ran off the right edge and `body { overflow-x: hidden }` clipped the
+     * last character or two of "Best choice" / "Hands skipped". Cap the
+     * inline padding so it stops eating the row's width; a no-op at the
+     * default scale (0.7em stays below 3.2vw down to ~350px). The block
+     * padding is left to grow.
+     */
+    padding-inline: min(0.7em, 3.2vw);
   }
 
   .dynamic-ui > * {
