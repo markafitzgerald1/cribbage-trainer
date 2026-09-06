@@ -37,6 +37,14 @@ const countRenderedXLabels = (
   return container.querySelectorAll(`.${classes.xLabel}`).length;
 };
 
+const expectChartRendered = (
+  getByRole: ReturnType<typeof renderChart>["getByRole"],
+): void => {
+  expect(
+    getByRole("group", { name: "Decision quality over time trend chart" }),
+  ).toBeInTheDocument();
+};
+
 describe("decision quality chart", () => {
   it("renders empty-state message when buckets array is empty", () => {
     const { getByText } = renderChart([], "rolling20");
@@ -54,14 +62,13 @@ describe("decision quality chart", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders SVG with role img and data points for single bucket", () => {
+  it("renders the chart group and data points for a single bucket", () => {
     const { getByRole, container } = renderChart(
       [makeBucket("b1", 0.4, 10)],
       "day",
     );
-    const svg = getByRole("img");
+    expectChartRendered(getByRole);
 
-    expect(svg).toBeInTheDocument();
     expect(container.querySelectorAll("circle")).toHaveLength(1);
   });
 
@@ -213,7 +220,7 @@ describe("decision quality chart", () => {
     }));
     const { getByRole } = renderChart(buckets, "rolling20");
 
-    expect(getByRole("img")).toBeInTheDocument();
+    expectChartRendered(getByRole);
   });
 
   it("maps loss values to point colors correctly", () => {
@@ -251,7 +258,8 @@ describe("decision quality chart rolling mode and points", () => {
       decisionPoints,
     );
 
-    expect(getByRole("img")).toBeInTheDocument();
+    expectChartRendered(getByRole);
+
     expect(container.querySelectorAll(`.${classes.optimalDot}`)).toHaveLength(
       1,
     );
@@ -284,7 +292,8 @@ describe("decision quality chart rolling mode and points", () => {
         [makeDecisionPoint(1, loss, loss)],
       );
 
-      expect(getByRole("img")).toBeInTheDocument();
+      expectChartRendered(getByRole);
+
       expect(container.querySelector("desc")).toHaveTextContent(
         `Trend chart with 1 decisions (${windowSize}-decision rolling average). Latest average expected loss is ${expectedLoss} points.`,
       );

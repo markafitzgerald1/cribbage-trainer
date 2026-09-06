@@ -18,6 +18,7 @@ export const legendItem: string;
 export const legendSwatch: string;
 export const lossDot: string;
 export const lossDotSelected: string;
+export const lossHitBand: string;
 export const lossMarker: string;
 export const lossStem: string;
 export const optimalBaseline: string;

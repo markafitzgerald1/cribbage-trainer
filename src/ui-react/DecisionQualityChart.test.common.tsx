@@ -50,6 +50,7 @@ export const makeDecisionPoint = (
   isOptimal: expectedPointsLoss === 0,
   isRetained: false,
   ordinal,
+  recencyAt: 1_700_000_500_000 + ordinal,
   rollingMeanLoss,
   timestamp: 1700000000000 + ordinal * 1000,
 });

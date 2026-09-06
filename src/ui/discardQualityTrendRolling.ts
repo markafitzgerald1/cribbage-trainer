@@ -119,6 +119,13 @@ export interface DiscardDecisionPoint {
   readonly isOptimal: boolean;
   readonly isRetained: boolean;
   readonly ordinal: number;
+  /*
+   * The record's monotonic `recencyAt` (strictly increasing across the
+   * stored history via normalizeStoredRecords), used as the decision's
+   * stable unique identity: `ordinal` is renumbered by the role filter and
+   * `at` is wall-clock time that a rolled-back clock can repeat.
+   */
+  readonly recencyAt: number;
   readonly rollingMeanLoss: number;
   readonly timestamp: number;
 }
@@ -151,6 +158,7 @@ export function buildContinuousDecisionPoints(
       isOptimal: record.isOptimal,
       isRetained,
       ordinal: globalIndex + 1,
+      recencyAt: record.recencyAt ?? record.at,
       rollingMeanLoss,
       timestamp: record.at,
     };

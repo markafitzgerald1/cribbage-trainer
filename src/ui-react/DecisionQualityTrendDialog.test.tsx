@@ -72,9 +72,7 @@ describe("decision quality trend dialog", () => {
     expect(getAllByText("Decisions").length).toBeGreaterThan(0);
     expect(getByRole("group", { name: "Granularity" })).toBeInTheDocument();
     expect(getByRole("group", { name: "Crib role" })).toBeInTheDocument();
-    expect(
-      getByRole("img", { name: /Decision quality over time/iu }),
-    ).toBeInTheDocument();
+    expect(getByRole("group", { name: /trend chart/iu })).toBeInTheDocument();
   });
 
   it("switches granularity when time frame radio buttons are clicked", () => {

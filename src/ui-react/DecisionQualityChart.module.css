@@ -107,6 +107,11 @@
   outline-offset: 2px;
 }
 
+/* Edge-to-edge invisible tap targets, one per mistake, so a dense chart stays tappable. */
+.loss-hit-band {
+  cursor: pointer;
+}
+
 .loss-dot-selected {
   fill: #ffd6a5;
   r: 3.5px;

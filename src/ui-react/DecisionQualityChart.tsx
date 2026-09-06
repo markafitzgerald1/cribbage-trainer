@@ -32,6 +32,7 @@ import type {
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
 import React, { useCallback, useEffect, useId, useState } from "react";
+import { renderHitBands, renderLossPoint } from "./decisionQualityChartMarkers";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { parseHand } from "../game/Card";
@@ -71,73 +72,16 @@ const renderTicks = (ticks: readonly ChartTick[]): React.JSX.Element[] =>
 
 interface RollingPlotOptions {
   readonly granularity: DiscardTrendGranularity;
-  readonly selectedTimestamp: number | null;
+  readonly selectedRecencyAt: number | null;
 }
 
-// The larger, invisible circle behind each loss dot, so a fingertip lands on it.
-const LOSS_HIT_RADIUS = 7;
-
-// A hit circle may span at most half the gap to the next marker, so dense targets never overlap.
-const HIT_RADIUS_GAP_DIVISOR = 2;
-
-function renderLossPoint(
-  point: DiscardDecisionPoint,
-  geometry: {
-    readonly cx: number;
-    readonly yStem: number;
-    readonly yZero: number;
-  },
-  marker: {
-    readonly hitRadius: number;
-    readonly selectedTimestamp: number | null;
-  },
-): React.JSX.Element {
-  const prefix = point.isRetained ? "Retained decision" : "Decision";
-  const titleText = `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
-    DECIMAL_PLACES,
-  )} points loss`;
-  const dotClass =
-    point.timestamp === marker.selectedTimestamp
-      ? `${classes.lossDot} ${classes.lossDotSelected}`
-      : classes.lossDot;
-  return (
-    <g
-      aria-label={`${titleText}. Select to see the hand.`}
-      className={classes.lossMarker}
-      data-decision-ordinal={point.ordinal}
-      data-decision-timestamp={point.timestamp}
-      key={`decision-${point.ordinal}`}
-      role="button"
-      tabIndex={0}
-    >
-      <title>{titleText}</title>
-      <line
-        className={classes.lossStem}
-        x1={geometry.cx}
-        x2={geometry.cx}
-        y1={geometry.yZero}
-        y2={geometry.yStem}
-      />
-      <circle
-        cx={geometry.cx}
-        cy={geometry.yStem}
-        fill="transparent"
-        r={marker.hitRadius}
-      />
-      <circle
-        className={dotClass}
-        cx={geometry.cx}
-        cy={geometry.yStem}
-        r={2}
-      />
-    </g>
-  );
-}
+// The data attribute both the tiling hit bands and the keyboard markers carry.
+const DECISION_HIT_SELECTOR = "[data-decision-recency]";
 
 function renderRollingPlot(
   decisionPoints: readonly DiscardDecisionPoint[],
   maxLossY: number,
-  { granularity, selectedTimestamp }: RollingPlotOptions,
+  { granularity, selectedRecencyAt }: RollingPlotOptions,
 ): React.JSX.Element {
   const total = decisionPoints.length;
   const movingPoints = decisionPoints.map((point, index) => ({
@@ -151,22 +95,16 @@ function renderRollingPlot(
   const lastMovingPoint = movingPoints[movingPoints.length - 1]!;
   const latestLoss = lastMovingPoint.loss.toFixed(DECIMAL_PLACES);
   const windowLabel = getRollingWindowLabel(total, granularity);
-  /*
-   * The hit circle is capped at half the point spacing so dense charts (up
-   * to MAX_RECENT_DECISIONS across PLOT_WIDTH) never stack overlapping
-   * transparent targets, which would let a click on one marker resolve to
-   * its neighbor painted on top.
-   */
-  const hitRadius =
-    total > 1
-      ? Math.min(
-          LOSS_HIT_RADIUS,
-          PLOT_WIDTH / (total - 1) / HIT_RADIUS_GAP_DIVISOR,
-        )
-      : LOSS_HIT_RADIUS;
+  const lossPoints = decisionPoints
+    .map((point, index) => ({ cx: calculateIndexedX(index, total), point }))
+    .filter(({ point }) => !point.isOptimal);
 
   return (
     <>
+      {lossPoints.length > 0
+        ? renderHitBands(lossPoints, MARGIN_LEFT, MARGIN_LEFT + PLOT_WIDTH)
+        : null}
+
       {decisionPoints.map((point, index) => {
         const xPosition = calculateIndexedX(index, total);
         const yStem = calculateY(point.expectedPointsLoss, maxLossY);
@@ -188,7 +126,7 @@ function renderRollingPlot(
         return renderLossPoint(
           point,
           { cx: xPosition, yStem, yZero },
-          { hitRadius, selectedTimestamp },
+          selectedRecencyAt,
         );
       })}
 
@@ -320,9 +258,10 @@ function renderDecisionDetail(
 }
 
 /*
- * The tapped decision is held by its timestamp, a stable per-decision id,
- * not by chart ordinal: the crib-role filter renumbers the points under the
- * panel, so an ordinal would silently point it at a different hand. When the
+ * The tapped decision is held by its recencyAt, a stable per-decision id
+ * (normalizeStoredRecords forces it strictly increasing): the crib-role
+ * filter renumbers `ordinal` and a rolled-back clock can repeat `at`, so
+ * either would silently point the panel at a different hand. When the
  * selected decision leaves the filtered or granularity view, `find` misses
  * and the panel closes on its own.
  */
@@ -335,12 +274,12 @@ function useDecisionSelection(
   readonly handleCloseDetail: () => void;
   readonly selectedPoint: DiscardDecisionPoint | null;
 } {
-  const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(
+  const [selectedRecencyAt, setSelectedRecencyAt] = useState<number | null>(
     null,
   );
 
   const handleCloseDetail = useCallback(() => {
-    setSelectedTimestamp(null);
+    setSelectedRecencyAt(null);
   }, []);
 
   const handleChartActivate = useCallback(
@@ -352,16 +291,14 @@ function useDecisionSelection(
       ) {
         return;
       }
-      const marker = (event.target as Element).closest(
-        "[data-decision-timestamp]",
-      );
+      const marker = (event.target as Element).closest(DECISION_HIT_SELECTOR);
       if (!marker) {
         return;
       }
       event.preventDefault();
-      const timestamp = Number(marker.getAttribute("data-decision-timestamp"));
-      setSelectedTimestamp((current) =>
-        current === timestamp ? null : timestamp,
+      const recencyAt = Number(marker.getAttribute("data-decision-recency"));
+      setSelectedRecencyAt((current) =>
+        current === recencyAt ? null : recencyAt,
       );
     },
     [],
@@ -370,7 +307,7 @@ function useDecisionSelection(
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setSelectedTimestamp(null);
+        setSelectedRecencyAt(null);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -383,7 +320,7 @@ function useDecisionSelection(
     handleChartActivate,
     handleCloseDetail,
     selectedPoint:
-      decisionPoints.find((point) => point.timestamp === selectedTimestamp) ??
+      decisionPoints.find((point) => point.recencyAt === selectedRecencyAt) ??
       null,
   };
 }
@@ -466,7 +403,8 @@ export function DecisionQualityChart({
         className={classes.chart}
         onClick={handleChartActivate}
         onKeyDown={handleChartActivate}
-        role="img"
+        // Not role="img": a screen reader then ignores everything inside, including the marker buttons that take focus.
+        role="group"
         viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
       >
         <desc id={`${chartId}-desc`}>{chartDesc}</desc>
@@ -476,7 +414,7 @@ export function DecisionQualityChart({
         {hasDecisionPoints
           ? renderRollingPlot(decisionPoints, maxLossY, {
               granularity,
-              selectedTimestamp: selectedPoint?.timestamp ?? null,
+              selectedRecencyAt: selectedPoint?.recencyAt ?? null,
             })
           : renderCalendarPlot(calendarPoints)}
 

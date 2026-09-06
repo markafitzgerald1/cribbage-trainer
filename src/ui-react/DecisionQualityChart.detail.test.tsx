@@ -119,7 +119,11 @@ describe("decision quality chart point detail", () => {
   it("ignores activity that lands off every marker", () => {
     const view = renderPlainChart();
 
-    fireEvent.click(view.getByRole("img"));
+    fireEvent.click(
+      view.getByRole("group", {
+        name: "Decision quality over time trend chart",
+      }),
+    );
 
     expectNoPanel(view);
   });
@@ -180,13 +184,7 @@ describe("decision quality chart point detail", () => {
     expectPanelText(openDetailOn(OPTIMAL_THEN_LOSS, 2), "Dealer");
   });
 
-  it("shrinks the marker hit target as points get dense", () => {
-    const hitRadius = (view: RenderChart): number =>
-      Number(
-        view.container
-          .querySelector('[data-decision-ordinal] circle[fill="transparent"]')
-          ?.getAttribute("r"),
-      );
+  it("tiles the plot with one wide hit band per mistake, even when dense", () => {
     const dense = renderChart(
       BUCKETS,
       "rolling20",
@@ -194,10 +192,16 @@ describe("decision quality chart point detail", () => {
         makeDecisionPoint(index + 1, 0.5, 0.5),
       ),
     );
+    const bands = [
+      ...dense.container.querySelectorAll(`.${classes.lossHitBand}`),
+    ];
+    const widths = bands.map((band) => Number(band.getAttribute("width")));
 
-    expect(hitRadius(renderPlainChart())).toBe(7);
-    expect(hitRadius(dense)).toBeGreaterThan(2);
-    expect(hitRadius(dense)).toBeLessThan(7);
+    expect(bands).toHaveLength(60);
+    // An interior band spans point-to-point (~7.6 units), not a shrunk circle.
+    expect(Number(bands[30]?.getAttribute("width"))).toBeGreaterThan(6);
+    // The bands tile the plot: their widths sum to roughly its full span.
+    expect(widths.reduce((sum, width) => sum + width, 0)).toBeGreaterThan(400);
   });
 
   it("omits the discard row when no discard was recorded", () => {

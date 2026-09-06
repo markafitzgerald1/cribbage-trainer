@@ -56,7 +56,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const expectChart = async (canvasElement: HTMLElement): Promise<void> => {
-  const chart = within(canvasElement).getByRole("img", {
+  const chart = within(canvasElement).getByRole("group", {
     name: "Decision quality over time trend chart",
   });
 
@@ -91,6 +91,7 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   isOptimal: loss === 0,
   isRetained: false,
   ordinal: index + 1,
+  recencyAt: 1700000000000 + index,
   rollingMeanLoss: mean,
   timestamp: 1700000000000 + index * 100000,
 }));
