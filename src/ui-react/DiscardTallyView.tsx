@@ -4,7 +4,7 @@ import {
   type StoredTally,
   hasTallyToShow,
 } from "../ui/discardTally";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
 import type {
   StartAutoDrillHandler,
   StartDrillHandler,
@@ -88,18 +88,33 @@ export function DiscardTallyView({
     setShowQueue(false);
   }, []);
 
-  // Close the browser before the board changes under it, so the drill starts on a clean screen.
-  const handleStartDrill = useCallback(
-    (item: MistakeQueueItem) => {
-      setShowQueue(false);
-      onStartDrill?.(item);
-    },
+  /*
+   * Close the browser before the board changes under it, so the drill
+   * starts on a clean screen. Each wrapper is null when its upstream
+   * handler is — the dialog gates "Start drill" / "Practice this" on a null
+   * handler, and a non-null pass-through wrapper would defeat that and show
+   * buttons that then only close the dialog.
+   */
+  const handleStartDrill: StartDrillHandler = useMemo(
+    () =>
+      onStartDrill === null
+        ? null
+        : (item: MistakeQueueItem) => {
+            setShowQueue(false);
+            onStartDrill(item);
+          },
     [onStartDrill],
   );
-  const handleStartAutoDrill = useCallback(() => {
-    setShowQueue(false);
-    onStartAutoDrill?.();
-  }, [onStartAutoDrill]);
+  const handleStartAutoDrill: StartAutoDrillHandler = useMemo(
+    () =>
+      onStartAutoDrill === null
+        ? null
+        : () => {
+            setShowQueue(false);
+            onStartAutoDrill();
+          },
+    [onStartAutoDrill],
+  );
 
   /*
    * Nothing is shown until a hand has been either played or walked away from.

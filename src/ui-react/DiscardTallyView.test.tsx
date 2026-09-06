@@ -198,13 +198,15 @@ describe("discard tally view", () => {
     expect(onStartAutoDrill).toHaveBeenCalledTimes(1);
   });
 
-  it("closes the queue even when no drill handler is wired", () => {
+  it("hides the drill actions when no drill handler is wired", () => {
     seedMistakeDecision();
     const view = openQueueForDrill(null, null);
 
-    clickButton(view, "Start drill");
-    clickButton(view, "Mistake queue");
-    clickFirstPractice(view);
+    // The dialog gates these on a null handler; DiscardTallyView must pass the null through rather than a no-op wrapper.
+    expect(view.queryByRole("button", { name: "Start drill" })).toBeNull();
+    expect(view.queryByRole("button", { name: "Practice this" })).toBeNull();
+
+    clickButton(view, "Done");
 
     expect(queueHeadingGone(view)).toBe(true);
   });
