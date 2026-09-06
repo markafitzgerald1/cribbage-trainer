@@ -16,6 +16,12 @@ const LARGE_ROOT_FONT = "html { font-size: 28px; }";
 // Same-row tolerance for the filter chips: sub-pixel drift, not a wrapped row.
 const CHIP_ROW_TOLERANCE_PX = 2;
 const SORT_BY_CHIP_COUNT = 3;
+/*
+ * How much shorter than the emulated landscape viewport a real phone is once
+ * its address and gesture bars are showing — the gap that hid the first
+ * mistake on hardware while a 390px emulator kept it on screen.
+ */
+const REAL_CHROME_HEIGHT_PX = 50;
 
 const MISTAKE_HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
 const BASE_AT = 1_700_000_000_000;
@@ -213,6 +219,33 @@ test.describe("practice drill", () => {
      */
     const sortBy = page.getByRole("group", { name: "Sort by" });
     await expectChipsOnOneRow(sortBy.locator("label"), SORT_BY_CHIP_COUNT);
+  });
+
+  test("shows the first mistake without scrolling in phone landscape", async ({
+    page,
+  }) => {
+    /*
+     * A real phone's address and gesture bars leave less height than the
+     * plain emulated landscape viewport — roughly 50px here — which is why
+     * the reporter saw the first mistake off screen where an emulator at 390
+     * did not. The queue header (title, action bar, subtitle, summary cards,
+     * four filter groups) is what filled that shorter box. The landscape
+     * media block drops the subtitle and tightens the header spacing so the
+     * top mistake's loss badge is on screen at once. Negative-checked:
+     * without that block the badge sits below the viewport here.
+     */
+    const shortHeight = phoneLandscapeViewport.height - REAL_CHROME_HEIGHT_PX;
+    await page.setViewportSize({
+      height: shortHeight,
+      width: phoneLandscapeViewport.width,
+    });
+    await page.getByRole("button", { name: "Mistake queue" }).click();
+
+    const lossBadge = page.getByText(/pts lost/u).first();
+    await expect(lossBadge).toBeVisible();
+    const box = await lossBadge.boundingBox();
+    expect(box).not.toBeNull();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(shortHeight);
   });
 
   test("counts no skip for the board hand when a drill starts", async ({
