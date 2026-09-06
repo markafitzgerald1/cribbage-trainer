@@ -15,14 +15,23 @@ export interface LossEntry {
   readonly point: DiscardDecisionPoint;
 }
 
+export const lossPointTitle = (point: DiscardDecisionPoint): string => {
+  const prefix = point.isRetained ? "Retained decision" : "Decision";
+  return `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
+    DECIMAL_PLACES,
+  )} points loss`;
+};
+
 /*
  * A row of transparent, edge-to-edge rectangles — one per mistake, each
- * spanning to the midpoint toward its neighbors — is the pointer hit area.
- * The per-marker approach could not survive a dense history: at the 100-point
- * cap the points sit ~4.5 viewBox units apart, so any circular target either
- * overlapped its neighbor (wrong hand on tap) or shrank below a fingertip.
- * Tiling bands give every mistake the widest catch area the spacing allows
- * and leave no dead pixels between them.
+ * spanning to the midpoint toward its neighbors — is the pointer hit area,
+ * and it is painted last so the trend path and the latest-average dot,
+ * which sit on top otherwise, cannot swallow a tap. The per-marker approach
+ * could not survive a dense history: at the 100-point cap the points sit
+ * ~4.5 viewBox units apart, so any circular target either overlapped its
+ * neighbor (wrong hand on tap) or shrank below a fingertip. Tiling bands
+ * give every mistake the widest catch area the spacing allows and leave no
+ * dead pixels between them; each carries the marker's own hover title.
  */
 export function renderHitBands(
   lossPoints: readonly LossEntry[],
@@ -50,7 +59,9 @@ export function renderHitBands(
             width={right - left}
             x={left}
             y={MARGIN_TOP}
-          />
+          >
+            <title>{lossPointTitle(entry.point)}</title>
+          </rect>
         );
       })}
     </g>
@@ -66,17 +77,14 @@ export function renderLossPoint(
   },
   selectedRecencyAt: number | null,
 ): React.JSX.Element {
-  const prefix = point.isRetained ? "Retained decision" : "Decision";
-  const titleText = `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
-    DECIMAL_PLACES,
-  )} points loss`;
   const dotClass =
     point.recencyAt === selectedRecencyAt
       ? `${classes.lossDot} ${classes.lossDotSelected}`
       : classes.lossDot;
   return (
     <g
-      aria-label={`${titleText}. Select to see the hand.`}
+      // The hover title lives on the hit band that covers this marker; here it would only duplicate it.
+      aria-label={`${lossPointTitle(point)}. Select to see the hand.`}
       className={classes.lossMarker}
       data-decision-ordinal={point.ordinal}
       data-decision-recency={point.recencyAt}
@@ -84,7 +92,6 @@ export function renderLossPoint(
       role="button"
       tabIndex={0}
     >
-      <title>{titleText}</title>
       <line
         className={classes.lossStem}
         x1={geometry.cx}

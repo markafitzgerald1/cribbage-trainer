@@ -184,6 +184,27 @@ describe("decision quality chart point detail", () => {
     expectPanelText(openDetailOn(OPTIMAL_THEN_LOSS, 2), "Dealer");
   });
 
+  it("paints the hit bands above the trend line and latest-average dot", () => {
+    const view = renderChart(BUCKETS, "rolling20", [
+      makeDecisionPoint(1, 0.6, 0.6),
+    ]);
+    const svg = view.getByRole("group", {
+      name: "Decision quality over time trend chart",
+    });
+    const order = [...svg.querySelectorAll("*")];
+    const band = view.container.querySelector(`.${classes.lossHitBand}`);
+    const latestDot = view.container.querySelector(`.${classes.dataPoint}`);
+
+    expect(order.indexOf(band as Element)).toBeGreaterThan(
+      order.indexOf(latestDot as Element),
+    );
+    expect(band?.querySelector("title")).toHaveTextContent("Decision #1");
+
+    fireEvent.click(band as Element);
+
+    expectPanelText(view, "Decision #1");
+  });
+
   it("tiles the plot with one wide hit band per mistake, even when dense", () => {
     const dense = renderChart(
       BUCKETS,

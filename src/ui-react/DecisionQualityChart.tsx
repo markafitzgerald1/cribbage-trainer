@@ -101,10 +101,6 @@ function renderRollingPlot(
 
   return (
     <>
-      {lossPoints.length > 0
-        ? renderHitBands(lossPoints, MARGIN_LEFT, MARGIN_LEFT + PLOT_WIDTH)
-        : null}
-
       {decisionPoints.map((point, index) => {
         const xPosition = calculateIndexedX(index, total);
         const yStem = calculateY(point.expectedPointsLoss, maxLossY);
@@ -146,6 +142,10 @@ function renderRollingPlot(
       >
         <title>{`Latest ${windowLabel}: ${latestLoss} points loss`}</title>
       </circle>
+
+      {lossPoints.length > 0
+        ? renderHitBands(lossPoints, MARGIN_LEFT, MARGIN_LEFT + PLOT_WIDTH)
+        : null}
     </>
   );
 }
