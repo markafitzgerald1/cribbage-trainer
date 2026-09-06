@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
-import type * as Tally from "../ui/discardTally";
 import * as classes from "./DecisionQualityTrendDialog.module.css";
+import { type StoredTally, discardTallyKey } from "../ui/discardTally";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
@@ -19,14 +19,16 @@ const multiLossTally = dialogFixtures.multiLossDialogTally();
 interface RenderDialogOptions {
   readonly initialGranularity?: DiscardTrendGranularity;
   readonly onClose?: () => void;
+  readonly onStartDrill?: ((item: unknown) => void) | null;
   readonly show?: boolean;
-  readonly tally?: Tally.StoredTally | null;
+  readonly tally?: StoredTally | null;
   readonly useStoredTally?: boolean;
 }
 
 const renderDialog = ({
   initialGranularity,
   onClose = jest.fn(),
+  onStartDrill = null,
   show = true,
   tally = sampleTally,
   useStoredTally = false,
@@ -35,6 +37,7 @@ const renderDialog = ({
     ? render(
         <DecisionQualityTrendDialog
           onClose={onClose}
+          onStartDrill={onStartDrill}
           show={show}
         />,
       )
@@ -42,6 +45,7 @@ const renderDialog = ({
         <DecisionQualityTrendDialog
           initialGranularity={initialGranularity}
           onClose={onClose}
+          onStartDrill={onStartDrill}
           show={show}
           tally={tally}
         />,
@@ -54,6 +58,32 @@ const clickRadio = (
   const radio = rendered.getByRole("radio", { name });
   fireEvent.click(radio);
   return radio;
+};
+
+type Rendered = ReturnType<typeof renderDialog>;
+
+const clickMarker = (rendered: Rendered, ordinal: number) =>
+  fireEvent.click(
+    rendered.container.querySelector(
+      `[data-decision-ordinal="${ordinal}"]`,
+    ) as Element,
+  );
+
+const practiceButton = "Practice this hand";
+
+const clickPractice = (rendered: Rendered) =>
+  fireEvent.click(rendered.getByRole("button", { name: practiceButton }));
+
+const practiceFromMarker = (ordinal: number, useStoredTally = false) => {
+  const onStartDrill = jest.fn<(item: unknown) => void>();
+  const rendered = renderDialog(
+    useStoredTally
+      ? { onStartDrill, useStoredTally }
+      : { onStartDrill, tally: dialogFixtures.practiceReadyDialogTally() },
+  );
+  clickMarker(rendered, ordinal);
+  clickPractice(rendered);
+  return onStartDrill;
 };
 
 describe("decision quality trend dialog", () => {
@@ -186,5 +216,45 @@ describe("decision quality trend dialog", () => {
         "The rolling chart displays the most recent 100 decisions with their trailing moving average.",
       ),
     ).toBeInTheDocument();
+  });
+
+  it("starts a drill on the hand behind a tapped chart mistake", () => {
+    expect(practiceFromMarker(1)).toHaveBeenCalledWith(
+      expect.objectContaining({ handKey: "5H,6H,7H,8H,9H,10H|Dealer" }),
+    );
+  });
+
+  it("does nothing when the tapped mistake is not in the queue", () => {
+    // Ordinal 3 is the zero-loss non-optimal record the queue excludes.
+    expect(practiceFromMarker(3)).not.toHaveBeenCalled();
+  });
+
+  it("omits the chart practice button when onStartDrill is left to default", () => {
+    // Rendered directly, bypassing renderDialog's explicit null prop.
+    // The component's own onStartDrill default is what hides the button here.
+    const rendered = render(
+      <DecisionQualityTrendDialog
+        onClose={jest.fn()}
+        show
+        tally={dialogFixtures.practiceReadyDialogTally()}
+      />,
+    );
+
+    clickMarker(rendered, 1);
+
+    expect(rendered.queryByRole("button", { name: practiceButton })).toBeNull();
+  });
+
+  it("resolves the practice hand from stored history when no tally prop", () => {
+    localStorage.setItem(
+      discardTallyKey,
+      JSON.stringify(dialogFixtures.practiceReadyDialogTally()),
+    );
+    const onStartDrill = practiceFromMarker(1, true);
+    localStorage.clear();
+
+    expect(onStartDrill).toHaveBeenCalledWith(
+      expect.objectContaining({ handKey: "5H,6H,7H,8H,9H,10H|Dealer" }),
+    );
   });
 });

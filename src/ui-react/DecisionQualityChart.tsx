@@ -1,30 +1,18 @@
 /* jscpd:ignore-start */
 import * as classes from "./DecisionQualityChart.module.css";
 import {
-  type ChartPoint,
-  type ChartTick,
   DECIMAL_PLACES,
-  MARGIN_LEFT,
   MARGIN_TOP,
   MIN_MAX_LOSS,
   PLOT_HEIGHT,
-  PLOT_WIDTH,
-  POINT_RADIUS,
   SVG_HEIGHT,
   SVG_WIDTH,
-  TICK_LABEL_X,
-  TICK_OFFSET_Y,
   X_LABEL_OFFSET_Y,
-  calculateIndexedX,
-  calculateY,
   createAdaptiveChartTicks,
   createChartPoints,
   createRollingXAxisLabels,
   createXAxisLabels,
-  formatPathData,
   getLatestLoss,
-  getLossPointColor,
-  getRollingWindowLabel,
 } from "./decisionQualityChartLayout";
 import type {
   DiscardDecisionPoint,
@@ -32,7 +20,12 @@ import type {
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
 import React, { useCallback, useEffect, useId, useState } from "react";
-import { renderHitBands, renderLossPoint } from "./decisionQualityChartMarkers";
+import {
+  buildChartDescription,
+  renderCalendarPlot,
+  renderRollingPlot,
+  renderTicks,
+} from "./decisionQualityChartMarkers";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { parseHand } from "../game/Card";
@@ -43,150 +36,22 @@ export * from "./decisionQualityChartLayout";
 
 const EMPTY_DECISION_POINTS: readonly DiscardDecisionPoint[] = [];
 
+export type PracticeDecisionHandler =
+  ((point: DiscardDecisionPoint) => void) | null;
+
 export interface DecisionQualityChartProps {
   readonly buckets: readonly DiscardPeriodBucket[];
   readonly decisionPoints?: readonly DiscardDecisionPoint[];
   readonly granularity: DiscardTrendGranularity;
+  // Starts a drill on the tapped mistake's hand; null hides the detail panel's practice button.
+  readonly onPracticeDecision?: PracticeDecisionHandler;
+  // The card order the rest of the app is using, so the detail panel's cards match the board.
+  readonly sortOrder?: SortOrder;
   readonly totalDecisions?: number | null;
-}
-
-const renderTicks = (ticks: readonly ChartTick[]): React.JSX.Element[] =>
-  ticks.map((tick) => (
-    <g key={tick.value}>
-      <line
-        className={tick.isOptimal ? classes.optimalBaseline : classes.gridLine}
-        x1={MARGIN_LEFT}
-        x2={MARGIN_LEFT + PLOT_WIDTH}
-        y1={tick.yPosition}
-        y2={tick.yPosition}
-      />
-      <text
-        className={classes.axisLabel}
-        x={TICK_LABEL_X}
-        y={tick.yPosition + TICK_OFFSET_Y}
-      >
-        {tick.label}
-      </text>
-    </g>
-  ));
-
-interface RollingPlotOptions {
-  readonly granularity: DiscardTrendGranularity;
-  readonly selectedRecencyAt: number | null;
 }
 
 // The data attribute both the tiling hit bands and the keyboard markers carry.
 const DECISION_HIT_SELECTOR = "[data-decision-recency]";
-
-function renderRollingPlot(
-  decisionPoints: readonly DiscardDecisionPoint[],
-  maxLossY: number,
-  { granularity, selectedRecencyAt }: RollingPlotOptions,
-): React.JSX.Element {
-  const total = decisionPoints.length;
-  const movingPoints = decisionPoints.map((point, index) => ({
-    color: getLossPointColor(point.rollingMeanLoss),
-    loss: point.rollingMeanLoss,
-    xPosition: calculateIndexedX(index, total),
-    yPosition: calculateY(point.rollingMeanLoss, maxLossY),
-  }));
-  const movingPath = formatPathData(movingPoints);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const lastMovingPoint = movingPoints[movingPoints.length - 1]!;
-  const latestLoss = lastMovingPoint.loss.toFixed(DECIMAL_PLACES);
-  const windowLabel = getRollingWindowLabel(total, granularity);
-  const decisionEntries = decisionPoints.map((point, index) => ({
-    cx: calculateIndexedX(index, total),
-    point,
-  }));
-  const hasMistake = decisionPoints.some((point) => !point.isOptimal);
-
-  return (
-    <>
-      {decisionPoints.map((point, index) => {
-        const xPosition = calculateIndexedX(index, total);
-        const yStem = calculateY(point.expectedPointsLoss, maxLossY);
-        const yZero = calculateY(0, maxLossY);
-        const prefix = point.isRetained ? "Retained decision" : "Decision";
-        if (point.isOptimal) {
-          return (
-            <circle
-              className={classes.optimalDot}
-              cx={xPosition}
-              cy={yZero}
-              key={`decision-${point.ordinal}`}
-              r={1.5}
-            >
-              <title>{`${prefix} #${point.ordinal}: 0.00 points loss (optimal)`}</title>
-            </circle>
-          );
-        }
-        return renderLossPoint(
-          point,
-          { cx: xPosition, yStem, yZero },
-          selectedRecencyAt,
-        );
-      })}
-
-      {movingPoints.length > 1 ? (
-        <path
-          className={classes.trendLine}
-          d={movingPath}
-        />
-      ) : null}
-
-      <circle
-        className={classes.dataPoint}
-        cx={lastMovingPoint.xPosition}
-        cy={lastMovingPoint.yPosition}
-        fill={lastMovingPoint.color}
-        r={POINT_RADIUS}
-      >
-        <title>{`Latest ${windowLabel}: ${latestLoss} points loss`}</title>
-      </circle>
-
-      {hasMistake
-        ? renderHitBands(decisionEntries, MARGIN_LEFT, MARGIN_LEFT + PLOT_WIDTH)
-        : null}
-    </>
-  );
-}
-
-function renderCalendarPlot(points: readonly ChartPoint[]): React.JSX.Element {
-  return (
-    <>
-      {points.length > 1 ? (
-        <path
-          className={classes.trendLine}
-          d={formatPathData(points)}
-        />
-      ) : null}
-
-      {points.map((point) => (
-        <circle
-          className={classes.dataPoint}
-          cx={point.xPosition}
-          cy={point.yPosition}
-          fill={point.color}
-          key={point.bucket.key}
-          r={POINT_RADIUS}
-        >
-          <title>
-            {`${point.bucket.label}: ${point.bucket.meanExpectedPointsLoss?.toFixed(
-              DECIMAL_PLACES,
-            )} points loss (${point.bucket.decisions} decisions, ${
-              point.bucket.optimalDecisions
-            } optimal${
-              point.bucket.skippedHands > 0
-                ? `, ${point.bucket.skippedHands} skipped`
-                : ""
-            })`}
-          </title>
-        </circle>
-      ))}
-    </>
-  );
-}
 
 const parsedHand = (
   handKey: string,
@@ -198,11 +63,19 @@ const parsedHand = (
   return { cards: parsed?.cards ?? [], role: parsed?.cribRole ?? null };
 };
 
-function renderDetailCards(
-  label: string,
-  cards: ReturnType<typeof parseHand>,
-  keyPrefix: string,
-): React.JSX.Element {
+interface DetailCardsRow {
+  readonly cards: ReturnType<typeof parseHand>;
+  readonly keyPrefix: string;
+  readonly label: string;
+  readonly sortOrder: SortOrder;
+}
+
+function renderDetailCards({
+  cards,
+  keyPrefix,
+  label,
+  sortOrder,
+}: DetailCardsRow): React.JSX.Element {
   return (
     <div className={classes.decisionDetailRow}>
       <span className={classes.decisionDetailLabel}>{label}</span>
@@ -210,16 +83,22 @@ function renderDetailCards(
         <SortedCardLabels
           cards={cards}
           keyPrefix={keyPrefix}
-          sortOrder={SortOrder.DealOrder}
+          sortOrder={sortOrder}
         />
       </span>
     </div>
   );
 }
 
+interface DecisionDetailHandlers {
+  readonly onClose: () => void;
+  readonly onPractice: (() => void) | null;
+  readonly sortOrder: SortOrder;
+}
+
 function renderDecisionDetail(
   point: DiscardDecisionPoint,
-  onClose: () => void,
+  { onClose, onPractice, sortOrder }: DecisionDetailHandlers,
 ): React.JSX.Element {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   const { cards, role } = parsedHand(point.handKey);
@@ -247,14 +126,31 @@ function renderDecisionDetail(
           Close
         </button>
       </div>
-      {renderDetailCards("Hand", cards, `chart-hand-${point.ordinal}`)}
+      {renderDetailCards({
+        cards,
+        keyPrefix: `chart-hand-${point.ordinal}`,
+        label: "Hand",
+        sortOrder,
+      })}
       {point.discardKey === null
         ? null
-        : renderDetailCards(
-            "Discarded",
-            parseHand(point.discardKey),
-            `chart-discard-${point.ordinal}`,
-          )}
+        : renderDetailCards({
+            cards: parseHand(point.discardKey),
+            keyPrefix: `chart-discard-${point.ordinal}`,
+            label: "Discarded",
+            sortOrder,
+          })}
+      {onPractice === null ? null : (
+        <div className={classes.decisionDetailActions}>
+          <button
+            className={classes.decisionDetailPractice}
+            onClick={onPractice}
+            type="button"
+          >
+            Practice this hand
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -269,11 +165,13 @@ function renderDecisionDetail(
  */
 function useDecisionSelection(
   decisionPoints: readonly DiscardDecisionPoint[],
+  onPracticeDecision: PracticeDecisionHandler,
 ): {
   readonly handleChartActivate: (
     event: React.MouseEvent | React.KeyboardEvent,
   ) => void;
   readonly handleCloseDetail: () => void;
+  readonly handlePracticeSelected: (() => void) | null;
   readonly selectedPoint: DiscardDecisionPoint | null;
 } {
   const [selectedRecencyAt, setSelectedRecencyAt] = useState<number | null>(
@@ -331,18 +229,36 @@ function useDecisionSelection(
     setSelectedRecencyAt(null);
   }
 
-  return { handleChartActivate, handleCloseDetail, selectedPoint };
+  const handlePracticeSelected =
+    onPracticeDecision === null || selectedPoint === null
+      ? null
+      : () => {
+          onPracticeDecision(selectedPoint);
+        };
+
+  return {
+    handleChartActivate,
+    handleCloseDetail,
+    handlePracticeSelected,
+    selectedPoint,
+  };
 }
 
 export function DecisionQualityChart({
   buckets,
   decisionPoints = EMPTY_DECISION_POINTS,
   granularity,
+  onPracticeDecision = null,
+  sortOrder = SortOrder.DealOrder,
   totalDecisions,
 }: DecisionQualityChartProps): React.JSX.Element {
   const chartId = useId();
-  const { selectedPoint, handleChartActivate, handleCloseDetail } =
-    useDecisionSelection(decisionPoints);
+  const {
+    selectedPoint,
+    handleChartActivate,
+    handleCloseDetail,
+    handlePracticeSelected,
+  } = useDecisionSelection(decisionPoints, onPracticeDecision);
 
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
   const hasDecisionPoints = isRolling && decisionPoints.length > 0;
@@ -383,26 +299,15 @@ export function DecisionQualityChart({
       )
     : getLatestLoss(calendarPoints);
 
-  const latestScoredBucket = scoredBuckets[
-    scoredBuckets.length - 1
-  ] as DiscardPeriodBucket;
-  const isLatestBucketScored =
-    latestScoredBucket.key === buckets[buckets.length - 1]?.key;
-  const calendarDesc = isLatestBucketScored
-    ? `Latest average expected loss is ${latestLoss} points.`
-    : `Latest scored period (${latestScoredBucket.label}) average expected loss is ${latestLoss} points.`;
-
-  const rollingWindowLabel = getRollingWindowLabel(
-    decisionPoints.length,
+  const chartDesc = buildChartDescription({
+    buckets,
+    decisionPoints,
     granularity,
-  );
-  const decisionCountText =
-    typeof totalDecisions === "number" && totalDecisions > decisionPoints.length
-      ? `the most recent ${decisionPoints.length} of ${totalDecisions}`
-      : `${decisionPoints.length}`;
-  const chartDesc = hasDecisionPoints
-    ? `Trend chart with ${decisionCountText} decisions (${rollingWindowLabel}). Latest average expected loss is ${latestLoss} points.`
-    : `Trend chart with ${buckets.length} periods. ${calendarDesc}`;
+    hasDecisionPoints,
+    latestLoss,
+    scoredBuckets,
+    totalDecisions,
+  });
 
   return (
     <div className={classes.container}>
@@ -441,12 +346,18 @@ export function DecisionQualityChart({
       </svg>
       {selectedPoint === null
         ? null
-        : renderDecisionDetail(selectedPoint, handleCloseDetail)}
+        : renderDecisionDetail(selectedPoint, {
+            onClose: handleCloseDetail,
+            onPractice: handlePracticeSelected,
+            sortOrder,
+          })}
     </div>
   );
 }
 
 DecisionQualityChart.defaultProps = {
   decisionPoints: EMPTY_DECISION_POINTS,
+  onPracticeDecision: null,
+  sortOrder: SortOrder.DealOrder,
   totalDecisions: null,
 };

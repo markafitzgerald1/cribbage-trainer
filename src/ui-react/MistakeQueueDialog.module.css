@@ -177,7 +177,7 @@
 }
 
 .summary-label {
-  align-items: end;
+  align-items: center;
   color: #155724;
   display: flex;
   font-size: 0.72rem;
@@ -185,9 +185,10 @@
   justify-content: center;
 
   /*
-   * Reserve the two lines the longest labels wrap to, so a one-line label
-   * ("Mastered") leaves its number aligned with the wrapped cards' numbers
-   * rather than sitting a line higher.
+   * Reserve the two lines the longest labels wrap to, so every value below
+   * starts at the same y, and center the text within that box so a
+   * one-line label ("Mastered") sits between the two lines of its wrapped
+   * neighbors rather than at the top or bottom.
    */
   min-height: 2.3em;
   text-align: center;
@@ -498,5 +499,57 @@
   .item-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/*
+ * Phone landscape: the modal scrolls, but the header — subtitle, three
+ * summary cards, four filter groups — otherwise fills the short viewport
+ * and the first mistake hand only appears after a scroll. Tighten every
+ * part of that header so a hand is visible straight away; the `vh` caps
+ * keep a large device font-size setting from re-inflating it past the
+ * viewport (AGENTS.md's rem-floor trap, softened here because the modal
+ * can scroll).
+ */
+@media (aspect-ratio >= 6 / 5) {
+  .dialog {
+    gap: 0.5rem;
+  }
+
+  .subtitle {
+    font-size: min(0.78rem, 2vh);
+    line-height: 1.3;
+  }
+
+  .controls {
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+  }
+
+  .filter-group {
+    gap: 0.3rem;
+    padding: 0.3rem 0.5rem 0.35rem;
+  }
+
+  .filter-group legend {
+    font-size: min(0.75rem, 1.9vh);
+  }
+
+  .option {
+    font-size: min(0.75rem, 1.9vh);
+    padding: 0.2rem 0.5rem;
+  }
+
+  .summary-card {
+    padding: 0.3rem 0.5rem;
+  }
+
+  .summary-label {
+    font-size: min(0.68rem, 1.7vh);
+    min-height: 2.2em;
+  }
+
+  .summary-value {
+    font-size: min(1.05rem, 2.6vh);
   }
 }

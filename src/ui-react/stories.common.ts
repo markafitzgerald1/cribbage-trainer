@@ -36,6 +36,27 @@ export const clickStoryButtonExpectingCall = async (
   await expect(mock).toHaveBeenCalledTimes(1);
 };
 
+/*
+ * Tap the first decision marker in a rendered quality chart, wait for the
+ * detail panel, then press its "Practice this hand" button — the path both
+ * the chart and the trend-dialog stories share for the drill hand-off.
+ */
+export const playPracticeFromDecisionMarker = async (
+  canvasElement: HTMLElement,
+  mock: unknown,
+): Promise<void> => {
+  canvasElement
+    .querySelector("[data-decision-ordinal]")
+    ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  await within(canvasElement).findByRole("region");
+
+  await clickStoryButtonExpectingCall(
+    canvasElement,
+    "Practice this hand",
+    mock,
+  );
+};
+
 export const playStoryEscape = async ({
   args,
 }: {

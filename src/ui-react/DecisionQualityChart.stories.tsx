@@ -3,8 +3,10 @@ import type {
   DiscardPeriodBucket,
 } from "../ui/discardQualityTrend";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fireEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { DecisionQualityChart } from "./DecisionQualityChart";
+import { SortOrder } from "../ui/SortOrder";
+import { playPracticeFromDecisionMarker } from "./stories.common";
 
 const sampleBuckets: DiscardPeriodBucket[] = [
   {
@@ -153,6 +155,16 @@ export const DecisionDetailPopup: Story = {
     clickElement(await canvas.findByRole("button", { name: "Close" }));
     await expectPanelGone(canvasElement);
   },
+};
+
+export const PracticeFromDetail: Story = {
+  args: {
+    ...rollingWithPointsArgs,
+    onPracticeDecision: fn(),
+    sortOrder: SortOrder.Descending,
+  },
+  play: ({ args, canvasElement }) =>
+    playPracticeFromDecisionMarker(canvasElement, args.onPracticeDecision),
 };
 
 export const Empty: Story = {

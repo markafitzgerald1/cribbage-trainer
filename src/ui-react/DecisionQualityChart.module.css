@@ -122,18 +122,24 @@
 /*
  * The tap-a-point detail: what hand the mistake was on and what was
  * discarded, shown below the chart rather than as a floating popover so it
- * is never clipped by the dialog's own scroll on a phone.
+ * is never clipped by the dialog's own scroll on a phone. It reads as a
+ * card lifted off the near-black plot — a lighter green ground, a brighter
+ * border, a drop shadow, and a left edge in the same red as the loss
+ * markers so the panel visibly belongs to the spike that was tapped.
  */
 .decision-detail {
-  background: color-mix(in srgb, #0b2f10 80%, black);
-  border: 1px solid color-mix(in srgb, green 40%, white);
+  background: #22482e;
+  border: 1px solid color-mix(in srgb, green 55%, white);
+  border-left-color: #ff7b72;
+  border-left-width: 4px;
   border-radius: 8px;
-  color: #d7efdb;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 40%);
+  color: #eef8ef;
   display: flex;
   flex-direction: column;
   font-family: var(--text-font-family);
-  gap: 0.4rem;
-  padding: 0.5rem 0.65rem;
+  gap: 0.45rem;
+  padding: 0.6rem 0.75rem;
 }
 
 .decision-detail-head {
@@ -180,6 +186,34 @@
 .detail-close:hover,
 .detail-close:focus-visible {
   border-color: #a7c7ad;
+  outline: none;
+}
+
+.decision-detail-actions {
+  display: flex;
+  margin-top: 0.15rem;
+}
+
+/* Jump straight from the chart into a drill on this exact mistake. */
+.decision-detail-practice {
+  background-color: #197536;
+  border: 2px solid #0f5527;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35rem 0.9rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.decision-detail-practice:hover,
+.decision-detail-practice:focus-visible {
+  background-color: #34c754;
+  border-color: #34c754;
   outline: none;
 }
 

@@ -89,21 +89,29 @@ export function DiscardTallyView({
   }, []);
 
   /*
-   * Close the browser before the board changes under it, so the drill
+   * Close the open dialog before the board changes under it, so the drill
    * starts on a clean screen. Each wrapper is null when its upstream
    * handler is — the dialog gates "Start drill" / "Practice this" on a null
    * handler, and a non-null pass-through wrapper would defeat that and show
    * buttons that then only close the dialog.
    */
-  const handleStartDrill: StartDrillHandler = useMemo(
-    () =>
+  const startDrillClosing = useCallback(
+    (closeDialog: () => void): StartDrillHandler =>
       onStartDrill === null
         ? null
         : (item: MistakeQueueItem) => {
-            setShowQueue(false);
+            closeDialog();
             onStartDrill(item);
           },
     [onStartDrill],
+  );
+  const handleStartDrill = useMemo(
+    () => startDrillClosing(handleCloseQueue),
+    [handleCloseQueue, startDrillClosing],
+  );
+  const handleStartDrillFromTrend = useMemo(
+    () => startDrillClosing(handleCloseTrend),
+    [handleCloseTrend, startDrillClosing],
   );
   const handleStartAutoDrill: StartAutoDrillHandler = useMemo(
     () =>
@@ -202,7 +210,10 @@ export function DiscardTallyView({
       {showTrend ? (
         <DecisionQualityTrendDialog
           onClose={handleCloseTrend}
+          onStartDrill={handleStartDrillFromTrend}
           show={showTrend}
+          sortOrder={sortOrder}
+          tally={injectedTally}
         />
       ) : null}
       {showQueue ? (

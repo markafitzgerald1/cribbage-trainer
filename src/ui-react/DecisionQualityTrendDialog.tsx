@@ -1,6 +1,8 @@
+/* jscpd:ignore-start */
 import * as classes from "./DecisionQualityTrendDialog.module.css";
 import {
   type CribRoleFilter,
+  type DiscardDecisionPoint,
   type DiscardPeriodBucket,
   type DiscardTrendGranularity,
   MAX_RECENT_DECISIONS,
@@ -8,21 +10,32 @@ import {
 } from "../ui/discardQualityTrend";
 import { DIALOG_ROLE_OPTIONS, DialogFilterGroup } from "./DialogFilterGroup";
 import {
+  DecisionQualityChart,
+  type PracticeDecisionHandler,
+} from "./DecisionQualityChart";
+import {
   MAX_RECORDS,
   type StoredTally,
   readTallyForDisplay,
 } from "../ui/discardTally";
-import { useCallback, useState } from "react";
-import { DecisionQualityChart } from "./DecisionQualityChart";
+import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
+import { SortOrder } from "../ui/SortOrder";
+import type { StartDrillHandler } from "./usePracticeDrill";
+import { buildMistakeQueue } from "../ui/mistakeQueue";
 import { useCloseOnEscape } from "./useCloseOnEscape";
+/* jscpd:ignore-end */
 
 export interface DecisionQualityTrendDialogProps {
   readonly initialGranularity?: DiscardTrendGranularity;
   readonly initialRoleFilter?: CribRoleFilter;
   readonly onClose: () => void;
+  // Starts a drill on a chart mistake's hand; null hides the detail panel's practice button.
+  readonly onStartDrill?: StartDrillHandler;
   readonly show: boolean;
+  // The card order the rest of the app uses, so the detail panel matches the board.
+  readonly sortOrder?: SortOrder;
   readonly tally?: StoredTally | null;
 }
 
@@ -115,7 +128,9 @@ export function DecisionQualityTrendDialog({
   initialGranularity = "rolling20",
   initialRoleFilter = "all",
   onClose,
+  onStartDrill = null,
   show,
+  sortOrder = SortOrder.DealOrder,
   tally = null,
 }: DecisionQualityTrendDialogProps): React.JSX.Element | null {
   const [granularity, setGranularity] =
@@ -124,6 +139,29 @@ export function DecisionQualityTrendDialog({
     useState<CribRoleFilter>(initialRoleFilter);
 
   useCloseOnEscape(show, onClose);
+
+  /*
+   * Null unless a drill can be started, so the chart hides its practice
+   * button rather than rendering a dead one. The queue is rebuilt on click,
+   * not every render: a tapped chart mistake resolves to its whole
+   * MistakeQueueItem (the drill needs more than the hand key), and the
+   * current tally is the freshest source for that.
+   */
+  const startDrillOnDecision = useMemo<PracticeDecisionHandler>(
+    () =>
+      onStartDrill === null
+        ? null
+        : (point: DiscardDecisionPoint) => {
+            const item = buildMistakeQueue(tally ?? readTallyForDisplay()).find(
+              (queueItem) => queueItem.handKey === point.handKey,
+            );
+            // A MistakeQueueItem is always an object, so a plain truthy check is safe.
+            if (item) {
+              onStartDrill(item);
+            }
+          },
+    [onStartDrill, tally],
+  );
 
   const changeGranularity = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -253,6 +291,8 @@ export function DecisionQualityTrendDialog({
           buckets={trend.buckets}
           decisionPoints={trend.decisionPoints}
           granularity={granularity}
+          onPracticeDecision={startDrillOnDecision}
+          sortOrder={sortOrder}
           totalDecisions={totalDecisions}
         />
 
@@ -265,5 +305,7 @@ export function DecisionQualityTrendDialog({
 DecisionQualityTrendDialog.defaultProps = {
   initialGranularity: "rolling20",
   initialRoleFilter: "all",
+  onStartDrill: null,
+  sortOrder: SortOrder.DealOrder,
   tally: null,
 };

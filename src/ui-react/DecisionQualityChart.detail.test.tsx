@@ -3,16 +3,20 @@ import "@testing-library/jest-dom/jest-globals";
 import * as cardClasses from "./CardLabel.module.css";
 import * as classes from "./DecisionQualityChart.module.css";
 import {
+  DecisionQualityChart,
+  type PracticeDecisionHandler,
+} from "./DecisionQualityChart";
+import {
   type RenderChart,
   makeBucket,
   makeDecisionPoint,
   makeRetainedDecisionPoint,
   renderChart,
 } from "./DecisionQualityChart.test.common";
-import { describe, expect, it } from "@jest/globals";
-import { DecisionQualityChart } from "./DecisionQualityChart";
+import { describe, expect, it, jest } from "@jest/globals";
+import { fireEvent, render } from "@testing-library/react";
 import type { DiscardDecisionPoint } from "../ui/discardQualityTrend";
-import { fireEvent } from "@testing-library/react";
+import { SortOrder } from "../ui/SortOrder";
 
 type ChartPoints = readonly DiscardDecisionPoint[];
 
@@ -271,5 +275,53 @@ describe("decision quality chart point detail", () => {
     expectPanelText(view, "Retained decision #2");
 
     expect(view.getByRole("region")).toHaveTextContent("0.40 lost");
+  });
+
+  const renderWith = ({
+    onPracticeDecision = null,
+    sortOrder = SortOrder.DealOrder,
+  }: {
+    readonly onPracticeDecision?: PracticeDecisionHandler;
+    readonly sortOrder?: SortOrder;
+  }): RenderChart =>
+    render(
+      <DecisionQualityChart
+        buckets={BUCKETS}
+        decisionPoints={OPTIMAL_THEN_LOSS}
+        granularity="rolling20"
+        onPracticeDecision={onPracticeDecision}
+        sortOrder={sortOrder}
+      />,
+    );
+
+  it("offers a practice button that forwards the tapped decision", () => {
+    const onPracticeDecision = jest.fn<(point: DiscardDecisionPoint) => void>();
+    const view = renderWith({ onPracticeDecision });
+
+    fireEvent.click(markerFor(view, 2));
+    fireEvent.click(view.getByRole("button", { name: "Practice this hand" }));
+
+    expect(onPracticeDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ ordinal: 2 }),
+    );
+  });
+
+  it("hides the practice button without an onPracticeDecision handler", () => {
+    const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
+
+    expect(
+      view.queryByRole("button", { name: "Practice this hand" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders the detail cards in the given sort order", () => {
+    const view = renderWith({ sortOrder: SortOrder.Descending });
+
+    fireEvent.click(markerFor(view, 2));
+    const firstHandRank = view.container.querySelector(
+      `.${classes.decisionDetailCards} .${cardClasses.rank}`,
+    );
+
+    expect(firstHandRank).toHaveTextContent("10");
   });
 });
