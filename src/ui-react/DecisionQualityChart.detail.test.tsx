@@ -50,17 +50,17 @@ const cardLabelCount = (view: RenderChart): number =>
   view.container.querySelectorAll(`.${cardClasses.cardLabel}`).length;
 
 const expectPanelText = (view: RenderChart, text: string): void => {
-  expect(view.getByRole("status")).toHaveTextContent(text);
+  expect(view.getByRole("region")).toHaveTextContent(text);
 };
 
 const expectNoPanel = (view: RenderChart): void => {
-  expect(view.queryByRole("status")).toBeNull();
+  expect(view.queryByRole("region")).toBeNull();
 };
 
 describe("decision quality chart point detail", () => {
   it("opens a panel naming the clicked mistake with its hand and discard", () => {
     const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
-    const panel = view.getByRole("status");
+    const panel = view.getByRole("region");
 
     expect(panel).toHaveTextContent("Decision #2");
     expect(panel).toHaveTextContent("0.45 lost");
@@ -174,7 +174,7 @@ describe("decision quality chart point detail", () => {
       2,
     );
 
-    expect(view.getByRole("status")).toBeInTheDocument();
+    expect(view.getByRole("region")).toBeInTheDocument();
     expect(cardLabelCount(view)).toBe(2);
   });
 
@@ -187,6 +187,6 @@ describe("decision quality chart point detail", () => {
 
     expectPanelText(view, "Retained decision #2");
 
-    expect(view.getByRole("status")).toHaveTextContent("0.40 lost");
+    expect(view.getByRole("region")).toHaveTextContent("0.40 lost");
   });
 });

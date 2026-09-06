@@ -121,7 +121,7 @@ const clickElement = (element: Element): void => {
 const expectPanelGone = async (canvasElement: HTMLElement): Promise<void> => {
   await waitFor(async () => {
     await expect(
-      within(canvasElement).queryByRole("status"),
+      within(canvasElement).queryByRole("region"),
     ).not.toBeInTheDocument();
   });
 };
@@ -133,7 +133,7 @@ export const DecisionDetailPopup: Story = {
     const marker = firstLossMarker(canvasElement);
 
     clickElement(marker);
-    const panel = await canvas.findByRole("status");
+    const panel = await canvas.findByRole("region");
 
     await expect(panel).toHaveTextContent("lost");
     await expect(panel).toHaveTextContent("Hand");
@@ -143,7 +143,7 @@ export const DecisionDetailPopup: Story = {
     await expectPanelGone(canvasElement);
 
     clickElement(marker);
-    await canvas.findByRole("status");
+    await canvas.findByRole("region");
     await fireEvent.keyDown(window, { key: "Escape" });
     await expectPanelGone(canvasElement);
 

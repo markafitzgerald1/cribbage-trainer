@@ -257,8 +257,9 @@ function renderDecisionDetail(
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   return (
     <div
+      aria-label={`${prefix} #${point.ordinal} detail`}
       className={classes.decisionDetail}
-      role="status"
+      role="region"
     >
       <div className={classes.decisionDetailHead}>
         <span className={classes.decisionDetailTitle}>
