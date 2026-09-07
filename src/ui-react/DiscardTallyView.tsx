@@ -27,10 +27,10 @@ const shareOf = (part: number, whole: number) =>
   `${((part / whole) * PER_CENT).toFixed(SHARE_FRACTION_DIGITS)}%`;
 
 /*
- * The count is the figure; the parenthesized share is a second, wider
- * span so a phone too narrow to fit both can drop it (`.share` is hidden
- * below ~380px in portrait) while the raw count — from which the share is
- * derivable anyway — always stays on screen.
+ * The count is the figure; the parenthesized share is a second span the
+ * stylesheet can drop on its own. Stacked (portrait) mode hides `.share`
+ * so only the raw count — from which the share is derivable anyway — has
+ * to fit a phone-width three-column row.
  */
 const countAndShare = (part: number, whole: number): ReactNode => (
   <>
