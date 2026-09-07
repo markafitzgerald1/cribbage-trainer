@@ -66,8 +66,10 @@ guidance only one tool can use.
     arguments, so the paths join that array instead and the whole suite
     runs.
 
-  - `npm run lint:cspell` works here as of #763, and checks the same 307
-    files a clean checkout does. It used to report "Files checked: 0" and
+  - `npm run lint:cspell` works here as of #763, and checks the same file
+    set a clean checkout does — compare the two totals rather than either
+    against a number, since it grows with the repository. It used to
+    report "Files checked: 0" and
     exit 1: the script passed `--gitignore`, so cspell resolved ignore rules
     against the parent repository's `.gitignore`, whose `/.claude/*` line
     covers the entire worktree. The sweep is now driven by `.cspell.json`'s

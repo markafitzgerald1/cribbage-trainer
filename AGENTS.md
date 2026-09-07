@@ -514,7 +514,10 @@ mcr.microsoft.com/playwright:<tag>`.
   the gate (#703) while all ten tasks printed green. Never infer coverage from
   a passing run — compare file sets. `npm run lint:cspell -- --verbose`
   prints an `n/total` line per file, and the image's total must equal a
-  clean checkout's (208 when #703 was fixed; 307 as of #763). Build that
+  clean checkout's. The invariant is that the two totals **match**, not any
+  particular value: it was 208 when #703 was fixed and 308 at the end of
+  #763, and it moves whenever a file is added, so compare the two runs
+  rather than either against a number written here. Build that
   reference checkout with `git archive HEAD | tar --extract` into a temporary
   directory. Two traps when harvesting that list: cspell **right-aligns** the
   counter, so an `^[0-9]` anchor silently drops every file numbered below
