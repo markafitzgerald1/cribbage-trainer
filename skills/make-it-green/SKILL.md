@@ -56,9 +56,13 @@ green build status.
   `lint:audit` and `lint:outdated`. It keeps non-script steps too, which
   is why `npm clean-install` appears — a `package.json` that has drifted
   from `package-lock.json` still installs locally, while `npm ci` in the
-  image refuses it, and no hook can see that. A change touching stories,
-  CSS, build configuration, dependencies, or user-visible copy is exactly
-  the change whose fast pass proves least.
+  image refuses it, and no hook can see that. It also lists a parent
+  script beside the members it calls, which is why `npm run lint` appears
+  next to the three `lint:*` entries: deciding that a parent contributes
+  nothing of its own means parsing shell, three attempts at which each
+  hid real work, and running the parent is how you cover it anyway. A
+  change touching stories, CSS, build configuration, dependencies, or
+  user-visible copy is exactly the change whose fast pass proves least.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`

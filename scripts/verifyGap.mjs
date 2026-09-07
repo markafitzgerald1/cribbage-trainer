@@ -18,8 +18,8 @@ const packageScripts = JSON.parse(readRepoFile("package.json")).scripts;
 /*
  * Both `npm:name` (concurrently's shorthand) and `npm run name` appear in
  * this repository's scripts, and the gap stays invisible unless nested
- * scripts are expanded — `RUN npm run lint` hides actionlint, audit and
- * outdated behind one entry.
+ * scripts are expanded — the Dockerfile's single lint step would otherwise
+ * conceal `lint:actionlint`, `lint:audit` and `lint:outdated`.
  */
 const invokedBy = (name) =>
   [
@@ -29,58 +29,40 @@ const invokedBy = (name) =>
   ].map((match) => match.groups.called);
 
 /*
- * A script is only safe to replace by the scripts it calls when calling
- * them is all it does. `node check.mjs && npm run lint:eslint` would
- * otherwise vanish into `lint:eslint`, reporting no gap while `check.mjs`
- * never runs in the hook. Strip the npm invocations and the fan-out
- * runner's own syntax; anything left is work only the parent performs.
+ * A parent is reported alongside everything it calls, never replaced by it.
+ * Deciding whether a parent "only" fans out means parsing shell, and three
+ * attempts at that during #763 each hid work behind a shape the previous
+ * one had not considered: a chained `&&` command, then a quoted worker such
+ * as `concurrently "node check.mjs" "npm:lint:eslint"`, then a flag whose
+ * value was mistaken for one. Over-reporting a parent costs a line; missing
+ * one reports a closed gap that is not closed, so this does not parse.
  */
-const isPureFanOut = (name) =>
-  !/\S/u.test(
-    (packageScripts[name] ?? "")
-      .replace(/npm(?::| run )[\w:-]+/gu, " ")
-      .replace(/\bconcurrently\b/gu, " ")
-      .replace(/--[\w-]+/gu, " ")
-      .replace(/'[^']*'/gu, " ")
-      .replace(/"[^"]*"/gu, " ")
-      .replace(/[&|;,]/gu, " "),
-  );
-
-const leavesOf = (name) => {
+const withDescendants = (name) => {
   const invoked = invokedBy(name);
-  if (invoked.length === 0) {
-    return [name];
-  }
-  const nested = invoked.flatMap(leavesOf);
-  return isPureFanOut(name) ? nested : [name, ...nested];
+  return invoked.length === 0
+    ? [name]
+    : [name, ...invoked.flatMap(withDescendants)];
 };
 
 /*
- * Read the gate's entry points from the Dockerfile so a new RUN line cannot
- * be missed. Non-script invocations are kept rather than filtered out:
- * `RUN npm clean-install` is a real failure class the hook cannot reach,
- * because a manifest that has drifted from the lockfile still installs
- * locally while `npm ci` refuses it.
- */
-/*
  * Continuations are joined first, and each instruction is then scanned for
  * every npm invocation rather than one: a single `RUN` can chain several
- * with `&&`, and an expression anchored to the instruction would report
- * only the first, quietly under-reporting the gap it exists to compute.
+ * with `&&`. Non-script invocations are kept, so `RUN npm clean-install`
+ * appears — a manifest that has drifted from the lockfile still installs
+ * locally while `npm ci` in the image refuses it, and no hook sees that.
  */
-const dockerInstructions = readRepoFile("Dockerfile")
+const gateEntryPoints = readRepoFile("Dockerfile")
   .replace(/\\\r?\n/gu, " ")
   .split(/\r?\n/u)
-  .filter((line) => /^(?:RUN|CMD)\b/u.test(line));
+  .filter((line) => /^(?:RUN|CMD)\b/u.test(line))
+  .flatMap((instruction) =>
+    [...instruction.matchAll(/\bnpm(?: run)? (?<entry>[\w:-]+)/gu)].map(
+      (match) => match.groups.entry,
+    ),
+  );
 
-const gateEntryPoints = dockerInstructions.flatMap((instruction) =>
-  [...instruction.matchAll(/\bnpm(?: run)? (?<entry>[\w:-]+)/gu)].map(
-    (match) => match.groups.entry,
-  ),
-);
-
-const gate = new Set(gateEntryPoints.flatMap(leavesOf));
-const fast = new Set(leavesOf("verify:fast"));
+const gate = new Set(gateEntryPoints.flatMap(withDescendants));
+const fast = new Set(withDescendants("verify:fast"));
 
 // Printed as the command to run, since a non-script entry has no `run`.
 const asCommand = (name) =>
