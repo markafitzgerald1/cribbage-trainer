@@ -45,17 +45,25 @@ const withDescendants = (name) => {
 };
 
 /*
- * Each `RUN`/`CMD` instruction is tokenized rather than pattern-matched.
- * Every prior attempt to regex the npm invocation out of a Dockerfile line
- * missed a legal shape — a chained `&&`, a line continuation, JSON exec
- * form, an `npm run --flag script` option — so this walks tokens instead:
- * at each `npm`, skip an optional `run` and any `-`-prefixed options, and
- * take the next token as the entry. `[`, `]`, `"` and `,` are blanked so
- * exec form (`CMD ["npm", "run", "x"]`) tokenizes like the shell form.
- * Non-script invocations are kept, so `npm clean-install` appears — a
- * lockfile that has drifted still installs locally while `npm ci` refuses
- * it, and no hook sees that.
+ * npm subcommands that validate something and could appear in the
+ * `Dockerfile`. `clean-install` and `ci` are the same command; the gate
+ * uses the long form.
  */
+const NPM_SUBCOMMANDS = new Set(["ci", "clean-install", "install", "test"]);
+
+/*
+ * Each `RUN`/`CMD` instruction is tokenized and scanned for the first
+ * token after an `npm` that is a real thing to run — a `package.json`
+ * script or an npm subcommand. Everything between (`run`, `--flags`,
+ * option values like `--script-shell /bin/bash`, JSON punctuation) is
+ * skipped because it is none of those. Eight review rounds each found a
+ * legal npm shape a looser parser mis-read; this cannot name a
+ * non-script, because it only recognizes names it can look up. `npm run x`
+ * is only valid when `x` is a defined script, so nothing real is lost.
+ */
+const isEntry = (token) =>
+  token in packageScripts || NPM_SUBCOMMANDS.has(token);
+
 const entriesInInstruction = (instruction) => {
   const tokens = instruction
     .replace(/["[\],]/gu, " ")
@@ -66,15 +74,14 @@ const entriesInInstruction = (instruction) => {
     if (tokens[index] !== "npm") {
       continue;
     }
-    let cursor = index + 1;
-    if (tokens[cursor] === "run") {
-      cursor += 1;
-    }
-    while (cursor < tokens.length && tokens[cursor].startsWith("-")) {
-      cursor += 1;
-    }
-    if (cursor < tokens.length) {
-      entries.push(tokens[cursor]);
+    for (let cursor = index + 1; cursor < tokens.length; cursor += 1) {
+      if (tokens[cursor] === "npm") {
+        break;
+      }
+      if (isEntry(tokens[cursor])) {
+        entries.push(tokens[cursor]);
+        break;
+      }
     }
   }
   return entries;
