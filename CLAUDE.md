@@ -29,15 +29,17 @@ guidance only one tool can use.
 - The shell may start on an old Node. Activate the repo version per command:
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use; hash -r`
   (`hash -r` is required because zsh caches the old `node` path).
-- `.husky/pre-commit` runs `npm run verify:fast` (~20s), so a foreground
-  `git commit` fits the Bash tool's 2-minute timeout — the old
-  `run_in_background: true` advice for commits is obsolete. The reasoning
-  still applies to any long foreground command: on timeout the Bash tool
-  SIGTERMs the process, and a synchronously-waited command (a hook, a
-  `git` op) does not complete — `git log`/`git status` confirm nothing
-  changed. Run `npm run docker:build-and-test-all` in the background and
-  judge it by exit status plus `git log`, not by the task finishing (a
-  failed run finishes too, with a nonzero exit).
+- `.husky/pre-commit` runs `npm run verify:fast`, which is ~20s on a warm
+  cache but has run past two minutes on a cold one (jest alone can take
+  that long resolving against a worktree's sparse `node_modules`). Keep
+  issuing `git commit` with `run_in_background: true`: a fast hook still
+  returns in seconds that way, and a slow one is not SIGTERMed at the Bash
+  tool's 2-minute timeout — which, because git waits synchronously on the
+  hook, kills the commit dead, not merely slow (`git log`/`git status`
+  then confirm nothing changed). The Docker gate follows the same rule: run
+  it in the background and judge it by exit status plus `git log`, never by
+  the task merely finishing (a failed run finishes too, with a nonzero
+  exit).
 - Working inside a `.claude/worktrees/<name>` checkout changes what several
   tools see, and each difference has already been mistaken for a real failure:
   - `npm test` and `npm run lint:cspell` work here as of #763; both used to

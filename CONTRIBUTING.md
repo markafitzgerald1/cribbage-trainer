@@ -67,7 +67,11 @@ npm run docker:build-and-test-all
 - Documentation-only changes need only the documentation checks
   (`npm run lint:markdownlint`, `npm run lint:prettier`, and
   `npm run lint:cspell`).
-- Keep GPG signing enabled for commits. Do not create unsigned commits.
+- Human contributors keep GPG signing enabled and do not create unsigned
+  commits. Autonomous AI agents are the exception: they MUST pass
+  `--no-gpg-sign` on intermediate commits (see AGENTS.md), and the human
+  assumes cryptographic accountability via the final Squash and Merge
+  signature.
 
 ## CI workflow notes
 
