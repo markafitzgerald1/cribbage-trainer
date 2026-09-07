@@ -65,6 +65,21 @@ guidance only one tool can use.
     parent repository's `.gitignore` excludes `/.claude/` and `--gitignore`
     therefore excludes the whole worktree. Check changed files directly with
     `npx cspell --no-gitignore <files>`.
+  - **Git hooks do not come from the worktree.** Husky sets `core.hooksPath`
+    to an absolute path in the main checkout, and its resolver derives the
+    hook as `dirname(dirname($0))/<name>`, so every worktree runs the
+    `.husky/pre-commit` belonging to whatever branch the **main working
+    tree** currently has checked out. Editing `.husky/pre-commit` on a
+    worktree branch changes nothing about the commits you make there. This
+    cost a wrong result while implementing #763: a `git commit` intended to
+    exercise the new 20-second hook ran `main`'s old
+    `docker:build-and-test-all` instead and took 2m52s, and a "the hook
+    rejects a type error" negative test actually proved only that the old
+    Docker gate does. Validate a hook change by invoking it the way husky
+    does, `sh -e .husky/pre-commit`, and treat a real `git commit` from a
+    worktree as evidence about the main checkout's hook only. The
+    corollary outlives that issue: after a hook change merges, worktrees
+    keep running the old hook until someone pulls in the **main** checkout.
   - The worktree starts with a nearly empty `node_modules`. Most tools resolve
     upward to the parent repository's copy, but Vitest browser mode (Storybook
     tests and coverage) fails with "Failed to fetch dynamically imported
