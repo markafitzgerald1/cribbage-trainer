@@ -29,80 +29,49 @@ guidance only one tool can use.
 - The shell may start on an old Node. Activate the repo version per command:
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use; hash -r`
   (`hash -r` is required because zsh caches the old `node` path).
-- `.husky/pre-commit` runs `npm run verify:fast`, measured at about 20
-  seconds, so an ordinary `git commit` fits the Bash tool's default 2-minute
-  timeout and needs no special handling. Until #763 the hook ran the whole
-  `npm run docker:build-and-test-all` gate synchronously — several minutes —
-  and this file therefore told every session to issue `git commit` with
-  `run_in_background: true`. That instruction is obsolete; a foreground
-  commit is now the normal case. The reasoning behind it is still worth
-  keeping, because it applies to any long foreground command here: when the
-  timeout fires it sends SIGTERM to the foreground `git commit`, and because
-  git is synchronously waiting on the hook the commit does not land — it is
-  dead, not merely slow, and `git log`/`git status` afterward confirm
-  nothing changed. So run `npm run docker:build-and-test-all` itself in the
-  background, and judge it by its reported exit status plus `git log` rather
-  than by the task having finished: a failed run completes too, just with a
-  nonzero exit.
+- `.husky/pre-commit` runs `npm run verify:fast` (~20s), so a foreground
+  `git commit` fits the Bash tool's 2-minute timeout — the old
+  `run_in_background: true` advice for commits is obsolete. The reasoning
+  still applies to any long foreground command: on timeout the Bash tool
+  SIGTERMs the process, and a synchronously-waited command (a hook, a
+  `git` op) does not complete — `git log`/`git status` confirm nothing
+  changed. Run `npm run docker:build-and-test-all` in the background and
+  judge it by exit status plus `git log`, not by the task finishing (a
+  failed run finishes too, with a nonzero exit).
 - Working inside a `.claude/worktrees/<name>` checkout changes what several
   tools see, and each difference has already been mistaken for a real failure:
-  - `npm test` works here as of #763. It used not to: `jest.config.json`
-    ignored the free-floating `/.claude/`, which the worktree's own absolute
-    path contains, so all 90 test files were excluded and jest exited 1 with
-    "No tests found". The patterns are now anchored at `<rootDir>`, which
-    scopes them to the project rather than to any ancestor directory name.
-    Do not "simplify" them back to bare `/.claude/` or `/scripts/`.
-  - A focused run still needs `--coverage=false`, whose global thresholds
-    otherwise fail a targeted suite that passed, and `--runTestsByPath`,
-    which makes jest read the trailing arguments as literal file paths
-    rather than as regex patterns.
+  - `npm test` and `npm run lint:cspell` work here as of #763; both used to
+    exit 1 finding nothing, because jest's `/.claude/` ignore pattern and
+    cspell's `--gitignore` both excluded the whole worktree. The fixes
+    anchor jest's patterns at `<rootDir>` and move cspell's ignores into
+    `.cspell.json`'s `ignorePaths` — do not "simplify" either back. cspell's
+    file count grows with the repo; compare it against a clean checkout's,
+    not a fixed number.
+  - A focused jest run still needs `--coverage=false` (global thresholds
+    otherwise fail a passing subset) and `--runTestsByPath` (reads the
+    trailing args as literal paths):
 
     ```bash
     npx jest --coverage=false --runTestsByPath <file>
     ```
 
-    If you do add an array-valued flag such as `--testPathIgnorePatterns`,
-    keep `--runTestsByPath` after it: an array flag swallows the following
-    arguments, so the paths join that array instead and the whole suite
-    runs.
+    If you add an array-valued flag like `--testPathIgnorePatterns`, keep
+    `--runTestsByPath` last, or the array swallows the paths and the whole
+    suite runs.
 
-  - `npm run lint:cspell` works here as of #763, and checks the same file
-    set a clean checkout does — compare the two totals rather than either
-    against a number, since it grows with the repository. It used to
-    report "Files checked: 0" and
-    exit 1: the script passed `--gitignore`, so cspell resolved ignore rules
-    against the parent repository's `.gitignore`, whose `/.claude/*` line
-    covers the entire worktree. The sweep is now driven by `.cspell.json`'s
-    `ignorePaths`, which resolves against cspell's own root. Do not restore
-    `--gitignore`.
-  - **The pre-commit hook a worktree runs is usually not its own, and may
-    be none at all. Never assume which.** Husky installs the _relative_
-    `core.hooksPath = .husky/_` in the main `.git/config`, but this repo
-    has `extensions.worktreeConfig = true`, so `git worktree add` writes an
-    _absolute_ resolution of that path into the new worktree's
-    `config.worktree`, and a worktree-scoped value beats the repo-local
-    one. Husky's resolver then derives the hook as
-    `dirname(dirname($0))/<name>`, which lands in the **main checkout** —
-    so the hook that runs is the `.husky/pre-commit` of whatever branch the
-    main working tree has checked out, and editing that file on a worktree
-    branch changes nothing about commits made there. Verify per worktree
-    with `git config --show-origin --get core.hooksPath`; 6 of 9 worktrees
-    here carry the override and 3 do not. Where it is absent the relative
-    path applies, and because a fresh worktree has no `.husky/_` of its own,
-    **no hook runs at all** and the commit is silently unvalidated — the
-    more dangerous of the two outcomes, since nothing about it looks wrong.
-  - Both were measured while implementing #763, and each produced a false
-    conclusion first. A `git commit` meant to exercise the new 20-second
-    hook ran `main`'s old `docker:build-and-test-all` and took 2m52s, so a
-    "the hook rejects a type error" negative test actually proved only that
-    the _old_ Docker gate does; a fresh probe worktree created with a plain
-    `git worktree add` reproduced it, its empty commit taking 141s in
-    Docker. Validate a hook change by invoking it the way husky does,
-    `sh -e .husky/pre-commit`, and treat a real `git commit` from a
-    worktree as evidence about whichever hook that worktree's config
-    actually selects. The corollary outlives the issue: after a hook change
-    merges, worktrees with the override keep running the old hook until
-    someone pulls in the **main** checkout.
+  - **A `git commit` from a worktree may run the main checkout's
+    `.husky/pre-commit`, or none at all — never assume it ran this branch's.**
+    Husky installs a relative `core.hooksPath = .husky/_`, but
+    `extensions.worktreeConfig` is on here, so `git worktree add` writes an
+    absolute override into each worktree's `config.worktree` that resolves
+    to the **main checkout**. Some worktrees here carry that override and
+    some do not; `git config --show-origin --get core.hooksPath` shows
+    which, and the ones without it have no `.husky/_` and run nothing,
+    silently. Editing `.husky/pre-commit` on a worktree branch changes
+    nothing about commits there; validate a hook change with
+    `sh -e .husky/pre-commit` rather than committing and timing it. After a
+    hook change merges, worktrees keep running the old hook until the
+    **main** checkout pulls.
   - The worktree starts with a nearly empty `node_modules`. Most tools resolve
     upward to the parent repository's copy, but Vitest browser mode (Storybook
     tests and coverage) fails with "Failed to fetch dynamically imported

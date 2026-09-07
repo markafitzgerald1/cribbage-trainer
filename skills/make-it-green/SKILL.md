@@ -30,41 +30,24 @@ green build status.
   build, lint, and Storybook coverage have passed, rerun
   `npm run docker:run-e2e-only` to verify the remaining Playwright tail before
   reporting final validation.
-- Before the slow Docker run, iterate with `npm run verify:fast` — eslint,
-  stylelint, markdownlint, prettier, cspell, tsc, jscpd, jest, and the
-  three standalone guards (`test:skill-paths`,
-  `test:pages-content-merge`, `test:lint-audit`), run concurrently in
-  about 20 seconds. This is also what `.husky/pre-commit` runs, but do not
-  treat a landed commit as proof it ran: `--no-verify` and `HUSKY=0` skip
-  it, and so does a worktree whose `core.hooksPath` resolves to a
-  missing `.husky/_` (see `CLAUDE.md` on worktree hooks) — run it
-  yourself rather than assuming. It catches most of the lint gauntlet
-  (eslint `--max-warnings 0`, jscpd 0%, `jest/no-hooks`,
-  `assertFunctionNames` registration); see "Lint gauntlet interplay" in
-  `AGENTS.md` for the fixes.
-- **A green fast pass is not a green build. Compute the gap; do not look it
-  up.** This bullet deliberately carries no list. During #763 an
-  enumeration of what survives `verify:fast` was written and corrected
-  three times and was wrong on all three, because the hook and the gate
-  move independently, so any written answer expires without warning. Run:
-
-  ```bash
-  npm run verify:gap
-  ```
-
-  It reads the `Dockerfile`'s entry points and expands both sides through
-  `package.json`, so nested scripts cannot hide members: the Dockerfile's
-  single lint step would otherwise conceal `lint:actionlint`,
-  `lint:audit` and `lint:outdated`. It keeps non-script steps too, which
-  is why `npm clean-install` appears — a `package.json` that has drifted
-  from `package-lock.json` still installs locally, while `npm ci` in the
-  image refuses it, and no hook can see that. It also lists a parent
-  script beside the members it calls, which is why `npm run lint` appears
-  next to the three `lint:*` entries: deciding that a parent contributes
-  nothing of its own means parsing shell, three attempts at which each
-  hid real work, and running the parent is how you cover it anyway. A
-  change touching stories, CSS, build configuration, dependencies, or
-  user-visible copy is exactly the change whose fast pass proves least.
+- Before the slow Docker run, iterate with `npm run verify:fast` — the
+  `npm install`-only checks, concurrently, in about 20 seconds. It is also
+  the pre-commit hook, but do not treat a landed commit as proof it ran:
+  `--no-verify`, `HUSKY=0`, and some worktree setups all skip it (see
+  `CLAUDE.md` on worktree hooks). It catches most of the lint gauntlet;
+  see "Lint gauntlet interplay" in `AGENTS.md` for the fixes.
+- **A green fast pass is not a green build.** `npm run verify:fast` is a
+  subset; `npm run verify:gap` prints what the Docker gate runs that it
+  does not, computed from the `Dockerfile` so it stays correct as either
+  side drifts. Do not write that set down — a prose version was wrong
+  three times during #763. A change touching stories, CSS, build config,
+  dependencies, or user-visible copy is exactly the one whose fast pass
+  proves least.
+- When CI fails after a green hook: `npm run verify:gap` names the
+  candidates. Run the failing one locally — or in Docker if it is arch- or
+  browser-specific (Storybook coverage, screenshots) — fix it, then re-run
+  `npm run verify:fast` plus that check before pushing, so the next CI run
+  is not a third round-trip.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`

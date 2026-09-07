@@ -48,11 +48,10 @@ npm run docker:build-and-test-all
 
 ## Husky/hooks
 
-- `.husky/pre-commit` runs `npm run verify:fast` — eslint, stylelint,
-  markdownlint, prettier, cspell, tsc, jscpd, jest, and the three
-  standalone guards (`test:skill-paths`, `test:pages-content-merge`,
-  `test:lint-audit`), concurrently, in about 20 seconds. Let it run; it is
-  short enough that skipping it saves nothing worth the risk.
+- `.husky/pre-commit` runs `npm run verify:fast` — the `npm install`-only
+  checks (lint, type-check, jest, the build, the standalone guards),
+  concurrently, in about 20 seconds. Let it run; skipping it saves nothing
+  worth the risk.
 - Every check in the hook comes from `devDependencies`, so a fresh clone plus
   `npm install` can run all of it. `actionlint` is deliberately excluded
   because it is installed only by the `Dockerfile`; including it made the

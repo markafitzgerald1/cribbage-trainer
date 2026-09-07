@@ -513,18 +513,13 @@ mcr.microsoft.com/playwright:<tag>`.
   how `tests-e2e/` and `playwright.config.ts` went unchecked for the life of
   the gate (#703) while all ten tasks printed green. Never infer coverage from
   a passing run — compare file sets. `npm run lint:cspell -- --verbose`
-  prints an `n/total` line per file, and the image's total must equal a
-  clean checkout's. The invariant is that the two totals **match**, not any
-  particular value: it was 208 when #703 was fixed and 308 at the end of
-  #763, and it moves whenever a file is added, so compare the two runs
-  rather than either against a number written here. Build that
-  reference checkout with `git archive HEAD | tar --extract` into a temporary
-  directory. Two traps when harvesting that list: cspell **right-aligns** the
-  counter, so an `^[0-9]` anchor silently drops every file numbered below
-  100 — strip leading whitespace first — and `--no-progress` suppresses the
-  per-file lines entirely, leaving only the summary. Both were hit while
-  establishing the #763 baseline, and each yields a plausible wrong number
-  rather than an error.
+  prints an `n/total` line per file; the image's total must **match** a
+  clean checkout's (built with `git archive HEAD | tar --extract` into a
+  temp dir), not any fixed number — it was 208 at #703, 308 at #763, and
+  grows with the repo. When scripting that comparison: cspell right-aligns
+  the counter (strip leading whitespace, or an `^[0-9]` anchor drops files
+  numbered below 100) and `--no-progress` hides the per-file lines
+  entirely — both yield a plausible wrong count rather than an error.
 - Two spell checkers with **different base dictionaries** run in lint:
   eslint's `spellcheck/spell-checker` (`skipWords` in `eslint.config.mjs`;
   `--max-warnings 0` makes its warnings fail CI) and cspell (`.cspell.json`,
@@ -750,57 +745,40 @@ mcr.microsoft.com/playwright:<tag>`.
 
 ## Husky/hooks
 
-- `.husky/pre-commit` runs `npm run verify:fast`: eslint, stylelint,
-  markdownlint, prettier, cspell, tsc, jscpd, jest, and the three
-  standalone guards CI runs as their own steps (`test:skill-paths`,
-  `test:pages-content-merge`, `test:lint-audit`), concurrently, in roughly
-  20 seconds. It is a filter, not the gate — let it run rather than
-  reaching for `--no-verify` out of habit. Keep GPG signing enabled for
-  commits. Autonomous AI agents MUST bypass GPG signing using the
-  `--no-gpg-sign` flag for intermediate commits. The human engineer assumes
+- `.husky/pre-commit` runs `npm run verify:fast` — the `npm install`-only
+  checks, concurrently, in roughly 20 seconds. It is a filter, not the gate:
+  let it run rather than reaching for `--no-verify` out of habit. Keep GPG
+  signing enabled for commits. Autonomous AI agents MUST bypass GPG signing
+  with `--no-gpg-sign` for intermediate commits; the human engineer assumes
   cryptographic accountability via the final Squash and Merge signature.
-- **Every check in the hook must be installed by `npm install`, and nothing
-  else may be added to it.** This is the constraint the hook lives or dies
-  by: a tool that is merely present on the author's machine makes the hook
-  pass locally and fail with exit 127 on a fresh clone, where it blocks
-  **every** commit. `lint:actionlint` was in `verify:fast` for exactly one
-  review round for this reason — `actionlint` is not a dependency of any
-  kind, is absent from `node_modules/.bin`, and is installed only by the
-  `Dockerfile`; it survived local measurement solely because the author had
-  it from Homebrew. Before adding a check, confirm its binary comes from
-  `devDependencies`, not from your `PATH`.
-- **Never restate what the hook omits as a list; run `npm run verify:gap`.**
-  It prints what the Docker gate runs that `verify:fast` does not, reading
-  the `Dockerfile` and expanding nested scripts on both sides so nothing
-  hides behind `RUN npm run lint`. A written version of that set was
-  produced and corrected three times during #763 and was wrong all three
-  times, because the hook and the gate change independently and prose
-  cannot notice. The reasons behind the current members are still worth
-  knowing — `lint:actionlint` is not npm-installed, `lint:audit` and
-  `lint:outdated` reach the network, and the builds and browser suites are
-  the slow gate — but read the membership from the command, not from here.
-- **`lint:cspell` uses `.cspell.json`'s `ignorePaths`, not `--gitignore`, and
-  that distinction is load-bearing.** With `--gitignore`, cspell resolved the
-  ignore rules against the **parent** repository's `.gitignore`, whose
-  `/.claude/*` line covers every file in a `.claude/worktrees` checkout — so
-  it checked **zero** files there and exited 1, in exactly the environment
-  agents work in. `ignorePaths` resolves against cspell's own root instead,
-  so a worktree checks its own files normally. Do not "simplify" this back to
-  `--gitignore`. If you change either the ignore list or `.gitignore`, keep
-  them in step and verify by **file set**, not by a passing run: a
-  glob-driven lint task that matches nothing still exits 0 (see the #703
-  bullet under Lint gauntlet interplay).
-- **One authoritative full gate per pushed head.** Required CI is normally
-  that gate, because it validates the exact pushed SHA and leaves shared
-  evidence. Do not request a fresh Codex or Copilot review until required CI
-  is green for the head you are asking them to read. Run
-  `npm run docker:build-and-test-all` locally when CI cannot serve as that
-  gate: work that will stay unpushed, a failure that needs reproducing inside
-  the local Docker environment, or any commit made with `--no-verify` or
-  `HUSKY=0`, which still MUST be validated in full before pushing.
-- Documentation-only changes need only the documentation checks
-  (`lint:markdownlint`, `lint:prettier`, and `lint:cspell`), not the full
-  Docker suite.
+- **Every check in the hook must come from `npm install`, never from your
+  `PATH`.** A tool merely present on one machine makes the hook pass locally
+  and exit 127 on a fresh clone, blocking every commit there. `lint:actionlint`
+  lasted one review round in the hook for exactly this: the `Dockerfile`
+  installs it, `npm install` does not. Confirm a new check's binary is in
+  `devDependencies` before adding it.
+- **Do not write down what the hook omits; run `npm run verify:gap`.** It
+  reads the `Dockerfile` and expands nested scripts on both sides, so the
+  answer stays correct as the hook and gate drift. A prose version was wrong
+  three times running. (For reference, the current omissions are network
+  checks — `lint:audit`, `lint:outdated` — and the slow gate: `test-e2e`,
+  the Storybook browser suite, and anything needing a browser binary.)
+- **`lint:cspell` uses `.cspell.json`'s `ignorePaths`, not `--gitignore`.**
+  `--gitignore` resolved against the **parent** repo's `.gitignore`, whose
+  `/.claude/*` line hid every file in a worktree — it checked zero and
+  exited 1. `ignorePaths` resolves against cspell's own root. Do not restore
+  `--gitignore`; if you change the ignore list or `.gitignore`, keep them in
+  step and verify by **file set**, not a passing run (a glob task matching
+  nothing still exits 0 — see the #703 bullet under Lint gauntlet interplay).
+- **One authoritative full gate per pushed head.** Required CI normally is
+  it, since it validates the exact SHA and leaves shared evidence — do not
+  request a fresh Codex or Copilot review until it is green for the head
+  under review. Run `npm run docker:build-and-test-all` locally only when CI
+  cannot serve: unpushed work, a Docker-only reproduction, or a commit made
+  with `--no-verify` or `HUSKY=0`, which still MUST be validated in full
+  before pushing.
+- Documentation-only changes need only `lint:markdownlint`, `lint:prettier`,
+  and `lint:cspell`, not the full Docker suite.
 - `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.
   Git stores the signing choice in `.git/rebase-merge/gpg_sign_opt`, so a
   rebase begun without it dies at the first replayed commit with "gpg failed

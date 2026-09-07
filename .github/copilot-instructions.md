@@ -27,25 +27,13 @@ repeating them.
 
 ## Validation
 
-`npm run verify:fast` is the quick local pass and what `.husky/pre-commit`
-runs by default on each commit — eslint, stylelint, markdownlint, prettier,
-tsc, jscpd, cspell, Jest, and the three standalone guards CI runs as their
-own steps (`test:skill-paths`, `test:pages-content-merge`,
-`test:lint-audit`), concurrently, in about 20 seconds. Run
-`npm run verify:gap` for what the Docker gate runs that the hook does not;
-do not rely on a list written here, which cannot stay current as either
-side changes. `actionlint` is excluded because only the Dockerfile
-installs it, not `npm install`.
-A commit made with `--no-verify` or `HUSKY=0` skips it, so a landed commit
-is not by itself evidence the checks ran.
-
-`npm run docker:build-and-test-all` is the authoritative full gate (lint,
-Jest, Storybook coverage, Playwright e2e/screenshots). Run exactly one such
-gate per pushed head: required CI normally is it, because it validates the
-exact pushed commit, so do not also run it locally before pushing. Run it
-yourself only when CI cannot serve that purpose — unpushed work, a
-Docker-only reproduction, or a commit made with `--no-verify`. Do not request
-a fresh review until that gate is green for the exact commit under review.
+`npm run verify:fast` is the quick local pass and the pre-commit hook: the
+`npm install`-only checks, concurrently, in ~20 seconds. It is a filter, not
+the gate — `npm run docker:build-and-test-all` is the authoritative gate, and
+required CI normally runs it against the exact pushed commit. Do not request a
+fresh review until that gate is green for the commit under review. `AGENTS.md`
+carries the details (what the hook omits and why, `npm run verify:gap`, the
+one-gate-per-head rule).
 
 ## Review focus (enforced — see AGENTS.md/CONTRIBUTING.md for rationale)
 
