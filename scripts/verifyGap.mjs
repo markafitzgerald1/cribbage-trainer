@@ -43,41 +43,48 @@ const withDescendants = (name) => {
 };
 
 /*
- * npm's own validation subcommands, any of which a Dockerfile step could
- * invoke directly (`RUN npm audit`). `clean-install` and `ci` are the same
- * command; the gate uses the long form. Everything else after an `npm`
- * token is `run`, a flag, an option value, or a script argument.
+ * npm's own validation subcommands and their documented aliases, any of
+ * which a Dockerfile step could invoke directly (`RUN npm audit`,
+ * `RUN npm install-ci-test`). `cit`/`it`/`i` are npm's aliases for
+ * `install-ci-test`/`install-test`/`install`. Everything else after an
+ * `npm` token is `run`, a flag, an option value, or a script argument.
  */
 const NPM_SUBCOMMANDS = new Set([
   "audit",
   "ci",
+  "cit",
   "clean-install",
   "doctor",
+  "i",
   "install",
+  "install-ci-test",
+  "install-test",
+  "it",
   "outdated",
   "test",
 ]);
 
 /*
- * Each `RUN`/`CMD` instruction is tokenized, and from the first `npm` token
- * onward every token that is a real thing to run - a `package.json` script
- * or an npm subcommand - is collected. `run`, `--flags`, option values
- * (`--script-shell /bin/bash`), script arguments, and JSON punctuation are
- * none of those, so they are skipped by not matching. Ten review rounds each
- * found a legal npm shape a narrower parser mis-read, several inside npm's
- * option grammar; matching by name rather than by position sidesteps the
- * grammar. Collecting every match rather than the first also means an option
- * value that equals a script name (`--workspace test test-e2e`) yields both:
- * over-reported at worst, and the gap filter drops it when it is already in
- * `verify:fast` - the same "over-report a line, never hide a gap" rule the
- * rest of this file follows.
+ * Each `RUN`/`CMD` instruction is tokenized: JSON-array punctuation and
+ * shell operators (`&& || | ;`, spaced or not) are blanked, then from the
+ * first `npm` token onward every token that is a real thing to run - a
+ * `package.json` script or a known npm subcommand - is collected. `run`,
+ * `--flags`, option values (`--script-shell /bin/bash`), and script
+ * arguments are none of those, so they are skipped by not matching. A dozen
+ * review rounds each found a legal npm shape a narrower parser mis-read,
+ * several inside npm's option grammar; matching by name rather than by
+ * position sidesteps the grammar. Collecting every match rather than the
+ * first also means an option value that equals a script name
+ * (`--workspace test test-e2e`) yields both: over-reported at worst, and
+ * the gap filter drops it when it is already in `verify:fast` - the same
+ * "over-report a line, never hide a gap" rule the rest of this file uses.
  */
 const isEntry = (token) =>
   token in packageScripts || NPM_SUBCOMMANDS.has(token);
 
 const entriesInInstruction = (instruction) => {
   const tokens = instruction
-    .replace(/["[\],]/gu, " ")
+    .replace(/["[\],&|;]/gu, " ")
     .split(/\s+/u)
     .filter(Boolean);
   const firstNpm = tokens.indexOf("npm");
