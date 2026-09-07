@@ -40,11 +40,22 @@ const leavesOf = (name) => {
  * because a manifest that has drifted from the lockfile still installs
  * locally while `npm ci` refuses it.
  */
-const gateEntryPoints = [
-  ...readRepoFile("Dockerfile").matchAll(
-    /^(?:RUN|CMD).*?npm(?: run)? (?<entry>[\w:-]+)/gmu,
+/*
+ * Continuations are joined first, and each instruction is then scanned for
+ * every npm invocation rather than one: a single `RUN` can chain several
+ * with `&&`, and an expression anchored to the instruction would report
+ * only the first, quietly under-reporting the gap it exists to compute.
+ */
+const dockerInstructions = readRepoFile("Dockerfile")
+  .replace(/\\\r?\n/gu, " ")
+  .split(/\r?\n/u)
+  .filter((line) => /^(?:RUN|CMD)\b/u.test(line));
+
+const gateEntryPoints = dockerInstructions.flatMap((instruction) =>
+  [...instruction.matchAll(/\bnpm(?: run)? (?<entry>[\w:-]+)/gu)].map(
+    (match) => match.groups.entry,
   ),
-].map((match) => match.groups.entry);
+);
 
 const gate = new Set(gateEntryPoints.flatMap(leavesOf));
 const fast = new Set(leavesOf("verify:fast"));
