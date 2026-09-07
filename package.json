@@ -40,7 +40,8 @@
     "table:update:play": "node scripts/updateExpectedPlayPointsTable.mjs",
     "test:lint-audit": "node --test scripts/lintAudit.test.mjs",
     "test:pages-content-merge": "node --test scripts/pagesContentMerge.test.mjs",
-    "test:skill-paths": "node --test scripts/skillPaths.test.mjs"
+    "test:skill-paths": "node --test scripts/skillPaths.test.mjs",
+    "verify:gap": "node scripts/verifyGap.mjs"
   },
   "devDependencies": {
     "@babel/core": "^8.0.1",

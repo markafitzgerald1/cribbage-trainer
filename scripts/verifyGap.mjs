@@ -1,0 +1,49 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
+
+/*
+ * Prints what the Docker gate runs that `npm run verify:fast` does not, so
+ * the answer is computed rather than remembered. Three successive review
+ * rounds on #763 corrected a prose list of this gap and it was wrong every
+ * time, because both sides move independently: a check added to the hook or
+ * a step added to the Dockerfile invalidates any written answer silently.
+ */
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+const readRepoFile = (name) => readFileSync(join(repoRoot, name), "utf8");
+
+const packageScripts = JSON.parse(readRepoFile("package.json")).scripts;
+
+/*
+ * Both `npm:name` (concurrently's shorthand) and `npm run name` appear in
+ * this repository's scripts, and the gap stays invisible unless nested
+ * scripts are expanded — `RUN npm run lint` hides actionlint, audit and
+ * outdated behind one entry.
+ */
+const invokedBy = (name) =>
+  [
+    ...(packageScripts[name] ?? "").matchAll(
+      /npm(?::| run )(?<called>[\w:-]+)/gu,
+    ),
+  ].map((match) => match.groups.called);
+
+const leavesOf = (name) => {
+  const invoked = invokedBy(name);
+  return invoked.length === 0 ? [name] : invoked.flatMap(leavesOf);
+};
+
+// Read the gate's entry points from the Dockerfile so a new RUN line cannot be missed.
+const gateEntryPoints = [
+  ...readRepoFile("Dockerfile").matchAll(
+    /^(?:RUN|CMD).*?npm(?: run)? (?<entry>[\w:-]+)/gmu,
+  ),
+]
+  .map((match) => match.groups.entry)
+  .filter((name) => name in packageScripts);
+
+const gate = new Set(gateEntryPoints.flatMap(leavesOf));
+const fast = new Set(leavesOf("verify:fast"));
+const gap = [...gate].filter((name) => !fast.has(name)).sort();
+
+process.stdout.write(`${gap.join("\n")}\n`);

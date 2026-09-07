@@ -40,23 +40,22 @@ green build status.
   `--max-warnings 0`, jscpd 0%, `jest/no-hooks`, `assertFunctionNames`
   registration); see "Lint gauntlet interplay" in `AGENTS.md` for the
   fixes.
-- **A green fast pass is not a green build. Derive the gap; do not look it
-  up.** No list belongs here, and this bullet deliberately does not carry
-  one: during #763 an enumeration of what survives `verify:fast` was
-  written, corrected, and corrected again, and was still incomplete each
-  time, because the hook and the gate both move. Read the two sources
-  instead — they are short:
+- **A green fast pass is not a green build. Compute the gap; do not look it
+  up.** This bullet deliberately carries no list. During #763 an
+  enumeration of what survives `verify:fast` was written and corrected
+  three times and was wrong on all three, because the hook and the gate
+  move independently, so any written answer expires without warning. Run:
 
   ```bash
-  grep -E '^(RUN|CMD)' Dockerfile
-  node --print "require('./package.json').scripts['verify:fast']"
+  npm run verify:gap
   ```
 
-  Everything the first prints and the second does not run is what can
-  still fail after a green hook, including the `lint:*` members that
-  `npm run lint` has and `verify:fast` omits. A change touching stories,
-  CSS, build configuration, dependencies, or user-visible copy is exactly
-  the change whose fast pass proves least.
+  It reads the `Dockerfile`'s entry points and expands both sides through
+  `package.json`, so nested scripts cannot hide members: the Dockerfile's
+  single lint step would otherwise conceal `lint:actionlint`,
+  `lint:audit` and `lint:outdated`. A change touching stories, CSS, build
+  configuration, dependencies, or user-visible copy is exactly the change
+  whose fast pass proves least.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
