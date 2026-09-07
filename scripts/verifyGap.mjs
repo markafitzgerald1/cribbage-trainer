@@ -50,15 +50,23 @@ const withDescendants = (name) => {
  * with `&&`. Non-script invocations are kept, so `RUN npm clean-install`
  * appears — a manifest that has drifted from the lockfile still installs
  * locally while `npm ci` in the image refuses it, and no hook sees that.
+ *
+ * `[`, `]`, `"` and `,` are blanked before the scan so Docker's JSON exec
+ * form (`CMD ["npm", "run", "test-e2e"]`) reduces to the same token stream
+ * as the shell form; without that, converting a step to exec form would
+ * silently drop it from the gap.
  */
 const gateEntryPoints = readRepoFile("Dockerfile")
   .replace(/\\\r?\n/gu, " ")
   .split(/\r?\n/u)
   .filter((line) => /^(?:RUN|CMD)\b/u.test(line))
   .flatMap((instruction) =>
-    [...instruction.matchAll(/\bnpm(?: run)? (?<entry>[\w:-]+)/gu)].map(
-      (match) => match.groups.entry,
-    ),
+    [
+      ...instruction
+        .replace(/["[\],]/gu, " ")
+        .replace(/\s+/gu, " ")
+        .matchAll(/\bnpm(?: run)? (?<entry>[\w:-]+)/gu),
+    ].map((match) => match.groups.entry),
   );
 
 const gate = new Set(gateEntryPoints.flatMap(withDescendants));
