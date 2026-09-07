@@ -45,9 +45,11 @@ const withDescendants = (name) => {
 /*
  * npm's own validation subcommands and their documented aliases, any of
  * which a Dockerfile step could invoke directly (`RUN npm audit`,
- * `RUN npm install-ci-test`). `cit`/`it`/`i` are npm's aliases for
- * `install-ci-test`/`install-test`/`install`. Everything else after an
- * `npm` token is `run`, a flag, an option value, or a script argument.
+ * `RUN npm install-ci-test`). This is npm's documented set of validating
+ * subcommands and their real aliases in npm 11.x; npm's deliberate
+ * typo-spelling aliases are omitted, since no Dockerfile writes those.
+ * Everything else after an `npm` token is `run`, a flag, an option value,
+ * or a script argument.
  */
 const NPM_SUBCOMMANDS = new Set([
   "audit",
@@ -56,8 +58,10 @@ const NPM_SUBCOMMANDS = new Set([
   "clean-install",
   "doctor",
   "i",
+  "ic",
   "install",
   "install-ci-test",
+  "install-clean",
   "install-test",
   "it",
   "outdated",
