@@ -34,12 +34,14 @@ green build status.
   stylelint, markdownlint, prettier, cspell, tsc, jscpd, jest, and the
   three standalone guards (`test:skill-paths`,
   `test:pages-content-merge`, `test:lint-audit`), run concurrently in
-  about 20 seconds. This is also what `.husky/pre-commit` runs by default,
-  so a commit that landed without `--no-verify` or `HUSKY=0` has already
-  cleared it. It catches most of the lint gauntlet (eslint
-  `--max-warnings 0`, jscpd 0%, `jest/no-hooks`, `assertFunctionNames`
-  registration); see "Lint gauntlet interplay" in `AGENTS.md` for the
-  fixes.
+  about 20 seconds. This is also what `.husky/pre-commit` runs, but do not
+  treat a landed commit as proof it ran: `--no-verify` and `HUSKY=0` skip
+  it, and so does a worktree whose `core.hooksPath` resolves to a
+  missing `.husky/_` (see `CLAUDE.md` on worktree hooks) — run it
+  yourself rather than assuming. It catches most of the lint gauntlet
+  (eslint `--max-warnings 0`, jscpd 0%, `jest/no-hooks`,
+  `assertFunctionNames` registration); see "Lint gauntlet interplay" in
+  `AGENTS.md` for the fixes.
 - **A green fast pass is not a green build. Compute the gap; do not look it
   up.** This bullet deliberately carries no list. During #763 an
   enumeration of what survives `verify:fast` was written and corrected
