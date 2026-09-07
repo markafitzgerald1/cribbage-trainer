@@ -52,6 +52,7 @@ const withDescendants = (name) => {
  * or a script argument.
  */
 const NPM_SUBCOMMANDS = new Set([
+  "add",
   "audit",
   "ci",
   "cit",
