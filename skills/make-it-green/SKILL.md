@@ -44,10 +44,15 @@ green build status.
   dependencies, or user-visible copy is exactly the one whose fast pass
   proves least.
 - When CI fails after a green hook: `npm run verify:gap` names the
-  candidates. Run the failing one locally — or in Docker if it is arch- or
-  browser-specific (Storybook coverage, screenshots) — fix it, then re-run
-  `npm run verify:fast` plus that check before pushing, so the next CI run
-  is not a third round-trip.
+  candidates. Some run on a plain `npm install` checkout (`build`,
+  `storybook:build`, `storybook:test`); others do not — `lint:actionlint`
+  needs the Docker-only binary, `lint:audit` and `lint:outdated` need the
+  network, and Storybook coverage and screenshots are arch-sensitive. For
+  the first group, run the failing check directly; for the rest, reproduce
+  through `npm run docker:build-and-test-all` (or
+  `npm run docker:run-e2e-only` for the Playwright tail). Either way, fix
+  it, then re-run `npm run verify:fast` plus that check before pushing, so
+  the next CI run is not a third round-trip.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
