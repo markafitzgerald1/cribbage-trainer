@@ -748,15 +748,27 @@ mcr.microsoft.com/playwright:<tag>`.
 ## Husky/hooks
 
 - `.husky/pre-commit` runs `npm run verify:fast`: eslint, stylelint,
-  markdownlint, prettier, cspell, tsc, jscpd, actionlint and jest,
-  concurrently, in roughly 20 seconds. It is a filter, not the gate — let it
-  run rather than reaching for `--no-verify` out of habit. Keep GPG signing
-  enabled for commits. Autonomous AI agents MUST bypass GPG signing using the
+  markdownlint, prettier, cspell, tsc, jscpd and jest, concurrently, in
+  roughly 20 seconds. It is a filter, not the gate — let it run rather than
+  reaching for `--no-verify` out of habit. Keep GPG signing enabled for
+  commits. Autonomous AI agents MUST bypass GPG signing using the
   `--no-gpg-sign` flag for intermediate commits. The human engineer assumes
   cryptographic accountability via the final Squash and Merge signature.
-- The hook omits `lint:audit` and `lint:outdated`, which reach the network,
-  and the Storybook browser suite and Playwright, which are the slow gate.
-  Everything else runs at commit time.
+- **Every check in the hook must be installed by `npm install`, and nothing
+  else may be added to it.** This is the constraint the hook lives or dies
+  by: a tool that is merely present on the author's machine makes the hook
+  pass locally and fail with exit 127 on a fresh clone, where it blocks
+  **every** commit. `lint:actionlint` was in `verify:fast` for exactly one
+  review round for this reason — `actionlint` is not a dependency of any
+  kind, is absent from `node_modules/.bin`, and is installed only by the
+  `Dockerfile`; it survived local measurement solely because the author had
+  it from Homebrew. Before adding a check, confirm its binary comes from
+  `devDependencies`, not from your `PATH`.
+- The hook therefore omits `lint:actionlint` (not npm-installed),
+  `lint:audit` and `lint:outdated` (they reach the network), and the
+  Storybook browser suite and Playwright (the slow gate). Everything else
+  runs at commit time, and `npm run lint` in Docker and CI still covers all
+  of it.
 - **`lint:cspell` uses `.cspell.json`'s `ignorePaths`, not `--gitignore`, and
   that distinction is load-bearing.** With `--gitignore`, cspell resolved the
   ignore rules against the **parent** repository's `.gitignore`, whose

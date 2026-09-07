@@ -49,9 +49,13 @@ npm run docker:build-and-test-all
 ## Husky/hooks
 
 - `.husky/pre-commit` runs `npm run verify:fast` — eslint, stylelint,
-  markdownlint, prettier, cspell, tsc, jscpd, actionlint and jest,
-  concurrently, in about 20 seconds. Let it run; it is short enough that
-  skipping it saves nothing worth the risk.
+  markdownlint, prettier, cspell, tsc, jscpd and jest, concurrently, in
+  about 20 seconds. Let it run; it is short enough that skipping it saves
+  nothing worth the risk.
+- Every check in the hook comes from `devDependencies`, so a fresh clone plus
+  `npm install` can run all of it. `actionlint` is deliberately excluded
+  because it is installed only by the `Dockerfile`; including it made the
+  hook exit 127 on any machine without a separate Homebrew install.
 - The hook is a fast filter, not the merge gate. The authoritative gate is
   `npm run docker:build-and-test-all`, which also runs the Storybook browser
   suite and Playwright. Required CI normally serves as that gate

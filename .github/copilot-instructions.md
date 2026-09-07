@@ -29,8 +29,9 @@ repeating them.
 
 `npm run verify:fast` is the quick local pass and what `.husky/pre-commit`
 runs by default on each commit — eslint, stylelint, markdownlint, prettier,
-tsc, jscpd, cspell, actionlint and Jest, concurrently, in about 20 seconds.
-It excludes only the network-dependent audit checks and the browser suites.
+tsc, jscpd, cspell and Jest, concurrently, in about 20 seconds. It excludes
+`actionlint` (installed only by the Dockerfile, not by `npm install`), the
+network-dependent audit checks, and the browser suites.
 A commit made with `--no-verify` or `HUSKY=0` skips it, so a landed commit
 is not by itself evidence the checks ran.
 
