@@ -32,7 +32,7 @@ green build status.
   reporting final validation.
 - Before the slow Docker run, iterate with `npm run verify:fast` — eslint,
   stylelint, markdownlint, prettier, tsc, jscpd, actionlint and jest, run
-  concurrently in about 25 seconds. This is also what `.husky/pre-commit`
+  concurrently in about 20 seconds. This is also what `.husky/pre-commit`
   runs, so a commit that lands has already cleared it. It catches most of
   the lint gauntlet (eslint `--max-warnings 0`, jscpd 0%, `jest/no-hooks`,
   `assertFunctionNames` registration); see "Lint gauntlet interplay" in

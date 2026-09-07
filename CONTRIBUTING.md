@@ -50,7 +50,7 @@ npm run docker:build-and-test-all
 
 - `.husky/pre-commit` runs `npm run verify:fast` — eslint, stylelint,
   markdownlint, prettier, tsc, jscpd, actionlint and jest, concurrently, in
-  about 25 seconds. Let it run; it is short enough that skipping it saves
+  about 20 seconds. Let it run; it is short enough that skipping it saves
   nothing worth the risk.
 - The hook is a fast filter, not the merge gate. The authoritative gate is
   `npm run docker:build-and-test-all`, which also runs the Storybook browser

@@ -54,12 +54,17 @@ guidance only one tool can use.
     Do not "simplify" them back to bare `/.claude/` or `/scripts/`.
   - A focused run still needs `--coverage=false`, whose global thresholds
     otherwise fail a targeted suite that passed, and `--runTestsByPath`,
-    without which the paths are swallowed by a preceding array flag and the
-    whole suite runs.
+    which makes jest read the trailing arguments as literal file paths
+    rather than as regex patterns.
 
     ```bash
     npx jest --coverage=false --runTestsByPath <file>
     ```
+
+    If you do add an array-valued flag such as `--testPathIgnorePatterns`,
+    keep `--runTestsByPath` after it: an array flag swallows the following
+    arguments, so the paths join that array instead and the whole suite
+    runs.
 
   - `npm run lint:cspell` reports "Files checked: 0" and exits 1, because the
     parent repository's `.gitignore` excludes `/.claude/` and `--gitignore`
