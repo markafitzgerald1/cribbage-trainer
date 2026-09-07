@@ -4,10 +4,10 @@ import { readFileSync } from "node:fs";
 
 /*
  * Prints what the Docker gate runs that `npm run verify:fast` does not, so
- * the answer is computed rather than remembered. Three successive review
- * rounds on #763 corrected a prose list of this gap and it was wrong every
- * time, because both sides move independently: a check added to the hook or
- * a step added to the Dockerfile invalidates any written answer silently.
+ * the answer is computed rather than remembered. Successive review rounds on
+ * #763 corrected a prose list of this gap and it was wrong every time,
+ * because both sides move independently: a check added to the hook or a step
+ * added to the Dockerfile invalidates any written answer silently.
  */
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -18,7 +18,7 @@ const packageScripts = JSON.parse(readRepoFile("package.json")).scripts;
 /*
  * Both `npm:name` (concurrently's shorthand) and `npm run name` appear in
  * this repository's scripts, and the gap stays invisible unless nested
- * scripts are expanded — the Dockerfile's single lint step would otherwise
+ * scripts are expanded - the Dockerfile's single lint step would otherwise
  * conceal `lint:actionlint`, `lint:audit` and `lint:outdated`.
  */
 const invokedBy = (name) =>
@@ -30,12 +30,10 @@ const invokedBy = (name) =>
 
 /*
  * A parent is reported alongside everything it calls, never replaced by it.
- * Deciding whether a parent "only" fans out means parsing shell, and three
- * attempts at that during #763 each hid work behind a shape the previous
- * one had not considered: a chained `&&` command, then a quoted worker such
- * as `concurrently "node check.mjs" "npm:lint:eslint"`, then a flag whose
- * value was mistaken for one. Over-reporting a parent costs a line; missing
- * one reports a closed gap that is not closed, so this does not parse.
+ * Deciding whether a parent "only" fans out means parsing shell, and every
+ * attempt at that during #763 hid work behind a shape the previous one had
+ * not considered. Over-reporting a parent costs a line; missing one reports
+ * a closed gap that is not closed, so this does not parse.
  */
 const withDescendants = (name) => {
   const invoked = invokedBy(name);
@@ -52,14 +50,18 @@ const withDescendants = (name) => {
 const NPM_SUBCOMMANDS = new Set(["ci", "clean-install", "install", "test"]);
 
 /*
- * Each `RUN`/`CMD` instruction is tokenized and scanned for the first
- * token after an `npm` that is a real thing to run — a `package.json`
- * script or an npm subcommand. Everything between (`run`, `--flags`,
- * option values like `--script-shell /bin/bash`, JSON punctuation) is
- * skipped because it is none of those. Eight review rounds each found a
- * legal npm shape a looser parser mis-read; this cannot name a
- * non-script, because it only recognizes names it can look up. `npm run x`
- * is only valid when `x` is a defined script, so nothing real is lost.
+ * Each `RUN`/`CMD` instruction is tokenized, and from the first `npm` token
+ * onward every token that is a real thing to run - a `package.json` script
+ * or an npm subcommand - is collected. `run`, `--flags`, option values
+ * (`--script-shell /bin/bash`), script arguments, and JSON punctuation are
+ * none of those, so they are skipped by not matching. Ten review rounds each
+ * found a legal npm shape a narrower parser mis-read, several inside npm's
+ * option grammar; matching by name rather than by position sidesteps the
+ * grammar. Collecting every match rather than the first also means an option
+ * value that equals a script name (`--workspace test test-e2e`) yields both:
+ * over-reported at worst, and the gap filter drops it when it is already in
+ * `verify:fast` - the same "over-report a line, never hide a gap" rule the
+ * rest of this file follows.
  */
 const isEntry = (token) =>
   token in packageScripts || NPM_SUBCOMMANDS.has(token);
@@ -69,22 +71,8 @@ const entriesInInstruction = (instruction) => {
     .replace(/["[\],]/gu, " ")
     .split(/\s+/u)
     .filter(Boolean);
-  const entries = [];
-  for (let index = 0; index < tokens.length; index += 1) {
-    if (tokens[index] !== "npm") {
-      continue;
-    }
-    for (let cursor = index + 1; cursor < tokens.length; cursor += 1) {
-      if (tokens[cursor] === "npm") {
-        break;
-      }
-      if (isEntry(tokens[cursor])) {
-        entries.push(tokens[cursor]);
-        break;
-      }
-    }
-  }
-  return entries;
+  const firstNpm = tokens.indexOf("npm");
+  return firstNpm < 0 ? [] : tokens.slice(firstNpm + 1).filter(isEntry);
 };
 
 const gateEntryPoints = readRepoFile("Dockerfile")
