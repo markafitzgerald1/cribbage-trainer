@@ -766,11 +766,15 @@ mcr.microsoft.com/playwright:<tag>`.
   `Dockerfile`; it survived local measurement solely because the author had
   it from Homebrew. Before adding a check, confirm its binary comes from
   `devDependencies`, not from your `PATH`.
-- The hook therefore omits `lint:actionlint` (not npm-installed),
-  `lint:audit` and `lint:outdated` (they reach the network), and the
-  Storybook browser suite and Playwright (the slow gate). Everything else
-  runs at commit time, and `npm run lint` in Docker and CI still covers all
-  of it.
+- The hook therefore omits `lint:actionlint` (not npm-installed), and
+  `lint:audit` and `lint:outdated` (they reach the network). It also does
+  not build: `npm run build`, `npm run storybook:build`,
+  `npm run storybook:test:coverage` and Playwright all belong to the gate.
+  Do not restate that omission list anywhere as a closed set — it was
+  written and corrected twice during #763 and was incomplete both times.
+  Derive it instead, from `grep -E '^(RUN|CMD)' Dockerfile` against the
+  `verify:fast` script; `skills/make-it-green/SKILL.md` carries the
+  worked form.
 - **`lint:cspell` uses `.cspell.json`'s `ignorePaths`, not `--gitignore`, and
   that distinction is load-bearing.** With `--gitignore`, cspell resolved the
   ignore rules against the **parent** repository's `.gitignore`, whose

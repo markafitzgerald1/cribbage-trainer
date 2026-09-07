@@ -40,15 +40,24 @@ green build status.
   `--max-warnings 0`, jscpd 0%, `jest/no-hooks`, `assertFunctionNames`
   registration); see "Lint gauntlet interplay" in `AGENTS.md` for the
   fixes.
-- **A green fast pass is not a green build, and the gap is defined by
-  subtraction, not by this list.** What CI runs and `verify:fast` does not
-  is what can still fail, so derive it from the workflow and the
-  `Dockerfile` rather than trusting any enumeration here to have stayed
-  current. As of #763 that gap is **`actionlint`** on the workflow files
-  (excluded because only the `Dockerfile` installs it), **Storybook
-  coverage** against the `vite.config.js` thresholds, and **Playwright**
-  e2e and screenshots. A change touching stories, CSS, or user-visible
-  copy is exactly the change whose fast pass proves least.
+- **A green fast pass is not a green build. Derive the gap; do not look it
+  up.** No list belongs here, and this bullet deliberately does not carry
+  one: during #763 an enumeration of what survives `verify:fast` was
+  written, corrected, and corrected again, and was still incomplete each
+  time, because the hook and the gate both move. Read the two sources
+  instead — they are short:
+
+  ```bash
+  grep -E '^(RUN|CMD)' Dockerfile
+  node --print "require('./package.json').scripts['verify:fast']"
+  ```
+
+  Everything the first prints and the second does not run is what can
+  still fail after a green hook, including the `lint:*` members that
+  `npm run lint` has and `verify:fast` omits. A change touching stories,
+  CSS, build configuration, dependencies, or user-visible copy is exactly
+  the change whose fast pass proves least.
+
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
   block in `vite.config.js` to the exact reported totals. Thresholds are
