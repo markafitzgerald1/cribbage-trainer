@@ -53,9 +53,12 @@ green build status.
   It reads the `Dockerfile`'s entry points and expands both sides through
   `package.json`, so nested scripts cannot hide members: the Dockerfile's
   single lint step would otherwise conceal `lint:actionlint`,
-  `lint:audit` and `lint:outdated`. A change touching stories, CSS, build
-  configuration, dependencies, or user-visible copy is exactly the change
-  whose fast pass proves least.
+  `lint:audit` and `lint:outdated`. It keeps non-script steps too, which
+  is why `npm clean-install` appears — a `package.json` that has drifted
+  from `package-lock.json` still installs locally, while `npm ci` in the
+  image refuses it, and no hook can see that. A change touching stories,
+  CSS, build configuration, dependencies, or user-visible copy is exactly
+  the change whose fast pass proves least.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`

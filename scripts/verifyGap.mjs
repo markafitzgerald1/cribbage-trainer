@@ -33,17 +33,29 @@ const leavesOf = (name) => {
   return invoked.length === 0 ? [name] : invoked.flatMap(leavesOf);
 };
 
-// Read the gate's entry points from the Dockerfile so a new RUN line cannot be missed.
+/*
+ * Read the gate's entry points from the Dockerfile so a new RUN line cannot
+ * be missed. Non-script invocations are kept rather than filtered out:
+ * `RUN npm clean-install` is a real failure class the hook cannot reach,
+ * because a manifest that has drifted from the lockfile still installs
+ * locally while `npm ci` refuses it.
+ */
 const gateEntryPoints = [
   ...readRepoFile("Dockerfile").matchAll(
     /^(?:RUN|CMD).*?npm(?: run)? (?<entry>[\w:-]+)/gmu,
   ),
-]
-  .map((match) => match.groups.entry)
-  .filter((name) => name in packageScripts);
+].map((match) => match.groups.entry);
 
 const gate = new Set(gateEntryPoints.flatMap(leavesOf));
 const fast = new Set(leavesOf("verify:fast"));
-const gap = [...gate].filter((name) => !fast.has(name)).sort();
+
+// Printed as the command to run, since a non-script entry has no `run`.
+const asCommand = (name) =>
+  name in packageScripts ? `npm run ${name}` : `npm ${name}`;
+
+const gap = [...gate]
+  .filter((name) => !fast.has(name))
+  .sort()
+  .map(asCommand);
 
 process.stdout.write(`${gap.join("\n")}\n`);
