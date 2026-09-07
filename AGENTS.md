@@ -742,17 +742,34 @@ mcr.microsoft.com/playwright:<tag>`.
 
 ## Husky/hooks
 
-- Some git commands may invoke Docker-based test hooks. **For doc-only changes,
-  skip hooks** (`HUSKY=0` or `--no-verify`) to avoid unnecessary Docker/test
-  runs. For code changes, only skip hooks if absolutely sure they are not needed
-  (i.e., a build and all tests have been performed on the current uncommitted
-  code). Keep GPG signing enabled for commits. Autonomous AI agents MUST bypass
-  GPG signing using the `--no-gpg-sign` flag for intermediate commits. The human
-  engineer assumes cryptographic accountability via the final Squash and Merge
-  signature.
-- If an agent uses `--no-verify` or `HUSKY=0` to bypass local git hooks, it MUST
-  execute `npm run docker:build-and-test-all` to explicitly ensure full CI
-  compliance before pushing.
+- `.husky/pre-commit` runs `npm run verify:fast`: eslint, stylelint,
+  markdownlint, prettier, tsc, jscpd, actionlint and jest, concurrently, in
+  roughly 25 seconds. It is a filter, not the gate — let it run rather than
+  reaching for `--no-verify` out of habit. Keep GPG signing enabled for
+  commits. Autonomous AI agents MUST bypass GPG signing using the
+  `--no-gpg-sign` flag for intermediate commits. The human engineer assumes
+  cryptographic accountability via the final Squash and Merge signature.
+- The hook deliberately omits `lint:cspell`, `lint:audit`, `lint:outdated`,
+  the Storybook browser suite, and Playwright. `lint:audit` and
+  `lint:outdated` reach the network, and the last two are the slow gate.
+  `lint:cspell` is excluded for a sharper reason: `cspell '**' --gitignore`
+  checks **zero** files inside a `.claude/worktrees` checkout, because the
+  parent repository's `.gitignore` excludes `/.claude/`. `.cspell.json`
+  declares no `ignorePaths` of its own, so dropping `--gitignore` is not a
+  fix either — it widens the sweep from 307 files to 539, including
+  `playwright-report/`, and reports hundreds of spurious issues. Spelling is
+  therefore caught in CI, not at commit time.
+- **One authoritative full gate per pushed head.** Required CI is normally
+  that gate, because it validates the exact pushed SHA and leaves shared
+  evidence. Do not request a fresh Codex or Copilot review until required CI
+  is green for the head you are asking them to read. Run
+  `npm run docker:build-and-test-all` locally when CI cannot serve as that
+  gate: work that will stay unpushed, a failure that needs reproducing inside
+  the local Docker environment, or any commit made with `--no-verify` or
+  `HUSKY=0`, which still MUST be validated in full before pushing.
+- Documentation-only changes need only the documentation checks
+  (`lint:markdownlint`, `lint:prettier`, and `npx cspell --no-gitignore` on
+  the changed files), not the full Docker suite.
 - `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.
   Git stores the signing choice in `.git/rebase-merge/gpg_sign_opt`, so a
   rebase begun without it dies at the first replayed commit with "gpg failed

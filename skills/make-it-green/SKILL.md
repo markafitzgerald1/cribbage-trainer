@@ -30,10 +30,19 @@ green build status.
   build, lint, and Storybook coverage have passed, rerun
   `npm run docker:run-e2e-only` to verify the remaining Playwright tail before
   reporting final validation.
-- Before the slow Docker run, iterate with `npm run lint && npm test` — the
-  lint gauntlet (eslint `--max-warnings 0`, dual spell checkers, jscpd 0%,
-  `jest/no-hooks`, `assertFunctionNames` registration) catches most failures
-  in seconds; see "Lint gauntlet interplay" in `AGENTS.md` for the fixes.
+- Before the slow Docker run, iterate with `npm run verify:fast` — eslint,
+  stylelint, markdownlint, prettier, tsc, jscpd, actionlint and jest, run
+  concurrently in about 25 seconds. This is also what `.husky/pre-commit`
+  runs, so a commit that lands has already cleared it. It catches most of
+  the lint gauntlet (eslint `--max-warnings 0`, jscpd 0%, `jest/no-hooks`,
+  `assertFunctionNames` registration); see "Lint gauntlet interplay" in
+  `AGENTS.md` for the fixes.
+- Three gate failures survive `verify:fast` and can only appear in Docker or
+  CI, so do not read a green fast pass as a green build: **spelling**
+  (`cspell` is excluded — it checks zero files in a worktree), **Storybook
+  coverage** against the `vite.config.js` thresholds, and **Playwright**
+  e2e and screenshots. A change touching stories, CSS, or user-visible
+  copy is exactly the change whose fast pass proves least.
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
   block in `vite.config.js` to the exact reported totals. Thresholds are

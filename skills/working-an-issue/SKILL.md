@@ -17,6 +17,19 @@ review mechanics that have each produced a wrong conclusion when guessed at.
   commit and open the PR immediately, because the preview only publishes for
   pushes made after the PR exists; open it as a draft if the work is not ready
   to read; then push the rest.
+- **One authoritative full gate per pushed head, and reviews come after it.**
+  `.husky/pre-commit` runs the fast `npm run verify:fast` filter, not the
+  merge gate, so a landed commit is not validated work. Wait for required CI
+  to be green on the exact SHA before requesting a fresh Codex or Copilot
+  review: a review of a head that then fails CI is spent twice, once on the
+  bot's budget and once on the round it forces. Run
+  `npm run docker:build-and-test-all` locally instead only when CI cannot be
+  that gate — unpushed work, a Docker-only reproduction, or a commit made
+  with `--no-verify`.
+- During a review fix the loop is: reproduce with a regression test that
+  fails against the unfixed code, run the focused test plus `verify:fast`,
+  commit and push, let required CI run the full gate for that SHA, then
+  reply to and resolve the threads and request the next round.
 - The PR body carries a human review guide and a manual testing plan. Request
   a Copilot review and run the Codex loop to a clean round before asking for
   human review — the human's attention is the scarce resource here and comes

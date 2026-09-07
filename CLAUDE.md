@@ -29,35 +29,36 @@ guidance only one tool can use.
 - The shell may start on an old Node. Activate the repo version per command:
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use; hash -r`
   (`hash -r` is required because zsh caches the old `node` path).
-- `.husky/pre-commit` runs the full `npm run docker:build-and-test-all` gate
-  synchronously on every commit — several minutes end to end on a passing
-  run. The Bash tool's default 2-minute timeout is long enough for a hook
-  that fails early (a lint or coverage-threshold error partway through the
-  Dockerfile) but not for one that runs to completion. When the timeout
-  fires it sends SIGTERM to that foreground `git commit`, and because git is
-  synchronously waiting on the hook, the commit does not land — it is dead,
-  not merely slow, and `git log`/`git status` afterward will confirm nothing
-  changed. Issue every `git commit` in this repo with
-  `run_in_background: true` from the start rather than attempting it in the
-  foreground first: a fast-failing hook still returns within seconds either
-  way, and a passing run needs the extra time a second foreground attempt
-  cannot buy it. Once its completion notification arrives, confirm the
-  outcome from the reported exit status and `git log`/`git status` rather
-  than assuming success from the task finishing — a failed hook completes
-  too, just with a nonzero exit, the same discipline this file already
-  asks for when judging any other validation run.
+- `.husky/pre-commit` runs `npm run verify:fast`, measured at about 25
+  seconds, so an ordinary `git commit` fits the Bash tool's default 2-minute
+  timeout and needs no special handling. Until #763 the hook ran the whole
+  `npm run docker:build-and-test-all` gate synchronously — several minutes —
+  and this file therefore told every session to issue `git commit` with
+  `run_in_background: true`. That instruction is obsolete; a foreground
+  commit is now the normal case. The reasoning behind it is still worth
+  keeping, because it applies to any long foreground command here: when the
+  timeout fires it sends SIGTERM to the foreground `git commit`, and because
+  git is synchronously waiting on the hook the commit does not land — it is
+  dead, not merely slow, and `git log`/`git status` afterward confirm
+  nothing changed. So run `npm run docker:build-and-test-all` itself in the
+  background, and judge it by its reported exit status plus `git log` rather
+  than by the task having finished: a failed run completes too, just with a
+  nonzero exit.
 - Working inside a `.claude/worktrees/<name>` checkout changes what several
   tools see, and each difference has already been mistaken for a real failure:
-  - `jest.config.json` ignores `/.claude/`, and the worktree's absolute path
-    contains it, so a bare `npx jest` finds no tests at all. Override the
-    list, and drop coverage, whose global thresholds fail a focused run that
-    otherwise passed. Keep `--runTestsByPath`: without it the paths are
-    swallowed by the preceding array flag and the whole suite runs.
+  - `npm test` works here as of #763. It used not to: `jest.config.json`
+    ignored the free-floating `/.claude/`, which the worktree's own absolute
+    path contains, so all 90 test files were excluded and jest exited 1 with
+    "No tests found". The patterns are now anchored at `<rootDir>`, which
+    scopes them to the project rather than to any ancestor directory name.
+    Do not "simplify" them back to bare `/.claude/` or `/scripts/`.
+  - A focused run still needs `--coverage=false`, whose global thresholds
+    otherwise fail a targeted suite that passed, and `--runTestsByPath`,
+    without which the paths are swallowed by a preceding array flag and the
+    whole suite runs.
 
     ```bash
-    npx jest --coverage=false \
-      --testPathIgnorePatterns '/tests-e2e/' \
-      --runTestsByPath <file>
+    npx jest --coverage=false --runTestsByPath <file>
     ```
 
   - `npm run lint:cspell` reports "Files checked: 0" and exits 1, because the

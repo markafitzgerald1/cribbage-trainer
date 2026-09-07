@@ -44,7 +44,10 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Lint and Test
 
-- `npm run docker:build-and-test-all`
+- Fast checks, and what `.husky/pre-commit` runs on every commit (about 25
+  seconds): `npm run verify:fast`
+- Full gate, required before a branch is pushed for review:
+  `npm run docker:build-and-test-all`
 
 ### Develop
 

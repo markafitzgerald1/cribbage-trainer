@@ -27,9 +27,15 @@ repeating them.
 
 ## Validation
 
+`npm run verify:fast` is the quick local pass and what `.husky/pre-commit`
+runs on every commit — eslint, stylelint, markdownlint, prettier, tsc, jscpd,
+actionlint and Jest, concurrently, in about 25 seconds. It excludes `cspell`,
+the network-dependent audit checks, and the browser suites.
+
 Always validate with `npm run docker:build-and-test-all` before pushing; it
-mirrors CI (lint, Jest, Storybook coverage, Playwright e2e/screenshots). A quick
-local pass is `npm run lint && npm test`.
+mirrors CI (lint, Jest, Storybook coverage, Playwright e2e/screenshots). Run
+exactly one authoritative full gate per pushed head, and do not request a
+fresh review until it is green for that exact commit.
 
 ## Review focus (enforced — see AGENTS.md/CONTRIBUTING.md for rationale)
 
