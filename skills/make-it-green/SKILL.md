@@ -47,11 +47,14 @@ green build status.
   it was. Run that check directly if your checkout can — but several of the
   gate's steps cannot run on a plain `npm install` tree: `lint:actionlint`
   exits 127 without the Docker-only binary, `lint:audit` and
-  `lint:outdated` need the network, and Storybook coverage and the
-  screenshots are arch-sensitive. Reproduce those through
-  `npm run docker:build-and-test-all` (or `npm run docker:run-e2e-only`
-  for the Playwright tail). Fix it, then re-run `npm run verify:fast` plus
-  that check before pushing, so the next CI run is not a third round-trip.
+  `lint:outdated` need the network, Storybook coverage varies with the
+  container's Node rather than the local one (not an arch split — see the
+  Storybook-coverage bullet under Tests and quality in `AGENTS.md`), and
+  the screenshots are genuinely arch-/rendering-sensitive. Reproduce those
+  through `npm run docker:build-and-test-all` (or
+  `npm run docker:run-e2e-only` for the Playwright tail). Fix it, then
+  re-run `npm run verify:fast` plus that check before pushing, so the next
+  CI run is not a third round-trip.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`

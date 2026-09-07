@@ -43,11 +43,20 @@ const withDescendants = (name) => {
 };
 
 /*
- * npm subcommands that validate something and could appear in the
- * `Dockerfile`. `clean-install` and `ci` are the same command; the gate
- * uses the long form.
+ * npm's own validation subcommands, any of which a Dockerfile step could
+ * invoke directly (`RUN npm audit`). `clean-install` and `ci` are the same
+ * command; the gate uses the long form. Everything else after an `npm`
+ * token is `run`, a flag, an option value, or a script argument.
  */
-const NPM_SUBCOMMANDS = new Set(["ci", "clean-install", "install", "test"]);
+const NPM_SUBCOMMANDS = new Set([
+  "audit",
+  "ci",
+  "clean-install",
+  "doctor",
+  "install",
+  "outdated",
+  "test",
+]);
 
 /*
  * Each `RUN`/`CMD` instruction is tokenized, and from the first `npm` token
