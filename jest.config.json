@@ -32,7 +32,7 @@
   },
   "testEnvironment": "jsdom",
   "testPathIgnorePatterns": [
-    "<rootDir>/.claude/",
+    "<rootDir>/\\.claude/",
     "<rootDir>/scripts/",
     "<rootDir>/tests-e2e/",
     "<rootDir>/tests-examples"

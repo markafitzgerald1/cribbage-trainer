@@ -28,9 +28,11 @@ repeating them.
 ## Validation
 
 `npm run verify:fast` is the quick local pass and what `.husky/pre-commit`
-runs on every commit — eslint, stylelint, markdownlint, prettier, tsc, jscpd,
-cspell, actionlint and Jest, concurrently, in about 20 seconds. It excludes
-only the network-dependent audit checks and the browser suites.
+runs by default on each commit — eslint, stylelint, markdownlint, prettier,
+tsc, jscpd, cspell, actionlint and Jest, concurrently, in about 20 seconds.
+It excludes only the network-dependent audit checks and the browser suites.
+A commit made with `--no-verify` or `HUSKY=0` skips it, so a landed commit
+is not by itself evidence the checks ran.
 
 `npm run docker:build-and-test-all` is the authoritative full gate (lint,
 Jest, Storybook coverage, Playwright e2e/screenshots). Run exactly one such

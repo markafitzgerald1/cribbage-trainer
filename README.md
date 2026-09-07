@@ -44,8 +44,8 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 
 ### Lint and Test
 
-- Fast checks, and what `.husky/pre-commit` runs on every commit (about 20
-  seconds): `npm run verify:fast`
+- Fast checks, and what `.husky/pre-commit` runs by default on each commit
+  (about 20 seconds): `npm run verify:fast`
 - The full gate: `npm run docker:build-and-test-all`. Continuous integration
   normally runs this for you against the exact commit you pushed, so you do
   not need to run it locally before pushing. Run it yourself when CI cannot
