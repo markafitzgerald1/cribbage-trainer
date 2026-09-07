@@ -512,17 +512,20 @@ mcr.microsoft.com/playwright:<tag>`.
   not an error: it matches nothing and the task still reports success. That is
   how `tests-e2e/` and `playwright.config.ts` went unchecked for the life of
   the gate (#703) while all ten tasks printed green. Never infer coverage from
-  a passing run — compare file sets. `cspell '**' --gitignore --verbose` prints
-  an `n/total` line per file, and the image's total must equal a clean
-  checkout's (208 when #703 was fixed). Build that reference checkout with
-  `git archive HEAD | tar --extract --directory <tmp>`, because in a
-  `.claude/worktrees` checkout the parent repo's `.gitignore` makes
-  `--gitignore` skip everything.
+  a passing run — compare file sets. `npm run lint:cspell -- --verbose`
+  prints an `n/total` line per file; the image's total must **match** a
+  clean checkout's (built with `git archive HEAD | tar --extract` into a
+  temp dir), not any fixed number — it was 208 at #703, 308 at #763, and
+  grows with the repo. When scripting that comparison: cspell right-aligns
+  the counter (strip leading whitespace, or an `^[0-9]` anchor drops files
+  numbered below 100) and `--no-progress` hides the per-file lines
+  entirely — both yield a plausible wrong count rather than an error.
 - Two spell checkers with **different base dictionaries** run in lint:
   eslint's `spellcheck/spell-checker` (`skipWords` in `eslint.config.mjs`;
   `--max-warnings 0` makes its warnings fail CI) and cspell (`.cspell.json`,
-  honors `.gitignore`). A new word may trip one, both, or neither — run each
-  checker and add the word only where it is actually flagged.
+  whose `ignorePaths` — not `.gitignore` — sets its sweep). A new word may
+  trip one, both, or neither — run each checker and add the word only where
+  it is actually flagged.
 - `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
   at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
   spies (see `index.test.tsx` for the established idiom).
@@ -742,17 +745,41 @@ mcr.microsoft.com/playwright:<tag>`.
 
 ## Husky/hooks
 
-- Some git commands may invoke Docker-based test hooks. **For doc-only changes,
-  skip hooks** (`HUSKY=0` or `--no-verify`) to avoid unnecessary Docker/test
-  runs. For code changes, only skip hooks if absolutely sure they are not needed
-  (i.e., a build and all tests have been performed on the current uncommitted
-  code). Keep GPG signing enabled for commits. Autonomous AI agents MUST bypass
-  GPG signing using the `--no-gpg-sign` flag for intermediate commits. The human
-  engineer assumes cryptographic accountability via the final Squash and Merge
-  signature.
-- If an agent uses `--no-verify` or `HUSKY=0` to bypass local git hooks, it MUST
-  execute `npm run docker:build-and-test-all` to explicitly ensure full CI
-  compliance before pushing.
+- `.husky/pre-commit` runs `npm run verify:fast` — the `npm install`-only
+  checks, concurrently, in roughly 20 seconds. It is a filter, not the gate:
+  let it run rather than reaching for `--no-verify` out of habit. Keep GPG
+  signing enabled for commits. Autonomous AI agents MUST bypass GPG signing
+  with `--no-gpg-sign` for intermediate commits; the human engineer assumes
+  cryptographic accountability via the final Squash and Merge signature.
+- **Every check in the hook must come from `npm install`, never from your
+  `PATH`.** A tool merely present on one machine makes the hook pass locally
+  and exit 127 on a fresh clone, blocking every commit there. `lint:actionlint`
+  lasted one review round in the hook for exactly this: the `Dockerfile`
+  installs it, `npm install` does not. Confirm a new check's binary is in
+  `devDependencies` before adding it.
+- **Do not write down what the hook omits; run `npm run verify:gap`.** It
+  reads the `Dockerfile` and expands nested scripts on both sides, so the
+  answer stays correct as the hook and gate drift. A prose list of it was
+  wrong four times running during #763 — including two attempts at a
+  "shorter, for-reference" version. There is no correct short version.
+- **`lint:cspell` uses `.cspell.json`'s `ignorePaths`, not `--gitignore`.**
+  `--gitignore` resolved against the **parent** repo's `.gitignore`, whose
+  `/.claude/*` line hid every file in a worktree — it checked zero and
+  exited 1. `ignorePaths` resolves against cspell's own root. Do not restore
+  `--gitignore`; if you change the ignore list or `.gitignore`, keep them in
+  step and verify by **file set**, not a passing run (a glob task matching
+  nothing still exits 0 — see the #703 bullet under Lint gauntlet interplay).
+- **One authoritative full gate per pushed head.** Required CI normally is
+  it, since it validates the exact SHA and leaves shared evidence — do not
+  request a fresh Codex or Copilot review until it is green for the head
+  under review. Run `npm run docker:build-and-test-all` locally only when CI
+  genuinely cannot serve as that gate: work that will stay unpushed, or a
+  failure that only reproduces inside Docker.
+- A `--no-verify` or `HUSKY=0` commit skipped `verify:fast`, not the gate.
+  Run `npm run verify:fast` by hand before pushing, then let CI run the full
+  gate on the pushed SHA like any other commit.
+- Documentation-only changes need only `lint:markdownlint`, `lint:prettier`,
+  and `lint:cspell`, not the full Docker suite.
 - `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.
   Git stores the signing choice in `.git/rebase-merge/gpg_sign_opt`, so a
   rebase begun without it dies at the first replayed commit with "gpg failed

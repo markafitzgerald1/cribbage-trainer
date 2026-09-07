@@ -48,11 +48,30 @@ npm run docker:build-and-test-all
 
 ## Husky/hooks
 
-- Some git commands may invoke Docker-based test hooks. For doc-only changes,
-  prefer skipping them (`HUSKY=0` or `--no-verify`) to avoid long runs; for code
-  changes, only skip hooks if absolutely sure they are not needed (i.e., a build
-  and all tests have been performed on the current uncommitted code). Keep GPG
-  signing enabled for commits. Do not create unsigned commits.
+- `.husky/pre-commit` runs `npm run verify:fast` — the `npm install`-only
+  checks (lint, type-check, jest, the build, the standalone guards),
+  concurrently, in about 20 seconds. Let it run; skipping it saves nothing
+  worth the risk.
+- Every check in the hook comes from `devDependencies`, so a fresh clone plus
+  `npm install` can run all of it. `actionlint` is deliberately excluded
+  because it is installed only by the `Dockerfile`; including it made the
+  hook exit 127 on any machine without a separate Homebrew install.
+- The hook is a fast filter, not the merge gate. The authoritative gate is
+  `npm run docker:build-and-test-all`; `npm run verify:gap` shows what it
+  runs that the hook does not. Required CI normally serves as that gate,
+  since it validates the exact pushed commit — run it locally only when CI
+  cannot (unpushed work, or a Docker-only reproduction).
+- If you skipped the hook with `--no-verify` or `HUSKY=0`, run
+  `npm run verify:fast` by hand before pushing; CI still runs the full gate
+  on the pushed commit.
+- Documentation-only changes need only the documentation checks
+  (`npm run lint:markdownlint`, `npm run lint:prettier`, and
+  `npm run lint:cspell`).
+- Human contributors keep GPG signing enabled and do not create unsigned
+  commits. Autonomous AI agents are the exception: they MUST pass
+  `--no-gpg-sign` on intermediate commits (see AGENTS.md), and the human
+  assumes cryptographic accountability via the final Squash and Merge
+  signature.
 
 ## CI workflow notes
 
@@ -79,7 +98,17 @@ npm run docker:build-and-test-all
   to run multiple linting scripts, a failure in one script (like `markdownlint`)
   might be buried in the output. Always verify that linting scripts use exact,
   quoted globbing (e.g., `'**/*.md'`) to ensure they run correctly across platforms.
-- **Bypassing Husky Hooks:** Bypassing local Husky pre-commit hooks
-  (`--no-verify`) will hide linting and test failures until they hit the CI
-  pipeline. If hooks must be bypassed locally, the agent MUST run the full Docker
-  CI loop manually to verify compliance before pushing.
+- **Bypassing Husky Hooks:** `--no-verify` / `HUSKY=0` skips `verify:fast`,
+  so linting and test failures stay hidden until CI. If you bypass the hook,
+  run `npm run verify:fast` manually before pushing; CI still runs the full
+  `docker:build-and-test-all` on the pushed commit, so a local Docker run is
+  only needed when the work stays unpushed.
+- **Spell-check Ignore Rules Live in `.cspell.json`, Not `.gitignore`:**
+  `lint:cspell` deliberately does not pass `--gitignore`. With that flag,
+  cspell resolved ignores against the parent repository's `.gitignore`,
+  whose `/.claude/*` entry covers every file in a `.claude/worktrees`
+  checkout, so it checked zero files and exited 1 there. `ignorePaths` in
+  `.cspell.json` resolves against cspell's own root instead. If you change
+  either that list or `.gitignore`, keep them in step, and verify by
+  comparing the checked-file set against a clean checkout rather than by a
+  passing run — a glob-driven lint task that matches nothing still exits 0.

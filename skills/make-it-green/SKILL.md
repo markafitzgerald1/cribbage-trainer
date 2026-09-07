@@ -30,10 +30,32 @@ green build status.
   build, lint, and Storybook coverage have passed, rerun
   `npm run docker:run-e2e-only` to verify the remaining Playwright tail before
   reporting final validation.
-- Before the slow Docker run, iterate with `npm run lint && npm test` — the
-  lint gauntlet (eslint `--max-warnings 0`, dual spell checkers, jscpd 0%,
-  `jest/no-hooks`, `assertFunctionNames` registration) catches most failures
-  in seconds; see "Lint gauntlet interplay" in `AGENTS.md` for the fixes.
+- Before the slow Docker run, iterate with `npm run verify:fast` — the
+  `npm install`-only checks, concurrently, in about 20 seconds. It is also
+  the pre-commit hook, but do not treat a landed commit as proof it ran:
+  `--no-verify`, `HUSKY=0`, and some worktree setups all skip it (see
+  `CLAUDE.md` on worktree hooks). It catches most of the lint gauntlet;
+  see "Lint gauntlet interplay" in `AGENTS.md` for the fixes.
+- **A green fast pass is not a green build.** `npm run verify:fast` is a
+  subset; `npm run verify:gap` prints what the Docker gate runs that it
+  does not, computed from the `Dockerfile` so it stays correct as either
+  side drifts. Do not write that set down — a prose version was wrong
+  three times during #763. A change touching stories, CSS, build config,
+  dependencies, or user-visible copy is exactly the one whose fast pass
+  proves least.
+- When CI fails after a green hook, `npm run verify:gap` names which check
+  it was. Run that check directly if your checkout can — but several of the
+  gate's steps cannot run on a plain `npm install` tree: `lint:actionlint`
+  exits 127 without the Docker-only binary, `lint:audit` and
+  `lint:outdated` need the network, Storybook coverage varies with the
+  container's Node rather than the local one (not an arch split — see the
+  Storybook-coverage bullet under Tests and quality in `AGENTS.md`), and
+  the screenshots are genuinely arch-/rendering-sensitive. Reproduce those
+  through `npm run docker:build-and-test-all` (or
+  `npm run docker:run-e2e-only` for the Playwright tail). Fix it, then
+  re-run `npm run verify:fast` plus that check before pushing, so the next
+  CI run is not a third round-trip.
+
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
   block in `vite.config.js` to the exact reported totals. Thresholds are

@@ -32,10 +32,10 @@
   },
   "testEnvironment": "jsdom",
   "testPathIgnorePatterns": [
-    "/.claude/",
-    "/scripts/",
-    "/tests-e2e/",
-    "/tests-examples"
+    "<rootDir>/\\.claude/",
+    "<rootDir>/scripts/",
+    "<rootDir>/tests-e2e/",
+    "<rootDir>/tests-examples"
   ],
   "transform": {
     "^.+\\.tsx?$": "babel-jest"

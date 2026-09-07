@@ -27,9 +27,13 @@ repeating them.
 
 ## Validation
 
-Always validate with `npm run docker:build-and-test-all` before pushing; it
-mirrors CI (lint, Jest, Storybook coverage, Playwright e2e/screenshots). A quick
-local pass is `npm run lint && npm test`.
+`npm run verify:fast` is the quick local pass and the pre-commit hook: the
+`npm install`-only checks, concurrently, in ~20 seconds. It is a filter, not
+the gate — `npm run docker:build-and-test-all` is the authoritative gate, and
+required CI normally runs it against the exact pushed commit. Do not request a
+fresh review until that gate is green for the commit under review. `AGENTS.md`
+carries the details (what the hook omits and why, `npm run verify:gap`, the
+one-gate-per-head rule).
 
 ## Review focus (enforced — see AGENTS.md/CONTRIBUTING.md for rationale)
 
