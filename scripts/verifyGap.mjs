@@ -28,9 +28,31 @@ const invokedBy = (name) =>
     ),
   ].map((match) => match.groups.called);
 
+/*
+ * A script is only safe to replace by the scripts it calls when calling
+ * them is all it does. `node check.mjs && npm run lint:eslint` would
+ * otherwise vanish into `lint:eslint`, reporting no gap while `check.mjs`
+ * never runs in the hook. Strip the npm invocations and the fan-out
+ * runner's own syntax; anything left is work only the parent performs.
+ */
+const isPureFanOut = (name) =>
+  !/\S/u.test(
+    (packageScripts[name] ?? "")
+      .replace(/npm(?::| run )[\w:-]+/gu, " ")
+      .replace(/\bconcurrently\b/gu, " ")
+      .replace(/--[\w-]+/gu, " ")
+      .replace(/'[^']*'/gu, " ")
+      .replace(/"[^"]*"/gu, " ")
+      .replace(/[&|;,]/gu, " "),
+  );
+
 const leavesOf = (name) => {
   const invoked = invokedBy(name);
-  return invoked.length === 0 ? [name] : invoked.flatMap(leavesOf);
+  if (invoked.length === 0) {
+    return [name];
+  }
+  const nested = invoked.flatMap(leavesOf);
+  return isPureFanOut(name) ? nested : [name, ...nested];
 };
 
 /*
