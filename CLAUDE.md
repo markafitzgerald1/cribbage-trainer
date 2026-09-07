@@ -29,7 +29,7 @@ guidance only one tool can use.
 - The shell may start on an old Node. Activate the repo version per command:
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use; hash -r`
   (`hash -r` is required because zsh caches the old `node` path).
-- `.husky/pre-commit` runs `npm run verify:fast`, measured at about 25
+- `.husky/pre-commit` runs `npm run verify:fast`, measured at about 20
   seconds, so an ordinary `git commit` fits the Bash tool's default 2-minute
   timeout and needs no special handling. Until #763 the hook ran the whole
   `npm run docker:build-and-test-all` gate synchronously — several minutes —
@@ -73,21 +73,34 @@ guidance only one tool can use.
     covers the entire worktree. The sweep is now driven by `.cspell.json`'s
     `ignorePaths`, which resolves against cspell's own root. Do not restore
     `--gitignore`.
-  - **Git hooks do not come from the worktree.** Husky sets `core.hooksPath`
-    to an absolute path in the main checkout, and its resolver derives the
-    hook as `dirname(dirname($0))/<name>`, so every worktree runs the
-    `.husky/pre-commit` belonging to whatever branch the **main working
-    tree** currently has checked out. Editing `.husky/pre-commit` on a
-    worktree branch changes nothing about the commits you make there. This
-    cost a wrong result while implementing #763: a `git commit` intended to
-    exercise the new 20-second hook ran `main`'s old
-    `docker:build-and-test-all` instead and took 2m52s, and a "the hook
-    rejects a type error" negative test actually proved only that the old
-    Docker gate does. Validate a hook change by invoking it the way husky
-    does, `sh -e .husky/pre-commit`, and treat a real `git commit` from a
-    worktree as evidence about the main checkout's hook only. The
-    corollary outlives that issue: after a hook change merges, worktrees
-    keep running the old hook until someone pulls in the **main** checkout.
+  - **The pre-commit hook a worktree runs is usually not its own, and may
+    be none at all. Never assume which.** Husky installs the _relative_
+    `core.hooksPath = .husky/_` in the main `.git/config`, but this repo
+    has `extensions.worktreeConfig = true`, so `git worktree add` writes an
+    _absolute_ resolution of that path into the new worktree's
+    `config.worktree`, and a worktree-scoped value beats the repo-local
+    one. Husky's resolver then derives the hook as
+    `dirname(dirname($0))/<name>`, which lands in the **main checkout** —
+    so the hook that runs is the `.husky/pre-commit` of whatever branch the
+    main working tree has checked out, and editing that file on a worktree
+    branch changes nothing about commits made there. Verify per worktree
+    with `git config --show-origin --get core.hooksPath`; 6 of 9 worktrees
+    here carry the override and 3 do not. Where it is absent the relative
+    path applies, and because a fresh worktree has no `.husky/_` of its own,
+    **no hook runs at all** and the commit is silently unvalidated — the
+    more dangerous of the two outcomes, since nothing about it looks wrong.
+  - Both were measured while implementing #763, and each produced a false
+    conclusion first. A `git commit` meant to exercise the new 20-second
+    hook ran `main`'s old `docker:build-and-test-all` and took 2m52s, so a
+    "the hook rejects a type error" negative test actually proved only that
+    the _old_ Docker gate does; a fresh probe worktree created with a plain
+    `git worktree add` reproduced it, its empty commit taking 141s in
+    Docker. Validate a hook change by invoking it the way husky does,
+    `sh -e .husky/pre-commit`, and treat a real `git commit` from a
+    worktree as evidence about whichever hook that worktree's config
+    actually selects. The corollary outlives the issue: after a hook change
+    merges, worktrees with the override keep running the old hook until
+    someone pulls in the **main** checkout.
   - The worktree starts with a nearly empty `node_modules`. Most tools resolve
     upward to the parent repository's copy, but Vitest browser mode (Storybook
     tests and coverage) fails with "Failed to fetch dynamically imported
