@@ -57,12 +57,13 @@ npm run docker:build-and-test-all
   because it is installed only by the `Dockerfile`; including it made the
   hook exit 127 on any machine without a separate Homebrew install.
 - The hook is a fast filter, not the merge gate. The authoritative gate is
-  `npm run docker:build-and-test-all`. Run `npm run verify:gap` to see
-  exactly what it runs that the hook does not, rather than relying on any
-  list written here. Required CI normally serves as that gate because it
-  validates the exact pushed commit. Run it locally when CI
-  cannot: unpushed work, a failure that only reproduces inside Docker, or
-  any commit made with `--no-verify` or `HUSKY=0`.
+  `npm run docker:build-and-test-all`; `npm run verify:gap` shows what it
+  runs that the hook does not. Required CI normally serves as that gate,
+  since it validates the exact pushed commit — run it locally only when CI
+  cannot (unpushed work, or a Docker-only reproduction).
+- If you skipped the hook with `--no-verify` or `HUSKY=0`, run
+  `npm run verify:fast` by hand before pushing; CI still runs the full gate
+  on the pushed commit.
 - Documentation-only changes need only the documentation checks
   (`npm run lint:markdownlint`, `npm run lint:prettier`, and
   `npm run lint:cspell`).
@@ -93,10 +94,11 @@ npm run docker:build-and-test-all
   to run multiple linting scripts, a failure in one script (like `markdownlint`)
   might be buried in the output. Always verify that linting scripts use exact,
   quoted globbing (e.g., `'**/*.md'`) to ensure they run correctly across platforms.
-- **Bypassing Husky Hooks:** Bypassing local Husky pre-commit hooks
-  (`--no-verify`) will hide linting and test failures until they hit the CI
-  pipeline. If hooks must be bypassed locally, the agent MUST run the full Docker
-  CI loop manually to verify compliance before pushing.
+- **Bypassing Husky Hooks:** `--no-verify` / `HUSKY=0` skips `verify:fast`,
+  so linting and test failures stay hidden until CI. If you bypass the hook,
+  run `npm run verify:fast` manually before pushing; CI still runs the full
+  `docker:build-and-test-all` on the pushed commit, so a local Docker run is
+  only needed when the work stays unpushed.
 - **Spell-check Ignore Rules Live in `.cspell.json`, Not `.gitignore`:**
   `lint:cspell` deliberately does not pass `--gitignore`. With that flag,
   cspell resolved ignores against the parent repository's `.gitignore`,

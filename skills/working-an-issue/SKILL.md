@@ -24,8 +24,9 @@ review mechanics that have each produced a wrong conclusion when guessed at.
   review: a review of a head that then fails CI is spent twice, once on the
   bot's budget and once on the round it forces. Run
   `npm run docker:build-and-test-all` locally instead only when CI cannot be
-  that gate — unpushed work, a Docker-only reproduction, or a commit made
-  with `--no-verify`.
+  that gate — unpushed work, or a Docker-only reproduction. A `--no-verify`
+  commit skipped `verify:fast`, not CI's gate, so just run `verify:fast` by
+  hand before pushing.
 - During a review fix the loop is: reproduce with a regression test that
   fails against the unfixed code, run the focused test plus `verify:fast`,
   commit and push, let required CI run the full gate for that SHA, then

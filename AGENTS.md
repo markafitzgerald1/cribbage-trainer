@@ -759,10 +759,9 @@ mcr.microsoft.com/playwright:<tag>`.
   `devDependencies` before adding it.
 - **Do not write down what the hook omits; run `npm run verify:gap`.** It
   reads the `Dockerfile` and expands nested scripts on both sides, so the
-  answer stays correct as the hook and gate drift. A prose version was wrong
-  three times running. (For reference, the current omissions are network
-  checks — `lint:audit`, `lint:outdated` — and the slow gate: `test-e2e`,
-  the Storybook browser suite, and anything needing a browser binary.)
+  answer stays correct as the hook and gate drift. A prose list of it was
+  wrong four times running during #763 — including two attempts at a
+  "shorter, for-reference" version. There is no correct short version.
 - **`lint:cspell` uses `.cspell.json`'s `ignorePaths`, not `--gitignore`.**
   `--gitignore` resolved against the **parent** repo's `.gitignore`, whose
   `/.claude/*` line hid every file in a worktree — it checked zero and
@@ -774,9 +773,11 @@ mcr.microsoft.com/playwright:<tag>`.
   it, since it validates the exact SHA and leaves shared evidence — do not
   request a fresh Codex or Copilot review until it is green for the head
   under review. Run `npm run docker:build-and-test-all` locally only when CI
-  cannot serve: unpushed work, a Docker-only reproduction, or a commit made
-  with `--no-verify` or `HUSKY=0`, which still MUST be validated in full
-  before pushing.
+  genuinely cannot serve as that gate: work that will stay unpushed, or a
+  failure that only reproduces inside Docker.
+- A `--no-verify` or `HUSKY=0` commit skipped `verify:fast`, not the gate.
+  Run `npm run verify:fast` by hand before pushing, then let CI run the full
+  gate on the pushed SHA like any other commit.
 - Documentation-only changes need only `lint:markdownlint`, `lint:prettier`,
   and `lint:cspell`, not the full Docker suite.
 - `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.

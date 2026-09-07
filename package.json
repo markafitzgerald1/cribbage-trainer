@@ -17,7 +17,7 @@
     "lint:outdated": "(check-outdated || true)",
     "lint": "concurrently --names 'ESLINT,STYLE,MARKDOWNLINT,PRETTIER,CSPELL,TSC,JSCPD,ACTIONLINT,AUDIT,OUTDATED' \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdownlint\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:lint:actionlint\" \"npm:lint:audit\" \"npm:lint:outdated\"",
     "prettier:fix": "prettier --write .",
-    "verify:fast": "concurrently --kill-others-on-fail --names 'ESLINT,STYLE,MARKDOWNLINT,PRETTIER,CSPELL,TSC,JSCPD,JEST,BUILD,STORYBOOK,SKILL-PATHS,PAGES-MERGE,LINT-AUDIT' \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdownlint\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:test\" \"npm:build\" \"npm:storybook:build\" \"npm:test:skill-paths\" \"npm:test:pages-content-merge\" \"npm:test:lint-audit\"",
+    "verify:fast": "npm run build && concurrently --kill-others-on-fail --names 'ESLINT,STYLE,MARKDOWNLINT,PRETTIER,CSPELL,TSC,JSCPD,JEST,STORYBOOK,SKILL-PATHS,PAGES-MERGE,LINT-AUDIT' \"npm:lint:eslint\" \"npm:lint:stylelint\" \"npm:lint:markdownlint\" \"npm:lint:prettier\" \"npm:lint:cspell\" \"npm:lint:tsc\" \"npm:lint:jscpd\" \"npm:test\" \"npm:storybook:build\" \"npm:test:skill-paths\" \"npm:test:pages-content-merge\" \"npm:test:lint-audit\"",
     "test": "jest --verbose --expand",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build --output-dir dist/storybook",
