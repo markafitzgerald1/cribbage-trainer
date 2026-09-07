@@ -45,29 +45,46 @@ const withDescendants = (name) => {
 };
 
 /*
- * Continuations are joined first, and each instruction is then scanned for
- * every npm invocation rather than one: a single `RUN` can chain several
- * with `&&`. Non-script invocations are kept, so `RUN npm clean-install`
- * appears — a manifest that has drifted from the lockfile still installs
- * locally while `npm ci` in the image refuses it, and no hook sees that.
- *
- * `[`, `]`, `"` and `,` are blanked before the scan so Docker's JSON exec
- * form (`CMD ["npm", "run", "test-e2e"]`) reduces to the same token stream
- * as the shell form; without that, converting a step to exec form would
- * silently drop it from the gap.
+ * Each `RUN`/`CMD` instruction is tokenized rather than pattern-matched.
+ * Every prior attempt to regex the npm invocation out of a Dockerfile line
+ * missed a legal shape — a chained `&&`, a line continuation, JSON exec
+ * form, an `npm run --flag script` option — so this walks tokens instead:
+ * at each `npm`, skip an optional `run` and any `-`-prefixed options, and
+ * take the next token as the entry. `[`, `]`, `"` and `,` are blanked so
+ * exec form (`CMD ["npm", "run", "x"]`) tokenizes like the shell form.
+ * Non-script invocations are kept, so `npm clean-install` appears — a
+ * lockfile that has drifted still installs locally while `npm ci` refuses
+ * it, and no hook sees that.
  */
+const entriesInInstruction = (instruction) => {
+  const tokens = instruction
+    .replace(/["[\],]/gu, " ")
+    .split(/\s+/u)
+    .filter(Boolean);
+  const entries = [];
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (tokens[index] !== "npm") {
+      continue;
+    }
+    let cursor = index + 1;
+    if (tokens[cursor] === "run") {
+      cursor += 1;
+    }
+    while (cursor < tokens.length && tokens[cursor].startsWith("-")) {
+      cursor += 1;
+    }
+    if (cursor < tokens.length) {
+      entries.push(tokens[cursor]);
+    }
+  }
+  return entries;
+};
+
 const gateEntryPoints = readRepoFile("Dockerfile")
   .replace(/\\\r?\n/gu, " ")
   .split(/\r?\n/u)
   .filter((line) => /^(?:RUN|CMD)\b/u.test(line))
-  .flatMap((instruction) =>
-    [
-      ...instruction
-        .replace(/["[\],]/gu, " ")
-        .replace(/\s+/gu, " ")
-        .matchAll(/\bnpm(?: run)? (?<entry>[\w:-]+)/gu),
-    ].map((match) => match.groups.entry),
-  );
+  .flatMap(entriesInInstruction);
 
 const gate = new Set(gateEntryPoints.flatMap(withDescendants));
 const fast = new Set(withDescendants("verify:fast"));
