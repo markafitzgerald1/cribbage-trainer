@@ -512,17 +512,22 @@ mcr.microsoft.com/playwright:<tag>`.
   not an error: it matches nothing and the task still reports success. That is
   how `tests-e2e/` and `playwright.config.ts` went unchecked for the life of
   the gate (#703) while all ten tasks printed green. Never infer coverage from
-  a passing run — compare file sets. `cspell '**' --gitignore --verbose` prints
-  an `n/total` line per file, and the image's total must equal a clean
-  checkout's (208 when #703 was fixed). Build that reference checkout with
-  `git archive HEAD | tar --extract --directory <tmp>`, because in a
-  `.claude/worktrees` checkout the parent repo's `.gitignore` makes
-  `--gitignore` skip everything.
+  a passing run — compare file sets. `npm run lint:cspell -- --verbose`
+  prints an `n/total` line per file, and the image's total must equal a
+  clean checkout's (208 when #703 was fixed; 307 as of #763). Build that
+  reference checkout with `git archive HEAD | tar --extract` into a temporary
+  directory. Two traps when harvesting that list: cspell **right-aligns** the
+  counter, so an `^[0-9]` anchor silently drops every file numbered below
+  100 — strip leading whitespace first — and `--no-progress` suppresses the
+  per-file lines entirely, leaving only the summary. Both were hit while
+  establishing the #763 baseline, and each yields a plausible wrong number
+  rather than an error.
 - Two spell checkers with **different base dictionaries** run in lint:
   eslint's `spellcheck/spell-checker` (`skipWords` in `eslint.config.mjs`;
   `--max-warnings 0` makes its warnings fail CI) and cspell (`.cspell.json`,
-  honors `.gitignore`). A new word may trip one, both, or neither — run each
-  checker and add the word only where it is actually flagged.
+  whose `ignorePaths` — not `.gitignore` — sets its sweep). A new word may
+  trip one, both, or neither — run each checker and add the word only where
+  it is actually flagged.
 - `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
   at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
   spies (see `index.test.tsx` for the established idiom).
@@ -743,22 +748,26 @@ mcr.microsoft.com/playwright:<tag>`.
 ## Husky/hooks
 
 - `.husky/pre-commit` runs `npm run verify:fast`: eslint, stylelint,
-  markdownlint, prettier, tsc, jscpd, actionlint and jest, concurrently, in
-  roughly 20 seconds. It is a filter, not the gate — let it run rather than
-  reaching for `--no-verify` out of habit. Keep GPG signing enabled for
-  commits. Autonomous AI agents MUST bypass GPG signing using the
+  markdownlint, prettier, cspell, tsc, jscpd, actionlint and jest,
+  concurrently, in roughly 20 seconds. It is a filter, not the gate — let it
+  run rather than reaching for `--no-verify` out of habit. Keep GPG signing
+  enabled for commits. Autonomous AI agents MUST bypass GPG signing using the
   `--no-gpg-sign` flag for intermediate commits. The human engineer assumes
   cryptographic accountability via the final Squash and Merge signature.
-- The hook deliberately omits `lint:cspell`, `lint:audit`, `lint:outdated`,
-  the Storybook browser suite, and Playwright. `lint:audit` and
-  `lint:outdated` reach the network, and the last two are the slow gate.
-  `lint:cspell` is excluded for a sharper reason: `cspell '**' --gitignore`
-  checks **zero** files inside a `.claude/worktrees` checkout, because the
-  parent repository's `.gitignore` excludes `/.claude/`. `.cspell.json`
-  declares no `ignorePaths` of its own, so dropping `--gitignore` is not a
-  fix either — it widens the sweep from 307 files to 539, including
-  `playwright-report/`, and reports hundreds of spurious issues. Spelling is
-  therefore caught in CI, not at commit time.
+- The hook omits `lint:audit` and `lint:outdated`, which reach the network,
+  and the Storybook browser suite and Playwright, which are the slow gate.
+  Everything else runs at commit time.
+- **`lint:cspell` uses `.cspell.json`'s `ignorePaths`, not `--gitignore`, and
+  that distinction is load-bearing.** With `--gitignore`, cspell resolved the
+  ignore rules against the **parent** repository's `.gitignore`, whose
+  `/.claude/*` line covers every file in a `.claude/worktrees` checkout — so
+  it checked **zero** files there and exited 1, in exactly the environment
+  agents work in. `ignorePaths` resolves against cspell's own root instead,
+  so a worktree checks its own files normally. Do not "simplify" this back to
+  `--gitignore`. If you change either the ignore list or `.gitignore`, keep
+  them in step and verify by **file set**, not by a passing run: a
+  glob-driven lint task that matches nothing still exits 0 (see the #703
+  bullet under Lint gauntlet interplay).
 - **One authoritative full gate per pushed head.** Required CI is normally
   that gate, because it validates the exact pushed SHA and leaves shared
   evidence. Do not request a fresh Codex or Copilot review until required CI
@@ -768,8 +777,8 @@ mcr.microsoft.com/playwright:<tag>`.
   the local Docker environment, or any commit made with `--no-verify` or
   `HUSKY=0`, which still MUST be validated in full before pushing.
 - Documentation-only changes need only the documentation checks
-  (`lint:markdownlint`, `lint:prettier`, and `npx cspell --no-gitignore` on
-  the changed files), not the full Docker suite.
+  (`lint:markdownlint`, `lint:prettier`, and `lint:cspell`), not the full
+  Docker suite.
 - `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.
   Git stores the signing choice in `.git/rebase-merge/gpg_sign_opt`, so a
   rebase begun without it dies at the first replayed commit with "gpg failed

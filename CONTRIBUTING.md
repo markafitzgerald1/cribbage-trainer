@@ -49,18 +49,18 @@ npm run docker:build-and-test-all
 ## Husky/hooks
 
 - `.husky/pre-commit` runs `npm run verify:fast` — eslint, stylelint,
-  markdownlint, prettier, tsc, jscpd, actionlint and jest, concurrently, in
-  about 20 seconds. Let it run; it is short enough that skipping it saves
-  nothing worth the risk.
+  markdownlint, prettier, cspell, tsc, jscpd, actionlint and jest,
+  concurrently, in about 20 seconds. Let it run; it is short enough that
+  skipping it saves nothing worth the risk.
 - The hook is a fast filter, not the merge gate. The authoritative gate is
   `npm run docker:build-and-test-all`, which also runs the Storybook browser
-  suite, Playwright, and `cspell`. Required CI normally serves as that gate
+  suite and Playwright. Required CI normally serves as that gate
   because it validates the exact pushed commit. Run it locally when CI
   cannot: unpushed work, a failure that only reproduces inside Docker, or
   any commit made with `--no-verify` or `HUSKY=0`.
 - Documentation-only changes need only the documentation checks
   (`npm run lint:markdownlint`, `npm run lint:prettier`, and
-  `npx cspell --no-gitignore` on the changed files).
+  `npm run lint:cspell`).
 - Keep GPG signing enabled for commits. Do not create unsigned commits.
 
 ## CI workflow notes
@@ -92,10 +92,12 @@ npm run docker:build-and-test-all
   (`--no-verify`) will hide linting and test failures until they hit the CI
   pipeline. If hooks must be bypassed locally, the agent MUST run the full Docker
   CI loop manually to verify compliance before pushing.
-- **Checks that Cannot Run at Commit Time:** `cspell '**' --gitignore` checks
-  zero files inside a `.claude/worktrees` checkout, because the parent
-  repository's `.gitignore` excludes `/.claude/`. That is why spelling is not
-  in the pre-commit hook. Dropping `--gitignore` is not a fix — `.cspell.json`
-  declares no `ignorePaths`, so the sweep widens from 307 files to 539 and
-  reports hundreds of issues from build output. Check changed files directly
-  with `npx cspell --no-gitignore <files>` and let CI catch the rest.
+- **Spell-check Ignore Rules Live in `.cspell.json`, Not `.gitignore`:**
+  `lint:cspell` deliberately does not pass `--gitignore`. With that flag,
+  cspell resolved ignores against the parent repository's `.gitignore`,
+  whose `/.claude/*` entry covers every file in a `.claude/worktrees`
+  checkout, so it checked zero files and exited 1 there. `ignorePaths` in
+  `.cspell.json` resolves against cspell's own root instead. If you change
+  either that list or `.gitignore`, keep them in step, and verify by
+  comparing the checked-file set against a clean checkout rather than by a
+  passing run — a glob-driven lint task that matches nothing still exits 0.

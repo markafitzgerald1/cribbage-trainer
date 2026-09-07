@@ -66,10 +66,13 @@ guidance only one tool can use.
     arguments, so the paths join that array instead and the whole suite
     runs.
 
-  - `npm run lint:cspell` reports "Files checked: 0" and exits 1, because the
-    parent repository's `.gitignore` excludes `/.claude/` and `--gitignore`
-    therefore excludes the whole worktree. Check changed files directly with
-    `npx cspell --no-gitignore <files>`.
+  - `npm run lint:cspell` works here as of #763, and checks the same 307
+    files a clean checkout does. It used to report "Files checked: 0" and
+    exit 1: the script passed `--gitignore`, so cspell resolved ignore rules
+    against the parent repository's `.gitignore`, whose `/.claude/*` line
+    covers the entire worktree. The sweep is now driven by `.cspell.json`'s
+    `ignorePaths`, which resolves against cspell's own root. Do not restore
+    `--gitignore`.
   - **Git hooks do not come from the worktree.** Husky sets `core.hooksPath`
     to an absolute path in the main checkout, and its resolver derives the
     hook as `dirname(dirname($0))/<name>`, so every worktree runs the
