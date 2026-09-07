@@ -56,6 +56,7 @@ const NPM_SUBCOMMANDS = new Set([
   "ci",
   "cit",
   "clean-install",
+  "clean-install-test",
   "doctor",
   "i",
   "ic",
@@ -65,6 +66,7 @@ const NPM_SUBCOMMANDS = new Set([
   "install-test",
   "it",
   "outdated",
+  "sit",
   "test",
 ]);
 
