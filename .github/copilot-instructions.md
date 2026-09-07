@@ -31,9 +31,11 @@ repeating them.
 runs by default on each commit — eslint, stylelint, markdownlint, prettier,
 tsc, jscpd, cspell, Jest, and the three standalone guards CI runs as their
 own steps (`test:skill-paths`, `test:pages-content-merge`,
-`test:lint-audit`), concurrently, in about 20 seconds. It excludes
-`actionlint` (installed only by the Dockerfile, not by `npm install`), the
-network-dependent audit checks, and the browser suites.
+`test:lint-audit`), concurrently, in about 20 seconds. Run
+`npm run verify:gap` for what the Docker gate runs that the hook does not;
+do not rely on a list written here, which cannot stay current as either
+side changes. `actionlint` is excluded because only the Dockerfile
+installs it, not `npm install`.
 A commit made with `--no-verify` or `HUSKY=0` skips it, so a landed commit
 is not by itself evidence the checks ran.
 

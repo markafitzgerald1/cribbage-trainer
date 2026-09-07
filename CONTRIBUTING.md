@@ -58,9 +58,10 @@ npm run docker:build-and-test-all
   because it is installed only by the `Dockerfile`; including it made the
   hook exit 127 on any machine without a separate Homebrew install.
 - The hook is a fast filter, not the merge gate. The authoritative gate is
-  `npm run docker:build-and-test-all`, which also runs the Storybook browser
-  suite and Playwright. Required CI normally serves as that gate
-  because it validates the exact pushed commit. Run it locally when CI
+  `npm run docker:build-and-test-all`. Run `npm run verify:gap` to see
+  exactly what it runs that the hook does not, rather than relying on any
+  list written here. Required CI normally serves as that gate because it
+  validates the exact pushed commit. Run it locally when CI
   cannot: unpushed work, a failure that only reproduces inside Docker, or
   any commit made with `--no-verify` or `HUSKY=0`.
 - Documentation-only changes need only the documentation checks
