@@ -748,8 +748,10 @@ mcr.microsoft.com/playwright:<tag>`.
 ## Husky/hooks
 
 - `.husky/pre-commit` runs `npm run verify:fast`: eslint, stylelint,
-  markdownlint, prettier, cspell, tsc, jscpd and jest, concurrently, in
-  roughly 20 seconds. It is a filter, not the gate — let it run rather than
+  markdownlint, prettier, cspell, tsc, jscpd, jest, and the three
+  standalone guards CI runs as their own steps (`test:skill-paths`,
+  `test:pages-content-merge`, `test:lint-audit`), concurrently, in roughly
+  20 seconds. It is a filter, not the gate — let it run rather than
   reaching for `--no-verify` out of habit. Keep GPG signing enabled for
   commits. Autonomous AI agents MUST bypass GPG signing using the
   `--no-gpg-sign` flag for intermediate commits. The human engineer assumes

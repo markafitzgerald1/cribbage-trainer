@@ -31,20 +31,24 @@ green build status.
   `npm run docker:run-e2e-only` to verify the remaining Playwright tail before
   reporting final validation.
 - Before the slow Docker run, iterate with `npm run verify:fast` — eslint,
-  stylelint, markdownlint, prettier, cspell, tsc, jscpd and jest, run
-  concurrently in about 20 seconds. This is also what
-  `.husky/pre-commit` runs by default, so a commit that landed without
-  `--no-verify` or `HUSKY=0` has already cleared it. It catches most of
-  the lint gauntlet (eslint `--max-warnings 0`, jscpd 0%, `jest/no-hooks`,
-  `assertFunctionNames` registration); see "Lint gauntlet interplay" in
-  `AGENTS.md` for the fixes.
-- Three gate failures survive `verify:fast` and can only appear in Docker or
-  CI, so do not read a green fast pass as a green build: **`actionlint`** on
-  the workflow files (excluded from the hook because only the `Dockerfile`
-  installs it), **Storybook coverage** against the `vite.config.js`
-  thresholds, and **Playwright** e2e and screenshots. A change touching
-  stories, CSS, or user-visible copy is exactly the change whose fast pass
-  proves least.
+  stylelint, markdownlint, prettier, cspell, tsc, jscpd, jest, and the
+  three standalone guards (`test:skill-paths`,
+  `test:pages-content-merge`, `test:lint-audit`), run concurrently in
+  about 20 seconds. This is also what `.husky/pre-commit` runs by default,
+  so a commit that landed without `--no-verify` or `HUSKY=0` has already
+  cleared it. It catches most of the lint gauntlet (eslint
+  `--max-warnings 0`, jscpd 0%, `jest/no-hooks`, `assertFunctionNames`
+  registration); see "Lint gauntlet interplay" in `AGENTS.md` for the
+  fixes.
+- **A green fast pass is not a green build, and the gap is defined by
+  subtraction, not by this list.** What CI runs and `verify:fast` does not
+  is what can still fail, so derive it from the workflow and the
+  `Dockerfile` rather than trusting any enumeration here to have stayed
+  current. As of #763 that gap is **`actionlint`** on the workflow files
+  (excluded because only the `Dockerfile` installs it), **Storybook
+  coverage** against the `vite.config.js` thresholds, and **Playwright**
+  e2e and screenshots. A change touching stories, CSS, or user-visible
+  copy is exactly the change whose fast pass proves least.
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
   block in `vite.config.js` to the exact reported totals. Thresholds are
