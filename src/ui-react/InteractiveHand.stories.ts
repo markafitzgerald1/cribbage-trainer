@@ -8,6 +8,7 @@ import {
   toDealtCards,
 } from "./stories.common";
 /* jscpd:ignore-end */
+import { basePanelArgs, sampleVerdict } from "./PracticeDrillPanel.test.common";
 import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import { InteractiveHand } from "./InteractiveHand";
@@ -54,4 +55,16 @@ export const JackFiveJackAceFourQueenDescending = createStory(
 );
 export const JackFiveJackAceFourQueenAscending = createStory(
   SortOrder.Ascending,
+);
+
+const drillStory = (drill: ReturnType<typeof basePanelArgs>): Story => ({
+  args: { ...createStory(SortOrder.DealOrder).args, practiceDrill: drill },
+});
+
+export const WithPracticeDrillChoosing = drillStory(
+  basePanelArgs({ phase: "choosing" }),
+);
+
+export const WithPracticeDrillVerdict = drillStory(
+  basePanelArgs({ phase: "revealed", verdict: sampleVerdict() }),
 );

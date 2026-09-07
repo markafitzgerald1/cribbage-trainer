@@ -93,7 +93,185 @@
   fill: #ff7b72;
 }
 
+/*
+ * A mistake whose hand has since been mastered in practice. Teal rather
+ * than a second green so it is not read as "always optimal", and teal
+ * rather than a shade of the red so a red/green-blind eye still separates
+ * the resolved spikes from the open ones.
+ */
+.loss-stem-mastered {
+  stroke: rgb(56 199 184 / 55%);
+}
+
+.loss-dot-mastered {
+  fill: #38c7b8;
+}
+
 .optimal-dot {
   cursor: pointer;
   fill: #28a745;
+}
+
+.loss-marker {
+  cursor: pointer;
+}
+
+.loss-marker:focus-visible {
+  outline: 2px solid #70c878;
+  outline-offset: 2px;
+}
+
+/* Edge-to-edge invisible tap targets, one per mistake, so a dense chart stays tappable. */
+.loss-hit-band {
+  cursor: pointer;
+}
+
+.loss-dot-selected {
+  fill: #ffd6a5;
+  r: 3.5px;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+/*
+ * The tap-a-point detail: what hand the mistake was on and what was
+ * discarded, shown below the chart rather than as a floating popover so it
+ * is never clipped by the dialog's own scroll on a phone. It reads as a
+ * card lifted off the near-black plot — a lighter green ground, a brighter
+ * border, a drop shadow, and a left edge in the same red as the loss
+ * markers so the panel visibly belongs to the spike that was tapped.
+ */
+.decision-detail {
+  background: #22482e;
+  border: 1px solid color-mix(in srgb, green 55%, white);
+  border-left-color: #ff7b72;
+  border-left-width: 4px;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgb(0 0 0 / 40%);
+  color: #eef8ef;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--text-font-family);
+  gap: 0.45rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.decision-detail-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.decision-detail-title {
+  font-weight: 700;
+}
+
+/* The crib role the hand was played as: the same six cards score differently as dealer and pone. */
+.decision-detail-role {
+  border: 1px solid color-mix(in srgb, green 40%, white);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.35rem;
+  text-transform: uppercase;
+}
+
+/* The hand behind this mistake has since been mastered in practice; teal to match its chart marker. */
+.decision-detail-mastered {
+  background-color: color-mix(in srgb, #38c7b8 22%, transparent);
+  border: 1px solid #38c7b8;
+  border-radius: 4px;
+  color: #d6fff9;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.35rem;
+  text-transform: uppercase;
+}
+
+.decision-detail-loss {
+  color: #ffbdbd;
+  font-family: var(--card-font-family);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-close {
+  background: transparent;
+  border: 1px solid #6c8f74;
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-left: auto;
+  padding: 0.15rem 0.55rem;
+}
+
+.detail-close:hover,
+.detail-close:focus-visible {
+  border-color: #a7c7ad;
+  outline: none;
+}
+
+.decision-detail-actions {
+  display: flex;
+  margin-top: 0.15rem;
+}
+
+/* Jump straight from the chart into a drill on this exact mistake. */
+.decision-detail-practice {
+  background-color: #197536;
+  border: 2px solid #0f5527;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35rem 0.9rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.decision-detail-practice:hover,
+.decision-detail-practice:focus-visible {
+  background-color: #34c754;
+  border-color: #34c754;
+  outline: none;
+}
+
+.decision-detail-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.decision-detail-label {
+  color: #a8d5af;
+  font-family: var(--text-font-family);
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 4.2rem;
+  text-transform: uppercase;
+}
+
+/*
+ * The rank/suit glyphs use their own red/black ink, which barely reads on the
+ * dark panel, so they sit on a light chip the way the drill panel's mini
+ * keep/discard labels do.
+ */
+.decision-detail-cards {
+  align-items: center;
+  background-color: #f4f8f4;
+  border-radius: 4px;
+  color: #143b18;
+  display: inline-flex;
+  font-family: var(--card-font-family);
+  gap: 0.25rem;
+  padding: 0.1rem 0.35rem;
 }

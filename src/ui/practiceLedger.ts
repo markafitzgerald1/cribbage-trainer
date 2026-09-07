@@ -1,6 +1,9 @@
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { parseHandKey } from "./handKey";
 
+// Two consecutive optimal choices since the last error; the one place the copy, the state machine, and the trend chart all read.
+export const SUCCESSES_FOR_MASTERY = 2;
+
 export interface PracticeRecord {
   readonly attempts: number;
   readonly consecutiveSuccesses: number;

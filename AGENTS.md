@@ -249,6 +249,56 @@ mcr.microsoft.com/playwright:<tag>`.
 - On short screens, place a modal's primary and secondary actions before a
   long scrolling picker and keep the action row sticky. Users should see how
   to complete the dialog without first discovering an off-screen footer.
+- `role="img"` on an `<svg>` makes every descendant presentational, so
+  focusable controls inside it (the decision-quality chart's per-mistake
+  marker buttons) never reach assistive tech even with working keyboard
+  handlers. An interactive chart SVG needs `role="group"` (keep the
+  `aria-label` / `aria-describedby`), and tests then query
+  `getByRole("group", { name })`, not `"img"` — check `tests-e2e/` for
+  `getByRole("img")` too, a `src/`-only sweep misses it.
+- A transparent SVG overlay only catches a pointer where it is the topmost
+  painted element: a hit layer drawn before the trend path and the final
+  data dot lets those swallow taps in their pixels. Paint hit targets last.
+  When one shape's identity must survive a filter that renumbers the series
+  (the chart's crib-role filter), key any stored selection by a genuinely
+  unique field — the record's monotonic `recencyAt`, never the chart
+  ordinal or wall-clock `at` — and clear it outright (render-time reset,
+  like `usePracticeDrill`) once its item leaves the filtered list, or
+  restoring the filter silently reopens the panel.
+- Freezing a control by swallowing its `onChange` leaves it focusable, still
+  showing a pointer cursor, and announced as editable — a control that lies
+  about being interactive. Lock it with the native `disabled` attribute
+  (thread a prop down to the `<input>`) and a `cursor` override on its
+  label. The practice drill's post-commit card lock does this through
+  `Hand`/`HandCard`'s `disabled`; a test then asserts `checkbox.disabled`,
+  not just that the handler went uncalled.
+- A transient board-scoped mode (the practice drill) cannot self-detect a
+  history restore of its own hand: `Back` onto the drilled six cards under
+  the same role reads identically to an in-drill card selection —
+  `serializeHand` ignores `kept`, and in the choosing phase the discard
+  count carries no signal either. The component that owns the navigation
+  must end the mode explicitly. `Trainer`'s `popstate` handler calls
+  `drill.clearDrill()` in its non-merge branch — the bare state reset,
+  not `drill.onExit()`, which also deals a fresh hand and would
+  overwrite the hand Back just restored. The hook's own render-time
+  reset only covers what it _can_ see (the cards or role differ, or a
+  committed discard was cleared). Guard the exit with the same
+  `!isInternalMerge` check the history-navigation report uses, or a
+  mind-change settle inside the drill ends it.
+- A field snapshotted into a UI mode (the drill's `activeItem`, taken from
+  the queue when the drill starts) goes stale against `localStorage`
+  another tab can mutate. `recordPracticeAttempt` merges against the
+  stored record as it stands at write time, so the streak it persists is
+  not one more than the snapshot's. Derive anything shown after such a
+  write by re-reading storage for that record, never from the snapshot —
+  otherwise a concurrent miss elsewhere lets this tab show two successes
+  and declare mastery over a stored streak of one. But do not then assume
+  the re-read `find` succeeds: `recordPracticeAttempt` deliberately
+  refuses to write when a newer-build tally is in storage (the version
+  guard), and `readTallyForDisplay()` returns the empty fallback there, so
+  the record is genuinely absent. Fall back to the local estimate rather
+  than asserting the record non-null — the whole tally is read-only in
+  that tab until reload anyway.
 
 ## Responsive layout invariants
 
@@ -287,6 +337,29 @@ mcr.microsoft.com/playwright:<tag>`.
   default-scale size unchanged, and guard it the way portrait already does:
   the same measurement repeated at a 28px root font. That guard failed on
   all five browser projects before the fix and passes after it.
+- Anything new added below the controls and cards in the side-by-side
+  left column inherits that trap. The practice-drill panel
+  (`PracticeDrillPanel.module.css`) went in with every gap, margin,
+  padding, and font in bare rem; inside Trainer's fixed-height,
+  non-scrolling column a 28px root font grew it until Check/Exit dropped
+  below a 844x390 viewport (measured at y425). Its landscape `@media`
+  block now caps each rem with a `min(…rem, …vw)` sized to leave the
+  default scale untouched, and `practiceDrill.spec.ts` asserts both drill
+  buttons stay within the landscape viewport at a 28px root — negative-
+  checked to fail against the uncapped CSS.
+- Cap **spacing** with a viewport unit in a landscape `@media` block, not
+  **font size**. A first pass at the mistake-queue landscape header
+  (`MistakeQueueDialog.module.css`) capped every option and legend with
+  `min(0.75rem, 1.9vh)`; on a real phone `1.9vh` won and rendered the
+  filter labels at ~7px, unreadable, while the emulator at 390px looked
+  fine either way. The working shape: plain readable rem for type
+  (`0.72rem` here), `min(rem, vh|vw)` only on padding / gap / margin, and
+  drop genuinely optional text outright in landscape — the subtitle there
+  went to `display: none` because the per-row "n/2 successes" badge
+  already carries the same information. A short landscape phone also has
+  roughly 50px less height than the emulated viewport once its address and
+  gesture bars show, so guard at `phoneLandscapeViewport.height - 50`, not
+  the bare 390.
 - `line-height: normal` is not proportional across font sizes (font-metric
   pixel rounding differs), so pin an explicit line-height wherever an
   aspect-ratio invariant depends on text height.
@@ -331,6 +404,24 @@ mcr.microsoft.com/playwright:<tag>`.
   projects, while looking correct in a single hand-checked viewport.
   `align-self: start` removes the stretch and leaves the geometry with an
   analysis on screen byte-identical, which is why it is the smaller change.
+- That same `> :nth-child(n + 2):nth-last-child(n + 2)` matches **two**
+  children once a discard is chosen — the analysis figure and the tally are
+  both "middle" — so both take a `grid-column: 2 / 3; grid-row: span 2`
+  slot and the tally, unable to fit the two explicit rows, auto-places into
+  an implicit row that runs past the bottom of `.dynamic-ui`. With no
+  discard selected the tally is the lone middle child and sits high enough
+  to fit, which is why "it works until I pick a discard" is the report. The
+  fix is `overflow-y: auto` + `min-height: 0` on `.dynamic-ui` in the
+  landscape block so that overflow is reachable inside a real scroll
+  container rather than spilling past the fixed-height app box; it is inert
+  at the default scale, where nothing overflows.
+- A `scrollIntoViewIfNeeded()` + `toBeInViewport()` guard for that fix
+  passes with **and** without it, because the emulator's `body` scrolls
+  (its own `overflow: auto`) where a phone's fixed-height `html`/`body`/
+  `#trainer`/`.app` chain does not. Assert the mechanism instead: at a
+  short landscape viewport with a large root font, `.dynamic-ui`'s computed
+  `overflow-y` is `auto` and its `scrollHeight` exceeds its `clientHeight`.
+  Negative-checked, that reads `visible` and equal heights.
 - Desktop engines do not model the mobile viewport, in two independent ways,
   and each has already produced a wrong fix. First, Chrome for Android has a
   toolbar that shows and hides; no desktop engine does, so `100%`, `100svh`,
@@ -488,6 +579,38 @@ mcr.microsoft.com/playwright:<tag>`.
   initialize-once mutable hook state, seed an eager
   `useRef(create(...))` instead (re-render results are discarded), and keep
   latest-prop reads for timer callbacks in a ref updated by an effect.
+- `no-undefined` is on everywhere, so an optional prop cannot default to the
+  `undefined` literal. With `plugin:react/all` also demanding a `defaultProps`
+  entry, the working idiom is `prop?: T | null` with `= null` in the
+  destructure and `defaultProps: { prop: null }`. Intersecting or `extends`-ing
+  a shared props interface confuses the plugin's prop-types detection
+  (`default-props-match-prop-types` fires with "no corresponding propTypes");
+  keep the members inline and collapse a jscpd clone between two such prop
+  lists by naming the field types (`type StartDrillHandler = …`) and ordering
+  the two members differently in each file.
+- `react/jsx-handler-names` only checks handler values that are **member
+  expressions** (`props.onFoo`, `drill.onFoo`) passed to a JSX `onX` attribute
+  — it wants those to start with `handle`. A plain local identifier is not
+  checked (`checkLocalVariables` defaults off), so destructure the handler
+  into a local, or return it from a hook already named `handleX`, before the
+  JSX. Building a plain object literal from `drill.onFoo` fields is fine; only
+  JSX attributes are inspected.
+- The test/story ESLint override (`files: ["**/*.test.ts*", …]`) turns off
+  `react/jsx-no-bind` but **not** `react/jsx-props-no-spreading`. Inline
+  arrows in JSX are fine in specs and stories; `{...props}` spreads are not,
+  even in a render helper — build the element with explicit attributes.
+- Every new `*.module.css` needs a hand-written `*.module.css.d.ts` sidecar
+  listing the camelCased class names. There is no generator in
+  `vite.config.js`; the `declare module "*.css"` fallback in `styles.d.ts`
+  types the import as `any`, which `@typescript-eslint/no-unsafe-member-access`
+  then rejects on every `classes.x`.
+- Storybook coverage (`vite.config.js` `test.coverage.thresholds`, ~88%) is a
+  gate separate from Jest's 100%. A hook or helper covered only by Jest drags
+  the browser-mode aggregate below threshold; the fix is a story that drives
+  the feature end to end — a `Trainer` story whose `play` seeds `localStorage`
+  and clicks through the flow lifted `usePracticeDrill` 45%→80% and
+  `practiceLedger` 19%→80%. Retune the numbers only from a Docker
+  `storybook:test:coverage` run, never the local one.
 
 - TypeScript/React with Vite; keep types sound.
 - Avoid single unconstrained generic arrow functions such as `<T>(...) => ...`

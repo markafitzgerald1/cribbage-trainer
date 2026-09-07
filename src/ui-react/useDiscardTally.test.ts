@@ -200,6 +200,15 @@ describe("discard tally hook", () => {
       skipped: 0,
     },
     {
+      // Regression: "Start drill" from an undecided authentic hand used to charge it a skip.
+      name: "an undecided hand set aside for a drill",
+      play: (tally: DiscardTally) => {
+        noteOrigin(tally, OTHER_HAND, "manual");
+      },
+      skipped: 0,
+      start: { discarded: false },
+    },
+    {
       name: "the hand a seeded session starts with",
       play: () => {
         // Nothing: the seeded start is the hand walked away from.

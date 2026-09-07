@@ -1,3 +1,4 @@
+import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import type { DiscardDecisionRecord } from "./discardTally";
 
 export const ROLLING_TWENTY = 20;
@@ -107,18 +108,67 @@ export function countRollingSkips<
 }
 
 export interface DiscardDecisionPoint {
+  /*
+   * The hand and the discard behind this decision, carried so the trend
+   * chart can show what the mistake actually was. `handKey` is the
+   * "cards|role" key; `discardKey` is the two discarded cards, null when the
+   * record predates discard capture.
+   */
+  readonly discardKey: string | null;
   readonly expectedPointsLoss: number;
+  readonly handKey: string;
+  /*
+   * This decision was sub-optimal when made, but its hand has since been
+   * mastered in practice (two consecutive optimal choices). The chart
+   * paints those markers apart from still-open mistakes so improvement is
+   * visible on the same axis as the errors. Always false for an optimal
+   * decision — there is nothing to have mastered.
+   */
+  readonly isMastered: boolean;
   readonly isOptimal: boolean;
   readonly isRetained: boolean;
   readonly ordinal: number;
+  /*
+   * The record's monotonic `recencyAt` (strictly increasing across the
+   * stored history via normalizeStoredRecords), used as the decision's
+   * stable unique identity: `ordinal` is renumbered by the role filter and
+   * `at` is wall-clock time that a rolled-back clock can repeat.
+   */
+  readonly recencyAt: number;
   readonly rollingMeanLoss: number;
   readonly timestamp: number;
+}
+
+const NO_MASTERED_HAND_KEYS: ReadonlySet<string> = new Set();
+
+/*
+ * The hand keys the practice ledger reports as mastered — two consecutive
+ * optimal choices since the last error. Passed to
+ * `buildContinuousDecisionPoints` so a mistake whose hand has since been
+ * mastered can be painted apart from the still-open ones.
+ */
+export const masteredHandKeysOf = (
+  practice: readonly PracticeRecord[],
+): ReadonlySet<string> =>
+  new Set(
+    practice
+      .filter((record) => record.consecutiveSuccesses >= SUCCESSES_FOR_MASTERY)
+      .map((record) => record.handKey),
+  );
+
+export interface ContinuousDecisionPointOptions {
+  readonly isRetained?: boolean;
+  // Hand keys the practice ledger reports as mastered; markers for these are painted apart from open mistakes.
+  readonly masteredHandKeys?: ReadonlySet<string>;
 }
 
 export function buildContinuousDecisionPoints(
   records: readonly DiscardDecisionRecord[],
   batchSize: number,
-  isRetained = false,
+  {
+    isRetained = false,
+    masteredHandKeys = NO_MASTERED_HAND_KEYS,
+  }: ContinuousDecisionPointOptions = {},
 ): readonly DiscardDecisionPoint[] {
   if (records.length === 0) {
     return [];
@@ -137,10 +187,14 @@ export function buildContinuousDecisionPoints(
     const rollingMeanLoss = totalLoss / window.length;
 
     return {
+      discardKey: record.discardKey,
       expectedPointsLoss: record.expectedPointsLoss,
+      handKey: record.handKey,
+      isMastered: !record.isOptimal && masteredHandKeys.has(record.handKey),
       isOptimal: record.isOptimal,
       isRetained,
       ordinal: globalIndex + 1,
+      recencyAt: record.recencyAt ?? record.at,
       rollingMeanLoss,
       timestamp: record.at,
     };

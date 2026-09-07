@@ -4,9 +4,14 @@ import {
   type StoredTally,
   hasTallyToShow,
 } from "../ui/discardTally";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useState } from "react";
+import type {
+  StartAutoDrillHandler,
+  StartDrillHandler,
+} from "./usePracticeDrill";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
+import type { MistakeQueueItem } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 
 const LOSS_FRACTION_DIGITS = 2;
@@ -21,13 +26,25 @@ const PER_CENT = 100;
 const shareOf = (part: number, whole: number) =>
   `${((part / whole) * PER_CENT).toFixed(SHARE_FRACTION_DIGITS)}%`;
 
-const countAndShare = (part: number, whole: number) =>
-  `${part}/${whole} (${shareOf(part, whole)})`;
+/*
+ * The count is the figure; the parenthesized share is a second span the
+ * stylesheet can drop on its own. Stacked (portrait) mode hides `.share`
+ * so only the raw count — from which the share is derivable anyway — has
+ * to fit a phone-width three-column row.
+ */
+const countAndShare = (part: number, whole: number): ReactNode => (
+  <>
+    {`${part}/${whole}`}
+    <span className={classes.share}>{` (${shareOf(part, whole)})`}</span>
+  </>
+);
 
 // An empty cell holds the column open; omitting it would shift every figure to its left.
 const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
 
 interface DiscardTallyViewProps {
+  readonly onStartAutoDrill?: StartAutoDrillHandler;
+  readonly onStartDrill?: StartDrillHandler;
   readonly sortOrder?: SortOrder;
   readonly summary: DiscardTallySummary;
   readonly tally?: StoredTally | null;
@@ -35,8 +52,8 @@ interface DiscardTallyViewProps {
 
 const renderMeasure = (
   measure: string,
-  today: string | null,
-  allTime: string,
+  today: ReactNode,
+  allTime: ReactNode,
 ) => (
   <>
     <span className={classes.label}>{measure}</span>
@@ -58,6 +75,8 @@ const renderMeasure = (
  * room, which on a phone turned two rows into four ragged ones.
  */
 export function DiscardTallyView({
+  onStartAutoDrill = null,
+  onStartDrill = null,
   sortOrder = SortOrder.Descending,
   summary,
   tally: injectedTally = null,
@@ -78,6 +97,42 @@ export function DiscardTallyView({
   const handleCloseQueue = useCallback(() => {
     setShowQueue(false);
   }, []);
+
+  /*
+   * Close the open dialog before the board changes under it, so the drill
+   * starts on a clean screen. Each wrapper is null when its upstream
+   * handler is — the dialog gates "Start drill" / "Practice this" on a null
+   * handler, and a non-null pass-through wrapper would defeat that and show
+   * buttons that then only close the dialog.
+   */
+  const startDrillClosing = useCallback(
+    (closeDialog: () => void): StartDrillHandler =>
+      onStartDrill === null
+        ? null
+        : (item: MistakeQueueItem) => {
+            closeDialog();
+            onStartDrill(item);
+          },
+    [onStartDrill],
+  );
+  const handleStartDrill = useMemo(
+    () => startDrillClosing(handleCloseQueue),
+    [handleCloseQueue, startDrillClosing],
+  );
+  const handleStartDrillFromTrend = useMemo(
+    () => startDrillClosing(handleCloseTrend),
+    [handleCloseTrend, startDrillClosing],
+  );
+  const handleStartAutoDrill: StartAutoDrillHandler = useMemo(
+    () =>
+      onStartAutoDrill === null
+        ? null
+        : () => {
+            setShowQueue(false);
+            onStartAutoDrill();
+          },
+    [onStartAutoDrill],
+  );
 
   /*
    * Nothing is shown until a hand has been either played or walked away from.
@@ -165,12 +220,17 @@ export function DiscardTallyView({
       {showTrend ? (
         <DecisionQualityTrendDialog
           onClose={handleCloseTrend}
+          onStartDrill={handleStartDrillFromTrend}
           show={showTrend}
+          sortOrder={sortOrder}
+          tally={injectedTally}
         />
       ) : null}
       {showQueue ? (
         <MistakeQueueDialog
           onClose={handleCloseQueue}
+          onStartAutoDrill={handleStartAutoDrill}
+          onStartDrill={handleStartDrill}
           show={showQueue}
           sortOrder={sortOrder}
           tally={injectedTally}
@@ -181,6 +241,8 @@ export function DiscardTallyView({
 }
 
 DiscardTallyView.defaultProps = {
+  onStartAutoDrill: null,
+  onStartDrill: null,
   sortOrder: SortOrder.Descending,
   tally: null,
 };

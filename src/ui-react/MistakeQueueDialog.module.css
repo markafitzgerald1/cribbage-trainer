@@ -27,6 +27,70 @@
   margin: 0;
 }
 
+/*
+ * Sticky and first, so the way to start a drill or leave the dialog is on
+ * screen before the summary cards and four filter groups are scrolled past
+ * — the same short-screen rule already applied to the enter-cards dialog.
+ */
+.action-bar {
+  background-color: #fff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.start-drill-button {
+  background-color: #197536;
+  border: 2px solid #0f5527;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.start-drill-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.start-drill-button:hover:not(:disabled),
+.start-drill-button:focus-visible:not(:disabled) {
+  background-color: #218838;
+  border-color: #218838;
+}
+
+.done-button {
+  background-color: transparent;
+  border: 2px solid #6c8f74;
+  border-radius: 8px;
+  color: #143b18;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+}
+
+.done-button:hover,
+.done-button:focus-visible {
+  border-color: #218838;
+}
+
+/*
+ * Not sticky: both responsive modes pin only the action bar and let this
+ * filter row scroll away with the content (a second sticky row eats the
+ * short-viewport space the pin protects). The `position` / `top` /
+ * `z-index` that would make it sticky live in neither media block, so
+ * they are omitted here rather than set and always overridden.
+ */
 .controls {
   background-color: #f7faf8;
   border-bottom: 1px solid #d0e5d4;
@@ -34,9 +98,6 @@
   flex-wrap: wrap;
   gap: 0.6rem;
   padding: 0.5rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
 
 .filter-group {
@@ -120,9 +181,21 @@
 }
 
 .summary-label {
+  align-items: center;
   color: #155724;
+  display: flex;
   font-size: 0.72rem;
   font-weight: 600;
+  justify-content: center;
+
+  /*
+   * Reserve the two lines the longest labels wrap to, so every value below
+   * starts at the same y, and center the text within that box so a
+   * one-line label ("Mastered") sits between the two lines of its wrapped
+   * neighbors rather than at the top or bottom.
+   */
+  min-height: 2.3em;
+  text-align: center;
   text-transform: uppercase;
 }
 
@@ -345,15 +418,82 @@
   box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
 }
 
+.practice-button {
+  align-self: flex-start;
+  background-color: #e4f4e6;
+  border: 1.5px solid #397a40;
+  border-radius: 6px;
+  color: #143b18;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.practice-button:hover,
+.practice-button:focus-visible {
+  background-color: #c8efcd;
+  border-color: #218838;
+}
+
 @media (aspect-ratio < 6 / 5) {
   .dialog {
     font-size: 0.95rem;
-    gap: 0.7rem;
+    gap: 0.55rem;
     width: 100%;
   }
 
   .title {
     font-size: 1.5rem;
+  }
+
+  /*
+   * rem font sizes and gaps here inflate with a large device font-size
+   * setting and wrap a sort chip's label ("Most recent") to a second line
+   * or push a whole chip onto a second row (AGENTS.md's rem-floor trap).
+   * Cap each with a viewport unit that leaves the default scale untouched,
+   * and keep each chip label on one line.
+   */
+  .controls {
+    gap: min(0.6rem, 2.4vw);
+
+    /*
+     * Only the action bar stays pinned on a phone; stacking a second sticky
+     * row below it eats the short viewport the pin is meant to protect.
+     */
+    position: static;
+  }
+
+  .filter-group {
+    gap: min(0.35rem, 1vw);
+    padding: min(0.4rem, 1.4vw) min(0.55rem, 1.7vw) min(0.45rem, 1.6vw);
+  }
+
+  /*
+   * The Loss-severity group (always last) has the widest chips; give it the
+   * modal's full width rather than its shrink-wrapped size so its four
+   * options stay on one row in portrait instead of wrapping the last one.
+   */
+  .filter-group:last-child {
+    flex-basis: 100%;
+  }
+
+  .filter-group legend {
+    font-size: min(0.8rem, 3.2vw);
+  }
+
+  /*
+   * Tighter than the other chips so the four Loss-severity options
+   * ("All", "High >= x", "Med x-y", "Low < x") sit on one row in portrait
+   * rather than wrapping the last one.
+   */
+  .option {
+    font-size: min(0.8rem, 3.2vw);
+    padding: min(0.25rem, 0.9vw) min(0.5rem, 1.4vw);
+    white-space: nowrap;
   }
 
   .summary-cards {
@@ -363,5 +503,91 @@
   .item-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/*
+ * Phone landscape: the modal scrolls, but on a real device the address and
+ * gesture bars leave far less height than an emulator, and the header —
+ * title, action bar, subtitle, three summary cards, four filter groups —
+ * pushed the first mistake entirely off screen. Give the modal nearly the
+ * whole viewport, drop the explanatory subtitle (the per-card "n/2
+ * successes" badge already conveys the mechanic), and tighten every header
+ * part's spacing. Fonts stay at plain readable rem — an earlier pass
+ * capped them with `vh` units that collapsed to ~7px on a phone; spacing,
+ * not type size, is what has to give here.
+ */
+@media (aspect-ratio >= 6 / 5) {
+  .dialog {
+    gap: 0.4rem;
+    max-height: 94vh;
+  }
+
+  .title {
+    font-size: 1.3rem;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  .action-bar {
+    gap: 0.4rem;
+    padding: 0.15rem 0;
+  }
+
+  .start-drill-button,
+  .done-button {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.75rem;
+  }
+
+  .controls {
+    gap: 0.35rem;
+    padding: 0.3rem 0;
+
+    /*
+     * As in portrait: only the action bar stays pinned. A phone in
+     * landscape with its address bar showing is shorter still, and a second
+     * sticky row of four filter groups left no room for even one full
+     * mistake. Static here lets the filters scroll away with the content.
+     */
+    position: static;
+  }
+
+  .filter-group {
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem 0.3rem;
+  }
+
+  .filter-group legend {
+    font-size: 0.72rem;
+  }
+
+  .option {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .summary-cards {
+    gap: 0.4rem;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .summary-card {
+    padding: 0.25rem 0.5rem;
+  }
+
+  .summary-label {
+    font-size: 0.68rem;
+    min-height: 0;
+  }
+
+  .summary-value {
+    font-size: 1rem;
+  }
+
+  .items-list {
+    margin-top: 0;
   }
 }

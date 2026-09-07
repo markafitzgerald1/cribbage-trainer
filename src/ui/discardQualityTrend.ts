@@ -4,6 +4,7 @@ import {
   countRollingSkips,
   getRollingBatchSize,
   getRollingChunkSizes,
+  masteredHandKeysOf,
   sliceIndexedChunks,
   sortByTimestamp,
 } from "./discardQualityTrendRolling";
@@ -442,14 +443,14 @@ export const computeDiscardQualityTrend = (
     granularity === "rolling20" || granularity === "rolling50"
       ? getRollingBatchSize(granularity)
       : null;
+  const masteredHandKeys = masteredHandKeysOf(tally.practice);
   const decisionPoints =
     batchSize === null
       ? []
-      : buildContinuousDecisionPoints(
-          authenticRecords,
-          batchSize,
-          hasTruncatedHistory,
-        );
+      : buildContinuousDecisionPoints(authenticRecords, batchSize, {
+          isRetained: hasTruncatedHistory,
+          masteredHandKeys,
+        });
 
   const [firstRecord] = authenticRecords;
   const lastRecord = authenticRecords[authenticRecords.length - 1];

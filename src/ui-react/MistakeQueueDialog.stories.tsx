@@ -1,13 +1,14 @@
 /* jscpd:ignore-start */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
+  clickStoryButtonExpectingCall,
   expectStoryTextVisible,
   playStoryEscape,
   selectStoryRadioOption,
 } from "./stories.common";
+import { expect, fn, within } from "storybook/test";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import dialogFixtures from "./MistakeQueueDialog.test.common";
-import { fn } from "storybook/test";
 /* jscpd:ignore-end */
 
 const sampleTally = dialogFixtures.createSampleMistakeTally();
@@ -21,6 +22,8 @@ const meta: Meta<typeof MistakeQueueDialog> = {
     initialSortOrder: "priority",
     initialStatusFilter: "active",
     onClose: fn(),
+    onStartAutoDrill: fn(),
+    onStartDrill: fn(),
     show: true,
     tally: sampleTally,
   },
@@ -84,4 +87,20 @@ export const EmptyQueueNotice: QueueStory = {
 
 export const DismissWithEscape: QueueStory = {
   play: playStoryEscape,
+};
+
+export const StartDrillFromCard: QueueStory = {
+  play: async ({ args, canvasElement }) => {
+    within(canvasElement)
+      .getAllByRole("button", { name: "Practice this" })[0]
+      ?.click();
+
+    await expect(args.onStartDrill).toHaveBeenCalledTimes(1);
+
+    await clickStoryButtonExpectingCall(
+      canvasElement,
+      "Start drill",
+      args.onStartAutoDrill,
+    );
+  },
 };

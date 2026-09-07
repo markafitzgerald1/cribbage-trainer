@@ -64,6 +64,7 @@ export const mockItemA: MistakeQueueItem = {
   originalDecisionAt: NOW - 2 * ONE_DAY_MS,
   pWrong: 1,
   previousDiscard: "5H,6H",
+  previousDiscardLoss: 1.0,
   priority: 0.8,
   wrong: 1,
 };
@@ -81,6 +82,7 @@ export const mockItemB: MistakeQueueItem = {
   originalDecisionAt: NOW - ONE_DAY_MS,
   pWrong: 1,
   previousDiscard: null,
+  previousDiscardLoss: 2.0,
   priority: 1.9,
   wrong: 1,
 };
@@ -98,6 +100,7 @@ export const mockItemMastered: MistakeQueueItem = {
   originalDecisionAt: NOW - 5 * ONE_DAY_MS,
   pWrong: 0.33,
   previousDiscard: "AH,2H",
+  previousDiscardLoss: 3.0,
   priority: 1.0,
   wrong: 1,
 };

@@ -16,6 +16,19 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   through ESLint 9. Before changing that range, verify both packages' current
   registry metadata; do not bypass the peer conflict with
   `--legacy-peer-deps`.
+- `lint:audit` is `node scripts/lintAudit.mjs`, not `better-npm-audit`
+  directly. When npm.org's `security/advisories/bulk` endpoint is degraded
+  it returns "audit endpoint returned an error" / "Unable to process the
+  JSON buffer string" and `better-npm-audit` exits non-zero with no
+  findings, reddening `build-and-test` for every open PR on pure
+  infrastructure — it happened three times in a row on #768 while npm was
+  down. The wrapper retries an unambiguous endpoint outage and, only if it
+  never clears, passes with a loud warning; a real findings table or any
+  other non-zero exit still fails. `scripts/lintAudit.test.mjs`
+  (`npm run test:lint-audit`, its own CI step next to `test:skill-paths`)
+  pins the classifier. If you genuinely need the raw tool — to confirm a
+  fix cleared an advisory — run `npx better-npm-audit audit` yourself; do
+  not "simplify" the script back out.
 - A Babel major can change how existing `.ts` parses: Babel 8 reads the type
   parameter of a single unconstrained generic arrow function as JSX. The
   resulting authoring rule binds every `.ts` file, so it lives in `AGENTS.md`

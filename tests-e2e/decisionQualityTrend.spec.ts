@@ -101,7 +101,7 @@ test.describe("decision quality over time trend dialog", () => {
       page.getByRole("cell", { exact: true, name: "20" }),
     ).toBeVisible();
 
-    const chart = page.getByRole("img", {
+    const chart = page.getByRole("group", {
       name: "Decision quality over time trend chart",
     });
     await expect(chart).toBeVisible();

@@ -17,40 +17,17 @@ import {
   selectTickStep,
 } from "./DecisionQualityChart";
 import type {
-  DiscardDecisionPoint,
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
 import { describe, expect, it } from "@jest/globals";
+import {
+  makeBucket,
+  makeDecisionPoint,
+  makeRetainedDecisionPoint,
+  renderChart,
+} from "./DecisionQualityChart.test.common";
 import { render } from "@testing-library/react";
-
-const makeBucket = (
-  key: string,
-  loss: number | null,
-  decisions = 10,
-): DiscardPeriodBucket => ({
-  decisions,
-  endTime: 1700003600000,
-  key,
-  label: `Period ${key}`,
-  meanExpectedPointsLoss: loss,
-  optimalDecisions: 5,
-  skippedHands: 1,
-  startTime: 1700000000000,
-});
-
-const renderChart = (
-  buckets: readonly DiscardPeriodBucket[],
-  granularity: DiscardTrendGranularity,
-  decisionPoints?: readonly DiscardDecisionPoint[],
-) =>
-  render(
-    <DecisionQualityChart
-      buckets={buckets}
-      decisionPoints={decisionPoints}
-      granularity={granularity}
-    />,
-  );
 
 const countRenderedXLabels = (
   buckets: readonly DiscardPeriodBucket[],
@@ -60,27 +37,13 @@ const countRenderedXLabels = (
   return container.querySelectorAll(`.${classes.xLabel}`).length;
 };
 
-const makeDecisionPoint = (
-  ordinal: number,
-  expectedPointsLoss: number,
-  rollingMeanLoss: number,
-) => ({
-  expectedPointsLoss,
-  isOptimal: expectedPointsLoss === 0,
-  isRetained: false,
-  ordinal,
-  rollingMeanLoss,
-  timestamp: 1700000000000 + ordinal * 1000,
-});
-
-const makeRetainedDecisionPoint = (
-  ordinal: number,
-  expectedPointsLoss: number,
-  rollingMeanLoss: number,
-) => ({
-  ...makeDecisionPoint(ordinal, expectedPointsLoss, rollingMeanLoss),
-  isRetained: true,
-});
+const expectChartRendered = (
+  getByRole: ReturnType<typeof renderChart>["getByRole"],
+): void => {
+  expect(
+    getByRole("group", { name: "Decision quality over time trend chart" }),
+  ).toBeInTheDocument();
+};
 
 describe("decision quality chart", () => {
   it("renders empty-state message when buckets array is empty", () => {
@@ -99,14 +62,13 @@ describe("decision quality chart", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders SVG with role img and data points for single bucket", () => {
+  it("renders the chart group and data points for a single bucket", () => {
     const { getByRole, container } = renderChart(
       [makeBucket("b1", 0.4, 10)],
       "day",
     );
-    const svg = getByRole("img");
+    expectChartRendered(getByRole);
 
-    expect(svg).toBeInTheDocument();
     expect(container.querySelectorAll("circle")).toHaveLength(1);
   });
 
@@ -258,7 +220,7 @@ describe("decision quality chart", () => {
     }));
     const { getByRole } = renderChart(buckets, "rolling20");
 
-    expect(getByRole("img")).toBeInTheDocument();
+    expectChartRendered(getByRole);
   });
 
   it("maps loss values to point colors correctly", () => {
@@ -296,7 +258,8 @@ describe("decision quality chart rolling mode and points", () => {
       decisionPoints,
     );
 
-    expect(getByRole("img")).toBeInTheDocument();
+    expectChartRendered(getByRole);
+
     expect(container.querySelectorAll(`.${classes.optimalDot}`)).toHaveLength(
       1,
     );
@@ -329,7 +292,8 @@ describe("decision quality chart rolling mode and points", () => {
         [makeDecisionPoint(1, loss, loss)],
       );
 
-      expect(getByRole("img")).toBeInTheDocument();
+      expectChartRendered(getByRole);
+
       expect(container.querySelector("desc")).toHaveTextContent(
         `Trend chart with 1 decisions (${windowSize}-decision rolling average). Latest average expected loss is ${expectedLoss} points.`,
       );

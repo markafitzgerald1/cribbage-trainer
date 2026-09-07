@@ -74,6 +74,23 @@
   opacity: 0.82;
 }
 
+/*
+ * Shown for a few seconds where the practice panel was, so "Exit drill"
+ * reads as "a fresh hand was dealt" rather than the board silently swapping.
+ * Sized like the panel, and capped the same way in landscape (see the
+ * rem-floor trap in AGENTS.md's responsive invariants).
+ */
+.fresh-hand-notice {
+  border: 1.5px solid #2f7d3a;
+  border-radius: 10px;
+  color: var(--text-color);
+  font-family: var(--text-font-family);
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.6rem;
+}
+
 @media (aspect-ratio < 6 / 5) {
   .interactive-hand {
     container-type: inline-size;
@@ -135,6 +152,12 @@
 }
 
 @media (aspect-ratio >= 6 / 5) {
+  .fresh-hand-notice {
+    font-size: min(0.95rem, 1.65vw);
+    margin-top: min(0.5rem, 1vw);
+    padding: min(0.5rem, 1vw) min(0.6rem, 1.2vw);
+  }
+
   /*
    * Wrapping to two lines ("Enter" over "cards") keeps the controls row
    * narrower than the six cards below, so the controls never widen the

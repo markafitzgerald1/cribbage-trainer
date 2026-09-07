@@ -1,6 +1,10 @@
 import { type Page, expect, test } from "@playwright/test";
+import {
+  constantHandQuery,
+  phoneLandscapeViewport,
+  phonePortraitViewport,
+} from "./layoutMeasurements";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
-import { constantHandQuery } from "./layoutMeasurements";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 /*
@@ -120,4 +124,143 @@ test("renders the tally between the analysis and the privacy links", async ({
 
   expect(tally?.y).toBeGreaterThan(table?.y ?? 0);
   expect(tally?.y).toBeLessThan(privacy?.y ?? 0);
+});
+
+// Above one line but below two, with room for line-height rounding.
+const SINGLE_LINE_HEIGHT_RATIO = 1.7;
+
+/*
+ * The tally labels are em-sized and share their row with the today and
+ * all-time figure columns, which take their width first. A device font-size
+ * setting above the default used to grow the labels until "Lost per discard"
+ * and "Best choice" wrapped into ragged multi-line cells; each mode's cap
+ * keeps them on one line. A wrapped label is ~3x its font size tall, well
+ * past the 1.7x bound, so this fails against the uncapped stylesheet.
+ */
+const expectTallyLabelsUnwrapped = async (page: Page) => {
+  await playOneAuthenticHand(page);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  const labelMetrics = await Promise.all(
+    ["Lost per discard", "Best choice"].map(async (label) => {
+      const locator = page.getByText(label, { exact: true });
+      const box = await locator.boundingBox();
+      const fontSize = await locator.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize),
+      );
+      return { fontSize, height: box?.height ?? Number.NaN };
+    }),
+  );
+
+  for (const { fontSize, height } of labelMetrics) {
+    expect(height).toBeLessThan(fontSize * SINGLE_LINE_HEIGHT_RATIO);
+  }
+};
+
+test("keeps the tally labels on one line at a large device font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phonePortraitViewport);
+  await expectTallyLabelsUnwrapped(page);
+});
+
+/*
+ * The tally's own font is viewport-capped, but `.dynamic-ui`'s `0.7em`
+ * inline padding and the tally's `0.7em` column gap were not, so on a
+ * narrow phone set well above the default font size the row grew until
+ * its fixed-width all-time figures ran under `body { overflow-x: hidden }`
+ * and lost their last character or two. Now, all within the stacked
+ * `@media` block: both `em` lengths are viewport-capped; the parenthesized
+ * `.share` percentage is dropped so only the raw count has to fit; and the
+ * tally is an `overflow-x: auto` container as a last backstop for when
+ * Android Chrome's minimum-font-size setting forces text past every `vw`
+ * cap. Asserting the computed values rather than a clipped pixel: the clip
+ * only bites with multi-digit counts, which need a seeded history this
+ * spec has no helper for. Negative-checked: without the caps the padding
+ * reads ~0.7 * 28 = 19.6px and the gap likewise, and the `.share` spans
+ * stay `inline`.
+ */
+const UNCAPPED_EM_PX = 16;
+
+test("caps the stacked tally's em lengths and drops the share so its figures fit", async ({
+  page,
+}) => {
+  await page.setViewportSize({
+    height: phonePortraitViewport.height,
+    width: 360,
+  });
+  await playOneAuthenticHand(page);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  const metrics = await page
+    .getByText("Lost per discard", { exact: true })
+    .evaluate((label) => {
+      const grid = label.parentElement as HTMLElement;
+      const dynamicUi = grid.closest("[class*='dynamic-ui']") as HTMLElement;
+      const share = grid.querySelector("[class*='share']");
+      const styles = getComputedStyle(grid);
+      return {
+        columnGap: Number.parseFloat(styles.columnGap),
+        inlinePadding: Number.parseFloat(
+          getComputedStyle(dynamicUi).paddingLeft,
+        ),
+        overflowX: styles.overflowX,
+        shareDisplay: share ? getComputedStyle(share).display : "missing",
+      };
+    });
+
+  expect(metrics.inlinePadding).toBeLessThan(UNCAPPED_EM_PX);
+  expect(metrics.columnGap).toBeLessThan(UNCAPPED_EM_PX);
+  expect(metrics.overflowX).toBe("auto");
+  expect(metrics.shareDisplay).toBe("none");
+});
+
+/*
+ * Side-by-side mode has the same trap with a worse consequence: the tally
+ * sits in the fixed-height left column, so a wrapped-label height pushes the
+ * "Quality trend" / "Mistake queue" buttons off a short phone landscape and
+ * out of reach. The landscape cap keeps the labels on one line.
+ */
+test("keeps the tally labels on one line in landscape at a large device font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phoneLandscapeViewport);
+  await expectTallyLabelsUnwrapped(page);
+});
+
+/*
+ * With a discard chosen, the analysis figure and the tally both take a
+ * `grid-row: span 2` slot in column 2, so the tally auto-places into an
+ * implicit row past the bottom of a short landscape viewport. The tally
+ * font cap does not help — the figure's height is what overflows. A phone
+ * whose fixed-height html/body/app chain does not scroll then strands the
+ * "Quality trend" / "Mistake queue" buttons off screen (an emulator, whose
+ * body does scroll, cannot show this — hence the asserted mechanism rather
+ * than button geometry). `.dynamic-ui` becomes its own scroll container so
+ * the overflow is reachable there instead of spilling past the app box.
+ * Negative-checked: without the rule `.dynamic-ui` overflow is `visible`
+ * and its scrollHeight equals its clientHeight.
+ */
+const SHORT_LANDSCAPE_HEIGHT = 320;
+
+test("gives the landscape dynamic-ui its own scroll when an analysis overflows it", async ({
+  page,
+}) => {
+  await page.setViewportSize({
+    height: SHORT_LANDSCAPE_HEIGHT,
+    width: phoneLandscapeViewport.width,
+  });
+  await playOneAuthenticHand(page);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  const scrollState = await page
+    .locator(".dynamic-ui, [class*='dynamic-ui']")
+    .first()
+    .evaluate((element) => ({
+      canScroll: element.scrollHeight > element.clientHeight,
+      overflowY: getComputedStyle(element).overflowY,
+    }));
+
+  expect(scrollState.overflowY).toBe("auto");
+  expect(scrollState.canScroll).toBe(true);
 });

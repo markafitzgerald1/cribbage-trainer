@@ -1,15 +1,18 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import {
   expectStoryTextVisible,
+  playPracticeFromDecisionMarker,
   playStoryEscape,
   selectStoryRadioOption,
 } from "./stories.common";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
+import { SortOrder } from "../ui/SortOrder";
 import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
 import { fn } from "storybook/test";
 
 const sampleTally = dialogFixtures.dialogTally(30);
 const cappedTally = dialogFixtures.cappedDialogTally();
+const practiceReadyTally = dialogFixtures.practiceReadyDialogTally();
 
 const meta = {
   args: {
@@ -60,4 +63,14 @@ export const AtRecordCap: Story = {
 
 export const DismissWithEscape: Story = {
   play: playStoryEscape,
+};
+
+export const PracticeFromChartMistake: Story = {
+  args: {
+    onStartDrill: fn(),
+    sortOrder: SortOrder.Descending,
+    tally: practiceReadyTally,
+  },
+  play: ({ args, canvasElement }) =>
+    playPracticeFromDecisionMarker(canvasElement, args.onStartDrill),
 };

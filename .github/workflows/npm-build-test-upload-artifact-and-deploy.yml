@@ -28,6 +28,11 @@ jobs:
       - name: Run skill path symlink tests
         run: npm run test:skill-paths
 
+      # Guards the lint:audit wrapper that keeps a npm.org audit-endpoint
+      # outage from failing this job; pure logic, no network, so it runs here.
+      - name: Run lint:audit wrapper tests
+        run: npm run test:lint-audit
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

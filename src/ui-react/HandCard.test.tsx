@@ -72,4 +72,27 @@ describe("hand card component", () => {
       getLabel(renderCard(card)).classList.contains(classes.discarded),
     ).toBe(!card.kept);
   });
+
+  it.each([false, true])(
+    "disables the checkbox and locks the label when disabled=%s",
+    (disabled) => {
+      const { dealOrder, kept, rank, suit } = dealCard();
+      const { getByRole } = render(
+        <HandCard
+          dealOrderIndex={dealOrder}
+          disabled={disabled}
+          kept={kept}
+          onChange={jest.fn()}
+          rank={rank}
+          suit={suit}
+        />,
+      );
+      const checkbox = getByRole("checkbox") as HTMLInputElement;
+
+      expect(checkbox.disabled).toBe(disabled);
+      expect(
+        checkbox.closest("label")!.classList.contains(classes.locked),
+      ).toBe(disabled);
+    },
+  );
 });

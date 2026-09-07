@@ -3,8 +3,10 @@ import type {
   DiscardPeriodBucket,
 } from "../ui/discardQualityTrend";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { DecisionQualityChart } from "./DecisionQualityChart";
+import { SortOrder } from "../ui/SortOrder";
+import { playPracticeFromDecisionMarker } from "./stories.common";
 
 const sampleBuckets: DiscardPeriodBucket[] = [
   {
@@ -56,7 +58,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const expectChart = async (canvasElement: HTMLElement): Promise<void> => {
-  const chart = within(canvasElement).getByRole("img", {
+  const chart = within(canvasElement).getByRole("group", {
     name: "Decision quality over time trend chart",
   });
 
@@ -79,27 +81,91 @@ export const SinglePeriod: Story = {
 };
 
 const sampleDecisionPoints: DiscardDecisionPoint[] = [
-  { loss: 0, mean: 0 },
-  { loss: 0.5, mean: 0.25 },
-  { loss: 1.2, mean: 0.57 },
-  { loss: 0, mean: 0.43 },
-  { loss: 0.25, mean: 0.39 },
-].map(({ loss, mean }, index) => ({
+  { loss: 0, mastered: false, mean: 0 },
+  { loss: 0.5, mastered: true, mean: 0.25 },
+  { loss: 1.2, mastered: false, mean: 0.57 },
+  { loss: 0, mastered: false, mean: 0.43 },
+  { loss: 0.25, mastered: false, mean: 0.39 },
+].map(({ loss, mastered, mean }, index) => ({
+  discardKey: "5H,6H",
   expectedPointsLoss: loss,
+  handKey: "5H,6H,7H,8H,9H,10H|Dealer",
+  isMastered: mastered,
   isOptimal: loss === 0,
   isRetained: false,
   ordinal: index + 1,
+  recencyAt: 1700000000000 + index,
   rollingMeanLoss: mean,
   timestamp: 1700000000000 + index * 100000,
 }));
 
+const rollingWithPointsArgs = {
+  buckets: sampleBuckets,
+  decisionPoints: sampleDecisionPoints,
+  granularity: "rolling20",
+} satisfies Story["args"];
+
 export const WithDecisionPoints: Story = {
-  args: {
-    buckets: sampleBuckets,
-    decisionPoints: sampleDecisionPoints,
-    granularity: "rolling20",
-  },
+  args: rollingWithPointsArgs,
   play: playExpectChart,
+};
+
+const firstLossMarker = (canvasElement: HTMLElement): Element => {
+  const marker = canvasElement.querySelector("[data-decision-ordinal]");
+  if (marker === null) {
+    throw new Error("expected a loss marker in the chart");
+  }
+  return marker;
+};
+
+const clickElement = (element: Element): void => {
+  element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+};
+
+const expectPanelGone = async (canvasElement: HTMLElement): Promise<void> => {
+  await waitFor(async () => {
+    await expect(
+      within(canvasElement).queryByRole("region"),
+    ).not.toBeInTheDocument();
+  });
+};
+
+export const DecisionDetailPopup: Story = {
+  args: rollingWithPointsArgs,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const marker = firstLossMarker(canvasElement);
+
+    clickElement(marker);
+    const panel = await canvas.findByRole("region");
+
+    await expect(panel).toHaveTextContent("lost");
+    await expect(panel).toHaveTextContent("Dealer");
+    await expect(panel).toHaveTextContent("Hand");
+    await expect(panel).toHaveTextContent("Discarded");
+
+    clickElement(marker);
+    await expectPanelGone(canvasElement);
+
+    clickElement(marker);
+    await canvas.findByRole("region");
+    await fireEvent.keyDown(window, { key: "Escape" });
+    await expectPanelGone(canvasElement);
+
+    clickElement(marker);
+    clickElement(await canvas.findByRole("button", { name: "Close" }));
+    await expectPanelGone(canvasElement);
+  },
+};
+
+export const PracticeFromDetail: Story = {
+  args: {
+    ...rollingWithPointsArgs,
+    onPracticeDecision: fn(),
+    sortOrder: SortOrder.Descending,
+  },
+  play: ({ args, canvasElement }) =>
+    playPracticeFromDecisionMarker(canvasElement, args.onPracticeDecision),
 };
 
 export const Empty: Story = {

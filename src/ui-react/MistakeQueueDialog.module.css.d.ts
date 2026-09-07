@@ -1,4 +1,5 @@
 /* jscpd:ignore-start */
+export const actionBar: string;
 export const activeBadge: string;
 export const allMasteredBody: string;
 export const allMasteredHeading: string;
@@ -6,9 +7,12 @@ export const allMasteredNotice: string;
 export const cardsRow: string;
 export const controls: string;
 export const dialog: string;
+export const doneButton: string;
 export const emptyState: string;
 export const filterGroup: string;
 export const input: string;
+export const practiceButton: string;
+export const startDrillButton: string;
 export const itemBadges: string;
 export const itemCard: string;
 export const itemFooter: string;

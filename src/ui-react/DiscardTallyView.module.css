@@ -41,6 +41,11 @@
   text-align: right;
 }
 
+/* The parenthesized percentage; dropped on a phone too narrow to fit both figures with it. */
+.share {
+  white-space: nowrap;
+}
+
 .label {
   opacity: 0.8;
 }
@@ -83,4 +88,87 @@
 .trend-button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+}
+
+/*
+ * On a phone with the device font-size setting above the default, the
+ * em-sized labels grow while the two figure columns take their share of the
+ * row first, squeezing the 1fr label track until "Lost per discard" and
+ * "Best choice" wrapped into several ragged lines (AGENTS.md's rem/em-floor
+ * trap). Cap the tally font with a viewport unit and keep every label and
+ * figure on one line, so a squeeze overflows predictably rather than
+ * wrapping mid-phrase.
+ */
+@media (aspect-ratio < 6 / 5) {
+  .tally {
+    /*
+     * A no-op at the default scale (1em resolves below 4.4vw only above a
+     * ~364px width or an above-default root font); the column gap is left
+     * uncapped so the default-scale layout stays byte-identical.
+     */
+    font-size: min(1em, 4.4vw);
+
+    /*
+     * Capped like the font (no-op at the default scale, where 0.7em stays
+     * below 3vw down to ~373px): the inter-column gap otherwise grows with
+     * the device font and is pure width the three columns cannot spare.
+     */
+    column-gap: min(0.7em, 3vw);
+
+    /*
+     * The font and gap caps still cannot guarantee the three columns fit:
+     * Android Chrome's minimum-font-size accessibility setting forces text
+     * above any `vw`-computed size, and there is no CSS opt-out. On a
+     * narrow phone with that set, the fixed-width all-time figures ran off
+     * the edge and `body { overflow-x: hidden }` clipped their last
+     * character. Let the row scroll its own overflow as the final backstop
+     * — no scrollbar and no layout shift whenever it already fits, so the
+     * default-scale layout is unchanged.
+     */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .label,
+  .figure,
+  .period {
+    white-space: nowrap;
+  }
+
+  /*
+   * Stacked mode is phone width with a three-column row, and the device
+   * font-size setting can force the tally text past every `vw` cap (Android
+   * Chrome's minimum-font-size, no CSS opt-out). Drop the parenthesized
+   * share here: it is just the count restated as a percentage, so the raw
+   * count — which must fit — always stays on screen rather than being
+   * clipped or pushed into the scroll overflow. Kept to the same two-mode
+   * boundary the rest of the file uses rather than adding a width
+   * breakpoint.
+   */
+  .share {
+    display: none;
+  }
+}
+
+/*
+ * Side-by-side mode has the same rem/em-floor trap, and worse consequences:
+ * the tally sits in the fixed-height left column below the cards, so when a
+ * large device font-size wraps "Lost per discard" and "Hands skipped" onto
+ * two or three lines each, the extra height pushes the "Quality trend" and
+ * "Mistake queue" buttons past the bottom of a short phone-landscape
+ * viewport — and Android Chrome does not always scroll the app box to
+ * reach them. Cap the tally font with a viewport unit (a no-op at the
+ * default scale, where 1em stays below 2vw) and keep every label and
+ * figure on one line so a squeeze overflows predictably instead.
+ */
+@media (aspect-ratio >= 6 / 5) {
+  .tally {
+    font-size: min(1em, 2vw);
+  }
+
+  .label,
+  .figure,
+  .period {
+    white-space: nowrap;
+  }
 }
