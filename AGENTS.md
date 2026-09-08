@@ -684,14 +684,22 @@ mcr.microsoft.com/playwright:<tag>`.
 - The Codex GitHub connector reviews the current head when a PR comment says
   `@codex review` (post it with an agent-attribution prefix). When Codex
   quota is exhausted it replies "usage limits reached" instead of reviewing.
-- Request that review yourself rather than asking permission first, and keep
-  requesting it: address every finding, re-request on the new head, and repeat
-  until a round reports no issues. The budget here is deliberately large
-  because Codex is the adversarial check on agent work, and successive rounds
-  earn their cost — on #728 the second round found a defect in code the first
-  round had passed, and only the third came back clean. Copilot's low-effort
-  reviews are similarly plentiful; its medium-effort reviews are the scarce
-  resource, so spend those deliberately.
+- Codex auto review (at the "exhaustive" trigger) and automatic Copilot
+  review have been on since 2026-09-07, so the per-head Codex round fires on
+  its own — on the opening PR and on every pushed head — and you do not
+  normally post `@codex review` yourself. Unchanged: keep iterating until a
+  round reports no issues, address every finding, and before asking a human
+  to look confirm a Codex round landed on the exact head they will read.
+  Post `@codex review` by hand only when one did not (a quota stub, or the
+  experimental "smart detect" trigger skipping the PR). The budget here is
+  deliberately large because Codex is the adversarial check on agent work,
+  and successive rounds earn their cost — on #728 the second round found a
+  defect in code the first round had passed, and only the third came back
+  clean. Copilot's low-effort reviews are similarly plentiful; its
+  medium-effort reviews are the scarce resource, so spend those
+  deliberately. Copilot's automatic review does not reliably re-fire on a
+  new head — re-request it via the REST `requested_reviewers` endpoint
+  (next bullet).
 - A Copilot review request via the REST `requested_reviewers` endpoint can
   succeed while the eventual "review" is only a COMMENTED stub saying the
   requester reached their Copilot quota. Read the review body before

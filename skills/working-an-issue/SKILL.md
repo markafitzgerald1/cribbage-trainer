@@ -32,10 +32,10 @@ guessed at.
   fails against the unfixed code, run the focused test plus `verify:fast`,
   commit and push, let required CI run the full gate for that SHA, then
   reply to and resolve the threads. `AGENTS.md` requires a Codex round on
-  every new head; auto review issues that per-head request for you when it
-  is on, so the push is usually enough on its own. Resolving a thread does
-  not trigger a round — only a new commit does — and if the automatic round
-  never lands (see below) the manual `@codex review` is still yours to send.
+  every new head and now treats the automatic round as that round, so the
+  push is usually enough on its own. Resolving a thread does not trigger a
+  round — only a new commit does — and if the automatic round never lands
+  (see below) the manual `@codex review` is still yours to send.
 - The PR body carries a human review guide and a manual testing plan. Let the
   automatic Copilot and Codex reviews land, run the loop to a clean round,
   and only then ask for human review — the human's attention is the scarce
@@ -55,10 +55,10 @@ guessed at.
   automatic Copilot review, and Codex auto review is on for every PR here at
   the "exhaustive" trigger, which keeps looking until a round finds nothing
   new. Both fire on the opening PR and Codex fires again on every pushed
-  head, so in practice the automatic round is the per-head Codex review that
-  `AGENTS.md` requires — you rarely have to type `@codex review`. What you
-  still owe: before asking a human to look, confirm a Codex round actually
-  landed on the head they will read, and request one by hand if it did not.
+  head, and `AGENTS.md` now counts that automatic round as the per-head
+  Codex review it requires — you rarely have to type `@codex review`. What
+  you still owe: before asking a human to look, confirm a Codex round
+  actually landed on the head they will read, and request one by hand if not.
   A round can be missing because Codex hit a quota stub, or because the
   experimental "smart detect" trigger skipped the PR. Copilot's automatic
   review also does not reliably re-fire on a new head; re-request it with
