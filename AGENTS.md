@@ -687,19 +687,24 @@ mcr.microsoft.com/playwright:<tag>`.
 - Codex auto review (at the "exhaustive" trigger) and automatic Copilot
   review have been on since 2026-09-07, so the per-head Codex round fires on
   its own — on the opening PR and on every pushed head — and you do not
-  normally post `@codex review` yourself. Unchanged: keep iterating until a
-  round reports no issues, address every finding, and before asking a human
-  to look confirm a Codex round landed on the exact head they will read.
-  Post `@codex review` by hand only when one did not (a quota stub, or the
-  experimental "smart detect" trigger skipping the PR). The budget here is
-  deliberately large because Codex is the adversarial check on agent work,
-  and successive rounds earn their cost — on #728 the second round found a
-  defect in code the first round had passed, and only the third came back
-  clean. Copilot's low-effort reviews are similarly plentiful; its
-  medium-effort reviews are the scarce resource, so spend those
-  deliberately. Copilot's automatic review does not reliably re-fire on a
-  new head — re-request it via the REST `requested_reviewers` endpoint
-  (next bullet).
+  normally post `@codex review` yourself. It fires concurrently with CI,
+  before the gate below is green; that is acceptable for the automatic round
+  because you did not choose to spend it and it re-fires on the fixed head,
+  but the "reviews come after the gate" rule still binds every _manual_
+  request — hold those until CI is green. Unchanged: iterate until a round
+  reports no issues, address every finding, and do not ask a human to look
+  until a clean Codex round has landed on a head whose CI passed. Request
+  `@codex review` by hand when "smart detect" skipped the PR; when a round
+  is missing because Codex returned a quota stub, wait for the quota to
+  recover rather than re-requesting into the same "usage limits reached"
+  reply. The budget here is deliberately large because Codex is the
+  adversarial check on agent work, and successive rounds earn their cost —
+  on #728 the second round found a defect in code the first round had
+  passed, and only the third came back clean. Copilot's low-effort reviews
+  are similarly plentiful; its medium-effort reviews are the scarce
+  resource, so spend those deliberately. Copilot's automatic review does not
+  reliably re-fire on a new head — re-request it, once CI is green, via the
+  REST `requested_reviewers` endpoint (next bullet).
 - A Copilot review request via the REST `requested_reviewers` endpoint can
   succeed while the eventual "review" is only a COMMENTED stub saying the
   requester reached their Copilot quota. Read the review body before
