@@ -54,12 +54,13 @@ guessed at.
 - The first Copilot and Codex reviews fire on their own now: the repo has
   automatic Copilot review and Codex "smart detect" enabled as of
   2026-09-07, so the opening round needs no manual request. Two holes that
-  leaves. "Smart detect" can judge a PR trivial and never review it, so a
-  substantive change still needs a manual `@codex review` to guarantee the
-  adversarial pass; and every fix push is a new head the opening automation
-  does not cover, per the review-fix loop above. Request Copilot by hand
-  with this, since `gh pr edit --add-reviewer copilot` cannot resolve that
-  login:
+  leaves. "Smart detect" can judge a PR trivial and post no review at all,
+  which leaves the opening adversarial pass undone — so when no Codex
+  review appears, request `@codex review` by hand; the `AGENTS.md` loop
+  still expects a clean Codex round on every PR. And every fix push is a
+  new head the opening automation does not cover, per the review-fix loop
+  above. Request Copilot by hand with this, since
+  `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash
   gh api --method POST \
@@ -110,10 +111,11 @@ guessed at.
   - **Discovery & Design** — still being refined, not yet a scoped unit of
     work.
   - **Done** — closed.
-- Those meanings imply four board invariants, each worth checking because
+- Those meanings imply five board invariants, each worth checking because
   nothing enforces it: every open issue is on the board; every open issue
   has a milestone; no `Beyond MLP` item and no `blocked` item sits in Todo;
-  nothing closed sits outside Done.
+  nothing closed sits outside Done; and nothing still open sits in Done,
+  where an accidental drop hides live work while passing every other check.
 - The board has no Priority field, yet the work is still ranked: priority is
   the milestone, then the Status column, then the manual top-to-bottom order
   of cards within a column. The top of Todo is the default next issue to
@@ -142,12 +144,14 @@ guessed at.
   on-board issues as missing, some of them printed three lines up in the
   same output. Sort both sides with plain `sort`, and reconcile every audit
   count against the `gh project item-list` total before trusting it.
-- `gh issue create` does not put the new issue on the board. It stays
-  invisible there until `gh project item-add 1 --owner <owner> --url <url>`
-  and then `gh project item-edit` to set its Status; eleven open issues had
+- A bare `gh issue create` does not put the new issue on the board — only
+  `gh issue create --project "<title>"` does, and even then with no Status.
+  Otherwise the issue stays off the board until
+  `gh project item-add 1 --owner <owner> --url <url>`, and either way it
+  needs `gh project item-edit` to set Status; eleven open issues had
   drifted off the board this way. Anything that files an issue and then
-  calls it "on the board" without the add step is reporting a state that is
-  not there.
+  calls it "on the board" without one of those steps is reporting a state
+  that is not there.
 - Prefer issues that deliver something a person can see over issues that
   deliver only an enabling layer. A storage-only or schema-only ticket can be
   verified through unit tests or devtools but never by using the app, so it
