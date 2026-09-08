@@ -52,12 +52,16 @@
   desktop) each list the repo's skills through their symlink, so every
   harness in use follows one.
 - A skill's `SKILL.md` frontmatter `name` must equal its directory name.
-  Harnesses disagree on which they display — Claude Code and Copilot in VS
-  Code show the directory, while Copilot's CLI and desktop app, Antigravity,
-  and Codex show the frontmatter — so a skill whose two names differ is
-  called different things depending on where the user looks.
-  `testing-storybook` declared `storybook-interaction-testing` and did
-  exactly that. `npm run test:skill-paths` now asserts they match.
+  At least two harnesses — Copilot in VS Code and the Antigravity IDE, both
+  checked 2026-09-08 — show the directory name and the frontmatter `name`
+  together, so a skill whose two names differ reads as an outright
+  contradiction in the UI rather than as two tools disagreeing about which
+  one to show. Which name a harness prefers when it shows only one cannot be
+  established from inside this repository: `test:skill-paths` keeps `name`
+  and the directory identical for every skill, so no observation here can
+  tell the two apart. `testing-storybook` declared
+  `storybook-interaction-testing` and shipped exactly that contradiction.
+  `npm run test:skill-paths` now asserts they match.
 - `npm run test:skill-paths` guards that layout: each vendor path must be a
   relative symlink resolving to `skills/`, `skills/` itself must hold the
   real files, and every skill directory must contain a `SKILL.md`. Like
@@ -99,9 +103,10 @@
     baselines, or diagnosing a rendered-layout bug in the browser, read
     `skills/testing-e2e/SKILL.md`.
   - Before editing responsive CSS or a media query, changing the card
-    grid, a control row, a modal, or a `.dynamic-ui` grid cell, or
-    designing or debugging a control's selected, hover, disabled, or
-    focus state, read `skills/ui-layout-and-interaction/SKILL.md`.
+    grid, the discard/analysis results table, a control row, a modal, or
+    a `.dynamic-ui` grid cell, or designing or debugging a control's
+    selected, hover, disabled, or focus state, read
+    `skills/ui-layout-and-interaction/SKILL.md`.
   - Before starting work on an issue, or when you triage or draft one,
     read `skills/working-an-issue/SKILL.md`.
   - Before touching analytics consent, `gtag`, or trainer telemetry, read
@@ -266,25 +271,6 @@ they bind any PR that makes a claim about a phone or ships a guard.
   than larger. When adding a guard alongside a fix, check it fails for the
   bug being fixed, not merely that it fails for some sabotage of the code
   under it.
-
-## Discard-table layout (portrait)
-
-- The per-row expand arrow (▸) lives inside the hand/discard cell, which is
-  `overflow: hidden`. Narrowing the portrait hand column too far clips the arrow
-  even when the cards still appear to fit. Keep the column wide enough for
-  cards + parens + arrow; verify with
-  `cell.scrollWidth - cell.clientWidth === 0`.
-- Signed expected-points columns rely on the U+2212 minus (digit-width under
-  tabular-nums) so positives and negatives right-align. Do not try to pad
-  positives with a figure space (U+2007) — it is narrower than U+2212 and
-  would also push 2-digit positives wider than the negatives. Instead size the
-  column so the widest signed-negative value fits without overflowing into the
-  gutter: an oversized score font makes 5-glyph negatives bleed a few px past
-  4-glyph positives, breaking decimal alignment (portrait only, where columns
-  are tightest).
-- A phone-width portrait viewport cannot fit enlarged scores alongside six
-  mini-cards, the arrow, and four numeric columns. Meaningful score-size
-  increases need the horizontal-mini-card redesign, not portrait font bumps.
 
 ## URL analysis state (deep linking)
 
