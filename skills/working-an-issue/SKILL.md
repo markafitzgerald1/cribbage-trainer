@@ -31,10 +31,11 @@ guessed at.
 - During a review fix the loop is: reproduce with a regression test that
   fails against the unfixed code, run the focused test plus `verify:fast`,
   commit and push, let required CI run the full gate for that SHA, then
-  reply to and resolve the threads. The push itself starts the next Codex
-  round — auto review re-runs on every new head — so nothing needs
-  requesting between rounds. Resolving a thread on its own does not start a
-  round; only a new commit does.
+  reply to and resolve the threads. `AGENTS.md` requires a Codex round on
+  every new head; auto review issues that per-head request for you when it
+  is on, so the push is usually enough on its own. Resolving a thread does
+  not trigger a round — only a new commit does — and if the automatic round
+  never lands (see below) the manual `@codex review` is still yours to send.
 - The PR body carries a human review guide and a manual testing plan. Let the
   automatic Copilot and Codex reviews land, run the loop to a clean round,
   and only then ask for human review — the human's attention is the scarce
@@ -54,15 +55,14 @@ guessed at.
   automatic Copilot review, and Codex auto review is on for every PR here at
   the "exhaustive" trigger, which keeps looking until a round finds nothing
   new. Both fire on the opening PR and Codex fires again on every pushed
-  head, so the loop needs no manual `@codex review` to advance. The
-  discipline of iterating to a clean round still holds; `AGENTS.md`'s "keep
-  requesting it" predates auto review and the manual re-request per head no
-  longer applies. Two things still need a hand. If a Codex round never
-  posts — a quota stub, or the experimental "smart detect" trigger skipping
-  a PR — the adversarial pass has not happened, so request `@codex review`
-  yourself. And Copilot's automatic review does not reliably re-fire on a
-  new head; re-request it with this, since
-  `gh pr edit --add-reviewer copilot` cannot resolve that login:
+  head, so in practice the automatic round is the per-head Codex review that
+  `AGENTS.md` requires — you rarely have to type `@codex review`. What you
+  still owe: before asking a human to look, confirm a Codex round actually
+  landed on the head they will read, and request one by hand if it did not.
+  A round can be missing because Codex hit a quota stub, or because the
+  experimental "smart detect" trigger skipped the PR. Copilot's automatic
+  review also does not reliably re-fire on a new head; re-request it with
+  this, since `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash
   gh api --method POST \
