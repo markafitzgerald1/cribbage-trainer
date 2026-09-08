@@ -1,6 +1,6 @@
 ---
 name: working-an-issue
-description: Use before starting work on a GitHub issue, and when you triage or draft one — the shape an issue should have, the project board, the plan comment, branch and PR shape, what a review guide and testing plan owe a reader, how to request Copilot and verify it, and the Codex review loop that has to run before a human is asked to look.
+description: Use before starting work on a GitHub issue, and when you triage or draft one — what the issue body, the plan comment, and the pull request each record, the shape an issue should have, the project board, branch and PR shape, what a review guide and testing plan owe a reader, how to request Copilot and verify it, and the Codex review loop that has to run before a human is asked to look.
 compatibility: Requires the gh CLI for issue, PR, review, and project board operations.
 ---
 
@@ -9,6 +9,30 @@ compatibility: Requires the gh CLI for issue, PR, review, and project board oper
 **Description:** The delivery shape expected here, in order, plus the board
 shape and review mechanics that have each produced a wrong conclusion when
 guessed at.
+
+**Where each fact belongs:** the issue, its plan comment, and the pull request
+record different things, and a fact filed in the wrong one is effectively
+lost — a reader looking for what was agreed should never have to reconstruct
+it from a diff.
+
+- The **issue body** is intent and accepted scope: what problem is being
+  solved and what would count as solving it. It is not a running log, and it
+  does not narrate how the work went.
+- A **dated edit to the issue body** is how an approved scope change is
+  recorded. Scope that moves without one leaves the issue describing work
+  nobody agreed to, and no reader can tell which version a reviewer read.
+  #775 gaining task 5 from #760 is the worked example.
+- An **attributed issue comment** is the implementation plan: the approach,
+  the per-item calls being made, and any scope call taken rather than asked
+  about. It is posted before the code, so it can be argued with while
+  changing course is still cheap, and it is what the diff is checked against.
+- The **pull request** records the implementation delta, the proof it works,
+  the review findings and how each was answered, the residual risk, and the
+  final closing decision. Anything learned while building belongs here, not
+  backfilled into the issue body.
+
+Picking up someone else's work means reading the pair: the issue says what was
+agreed, the pull request says what actually happened.
 
 **Learnings:**
 

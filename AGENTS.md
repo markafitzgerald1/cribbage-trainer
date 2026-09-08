@@ -64,7 +64,12 @@
   `test:pages-content-merge` it runs as its own CI step rather than inside
   the Docker gate, because the Dockerfile's `COPY` allowlist deliberately
   excludes these dot-paths — so `npm run docker:build-and-test-all` alone
-  will not catch a broken symlink.
+  will not catch a broken symlink. Those symlinks sit at `skills/` as a
+  whole, so **adding a skill adds no symlink**: a new directory's only new
+  surface is its `SKILL.md` and the frontmatter `name` matching it, and the
+  Dockerfile already carries both `COPY skills/ ./skills/` and the
+  whole-context `COPY . .` before lint, so it needs no copy-surface change
+  either.
 - This file keeps only what an agent can violate _without knowing it is in
   that domain_ — build-wide invariants, contribution rules, and the shape of
   the project. Guidance whose trigger is self-evident from the task lives in
@@ -93,6 +98,10 @@
   - Before writing or debugging a Playwright spec, regenerating screenshot
     baselines, or diagnosing a rendered-layout bug in the browser, read
     `skills/testing-e2e/SKILL.md`.
+  - Before editing responsive CSS or a media query, changing the card
+    grid, a control row, a modal, or a `.dynamic-ui` grid cell, or
+    designing or debugging a control's selected, hover, disabled, or
+    focus state, read `skills/ui-layout-and-interaction/SKILL.md`.
   - Before starting work on an issue, or when you triage or draft one,
     read `skills/working-an-issue/SKILL.md`.
   - Before touching analytics consent, `gtag`, or trainer telemetry, read
@@ -154,8 +163,8 @@
   identical commit, while the ordinary arm64-native Docker build reported a
   branch lower — and both the amd64 and arm64 variants of the Playwright
   base image ship the identical Node build — checked directly by running
-  `node --version` in each, via `docker run --platform linux/<arch>
-mcr.microsoft.com/playwright:<tag>`.
+  `node --version` in each, via
+  `docker run --platform linux/<arch> mcr.microsoft.com/playwright:<tag>`.
   Architecture cannot be the variable when both architectures agree with
   each other and disagree with the one thing that changed: whether Node ran
   inside this Dockerfile's container at all. The container's Node (baked
@@ -208,36 +217,17 @@ mcr.microsoft.com/playwright:<tag>`.
 
 ## Interaction design and visual-state debugging
 
-- Name an action for its immediate effect, not a later workflow outcome. For
-  example, a dialog button that commits six chosen cards but leaves the user
-  to select two discards is "Use hand", not "Analyze".
+Control naming, native form semantics, hiding a control that must stay
+focusable, chart SVG roles and hit testing, locking a control with
+`disabled`, and the practice drill's history and storage-staleness rules
+moved to `skills/ui-layout-and-interaction/SKILL.md`. These two stay because
+an agent breaks them without knowing it has entered this domain.
+
 - Keep visible and aria labels mutually non-substring across controls, even
   when only renaming one. Playwright's `getByRole` name match is a
   case-insensitive substring, so a new label that contains another control's
   name breaks locators in specs that were never touched (see
   `skills/testing-e2e/SKILL.md` for the collisions this has already caused).
-- Preserve native form semantics when styling controls. Keep radio inputs in
-  the accessibility tree and style their adjacent labels as buttons; retain
-  the native role, name, checked state, and `:focus-visible` behavior.
-- `appearance: none` unstyles a control but leaves it in flow, and what
-  remains is UA-stylesheet dependent: the hidden sort radios reserved 8px
-  each in Chromium, 4px in desktop WebKit, and roughly 20px on a real
-  iPhone. Hide a control that must stay focusable with the absolute-plus-
-  clip pattern (`Hand.module.css`'s `.figcaption`, plus `margin: 0`) so it
-  contributes no layout width anywhere, and space the visible labels with an
-  explicit `gap`. Never let a wrapper's spacing come from a hidden control's
-  box. When you take a control out of flow, move its focus ring to the
-  adjacent label (`.input:focus-visible + .label`) — stylelint's
-  `no-descending-specificity` wants that rule after the plain `.label` and
-  `.label:hover` rules.
-- When a deselected control still looks selected, inspect state selectors
-  independently before changing React logic: check `aria-pressed`,
-  `:focus-visible`, and `:hover`. An unselected hover style that resembles the
-  selected style can make correct application state appear stale.
-- A declared color transition is insufficient if its endpoints are visually
-  indistinguishable. Review both entering and leaving hover in the rendered UI
-  and use a target color with a perceptible contrast change consistent with
-  peer controls.
 - CSS modules scope only class selectors: a bare element selector in any
   `*.module.css` (e.g. `button + button`) compiles to a global rule that
   leaks into every other component. One such rule indented all but the
@@ -246,182 +236,15 @@ mcr.microsoft.com/playwright:<tag>`.
   its siblings, diff `getComputedStyle` margins between siblings first,
   then hunt for element-only rules in unrelated module files and qualify
   them with a component class.
-- On short screens, place a modal's primary and secondary actions before a
-  long scrolling picker and keep the action row sticky. Users should see how
-  to complete the dialog without first discovering an off-screen footer.
-- `role="img"` on an `<svg>` makes every descendant presentational, so
-  focusable controls inside it (the decision-quality chart's per-mistake
-  marker buttons) never reach assistive tech even with working keyboard
-  handlers. An interactive chart SVG needs `role="group"` (keep the
-  `aria-label` / `aria-describedby`), and tests then query
-  `getByRole("group", { name })`, not `"img"` — check `tests-e2e/` for
-  `getByRole("img")` too, a `src/`-only sweep misses it.
-- A transparent SVG overlay only catches a pointer where it is the topmost
-  painted element: a hit layer drawn before the trend path and the final
-  data dot lets those swallow taps in their pixels. Paint hit targets last.
-  When one shape's identity must survive a filter that renumbers the series
-  (the chart's crib-role filter), key any stored selection by a genuinely
-  unique field — the record's monotonic `recencyAt`, never the chart
-  ordinal or wall-clock `at` — and clear it outright (render-time reset,
-  like `usePracticeDrill`) once its item leaves the filtered list, or
-  restoring the filter silently reopens the panel.
-- Freezing a control by swallowing its `onChange` leaves it focusable, still
-  showing a pointer cursor, and announced as editable — a control that lies
-  about being interactive. Lock it with the native `disabled` attribute
-  (thread a prop down to the `<input>`) and a `cursor` override on its
-  label. The practice drill's post-commit card lock does this through
-  `Hand`/`HandCard`'s `disabled`; a test then asserts `checkbox.disabled`,
-  not just that the handler went uncalled.
-- A transient board-scoped mode (the practice drill) cannot self-detect a
-  history restore of its own hand: `Back` onto the drilled six cards under
-  the same role reads identically to an in-drill card selection —
-  `serializeHand` ignores `kept`, and in the choosing phase the discard
-  count carries no signal either. The component that owns the navigation
-  must end the mode explicitly. `Trainer`'s `popstate` handler calls
-  `drill.clearDrill()` in its non-merge branch — the bare state reset,
-  not `drill.onExit()`, which also deals a fresh hand and would
-  overwrite the hand Back just restored. The hook's own render-time
-  reset only covers what it _can_ see (the cards or role differ, or a
-  committed discard was cleared). Guard the exit with the same
-  `!isInternalMerge` check the history-navigation report uses, or a
-  mind-change settle inside the drill ends it.
-- A field snapshotted into a UI mode (the drill's `activeItem`, taken from
-  the queue when the drill starts) goes stale against `localStorage`
-  another tab can mutate. `recordPracticeAttempt` merges against the
-  stored record as it stands at write time, so the streak it persists is
-  not one more than the snapshot's. Derive anything shown after such a
-  write by re-reading storage for that record, never from the snapshot —
-  otherwise a concurrent miss elsewhere lets this tab show two successes
-  and declare mastery over a stored streak of one. But do not then assume
-  the re-read `find` succeeds: `recordPracticeAttempt` deliberately
-  refuses to write when a newer-build tally is in storage (the version
-  guard), and `readTallyForDisplay()` returns the empty fallback there, so
-  the record is genuinely absent. Fall back to the local estimate rather
-  than asserting the record non-null — the whole tally is read-only in
-  that tab until reload anyway.
 
 ## Responsive layout invariants
 
-- Exactly two responsive modes exist, keyed off a single boundary:
-  `@media (aspect-ratio < 6 / 5)` (stacked) and
-  `@media (aspect-ratio >= 6 / 5)` (side-by-side). Never use `orientation`
-  media queries — they re-create a hybrid band between ratios 1 and 6/5 with
-  stacked layout but side-by-side sizing — and never let both blocks match a
-  shared boundary value: exactly 6/5 belongs to the side-by-side mode only.
-- The six hand cards render one card design in both layout modes and at
-  every viewport size — rotating a phone only rescales the cards. The whole
-  card (5/7 `aspect-ratio` box, `em` width, border, checkbox, rank, and
-  suit) is defined once in card-font-relative units in
-  `HandCard.module.css` and `CardLabel.module.css`; each mode sets only the
-  font scale (container-relative `cqw` in stacked mode, `vw` in
-  side-by-side, whose width also sets the grid column, the Deal-button
-  alignment, and the analysis table's share). Do not add per-mode overrides
-  of the card's interior or reintroduce viewport-unit clamps whose fixed
-  caps flatten cards as the window widens; e2e guards compare the card
-  shape and its rank-glyph fill across widths and across the rotation
-  boundary. Form controls do not inherit font size, so the checkbox needs
-  `font-size: inherit` for its `em` sizes to track the card font.
-- Never size nowrap control rows with rem floors. Mobile browsers scale rem
-  with the device font-size setting, so rem-floored controls overflow the
-  screen edge on real phones while emulators at default font scale look
-  fine (the tell: `cqw`-sized parts fit while rem-floored parts overflow).
-  Stacked-mode controls are sized entirely in container units; an e2e guard
-  asserts they fit the portrait viewport at a 28px root font.
-- The rem-floor trap is not only about control rows: any rem **lower
-  bound** inflates on a phone whose font-size setting is above default,
-  including `clamp(1rem, …)`. In side-by-side mode the app title and the
-  consent cell were floored that way, and on real hardware the consent
-  banner had to be scrolled to reach its buttons while every emulated check
-  at the default scale passed. Cap such a floor with a viewport unit —
-  `clamp(min(1rem, 2vw), …)`, `min(0.8rem, 1.5vw)` — which leaves every
-  default-scale size unchanged, and guard it the way portrait already does:
-  the same measurement repeated at a 28px root font. That guard failed on
-  all five browser projects before the fix and passes after it.
-- Anything new added below the controls and cards in the side-by-side
-  left column inherits that trap. The practice-drill panel
-  (`PracticeDrillPanel.module.css`) went in with every gap, margin,
-  padding, and font in bare rem; inside Trainer's fixed-height,
-  non-scrolling column a 28px root font grew it until Check/Exit dropped
-  below a 844x390 viewport (measured at y425). Its landscape `@media`
-  block now caps each rem with a `min(…rem, …vw)` sized to leave the
-  default scale untouched, and `practiceDrill.spec.ts` asserts both drill
-  buttons stay within the landscape viewport at a 28px root — negative-
-  checked to fail against the uncapped CSS.
-- Cap **spacing** with a viewport unit in a landscape `@media` block, not
-  **font size**. A first pass at the mistake-queue landscape header
-  (`MistakeQueueDialog.module.css`) capped every option and legend with
-  `min(0.75rem, 1.9vh)`; on a real phone `1.9vh` won and rendered the
-  filter labels at ~7px, unreadable, while the emulator at 390px looked
-  fine either way. The working shape: plain readable rem for type
-  (`0.72rem` here), `min(rem, vh|vw)` only on padding / gap / margin, and
-  drop genuinely optional text outright in landscape — the subtitle there
-  went to `display: none` because the per-row "n/2 successes" badge
-  already carries the same information. A short landscape phone also has
-  roughly 50px less height than the emulated viewport once its address and
-  gesture bars show, so guard at `phoneLandscapeViewport.height - 50`, not
-  the bare 390.
-- `line-height: normal` is not proportional across font sizes (font-metric
-  pixel rounding differs), so pin an explicit line-height wherever an
-  aspect-ratio invariant depends on text height.
-- In side-by-side mode the left grid column is `min-content`-sized by the
-  wider of the controls row and the six cards. The controls must stay
-  narrower than the cards — that is why "Enter cards" wraps to two lines
-  there — or they widen the column, steal width from the analysis table,
-  and make the buttons shift when the role label changes between Dealer and
-  Pone. Do not spread the cards (`justify-content: space-between`) to chase
-  the Deal button's right edge; keep fixed gaps and narrow the controls
-  instead (an e2e guard asserts Deal/last-card alignment).
-- The app-title/tagline header sits above the grid, so its height is stolen
-  from the height-tightest side-by-side left column (controls + cards +
-  first-run consent banner). On a short phone-landscape viewport that pushes
-  the consent Accept/Decline off-screen — worst in WebKit, which renders the
-  banner ~27px taller than Chromium, so the screenshot baselines (Chromium
-  and Mobile Chrome only) never catch it. Keep the landscape header compact
-  and shrink the consent banner from its grid cell — the `font-size` on
-  `.dynamic-ui > :last-child`, which its text and `em` padding both track —
-  rather than editing `AnalyticsConsentDialog`. A non-screenshot e2e guard
-  asserts Accept stays within a 844x390 viewport across all browsers.
-- `.dynamic-ui` places its children by **position**, and one of them is
-  conditionally rendered, so those selectors do not mean what they read as.
-  The analysis element exists only once two cards are discarded
-  (`discardIsComplete(dealtCards) && <ScoredPossibleKeepDiscards …>`), so
-  with no discard selected every positional selector after it shifts by one.
-  In side-by-side mode `> :nth-child(n + 2):nth-last-child(n + 2)` hands the
-  middle child the analysis's own slot — `grid-column: 2 / 3` with
-  `grid-row: span 2` — so whichever child lands there inherits a full-height
-  cell and stretches to fill it. The discard tally did exactly that: 753px
-  tall around 56px of content, its rows spread down the whole column, with
-  nothing wrong in its own CSS. A new child added to this container needs an
-  explicit placement of its own, anchored the way the stacked layout already
-  anchors one (`.dynamic-ui.with-tally > :nth-last-child(2)`), and the
-  conditional class driving it must come from the same predicate the child's
-  own render uses or the two diverge.
-- Aligning such a child to the **end** of its cell is not the safe way to
-  stop it stretching. Items placed after the consent cell's row sit below the
-  privacy links once pushed to their cell's end: `align-self: end` put the
-  tally at y675 against the links' y670 and failed
-  `discardTally.spec.ts`'s ordering assertion in all three landscape
-  projects, while looking correct in a single hand-checked viewport.
-  `align-self: start` removes the stretch and leaves the geometry with an
-  analysis on screen byte-identical, which is why it is the smaller change.
-- That same `> :nth-child(n + 2):nth-last-child(n + 2)` matches **two**
-  children once a discard is chosen — the analysis figure and the tally are
-  both "middle" — so both take a `grid-column: 2 / 3; grid-row: span 2`
-  slot and the tally, unable to fit the two explicit rows, auto-places into
-  an implicit row that runs past the bottom of `.dynamic-ui`. With no
-  discard selected the tally is the lone middle child and sits high enough
-  to fit, which is why "it works until I pick a discard" is the report. The
-  fix is `overflow-y: auto` + `min-height: 0` on `.dynamic-ui` in the
-  landscape block so that overflow is reachable inside a real scroll
-  container rather than spilling past the fixed-height app box; it is inert
-  at the default scale, where nothing overflows.
-- A `scrollIntoViewIfNeeded()` + `toBeInViewport()` guard for that fix
-  passes with **and** without it, because the emulator's `body` scrolls
-  (its own `overflow: auto`) where a phone's fixed-height `html`/`body`/
-  `#trainer`/`.app` chain does not. Assert the mechanism instead: at a
-  short landscape viewport with a large root font, `.dynamic-ui`'s computed
-  `overflow-y` is `auto` and its `scrollHeight` exceeds its `clientHeight`.
-  Negative-checked, that reads `visible` and equal heights.
+The two-mode aspect-ratio contract, the single card design, the rem-floor
+traps, `.dynamic-ui` positional-child placement, and the hardware-first
+measurement rules moved to `skills/ui-layout-and-interaction/SKILL.md`.
+These two stay because they govern what a measurement is evidence for, so
+they bind any PR that makes a claim about a phone or ships a guard.
+
 - Desktop engines do not model the mobile viewport, in two independent ways,
   and each has already produced a wrong fix. First, Chrome for Android has a
   toolbar that shows and hides; no desktop engine does, so `100%`, `100svh`,
@@ -435,22 +258,14 @@ mcr.microsoft.com/playwright:<tag>`.
   measurement of scroll behavior or viewport height as evidence about
   desktop only. Reproduce on hardware before concluding anything about a
   phone, and say in the PR which claims rest on emulation.
-- Measure on hardware first before changing the app box's height unit.
-  `100svh` was tried (#701, PR #702) on the theory that Chrome for Android
-  resolves the percentage-height chain against the large viewport, so the
-  bottom grid row — the analytics consent controls — hid under the toolbar.
-  The theory is accurate about Chrome, but `svh` also shrinks the box by
-  roughly the toolbar height: device testing showed controls that were
-  clickable on `main` becoming unreachable in landscape with it applied, and
-  it was reverted. The reported symptom turned out to be resolved by #696's
-  controls-row fix instead. Every automated gate passed on that branch, so a
-  change here is worth exactly as much as its phone test.
 - A guard that passes on the branch introducing the regression is guarding
-  the wrong invariant. The `svh` change shipped with a new e2e assertion that
-  the app root does not render past the viewport; it passed on the broken
-  branch, because `svh` made the box smaller rather than larger. When adding
-  a guard alongside a fix, check it fails for the bug being fixed, not merely
-  that it fails for some sabotage of the code under it.
+  the wrong invariant. The reverted `100svh` app-box change (#701, PR #702,
+  recounted in `skills/ui-layout-and-interaction/SKILL.md`) shipped with a
+  new e2e assertion that the app root does not render past the viewport; it
+  passed on the broken branch, because `svh` made the box smaller rather
+  than larger. When adding a guard alongside a fix, check it fails for the
+  bug being fixed, not merely that it fails for some sabotage of the code
+  under it.
 
 ## Discard-table layout (portrait)
 
@@ -614,6 +429,8 @@ mcr.microsoft.com/playwright:<tag>`.
   and clicks through the flow lifted `usePracticeDrill` 45%→80% and
   `practiceLedger` 19%→80%. Retune the numbers only from a Docker
   `storybook:test:coverage` run, never the local one.
+
+## Code style and conventions
 
 - TypeScript/React with Vite; keep types sound.
 - Avoid single unconstrained generic arrow functions such as `<T>(...) => ...`
@@ -894,13 +711,26 @@ mcr.microsoft.com/playwright:<tag>`.
   README subsections are level three. An edit that splices by index can
   swallow any of them while every gate stays green, because markdownlint,
   prettier, and cspell check lines rather than structure; four adversarial
-  review rounds missed exactly that on #730 before Copilot caught it.
+  review rounds missed exactly that on #730 before Copilot caught it. That
+  diff only catches damage a branch is about to do, so run it once against a
+  much older base when auditing a file's structure: the
+  `## Code style and conventions` heading had been missing since #646 spliced
+  it away, leaving 61 style and contribution bullets reading as part of the
+  lint checklist for two months, and only a diff against the file's first
+  commit surfaced it.
 
   ```bash
   diff <(git show <base>:<file> | grep -E '^#{1,6} ') \
     <(grep -E '^#{1,6} ' <file>)
   ```
 
+- Keep an inline code span short enough to fit one wrapped line. Prettier
+  reflows prose at 80 columns but never breaks inside a span, so an
+  over-long one lands whole on the next line at column zero, breaking its
+  backticks and de-indenting the list item under it. markdownlint,
+  prettier, and cspell all pass on the wreckage — the same
+  lines-not-structure blind spot as the heading rule above. Two instances
+  existed here at once, one of them live for months.
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
 
