@@ -693,12 +693,14 @@ mcr.microsoft.com/playwright:<tag>`.
   but the "reviews come after the gate" rule still binds every _manual_
   request — hold those until CI is green. Unchanged: iterate until a round
   reports no issues, address every finding, and do not ask a human to look
-  until a clean Codex round has landed on a head whose CI passed. Request
-  `@codex review` by hand when "smart detect" skipped the PR; when a round
-  is missing because Codex returned a quota stub, wait for the quota to
-  recover rather than re-requesting into the same "usage limits reached"
-  reply. The budget here is deliberately large because Codex is the
-  adversarial check on agent work, and successive rounds earn their cost —
+  until a clean Codex round has landed on the exact head they will read,
+  with its CI green — smart detect skips heads unpredictably, a later push
+  included even after it reviewed earlier ones. Request `@codex review` by
+  hand for any pushed head it skips; when a round is missing because Codex
+  returned a quota stub, wait for the quota to recover rather than
+  re-requesting into the same "usage limits reached" reply. The budget here
+  is deliberately large because Codex is the adversarial check on agent
+  work, and successive rounds earn their cost —
   on #728 the second round found a defect in code the first round had
   passed, and only the third came back clean. Copilot's low-effort reviews
   are similarly plentiful; its medium-effort reviews are the scarce

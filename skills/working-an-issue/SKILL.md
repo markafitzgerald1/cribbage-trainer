@@ -58,11 +58,12 @@ guessed at.
   head, and `AGENTS.md` now counts that automatic round as the per-head
   Codex review it requires — you rarely have to type `@codex review`. What
   you still owe: before asking a human to look, confirm a clean Codex round
-  landed on a head whose CI passed, and act if it did not. If "smart detect"
-  skipped the PR, request `@codex review` by hand; if the round was a quota
-  stub, wait for the quota to recover rather than re-requesting into the same
-  reply. Copilot's automatic review also does not reliably re-fire on a new
-  head; re-request it (once CI is green) with this, since
+  landed on the exact head they will read, CI green — smart detect skips
+  heads unpredictably, a later push included. Request `@codex review` by
+  hand for any skipped head; if the round was a quota stub, wait for the
+  quota to recover rather than re-requesting into the same reply. Copilot's
+  automatic review also does not reliably re-fire on a new head; re-request
+  it (once CI is green) with this, since
   `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash
