@@ -23,9 +23,8 @@ guessed at.
   merge gate, so a landed commit is not validated work. Before requesting a
   Codex or Copilot review by hand, wait for required CI to be green on the
   exact SHA — a manual review of a head that then fails CI is spent twice,
-  once on the bot's budget and once on the round it forces. (The automatic
-  Codex round fires alongside CI and is not a spend you control; it re-runs
-  on the fixed head.) Run
+  once on the bot's budget and once on the round it forces (the automatic
+  round is exempt: you do not control it). Run
   `npm run docker:build-and-test-all` locally instead only when CI cannot be
   that gate — unpushed work, or a Docker-only reproduction. A `--no-verify`
   commit skipped `verify:fast`, not CI's gate, so just run `verify:fast` by
@@ -33,11 +32,9 @@ guessed at.
 - During a review fix the loop is: reproduce with a regression test that
   fails against the unfixed code, run the focused test plus `verify:fast`,
   commit and push, let required CI run the full gate for that SHA, then
-  reply to and resolve the threads. `AGENTS.md` requires a Codex round on
-  every new head and now treats the automatic round as that round, so the
-  push is usually enough on its own. Resolving a thread does not trigger a
-  round — only a new commit does — and if the automatic round never lands
-  (see below) the manual `@codex review` is still yours to send.
+  reply to and resolve the threads. The push starts the next automatic
+  Codex round; you only send `@codex review` if that round does not land
+  (see below).
 - The PR body carries a human review guide and a manual testing plan. Let the
   automatic Copilot and Codex reviews land, run the loop to a clean round,
   and only then ask for human review — the human's attention is the scarce
@@ -53,19 +50,14 @@ guessed at.
   covers: a real phone, a real network, a real Google Analytics stream. When
   the human runs those steps, record the result in the PR body, and say
   plainly if later commits have moved the code out from under that run.
-- Copilot and Codex now review automatically: as of 2026-09-07 the repo has
-  automatic Copilot review, and Codex auto review is on for every PR here at
-  the "exhaustive" trigger, which keeps looking until a round finds nothing
-  new. Both fire on the opening PR and Codex fires again on every pushed
-  head, and `AGENTS.md` now counts that automatic round as the per-head
-  Codex review it requires — you rarely have to type `@codex review`. What
-  you still owe: before asking a human to look, confirm a clean Codex round
-  landed on the exact head they will read, CI green — smart detect skips
-  heads unpredictably, a later push included. Request `@codex review` by
-  hand for any skipped head; if the round was a quota stub, wait for the
-  quota to recover rather than re-requesting into the same reply. Copilot's
-  automatic review also does not reliably re-fire on a new head; re-request
-  it (once CI is green) with this, since
+- The automatic reviews (`AGENTS.md`, GitHub PR Reviews) do most of the
+  loop: Codex reviews every pushed head, Copilot reviews the opening PR.
+  Two things they leave you. If a Codex round is missing on the head a
+  human will read — smart detect skipped it, or it came back a quota stub
+  — request `@codex review` by hand, but on a quota stub wait for the quota
+  to recover first rather than re-requesting into the same reply. And
+  Copilot's automatic review does not reliably re-fire on a new head;
+  re-request it (once CI is green) with this, since
   `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash

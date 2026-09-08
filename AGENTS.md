@@ -684,29 +684,20 @@ mcr.microsoft.com/playwright:<tag>`.
 - The Codex GitHub connector reviews the current head when a PR comment says
   `@codex review` (post it with an agent-attribution prefix). When Codex
   quota is exhausted it replies "usage limits reached" instead of reviewing.
-- Codex auto review (at the "exhaustive" trigger) and automatic Copilot
-  review have been on since 2026-09-07, so the per-head Codex round fires on
-  its own — on the opening PR and on every pushed head — and you do not
-  normally post `@codex review` yourself. It fires concurrently with CI,
-  before the gate below is green; that is acceptable for the automatic round
-  because you did not choose to spend it and it re-fires on the fixed head,
-  but the "reviews come after the gate" rule still binds every _manual_
-  request — hold those until CI is green. Unchanged: iterate until a round
-  reports no issues, address every finding, and do not ask a human to look
-  until a clean Codex round has landed on the exact head they will read,
-  with its CI green — smart detect skips heads unpredictably, a later push
-  included even after it reviewed earlier ones. Request `@codex review` by
-  hand for any pushed head it skips; when a round is missing because Codex
-  returned a quota stub, wait for the quota to recover rather than
-  re-requesting into the same "usage limits reached" reply. The budget here
+- Codex auto review and automatic Copilot review are on (since 2026-09-07),
+  so the per-head Codex round fires on its own and you rarely post
+  `@codex review` yourself. The discipline is unchanged: iterate until a
+  round reports no issues, address every finding, resolve every thread.
+  Before asking a human to look, confirm a clean Codex round landed on the
+  exact head they will read, and request one by hand if it is missing (smart
+  detect skips heads unpredictably). The wait-for-CI ordering in the gate
+  rule binds your manual requests, not the automatic round. The budget here
   is deliberately large because Codex is the adversarial check on agent
-  work, and successive rounds earn their cost —
-  on #728 the second round found a defect in code the first round had
-  passed, and only the third came back clean. Copilot's low-effort reviews
-  are similarly plentiful; its medium-effort reviews are the scarce
-  resource, so spend those deliberately. Copilot's automatic review does not
-  reliably re-fire on a new head — re-request it, once CI is green, via the
-  REST `requested_reviewers` endpoint (next bullet).
+  work, and successive rounds earn their cost — on #728 the second round
+  found a defect in code the first round had passed, and only the third came
+  back clean. Copilot's low-effort reviews are similarly plentiful; its
+  medium-effort reviews are the scarce resource, so spend those
+  deliberately.
 - A Copilot review request via the REST `requested_reviewers` endpoint can
   succeed while the eventual "review" is only a COMMENTED stub saying the
   requester reached their Copilot quota. Read the review body before
