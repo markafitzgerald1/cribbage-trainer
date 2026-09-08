@@ -684,14 +684,20 @@ mcr.microsoft.com/playwright:<tag>`.
 - The Codex GitHub connector reviews the current head when a PR comment says
   `@codex review` (post it with an agent-attribution prefix). When Codex
   quota is exhausted it replies "usage limits reached" instead of reviewing.
-- Request that review yourself rather than asking permission first, and keep
-  requesting it: address every finding, re-request on the new head, and repeat
-  until a round reports no issues. The budget here is deliberately large
-  because Codex is the adversarial check on agent work, and successive rounds
-  earn their cost — on #728 the second round found a defect in code the first
-  round had passed, and only the third came back clean. Copilot's low-effort
-  reviews are similarly plentiful; its medium-effort reviews are the scarce
-  resource, so spend those deliberately.
+- Codex auto review and automatic Copilot review are on (since 2026-09-07),
+  so the per-head Codex round fires on its own and you rarely post
+  `@codex review` yourself. The discipline is unchanged: iterate until a
+  round reports no issues, address every finding, resolve every thread.
+  Before asking a human to look, confirm a clean Codex round landed on the
+  exact head they will read, and request one by hand if it is missing (smart
+  detect skips heads unpredictably). The wait-for-CI ordering in the gate
+  rule binds your manual requests, not the automatic round. The budget here
+  is deliberately large because Codex is the adversarial check on agent
+  work, and successive rounds earn their cost — on #728 the second round
+  found a defect in code the first round had passed, and only the third came
+  back clean. Copilot's low-effort reviews are similarly plentiful; its
+  medium-effort reviews are the scarce resource, so spend those
+  deliberately.
 - A Copilot review request via the REST `requested_reviewers` endpoint can
   succeed while the eventual "review" is only a COMMENTED stub saying the
   requester reached their Copilot quota. Read the review body before
