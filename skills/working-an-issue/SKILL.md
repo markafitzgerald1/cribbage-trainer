@@ -51,7 +51,7 @@ guessed at.
   the human runs those steps, record the result in the PR body, and say
   plainly if later commits have moved the code out from under that run.
 - The automatic reviews (`AGENTS.md`, GitHub PR Reviews) do most of the
-  loop: Codex reviews every pushed head, Copilot reviews the opening PR.
+  loop: Codex usually reviews every pushed head, Copilot the opening PR.
   Two things they leave you. If a Codex round is missing on the head a
   human will read — smart detect skipped it, or it came back a quota stub
   — request `@codex review` by hand, but on a quota stub wait for the quota
