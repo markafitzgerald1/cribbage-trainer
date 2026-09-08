@@ -114,10 +114,13 @@ guessed at.
   nothing enforces it: every open issue is on the board; every open issue
   has a milestone; no `Beyond MLP` item and no `blocked` item sits in Todo;
   nothing closed sits outside Done.
-- The board has no Priority field. Priority is the milestone plus the Status
-  column and nothing else — `Minimum Lovable Product` is active and
-  `Beyond MLP` is deferred — so an agent looking for a priority field finds
-  none and can wrongly conclude that nothing on the board is prioritized.
+- The board has no Priority field, yet the work is still ranked: priority is
+  the milestone, then the Status column, then the manual top-to-bottom order
+  of cards within a column. The top of Todo is the default next issue to
+  pick up — and `Minimum Lovable Product` is the active milestone with
+  `Beyond MLP` deferred. An agent that hunts for a Priority field finds none
+  and can misread the board as a flat bag of work; one that treats Todo as
+  unordered picks the wrong issue next.
 - The board spans two repositories that share one issue-number space, so a
   board audit must key each item on the repository and number together,
   `(content.repository, content.number)`, never `content.number` alone.
