@@ -114,11 +114,13 @@ guessed at.
   - **Discovery & Design** — still being refined, not yet a scoped unit of
     work.
   - **Done** — closed.
-- Those meanings imply five board invariants, each worth checking because
+- Those meanings imply six board invariants, each worth checking because
   nothing enforces it: every open issue is on the board; every open issue
-  has a milestone; no `Beyond MLP` item and no `blocked` item sits in Todo;
-  nothing closed sits outside Done; and nothing still open sits in Done,
-  where an accidental drop hides live work while passing every other check.
+  has a milestone; every board item has a Status set (a `--project` add
+  leaves it empty, so the item shows in no column); no `Beyond MLP` item and
+  no `blocked` item sits in Todo; nothing closed sits outside Done; and
+  nothing still open sits in Done, where an accidental drop hides live work
+  while passing every other check.
 - The board has no Priority field, yet the work is still ranked: priority is
   the milestone, then the Status column, then the manual top-to-bottom order
   of cards within a column. The top of Todo is the default next issue to
@@ -141,12 +143,15 @@ guessed at.
   truncated that board with no error — the first page held every Todo item
   but one, so the column looked complete while an issue hid at its tail. Use
   `gh project item-list 1 --owner <owner> --limit 400`, the limit trap the
-  In Progress bullet already flags for the CLI default. `comm -13`
-  fed two lists that were `sort -n`-ordered emitted garbage quietly, because
-  `comm` needs its inputs in the collation it compares with — it named 77
-  on-board issues as missing, some of them printed three lines up in the
-  same output. Sort both sides with plain `sort`, and reconcile every audit
-  count against the `gh project item-list` total before trusting it.
+  In Progress bullet already flags for the CLI default, and pass an explicit
+  `--limit` to every `gh issue list` too — it defaults to 30, so a repo with
+  more matching issues drops the overflow while the totals still reconcile.
+  `comm -13` fed two lists that were `sort -n`-ordered emitted garbage
+  quietly, because `comm` needs its inputs in the collation it compares
+  with — it named 77 on-board issues as missing, some of them printed three
+  lines up in the same output. Sort both sides with plain `sort`, and
+  reconcile every audit count against the `gh project item-list` total
+  before trusting it.
 - A bare `gh issue create` does not put the new issue on the board — only
   `gh issue create --project "<title>"` does, and even then with no Status.
   Otherwise the issue stays off the board until
