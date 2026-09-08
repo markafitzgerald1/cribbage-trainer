@@ -20,10 +20,12 @@ guessed at.
   to read; then push the rest.
 - **One authoritative full gate per pushed head, and reviews come after it.**
   `.husky/pre-commit` runs the fast `npm run verify:fast` filter, not the
-  merge gate, so a landed commit is not validated work. Wait for required CI
-  to be green on the exact SHA before requesting a fresh Codex or Copilot
-  review: a review of a head that then fails CI is spent twice, once on the
-  bot's budget and once on the round it forces. Run
+  merge gate, so a landed commit is not validated work. Before requesting a
+  Codex or Copilot review by hand, wait for required CI to be green on the
+  exact SHA — a manual review of a head that then fails CI is spent twice,
+  once on the bot's budget and once on the round it forces. (The automatic
+  Codex round fires alongside CI and is not a spend you control; it re-runs
+  on the fixed head.) Run
   `npm run docker:build-and-test-all` locally instead only when CI cannot be
   that gate — unpushed work, or a Docker-only reproduction. A `--no-verify`
   commit skipped `verify:fast`, not CI's gate, so just run `verify:fast` by
