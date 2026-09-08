@@ -163,8 +163,8 @@
   identical commit, while the ordinary arm64-native Docker build reported a
   branch lower — and both the amd64 and arm64 variants of the Playwright
   base image ship the identical Node build — checked directly by running
-  `node --version` in each, via `docker run --platform linux/<arch>
-mcr.microsoft.com/playwright:<tag>`.
+  `node --version` in each, via
+  `docker run --platform linux/<arch> mcr.microsoft.com/playwright:<tag>`.
   Architecture cannot be the variable when both architectures agree with
   each other and disagree with the one thing that changed: whether Node ran
   inside this Dockerfile's container at all. The container's Node (baked
@@ -713,16 +713,24 @@ they bind any PR that makes a claim about a phone or ships a guard.
   prettier, and cspell check lines rather than structure; four adversarial
   review rounds missed exactly that on #730 before Copilot caught it. That
   diff only catches damage a branch is about to do, so run it once against a
-  much older base when auditing a file's structure: `## Code style and
-conventions` had been missing since #646 spliced it away, leaving 61 style
-  and contribution bullets reading as part of the lint checklist for two
-  months, and only a diff against the file's first commit surfaced it.
+  much older base when auditing a file's structure: the
+  `## Code style and conventions` heading had been missing since #646 spliced
+  it away, leaving 61 style and contribution bullets reading as part of the
+  lint checklist for two months, and only a diff against the file's first
+  commit surfaced it.
 
   ```bash
   diff <(git show <base>:<file> | grep -E '^#{1,6} ') \
     <(grep -E '^#{1,6} ' <file>)
   ```
 
+- Keep an inline code span short enough to fit one wrapped line. Prettier
+  reflows prose at 80 columns but never breaks inside a span, so an
+  over-long one lands whole on the next line at column zero, breaking its
+  backticks and de-indenting the list item under it. markdownlint,
+  prettier, and cspell all pass on the wreckage — the same
+  lines-not-structure blind spot as the heading rule above. Two instances
+  existed here at once, one of them live for months.
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
 
