@@ -31,11 +31,10 @@ guessed at.
 - During a review fix the loop is: reproduce with a regression test that
   fails against the unfixed code, run the focused test plus `verify:fast`,
   commit and push, let required CI run the full gate for that SHA, then
-  reply to and resolve the threads and request the next round. Resolving a
-  thread does not re-fire the automatic review, and neither does the fix
-  push on its own, so each new head needs a manual `@codex review` comment.
-  Skip it and you have a fix nothing adversarial has read, which in the PR
-  timeline looks identical to a round that came back clean.
+  reply to and resolve the threads. The push itself starts the next Codex
+  round — auto review re-runs on every new head — so nothing needs
+  requesting between rounds. Resolving a thread on its own does not start a
+  round; only a new commit does.
 - The PR body carries a human review guide and a manual testing plan. Let the
   automatic Copilot and Codex reviews land, run the loop to a clean round,
   and only then ask for human review — the human's attention is the scarce
@@ -51,15 +50,18 @@ guessed at.
   covers: a real phone, a real network, a real Google Analytics stream. When
   the human runs those steps, record the result in the PR body, and say
   plainly if later commits have moved the code out from under that run.
-- The first Copilot and Codex reviews fire on their own now: the repo has
-  automatic Copilot review and Codex "smart detect" enabled as of
-  2026-09-07, so the opening round needs no manual request. Two holes that
-  leaves. "Smart detect" can judge a PR trivial and post no review at all,
-  which leaves the opening adversarial pass undone — so when no Codex
-  review appears, request `@codex review` by hand; the `AGENTS.md` loop
-  still expects a clean Codex round on every PR. And every fix push is a
-  new head the opening automation does not cover, per the review-fix loop
-  above. Request Copilot by hand with this, since
+- Copilot and Codex now review automatically: as of 2026-09-07 the repo has
+  automatic Copilot review, and Codex auto review is on for every PR here at
+  the "exhaustive" trigger, which keeps looking until a round finds nothing
+  new. Both fire on the opening PR and Codex fires again on every pushed
+  head, so the loop needs no manual `@codex review` to advance. The
+  discipline of iterating to a clean round still holds; `AGENTS.md`'s "keep
+  requesting it" predates auto review and the manual re-request per head no
+  longer applies. Two things still need a hand. If a Codex round never
+  posts — a quota stub, or the experimental "smart detect" trigger skipping
+  a PR — the adversarial pass has not happened, so request `@codex review`
+  yourself. And Copilot's automatic review does not reliably re-fire on a
+  new head; re-request it with this, since
   `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash
