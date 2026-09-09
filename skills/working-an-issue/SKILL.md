@@ -39,9 +39,10 @@ agreed, the pull request says what actually happened.
 - The order is: post the plan as an attributed comment on the issue **before**
   writing code; move the issue to In Progress on the board (below);
   implement on a `feature/<issue>-<slug>` branch; push once the branch has one
-  commit and open the PR immediately, because the preview only publishes for
-  pushes made after the PR exists; open it as a draft if the work is not ready
-  to read; then push the rest.
+  commit and open the PR immediately, because opening the PR is what starts
+  the first CI run and publishes the first preview — a branch pushed with no
+  PR runs nothing; open it as a draft if the work is not ready to read; then
+  push the rest.
 - **One authoritative full gate per pushed head, and reviews come after it.**
   `.husky/pre-commit` runs the fast `npm run verify:fast` filter, not the
   merge gate, so a landed commit is not validated work. Before requesting a

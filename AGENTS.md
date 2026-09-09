@@ -579,14 +579,15 @@ they bind any PR that makes a claim about a phone or ships a guard.
   step and verify by **file set**, not a passing run (a glob task matching
   nothing still exits 0 — see the #703 bullet under Lint gauntlet interplay).
 - **One authoritative full gate per pushed head.** Required CI normally is
-  it, since it validates the exact SHA and leaves shared evidence — do not
+  it, since it validates the PR head and leaves shared evidence — do not
   request a fresh Codex or Copilot review until it is green for the head
-  under review. Run `npm run docker:build-and-test-all` locally only when CI
-  genuinely cannot serve as that gate: work that will stay unpushed, or a
-  failure that only reproduces inside Docker.
+  under review. CI runs per `pull_request` event (open / reopen / push to
+  the PR), so it needs an open PR: run `npm run docker:build-and-test-all`
+  locally when there is none yet, when the work will stay unpushed, or for
+  a failure that only reproduces inside Docker.
 - A `--no-verify` or `HUSKY=0` commit skipped `verify:fast`, not the gate.
   Run `npm run verify:fast` by hand before pushing, then let CI run the full
-  gate on the pushed SHA like any other commit.
+  gate on that head — via the PR (open it if it is not yet).
 - Documentation-only changes need only `lint:markdownlint`, `lint:prettier`,
   and `lint:cspell`, not the full Docker suite.
 - `rebase` needs its own `--no-gpg-sign`, passed when the rebase **starts**.
