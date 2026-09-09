@@ -1,6 +1,10 @@
 name: npm-build-test-upload-artifact-and-deploy
 on:
+  # Branch pushes only. Nothing here acts on a tag push (production needs
+  # refs/heads/main, previews need an open PR), and letting tags through
+  # would collide with a same-named branch in the concurrency key below.
   push:
+    branches: ["**"]
   # So a newly opened PR gets its preview immediately instead of only on the
   # next push: the branch-creating push always runs before the PR exists, so
   # push alone leaves the first preview unpublished until a second push.

@@ -617,7 +617,8 @@ they bind any PR that makes a claim about a phone or ships a guard.
 ## CI workflow notes
 
 - Workflow: .github/workflows/npm-build-test-upload-artifact-and-deploy.yml.
-- Triggers are `push` and `pull_request: [opened, reopened]`. On non-main
+- Triggers are `push` (branch pushes only — `branches: ["**"]`, so a tag
+  push never runs it) and `pull_request: [opened, reopened]`. On non-main
   branches it builds the Docker test image and runs Playwright e2e via
   `npm run docker:run-e2e-only`, then (same workflow) resolves whether an
   open, same-repository, non-Dependabot PR exists — from the event payload
