@@ -617,26 +617,33 @@ they bind any PR that makes a claim about a phone or ships a guard.
 ## CI workflow notes
 
 - Workflow: .github/workflows/npm-build-test-upload-artifact-and-deploy.yml.
-- On non-main branches: builds Docker test image and runs Playwright e2e via
+- Triggers are `push` and `pull_request: [opened, reopened]`. On non-main
+  branches it builds the Docker test image and runs Playwright e2e via
   `npm run docker:run-e2e-only`, then (same workflow) resolves whether an
-  open, same-repository, non-Dependabot PR exists for the branch and, if so,
-  publishes a PR preview.
+  open, same-repository, non-Dependabot PR exists — from the event payload
+  on `pull_request`, via `gh pr list --head` on `push` — and if so publishes
+  a PR preview.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
-  artifact, deploys to GitHub Pages.
-- Order branch work so the PR exists before the push you want previewed.
-  `gh pr create` needs the branch on the remote, so the PR cannot literally
-  come first; instead push the branch as soon as it has one commit (or an
-  empty one), open the PR immediately — `--draft` is fine — and only then
-  push the commits to preview. Pushing a finished branch and opening the PR
-  afterwards always burns a cycle: that push's `resolve-preview-pr` logs "No
-  open pull request found ...; skipping preview deploy" and nothing publishes
-  until the next push.
-- The workflow's top-level concurrency group is
-  `${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true`,
-  so any push to a branch cancels that branch's running build. Never push to
-  a PR branch while waiting on its preview or CI result — including a
-  doc-only follow-up commit — or the run producing that result dies and the
-  wait restarts. Land such commits before the run starts, or after it ends.
+  artifact, deploys to GitHub Pages. This job is pinned to
+  `github.event_name == 'push'`, so only a push to main ever deploys
+  production.
+- Opening the PR now publishes its first preview; you no longer need a
+  second push for that. `gh pr create` still needs the branch on the
+  remote, so push one commit (an empty one is fine), open the PR, and the
+  `pull_request: opened` run publishes the preview. The push run and the
+  PR-open run share a concurrency group (below), so opening the PR right
+  after a push cancels the push run and the PR-open run does the full test
+  and preview — one run, not two.
+- The workflow's top-level concurrency group keys on
+  `github.head_ref || github.ref_name` with `cancel-in-progress: true`, so a
+  branch's `push` and `pull_request` runs both key on the head branch name
+  and dedupe. A push to main is special-cased into its own `deploy-main`
+  group that no `pull_request` can name, so a fork PR from a branch called
+  `main` cannot cancel a production deploy. Never push to a PR branch while
+  waiting on its preview or CI
+  result — including a doc-only follow-up commit — or the run producing that
+  result dies and the wait restarts. Land such commits before the run
+  starts, or after it ends.
 - A scheduled workflow's execution clock is not the time it was scheduled
   for, and the gap can exceed the whole interval. GitHub delays scheduled
   runs under load, a queued job may reach a runner much later, and a re-run
