@@ -58,12 +58,14 @@ npm run docker:build-and-test-all
   hook exit 127 on any machine without a separate Homebrew install.
 - The hook is a fast filter, not the merge gate. The authoritative gate is
   `npm run docker:build-and-test-all`; `npm run verify:gap` shows what it
-  runs that the hook does not. Required CI normally serves as that gate,
-  since it validates the exact pushed commit — run it locally only when CI
-  cannot (unpushed work, or a Docker-only reproduction).
+  runs that the hook does not. Required CI serves as that gate once your
+  pull request is open — it validates the PR's head. A branch pushed with
+  no open PR runs no CI, so open the PR right after the first commit, or
+  run the gate locally (also do that for unpushed work or a Docker-only
+  reproduction).
 - If you skipped the hook with `--no-verify` or `HUSKY=0`, run
   `npm run verify:fast` by hand before pushing; CI still runs the full gate
-  on the pushed commit.
+  on your PR's head once the PR exists.
 - Documentation-only changes need only the documentation checks
   (`npm run lint:markdownlint`, `npm run lint:prettier`, and
   `npm run lint:cspell`).
@@ -76,8 +78,10 @@ npm run docker:build-and-test-all
 ## CI workflow notes
 
 - Workflow: `.github/workflows/npm-build-test-upload-artifact-and-deploy.yml`.
-- On non-`main` branches: builds Docker test image and runs Playwright e2e via
-  `npm run docker:run-e2e-only`.
+- On a pull request (`opened`, `reopened`, `synchronize`): builds the Docker
+  test image, runs Playwright e2e via `npm run docker:run-e2e-only`, and
+  publishes a per-PR preview. `push` triggers the workflow only for `main`,
+  so a branch without an open PR gets no CI.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages.
 
@@ -100,9 +104,9 @@ npm run docker:build-and-test-all
   quoted globbing (e.g., `'**/*.md'`) to ensure they run correctly across platforms.
 - **Bypassing Husky Hooks:** `--no-verify` / `HUSKY=0` skips `verify:fast`,
   so linting and test failures stay hidden until CI. If you bypass the hook,
-  run `npm run verify:fast` manually before pushing; CI still runs the full
-  `docker:build-and-test-all` on the pushed commit, so a local Docker run is
-  only needed when the work stays unpushed.
+  run `npm run verify:fast` manually before pushing; CI runs the full
+  `docker:build-and-test-all` on your PR's head once the PR is open, so a
+  local Docker run is only needed for unpushed work or a Docker-only repro.
 - **Spell-check Ignore Rules Live in `.cspell.json`, Not `.gitignore`:**
   `lint:cspell` deliberately does not pass `--gitignore`. With that flag,
   cspell resolved ignores against the parent repository's `.gitignore`,
