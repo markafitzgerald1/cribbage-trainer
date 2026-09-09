@@ -47,8 +47,9 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - Fast checks, and what `.husky/pre-commit` runs by default on each commit
   (about 20 seconds): `npm run verify:fast`
 - The full gate: `npm run docker:build-and-test-all`. Continuous integration
-  normally runs this for you against the exact commit you pushed, so you do
-  not need to run it locally before pushing. Run it yourself only when CI
+  runs this for you against your pull request's head — but only once the PR
+  exists: a branch pushed with no open PR triggers no CI. Open the PR right
+  after the first commit (the flow below), or run the gate yourself when CI
   cannot serve that purpose — work that will stay unpushed, or a failure
   that only reproduces inside Docker.
 - If you committed with `--no-verify`, you skipped `verify:fast`, not the
