@@ -634,13 +634,14 @@ they bind any PR that makes a claim about a phone or ships a guard.
   PR-open run share a concurrency group (below), so opening the PR right
   after a push cancels the push run and the PR-open run does the full test
   and preview — one run, not two.
-- The workflow's top-level concurrency group keys on
-  `github.head_ref || github.ref_name` with `cancel-in-progress: true`, so a
-  branch's `push` and `pull_request` runs both key on the head branch name
-  and dedupe. A push to main is special-cased into its own `deploy-main`
-  group that no `pull_request` can name, so a fork PR from a branch called
-  `main` cannot cancel a production deploy. Never push to a PR branch while
-  waiting on its preview or CI
+- The workflow's top-level concurrency group keys a branch's runs on
+  `format('branch-{0}', github.head_ref || github.ref_name)` with
+  `cancel-in-progress: true`, so a branch's `push` and `pull_request` runs
+  share a group and dedupe. A push to main keys on the bare `main-deploy`
+  instead; the `branch-` prefix on every other group means no branch name —
+  including a fork's `main` or `main-deploy` — can produce the production
+  group, so no `pull_request` can cancel a production deploy. Never push to
+  a PR branch while waiting on its preview or CI
   result — including a doc-only follow-up commit — or the run producing that
   result dies and the wait restarts. Land such commits before the run
   starts, or after it ends.

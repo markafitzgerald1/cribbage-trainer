@@ -8,14 +8,15 @@ on:
     types: [opened, reopened]
 
 concurrency:
-  # Collapse a branch's push run and its pull_request run onto one group so
-  # they dedupe (cancel-in-progress) rather than race: github.head_ref is the
+  # A branch's push run and its pull_request run share one group so they
+  # dedupe (cancel-in-progress) rather than race: github.head_ref is the
   # source branch on pull_request and empty on push, so push to feature-x and
-  # a PR opened from feature-x both key on "...-feature-x". Push to main is
-  # forced into a dedicated group no pull_request can ever name — a fork PR
-  # opened from a branch called "main" would otherwise share the key and
-  # cancel a running production deploy.
-  group: ${{ github.workflow }}-${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'deploy-main' || github.head_ref || github.ref_name }}
+  # a PR opened from feature-x both key on "branch-feature-x". Every
+  # branch-keyed group carries the "branch-" prefix; a push to main keys on
+  # the bare "main-deploy", which no branch name can produce, so no
+  # pull_request — not even one from a fork branch called "main" or
+  # "main-deploy" — can share the production deploy's group and cancel it.
+  group: ${{ github.workflow }}-${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'main-deploy' || format('branch-{0}', github.head_ref || github.ref_name) }}
   cancel-in-progress: true
 
 jobs:
