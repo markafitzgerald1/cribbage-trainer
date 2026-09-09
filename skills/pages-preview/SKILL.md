@@ -20,16 +20,20 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   (`.github/workflows/pages-preview-cleanup.yml`, triggered by
   `pull_request: closed`, kept in its own file so editing cleanup logic can
   never perturb the production-critical jobs' `on:`/`if:` conditions).
-  "Eligible" means same-repository and not authored by `dependabot[bot]`;
-  fork PRs never reach this at all since `push` never fires in this repo for
-  fork commits. Because previews are `push`-triggered, the branch-creating
-  push always precedes `gh pr create` and skips with "No open pull request
-  found"; the first preview publishes on the first push made _after_ the PR
-  exists (push an empty or follow-up commit if one is needed sooner).
-- The branch-ordering and push-timing rules these triggers imply bind every
-  PR, not just Pages work, so they live in "CI workflow notes" in
-  `AGENTS.md`: open the PR before the push you want previewed, and never
-  push while waiting on a run.
+  "Eligible" means same-repository and not authored by `dependabot[bot]`.
+  The workflow triggers on `push` and on `pull_request: [opened, reopened]`,
+  so opening (or reopening) the PR publishes the first preview directly — no
+  second push needed. A `pull_request` event does fire for fork PRs (a
+  `push` never does in this repo), so the eligibility check rejects
+  cross-repository PRs before any deploy step; a fork `pull_request` run
+  also gets a read-only token with no secrets, so the publish path is
+  doubly unreachable from a fork. `resolve-preview-pr` reads the PR from the
+  event payload on `pull_request` and via `gh pr list --head` on `push`.
+- The push-timing rules these triggers imply bind every PR, not just Pages
+  work, so they live in "CI workflow notes" in `AGENTS.md`: opening the PR
+  publishes the first preview on its own, and never push while waiting on a
+  run (a `push` and a `pull_request` run for one branch share a concurrency
+  group and cancel each other).
 - The `pages-content` branch is a git-based **cache**, not the Pages
   publishing source (Pages settings stay `build_type: workflow`). It is
   fetched-or-created, mutated, and force-pushed as a single amended commit
