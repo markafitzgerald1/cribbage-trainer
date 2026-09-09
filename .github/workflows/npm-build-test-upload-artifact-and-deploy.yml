@@ -1,27 +1,27 @@
 name: npm-build-test-upload-artifact-and-deploy
 on:
-  # Branch pushes only. Nothing here acts on a tag push (production needs
-  # refs/heads/main, previews need an open PR), and letting tags through
-  # would collide with a same-named branch in the concurrency key below.
+  # push is the production trigger only. A feature-branch push starts no run,
+  # so it can never be cancelled by the pull_request run that follows it and
+  # leave an orphan CANCELLED build-and-test check-run that blocks merge
+  # (#786). Everything for a branch runs on pull_request instead. A branch
+  # pushed without an open PR gets no CI — the flow (AGENTS.md) opens the PR
+  # immediately, and a PR-less branch cannot merge anyway.
   push:
-    branches: ["**"]
-  # So a newly opened PR gets its preview immediately instead of only on the
-  # next push: the branch-creating push always runs before the PR exists, so
-  # push alone leaves the first preview unpublished until a second push.
+    branches: [main]
+  # opened/reopened give a new PR its checks and preview at once; synchronize
+  # covers every later push to the PR head (a fork push, which fires no push
+  # event here, included).
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
 
 concurrency:
-  # A branch's push run and its pull_request run share one group so they
-  # dedupe (cancel-in-progress) rather than race. The key is
-  # branch-<head repo>-<branch>: the head repo is github.repository on push
-  # and the PR's head repo on pull_request — equal for same-repo PRs, so a
-  # branch's push and open runs still align; distinct for forks, so two fork
-  # PRs both on a branch named "main" (or a fork branch colliding with a
-  # same-repo one) do not cancel each other. A push to main instead keys on
-  # the bare "main-deploy"; the "branch-" prefix means no head_ref/ref_name
-  # can produce it, so no pull_request can cancel a production deploy.
-  group: ${{ github.workflow }}-${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') && 'main-deploy' || format('branch-{0}-{1}', github.event.pull_request.head.repo.full_name || github.repository, github.head_ref || github.ref_name) }}
+  # push (main only) keys on "main-deploy"; a pull_request keys on
+  # branch-<head repo>-<branch>. The two spaces cannot intersect — the
+  # "branch-" prefix is unreachable by any ref name, so a fork PR from a
+  # branch called "main" gets branch-<fork>/cribbage-trainer-main and cannot
+  # cancel a production deploy. Namespacing on the head repo also keeps two
+  # fork PRs that share a branch name from cancelling each other's run.
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && 'main-deploy' || format('branch-{0}-{1}', github.event.pull_request.head.repo.full_name || github.repository, github.head_ref || github.ref_name) }}
   cancel-in-progress: true
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: github.ref != 'refs/heads/main'
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -182,7 +182,7 @@ jobs:
 
   resolve-preview-pr:
     runs-on: ubuntu-latest
-    if: github.ref != 'refs/heads/main'
+    if: github.event_name == 'pull_request'
     permissions:
       pull-requests: read
     outputs:
@@ -191,47 +191,22 @@ jobs:
       url: ${{ steps.resolve.outputs.url }}
     steps:
       - id: resolve
-        name: Resolve the open, same-repository, non-Dependabot PR for this event
+        name: Resolve whether this PR is eligible for a preview
         env:
-          GH_TOKEN: ${{ github.token }}
-          # Read from the payload on pull_request rather than inlined into the
-          # script (actionlint script-injection check); unset on push.
-          EVENT_NAME: ${{ github.event_name }}
+          # From the payload rather than inlined into the script (actionlint
+          # script-injection check). This job only runs on pull_request.
           PR_EVENT_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_EVENT_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            NUMBER="$PR_EVENT_NUMBER"
-            AUTHOR="$PR_EVENT_AUTHOR"
-            if [ "$PR_EVENT_HEAD_REPO" = "$GITHUB_REPOSITORY" ]; then
-              CROSS_REPO=false
-            else
-              CROSS_REPO=true
-            fi
-          else
-            BRANCH="${GITHUB_REF#refs/heads/}"
-            # The --head filter prefix-matches branch names (github/cli#10816),
-            # so select on exact headRefName equality to never publish this
-            # branch's build to a similarly named branch's PR path.
-            PR_LIST=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number,author,isCrossRepository,headRefName)
-            PR_JSON=$(jq --arg branch "$BRANCH" '[.[] | select(.headRefName == $branch)][0] // empty' <<< "$PR_LIST")
-            if [ -z "$PR_JSON" ]; then
-              echo "No open pull request found for branch $BRANCH; skipping preview deploy."
-              echo "eligible=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            NUMBER=$(jq -r '.number' <<< "$PR_JSON")
-            AUTHOR=$(jq -r '.author.login' <<< "$PR_JSON")
-            CROSS_REPO=$(jq -r '.isCrossRepository' <<< "$PR_JSON")
-          fi
+          NUMBER="$PR_EVENT_NUMBER"
           # The same bot is app/dependabot in gh CLI/GraphQL output but
           # dependabot[bot] in REST event payloads; match both spellings.
-          case "$AUTHOR" in
+          case "$PR_EVENT_AUTHOR" in
             "dependabot[bot]" | "app/dependabot") DEPENDABOT=true ;;
             *) DEPENDABOT=false ;;
           esac
-          if [ "$CROSS_REPO" = "true" ] || [ "$DEPENDABOT" = "true" ]; then
+          if [ "$PR_EVENT_HEAD_REPO" != "$GITHUB_REPOSITORY" ] || [ "$DEPENDABOT" = "true" ]; then
             echo "Pull request #$NUMBER is from a fork or Dependabot; skipping preview deploy."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
@@ -245,7 +220,7 @@ jobs:
   deploy-preview:
     runs-on: ubuntu-latest
     needs: [build-and-test, resolve-preview-pr]
-    if: github.ref != 'refs/heads/main' && needs.resolve-preview-pr.outputs.eligible == 'true'
+    if: github.event_name == 'pull_request' && needs.resolve-preview-pr.outputs.eligible == 'true'
 
     # Shared with build-upload-and-deploy; see that job's comment.
     concurrency:
