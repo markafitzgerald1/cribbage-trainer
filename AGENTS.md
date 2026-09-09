@@ -635,16 +635,17 @@ they bind any PR that makes a claim about a phone or ships a guard.
   after a push cancels the push run and the PR-open run does the full test
   and preview — one run, not two.
 - The workflow's top-level concurrency group keys a branch's runs on
-  `format('branch-{0}', github.head_ref || github.ref_name)` with
-  `cancel-in-progress: true`, so a branch's `push` and `pull_request` runs
-  share a group and dedupe. A push to main keys on the bare `main-deploy`
-  instead; the `branch-` prefix on every other group means no branch name —
-  including a fork's `main` or `main-deploy` — can produce the production
-  group, so no `pull_request` can cancel a production deploy. Never push to
-  a PR branch while waiting on its preview or CI
-  result — including a doc-only follow-up commit — or the run producing that
-  result dies and the wait restarts. Land such commits before the run
-  starts, or after it ends.
+  `branch-<head repo>-<branch>` with `cancel-in-progress: true`: the head
+  repo is `github.repository` on `push` and the PR head repo on
+  `pull_request`, so a branch's `push` and `pull_request` runs dedupe while
+  two fork PRs sharing a branch name (or a fork branch colliding with a
+  same-repo one) do not cancel each other. A push to main keys on the bare
+  `main-deploy` instead; the `branch-` prefix means no branch name can
+  produce the production group, so no `pull_request` can cancel a
+  production deploy. Never push to a PR branch while waiting on its preview
+  or CI result — including a doc-only follow-up commit — or the run
+  producing that result dies and the wait restarts. Land such commits
+  before the run starts, or after it ends.
 - A scheduled workflow's execution clock is not the time it was scheduled
   for, and the gap can exceed the whole interval. GitHub delays scheduled
   runs under load, a queued job may reach a runner much later, and a re-run
