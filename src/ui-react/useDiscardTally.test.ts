@@ -200,8 +200,13 @@ describe("discard tally hook", () => {
       skipped: 0,
     },
     {
-      // Regression: "Start drill" from an undecided authentic hand used to charge it a skip.
-      name: "an undecided hand set aside for a drill",
+      /*
+       * Regression: replacing an undecided authentic hand to study it used to
+       * charge it a skip. The `manual` cause covers both entry points — a
+       * drill start (#768) and an Enter-cards hand (#755) — and the untouched
+       * startup state is the one #755 reproduced from.
+       */
+      name: "an undecided hand set aside to study — drill start or Enter cards",
       play: (tally: DiscardTally) => {
         noteOrigin(tally, OTHER_HAND, "manual");
       },
