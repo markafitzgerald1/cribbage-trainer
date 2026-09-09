@@ -23,6 +23,13 @@ const DISCARD_COUNT = 2;
 // Rendered only once a skip exists, so its absence is the assertion.
 const skippedRow = (page: Page) => page.getByText("Hands skipped");
 
+/*
+ * The all-time skipped figure — `count/faced`, with a share span the
+ * stylesheet may drop. `.last()` is the all-time column. Anchored on an
+ * exact `1/1` so the Deal case pins "one skip", not merely "a skip".
+ */
+const ONE_SKIP_OF_ONE = /^1\/1\b/u;
+
 const startAuthenticHand = async (page: Page) => {
   await blockGoogleAnalytics(page);
   await page.goto("/");
@@ -80,11 +87,12 @@ test("dismissing Enter cards on an untouched authentic hand records no skip", as
   await expect(skippedRow(page)).toHaveCount(0);
 });
 
-test("dealing a fresh hand from an untouched authentic hand still records a skip", async ({
+test("dealing a fresh hand from an untouched authentic hand records exactly one skip", async ({
   page,
 }) => {
   await startAuthenticHand(page);
   await page.getByRole("button", { exact: true, name: "Deal" }).click();
 
-  await expect(skippedRow(page).last()).toBeVisible();
+  await expect(skippedRow(page)).toHaveCount(1);
+  await expect(page.getByText(ONE_SKIP_OF_ONE).last()).toBeVisible();
 });
