@@ -130,7 +130,6 @@
     }
   },
   "overrides": {
-    "storybook": "$storybook",
     "@vitest/browser": "^4.1.11",
     "axios": "1.18.1",
     "brace-expansion@1": "^1.1.18",
@@ -149,6 +148,8 @@
     "postcss": "^8.5.26",
     "qs": "^6.16.0",
     "shell-quote": "1.10.0",
+    "smol-toml": "^1.7.1",
+    "storybook": "$storybook",
     "ws": "^8.21.0"
   }
 }
