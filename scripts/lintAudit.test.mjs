@@ -1,4 +1,8 @@
-import { classifyAuditOutcome, runAuditWithResilience } from "./lintAudit.mjs";
+import {
+  ATTEMPT_TIMEOUT_MS,
+  classifyAuditOutcome,
+  runAuditWithResilience,
+} from "./lintAudit.mjs";
 import { strictEqual } from "node:assert/strict";
 import { test } from "node:test";
 
@@ -38,6 +42,23 @@ test("classifyAuditOutcome: real advisories fail even if the text mentions a 503
     }),
     "fail",
   );
+});
+
+test("classifyAuditOutcome: a timed-out attempt is transient, not a failure", () => {
+  // What runAuditOnce appends when spawnSync kills the child: an unbounded
+  // attempt inherits npm's five-minute fetch-timeout, so the ceiling is what
+  // keeps verify:fast a filter rather than a stall.
+  strictEqual(
+    classifyAuditOutcome({
+      output: `\naudit attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms: ETIMEDOUT\n`,
+      status: 1,
+    }),
+    "transient",
+  );
+});
+
+test("ATTEMPT_TIMEOUT_MS bounds an attempt well under npm's fetch-timeout", () => {
+  strictEqual(ATTEMPT_TIMEOUT_MS < 300_000, true);
 });
 
 test("classifyAuditOutcome: an unrecognized non-zero exit fails closed", () => {

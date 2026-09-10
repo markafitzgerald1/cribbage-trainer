@@ -46,8 +46,8 @@ green build status.
 - When CI fails after a green hook, `npm run verify:gap` names which check
   it was. Run that check directly if your checkout can — but several of the
   gate's steps cannot run on a plain `npm install` tree: `lint:actionlint`
-  exits 127 without the Docker-only binary, `lint:audit` and
-  `lint:outdated` need the network, Storybook coverage varies with the
+  exits 127 without the Docker-only binary, `lint:outdated` needs the
+  network, Storybook coverage varies with the
   container's Node rather than the local one (not an arch split — see the
   Storybook-coverage bullet under Tests and quality in `AGENTS.md`), and
   the screenshots are genuinely arch-/rendering-sensitive. Reproduce those
@@ -55,6 +55,13 @@ green build status.
   `npm run docker:run-e2e-only` for the Playwright tail). Fix it, then
   re-run `npm run verify:fast` plus that check before pushing, so the next
   CI run is not a third round-trip.
+- `lint:audit` also needs the network, but the hook runs it, so a CI-only
+  audit failure means the advisory was published between your commit and
+  the run rather than that you skipped a check. Re-run `npm run lint:audit`
+  directly — no Docker needed — and fix it per
+  `skills/dependency-maintenance/SKILL.md`. Each attempt is capped by
+  `ATTEMPT_TIMEOUT_MS`, so a network that hangs rather than refusing cannot
+  stall the hook the way npm's own five-minute fetch timeout would.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`

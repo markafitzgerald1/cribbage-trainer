@@ -20,6 +20,18 @@ import { spawnSync } from "node:child_process";
 export const MAX_ATTEMPTS = 3;
 export const BACKOFF_MS = 20_000;
 
+/*
+ * A ceiling on one audit attempt. npm's own `fetch-timeout` defaults to five
+ * minutes, and a network that accepts the connection but never answers hits
+ * that rather than any of the fast DNS/connection failures below — so an
+ * unbounded attempt can hang for five minutes, three times over. That is
+ * tolerable nowhere and intolerable in `verify:fast`, which is a filter
+ * measured in seconds. The observed honest cost is about a second locally
+ * and seven in the container, so this leaves ample headroom while capping
+ * the pathological case.
+ */
+export const ATTEMPT_TIMEOUT_MS = 30_000;
+
 // Substrings that mark the audit service being unreachable rather than the
 // tree being vulnerable. Matched case-insensitively against combined output.
 export const TRANSIENT_MARKERS = [
@@ -77,10 +89,27 @@ const runAuditOnce = () => {
   const result = spawnSync(
     "npx",
     ["--no-install", "better-npm-audit", "audit"],
-    { encoding: "utf8", shell: process.platform === "win32" },
+    {
+      encoding: "utf8",
+      shell: process.platform === "win32",
+      timeout: ATTEMPT_TIMEOUT_MS,
+    },
   );
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   process.stdout.write(output);
+  /*
+   * A killed child reports no status, so its output alone would classify as
+   * an unrecognized failure and fail the build. A timeout is the endpoint
+   * being unreachable by another name, so say so in the output the
+   * classifier reads rather than teaching it a second vocabulary.
+   */
+  if (result.error?.code === "ETIMEDOUT") {
+    const timedOut = `${output}\naudit attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms: ETIMEDOUT\n`;
+    process.stdout.write(
+      `\nlintAudit: attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms; treating as unreachable.\n`,
+    );
+    return { output: timedOut, status: result.status ?? 1 };
+  }
   return { output, status: result.status ?? 1 };
 };
 
