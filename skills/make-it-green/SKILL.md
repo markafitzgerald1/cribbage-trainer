@@ -46,8 +46,8 @@ green build status.
 - When CI fails after a green hook, `npm run verify:gap` names which check
   it was. Run that check directly if your checkout can — but several of the
   gate's steps cannot run on a plain `npm install` tree: `lint:actionlint`
-  exits 127 without the Docker-only binary, `lint:audit` and
-  `lint:outdated` need the network, Storybook coverage varies with the
+  exits 127 without the Docker-only binary, `lint:outdated` needs the
+  network, Storybook coverage varies with the
   container's Node rather than the local one (not an arch split — see the
   Storybook-coverage bullet under Tests and quality in `AGENTS.md`), and
   the screenshots are genuinely arch-/rendering-sensitive. Reproduce those
@@ -55,14 +55,13 @@ green build status.
   `npm run docker:run-e2e-only` for the Playwright tail). Fix it, then
   re-run `npm run verify:fast` plus that check before pushing, so the next
   CI run is not a third round-trip.
-- `lint:audit` needs the network, but it does **not** need Docker: run
-  `npm run lint:audit` directly and fix what it finds per
-  `skills/dependency-maintenance/SKILL.md`. It is gate-only rather than in
-  `verify:fast`, so a green hook is no evidence about advisories — a newly
-  published one reddens CI on a commit that changed no dependency at all.
-  Each attempt is capped by `ATTEMPT_TIMEOUT_MS`, so a network that hangs
-  rather than refusing cannot stall the gate for npm's five-minute fetch
-  timeout.
+- `lint:audit` needs the network but not Docker, so when `verify:gap` names
+  it, run `npm run lint:audit` directly and fix what it finds per
+  `skills/dependency-maintenance/SKILL.md`. Each attempt is capped by
+  `ATTEMPT_TIMEOUT_MS`, so a network that hangs rather than refusing cannot
+  stall it for npm's five-minute fetch timeout. An advisory published
+  between a commit and its run reddens CI on a change that touched no
+  dependency, so read the failure before assuming the tree moved.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
