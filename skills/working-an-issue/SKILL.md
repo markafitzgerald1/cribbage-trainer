@@ -115,7 +115,14 @@ agreed, the pull request says what actually happened.
   you start work on it; merging a PR whose body closes the issue moves it to
   Done on its own. A board reading Todo while a branch and PR exist misreports
   what is being worked, and the board is how the state of play is read. It is
-  project 1 for this repository's owner. Read the Status field and its option
+  project 1 for this repository's owner. The board is named for this
+  repository while tracking both, because the sibling's output — the vendored
+  expected-points artifacts — exists to feed this app, so its work is
+  ultimately work on this product. The shared mission both repositories
+  state is broader than that name, so expect to revisit it when the product
+  is named for launch at the end of `Minimum Lovable Product`; until then the
+  mismatch is a known intermediate state, not a filing error. Read the Status
+  field and its option
   ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
   Discovery & Design, Todo, In Progress, Done), find the item id with
   `gh project item-list 1 --owner <owner> --limit 400 --format json` — the
@@ -148,9 +155,11 @@ agreed, the pull request says what actually happened.
   `Beyond MLP` deferred. An agent that hunts for a Priority field finds none
   and can misread the board as a flat bag of work; one that treats Todo as
   unordered picks the wrong issue next.
-- The board spans two repositories that share one issue-number space, so a
-  board audit must key each item on the repository and number together,
-  `(content.repository, content.number)`, never `content.number` alone.
+- The board spans two repositories whose issue numbers are scoped
+  independently, so two unrelated issues can carry the same number and meet
+  on one board. A board audit must therefore key each item on the repository
+  and number together, `(content.repository, content.number)`, never
+  `content.number` alone.
   Project 1 tracks `cribbage-trainer` and its sibling
   `simulate-cribbage-games` together — close to 300 items — and #22, #23,
   #101, and #102 each exist in both. Keying on the number alone silently
