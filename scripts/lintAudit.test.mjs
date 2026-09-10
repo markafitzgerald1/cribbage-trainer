@@ -1,6 +1,7 @@
 import {
   ATTEMPT_TIMEOUT_MS,
   classifyAuditOutcome,
+  runAuditOnce,
   runAuditWithResilience,
 } from "./lintAudit.mjs";
 import { strictEqual } from "node:assert/strict";
@@ -53,6 +54,48 @@ test("classifyAuditOutcome: an unexplained timeout fails rather than passing", (
 test("classifyAuditOutcome: a timeout whose output names an outage is transient", () => {
   strictEqual(
     classifyAuditOutcome({ output: ENDPOINT_OUTAGE, status: 1 }),
+    "transient",
+  );
+});
+
+// A stand-in for spawnSync that records how it was called and replays a
+// prepared result, so the timeout branch runs without a real audit.
+const spawnStub = (result) => {
+  const calls = [];
+  const spawn = (command, args, options) => {
+    calls.push({ args, command, options });
+    return result;
+  };
+  return { calls, spawn };
+};
+
+const TIMED_OUT = { error: { code: "ETIMEDOUT" }, status: null, stderr: "" };
+
+test("runAuditOnce bounds the child process with ATTEMPT_TIMEOUT_MS", () => {
+  // Without this assertion, deleting the timeout option leaves every other
+  // test passing while the attempt becomes unbounded again.
+  const stub = spawnStub({ status: 0, stderr: "", stdout: "" });
+  runAuditOnce({ spawn: stub.spawn });
+  strictEqual(stub.calls[0].options.timeout, ATTEMPT_TIMEOUT_MS);
+});
+
+test("runAuditOnce reports a killed child as a non-zero status", () => {
+  const stub = spawnStub({ ...TIMED_OUT, stdout: "" });
+  strictEqual(runAuditOnce({ spawn: stub.spawn }).status, 1);
+});
+
+test("a timeout explaining nothing fails the build", () => {
+  const stub = spawnStub({ ...TIMED_OUT, stdout: "" });
+  strictEqual(
+    classifyAuditOutcome(runAuditOnce({ spawn: stub.spawn })),
+    "fail",
+  );
+});
+
+test("a timeout whose transcript names an outage is softened", () => {
+  const stub = spawnStub({ ...TIMED_OUT, stdout: ENDPOINT_OUTAGE });
+  strictEqual(
+    classifyAuditOutcome(runAuditOnce({ spawn: stub.spawn })),
     "transient",
   );
 });

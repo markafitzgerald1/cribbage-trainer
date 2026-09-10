@@ -86,16 +86,17 @@ export const classifyAuditOutcome = ({ status, output }) => {
 
 const note = (message) => process.stderr.write(`\nlintAudit: ${message}\n`);
 
-const runAuditOnce = () => {
-  const result = spawnSync(
-    "npx",
-    ["--no-install", "better-npm-audit", "audit"],
-    {
-      encoding: "utf8",
-      shell: process.platform === "win32",
-      timeout: ATTEMPT_TIMEOUT_MS,
-    },
-  );
+/*
+ * `spawn` is injectable so the timeout branch can be exercised without a real
+ * audit call: without a seam, deleting the `timeout` option below would leave
+ * every test passing. Exported for that reason alone.
+ */
+export const runAuditOnce = ({ spawn = spawnSync } = {}) => {
+  const result = spawn("npx", ["--no-install", "better-npm-audit", "audit"], {
+    encoding: "utf8",
+    shell: process.platform === "win32",
+    timeout: ATTEMPT_TIMEOUT_MS,
+  });
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   process.stdout.write(output);
   /*
