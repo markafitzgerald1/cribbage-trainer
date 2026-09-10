@@ -120,9 +120,12 @@ agreed, the pull request says what actually happened.
   expected-points artifacts — exists to feed this app, so its work is
   ultimately work on this product. Both repositories describe a mission
   broader than that name, so the board's name can widen or change as the app
-  does; revisit it when it stops matching what the two build together. Until
-  then the mismatch is a known intermediate state, not a filing error. Read
-  the Status field and its option
+  does. The condition that makes it wrong rather than merely loose is the
+  sibling gaining a purpose this app does not consume — published as a
+  library, or as research for someone else — because the name only holds
+  while everything on the board is ultimately work on this product. Until
+  that happens the mismatch is a known intermediate state, not a filing
+  error. Read the Status field and its option
   ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
   Discovery & Design, Todo, In Progress, Done), find the item id with
   `gh project item-list 1 --owner <owner> --limit 400 --format json` — the
