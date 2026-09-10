@@ -24,11 +24,10 @@ export const BACKOFF_MS = 20_000;
  * A ceiling on one audit attempt. npm's own `fetch-timeout` defaults to five
  * minutes, and a network that accepts the connection but never answers hits
  * that rather than any of the fast DNS/connection failures below — so an
- * unbounded attempt can hang for five minutes, three times over. That is
- * tolerable nowhere and intolerable in `verify:fast`, which is a filter
- * measured in seconds. The observed honest cost is about a second locally
- * and seven in the container, so this leaves ample headroom while capping
- * the pathological case.
+ * unbounded attempt can hang for five minutes, three times over, whoever
+ * invokes it. The observed honest cost is about a second locally and seven
+ * in the container, so this leaves ample headroom while capping the
+ * pathological case.
  */
 export const ATTEMPT_TIMEOUT_MS = 30_000;
 
