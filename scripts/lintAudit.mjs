@@ -85,6 +85,8 @@ export const classifyAuditOutcome = ({ status, output }) => {
   return includesAny(output, TRANSIENT_MARKERS) ? "transient" : "fail";
 };
 
+const note = (message) => process.stderr.write(`\nlintAudit: ${message}\n`);
+
 const runAuditOnce = () => {
   const result = spawnSync(
     "npx",
@@ -98,22 +100,24 @@ const runAuditOnce = () => {
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   process.stdout.write(output);
   /*
-   * A killed child reports no status, so its output alone would classify as
-   * an unrecognized failure and fail the build. A timeout is the endpoint
-   * being unreachable by another name, so say so in the output the
-   * classifier reads rather than teaching it a second vocabulary.
+   * A timeout is reported for any child that did not exit — a hung registry
+   * socket, but equally a local deadlock or a resource stall. Only the first
+   * is safe to soften, so the timeout is announced without being written into
+   * the output the classifier reads: a partial transcript naming a network
+   * failure still classifies as transient, while a timeout that explains
+   * nothing keeps its unrecognized-failure status and fails the build. The
+   * alternative — treating every timeout as an outage — lets three stalled
+   * attempts return success with no audit result at all.
    */
   if (result.error?.code === "ETIMEDOUT") {
-    const timedOut = `${output}\naudit attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms: ETIMEDOUT\n`;
-    process.stdout.write(
-      `\nlintAudit: attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms; treating as unreachable.\n`,
+    note(
+      `attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms. Softened only if the output ` +
+        "above names a network or endpoint failure; an unexplained timeout " +
+        "fails the build rather than passing an audit that never ran.",
     );
-    return { output: timedOut, status: result.status ?? 1 };
   }
   return { output, status: result.status ?? 1 };
 };
-
-const note = (message) => process.stderr.write(`\nlintAudit: ${message}\n`);
 
 /*
  * Recursive rather than a loop so there is no await inside a loop body.

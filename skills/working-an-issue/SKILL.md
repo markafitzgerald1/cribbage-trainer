@@ -118,11 +118,11 @@ agreed, the pull request says what actually happened.
   project 1 for this repository's owner. The board is named for this
   repository while tracking both, because the sibling's output — the vendored
   expected-points artifacts — exists to feed this app, so its work is
-  ultimately work on this product. The shared mission both repositories
-  state is broader than that name, so expect to revisit it when the product
-  is named for launch at the end of `Minimum Lovable Product`; until then the
-  mismatch is a known intermediate state, not a filing error. Read the Status
-  field and its option
+  ultimately work on this product. Both repositories describe a mission
+  broader than that name, so the board's name can widen or change as the app
+  does; revisit it when it stops matching what the two build together. Until
+  then the mismatch is a known intermediate state, not a filing error. Read
+  the Status field and its option
   ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
   Discovery & Design, Todo, In Progress, Done), find the item id with
   `gh project item-list 1 --owner <owner> --limit 400 --format json` — the

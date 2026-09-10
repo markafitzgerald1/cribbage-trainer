@@ -56,9 +56,11 @@ green build status.
   re-run `npm run verify:fast` plus that check before pushing, so the next
   CI run is not a third round-trip.
 - `lint:audit` also needs the network, but the hook runs it, so a CI-only
-  audit failure means the advisory was published between your commit and
-  the run rather than that you skipped a check. Re-run `npm run lint:audit`
-  directly — no Docker needed — and fix it per
+  audit failure usually means the advisory was published between your commit
+  and the run rather than that you skipped a check. It can also mean the hook
+  softened a registry outage and passed while CI later reached a working
+  endpoint, so read the hook's own output before assuming which. Re-run
+  `npm run lint:audit` directly — no Docker needed — and fix it per
   `skills/dependency-maintenance/SKILL.md`. Each attempt is capped by
   `ATTEMPT_TIMEOUT_MS`, so a network that hangs rather than refusing cannot
   stall the hook the way npm's own five-minute fetch timeout would.

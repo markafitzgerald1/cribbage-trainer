@@ -44,15 +44,15 @@ test("classifyAuditOutcome: real advisories fail even if the text mentions a 503
   );
 });
 
-test("classifyAuditOutcome: a timed-out attempt is transient, not a failure", () => {
-  // What runAuditOnce appends when spawnSync kills the child: an unbounded
-  // attempt inherits npm's five-minute fetch-timeout, so the ceiling is what
-  // keeps verify:fast a filter rather than a stall.
+test("classifyAuditOutcome: an unexplained timeout fails rather than passing", () => {
+  // A killed child proves nothing about why. Softening every timeout would let
+  // three stalled attempts return success with no audit result at all.
+  strictEqual(classifyAuditOutcome({ output: "", status: 1 }), "fail");
+});
+
+test("classifyAuditOutcome: a timeout whose output names an outage is transient", () => {
   strictEqual(
-    classifyAuditOutcome({
-      output: `\naudit attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms: ETIMEDOUT\n`,
-      status: 1,
-    }),
+    classifyAuditOutcome({ output: ENDPOINT_OUTAGE, status: 1 }),
     "transient",
   );
 });
