@@ -64,7 +64,7 @@
 .scored-possible-keep-discards th {
   position: sticky;
   top: 0;
-  background-color: green;
+  background-color: #18522b;
   z-index: 1;
   text-align: right;
   padding: 5px;

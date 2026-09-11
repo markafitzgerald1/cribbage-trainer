@@ -25,14 +25,16 @@
 }
 
 .analytics-consent-dialog-minimal {
+  color: var(--text-color);
   font-family: var(--text-font-family);
   text-align: center;
 }
 
 .analytics-consent-dialog-minimal-animated {
+  animation: fade-in 0.8s ease-out;
+  color: var(--text-color);
   font-family: var(--text-font-family);
   text-align: center;
-  animation: fade-in 0.8s ease-out;
 }
 
 @keyframes fade-in {

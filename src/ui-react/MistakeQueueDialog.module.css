@@ -33,7 +33,7 @@
  * — the same short-screen rule already applied to the enter-cards dialog.
  */
 .action-bar {
-  background-color: #0b2f10;
+  background-color: #144222;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -314,8 +314,10 @@
   border-radius: 4px;
   color: #143b18;
   display: inline-flex;
+  flex-wrap: wrap;
   font-family: var(--card-font-family);
   gap: 0.25rem;
+  max-width: 100%;
   padding: 0.1rem 0.35rem;
   width: fit-content;
 }

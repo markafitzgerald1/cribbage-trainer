@@ -25,7 +25,8 @@
   font-family: var(--card-font-family);
   border-radius: var(--clickable-border-radius);
   aspect-ratio: 5 / 7;
-  border-width: 0.022em;
+  border-width: 0.028em;
+  box-shadow: 0 0.04em 0.12em rgb(0 0 0 / 35%);
   box-sizing: border-box;
   width: 1.212em;
 }
@@ -60,6 +61,7 @@
 .discarded {
   background-color: #ababab;
   border-color: #616161;
+  box-shadow: 0 0.02em 0.06em rgb(0 0 0 / 25%);
   color: #5c5c5c;
   margin-top: 0.4em;
   margin-bottom: 0;
