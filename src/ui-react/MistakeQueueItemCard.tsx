@@ -102,7 +102,7 @@ export function MistakeQueueItemCard({
           {lossReason === null ? null : (
             <span
               className={classes.componentBadge}
-              title={`Loss driven by ${lossReason}`}
+              title={`Previous discard (${item.previousDiscardLoss.toFixed(DECIMAL_DIGITS)} pts lost) driven by ${lossReason}`}
             >
               {lossReason}
             </span>

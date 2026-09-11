@@ -412,17 +412,18 @@ describe("mistake queue dialog", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders dominant component badges for mistake cards", () => {
-      const { getAllByTitle } = renderQueueDialog();
+    it("renders dominant component badges for mistake cards", async () => {
+      const { findAllByTitle } = renderQueueDialog();
+      const badges = await findAllByTitle(/driven by/u);
 
-      expect(getAllByTitle(/Loss driven by/u).length).toBeGreaterThan(0);
+      expect(badges.length).toBeGreaterThan(0);
     });
 
     it("asynchronously loads tables when initial tables are null", async () => {
       cribLoader.setTableSync(null);
       playLoader.setTableSync(null);
       const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
-      const badge = await rendered.findByTitle("Loss driven by Hand");
+      const badge = await rendered.findByTitle(/driven by Hand/u);
 
       expect(badge).toBeInTheDocument();
     });

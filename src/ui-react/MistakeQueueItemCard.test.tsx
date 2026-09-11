@@ -32,19 +32,21 @@ describe("mistakeQueueItemCard", () => {
     const { getByText, getByTitle } = renderCard({ lossReason: "Crib" });
 
     expect(getByText("Crib")).toBeInTheDocument();
-    expect(getByTitle("Loss driven by Crib")).toBeInTheDocument();
+    expect(
+      getByTitle("Previous discard (1.00 pts lost) driven by Crib"),
+    ).toBeInTheDocument();
   });
 
   it("does not render loss reason badge when lossReason is null", () => {
     const { queryByTitle } = renderCard({ lossReason: null });
 
-    expect(queryByTitle(/Loss driven by/u)).toBeNull();
+    expect(queryByTitle(/driven by/u)).toBeNull();
   });
 
   it("does not render loss reason badge when lossReason is omitted", () => {
     const { queryByTitle } = renderCard();
 
-    expect(queryByTitle(/Loss driven by/u)).toBeNull();
+    expect(queryByTitle(/driven by/u)).toBeNull();
   });
 
   it("calls onPractice handler when practice button is clicked", () => {
