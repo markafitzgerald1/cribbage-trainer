@@ -63,6 +63,6 @@ export const WithLossReason: Story = {
     lossReason: "Crib",
   },
   play: async ({ canvasElement }) => {
-    await expectStoryTextVisible(canvasElement, "Crib");
+    await expectStoryTextVisible(canvasElement, "Prev: Crib");
   },
 };

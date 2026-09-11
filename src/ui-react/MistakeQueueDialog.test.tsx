@@ -426,6 +426,7 @@ describe("mistake queue dialog", () => {
       const badge = await rendered.findByTitle(/driven by Hand/u);
 
       expect(badge).toBeInTheDocument();
+      expect(badge).toHaveTextContent("Prev: Hand");
     });
 
     it("handles table load failure gracefully", async () => {

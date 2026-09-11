@@ -101,10 +101,11 @@ export function MistakeQueueItemCard({
           )}
           {lossReason === null ? null : (
             <span
+              aria-label={`Previous discard driven by ${lossReason}`}
               className={classes.componentBadge}
               title={`Previous discard (${item.previousDiscardLoss.toFixed(DECIMAL_DIGITS)} pts lost) driven by ${lossReason}`}
             >
-              {lossReason}
+              Prev: {lossReason}
             </span>
           )}
         </div>

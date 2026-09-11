@@ -31,7 +31,7 @@ describe("mistakeQueueItemCard", () => {
   it("renders loss reason badge when provided", () => {
     const { getByText, getByTitle } = renderCard({ lossReason: "Crib" });
 
-    expect(getByText("Crib")).toBeInTheDocument();
+    expect(getByText("Prev: Crib")).toBeInTheDocument();
     expect(
       getByTitle("Previous discard (1.00 pts lost) driven by Crib"),
     ).toBeInTheDocument();
