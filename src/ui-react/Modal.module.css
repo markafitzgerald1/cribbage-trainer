@@ -19,7 +19,6 @@
 .content {
   background: #0b2f10;
   border: 1px solid color-mix(in srgb, green 40%, white);
-  box-shadow: 0 4px 20px rgb(0 0 0 / 50%);
   box-sizing: border-box;
   color: var(--text-color);
   width: min(43em, calc(100% - 2rem));

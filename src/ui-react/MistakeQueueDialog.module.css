@@ -310,9 +310,14 @@
 
 .cards-row {
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+  background-color: #f4f8f4;
+  border-radius: 4px;
+  color: #143b18;
+  display: inline-flex;
+  font-family: var(--card-font-family);
+  gap: 0.25rem;
+  padding: 0.1rem 0.35rem;
+  width: fit-content;
 }
 
 .item-footer {

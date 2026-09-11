@@ -65,6 +65,18 @@
   text-decoration: underline;
 }
 
+.analytics-consent-dialog-minimal .privacy-policy-link,
+.analytics-consent-dialog-minimal-animated .privacy-policy-link {
+  color: #a8d5af;
+}
+
+.analytics-consent-dialog-minimal .privacy-policy-link:hover,
+.analytics-consent-dialog-minimal .privacy-policy-link:focus-visible,
+.analytics-consent-dialog-minimal-animated .privacy-policy-link:hover,
+.analytics-consent-dialog-minimal-animated .privacy-policy-link:focus-visible {
+  color: #7ff0a0;
+}
+
 .preference-links {
   white-space: nowrap;
 }
