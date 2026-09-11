@@ -7,7 +7,7 @@
  * above it and never widens the column into the analysis table's share.
  */
 .panel {
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 10px;
   box-sizing: border-box;
   color: var(--text-color);

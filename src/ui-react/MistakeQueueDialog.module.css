@@ -130,7 +130,7 @@
 
 .option {
   background-color: #1a4524;
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 6px;
   color: #eef8ef;
   cursor: pointer;
@@ -242,7 +242,7 @@
 
 .role-badge {
   background-color: #1a4524;
-  border: 1px solid #2f7d3a;
+  border: 1px solid #43a047;
   border-radius: 4px;
   color: #eef8ef;
   font-size: 0.75rem;
@@ -312,6 +312,7 @@
   align-items: center;
   background-color: #f4f8f4;
   border-radius: 4px;
+  box-sizing: border-box;
   color: #143b18;
   display: inline-flex;
   flex-wrap: wrap;
@@ -363,7 +364,7 @@
 
 .empty-state {
   background-color: #14361b;
-  border: 1.5px dashed #2f7d3a;
+  border: 1.5px dashed #43a047;
   border-radius: 8px;
   color: #a8d5af;
   font-size: 0.95rem;
@@ -373,7 +374,7 @@
 
 .all-mastered-notice {
   background-color: #14361b;
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 8px;
   color: #eef8ef;
   display: flex;
@@ -405,7 +406,7 @@
 
 .show-more-button {
   background-color: #1a4524;
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 6px;
   color: #eef8ef;
   cursor: pointer;
@@ -429,7 +430,7 @@
 .practice-button {
   align-self: flex-start;
   background-color: #1a4524;
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 6px;
   color: #eef8ef;
   cursor: pointer;
