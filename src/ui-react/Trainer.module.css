@@ -56,7 +56,7 @@
 
   .dynamic-ui {
     display: grid;
-    grid-template-rows: auto minmax(min-content, 1fr) max-content;
+    grid-template-rows: auto 1fr max-content;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.5em;
 
@@ -100,7 +100,7 @@
    * conditional selector exact without a marker on the element itself.
    */
   .dynamic-ui.with-tally {
-    grid-template-rows: auto minmax(min-content, 1fr) max-content max-content;
+    grid-template-rows: auto 1fr max-content max-content;
   }
 
   .dynamic-ui.with-tally > :nth-last-child(2) {
