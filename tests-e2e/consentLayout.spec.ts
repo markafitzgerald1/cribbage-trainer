@@ -211,7 +211,7 @@ test("preserves usable analysis table height when controls overflow in stacked m
   await page.getByRole("button", { name: "Analytics Settings" }).click();
 
   const dynamicUi = page.locator(".dynamic-ui, [class*='dynamic-ui']").first();
-  const analysisElement = dynamicUi.locator("> :nth-child(2)");
+  const analysisElement = dynamicUi.locator(":scope > :nth-child(2)");
   const analysisBounds = await requireBoundingBox(analysisElement);
   expect(analysisBounds.height).toBeGreaterThan(0);
 });
