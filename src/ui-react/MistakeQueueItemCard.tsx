@@ -15,6 +15,7 @@ const DECIMAL_DIGITS = 2;
 
 export interface MistakeQueueItemCardProps {
   readonly item: MistakeQueueItem;
+  readonly lossReason?: string | null;
   readonly onPractice: ((item: MistakeQueueItem) => void) | null;
   readonly sortOrder: SortOrder;
 }
@@ -71,6 +72,7 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
 
 export function MistakeQueueItemCard({
   item,
+  lossReason = null,
   onPractice,
   sortOrder,
 }: MistakeQueueItemCardProps): React.JSX.Element {
@@ -95,6 +97,14 @@ export function MistakeQueueItemCard({
               className={`${classes.quantileBadge} ${getQuantileBadgeClass(item.lossQuantile)}`}
             >
               {item.lossQuantile}
+            </span>
+          )}
+          {lossReason === null ? null : (
+            <span
+              className={classes.componentBadge}
+              title={`Loss driven by ${lossReason}`}
+            >
+              {lossReason}
             </span>
           )}
         </div>
@@ -123,3 +133,7 @@ export function MistakeQueueItemCard({
     </div>
   );
 }
+
+MistakeQueueItemCard.defaultProps = {
+  lossReason: null,
+};

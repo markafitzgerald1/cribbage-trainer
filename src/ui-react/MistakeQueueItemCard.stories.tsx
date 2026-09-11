@@ -57,3 +57,12 @@ export const WithoutPreviousDiscard: Story = {
     await expectStoryTextVisible(canvasElement, "Previous choice not recorded");
   },
 };
+
+export const WithLossReason: Story = {
+  args: {
+    lossReason: "Crib",
+  },
+  play: async ({ canvasElement }) => {
+    await expectStoryTextVisible(canvasElement, "Crib");
+  },
+};

@@ -5,6 +5,7 @@ export const allMasteredBody: string;
 export const allMasteredHeading: string;
 export const allMasteredNotice: string;
 export const cardsRow: string;
+export const componentBadge: string;
 export const controls: string;
 export const dialog: string;
 export const doneButton: string;

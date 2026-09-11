@@ -1,4 +1,6 @@
 import * as classes from "./MistakeQueueDialog.module.css";
+import * as cribLoader from "../game/expectedCribPointsTableLoader";
+import * as playLoader from "../game/expectedPlayPointsTableLoader";
 import {
   DIALOG_ROLE_OPTIONS,
   DialogFilterGroup,
@@ -22,11 +24,14 @@ import type {
   StartDrillHandler,
 } from "./usePracticeDrill";
 import { type StoredTally, readTallyForDisplay } from "../ui/discardTally";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
+import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
+import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import Modal from "./Modal";
 import { SortOrder } from "../ui/SortOrder";
+import { classifyMistake } from "../analysis/classifyMistake";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 
 const SORT_OPTIONS: readonly DialogFilterOption<MistakeQueueSortOrder>[] = [
@@ -161,6 +166,44 @@ function buildMistakeQueueBaseData(tally: StoredTally): MistakeQueueBaseData {
   };
 }
 
+interface ScoringTables {
+  readonly crib: ExpectedCribPointsTable;
+  readonly play: ExpectedPlayPointsTable;
+}
+
+const readSynchronousTables = (): ScoringTables | null => {
+  const crib = cribLoader.getTableSync();
+  if (crib === null) {
+    return null;
+  }
+  const play = playLoader.getTableSync();
+  return play === null ? null : { crib, play };
+};
+
+const computeClassifications = (
+  items: readonly MistakeQueueItem[],
+  tables: ScoringTables | null,
+): Map<string, string> => {
+  if (tables === null) {
+    return new Map<string, string>();
+  }
+  const map = new Map<string, string>();
+  for (const item of items) {
+    if (item.previousDiscard !== null) {
+      const classification = classifyMistake({
+        cards: item.cards,
+        cribRole: item.cribRole,
+        previousDiscard: item.previousDiscard,
+        tables,
+      });
+      if (classification !== null) {
+        map.set(item.handKey, classification.label);
+      }
+    }
+  }
+  return map;
+};
+
 const PAGE_SIZE = 50;
 
 export function MistakeQueueDialog({
@@ -175,6 +218,9 @@ export function MistakeQueueDialog({
   sortOrder = SortOrder.Descending,
   tally = null,
 }: MistakeQueueDialogProps): React.JSX.Element | null {
+  const [tables, setTables] = useState<ScoringTables | null>(
+    readSynchronousTables,
+  );
   const [filters, setFilters] = useState({
     quantile: initialQuantileFilter,
     role: initialRoleFilter,
@@ -184,6 +230,20 @@ export function MistakeQueueDialog({
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useCloseOnEscape(show, onClose);
+
+  useEffect(() => {
+    if (show && tables === null) {
+      cribLoader
+        .loadTable()
+        .then(async (crib) => {
+          const play = await playLoader.loadTable();
+          setTables({ crib, play });
+        })
+        .catch(() => {
+          setTables(null);
+        });
+    }
+  }, [show, tables]);
 
   const handleShowMore = useCallback(() => {
     setVisibleCount((current) => current + PAGE_SIZE);
@@ -263,6 +323,15 @@ export function MistakeQueueDialog({
     filters.sort,
     filters.status,
   ]);
+
+  const classifications = useMemo(
+    () =>
+      computeClassifications(
+        (derivedQueueData?.sortedItems ?? []).slice(0, visibleCount),
+        tables,
+      ),
+    [derivedQueueData?.sortedItems, tables, visibleCount],
+  );
 
   if (!show || baseQueueData === null || derivedQueueData === null) {
     return null;
@@ -371,6 +440,7 @@ export function MistakeQueueDialog({
                 <MistakeQueueItemCard
                   item={item}
                   key={item.handKey}
+                  lossReason={classifications.get(item.handKey) ?? null}
                   onPractice={onStartDrill}
                   sortOrder={sortOrder}
                 />

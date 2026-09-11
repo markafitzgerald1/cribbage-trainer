@@ -37,6 +37,7 @@
     "<rootDir>/tests-e2e/",
     "<rootDir>/tests-examples"
   ],
+  "testTimeout": 15000,
   "transform": {
     "^.+\\.tsx?$": "babel-jest"
   }

@@ -3,9 +3,9 @@
  * and far above the residue of summing fifty-odd terms, so rounding here
  * clears floating-point noise without inventing a tolerance of its own.
  */
-const LOSS_FRACTION_DIGITS = 6;
+export const LOSS_FRACTION_DIGITS = 6;
 
-const withoutFloatResidue = (points: number): number =>
+export const withoutFloatResidue = (points: number): number =>
   Number(points.toFixed(LOSS_FRACTION_DIGITS));
 
 interface KeptCard {
