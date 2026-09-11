@@ -20,6 +20,17 @@ import { spawnSync } from "node:child_process";
 export const MAX_ATTEMPTS = 3;
 export const BACKOFF_MS = 20_000;
 
+/*
+ * A ceiling on one audit attempt. npm's own `fetch-timeout` defaults to five
+ * minutes, and a network that accepts the connection but never answers hits
+ * that rather than any of the fast DNS/connection failures below — so an
+ * unbounded attempt can hang for five minutes, three times over, whoever
+ * invokes it. The observed honest cost is about a second locally and seven
+ * in the container, so this leaves ample headroom while capping the
+ * pathological case.
+ */
+export const ATTEMPT_TIMEOUT_MS = 30_000;
+
 // Substrings that mark the audit service being unreachable rather than the
 // tree being vulnerable. Matched case-insensitively against combined output.
 export const TRANSIENT_MARKERS = [
@@ -73,18 +84,40 @@ export const classifyAuditOutcome = ({ status, output }) => {
   return includesAny(output, TRANSIENT_MARKERS) ? "transient" : "fail";
 };
 
-const runAuditOnce = () => {
-  const result = spawnSync(
-    "npx",
-    ["--no-install", "better-npm-audit", "audit"],
-    { encoding: "utf8", shell: process.platform === "win32" },
-  );
+const note = (message) => process.stderr.write(`\nlintAudit: ${message}\n`);
+
+/*
+ * `spawn` is injectable so the timeout branch can be exercised without a real
+ * audit call: without a seam, deleting the `timeout` option below would leave
+ * every test passing. Exported for that reason alone.
+ */
+export const runAuditOnce = ({ spawn = spawnSync } = {}) => {
+  const result = spawn("npx", ["--no-install", "better-npm-audit", "audit"], {
+    encoding: "utf8",
+    shell: process.platform === "win32",
+    timeout: ATTEMPT_TIMEOUT_MS,
+  });
   const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
   process.stdout.write(output);
+  /*
+   * A timeout is reported for any child that did not exit — a hung registry
+   * socket, but equally a local deadlock or a resource stall. Only the first
+   * is safe to soften, so the timeout is announced without being written into
+   * the output the classifier reads: a partial transcript naming a network
+   * failure still classifies as transient, while a timeout that explains
+   * nothing keeps its unrecognized-failure status and fails the build. The
+   * alternative — treating every timeout as an outage — lets three stalled
+   * attempts return success with no audit result at all.
+   */
+  if (result.error?.code === "ETIMEDOUT") {
+    note(
+      `attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms. Softened only if the output ` +
+        "above names a network or endpoint failure; an unexplained timeout " +
+        "fails the build rather than passing an audit that never ran.",
+    );
+  }
   return { output, status: result.status ?? 1 };
 };
-
-const note = (message) => process.stderr.write(`\nlintAudit: ${message}\n`);
 
 /*
  * Recursive rather than a loop so there is no await inside a loop body.
