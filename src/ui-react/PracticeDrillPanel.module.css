@@ -158,6 +158,7 @@
 
 .secondary:hover,
 .secondary:focus-visible {
+  background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #a7c7ad;
   outline: none;
 }

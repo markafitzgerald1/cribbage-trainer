@@ -1,7 +1,7 @@
 @import url("./vars.css");
 
 .dialog {
-  color: #143b18;
+  color: #eef8ef;
   display: flex;
   flex-direction: column;
   font-size: 1rem;
@@ -13,7 +13,7 @@
 }
 
 .title {
-  color: #0b2f10;
+  color: #eef8ef;
   font-size: 1.8rem;
   line-height: 1;
   margin: 0;
@@ -27,7 +27,7 @@
 }
 
 .filter-group {
-  border: 1.5px solid color-mix(in srgb, green 35%, white);
+  border: 1.5px solid color-mix(in srgb, green 40%, white);
   border-radius: 0.45rem;
   display: flex;
   flex-wrap: wrap;
@@ -37,7 +37,7 @@
 }
 
 .filter-group legend {
-  color: #1d4f22;
+  color: #a8d5af;
   font-size: 0.85rem;
   font-weight: 700;
   padding: 0 0.3rem;
@@ -54,10 +54,10 @@
 }
 
 .option {
-  background-color: #e4f4e6;
-  border: 1.5px solid #397a40;
+  background-color: #1a4524;
+  border: 1.5px solid #2f7d3a;
   border-radius: 6px;
-  color: #143b18;
+  color: #eef8ef;
   cursor: pointer;
   display: block;
   font-size: 0.85rem;
@@ -71,13 +71,13 @@
 }
 
 .option:hover {
-  background-color: #c8efcd;
-  border-color: #218838;
+  background-color: #245830;
+  border-color: #34c754;
 }
 
 .input:checked + .option {
-  background-color: #28a745;
-  border-color: #218838;
+  background-color: #197536;
+  border-color: #34c754;
   color: #fff;
 }
 
@@ -90,17 +90,17 @@
 }
 
 .horizon-notice {
-  background-color: #fff3cd;
-  border: 1px solid #ffeeba;
+  background-color: #3d320b;
+  border: 1px solid #6b5814;
   border-radius: 6px;
-  color: #856404;
+  color: #f9e79f;
   font-size: 0.85rem;
   padding: 0.45rem 0.75rem;
   text-align: center;
 }
 
 .methodology {
-  color: #315d36;
+  color: #a8d5af;
   font-size: 0.85rem;
   line-height: 1.35;
   margin: 0;
@@ -113,8 +113,8 @@
 }
 
 .summary-card {
-  background-color: #f1f9f2;
-  border: 1px solid #c3e6cb;
+  background-color: #163e1f;
+  border: 1px solid #2d6b38;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -124,14 +124,14 @@
 }
 
 .summary-label {
-  color: #155724;
+  color: #a8d5af;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .summary-value {
-  color: #0b2f10;
+  color: #eef8ef;
   font-size: 1.25rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -165,8 +165,8 @@
 }
 
 .table th {
-  background-color: #eaf3ec;
-  color: #245228;
+  background-color: #163e1f;
+  color: #eef8ef;
   font-size: 0.78rem;
   font-weight: 700;
   position: sticky;
@@ -176,7 +176,7 @@
 
 .table th,
 .table td {
-  border-bottom: 1px solid #e1ebe2;
+  border-bottom: 1px solid #244b2c;
   padding: 0.4rem 0.5rem;
   text-align: right;
 }
@@ -187,11 +187,11 @@
 }
 
 .table tr:hover {
-  background-color: #eaf5ec;
+  background-color: #1c4826;
 }
 
 .table tbody tr:nth-child(even) {
-  background-color: #f8faf8;
+  background-color: #0f3616;
 }
 
 .loss-pill {
@@ -204,8 +204,8 @@
 }
 
 .loss-pill-none {
-  background-color: #e2e3e5;
-  color: #383d41;
+  background-color: #334438;
+  color: #c4d7c8;
 }
 
 .loss-pill-optimal {
