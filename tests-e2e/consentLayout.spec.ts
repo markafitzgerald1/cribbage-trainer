@@ -160,6 +160,62 @@ test("gives dynamic-ui its own scroll when analytics settings overflow in stacke
   expect(scrolledBottom).toBeLessThanOrEqual(shortStackedViewport.height);
 });
 
+/*
+ * When discards are chosen and both a tally and an open settings panel are
+ * present in a short stacked viewport, the analysis table in track 2 must
+ * retain a usable, content-derived height rather than collapsing to zero
+ * against the trailing max-content rows.
+ */
+test("preserves usable analysis table height when controls overflow in stacked mode", async ({
+  page,
+}) => {
+  await page.setViewportSize(shortStackedViewport);
+  await page.addInitScript(
+    (stored: {
+      readonly answeredKey: string;
+      readonly consentKey: string;
+      readonly tally: string;
+      readonly tallyPrefix: string;
+      readonly version: string;
+    }) => {
+      window.localStorage.setItem(stored.consentKey, "true");
+      window.localStorage.setItem(stored.answeredKey, stored.version);
+      window.localStorage.setItem(
+        stored.tallyPrefix + new URL(document.baseURI).pathname,
+        stored.tally,
+      );
+    },
+    {
+      answeredKey: answeredPolicyVersionKey,
+      consentKey: analyticsConsentKey,
+      tally: JSON.stringify({
+        lifetime: {
+          decisions: 128,
+          expectedPointsLossTotal: 157.44,
+          optimalDecisions: 61,
+        },
+        records: [],
+        version: 1,
+      }),
+      tallyPrefix: DISCARD_TALLY_KEY_PREFIX,
+      version: PRIVACY_POLICY_VERSION,
+    },
+  );
+  await page.goto("/");
+  await page.addStyleTag({ content: "html { font-size: 26px; }" });
+
+  const checkboxes = page.getByRole("checkbox");
+  await checkboxes.nth(0).click();
+  await checkboxes.nth(1).click();
+  await page.locator('text="Loading analysis..."').waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "Analytics Settings" }).click();
+
+  const dynamicUi = page.locator(".dynamic-ui, [class*='dynamic-ui']").first();
+  const analysisElement = dynamicUi.locator("> :nth-child(2)");
+  const analysisBounds = await requireBoundingBox(analysisElement);
+  expect(analysisBounds.height).toBeGreaterThan(0);
+});
+
 test("Privacy Policy link has a high-contrast color on the consent surface", async ({
   page,
 }) => {
