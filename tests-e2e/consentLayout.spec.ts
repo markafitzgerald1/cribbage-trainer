@@ -109,6 +109,57 @@ test("analytics settings actions stay within the phone-landscape viewport", asyn
   );
 });
 
+/*
+ * When the analytics settings panel opens inside a short viewport with an
+ * enlarged root font, the controls extend past the bottom of .dynamic-ui.
+ * Because the html/body/#trainer/.app chain sets fixed height: 100% to support
+ * internal column scrolling, .dynamic-ui must act as its own scroll container
+ * so overflowing controls remain reachable via scroll rather than spilling
+ * past the page box out of reach.
+ */
+const shortStackedViewport = { height: 350, width: 380 };
+
+test("gives dynamic-ui its own scroll when analytics settings overflow in stacked mode", async ({
+  page,
+}) => {
+  await page.setViewportSize(shortStackedViewport);
+  await page.addInitScript(
+    ([consentKey, answeredKey, version]) => {
+      window.localStorage.setItem(String(consentKey), "true");
+      window.localStorage.setItem(String(answeredKey), String(version));
+    },
+    [analyticsConsentKey, answeredPolicyVersionKey, PRIVACY_POLICY_VERSION],
+  );
+  await page.goto("/");
+  await page.addStyleTag({ content: "html { font-size: 26px; }" });
+
+  await page.getByRole("button", { name: "Analytics Settings" }).click();
+  await expect(
+    page.getByRole("button", { name: "Allow decision-quality measurements" }),
+  ).toBeVisible();
+
+  const dynamicUi = page.locator(".dynamic-ui, [class*='dynamic-ui']").first();
+  const scrollState = await dynamicUi.evaluate((element) => ({
+    canScroll: element.scrollHeight > element.clientHeight,
+    clientHeight: element.clientHeight,
+    overflowY: getComputedStyle(element).overflowY,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(scrollState.overflowY).toBe("auto");
+  expect(scrollState.canScroll).toBe(true);
+
+  // Before scrolling, the Close action is below the viewport.
+  const initialBottom = await consentActionBottom(page, "Close");
+  expect(initialBottom).toBeGreaterThan(shortStackedViewport.height);
+
+  // Scrolling the container brings the Close button into view.
+  await dynamicUi.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  const scrolledBottom = await consentActionBottom(page, "Close");
+  expect(scrolledBottom).toBeLessThanOrEqual(shortStackedViewport.height);
+});
+
 test("Privacy Policy link has a high-contrast color on the consent surface", async ({
   page,
 }) => {
