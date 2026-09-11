@@ -61,17 +61,17 @@ const getComponentLabel = (component: LossComponent): string => {
   return "Play";
 };
 
-const getComponentAbsLoss = (
+const getComponentLoss = (
   component: LossComponent,
   losses: ComponentLosses,
 ): number => {
   if (component === "hand") {
-    return Math.abs(losses.hand);
+    return losses.hand;
   }
   if (component === "crib") {
-    return Math.abs(losses.crib);
+    return losses.crib;
   }
-  return Math.abs(losses.play);
+  return losses.play;
 };
 
 export const classifyScoredMistake = (
@@ -95,11 +95,7 @@ export const classifyScoredMistake = (
     best.expectedPlayPoints.delta - chosen.expectedPlayPoints.delta,
   );
 
-  const maxContribution = Math.max(
-    Math.abs(handLoss),
-    Math.abs(cribLoss),
-    Math.abs(playLoss),
-  );
+  const maxLoss = Math.max(0, handLoss, cribLoss, playLoss);
 
   const losses: ComponentLosses = {
     crib: cribLoss,
@@ -108,8 +104,8 @@ export const classifyScoredMistake = (
   };
 
   const dominantComponents = ORDERED_COMPONENTS.filter((component) => {
-    const absLoss = getComponentAbsLoss(component, losses);
-    return withoutFloatResidue(maxContribution - absLoss) <= DISPLAY_PRECISION;
+    const loss = getComponentLoss(component, losses);
+    return loss > 0 && withoutFloatResidue(maxLoss - loss) <= DISPLAY_PRECISION;
   });
 
   const label = dominantComponents.map(getComponentLabel).join(", ");

@@ -444,11 +444,13 @@ describe("mistake queue dialog", () => {
     it("handles partial synchronous table presence", () => {
       setAnalysisTables();
       playLoader.setTableSync(null);
-      const { queryByRole } = renderQueueDialog({
+      const { queryByRole, unmount } = renderQueueDialog({
         skipSetAnalysisTables: true,
       });
+      const region = queryByRole("region", { name: "Mistake queue" });
+      unmount();
 
-      expect(queryByRole("region", { name: "Mistake queue" })).not.toBeNull();
+      expect(region).not.toBeNull();
     });
   });
 });

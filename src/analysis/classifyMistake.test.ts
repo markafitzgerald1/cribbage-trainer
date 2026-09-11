@@ -95,7 +95,14 @@ describe("classifyScoredMistake", () => {
       chosen: [10, -1, 0] as const,
       expectedLosses: [-2, 3, 1] as const,
       label: "Crib",
-      name: "selects largest absolute contribution when hand delta is negative",
+      name: "selects positive component loss when hand delta is negative",
+    },
+    {
+      best: [6, 0, 3] as const,
+      chosen: [1, 7, 0] as const,
+      expectedLosses: [5, -7, 3] as const,
+      label: "Hand",
+      name: "ignores offsetting negative loss with larger absolute magnitude",
     },
   ])("$name", ({ best, chosen, expectedLosses, label }) => {
     const classification = classifyScoredMistake(

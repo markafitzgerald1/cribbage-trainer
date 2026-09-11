@@ -232,17 +232,21 @@ export function MistakeQueueDialog({
   useCloseOnEscape(show, onClose);
 
   useEffect(() => {
+    let active = true;
     if (show && tables === null) {
-      cribLoader
-        .loadTable()
-        .then(async (crib) => {
-          const play = await playLoader.loadTable();
-          setTables({ crib, play });
+      Promise.all([cribLoader.loadTable(), playLoader.loadTable()])
+        .then(([crib, play]) => {
+          if (active) {
+            setTables({ crib, play });
+          }
         })
         .catch(() => {
           setTables(null);
         });
     }
+    return () => {
+      active = false;
+    };
   }, [show, tables]);
 
   const handleShowMore = useCallback(() => {
