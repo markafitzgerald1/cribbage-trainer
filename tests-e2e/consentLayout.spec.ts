@@ -212,8 +212,9 @@ test("preserves usable analysis table height when controls overflow in stacked m
 
   const dynamicUi = page.locator(".dynamic-ui, [class*='dynamic-ui']").first();
   const analysisElement = dynamicUi.locator(":scope > :nth-child(2)");
-  const analysisBounds = await requireBoundingBox(analysisElement);
-  expect(analysisBounds.height).toBeGreaterThan(0);
+  const tableContainer = analysisElement.locator("[class*='table-container']");
+  const containerBounds = await requireBoundingBox(tableContainer);
+  expect(containerBounds.height).toBeGreaterThan(0);
 });
 
 test("Privacy Policy link has a high-contrast color on the consent surface", async ({
