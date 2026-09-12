@@ -504,11 +504,15 @@ they bind any PR that makes a claim about a phone or ships a guard.
   Successive rounds earn their cost — on #728 the second round found a
   defect in code the first round had passed, and only the third came back
   clean.
-- **Request a review only when required CI is green on that head.** This now
-  binds every round rather than only manual ones, because no round is
-  automatic. A review of a head that then fails CI is spent twice, and a
-  review of a head with pending checks may be reviewing code the gate is
-  about to reject.
+- **Request a review only when required CI is green on that head.** A review
+  of a head that then fails CI is spent twice, and a review of a head with
+  pending checks may be reviewing code the gate is about to reject. This
+  governs the rounds you request, which since 2026-09-12 is every Codex
+  round. It cannot govern Copilot's automatic run, which fires outside your
+  control and may land on a red or pending head — that is not a rule
+  violation, and it is another reason to request Copilot deliberately for
+  the head that will be merged rather than relying on whatever it reviewed
+  on its own.
 - **Do not serialize the two reviewers to save budget — it costs more, not
   less.** Any push invalidates every review on the previous head, so fixing
   Codex's findings retires Copilot's clean round and vice versa, and the two
@@ -516,14 +520,21 @@ they bind any PR that makes a claim about a phone or ships a guard.
   head so a single fix cycle answers both. Where budget is tight, cut
   frequency rather than parallelism: run intermediate rounds with Codex
   alone and spend Copilot on the head that will actually be merged.
-- **Copilot is for changes with code in them.** A documentation-only pull
-  request does not need it; Codex alone has been sufficient there. The two
-  are genuinely orthogonal on code and worth paying for — across the #791
-  family roughly six of fourteen findings were Copilot-only, including a
-  stale pull request title, a stale body claiming protection the branch did
-  not add, and a timeout path no test reached, all of which Codex passed
-  clean. Its low-effort reviews are plentiful; its medium-effort reviews are
-  the scarce resource, so spend those deliberately.
+- **Spend Copilot where a change could leave two places disagreeing**, which
+  is not the same as where the code is. The first draft of this bullet said
+  documentation-only pull requests do not need Copilot, and the review of
+  the pull request that introduced it disproved that within the hour: Codex
+  returned no findings while Copilot caught both a contradiction the change
+  had just created inside `AGENTS.md` and a passage in
+  `skills/working-an-issue/SKILL.md` still describing the behavior being
+  removed. A prose-only change to a contract spread across several files is
+  exactly the shape Copilot reads well. What genuinely does not need it is a
+  change confined to one file with no counterpart elsewhere. The
+  orthogonality is real and measured: across the #791 family roughly six of
+  fourteen findings were Copilot-only, including a stale pull request title,
+  a body claiming protection the branch did not add, and a timeout path no
+  test reached. Its low-effort reviews are plentiful; its medium-effort
+  reviews are the scarce resource, so spend those deliberately.
 - A Copilot review request via the REST `requested_reviewers` endpoint can
   succeed while the eventual "review" is only a COMMENTED stub saying the
   requester reached their Copilot quota. Read the review body before

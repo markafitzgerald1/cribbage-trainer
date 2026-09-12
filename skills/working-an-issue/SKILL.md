@@ -58,9 +58,8 @@ agreed, the pull request says what actually happened.
 - During a review fix the loop is: reproduce with a regression test that
   fails against the unfixed code, run the focused test plus `verify:fast`,
   commit and push, let required CI run the full gate for that SHA, then
-  reply to and resolve the threads. The push starts the next automatic
-  Codex round; you only send `@codex review` if that round does not land
-  (see below).
+  reply to and resolve the threads. Request the next Codex round yourself
+  once that CI is green — pushing no longer starts one (see below).
 - The PR body carries a human review guide and a manual testing plan. Let the
   automatic Copilot and Codex reviews land, run the loop to a clean round,
   and only then ask for human review — the human's attention is the scarce
@@ -76,14 +75,15 @@ agreed, the pull request says what actually happened.
   covers: a real phone, a real network, a real Google Analytics stream. When
   the human runs those steps, record the result in the PR body, and say
   plainly if later commits have moved the code out from under that run.
-- The automatic reviews (`AGENTS.md`, GitHub PR Reviews) do most of the
-  loop: Codex usually reviews every pushed head, Copilot the opening PR.
-  Two things they leave you. If a Codex round is missing on the head a
-  human will read — smart detect skipped it, or it came back a quota stub
-  — request `@codex review` by hand, but on a quota stub wait for the quota
-  to recover first rather than re-requesting into the same reply. And
-  Copilot's automatic review does not reliably re-fire on a new head;
-  re-request it (once CI is green) with this, since
+- **Codex automatic review was turned off on 2026-09-12, so every Codex
+  round is yours to request** — post a comment containing `@codex review`
+  with the attribution prefix, once required CI is green on that head. On a
+  quota stub, wait for the quota to recover rather than re-requesting into
+  the same reply. Copilot's automatic review is still on but does not
+  reliably re-fire on a new head, so request it too for the head a human
+  will read; `AGENTS.md` under GitHub PR Reviews owns the policy for when
+  each is worth spending. Request them on the same head rather than one
+  after the other. Re-request Copilot with this, since
   `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash
