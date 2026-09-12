@@ -10,5 +10,6 @@ export declare const rowLabel: string;
 export declare const rowLabelCards: string;
 export declare const rowLabelText: string;
 export declare const sampleNote: string;
+export declare const spokenSummary: string;
 export declare const starterCard: string;
 export declare const total: string;

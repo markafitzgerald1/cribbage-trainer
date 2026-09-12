@@ -76,6 +76,20 @@
   gap: 0.2em;
 }
 
+/*
+ * The row's numbers spelled out for assistive technology, which the visual
+ * grid is hidden from. Absolute-plus-clip, the same pattern `Hand.module.css`
+ * uses, so it contributes no width to the grid column it sits in.
+ */
+.spoken-summary {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
 .count,
 .total,
 .average {
@@ -114,8 +128,15 @@
     font-size: calc(var(--medium-text-font-size-portrait) * 0.6);
   }
 
+  /*
+   * Floored, because the viewport-relative size alone drops to about 8px on a
+   * 320px-wide phone and this is the copy that stops one cut being read as a
+   * verdict. The floor is a rem so it also tracks the device font-size
+   * setting; it wins only on narrow screens and at enlarged settings, where
+   * `.dynamic-ui`'s own scroll keeps the extra height reachable.
+   */
   .footnote {
-    font-size: calc(var(--medium-text-font-size-portrait) * 0.46);
+    font-size: max(0.6rem, calc(var(--medium-text-font-size-portrait) * 0.5));
   }
 }
 

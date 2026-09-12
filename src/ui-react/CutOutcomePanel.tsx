@@ -2,6 +2,7 @@ import * as classes from "./CutOutcomePanel.module.css";
 import { type CutOutcomeOption, toCutOutcome } from "./cutOutcome";
 import { Fragment, useMemo } from "react";
 import {
+  MINUS_SIGN,
   formatCount,
   formatSignedCount,
   toAlignedFixed,
@@ -50,6 +51,13 @@ const isSameDiscard = (first: CutOutcomeOption, second: CutOutcomeOption) =>
 const expectedTotal = (option: CutOutcomeOption) =>
   option.expectedHandPoints + option.signedExpectedCribPoints;
 
+/*
+ * The digit-width minus sign keeps the columns aligned but reads poorly aloud,
+ * so the spoken summary spells the sign out instead.
+ */
+const spoken = (formatted: string) =>
+  formatted.replace(MINUS_SIGN, "minus ").replace("+", "plus ");
+
 const toRows = (
   chosen: CutOutcomeOption,
   best: CutOutcomeOption,
@@ -77,11 +85,27 @@ export function CutOutcomePanel({
     [dealtCards, scoredKeepDiscardsByNetScore],
   );
 
+  /*
+   * The visual grid is hidden from assistive technology, which reads the
+   * per-row summary below instead: a screen reader would otherwise receive a
+   * flat run of headings and numbers with nothing tying the two together.
+   *
+   * A real `<table>` would carry those relationships natively, and was the
+   * first thing tried. It is not used because this panel renders inside the
+   * analysis figure: `ScoredPossibleKeepDiscards.module.css` styles `table`
+   * and `th` as descendants of that figure, so the sticky green header rules
+   * would land on this panel too, and a second table in the document makes
+   * the suite's bare `getByRole("table")`, `getByRole("columnheader")` and
+   * `tbody tr` locators ambiguous — including numeric `getByRole("cell")`
+   * lookups in specs that have nothing to do with this feature, which would
+   * then collide or not depending on the hand dealt.
+   */
   const renderHeadings = () => (
     <>
       <div className={classes.rowLabel} />
       {COLUMN_HEADINGS.map((heading) => (
         <div
+          aria-hidden="true"
           className={classes.columnHeading}
           key={heading}
         >
@@ -91,15 +115,24 @@ export function CutOutcomePanel({
     </>
   );
 
-  const renderRowLabel = ({ label, option }: OutcomeRow) => (
+  const renderRowLabel = ({ label, option }: OutcomeRow, summary: string) => (
     <div className={classes.rowLabel}>
-      <span className={classes.rowLabelText}>{label}</span>
-      <span className={classes.rowLabelCards}>
+      <span
+        aria-hidden="true"
+        className={classes.rowLabelText}
+      >
+        {label}
+      </span>
+      <span
+        aria-hidden="true"
+        className={classes.rowLabelCards}
+      >
         <PossibleHand
           dealtCards={option.discard}
           sortOrder={sortOrder}
         />
       </span>
+      <span className={classes.spokenSummary}>{summary}</span>
     </div>
   );
 
@@ -111,16 +144,37 @@ export function CutOutcomePanel({
       opponentCribCards: starterCut.opponentCribCards,
       starter: starterCut.starter,
     });
+    const hand = formatCount(counts.handPoints);
+    const crib = formatSignedCount(counts.signedCribPoints);
+    const total = formatCount(counts.total);
+    const average = toAlignedFixed(expectedTotal(row.option));
+    const summary = `${row.label}: hand ${spoken(hand)}, crib ${spoken(crib)}, total ${spoken(total)}, average ${spoken(average)}`;
     return (
       <Fragment key={row.label}>
-        {renderRowLabel(row)}
-        <div className={classes.count}>{formatCount(counts.handPoints)}</div>
-        <div className={classes.count}>
-          {formatSignedCount(counts.signedCribPoints)}
+        {renderRowLabel(row, summary)}
+        <div
+          aria-hidden="true"
+          className={classes.count}
+        >
+          {hand}
         </div>
-        <div className={classes.total}>{formatCount(counts.total)}</div>
-        <div className={classes.average}>
-          {toAlignedFixed(expectedTotal(row.option))}
+        <div
+          aria-hidden="true"
+          className={classes.count}
+        >
+          {crib}
+        </div>
+        <div
+          aria-hidden="true"
+          className={classes.total}
+        >
+          {total}
+        </div>
+        <div
+          aria-hidden="true"
+          className={classes.average}
+        >
+          {average}
         </div>
       </Fragment>
     );
@@ -155,9 +209,9 @@ export function CutOutcomePanel({
         {toRows(chosen, best).map((row) => renderRow(row, cut))}
       </div>
       <p className={classes.footnote}>
-        One cut only; Avg averages all 46. A better discard often loses one.
-        Pegging is excluded, and the crib&apos;s other two cards are dealt at
-        random.
+        One cut only. Avg averages all 46 cuts against a modelled opponent,
+        where this crib takes two random cards. A better discard often loses
+        one. Pegging is excluded.
       </p>
     </section>
   );

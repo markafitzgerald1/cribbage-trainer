@@ -159,6 +159,7 @@ export default [
             "amd64",
             "antialiasing",
             "arm64",
+            "assistive",
             "autodocs",
             "bijection",
             "callee",

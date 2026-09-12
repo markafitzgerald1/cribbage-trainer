@@ -393,15 +393,16 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whole-context copy invalidates nothing but the lint layer, and anything
   `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
   junk lints inside Docker while never reaching CI.
-- **An ignore path has to be added to every ignore list, not just the ones
-  the gate reads.** `playwright-report/` and `test-results/` were in
-  `.gitignore`, `.dockerignore` and `.prettierignore` but in neither
-  `.stylelintignore` nor `eslint.config.mjs`'s `ignores`, so running the e2e
-  suite locally left thousands of lint errors in bundled third-party
-  JavaScript and CSS and broke `verify:fast` — and therefore the pre-commit
-  hook — on that machine only. Docker and CI never saw it, because the
-  `Dockerfile` excludes those paths. When a directory becomes generated
-  output, put it in all five.
+- **A generated directory has to be added to every ignore list there is, and
+  there are seven:** `.gitignore`, `.dockerignore`, `.prettierignore`,
+  `.stylelintignore`, `.markdownlintignore`, `.cspell.json`'s `ignorePaths`,
+  and `eslint.config.mjs`'s `ignores`. Enumerate them rather than counting
+  from memory — `playwright-report/` and `test-results/` were in some and not
+  others, so running the e2e suite locally left thousands of lint errors in
+  Playwright's bundled third-party JavaScript and CSS and broke
+  `verify:fast`, and therefore the pre-commit hook, on that machine only.
+  Docker and CI never saw it, because the `Dockerfile` excludes those paths;
+  only a developer who had run e2e locally could.
 - `no-bitwise` is on across `src/`, so hashing and mixing arithmetic cannot
   reach for `^`, `>>>` or friends the way the reference implementations all
   do. Stay in modular arithmetic instead — a multiplier and prime modulus

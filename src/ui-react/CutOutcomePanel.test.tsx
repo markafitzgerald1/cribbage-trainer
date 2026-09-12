@@ -129,10 +129,18 @@ describe("cutOutcomePanel", () => {
     expect(screen.getByText(/often loses one/u)).toBeInTheDocument();
   });
 
-  it("says the crib's other two cards are not the user's", () => {
+  /*
+   * Avg comes from the vendored crib table, which averages over the
+   * simulator's opponent policy, while the count beside it takes two random
+   * crib cards. The copy has to say so, or the two columns read as the same
+   * quantity measured two ways.
+   */
+  it("discloses that the count and the expectation model the crib differently", () => {
     renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES);
 
-    expect(screen.getByText(/dealt at random/u)).toBeInTheDocument();
+    expect(
+      screen.getByText(/modelled opponent, where this crib takes two random/u),
+    ).toBeInTheDocument();
   });
 
   it("renders nothing while no discard is complete", () => {
@@ -179,6 +187,29 @@ describe("cutOutcomePanel counts", () => {
 
     expect(screen.getByText("−8")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
+  });
+
+  /*
+   * The visual grid is aria-hidden, so this sentence is the only thing a
+   * screen reader gets: it has to name every column rather than repeat the
+   * numbers the sighted layout already associates by position, and it spells
+   * the signs as words because the digit-width minus reads poorly aloud.
+   */
+  it.each([
+    {
+      cribRole: CribRole.Dealer,
+      name: "a crib the dealer adds",
+      summary: "Yours: hand 15, crib plus 8, total 23, average 16.50",
+    },
+    {
+      cribRole: CribRole.Pone,
+      name: "a crib the pone loses",
+      summary: "Yours: hand 15, crib minus 8, total 7, average 16.50",
+    },
+  ])("spells $name out for assistive technology", ({ cribRole, summary }) => {
+    renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES, cribRole);
+
+    expect(screen.getByText(summary)).toBeInTheDocument();
   });
 
   it("keeps the expectation beside the count for both rows", () => {
