@@ -179,8 +179,9 @@ describe("cutOutcomePanel", () => {
 });
 
 /*
- * These six cards cut the ace of spades and send the four and eight of hearts
- * to the crib, so keeping the fives counts 15 in hand against a crib of 8.
+ * These six cards cut the ace of spades (A♠) and send the four and eight of
+ * hearts (4♥ 8♥) to the crib, so keeping the fives counts 15 in hand against
+ * a crib of 8.
  * Spelled out rather than recomputed here, so a change in the derivation
  * surfaces as a failure instead of as two matching wrong answers.
  */
@@ -215,14 +216,12 @@ describe("cutOutcomePanel counts", () => {
     {
       cribRole: CribRole.Dealer,
       name: "a crib the dealer adds",
-      summary:
-        "Yours, 3\u2666 2\u2663: hand 15, crib plus 8, total 23, average 16.50",
+      summary: "Yours, 3♦ 2♣: hand 15, crib plus 8, total 23, average 16.50",
     },
     {
       cribRole: CribRole.Pone,
       name: "a crib the pone loses",
-      summary:
-        "Yours, 3\u2666 2\u2663: hand 15, crib minus 8, total 7, average 8.50",
+      summary: "Yours, 3♦ 2♣: hand 15, crib minus 8, total 7, average 8.50",
     },
   ])("spells $name out for assistive technology", ({ cribRole, summary }) => {
     renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES, cribRole);
@@ -240,7 +239,7 @@ describe("cutOutcomePanel counts", () => {
 
     expect(
       screen.getByText(
-        "Top choice, 3\u2666 2\u2663: hand 15, crib plus 8, total 23, average 16.50",
+        "Top choice, 3♦ 2♣: hand 15, crib plus 8, total 23, average 16.50",
       ),
     ).toBeInTheDocument();
   });
@@ -256,7 +255,7 @@ describe("cutOutcomePanel counts", () => {
     const header = screen.getByText("crib also gets").parentElement;
 
     expect(header?.textContent).toBe(
-      "This cutA\u2660crib also gets8\u26654\u2665one sample, not a verdict",
+      "This cutA♠crib also gets8♥4♥one sample, not a verdict",
     );
   });
 

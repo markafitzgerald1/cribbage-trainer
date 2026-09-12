@@ -224,6 +224,16 @@ once you are already editing layout or interaction code.
   ordinal or wall-clock `at` — and clear it outright (render-time reset,
   like `usePracticeDrill`) once its item leaves the filtered list, or
   restoring the filter silently reopens the panel.
+- Hiding a visual layout from assistive technology makes the replacement text
+  the **only** source of every fact it carried, and it is easy to leave one
+  out. #717's cut panel is a CSS grid, so each row carries one spoken sentence
+  with the grid `aria-hidden`; the first version named the columns and the
+  numbers but not the two cards the row was about, which left a screen-reader
+  user told that the top choice scored more without being told what it was.
+  When you `aria-hidden` a region, list what a sighted reader gets from it —
+  headers, labels, identity, ordering — and check the replacement carries each
+  one. Assert the whole sentence in a test, not a fragment, or the omission
+  reappears silently.
 - Freezing a control by swallowing its `onChange` leaves it focusable, still
   showing a pointer cursor, and announced as editable — a control that lies
   about being interactive. Lock it with the native `disabled` attribute

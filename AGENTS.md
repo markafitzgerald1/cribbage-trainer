@@ -537,6 +537,17 @@ they bind any PR that makes a claim about a phone or ships a guard.
   claiming a Copilot review happened.
 - To find PR review threads without individual review URLs, use any available
   GitHub integration or the `gh` CLI for the repository and PR number.
+- **The two reviewers can contradict each other, and the tie-break is this
+  repository's own written rule, not the more recent comment.** On #797
+  Copilot objected to a `rem` floor on a font size as the rem-floor trap, and
+  Codex asked for the same element to be `rem`-sized so it would follow the
+  device font-size setting. Both are reasonable in isolation; the tie went to
+  `skills/ui-layout-and-interaction/SKILL.md`, which records rem-floored
+  sizing overflowing real phones inside the fixed-height chain, and the
+  element got an absolute floor instead — smaller of the two harms, with the
+  gap Codex identified written into the PR as residual risk rather than
+  argued away. Answer the loser on its thread with the rule you followed, so
+  the next round does not re-raise it as if unconsidered.
 - A bot's login differs between the two GitHub APIs: REST reports
   `chatgpt-codex-connector[bot]` where GraphQL reports
   `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling
