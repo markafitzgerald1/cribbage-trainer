@@ -1,7 +1,7 @@
 import { type Page, expect, test } from "@playwright/test";
+import { constantHandQuery, phonePortraitViewport } from "./layoutMeasurements";
 import { CARDS_PER_DEALT_HAND } from "../src/game/facts";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
-import { constantHandQuery } from "./layoutMeasurements";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 const CUT_SEED_QUERY = "/?seed=starter-cut-guard";
@@ -11,6 +11,10 @@ const DISCARD_COUNT = 2;
 // Display positions in the default descending sort of KH,QS,10D,9C,6S,5H.
 const INDEX_OF_KING = 0;
 const INDEX_OF_SIX = 4;
+
+// 0.7rem of a 28px root, the floor the disclosure is meant to reach there.
+const DISCLOSURE_MINIMUM_AT_LARGE_ROOT = 19;
+const LARGE_ROOT_FONT = "html { font-size: 28px; }";
 
 const handLocator = (page: Page) => page.locator("ul").first();
 
@@ -114,4 +118,42 @@ test("changing the discard does not re-roll the starter", async ({ page }) => {
   await waitForAnalysis(page);
 
   expect(await starterText(page)).toBe(before);
+});
+
+/*
+ * The panel's caution text is the one thing in it sized from the root font
+ * rather than the viewport, so that a reader who enlarges their device font
+ * gets a larger sample-not-verdict disclosure rather than a smaller one — in
+ * side-by-side mode the viewport-relative sizing actually shrank it, because a
+ * larger root font widens the min-content left column and narrows the
+ * container its container-relative size reads.
+ *
+ * The second assertion is the other half of the bargain: rem-floored type is
+ * only safe here because the height it adds lands in a scroll container rather
+ * than pushing anything off the side of the screen.
+ *
+ * Negative-checked against the absolute floor this replaced, which held the
+ * text at about 11px and fails the first assertion.
+ */
+test("the cut panel's caution text grows with the device font-size setting", async ({
+  page,
+}) => {
+  await blockGoogleAnalytics(page);
+  await page.setViewportSize(phonePortraitViewport);
+  await page.goto(`/${constantHandQuery}&discard=6S,5H`);
+  await waitForAnalysis(page);
+  await page.addStyleTag({ content: LARGE_ROOT_FONT });
+
+  const fontSize = await cutPanel(page)
+    .locator("p")
+    .evaluate((element) =>
+      Number.parseFloat(globalThis.getComputedStyle(element).fontSize),
+    );
+
+  expect(fontSize).toBeGreaterThanOrEqual(DISCLOSURE_MINIMUM_AT_LARGE_ROOT);
+  expect(
+    await page.evaluate(
+      () => document.body.scrollWidth - globalThis.innerWidth,
+    ),
+  ).toBeLessThanOrEqual(0);
 });
