@@ -322,17 +322,22 @@ they bind any PR that makes a claim about a phone or ships a guard.
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
 - **The injected `generateRandomNumber` is one shared positional stream, and
-  two things already draw from it.** Every draw advances it, so a consumer
-  changes what a seeded link deals from that point on, and nothing fails
-  loudly when it does. The existing consumers are `useDealHand` (the deal
-  itself, then the crib role) and `usePracticeDrill`'s `drawNext`, which
-  samples the mistake queue — `Trainer` hands the same generator to both. So
-  starting an automatic drill really does shift the next seeded deal, and
-  that is shipped behavior, not a latent bug: state the exception rather
-  than writing this rule as an absolute, which an earlier draft did and
-  which the shipped flow already contradicted.
+  several places already draw from it.** Every draw advances it, so a
+  consumer changes what a seeded link deals from that point on, and nothing
+  fails loudly when it does. Known call sites, as a starting inventory
+  rather than a closed list: `Trainer`'s own `useState` initializer, which
+  calls `dealHand(generator)` and then `randomCribRole(generator)` on a
+  non-deep-linked first render; `useDealHand`, which repeats that pair for
+  every later deal; and `usePracticeDrill`'s `drawNext`, which samples the
+  mistake queue. So starting an automatic drill really does shift the next
+  seeded deal, and that is shipped behavior rather than a latent bug: state
+  the exception rather than writing this rule as an absolute, which an
+  earlier draft did and which the shipped flow already contradicted.
+  **Re-derive that inventory by grep before relying on it** — an earlier
+  draft named two of the three and would have sent a seed-contract audit
+  past the startup draws entirely.
   The rule for anything **new** is therefore not "never draw" but "do not
-  become a third consumer without deciding what that does to the seed
+  add another consumer without deciding what that does to the seed
   contract". Two ways to avoid it: the telemetry `deal_nonce` takes its own
   source (`crypto.randomUUID`, see `skills/analytics-telemetry/SKILL.md`),
   and **deriving** a value from the six dealt cards avoids the stream while
@@ -420,12 +425,19 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whole-context copy invalidates nothing but the lint layer, and anything
   `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
   junk lints inside Docker while never reaching CI.
-- **A generated directory needs more ignore entries than it looks, and there
-  are seven lists to weigh:** `.gitignore`, `.dockerignore`,
-  `.prettierignore`, `.stylelintignore`, `.markdownlintignore`,
-  `.cspell.json`'s `ignorePaths`, and `eslint.config.mjs`'s `ignores`.
-  Enumerate them rather than counting from memory, and add an entry wherever
-  that tool's globs can reach inside the directory. Do not infer the rule
+- **A generated directory needs more exclusions than it looks, and the
+  count is not the useful part — the inventory is.** The ignore lists are
+  `.gitignore`, `.dockerignore`, `.prettierignore`, `.stylelintignore`,
+  `.markdownlintignore`, `.cspell.json`'s `ignorePaths`, and
+  `eslint.config.mjs`'s `ignores`; **`tsconfig.json`'s `exclude` belongs on
+  the same list and is not an ignore file at all.** It currently includes
+  `**/*.ts` and `**/*.tsx` while excluding only `dist`, so a generated
+  directory holding any TypeScript fails `lint:tsc` — and therefore
+  `verify:fast` — no matter how many ignore files name it. Treat the list
+  above as a starting inventory to check against the verification commands
+  themselves, not as a closed set of seven: two successive drafts of this
+  bullet called it exhaustive and it was not either time. Add an entry
+  wherever that tool can reach inside the directory. Do not infer the rule
   from the lists already here, which are not exhaustive: `dist/` and
   `storybook-static/` are each absent from lists whose tool never matches
   anything inside them, so a missing entry is not evidence that one is
@@ -581,12 +593,19 @@ they bind any PR that makes a claim about a phone or ships a guard.
   root font widens the `min-content` left column, which narrows the container
   a right-hand panel's `cqw` sizes read, so an enlarged accessibility setting
   made the explanatory copy _smaller_ — 13.78px to 12.11px at a 28px root.
-  The rule the tie was decided under is about control rows and consent
-  actions, which have no scroll container to fall into; text inside
-  `.dynamic-ui` or the analysis figure has one, so height it gains stays
-  reachable. That PR was later withdrawn, so the `rem` floor and its e2e
-  guard are not in the app: read this bullet as a measurement, not as
-  shipped CSS. #802 carries the open decision. **Do not summarize what the
+  **That measurement is where this bullet stops, and it must not be read as
+  overturning the skill.** `skills/ui-layout-and-interaction/SKILL.md` still
+  says that _any_ uncapped rem lower bound inflates on a phone above default
+  font size, `clamp(1rem, …)` included, and to cap it with a viewport unit —
+  and that rule was earned on real hardware, where an uncapped floor put the
+  consent buttons out of reach while every emulated check passed. The
+  scroll-container argument for exempting scrollable explanatory text is
+  plausible and was never tested on a phone, because PR #797 was withdrawn
+  before it got there. So the skill's rule stands, this paragraph records a
+  measurement that complicates it, and **#802 is what decides between them**
+  — against a hardware measurement, which neither of these has for the
+  exception. An agent doing responsive work should follow the skill and
+  treat this as an open question, not as permission. **Do not summarize what the
   app does today as a list of surfaces that scale and surfaces that do
   not** — two drafts of this paragraph tried, and both were wrong in
   opposite directions. The behavior is per **declaration**, and often per

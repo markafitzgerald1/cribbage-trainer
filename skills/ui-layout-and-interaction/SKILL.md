@@ -51,6 +51,12 @@ once you are already editing layout or interaction code.
   default-scale size unchanged, and guard it the way portrait already does:
   the same measurement repeated at a 28px root font. That guard failed on
   all five browser projects before the fix and passes after it.
+  A proposed exception — that text inside a scroll container (`.dynamic-ui`,
+  the analysis figure) can carry an uncapped floor, because the height it
+  gains stays reachable — is recorded in #802 and in `AGENTS.md`'s
+  two-reviewers bullet. It is **not** in force: it rests on a desktop
+  measurement, PR #797 was withdrawn before it reached a phone, and this
+  rule was earned on hardware. Cap the floor until #802 settles it.
 - Anything new added below the controls and cards in the side-by-side
   left column inherits that trap. The practice-drill panel
   (`PracticeDrillPanel.module.css`) went in with every gap, margin,
@@ -119,9 +125,14 @@ once you are already editing layout or interaction code.
   vanished while the panel itself looked correct. That PR was withdrawn, so
   no `min-height` floor protects the table today and the next child added
   there inherits the whole hazard. `consentLayout.spec.ts`'s "preserves
-  usable analysis table height" case catches it — it failed on that unfixed
-  branch, which is what makes it worth trusting — so run it before assuming
-  a new child of that figure is free.
+  usable analysis table height" case is the nearest guard, and it did fail
+  on that unfixed branch — but **read what it actually asserts before
+  trusting it**: `expect(containerBounds.height).toBeGreaterThan(0)` catches
+  a total collapse only, which is what that branch happened to produce. A
+  sibling that leaves the table at some positive but unusably small height
+  passes it. Its name promises more than its assertion delivers, so a new
+  child of that figure needs a content-derived minimum asserted alongside
+  it, not a green run of this one.
 - Aligning such a child to the **end** of its cell is not the safe way to
   stop it stretching. Items placed after the consent cell's row sit below the
   privacy links once pushed to their cell's end: `align-self: end` put the
