@@ -14,10 +14,12 @@ describe("hand component", () => {
   const renderCards = (
     dealtCards: ReturnType<typeof dealHand>,
     sortOrder: SortOrder,
+    locked = false,
   ) =>
     render(
       <Hand
         dealtCards={dealtCards}
+        locked={locked}
         onChange={jest.fn()}
         sortOrder={sortOrder}
       />,
@@ -54,6 +56,12 @@ describe("hand component", () => {
 
     expect(cueElement).toBeTruthy();
     expect(cueElement?.tagName).toBe("P");
+  });
+
+  it("omits the discard prompt when cards are locked", () => {
+    const view = renderCards(dealHand(Math.random), SortOrder.Ascending, true);
+
+    expect(view.queryByText("Select two cards to discard")).toBeNull();
   });
 
   it("has a checkbox for each dealt card", () => {

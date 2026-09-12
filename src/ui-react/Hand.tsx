@@ -16,7 +16,9 @@ export function Hand({
   return (
     <figure className={classes.figure}>
       <figcaption className={classes.figcaption}>Hand</figcaption>
-      <p className={classes.cue}>Select two cards to discard</p>
+      {locked ? null : (
+        <p className={classes.cue}>Select two cards to discard</p>
+      )}
       <ul className={classes.hand}>
         {sortCards(dealtCards, sortOrder).map((dealtCard) => (
           <HandCard
