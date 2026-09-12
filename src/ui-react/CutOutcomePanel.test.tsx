@@ -155,7 +155,9 @@ describe("cutOutcomePanel", () => {
     renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES);
 
     expect(
-      screen.getByText(/modelled opponent, where this crib takes two random/u),
+      screen.getByText(
+        /modelled opponent; this crib pairs your discard with two fixed cards/u,
+      ),
     ).toBeInTheDocument();
   });
 

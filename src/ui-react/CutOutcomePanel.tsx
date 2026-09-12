@@ -225,9 +225,9 @@ export function CutOutcomePanel({
         {toRows(chosen, best).map((row) => renderRow(row, cut))}
       </div>
       <p className={classes.footnote}>
-        One cut only. Avg averages all 46 cuts against a modelled opponent,
-        where this crib takes two random cards. A better discard often loses
-        one. Pegging is excluded.
+        One cut only. Avg averages all 46 cuts against a modelled opponent; this
+        crib pairs your discard with two fixed cards from the unseen deck. A
+        better discard often loses one. Pegging is excluded.
       </p>
     </section>
   );

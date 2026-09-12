@@ -7,11 +7,18 @@ import { getRemainingDeck } from "./getRemainingDeck";
  *
  * The opponent's two are here because a crib is four cards plus the starter
  * and only two of them are the player's. The app has no opponent model, so
- * these are drawn uniformly from what the deal left — the maximum-entropy
- * choice, which introduces no rule of thumb about what an opponent throws.
- * They belong to the cut rather than to either candidate discard so that
- * comparing two discards holds them fixed, which is what keeps the comparison
- * about the discard rather than about the crib's other half.
+ * these are taken from what the deal left by the same derivation as the
+ * starter, rather than chosen to represent what an opponent would throw: no
+ * rule of thumb enters the count that way.
+ *
+ * They are not a random draw, and nothing here should describe them as one.
+ * Like the starter they are a pure function of the dealt six, so they are the
+ * same cards every time that hand is on the board — the derivation spreads
+ * evenly over the unseen deck *across* hands, which is a property of the
+ * mapping and not a draw made at runtime. They belong to the cut rather than
+ * to either candidate discard so that comparing two discards holds them
+ * fixed, which keeps the comparison about the discard rather than about the
+ * crib's other half.
  */
 export interface HandCut {
   readonly opponentCribCards: readonly Card[];
