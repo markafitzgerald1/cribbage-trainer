@@ -819,6 +819,42 @@ they bind any PR that makes a claim about a phone or ships a guard.
   upgrades when they do not overshadow the PR's primary purpose. How to do that
   safely — audit advisories, caret `overrides`, `.nsprc` waivers — is in
   `skills/dependency-maintenance/SKILL.md`.
+- **Falsify a claim before writing it down as guidance.** Documentation here
+  is instruction an agent will follow without re-deriving, so a confident
+  sentence that happens to be false is worse than silence — and no gate can
+  see it, because markdownlint, prettier, and cspell check lines rather than
+  truth. #803 is the worked example and it is not close: five review rounds,
+  twelve findings, every one correct and **none of them in the code**. Eight
+  landed on `AGENTS.md`, three on `skills/testing-e2e/SKILL.md`, one on
+  `skills/ui-layout-and-interaction/SKILL.md`; the source change was twelve
+  added lines against five removed, and drew no comment at all.
+  Two shapes accounted for nearly all of them, and both are cheap to check:
+  - **An absolute this repository already contradicts.** "Nothing may draw
+    from the injected generator" while `usePracticeDrill` does. "A generated
+    directory must join all seven ignore lists" while `dist/` and
+    `storybook-static/` are missing from several. "Nothing tracks the device
+    font-size setting" while the dialogs and card picker are `rem`-sized.
+    Before writing _never_, _always_, or _must_, run the grep that would
+    disprove it, and if the repository disagrees, document the exception
+    instead — a rule the codebase violates on its own page teaches the next
+    agent to discount rules.
+  - **A closed list that is not closed.** Three separate inventories fell to
+    this in one PR: the ignore lists, the RNG call sites, and the bare
+    `getByRole("table")` locators, which named two of six. A count invites an
+    agent to tick it off and stops them looking. Prefer the search command
+    that regenerates the list over the list, or write both and say plainly
+    which one is authoritative.
+
+  Both failures come from the same place: asserting a property of the whole
+  from the part you were already reading. The derived-inputs rule under
+  Project overview is a special case of this one, and writing that one down
+  did not prevent the eleven other findings in the same PR — so treat this as
+  a checking discipline to execute, not a principle to agree with. Two claims
+  in this very bullet were wrong on first draft, both caught by running the
+  check it prescribes: the source diff was called nine lines, and the
+  derived-inputs rule was called the one immediately above when it sits 810
+  lines earlier in a different section.
+
 - Capture each session's durable, non-obvious learnings — new invariants,
   debugging techniques, tooling or review-workflow gotchas — in `AGENTS.md`
   (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as
