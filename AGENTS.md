@@ -537,17 +537,29 @@ they bind any PR that makes a claim about a phone or ships a guard.
   claiming a Copilot review happened.
 - To find PR review threads without individual review URLs, use any available
   GitHub integration or the `gh` CLI for the repository and PR number.
-- **The two reviewers can contradict each other, and the tie-break is this
-  repository's own written rule, not the more recent comment.** On #797
-  Copilot objected to a `rem` floor on a font size as the rem-floor trap, and
-  Codex asked for the same element to be `rem`-sized so it would follow the
-  device font-size setting. Both are reasonable in isolation; the tie went to
+- **The two reviewers can contradict each other. Reach for this repository's
+  own written rule before the more recent comment — but a measurement beats
+  both.** On #797 Copilot objected to a `rem` floor on a font size as the
+  rem-floor trap while Codex asked for that same element to be `rem`-sized so
+  it would follow the device font-size setting. The tie first went to
   `skills/ui-layout-and-interaction/SKILL.md`, which records rem-floored
-  sizing overflowing real phones inside the fixed-height chain, and the
-  element got an absolute floor instead — smaller of the two harms, with the
-  gap Codex identified written into the PR as residual risk rather than
-  argued away. Answer the loser on its thread with the rule you followed, so
-  the next round does not re-raise it as if unconsidered.
+  sizing overflowing real phones, and the element got an absolute floor.
+  **That was wrong, and measuring it is what showed why:** in side-by-side
+  mode a larger root font widens the `min-content` left column, which narrows
+  the container the panel's `cqw` sizes read, so an enlarged accessibility
+  setting was making the explanatory copy _smaller_. The rule it was decided
+  under is about control rows and consent actions, which have no scroll container
+  to fall into; this text sits inside `.dynamic-ui` and the analysis figure,
+  which both scroll, so the height it gains stays reachable. The final shape
+  is a `0.7rem` floor on that copy alone, with the numeric grid left
+  viewport-sized and `starterCut.spec.ts` asserting both halves — the text
+  grows at a 28px root, and the body still does not scroll sideways.
+  Two things to take from it. Answer the loser on its thread with the rule
+  you followed, so the next round does not re-raise it as if unconsidered.
+  And when a durable note like this one records a decision that a later
+  round reverses, go back and rewrite it: Codex caught this very paragraph
+  still describing the superseded absolute floor while the branch shipped
+  the opposite, which would have sent the next agent to undo it.
 - A bot's login differs between the two GitHub APIs: REST reports
   `chatgpt-codex-connector[bot]` where GraphQL reports
   `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling
