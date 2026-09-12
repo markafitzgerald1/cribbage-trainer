@@ -13,12 +13,15 @@ import { getRemainingDeck } from "./getRemainingDeck";
  *
  * They are not a random draw, and nothing here should describe them as one.
  * Like the starter they are a pure function of the dealt six, so they are the
- * same cards every time that hand is on the board — the derivation spreads
- * evenly over the unseen deck *across* hands, which is a property of the
- * mapping and not a draw made at runtime. They belong to the cut rather than
- * to either candidate discard so that comparing two discards holds them
- * fixed, which keeps the comparison about the discard rather than about the
- * crib's other half.
+ * same cards every time that hand is on the board, and different hands land
+ * on different cards across the unseen deck — a property of the mapping
+ * rather than a draw made at runtime, and the most `cutStarter.test.ts`
+ * establishes. How *evenly* they spread is deliberately not claimed: nothing
+ * here measures it, and the test only rules out a degenerate hash that piles
+ * many hands onto one card. They belong to the cut rather than to either
+ * candidate discard so that comparing two discards holds them fixed, which
+ * keeps the comparison about the discard rather than about the crib's other
+ * half.
  */
 export interface HandCut {
   readonly opponentCribCards: readonly Card[];
@@ -36,10 +39,11 @@ const HASH_MULTIPLIER = 48271;
 const HASH_MODULUS = 2147483647;
 
 /*
- * Wanted for a stable index rather than for any security property. Its output
- * is reduced modulo a deck of at most 46, whose bias against the modulus above
- * is roughly one part in forty million — orders of magnitude below anything a
- * single cut could express.
+ * Wanted for a stable index rather than for any security property, and not
+ * claimed to be uniform. The one thing quantified here is the reduction step:
+ * folding this modulus down to a deck of at most 46 skews the result by
+ * roughly one part in forty million, which is arithmetic about the fold alone
+ * and says nothing about how the hash distributes its inputs.
  */
 const hashText = (text: string): number => {
   let hash = 1;
