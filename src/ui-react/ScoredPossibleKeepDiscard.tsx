@@ -151,22 +151,14 @@ export function ScoredPossibleKeepDiscard({
 
   return (
     <>
-      {isHighlighted ? (
-        <tr
-          className={rowClassName}
-          onClick={handleRowClick}
-          title={getRowTitle(classification)}
-        >
-          {rowContent}
-        </tr>
-      ) : (
-        <tr
-          className={rowClassName}
-          onClick={handleRowClick}
-        >
-          {rowContent}
-        </tr>
-      )}
+      <tr
+        className={rowClassName}
+        onClick={handleRowClick}
+        // eslint-disable-next-line no-undefined
+        title={isHighlighted ? getRowTitle(classification) : undefined}
+      >
+        {rowContent}
+      </tr>
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow
           cribRole={cribRole}
