@@ -47,7 +47,7 @@
 .start-drill-button {
   align-items: center;
   background-color: #197536;
-  border: 2px solid #4caf50;
+  border: 2px solid #72d572;
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
@@ -501,15 +501,6 @@
     padding: min(0.4rem, 1.4vw) min(0.55rem, 1.7vw) min(0.45rem, 1.6vw);
   }
 
-  /*
-   * The Loss-severity group (always last) has the widest chips; give it the
-   * modal's full width rather than its shrink-wrapped size so its four
-   * options stay on one row in portrait instead of wrapping the last one.
-   */
-  .filter-group:last-child {
-    flex-basis: 100%;
-  }
-
   .filter-group legend {
     font-size: min(0.8rem, 3.2vw);
   }
@@ -521,8 +512,36 @@
    */
   .option {
     font-size: min(0.8rem, 3.2vw);
-    padding: min(0.25rem, 0.9vw) min(0.5rem, 1.4vw);
+    padding: min(0.25rem, 0.9vw) min(0.45rem, 1.2vw);
     white-space: nowrap;
+  }
+
+  .option::before {
+    height: min(0.5em, 1.8vw);
+    margin-right: min(0.25em, 0.9vw);
+    width: min(0.5em, 1.8vw);
+  }
+
+  /*
+   * The Loss-severity group (always last) has the widest chips; give it the
+   * modal's full width rather than its shrink-wrapped size so its four
+   * options stay on one row in portrait instead of wrapping the last one.
+   */
+  .filter-group:last-child {
+    flex-basis: 100%;
+    gap: min(0.25rem, 0.8vw);
+    padding: min(0.35rem, 1.2vw);
+  }
+
+  .filter-group:last-child .option {
+    font-size: min(0.72rem, 2.7vw);
+    padding: min(0.2rem, 0.8vw) min(0.35rem, 0.9vw);
+  }
+
+  .filter-group:last-child .option::before {
+    height: min(0.45em, 1.6vw);
+    margin-right: min(0.18em, 0.7vw);
+    width: min(0.45em, 1.6vw);
   }
 
   .summary-cards {

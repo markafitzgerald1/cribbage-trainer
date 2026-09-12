@@ -16,6 +16,7 @@ const LARGE_ROOT_FONT = "html { font-size: 28px; }";
 // Same-row tolerance for the filter chips: sub-pixel drift, not a wrapped row.
 const CHIP_ROW_TOLERANCE_PX = 2;
 const SORT_BY_CHIP_COUNT = 3;
+const LOSS_SEVERITY_CHIP_COUNT = 4;
 /*
  * How much shorter than the emulated landscape viewport a real phone is once
  * its address and gesture bars are showing — the gap that hid the first
@@ -77,6 +78,22 @@ const SEED_TALLY = {
   revision: 1,
   skipped: [],
   version: 5,
+};
+
+const SEED_TALLY_WITH_QUANTILES = {
+  ...SEED_TALLY,
+  records: [
+    ...SEED_TALLY.records,
+    {
+      at: BASE_AT + TWO_DAYS_MS + ONE_DAY_MS,
+      cribRole: "Dealer" as const,
+      discardKey: "9H,10H",
+      expectedPointsLoss: 2.8,
+      handKey: "7H,8H,9H,10H,JH,QH|Dealer",
+      isOptimal: false,
+      isPractice: false,
+    },
+  ],
 };
 
 const seedBrowser = (page: Page) =>
@@ -204,12 +221,16 @@ test.describe("practice drill", () => {
     );
   };
 
-  test("keeps the mistake-queue sort chips on one row at a large device font", async ({
-    page,
-  }) => {
+  const openMistakeQueueAtLargeFont = async (page: Page) => {
     await page.setViewportSize(phonePortraitViewport);
     await page.getByRole("button", { name: "Mistake queue" }).click();
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
+  };
+
+  test("keeps the mistake-queue sort chips on one row at a large device font", async ({
+    page,
+  }) => {
+    await openMistakeQueueAtLargeFont(page);
 
     /*
      * A 28px device font used to wrap a chip's label ("Most recent") or push
@@ -219,6 +240,30 @@ test.describe("practice drill", () => {
      */
     const sortBy = page.getByRole("group", { name: "Sort by" });
     await expectChipsOnOneRow(sortBy.locator("label"), SORT_BY_CHIP_COUNT);
+  });
+
+  test("keeps the mistake-queue loss severity chips on one row at a large device font", async ({
+    page,
+  }) => {
+    await page.evaluate(
+      ({ keyPrefix, tally }) => {
+        window.localStorage.setItem(
+          keyPrefix + new URL(document.baseURI).pathname,
+          JSON.stringify(tally),
+        );
+      },
+      {
+        keyPrefix: DISCARD_TALLY_KEY_PREFIX,
+        tally: SEED_TALLY_WITH_QUANTILES,
+      },
+    );
+    await openMistakeQueueAtLargeFont(page);
+
+    const lossSeverity = page.getByRole("group", { name: "Loss severity" });
+    await expectChipsOnOneRow(
+      lossSeverity.locator("label"),
+      LOSS_SEVERITY_CHIP_COUNT,
+    );
   });
 
   test("shows the first mistake without scrolling in phone landscape", async ({

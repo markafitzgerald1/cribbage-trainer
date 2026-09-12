@@ -262,13 +262,19 @@ once you are already editing layout or interaction code.
   both, sticky action bars paint across the top-right corner when scrolled,
   partially obscuring or entirely swallowing clicks intended for the close
   action.
-- Primary controls on the main table ground (such as the Deal button and Enter
-  cards) must maintain at least 3:1 non-text boundary contrast against the felt
-  ground (e.g. #72d572 reaching 3.86:1 against #1f6536) and against their own
-  fill (#197536 reaching 3.15:1). Because dark grounds compress luminance,
-  darker borders cannot reach 3:1 against a dark felt ground; high-luminance
-  borders are mathematically required to establish legible component
-  boundaries for low-vision players.
+- Primary action buttons across both the main felt ground and elevated modals
+  (such as Deal, Use hand, Start drill, and Practice actions) must maintain
+  at least 3:1 non-text boundary contrast against their fill (e.g. #72d572
+  border reaching 3.16:1 against #197536 fill) and against adjacent grounds
+  (3.86:1 against #1f6536 table felt, 7.10:1 against #10381b dialog surface).
+  Because dark grounds compress luminance, darker borders cannot reach 3:1;
+  high-luminance borders are mathematically required to establish legible
+  component boundaries for low-vision players.
+- Persistent links rendered directly on the felt table ground (such as the
+  collapsed Privacy Policy and Analytics Settings links) must maintain at
+  least 4.5:1 normal-text contrast under WCAG 2.1 SC 1.4.3 (e.g. #b8e5be
+  reaching 5.01:1 against #1f6536 ground, brightening to #def8e2 at 6.40:1
+  on hover and focus).
 - Radio selections and filter chips (such as Dealer/Pone role selectors and
   dialog filter groups) must distinguish their active/checked state through
   both non-color visual indicators (such as an inline radio circle or dot
@@ -277,3 +283,10 @@ once you are already editing layout or interaction code.
   state (e.g. #34c754 reaching 4.92:1 against unselected #1a4524 and 5.89:1
   against the #10381b modal ground, paired with high-contrast #08200d text at
   7.72:1).
+- Filter groups in modals with multiple chips (such as the four Loss-severity
+  options in the mistake queue) must rebalance padding, gaps, and non-color
+  marker sizing in portrait mode so all chips fit on a single row without
+  wrapping. On narrow screens (390px) and large accessibility fonts (28px root),
+  inline radio markers add horizontal width across every chip; capping marker
+  dimensions and tightening chip padding preserves the single-line layout and
+  prevents headers from eating vertical space meant for dialog content.
