@@ -22,6 +22,17 @@ const EXPECTED_CELL_COUNT = 5;
 const EXPECTED_CRIB_POINTS = 1.25;
 const EXPECTED_PLAY_POINTS = 0.75;
 const TINY_NEGATIVE_EXPECTED_PLAY_POINTS = -0.0047;
+/*
+ * The smallest positive play delta the shipped table can display: keeping
+ * A 9 J K as dealer. It rendered as "+0.00" before the sign was taken from
+ * the rounded value.
+ */
+const TINY_POSITIVE_EXPECTED_PLAY_POINTS = 0.0017;
+const PLAY_POINTS_CELL_INDEX = 3;
+const ROUNDING_TO_ZERO_CASES = [
+  { expectedPlayPoints: TINY_NEGATIVE_EXPECTED_PLAY_POINTS, name: "negative" },
+  { expectedPlayPoints: TINY_POSITIVE_EXPECTED_PLAY_POINTS, name: "positive" },
+] as const;
 const missingCribPointBreakdown = new Map<string, never>().get("missing");
 const CRIB_STARTER_POINTS = [
   {
@@ -209,19 +220,18 @@ describe("calculation component", () => {
     ).toBeTruthy();
   });
 
-  it("renders play points that round to zero without a negative sign", () => {
-    const scenario = setupScenario("Ascending");
+  it.each(ROUNDING_TO_ZERO_CASES)(
+    "renders $name play points that round to zero as an unsigned 0.00",
+    ({ expectedPlayPoints }) => {
+      const scenario = setupScenario("Ascending");
 
-    renderComponentWithScenario(scenario, {
-      expectedPlayPoints: TINY_NEGATIVE_EXPECTED_PLAY_POINTS,
-    });
+      renderComponentWithScenario(scenario, { expectedPlayPoints });
 
-    const cells = screen.getAllByRole("cell");
-    const playCellText = String(cells[3]?.textContent);
+      const cells = screen.getAllByRole("cell");
 
-    expect(playCellText).toBe("0.00");
-    expect(playCellText).not.toBe("−0.00");
-  });
+      expect(String(cells[PLAY_POINTS_CELL_INDEX]?.textContent)).toBe("0.00");
+    },
+  );
 
   const setupAndRender = () => {
     const scenario = setupScenario("Ascending");
