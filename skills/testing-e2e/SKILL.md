@@ -64,9 +64,14 @@ baselines so CI agrees with what was generated locally.
   `waitForAnalysis`, which nearly every spec calls, and again in
   `discardTally.spec.ts`. A second table anywhere on the page therefore puts
   those into strict-mode violation across the whole suite, not just in the
-  spec that added it. Build tabular UI out of a CSS grid instead, the way
-  `ScoredPossibleKeepDiscardExpandedRow` does, unless you are also prepared
-  to scope every one of those locators.
+  spec that added it. Scope those locators — to the analysis figure, or to
+  an accessible name — as part of whatever adds the second table. Do not
+  reach for a `div` grid to keep them working:
+  `ScoredPossibleKeepDiscardExpandedRow` shows what that costs, declaring no
+  table, row, cell, or header roles, so a screen reader loses the row and
+  column associations a real table would have given it for free. Genuinely
+  tabular data earns a real table; the locators are the part that has to
+  change.
 - Analysis tables are lazy-loaded. E2E tests that select a complete discard or
   hydrate one from a deep link must wait for `Loading analysis...` to become
   hidden and for the table to become visible before locating a result row;

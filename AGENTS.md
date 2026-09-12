@@ -410,16 +410,22 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whole-context copy invalidates nothing but the lint layer, and anything
   `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
   junk lints inside Docker while never reaching CI.
-- **A generated directory has to be added to every ignore list there is, and
-  there are seven:** `.gitignore`, `.dockerignore`, `.prettierignore`,
-  `.stylelintignore`, `.markdownlintignore`, `.cspell.json`'s `ignorePaths`,
-  and `eslint.config.mjs`'s `ignores`. Enumerate them rather than counting
-  from memory — `playwright-report/` and `test-results/` were in some and not
-  others, so running the e2e suite locally left thousands of lint errors in
-  Playwright's bundled third-party JavaScript and CSS and broke
-  `verify:fast`, and therefore the pre-commit hook, on that machine only.
-  Docker and CI never saw it, because the `Dockerfile` excludes those paths;
-  only a developer who had run e2e locally could.
+- **A generated directory needs more ignore entries than it looks, and there
+  are seven lists to weigh:** `.gitignore`, `.dockerignore`,
+  `.prettierignore`, `.stylelintignore`, `.markdownlintignore`,
+  `.cspell.json`'s `ignorePaths`, and `eslint.config.mjs`'s `ignores`.
+  Enumerate them rather than counting from memory, and add an entry wherever
+  that tool's globs can reach inside the directory. Do not infer the rule
+  from the lists already here, which are not exhaustive: `dist/` and
+  `storybook-static/` are each absent from lists whose tool never matches
+  anything inside them, so a missing entry is not evidence that one is
+  unnecessary. Err toward adding, because the costs are lopsided. A
+  redundant entry is dead config; a missing one broke `verify:fast`, and
+  therefore the pre-commit hook, on one developer's machine — leaving
+  `playwright-report/` and `test-results/` unlisted meant running the e2e
+  suite locally produced thousands of lint errors out of Playwright's
+  bundled third-party JavaScript and CSS. No gate can catch that, because
+  the `Dockerfile` excludes both paths from Docker and CI alike.
 - `no-bitwise` is on across `src/`, so hashing and mixing arithmetic cannot
   reach for `^`, `>>>` or friends the way the reference implementations all
   do. Stay in modular arithmetic instead: a multiplier and prime modulus
@@ -568,9 +574,16 @@ they bind any PR that makes a claim about a phone or ships a guard.
   The rule the tie was decided under is about control rows and consent
   actions, which have no scroll container to fall into; text inside
   `.dynamic-ui` or the analysis figure has one, so height it gains stays
-  reachable. That PR was later withdrawn for unrelated reasons, so **nothing
-  in the app tracks the device font-size setting today** and #802 carries the
-  open decision — do not read this bullet as describing shipped CSS.
+  reachable. That PR was later withdrawn, so the `rem` floor and its e2e
+  guard are not in the app: read this bullet as a measurement, not as
+  shipped CSS. What ships is **split**, which is the reason #802 exists and
+  carries the open decision. The dialogs, the card picker, the practice
+  drill panel, and the decision-quality chart are plain-`rem` sized and do
+  follow the device font-size setting; the trainer's own reading surface —
+  hand cards, controls row, deal button, analysis table — derives from
+  `--medium-text-font-size-portrait` and `-landscape`, which are `vw`, and
+  does not. Never claim either half covers the whole app without grepping
+  for both.
   Two things to take from it. Answer the loser on its thread with the rule
   you followed, so the next round does not re-raise it as if unconsidered.
   And when a durable note like this one records a decision that a later round
