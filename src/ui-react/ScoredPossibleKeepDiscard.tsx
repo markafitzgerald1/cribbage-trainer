@@ -11,6 +11,7 @@ import { PossibleHand } from "./PossibleHand";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
+import { formatCardText } from "./formatCardText";
 
 export interface ScoredPossibleKeepDiscardProps {
   readonly scoredKeepDiscard: ScoredKeepDiscard<
@@ -23,14 +24,6 @@ export interface ScoredPossibleKeepDiscardProps {
 }
 
 const ROW_STRIPE_DIVISOR = 2;
-
-const formatDiscardLabel = (discard: readonly Card[]): string => {
-  const [firstCard, secondCard] = discard as unknown as readonly [Card, Card];
-  const firstString = `${firstCard.rankLabel}${firstCard.suit}`;
-  const secondString = `${secondCard.rankLabel}${secondCard.suit}`;
-
-  return `${firstString} ${secondString}`;
-};
 
 export function ScoredPossibleKeepDiscard({
   scoredKeepDiscard,
@@ -47,7 +40,7 @@ export function ScoredPossibleKeepDiscard({
     expectedPlayPoints,
     signedExpectedCribPoints,
   } = scoredKeepDiscard;
-  const discardLabel = formatDiscardLabel(discard);
+  const discardLabel = formatCardText(discard);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleRowClick = useCallback(() => {

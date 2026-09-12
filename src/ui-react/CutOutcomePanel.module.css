@@ -11,6 +11,15 @@
   flex-shrink: 0;
   font-family: var(--text-font-family);
   min-width: 0;
+
+  /*
+   * A gutter on the end edge, because this panel can make the analysis figure
+   * overflow and the figure is a scroll container: without it the rightmost
+   * things — the Avg column and the "not a verdict" note, which are both
+   * pinned to that edge — sit under the scrollbar. The table below has its own
+   * scroller and so never needed one.
+   */
+  padding-inline-end: 0.6em;
   width: 100%;
 }
 
@@ -33,6 +42,11 @@
 .starter-card {
   display: inline-flex;
   font-size: 1.25em;
+}
+
+.opponent-cards {
+  display: inline-flex;
+  gap: 0.2em;
 }
 
 .sample-note {
@@ -150,7 +164,10 @@
 @media (aspect-ratio >= 6 / 5) {
   /*
    * Container units track the analysis column's own width rather than the
-   * viewport, matching the table headers this panel sits above.
+   * viewport, and the size is held below the table headers this panel sits
+   * above: the two share one column and the table is the surface the user came
+   * for. At the headers' own size the panel took 200px of a 235px column on a
+   * 844x390 phone and the results were reduced to their sticky header.
    *
    * The lower bound is itself capped by a viewport unit. A bare rem floor
    * grows with a phone's font-size accessibility setting and would then win
@@ -160,20 +177,13 @@
    */
   .cut-outcome-panel {
     font-size: clamp(
-      min(0.7rem, 1.4vw),
-      4.6cqw,
-      var(--medium-text-font-size-landscape)
+      min(0.6rem, 1.2vw),
+      3.4cqw,
+      calc(var(--medium-text-font-size-landscape) * 0.74)
     );
   }
 
-  /*
-   * The analysis table shares this column and is the surface the user came
-   * for, so the caution text is kept to the smallest size that still reads
-   * rather than allowed to push rows off a short landscape screen. Relative to
-   * the panel's own size, so it inherits that size's viewport cap instead of
-   * introducing a second rem floor.
-   */
   .footnote {
-    font-size: 0.68em;
+    font-size: 0.8em;
   }
 }

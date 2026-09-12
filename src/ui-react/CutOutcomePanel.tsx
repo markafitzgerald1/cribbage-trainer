@@ -7,6 +7,7 @@ import {
   formatSignedCount,
   toAlignedFixed,
 } from "./formatExpectedPoints";
+import { sortCards, toComparableCards } from "../ui/sortCards";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { HandCut } from "../game/cutStarter";
@@ -14,6 +15,7 @@ import { PossibleHand } from "./PossibleHand";
 import { PossibleHandCard } from "./PossibleHandCard";
 import { SortOrder } from "../ui/SortOrder";
 import { cutCounts } from "../game/cutCounts";
+import { formatCardText } from "./formatCardText";
 import { isSamePhysicalCard } from "../game/Card";
 
 export interface CutOutcomePanelProps {
@@ -148,7 +150,13 @@ export function CutOutcomePanel({
     const crib = formatSignedCount(counts.signedCribPoints);
     const total = formatCount(counts.total);
     const average = toAlignedFixed(expectedTotal(row.option));
-    const summary = `${row.label}: hand ${spoken(hand)}, crib ${spoken(crib)}, total ${spoken(total)}, average ${spoken(average)}`;
+    /*
+     * The cards are named here because the visual row label is aria-hidden:
+     * without them a screen reader hears what the top choice scored but never
+     * which two cards it is, which is the half of the comparison worth acting
+     * on.
+     */
+    const summary = `${row.label}, ${formatCardText(sortCards(row.option.discard, sortOrder))}: hand ${spoken(hand)}, crib ${spoken(crib)}, total ${spoken(total)}, average ${spoken(average)}`;
     return (
       <Fragment key={row.label}>
         {renderRowLabel(row, summary)}
@@ -200,6 +208,14 @@ export function CutOutcomePanel({
           <PossibleHandCard
             rank={cut.starter.rank}
             suit={cut.starter.suit}
+          />
+        </span>
+        {/* The crib's other two cards, so its count can be checked rather than taken on trust. */}
+        <span className={classes.cutHeaderText}>crib also gets</span>
+        <span className={classes.opponentCards}>
+          <PossibleHand
+            dealtCards={toComparableCards(cut.opponentCribCards)}
+            sortOrder={sortOrder}
           />
         </span>
         <span className={classes.sampleNote}>one sample, not a verdict</span>

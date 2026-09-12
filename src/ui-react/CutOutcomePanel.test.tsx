@@ -215,12 +215,14 @@ describe("cutOutcomePanel counts", () => {
     {
       cribRole: CribRole.Dealer,
       name: "a crib the dealer adds",
-      summary: "Yours: hand 15, crib plus 8, total 23, average 16.50",
+      summary:
+        "Yours, 3\u2666 2\u2663: hand 15, crib plus 8, total 23, average 16.50",
     },
     {
       cribRole: CribRole.Pone,
       name: "a crib the pone loses",
-      summary: "Yours: hand 15, crib minus 8, total 7, average 8.50",
+      summary:
+        "Yours, 3\u2666 2\u2663: hand 15, crib minus 8, total 7, average 8.50",
     },
   ])("spells $name out for assistive technology", ({ cribRole, summary }) => {
     renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES, cribRole);

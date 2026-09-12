@@ -6,6 +6,7 @@ export declare const cutHeaderText: string;
 export declare const cutOutcomePanel: string;
 export declare const footnote: string;
 export declare const grid: string;
+export declare const opponentCards: string;
 export declare const rowLabel: string;
 export declare const rowLabelCards: string;
 export declare const rowLabelText: string;
