@@ -44,8 +44,9 @@
 }
 
 .start-drill-button {
+  align-items: center;
   background-color: #197536;
-  border: 2px solid #0f5527;
+  border: 2px solid #4caf50;
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
@@ -65,7 +66,7 @@
 .start-drill-button:hover:not(:disabled),
 .start-drill-button:focus-visible:not(:disabled) {
   background-color: #218838;
-  border-color: #218838;
+  border-color: #34c754;
 }
 
 .done-button {
