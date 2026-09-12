@@ -112,6 +112,7 @@ export const mockTradeOffClassification: MistakeClassification = {
   dominantComponents: ["hand"],
   dominantGains: ["crib"],
   handLoss: 1.48,
+  isFlushMiss: false,
   label: "Hand loss > Crib gain",
   netLoss: 0.1,
   playLoss: -0.08,

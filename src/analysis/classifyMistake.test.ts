@@ -34,6 +34,22 @@ const createMockCandidate = (
   };
 };
 
+const createFlushCandidate = (
+  values: readonly [hand: number, crib: number, play: number],
+  flushes: number,
+): ScoredMistakeCandidate => ({
+  ...createMockCandidate(values),
+  avgCutAddedFlushes: flushes > 0 ? 0.2 : 0,
+  handPointsBreakdown: {
+    fifteens: 0,
+    flushes,
+    nobs: 0,
+    pairs: 0,
+    runs: 0,
+    total: flushes,
+  },
+});
+
 describe("classifyScoredMistake", () => {
   it("returns null when net loss is zero or negative", () => {
     const candidate = createMockCandidate([8, 2, 1]);
@@ -228,6 +244,58 @@ describe("classifyScoredMistake", () => {
       ]);
     },
   );
+
+  it.each([
+    {
+      bestCandidate: createFlushCandidate([4.2, 0, 0], 4),
+      chosenCandidate: createMockCandidate([0, 0, 0]),
+      expected: {
+        isFlushMiss: true,
+        label: "Missed flush",
+        shortLabel: "Missed flush",
+      },
+      name: "narrows pure hand loss to missed flush when 4-card flush is broken",
+    },
+    {
+      bestCandidate: createFlushCandidate([5.2, 0, 0], 4),
+      chosenCandidate: createFlushCandidate([1.0, 3.5, 0], 0),
+      expected: {
+        isFlushMiss: true,
+        label: "Missed flush loss > Crib gain",
+        shortLabel: "Missed flush > Crib",
+      },
+      name: "narrows hand loss to missed flush with offsetting crib gain",
+    },
+    {
+      bestCandidate: createFlushCandidate([8.2, 0, 0], 4),
+      chosenCandidate: createFlushCandidate([4.2, 0, 0], 4),
+      expected: {
+        isFlushMiss: false,
+        label: "Hand",
+        shortLabel: "Hand",
+      },
+      name: "does not flag missed flush when chosen also retained a flush",
+    },
+    {
+      bestCandidate: createFlushCandidate([4.2, 10, 0], 4),
+      chosenCandidate: createFlushCandidate([0, 0, 0], 0),
+      expected: {
+        isFlushMiss: false,
+        label: "Crib",
+        shortLabel: "Crib",
+      },
+      name: "does not flag missed flush when hand is not a dominant or contributing loss",
+    },
+  ])("$name", ({ bestCandidate, chosenCandidate, expected }) => {
+    const classification = classifyScoredMistake(
+      bestCandidate,
+      chosenCandidate,
+    );
+
+    expect(classification?.isFlushMiss).toBe(expected.isFlushMiss);
+    expect(classification?.label).toBe(expected.label);
+    expect(classification?.shortLabel).toBe(expected.shortLabel);
+  });
 });
 
 describe("classifyMistake", () => {
@@ -247,6 +315,15 @@ describe("classifyMistake", () => {
     expect(result).not.toBeNull();
     expect(result?.label.length).toBeGreaterThan(0);
     expect(result?.netLoss).toBeGreaterThan(0);
+  });
+
+  it("classifies an authentic decision that misses a 4-card flush", () => {
+    const flushCards = parseHand("2H,4H,6H,8H,10S,KS");
+    const result = runClassify("6H,8H", flushCards);
+
+    expect(result).not.toBeNull();
+    expect(result?.isFlushMiss).toBe(true);
+    expect(result?.label).toContain("Missed flush");
   });
 
   it("returns null when the chosen discard is optimal", () => {

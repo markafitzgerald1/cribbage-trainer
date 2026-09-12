@@ -8,15 +8,18 @@ import type {
   ExpectedPlayPointsTable,
 } from "../game/expectedPlayPoints";
 import { CARDS_PER_DISCARD } from "../game/facts";
+import type { HandPoints } from "../game/handPoints";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "./analysis";
 import { withoutFloatResidue } from "./discardQuality";
 
 export type LossComponent = "crib" | "hand" | "play";
 
 export interface ScoredMistakeCandidate {
+  readonly avgCutAddedFlushes?: number;
   readonly expectedHandPoints: number;
   readonly expectedNetPoints: number;
   readonly expectedPlayPoints: ExpectedPlayPoints;
+  readonly handPointsBreakdown?: HandPoints;
   readonly signedExpectedCribPoints: number;
 }
 
@@ -25,6 +28,7 @@ export interface MistakeClassification {
   readonly dominantComponents: readonly LossComponent[];
   readonly dominantGains: readonly LossComponent[];
   readonly handLoss: number;
+  readonly isFlushMiss: boolean;
   readonly label: string;
   readonly netLoss: number;
   readonly playLoss: number;
@@ -61,9 +65,12 @@ interface ComponentLosses {
   readonly play: number;
 }
 
-const getComponentLabel = (component: LossComponent): string => {
+const getComponentLabel = (
+  component: LossComponent,
+  isFlushMiss: boolean,
+): string => {
   if (component === "hand") {
-    return "Hand";
+    return isFlushMiss ? "Missed flush" : "Hand";
   }
   if (component === "crib") {
     return "Crib";
@@ -142,6 +149,20 @@ const getContributingLossComponents = (
   );
 };
 
+const isFlushMissMistake = (
+  best: ScoredMistakeCandidate,
+  chosen: ScoredMistakeCandidate,
+  contributingLosses: readonly LossComponent[],
+): boolean => {
+  if (!contributingLosses.includes("hand")) {
+    return false;
+  }
+  return (
+    (best.handPointsBreakdown?.flushes ?? 0) > 0 &&
+    (chosen.handPointsBreakdown?.flushes ?? 0) === 0
+  );
+};
+
 export const classifyScoredMistake = (
   best: ScoredMistakeCandidate,
   chosen: ScoredMistakeCandidate,
@@ -161,9 +182,14 @@ export const classifyScoredMistake = (
     dominantGains,
     losses,
   );
+  const isFlushMiss = isFlushMissMistake(best, chosen, contributingLosses);
 
-  const lossLabel = contributingLosses.map(getComponentLabel).join(", ");
-  const gainLabel = dominantGains.map(getComponentLabel).join(", ");
+  const lossLabel = contributingLosses
+    .map((component) => getComponentLabel(component, isFlushMiss))
+    .join(", ");
+  const gainLabel = dominantGains
+    .map((component) => getComponentLabel(component, false))
+    .join(", ");
 
   const label =
     dominantGains.length > 0
@@ -178,6 +204,7 @@ export const classifyScoredMistake = (
     dominantComponents,
     dominantGains,
     handLoss: losses.hand,
+    isFlushMiss,
     label,
     netLoss,
     playLoss: losses.play,

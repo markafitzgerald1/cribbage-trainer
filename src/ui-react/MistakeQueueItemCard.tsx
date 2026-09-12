@@ -90,6 +90,7 @@ export function MistakeQueueItemCard({
     [item, onPractice],
   );
   const effectiveReason = classification?.label ?? lossReason;
+  const effectiveShortReason = classification?.shortLabel ?? lossReason;
   const effectiveLoss = classification?.netLoss ?? item.previousDiscardLoss;
 
   return (
@@ -113,7 +114,7 @@ export function MistakeQueueItemCard({
               className={classes.componentBadge}
               title={`Previous discard (${formatNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
             >
-              Prev: {effectiveReason}
+              Prev: {effectiveShortReason}
             </span>
           )}
         </div>
