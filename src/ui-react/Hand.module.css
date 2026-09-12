@@ -17,6 +17,16 @@
   white-space: nowrap;
 }
 
+.cue {
+  color: var(--text-color);
+  font-family: var(--text-font-family);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
 .hand {
   display: flex;
   gap: 0.8em;
@@ -29,6 +39,11 @@
 }
 
 @media (aspect-ratio < 6 / 5) {
+  .cue {
+    font-size: 3.5cqw;
+    margin-bottom: 0.8cqw;
+  }
+
   .hand {
     display: grid;
 
@@ -39,6 +54,15 @@
 }
 
 @media (aspect-ratio >= 6 / 5) {
+  .figure {
+    margin-top: min(0.2rem, 0.4vw);
+  }
+
+  .cue {
+    font-size: 0.75rem;
+    margin-bottom: min(0.15rem, 0.3vw);
+  }
+
   .hand {
     gap: 0.96vw;
     justify-content: flex-start;

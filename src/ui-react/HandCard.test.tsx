@@ -44,6 +44,35 @@ describe("hand card component", () => {
     ).toBeTruthy();
   });
 
+  it("accessible name states the discard meaning", () => {
+    const card = dealCard();
+    const { getByRole } = renderCard(card);
+
+    expect(
+      getByRole("checkbox", {
+        name: `Discard ${CARD_LABELS[card.rank]}${card.suit}`,
+      }),
+    ).toBeTruthy();
+  });
+
+  it("accessible name falls back gracefully when suit is omitted", () => {
+    const { dealOrder, kept, rank } = dealCard();
+    const { getByRole } = render(
+      <HandCard
+        dealOrderIndex={dealOrder}
+        kept={kept}
+        onChange={jest.fn()}
+        rank={rank}
+      />,
+    );
+
+    expect(
+      getByRole("checkbox", {
+        name: `Discard ${CARD_LABELS[rank]}`,
+      }),
+    ).toBeTruthy();
+  });
+
   it("emits an onChange event on checkbox click", async () => {
     const user = userEvent.setup();
     const mock = jest.fn();

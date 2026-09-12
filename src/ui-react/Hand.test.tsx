@@ -41,6 +41,15 @@ describe("hand component", () => {
     expect(captionElement?.tagName).toBe("FIGCAPTION");
   });
 
+  it("renders the on-screen discard cue", () => {
+    const cueElement = dealAndRender(SortOrder.Ascending).queryByText(
+      "Select two cards to discard",
+    );
+
+    expect(cueElement).toBeTruthy();
+    expect(cueElement?.tagName).toBe("P");
+  });
+
   it("has a checkbox for each dealt card", () => {
     const { dealtHand, getAllByRole } = dealAndRender(SortOrder.Ascending);
 
