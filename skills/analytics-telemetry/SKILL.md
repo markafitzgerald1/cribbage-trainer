@@ -19,6 +19,13 @@ be inferred from repository changes.
 
 **Learnings:**
 
+- "Works with analytics consent declined" answers only whether a feature
+  depends on telemetry: the feature must keep working when collection is off.
+  It says nothing about whether consented usage should be measured. State the
+  dependency requirement first and make the measurement decision separately,
+  or the second question silently inherits the first answer. #28, #719, and
+  #19 each used the consent-declined criterion as their only analytics mention
+  and shipped without a recorded measurement decision.
 - `src/ui/loadGoogleAnalytics.ts` implements basic consent mode. Unanswered or
   declined consent must leave `dataLayer` undefined, inject no Google script,
   and send no Google request. Only accepted consent may initialize the tag; it
