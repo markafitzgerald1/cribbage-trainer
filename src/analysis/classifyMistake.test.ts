@@ -187,6 +187,22 @@ describe("classifyScoredMistake", () => {
       name: "ignores offsetting gain below display precision threshold",
     },
     {
+      best: [8, 2, 1] as const,
+      chosen: [6, 2.01, 1] as const,
+      dominant: ["hand", ...[]] as const,
+      gains: ["crib"] as const,
+      label: `${"Hand"} loss > Crib gain`,
+      name: "treats exact 0.01 offsetting gain as material at display precision boundary",
+      shortLabel: `${"Hand"} > Crib`,
+    },
+    {
+      best: [6, 2, 3] as const,
+      chosen: [4, 2, 1.01] as const,
+      dominant: ["hand", "play"] as const,
+      label: "Hand, Play",
+      name: "treats exact 0.01 gap as a dominant loss tie at display precision boundary",
+    },
+    {
       best: [2.0, 1.9, 0] as const,
       chosen: [0, 0, 3 + 0.8] as const,
       dominant: ["hand"] as const,

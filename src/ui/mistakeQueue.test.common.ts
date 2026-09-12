@@ -106,7 +106,6 @@ export const mockItemMastered: MistakeQueueItem = {
   wrong: 1,
 };
 
-/* jscpd:ignore-start */
 export const mockTradeOffClassification: MistakeClassification = {
   cribLoss: -1.3,
   dominantComponents: ["hand"],
@@ -118,4 +117,3 @@ export const mockTradeOffClassification: MistakeClassification = {
   playLoss: -0.08,
   shortLabel: "Hand > Crib",
 };
-/* jscpd:ignore-end */
