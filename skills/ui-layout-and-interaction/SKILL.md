@@ -246,3 +246,19 @@ once you are already editing layout or interaction code.
   the record is genuinely absent. Fall back to the local estimate rather
   than asserting the record non-null — the whole tally is read-only in
   that tab until reload anyway.
+- Dark themes must satisfy WCAG 2.1 SC 1.4.11 (non-text contrast) across all
+  interactive boundaries: button borders, role chips, and filter options need
+  at least 3:1 contrast against both their own fill and the adjacent surface
+  (e.g. #43a047 reaching 3.47:1 against dark modal surfaces). In modals,
+  elevated dialog surfaces must maintain distinct visual separation from the
+  felt ground behind the dimmed overlay (color-mix 50% black): thin 1px borders
+  or surfaces that closely match the dimmed backdrop leave dialogs looking
+  flat and unanchored. Frame dark modals with a crisp boundary border (e.g. 2px
+  solid #43a047) and distinct elevation.
+- Modal action bars that stick to the top (e.g. `position: sticky; top: 0`)
+  must explicitly reserve clearance for absolute-positioned header controls
+  like the top-right close button (`padding-right: 3.5rem`), and the close
+  button itself must carry an elevated stacking context (`z-index: 10`). Without
+  both, sticky action bars paint across the top-right corner when scrolled,
+  partially obscuring or entirely swallowing clicks intended for the close
+  action.
