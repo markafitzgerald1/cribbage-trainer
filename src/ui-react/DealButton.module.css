@@ -1,9 +1,9 @@
 .deal-button {
-  --bg-color: #28a745;
+  --bg-color: #197536;
   --hover-color: #34c754;
-  --active-color: #218838;
+  --active-color: #0f5527;
   --focus-shadow-color: rgb(52 208 88 / 30%);
-  --border-color: #218838;
+  --border-color: #72d572;
   --font-size-portrait: calc(var(--medium-text-font-size-portrait) * 0.6667);
   --font-size-landscape: calc(var(--medium-text-font-size-portrait) * 0.4);
   --vertical-padding-multiplier: 0.425;

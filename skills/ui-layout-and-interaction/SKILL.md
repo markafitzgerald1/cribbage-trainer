@@ -262,3 +262,18 @@ once you are already editing layout or interaction code.
   both, sticky action bars paint across the top-right corner when scrolled,
   partially obscuring or entirely swallowing clicks intended for the close
   action.
+- Primary controls on the main table ground (such as the Deal button and Enter
+  cards) must maintain at least 3:1 non-text boundary contrast against the felt
+  ground (e.g. #72d572 reaching 3.86:1 against #1f6536) and against their own
+  fill (#197536 reaching 3.15:1). Because dark grounds compress luminance,
+  darker borders cannot reach 3:1 against a dark felt ground; high-luminance
+  borders are mathematically required to establish legible component
+  boundaries for low-vision players.
+- Radio selections and filter chips (such as Dealer/Pone role selectors and
+  dialog filter groups) must distinguish their active/checked state through
+  both non-color visual indicators (such as an inline radio circle or dot
+  pseudo-element that avoids altering accessible text names) and distinct state
+  colors where the selected fill contrasts at least 3:1 against the unselected
+  state (e.g. #34c754 reaching 4.92:1 against unselected #1a4524 and 5.89:1
+  against the #10381b modal ground, paired with high-contrast #08200d text at
+  7.72:1).

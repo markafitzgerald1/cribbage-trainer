@@ -70,15 +70,32 @@
     color var(--transition-duration) var(--transition-timing);
 }
 
+.option::before {
+  border: 1.5px solid #a8d5af;
+  border-radius: 50%;
+  box-sizing: border-box;
+  content: "";
+  display: inline-block;
+  height: 0.55em;
+  margin-right: 0.35em;
+  vertical-align: middle;
+  width: 0.55em;
+}
+
 .option:hover {
   background-color: #245830;
   border-color: #34c754;
 }
 
 .input:checked + .option {
-  background-color: #197536;
-  border-color: #34c754;
-  color: #fff;
+  background-color: #34c754;
+  border-color: #08200d;
+  color: #08200d;
+}
+
+.input:checked + .option::before {
+  background-color: #08200d;
+  border: 1.5px solid #08200d;
 }
 
 .input:focus-visible + .option {
@@ -86,7 +103,8 @@
 }
 
 .input:checked + .option:hover {
-  background-color: #218838;
+  background-color: #2eb34b;
+  border-color: #08200d;
 }
 
 .horizon-notice {
