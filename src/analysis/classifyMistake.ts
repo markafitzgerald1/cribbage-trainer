@@ -76,8 +76,71 @@ const getComponentLoss = (
   return losses.play;
 };
 
-export const SIGNIFICANT_GAIN_THRESHOLD = 0.25;
-export const SIGNIFICANT_GAIN_RATIO = 0.2;
+const computeComponentLosses = (
+  best: ScoredMistakeCandidate,
+  chosen: ScoredMistakeCandidate,
+): ComponentLosses => ({
+  crib: withoutFloatResidue(
+    best.signedExpectedCribPoints - chosen.signedExpectedCribPoints,
+  ),
+  hand: withoutFloatResidue(
+    best.expectedHandPoints - chosen.expectedHandPoints,
+  ),
+  play: withoutFloatResidue(
+    best.expectedPlayPoints.delta - chosen.expectedPlayPoints.delta,
+  ),
+});
+
+const getDominantLossComponents = (
+  losses: ComponentLosses,
+): readonly LossComponent[] => {
+  const maxLoss = Math.max(0, losses.hand, losses.crib, losses.play);
+  return ORDERED_COMPONENTS.filter((component) => {
+    const loss = getComponentLoss(component, losses);
+    return loss > 0 && withoutFloatResidue(maxLoss - loss) <= DISPLAY_PRECISION;
+  });
+};
+
+const getDominantGainComponents = (
+  losses: ComponentLosses,
+): readonly LossComponent[] => {
+  const maxGain = Math.max(0, -losses.hand, -losses.crib, -losses.play);
+  if (maxGain < DISPLAY_PRECISION) {
+    return [];
+  }
+  return ORDERED_COMPONENTS.filter((component) => {
+    const gain = -getComponentLoss(component, losses);
+    return (
+      gain >= DISPLAY_PRECISION &&
+      withoutFloatResidue(maxGain - gain) <= DISPLAY_PRECISION
+    );
+  });
+};
+
+const getContributingLossComponents = (
+  dominantLosses: readonly LossComponent[],
+  dominantGains: readonly LossComponent[],
+  losses: ComponentLosses,
+): readonly LossComponent[] => {
+  if (dominantGains.length === 0) {
+    return dominantLosses;
+  }
+  const dominantLossTotal = dominantLosses.reduce(
+    (sum, component) =>
+      withoutFloatResidue(sum + getComponentLoss(component, losses)),
+    0,
+  );
+  const maxGain = dominantGains.reduce(
+    (max, component) => Math.max(max, -getComponentLoss(component, losses)),
+    0,
+  );
+  if (dominantLossTotal >= maxGain) {
+    return dominantLosses;
+  }
+  return ORDERED_COMPONENTS.filter(
+    (component) => getComponentLoss(component, losses) >= DISPLAY_PRECISION,
+  );
+};
 
 export const classifyScoredMistake = (
   best: ScoredMistakeCandidate,
@@ -90,50 +153,16 @@ export const classifyScoredMistake = (
     return null;
   }
 
-  const handLoss = withoutFloatResidue(
-    best.expectedHandPoints - chosen.expectedHandPoints,
+  const losses = computeComponentLosses(best, chosen);
+  const dominantComponents = getDominantLossComponents(losses);
+  const dominantGains = getDominantGainComponents(losses);
+  const contributingLosses = getContributingLossComponents(
+    dominantComponents,
+    dominantGains,
+    losses,
   );
-  const cribLoss = withoutFloatResidue(
-    best.signedExpectedCribPoints - chosen.signedExpectedCribPoints,
-  );
-  const playLoss = withoutFloatResidue(
-    best.expectedPlayPoints.delta - chosen.expectedPlayPoints.delta,
-  );
 
-  const maxLoss = Math.max(0, handLoss, cribLoss, playLoss);
-
-  const losses: ComponentLosses = {
-    crib: cribLoss,
-    hand: handLoss,
-    play: playLoss,
-  };
-
-  const gains: ComponentLosses = {
-    crib: -cribLoss,
-    hand: -handLoss,
-    play: -playLoss,
-  };
-
-  const dominantComponents = ORDERED_COMPONENTS.filter((component) => {
-    const loss = getComponentLoss(component, losses);
-    return loss > 0 && withoutFloatResidue(maxLoss - loss) <= DISPLAY_PRECISION;
-  });
-
-  const maxGain = Math.max(0, -handLoss, -cribLoss, -playLoss);
-  const hasSignificantGain =
-    maxGain >= SIGNIFICANT_GAIN_THRESHOLD &&
-    maxGain >= withoutFloatResidue(SIGNIFICANT_GAIN_RATIO * maxLoss);
-
-  const dominantGains = hasSignificantGain
-    ? ORDERED_COMPONENTS.filter((component) => {
-        const gain = getComponentLoss(component, gains);
-        return (
-          gain > 0 && withoutFloatResidue(maxGain - gain) <= DISPLAY_PRECISION
-        );
-      })
-    : [];
-
-  const lossLabel = dominantComponents.map(getComponentLabel).join(", ");
+  const lossLabel = contributingLosses.map(getComponentLabel).join(", ");
   const gainLabel = dominantGains.map(getComponentLabel).join(", ");
 
   const label =
@@ -145,13 +174,13 @@ export const classifyScoredMistake = (
     dominantGains.length > 0 ? `${lossLabel} > ${gainLabel}` : lossLabel;
 
   return {
-    cribLoss,
+    cribLoss: losses.crib,
     dominantComponents,
     dominantGains,
-    handLoss,
+    handLoss: losses.hand,
     label,
     netLoss,
-    playLoss,
+    playLoss: losses.play,
     shortLabel,
   };
 };

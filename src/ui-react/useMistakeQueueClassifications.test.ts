@@ -75,7 +75,9 @@ const runChunkingTest = (): readonly [string | null, string | null] => {
     // First timer tick processes first item
     advanceNextTask();
 
-    expect(rendered.result.current(queue[0]!)?.label).toBe("Hand");
+    expect(rendered.result.current(queue[0]!)?.label).toBe(
+      "Hand loss > Play gain",
+    );
     expect(rendered.result.current(queue[1]!)).toBeNull();
 
     // Second timer tick processes second item
@@ -198,7 +200,7 @@ describe("useMistakeQueueClassifications", () => {
       target: mockItemB,
     },
     {
-      expected: "Hand",
+      expected: "Hand loss > Play gain",
       expectedLossPositive: true,
       items: [mockItemA],
       name: "caches and returns classification for valid item",
@@ -239,7 +241,7 @@ describe("useMistakeQueueClassifications", () => {
   it("loads tables asynchronously when tables are initially null", async () => {
     const label = await runAsyncLoadTest();
 
-    expect(label).toBe("Hand");
+    expect(label).toBe("Hand loss > Play gain");
   });
 
   it("handles table load rejection gracefully", async () => {
@@ -263,7 +265,7 @@ describe("useMistakeQueueClassifications", () => {
   it("processes items in chunks and schedules remaining chunks", () => {
     const [secondClassification, thirdClassification] = runChunkingTest();
 
-    expect(secondClassification).toBe("Hand");
+    expect(secondClassification).toBe("Hand loss > Play gain");
     expect(thirdClassification).toBeNull();
   });
 
@@ -276,7 +278,7 @@ describe("useMistakeQueueClassifications", () => {
   it("clears classification cache via clearClassificationCache", () => {
     const [initialLabel, resetClassification] = runClearCacheTest();
 
-    expect(initialLabel).toBe("Hand");
+    expect(initialLabel).toBe("Hand loss > Play gain");
     expect(resetClassification).toBeNull();
   });
 });
