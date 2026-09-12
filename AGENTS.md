@@ -126,6 +126,9 @@
     read `skills/working-an-issue/SKILL.md`.
   - Before touching analytics consent, `gtag`, or trainer telemetry, read
     `skills/analytics-telemetry/SKILL.md`.
+  - Before shipping a user-facing feature whose usage you would want to know
+    about, read `skills/analytics-telemetry/SKILL.md`, even when no analytics
+    code is in scope.
   - Before changing the Pages workflows, the PR preview deploy, the
     `pages-content` branch, or `scripts/pagesContentMerge.mjs`, read
     `skills/pages-preview/SKILL.md`.
