@@ -28,10 +28,14 @@ const renderAndFlushPromises = async () => {
   return rendered;
 };
 
-const runRejectionTest = async (): Promise<string | null> => {
+const resetLoadersAndCache = (): void => {
   clearClassificationCache();
   cribLoader.setTableSync(null);
   playLoader.setTableSync(null);
+};
+
+const runRejectionTest = async (): Promise<string | null> => {
+  resetLoadersAndCache();
   const spy = jest
     .spyOn(cribLoader, "loadTable")
     .mockRejectedValueOnce(new Error("Network failure"));
@@ -40,6 +44,21 @@ const runRejectionTest = async (): Promise<string | null> => {
     const { result } = await renderAndFlushPromises();
 
     return result.current(mockItemA)?.label ?? null;
+  } finally {
+    spy.mockRestore();
+  }
+};
+
+const runNoUnclassifiedPreviousDiscardTest = async (): Promise<number> => {
+  resetLoadersAndCache();
+  const spy = jest.spyOn(cribLoader, "loadTable");
+  try {
+    renderHook(() => useMistakeQueueClassifications(true, [mockItemB], 10));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    return spy.mock.calls.length;
   } finally {
     spy.mockRestore();
   }
@@ -152,9 +171,7 @@ const runClassificationsTest = (
 const runAsyncLoadTest = async (): Promise<string | null> => {
   jest.useFakeTimers();
   try {
-    clearClassificationCache();
-    cribLoader.setTableSync(null);
-    playLoader.setTableSync(null);
+    resetLoadersAndCache();
 
     const asyncRender = await renderAndFlushPromises();
 
@@ -248,6 +265,12 @@ describe("useMistakeQueueClassifications", () => {
     const classification = await runRejectionTest();
 
     expect(classification).toBeNull();
+  });
+
+  it("does not load tables when items list has no unclassified previous discard", async () => {
+    const callCount = await runNoUnclassifiedPreviousDiscardTest();
+
+    expect(callCount).toBe(0);
   });
 
   it("reads null tables synchronously when play table is missing", () => {

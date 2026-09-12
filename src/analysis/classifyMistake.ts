@@ -123,43 +123,23 @@ const getMaterialGainComponents = (
     (component) => -getComponentLoss(component, losses) >= DISPLAY_PRECISION,
   );
 
-const getContributingLossComponents = (
-  dominantLosses: readonly LossComponent[],
-  gains: readonly LossComponent[],
-  losses: ComponentLosses,
-): readonly LossComponent[] => {
-  if (gains.length === 0) {
-    return dominantLosses;
-  }
-  const dominantLossTotal = dominantLosses.reduce(
-    (sum, component) =>
-      withoutFloatResidue(sum + getComponentLoss(component, losses)),
-    0,
-  );
-  const totalGain = gains.reduce(
-    (sum, component) =>
-      withoutFloatResidue(sum - getComponentLoss(component, losses)),
-    0,
-  );
-  if (dominantLossTotal >= totalGain) {
-    return dominantLosses;
-  }
-  return ORDERED_COMPONENTS.filter(
-    (component) => getComponentLoss(component, losses) >= DISPLAY_PRECISION,
-  );
-};
+const getFlushExpectedPoints = (candidate: ScoredMistakeCandidate): number =>
+  (candidate.handPointsBreakdown?.flushes ?? 0) +
+  (candidate.avgCutAddedFlushes ?? 0);
 
 const isFlushMissMistake = (
   best: ScoredMistakeCandidate,
   chosen: ScoredMistakeCandidate,
-  contributingLosses: readonly LossComponent[],
+  dominantLosses: readonly LossComponent[],
 ): boolean => {
-  if (!contributingLosses.includes("hand")) {
+  if (!dominantLosses.includes("hand")) {
     return false;
   }
+  const bestFlushEV = getFlushExpectedPoints(best);
+  const chosenFlushEV = getFlushExpectedPoints(chosen);
   return (
-    (best.handPointsBreakdown?.flushes ?? 0) > 0 &&
-    (chosen.handPointsBreakdown?.flushes ?? 0) === 0
+    bestFlushEV > 0 &&
+    withoutFloatResidue(bestFlushEV - chosenFlushEV) >= DISPLAY_PRECISION
   );
 };
 
@@ -177,14 +157,9 @@ export const classifyScoredMistake = (
   const losses = computeComponentLosses(best, chosen);
   const dominantComponents = getDominantLossComponents(losses);
   const dominantGains = getMaterialGainComponents(losses);
-  const contributingLosses = getContributingLossComponents(
-    dominantComponents,
-    dominantGains,
-    losses,
-  );
-  const isFlushMiss = isFlushMissMistake(best, chosen, contributingLosses);
+  const isFlushMiss = isFlushMissMistake(best, chosen, dominantComponents);
 
-  const lossLabel = contributingLosses
+  const lossLabel = dominantComponents
     .map((component) => getComponentLabel(component, isFlushMiss))
     .join(", ");
   const gainLabel = dominantGains

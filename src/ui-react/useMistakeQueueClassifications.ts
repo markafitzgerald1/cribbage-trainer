@@ -63,7 +63,12 @@ export const useMistakeQueueClassifications = (
   const [classifications, setClassifications] = useState(classificationCache);
 
   useEffect(() => {
-    if (show && tables === null) {
+    if (
+      show &&
+      tables === null &&
+      sortedItems !== null &&
+      sortedItems.some(hasPreviousDiscard)
+    ) {
       Promise.all([cribLoader.loadTable(), playLoader.loadTable()])
         .then(([crib, play]) => {
           setTables({ crib, play });
@@ -72,7 +77,7 @@ export const useMistakeQueueClassifications = (
           setTables(null);
         });
     }
-  }, [show, tables]);
+  }, [show, sortedItems, tables]);
 
   useEffect(() => {
     if (!show || tables === null || sortedItems === null) {

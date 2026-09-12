@@ -191,9 +191,9 @@ describe("classifyScoredMistake", () => {
       chosen: [0, 0, 3 + 0.8] as const,
       dominant: ["hand"] as const,
       gains: ["play", ...[]] as const,
-      label: "Hand, Crib loss > Play gain",
-      name: "includes additional contributing loss when a single dominant loss does not exceed the gain",
-      shortLabel: "Hand, Crib > Play",
+      label: "Hand loss > Play gain",
+      name: "restricts loss side to dominant components even when total gain exceeds dominant loss",
+      shortLabel: "Hand > Play",
     },
     {
       best: [8, 2, 3] as const,
@@ -285,6 +285,22 @@ describe("classifyScoredMistake", () => {
         shortLabel: "Crib",
       },
       name: "does not flag missed flush when hand is not a dominant or contributing loss",
+    },
+    {
+      bestCandidate: {
+        ...createFlushCandidate([4.2, 0, 0], 4),
+        avgCutAddedFlushes: 0.2,
+      },
+      chosenCandidate: {
+        ...createFlushCandidate([4.15, 0, 0], 4),
+        avgCutAddedFlushes: 0.15,
+      },
+      expected: {
+        isFlushMiss: true,
+        label: "Missed flush",
+        shortLabel: "Missed flush",
+      },
+      name: "narrows to missed flush when cut-added flush EV is lost despite retaining base flush",
     },
   ])("$name", ({ bestCandidate, chosenCandidate, expected }) => {
     const classification = classifyScoredMistake(
