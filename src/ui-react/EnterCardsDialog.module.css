@@ -158,7 +158,7 @@
 .use-hand:hover,
 .use-hand:focus {
   background-color: #218838;
-  border-color: #34c754;
+  border-color: #8cee8c;
   outline: none;
 }
 
@@ -176,7 +176,7 @@
 
 .use-hand:active {
   background-color: #218838;
-  border-color: #218838;
+  border-color: #8cee8c;
 }
 
 .use-hand:disabled,

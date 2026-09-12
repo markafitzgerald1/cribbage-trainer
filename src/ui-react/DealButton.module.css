@@ -1,6 +1,7 @@
 .deal-button {
   --bg-color: #197536;
-  --hover-color: #34c754;
+  --hover-bg-color: #218838;
+  --hover-border-color: #8cee8c;
   --active-color: #0f5527;
   --focus-shadow-color: rgb(52 208 88 / 30%);
   --border-color: #72d572;
@@ -21,8 +22,8 @@
 }
 
 .deal-button:hover {
-  background-color: var(--hover-color);
-  border-color: var(--hover-color);
+  background-color: var(--hover-bg-color);
+  border-color: var(--hover-border-color);
 }
 
 .deal-button:active {

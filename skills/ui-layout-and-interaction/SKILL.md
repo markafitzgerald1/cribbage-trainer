@@ -290,3 +290,19 @@ once you are already editing layout or interaction code.
   inline radio markers add horizontal width across every chip; capping marker
   dimensions and tightening chip padding preserves the single-line layout and
   prevents headers from eating vertical space meant for dialog content.
+- Hover and focus states for primary action buttons must maintain at least
+  3:1 contrast between the border and the interactive fill (e.g. #8cee8c border
+  reaching 3.17:1 against #218838 fill, 4.95:1 against #1f6536 felt, and 9.18:1
+  against #10381b modal ground) to ensure interactive boundaries remain legible
+  under WCAG 2.1 SC 1.4.11 during interaction.
+- Do not use positional selectors like `:last-child` for filter groups whose
+  presence depends on conditional data (such as the mistake queue's
+  Loss-severity group, which is omitted when fewer than three distinct loss
+  values exist). Scoping multi-chip portrait sizing to a dedicated class (e.g.
+  `.severity-group`) prevents child-shift regressions where other controls
+  (like Crib role) are inadvertently shrunk.
+- The analytics consent dialog and settings panel use the dark modal surface
+  (#10381b, border 2px solid #43a047, box-shadow, and #eef8ef text) rather than
+  light backgrounds. Action buttons within the consent dialog use consistent
+  dark theme action button styling (#197536 fill with #72d572 border,
+  transitioning to #218838 fill with #8cee8c border on hover and focus).

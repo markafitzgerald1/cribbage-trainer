@@ -145,8 +145,8 @@
 
 .primary:hover:not(:disabled),
 .primary:focus-visible:not(:disabled) {
-  background-color: #34c754;
-  border-color: #34c754;
+  background-color: #218838;
+  border-color: #8cee8c;
   outline: none;
 }
 
