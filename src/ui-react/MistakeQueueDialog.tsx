@@ -267,7 +267,7 @@ export function MistakeQueueDialog({
     filters.status,
   ]);
 
-  const getLossReason = useMistakeQueueClassifications(
+  const getClassification = useMistakeQueueClassifications(
     show,
     derivedQueueData?.sortedItems ?? null,
     visibleCount,
@@ -378,9 +378,9 @@ export function MistakeQueueDialog({
             <>
               {sortedItems.slice(0, visibleCount).map((item) => (
                 <MistakeQueueItemCard
+                  classification={getClassification(item)}
                   item={item}
                   key={item.handKey}
-                  lossReason={getLossReason(item)}
                   onPractice={onStartDrill}
                   sortOrder={sortOrder}
                 />

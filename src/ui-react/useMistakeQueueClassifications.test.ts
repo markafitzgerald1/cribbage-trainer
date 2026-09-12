@@ -16,6 +16,18 @@ const invalidItem: MistakeQueueItem = {
   previousDiscard: "ZZ,YY",
 };
 
+const renderAndFlushPromises = async () => {
+  const rendered = renderHook(() =>
+    useMistakeQueueClassifications(true, [mockItemA], 10),
+  );
+
+  await act(async () => {
+    await Promise.resolve();
+  });
+
+  return rendered;
+};
+
 const runRejectionTest = async (): Promise<string | null> => {
   clearClassificationCache();
   cribLoader.setTableSync(null);
@@ -25,15 +37,9 @@ const runRejectionTest = async (): Promise<string | null> => {
     .mockRejectedValueOnce(new Error("Network failure"));
 
   try {
-    const { result } = renderHook(() =>
-      useMistakeQueueClassifications(true, [mockItemA], 10),
-    );
+    const { result } = await renderAndFlushPromises();
 
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    return result.current(mockItemA);
+    return result.current(mockItemA)?.label ?? null;
   } finally {
     spy.mockRestore();
   }
@@ -42,7 +48,7 @@ const runRejectionTest = async (): Promise<string | null> => {
 const createChunkTestHarness = (keyPrefix: string) => {
   clearClassificationCache();
   setAnalysisTables();
-  const queue = Array.from({ length: 7 }, (_, index) => ({
+  const queue = Array.from({ length: 3 }, (_, index) => ({
     ...mockItemA,
     handKey: `${keyPrefix}_${index}`,
   }));
@@ -57,18 +63,27 @@ const runChunkingTest = (): readonly [string | null, string | null] => {
   jest.useFakeTimers();
   try {
     const { queue, rendered } = createChunkTestHarness("hand_chunk");
+    const advanceNextTask = () => {
+      act(() => {
+        jest.runOnlyPendingTimers();
+      });
+    };
 
-    expect(rendered.result.current(queue[0]!)).toBe("Hand");
-    expect(rendered.result.current(queue[4]!)).toBe("Hand");
-    expect(rendered.result.current(queue[5]!)).toBeNull();
+    // Initially unclassified before timer fires (non-blocking mount)
+    expect(rendered.result.current(queue[0]!)).toBeNull();
 
-    act(() => {
-      jest.runOnlyPendingTimers();
-    });
+    // First timer tick processes first item
+    advanceNextTask();
+
+    expect(rendered.result.current(queue[0]!)?.label).toBe("Hand");
+    expect(rendered.result.current(queue[1]!)).toBeNull();
+
+    // Second timer tick processes second item
+    advanceNextTask();
 
     return [
-      rendered.result.current(queue[5]!),
-      rendered.result.current(queue[6]!),
+      rendered.result.current(queue[1]!)?.label ?? null,
+      rendered.result.current(queue[2]!)?.label ?? null,
     ];
   } finally {
     jest.useRealTimers();
@@ -91,10 +106,92 @@ const runUnmountTest = (): number => {
   }
 };
 
+interface ClassificationTestResult {
+  readonly isLossPositive: boolean;
+  readonly label: string | null;
+}
+
+const renderAndRunTimers = (
+  show: boolean,
+  items: readonly MistakeQueueItem[] | null,
+) => {
+  const rendered = renderHook(() =>
+    useMistakeQueueClassifications(show, items, 10),
+  );
+
+  act(() => {
+    jest.runAllTimers();
+  });
+
+  return rendered;
+};
+
+const runClassificationsTest = (
+  show: boolean,
+  items: readonly MistakeQueueItem[] | null,
+  target: MistakeQueueItem,
+): ClassificationTestResult => {
+  jest.useFakeTimers();
+  try {
+    clearClassificationCache();
+    setAnalysisTables();
+
+    const { result } = renderAndRunTimers(show, items);
+    const classification = result.current(target);
+    const label = classification?.label ?? null;
+    const isLossPositive = (classification?.netLoss ?? 0) > 0;
+
+    return { isLossPositive, label };
+  } finally {
+    jest.useRealTimers();
+  }
+};
+
+const runAsyncLoadTest = async (): Promise<string | null> => {
+  jest.useFakeTimers();
+  try {
+    clearClassificationCache();
+    cribLoader.setTableSync(null);
+    playLoader.setTableSync(null);
+
+    const asyncRender = await renderAndFlushPromises();
+
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    return asyncRender.result.current(mockItemA)?.label ?? null;
+  } finally {
+    jest.useRealTimers();
+  }
+};
+
+const runClearCacheTest = (): readonly [string | null, unknown] => {
+  jest.useFakeTimers();
+  try {
+    clearClassificationCache();
+    setAnalysisTables();
+
+    const initialRender = renderAndRunTimers(true, [mockItemA]);
+    const initialLabel = initialRender.result.current(mockItemA)?.label ?? null;
+
+    clearClassificationCache();
+
+    const resetRender = renderHook(() =>
+      useMistakeQueueClassifications(false, [mockItemA], 10),
+    );
+
+    return [initialLabel, resetRender.result.current(mockItemA)];
+  } finally {
+    jest.useRealTimers();
+  }
+};
+
 describe("useMistakeQueueClassifications", () => {
   it.each([
     {
       expected: null,
+      expectedLossPositive: false,
       items: [mockItemB],
       name: "returns null when previousDiscard is null",
       show: true,
@@ -102,6 +199,7 @@ describe("useMistakeQueueClassifications", () => {
     },
     {
       expected: "Hand",
+      expectedLossPositive: true,
       items: [mockItemA],
       name: "caches and returns classification for valid item",
       show: true,
@@ -109,6 +207,7 @@ describe("useMistakeQueueClassifications", () => {
     },
     {
       expected: null,
+      expectedLossPositive: false,
       items: [invalidItem],
       name: "caches null when previousDiscard cannot be parsed",
       show: true,
@@ -116,6 +215,7 @@ describe("useMistakeQueueClassifications", () => {
     },
     {
       expected: null,
+      expectedLossPositive: false,
       items: [mockItemA],
       name: "does not classify when show is false",
       show: false,
@@ -123,38 +223,23 @@ describe("useMistakeQueueClassifications", () => {
     },
     {
       expected: null,
+      expectedLossPositive: false,
       items: null,
       name: "does not classify when items is null",
       show: true,
       target: mockItemA,
     },
-  ])("$name", ({ expected, items, show, target }) => {
-    clearClassificationCache();
-    setAnalysisTables();
+  ])("$name", ({ expected, expectedLossPositive, items, show, target }) => {
+    const result = runClassificationsTest(show, items, target);
 
-    const { result } = renderHook(() =>
-      useMistakeQueueClassifications(show, items, 10),
-    );
-
-    expect(result.current(target)).toBe(expected);
+    expect(result.label).toBe(expected);
+    expect(result.isLossPositive).toBe(expectedLossPositive);
   });
 
   it("loads tables asynchronously when tables are initially null", async () => {
-    clearClassificationCache();
-    cribLoader.setTableSync(null);
-    playLoader.setTableSync(null);
+    const label = await runAsyncLoadTest();
 
-    const asyncRender = renderHook(() =>
-      useMistakeQueueClassifications(true, [mockItemA], 10),
-    );
-
-    expect(asyncRender.result.current(mockItemA)).toBeNull();
-
-    await act(async () => {
-      await Promise.resolve();
-    });
-
-    expect(asyncRender.result.current(mockItemA)).toBe("Hand");
+    expect(label).toBe("Hand");
   });
 
   it("handles table load rejection gracefully", async () => {
@@ -176,10 +261,10 @@ describe("useMistakeQueueClassifications", () => {
   });
 
   it("processes items in chunks and schedules remaining chunks", () => {
-    const [sixthClassification, seventhClassification] = runChunkingTest();
+    const [secondClassification, thirdClassification] = runChunkingTest();
 
-    expect(sixthClassification).toBe("Hand");
-    expect(seventhClassification).toBe("Hand");
+    expect(secondClassification).toBe("Hand");
+    expect(thirdClassification).toBeNull();
   });
 
   it("clears scheduled timeout when unmounted mid-chunking", () => {
@@ -189,21 +274,9 @@ describe("useMistakeQueueClassifications", () => {
   });
 
   it("clears classification cache via clearClassificationCache", () => {
-    clearClassificationCache();
-    setAnalysisTables();
+    const [initialLabel, resetClassification] = runClearCacheTest();
 
-    const initialRender = renderHook(() =>
-      useMistakeQueueClassifications(true, [mockItemA], 10),
-    );
-
-    expect(initialRender.result.current(mockItemA)).toBe("Hand");
-
-    clearClassificationCache();
-
-    const resetRender = renderHook(() =>
-      useMistakeQueueClassifications(false, [mockItemA], 10),
-    );
-
-    expect(resetRender.result.current(mockItemA)).toBeNull();
+    expect(initialLabel).toBe("Hand");
+    expect(resetClassification).toBeNull();
   });
 });

@@ -66,67 +66,66 @@ const REPORTED_ANALYSIS_CASES = [
   },
 ];
 
-describe("scored possible keep discards component", () => {
-  const mathRandom = Math.random;
+const mathRandom = Math.random;
 
-  interface RenderOptions {
-    readonly cribRole?: CribRole;
-    readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
-    readonly onScoreSortKeyChange?: (
-      scoreSortKey: ScoredKeepDiscardSortKey,
-    ) => void;
-    readonly preload?: boolean;
-    readonly scoreSortKey?: ScoredKeepDiscardSortKey;
+interface RenderOptions {
+  readonly cribRole?: CribRole;
+  readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
+  readonly onScoreSortKeyChange?: (
+    scoreSortKey: ScoredKeepDiscardSortKey,
+  ) => void;
+  readonly preload?: boolean;
+  readonly scoreSortKey?: ScoredKeepDiscardSortKey;
+}
+
+const renderScoredPossibleKeepDiscards = (
+  dealtCards: DealtCard[],
+  {
+    cribRole = CribRole.Dealer,
+    onAnalysisRendered = jest.fn(),
+    onScoreSortKeyChange = jest.fn(),
+    preload = true,
+    scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
+  }: RenderOptions = {},
+) => {
+  if (preload) {
+    setTableSync(
+      expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+    );
+    setPlayTableSync(
+      expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
+    );
   }
 
-  const renderScoredPossibleKeepDiscards = (
-    dealtCards: DealtCard[],
-    {
-      cribRole = CribRole.Dealer,
-      onAnalysisRendered = jest.fn(),
-      onScoreSortKeyChange = jest.fn(),
-      preload = true,
-      scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
-    }: RenderOptions = {},
-  ) => {
-    if (preload) {
-      setTableSync(
-        expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
-      );
-      setPlayTableSync(
-        expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
-      );
-    }
+  return render(
+    <ScoredPossibleKeepDiscards
+      cribRole={cribRole}
+      dealtCards={dealtCards}
+      onAnalysisRendered={onAnalysisRendered}
+      onScoreSortKeyChange={onScoreSortKeyChange}
+      scoreSortKey={scoreSortKey}
+      sortOrder={SortOrder.Ascending}
+    />,
+  );
+};
 
-    return render(
-      <ScoredPossibleKeepDiscards
-        cribRole={cribRole}
-        dealtCards={dealtCards}
-        onAnalysisRendered={onAnalysisRendered}
-        onScoreSortKeyChange={onScoreSortKeyChange}
-        scoreSortKey={scoreSortKey}
-        sortOrder={SortOrder.Ascending}
-      />,
-    );
-  };
+const dealAndRender = () => {
+  const dealtHand = dealHand(mathRandom);
+  const { container } = renderScoredPossibleKeepDiscards(dealtHand);
 
-  const dealAndRender = () => {
-    const dealtHand = dealHand(mathRandom);
-    const { container } = renderScoredPossibleKeepDiscards(dealtHand);
+  return { container, dealtHand };
+};
 
-    return { container, dealtHand };
-  };
-  const getColumnValues = (container: HTMLElement, cellIndex: number) =>
-    Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr")).map(
-      (row) => {
-        const cellText = row.cells
-          .item(cellIndex)
-          ?.textContent?.replace("▸", "");
+const getColumnValues = (container: HTMLElement, cellIndex: number) =>
+  Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr")).map(
+    (row) => {
+      const cellText = row.cells.item(cellIndex)?.textContent?.replace("▸", "");
 
-        return Number(cellText);
-      },
-    );
+      return Number(cellText);
+    },
+  );
 
+describe("scored possible keep discards component", () => {
   it("should render each possible keep and discard pair exactly once", () => {
     const { container } = dealAndRender();
 
@@ -315,5 +314,26 @@ describe("scored possible keep discards component", () => {
     // Eventually should render content
 
     await expect(expectLoaded()).resolves.toBeTruthy();
+  });
+
+  it("renders optimal discard caption when chosen discard is optimal", () => {
+    const cards = parseHand("5H,5D,6H,7H,8H,9H");
+    const dealtCards = toDealtCards(cards, parseHand("5H,5D"));
+    const { container } = renderScoredPossibleKeepDiscards(dealtCards);
+
+    expect(container.querySelector("figcaption")?.textContent).toBe(
+      "Optimal discard",
+    );
+  });
+
+  it("renders sub-optimal caption with diagnostic reason when chosen discard is sub-optimal", () => {
+    const cards = parseHand("4H,5D,KH,6H,8C,KC");
+    const dealtCards = toDealtCards(cards, parseHand("KH,KC"));
+    const { container } = renderScoredPossibleKeepDiscards(dealtCards);
+    const caption = container.querySelector("figcaption");
+
+    expect(caption).not.toBeNull();
+    expect(caption?.textContent).toContain("Sub-optimal:");
+    expect(caption?.textContent).toContain("Hand loss > Crib gain");
   });
 });

@@ -2,9 +2,13 @@ import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
+import {
+  mockItemA,
+  mockTradeOffClassification,
+} from "../ui/mistakeQueue.test.common";
+import { CribRole } from "../game/expectedCribPoints";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
-import { mockItemA } from "../ui/mistakeQueue.test.common";
 
 interface RenderCardOptions {
   readonly item?: typeof mockItemA;
@@ -34,6 +38,24 @@ describe("mistakeQueueItemCard", () => {
     expect(getByText("Prev: Crib")).toBeInTheDocument();
     expect(
       getByTitle("Previous discard (1.00 pts lost) driven by Crib"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders loss reason and recomputed loss when classification is provided", () => {
+    const { getByText, getByTitle } = render(
+      <MistakeQueueItemCard
+        classification={mockTradeOffClassification}
+        item={mockItemA}
+        onPractice={null}
+        sortOrder={SortOrder.DealOrder}
+      />,
+    );
+
+    expect(getByText("Prev: Hand loss > Crib gain")).toBeInTheDocument();
+    expect(
+      getByTitle(
+        "Previous discard (0.10 pts lost) driven by Hand loss > Crib gain",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -67,18 +89,41 @@ describe("mistakeQueueItemCard", () => {
     expect(queryByRole("button", { name: "Practice this" })).toBeNull();
   });
 
-  it("renders mastered state correctly", () => {
-    const { getByText } = renderCard({
-      item: {
-        ...mockItemA,
-        isMastered: true,
-        lossQuantile: "medium",
-      },
-    });
+  it.each([
+    {
+      cribRole: mockItemA.cribRole,
+      isMastered: true,
+      quantile: "medium" as const,
+      role: "Dealer",
+    },
+    {
+      cribRole: mockItemA.cribRole,
+      isMastered: false,
+      quantile: "high" as const,
+      role: "Dealer",
+    },
+    {
+      cribRole: CribRole.Pone,
+      isMastered: false,
+      quantile: "low" as const,
+      role: "Pone",
+    },
+  ])(
+    "renders quantile $quantile and role $role",
+    ({ cribRole, isMastered, quantile, role }) => {
+      const { getByText } = renderCard({
+        item: {
+          ...mockItemA,
+          cribRole,
+          isMastered,
+          lossQuantile: quantile,
+        },
+      });
 
-    expect(getByText("Mastered")).toBeInTheDocument();
-    expect(getByText("medium")).toBeInTheDocument();
-  });
+      expect(getByText(quantile)).toBeInTheDocument();
+      expect(getByText(role)).toBeInTheDocument();
+    },
+  );
 
   it("renders fallback text when previous discard is null", () => {
     const { getByText } = renderCard({

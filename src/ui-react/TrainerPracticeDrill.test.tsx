@@ -7,6 +7,7 @@ import {
   createSequenceGenerator,
   getHandText,
   renderTrainerWithInitialProps,
+  setAnalysisTables,
 } from "./Trainer.test.common";
 import {
   clearDiscardTally,
@@ -23,6 +24,7 @@ import userEvent from "@testing-library/user-event";
 const MISTAKE_HAND = "5H,6H,7H,8H,9H,10H";
 
 const seedMistakeHand = () => {
+  setAnalysisTables();
   clearDiscardTally();
   recordDiscardDecision({
     at: Date.now(),

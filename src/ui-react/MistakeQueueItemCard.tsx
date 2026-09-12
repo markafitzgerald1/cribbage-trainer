@@ -6,6 +6,7 @@ import {
   SUCCESSES_FOR_MASTERY,
 } from "../ui/mistakeQueue";
 import { CribRole } from "../game/expectedCribPoints";
+import type { MistakeClassification } from "../analysis/classifyMistake";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { useMemo } from "react";
@@ -14,6 +15,7 @@ const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
 
 export interface MistakeQueueItemCardProps {
+  readonly classification?: MistakeClassification | null;
   readonly item: MistakeQueueItem;
   readonly lossReason?: string | null;
   readonly onPractice: ((item: MistakeQueueItem) => void) | null;
@@ -71,6 +73,7 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
   );
 
 export function MistakeQueueItemCard({
+  classification = null,
   item,
   lossReason = null,
   onPractice,
@@ -83,6 +86,8 @@ export function MistakeQueueItemCard({
     () => (onPractice === null ? null : () => onPractice(item)),
     [item, onPractice],
   );
+  const effectiveReason = classification?.label ?? lossReason;
+  const effectiveLoss = classification?.netLoss ?? item.previousDiscardLoss;
 
   return (
     <div className={classes.itemCard}>
@@ -99,13 +104,13 @@ export function MistakeQueueItemCard({
               {item.lossQuantile}
             </span>
           )}
-          {lossReason === null ? null : (
+          {effectiveReason === null ? null : (
             <span
-              aria-label={`Previous discard driven by ${lossReason}`}
+              aria-label={`Previous discard driven by ${effectiveReason}`}
               className={classes.componentBadge}
-              title={`Previous discard (${item.previousDiscardLoss.toFixed(DECIMAL_DIGITS)} pts lost) driven by ${lossReason}`}
+              title={`Previous discard (${effectiveLoss.toFixed(DECIMAL_DIGITS)} pts lost) driven by ${effectiveReason}`}
             >
-              Prev: {lossReason}
+              Prev: {effectiveReason}
             </span>
           )}
         </div>
@@ -136,5 +141,6 @@ export function MistakeQueueItemCard({
 }
 
 MistakeQueueItemCard.defaultProps = {
+  classification: null,
   lossReason: null,
 };

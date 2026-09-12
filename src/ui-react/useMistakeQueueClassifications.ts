@@ -1,10 +1,13 @@
 import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import * as playLoader from "../game/expectedPlayPointsTableLoader";
+import {
+  type MistakeClassification,
+  classifyMistake,
+} from "../analysis/classifyMistake";
 import { useCallback, useEffect, useState } from "react";
 import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
-import { classifyMistake } from "../analysis/classifyMistake";
 
 interface ScoringTables {
   readonly crib: ExpectedCribPointsTable;
@@ -17,7 +20,7 @@ const readSynchronousTables = (): ScoringTables | null => {
   return crib !== null && play !== null ? { crib, play } : null;
 };
 
-const classificationCache = new Map<string, string | null>();
+const classificationCache = new Map<string, MistakeClassification | null>();
 
 export const clearClassificationCache = (): void => {
   classificationCache.clear();
@@ -39,7 +42,7 @@ const classifyAndCacheItem = (
   });
   classificationCache.set(
     `${item.handKey}#${item.previousDiscard}`,
-    classification?.label ?? null,
+    classification,
   );
 };
 
@@ -47,13 +50,13 @@ const hasPreviousDiscard = (item: MistakeQueueItem): item is UnclassifiedItem =>
   item.previousDiscard !== null &&
   !classificationCache.has(`${item.handKey}#${item.previousDiscard}`);
 
-const CHUNK_SIZE = 5;
+const CHUNK_SIZE = 1;
 
 export const useMistakeQueueClassifications = (
   show: boolean,
   sortedItems: readonly MistakeQueueItem[] | null,
   visibleCount: number,
-): ((item: MistakeQueueItem) => string | null) => {
+): ((item: MistakeQueueItem) => MistakeClassification | null) => {
   const [tables, setTables] = useState<ScoringTables | null>(
     readSynchronousTables,
   );
@@ -86,8 +89,9 @@ export const useMistakeQueueClassifications = (
     }
 
     let index = 0;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
+    const timeoutRef = {
+      current: null as ReturnType<typeof setTimeout> | null,
+    };
     const processNextChunk = () => {
       const chunk = pendingItems.slice(index, index + CHUNK_SIZE);
       for (const item of chunk) {
@@ -96,21 +100,19 @@ export const useMistakeQueueClassifications = (
       index += chunk.length;
       setClassifications(new Map(classificationCache));
       if (index < pendingItems.length) {
-        timeoutId = setTimeout(processNextChunk, 0);
+        timeoutRef.current = setTimeout(processNextChunk, 0);
       }
     };
 
-    processNextChunk();
+    timeoutRef.current = setTimeout(processNextChunk, 0);
 
     return () => {
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-      }
+      clearTimeout(timeoutRef.current as ReturnType<typeof setTimeout>);
     };
   }, [show, sortedItems, tables, visibleCount]);
 
   return useCallback(
-    (item: MistakeQueueItem): string | null =>
+    (item: MistakeQueueItem): MistakeClassification | null =>
       item.previousDiscard === null
         ? null
         : (classifications.get(`${item.handKey}#${item.previousDiscard}`) ??

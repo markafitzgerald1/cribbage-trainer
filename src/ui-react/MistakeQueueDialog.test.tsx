@@ -22,6 +22,7 @@ import { fireEvent, render, within } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import type { StoredTally } from "../ui/discardTally";
+import { clearClassificationCache } from "./useMistakeQueueClassifications";
 import { createElement } from "react";
 import { setAnalysisTables } from "./Trainer.test.common";
 
@@ -413,44 +414,80 @@ describe("mistake queue dialog", () => {
     });
 
     it("renders dominant component badges for mistake cards", async () => {
+      clearClassificationCache();
       const { findAllByTitle } = renderQueueDialog();
-      const badges = await findAllByTitle(/driven by/u);
+      const badges = await findAllByTitle(/driven by/u, {}, { timeout: 5000 });
 
       expect(badges.length).toBeGreaterThan(0);
     });
 
+    const runAsyncTableLoad = async () => {
+      clearClassificationCache();
+      try {
+        cribLoader.setTableSync(null);
+        playLoader.setTableSync(null);
+        const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
+
+        return await rendered.findByTitle(
+          /driven by Hand/u,
+          {},
+          { timeout: 5000 },
+        );
+      } finally {
+        setAnalysisTables();
+      }
+    };
+
     it("asynchronously loads tables when initial tables are null", async () => {
-      cribLoader.setTableSync(null);
-      playLoader.setTableSync(null);
-      const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
-      const badge = await rendered.findByTitle(/driven by Hand/u);
+      const badge = await runAsyncTableLoad();
 
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveTextContent("Prev: Hand");
     });
 
-    it("handles table load failure gracefully", async () => {
-      cribLoader.setTableSync(null);
-      playLoader.setTableSync(null);
+    const runTableLoadFailure = async () => {
       const spy = jest
         .spyOn(cribLoader, "loadTable")
         .mockRejectedValueOnce(new Error("Table error"));
-      const { findByRole } = renderQueueDialog({ skipSetAnalysisTables: true });
-      const region = await findByRole("region", { name: "Mistake queue" });
-      const scoped = within(region);
-      spy.mockRestore();
+      try {
+        cribLoader.setTableSync(null);
+        playLoader.setTableSync(null);
+        const { findByRole } = renderQueueDialog({
+          skipSetAnalysisTables: true,
+        });
+        const region = await findByRole("region", { name: "Mistake queue" });
+
+        return within(region);
+      } finally {
+        spy.mockRestore();
+        setAnalysisTables();
+      }
+    };
+
+    it("handles table load failure gracefully", async () => {
+      const scoped = await runTableLoadFailure();
 
       expect(scoped.getByText(/Needs practice/u)).toBeInTheDocument();
     });
 
+    const runPartialTablePresence = () => {
+      try {
+        setAnalysisTables();
+        playLoader.setTableSync(null);
+        const { queryByRole, unmount } = renderQueueDialog({
+          skipSetAnalysisTables: true,
+        });
+        const region = queryByRole("region", { name: "Mistake queue" });
+        unmount();
+
+        return region;
+      } finally {
+        setAnalysisTables();
+      }
+    };
+
     it("handles partial synchronous table presence", () => {
-      setAnalysisTables();
-      playLoader.setTableSync(null);
-      const { queryByRole, unmount } = renderQueueDialog({
-        skipSetAnalysisTables: true,
-      });
-      const region = queryByRole("region", { name: "Mistake queue" });
-      unmount();
+      const region = runPartialTablePresence();
 
       expect(region).not.toBeNull();
     });

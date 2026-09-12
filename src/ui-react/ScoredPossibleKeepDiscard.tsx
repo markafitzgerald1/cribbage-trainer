@@ -3,19 +3,21 @@ import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
 import { useCallback, useState } from "react";
 import type { Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
+import type { MistakeClassification } from "../analysis/classifyMistake";
 import { PossibleHand } from "./PossibleHand";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
 
 export interface ScoredPossibleKeepDiscardProps {
+  readonly classification?: MistakeClassification | null;
+  readonly cribRole: CribRole;
+  readonly isHighlighted: boolean;
+  readonly rowIndex: number;
   readonly scoredKeepDiscard: ScoredKeepDiscard<
     Card & { readonly dealOrder: number }
   >;
-  readonly cribRole: CribRole;
   readonly sortOrder: SortOrder;
-  readonly isHighlighted: boolean;
-  readonly rowIndex: number;
 }
 
 const EXPECTED_POINTS_FRACTION_DIGITS = 2;
@@ -34,6 +36,16 @@ const toAlignedFixed = (points: number): string => {
     .replace("-", MINUS_SIGN);
 };
 
+const getRowTitle = (classification?: MistakeClassification | null): string => {
+  if (classification) {
+    const loss = classification.netLoss.toFixed(
+      EXPECTED_POINTS_FRACTION_DIGITS,
+    );
+    return `Chosen discard (${loss} pts lost): ${classification.label}`;
+  }
+  return "Optimal discard";
+};
+
 const formatDiscardLabel = (discard: readonly Card[]): string => {
   const [firstCard, secondCard] = discard as unknown as readonly [Card, Card];
   const firstString = `${firstCard.rankLabel}${firstCard.suit}`;
@@ -49,6 +61,7 @@ const formatSignedExpectedPoints = (points: number): string => {
 };
 
 export function ScoredPossibleKeepDiscard({
+  classification,
   scoredKeepDiscard,
   cribRole,
   sortOrder,
@@ -122,20 +135,37 @@ export function ScoredPossibleKeepDiscard({
     </span>
   );
 
+  const rowContent = (
+    <>
+      <td>{renderHandDiscardCell()}</td>
+      <td className={classes.scoreCell}>{handExpectedTotal}</td>
+      <td className={classes.scoreCell}>{cribExpectedTotal}</td>
+      <td className={classes.scoreCell}>{playExpectedTotal}</td>
+      <td className={classes.netScoreCell}>{netExpectedTotal}</td>
+    </>
+  );
+  const rowClassName = `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${
+    isHighlighted ? classes.highlighted : ""
+  } ${classes.clickable}`;
+
   return (
     <>
-      <tr
-        className={`${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${
-          isHighlighted ? classes.highlighted : ""
-        } ${classes.clickable}`}
-        onClick={handleRowClick}
-      >
-        <td>{renderHandDiscardCell()}</td>
-        <td className={classes.scoreCell}>{handExpectedTotal}</td>
-        <td className={classes.scoreCell}>{cribExpectedTotal}</td>
-        <td className={classes.scoreCell}>{playExpectedTotal}</td>
-        <td className={classes.netScoreCell}>{netExpectedTotal}</td>
-      </tr>
+      {isHighlighted ? (
+        <tr
+          className={rowClassName}
+          onClick={handleRowClick}
+          title={getRowTitle(classification)}
+        >
+          {rowContent}
+        </tr>
+      ) : (
+        <tr
+          className={rowClassName}
+          onClick={handleRowClick}
+        >
+          {rowContent}
+        </tr>
+      )}
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow
           cribRole={cribRole}
@@ -146,3 +176,7 @@ export function ScoredPossibleKeepDiscard({
     </>
   );
 }
+
+ScoredPossibleKeepDiscard.defaultProps = {
+  classification: null,
+};

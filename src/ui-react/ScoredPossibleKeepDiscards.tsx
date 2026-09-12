@@ -6,12 +6,21 @@ import {
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
 import {
+  EXPECTED_POINTS_FRACTION_DIGITS,
+  type MistakeClassification,
+  classifyScoredMistake,
+} from "../analysis/classifyMistake";
+import {
   type MouseEvent,
   useCallback,
   useEffect,
   useMemo,
   useState,
 } from "react";
+import {
+  type ScoredKeepDiscard,
+  allScoredKeepDiscardsByExpectedNetScoreDescending,
+} from "../analysis/analysis";
 import {
   ScoredKeepDiscardSortKey,
   compareByExpectedScoreThenRankDescending,
@@ -21,7 +30,6 @@ import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
-import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
 import { getDiscardQuality } from "../analysis/discardQuality";
 
 export interface ScoredPossibleKeepDiscardsProps {
@@ -92,16 +100,44 @@ const scoreColumns = [
   },
 ] as const;
 
-export function ScoredPossibleKeepDiscards({
-  cribRole,
-  dealtCards,
-  loadCribTable = cribLoader.loadTable,
-  loadPlayTable = playLoader.loadTable,
-  onAnalysisRendered,
-  onScoreSortKeyChange,
-  scoreSortKey,
-  sortOrder,
-}: ScoredPossibleKeepDiscardsProps) {
+interface ChosenDiagnosticInfo {
+  readonly chosenClassification: MistakeClassification | null;
+  readonly hasChosenCandidate: boolean;
+}
+
+const useChosenDiagnosticInfo = (
+  scoredOptions: readonly ScoredKeepDiscard<DealtCard>[],
+): ChosenDiagnosticInfo =>
+  useMemo(() => {
+    const chosen =
+      scoredOptions.find((option) =>
+        option.discard.every((card) => !card.kept),
+      ) ?? null;
+    const best = scoredOptions[0] ?? null;
+    const chosenClassification =
+      best !== null && chosen !== null
+        ? classifyScoredMistake(best, chosen)
+        : null;
+
+    return {
+      chosenClassification,
+      hasChosenCandidate: chosen !== null,
+    };
+  }, [scoredOptions]);
+
+interface ExpectedTablesState {
+  readonly handleRetry: () => void;
+  readonly loadError: boolean;
+  readonly tables: {
+    readonly crib: ExpectedCribPointsTable;
+    readonly play: ExpectedPlayPointsTable;
+  } | null;
+}
+
+const useExpectedTables = (
+  loadCribTable: () => Promise<ExpectedCribPointsTable>,
+  loadPlayTable: () => Promise<ExpectedPlayPointsTable>,
+): ExpectedTablesState => {
   const [tables, setTables] = useState<{
     readonly crib: ExpectedCribPointsTable;
     readonly play: ExpectedPlayPointsTable;
@@ -130,6 +166,24 @@ export function ScoredPossibleKeepDiscards({
     setRetryCount((prev) => prev + 1);
   }, []);
 
+  return { handleRetry, loadError, tables };
+};
+
+export function ScoredPossibleKeepDiscards({
+  cribRole,
+  dealtCards,
+  loadCribTable = cribLoader.loadTable,
+  loadPlayTable = playLoader.loadTable,
+  onAnalysisRendered,
+  onScoreSortKeyChange,
+  scoreSortKey,
+  sortOrder,
+}: ScoredPossibleKeepDiscardsProps) {
+  const { handleRetry, loadError, tables } = useExpectedTables(
+    loadCribTable,
+    loadPlayTable,
+  );
+
   const scoredKeepDiscardsByNetScore = useMemo(
     () =>
       tables
@@ -140,6 +194,9 @@ export function ScoredPossibleKeepDiscards({
           )
         : [],
     [cribRole, dealtCards, tables],
+  );
+  const { chosenClassification, hasChosenCandidate } = useChosenDiagnosticInfo(
+    scoredKeepDiscardsByNetScore,
   );
   const renderedAnalysis = useMemo(
     (): RenderedAnalysis => ({
@@ -233,25 +290,57 @@ export function ScoredPossibleKeepDiscards({
     </thead>
   );
 
+  const renderCaption = () => {
+    if (!hasChosenCandidate) {
+      return null;
+    }
+    return (
+      <figcaption className={classes.diagnosticCaption}>
+        {chosenClassification === null ? (
+          <span className={classes.optimalBadge}>Optimal discard</span>
+        ) : (
+          <>
+            <span className={classes.subOptimalBadge}>
+              Sub-optimal:{" "}
+              {chosenClassification.netLoss.toFixed(
+                EXPECTED_POINTS_FRACTION_DIGITS,
+              )}{" "}
+              pts lost
+            </span>
+            <span className={classes.diagnosticReason}>
+              {chosenClassification.label}
+            </span>
+          </>
+        )}
+      </figcaption>
+    );
+  };
+
   const renderScoringTableBody = () => (
     <tbody>
-      {scoredKeepDiscards.map((scoredKeepDiscard, index) => (
-        <ScoredPossibleKeepDiscard
-          cribRole={cribRole}
-          isHighlighted={scoredKeepDiscard.keep.every((card) => card.kept)}
-          key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-            .map((dealtCard) => dealtCard.dealOrder)
-            .join("")}
-          rowIndex={index}
-          scoredKeepDiscard={scoredKeepDiscard}
-          sortOrder={sortOrder}
-        />
-      ))}
+      {scoredKeepDiscards.map((scoredKeepDiscard, index) => {
+        const isHighlighted = scoredKeepDiscard.keep.every((card) => card.kept);
+
+        return (
+          <ScoredPossibleKeepDiscard
+            classification={isHighlighted ? chosenClassification : null}
+            cribRole={cribRole}
+            isHighlighted={isHighlighted}
+            key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
+              .map((dealtCard) => dealtCard.dealOrder)
+              .join("")}
+            rowIndex={index}
+            scoredKeepDiscard={scoredKeepDiscard}
+            sortOrder={sortOrder}
+          />
+        );
+      })}
     </tbody>
   );
 
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
+      {renderCaption()}
       <div className={classes.tableContainer}>
         <table>
           <colgroup>

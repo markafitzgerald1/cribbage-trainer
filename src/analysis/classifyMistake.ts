@@ -23,10 +23,12 @@ export interface ScoredMistakeCandidate {
 export interface MistakeClassification {
   readonly cribLoss: number;
   readonly dominantComponents: readonly LossComponent[];
+  readonly dominantGains: readonly LossComponent[];
   readonly handLoss: number;
   readonly label: string;
   readonly netLoss: number;
   readonly playLoss: number;
+  readonly shortLabel: string;
 }
 
 export interface ClassifyMistakeParams {
@@ -74,6 +76,9 @@ const getComponentLoss = (
   return losses.play;
 };
 
+export const SIGNIFICANT_GAIN_THRESHOLD = 0.25;
+export const SIGNIFICANT_GAIN_RATIO = 0.2;
+
 export const classifyScoredMistake = (
   best: ScoredMistakeCandidate,
   chosen: ScoredMistakeCandidate,
@@ -103,20 +108,51 @@ export const classifyScoredMistake = (
     play: playLoss,
   };
 
+  const gains: ComponentLosses = {
+    crib: -cribLoss,
+    hand: -handLoss,
+    play: -playLoss,
+  };
+
   const dominantComponents = ORDERED_COMPONENTS.filter((component) => {
     const loss = getComponentLoss(component, losses);
     return loss > 0 && withoutFloatResidue(maxLoss - loss) <= DISPLAY_PRECISION;
   });
 
-  const label = dominantComponents.map(getComponentLabel).join(", ");
+  const maxGain = Math.max(0, -handLoss, -cribLoss, -playLoss);
+  const hasSignificantGain =
+    maxGain >= SIGNIFICANT_GAIN_THRESHOLD &&
+    maxGain >= withoutFloatResidue(SIGNIFICANT_GAIN_RATIO * maxLoss);
+
+  const dominantGains = hasSignificantGain
+    ? ORDERED_COMPONENTS.filter((component) => {
+        const gain = getComponentLoss(component, gains);
+        return (
+          gain > 0 && withoutFloatResidue(maxGain - gain) <= DISPLAY_PRECISION
+        );
+      })
+    : [];
+
+  const lossLabel = dominantComponents.map(getComponentLabel).join(", ");
+  const gainLabel = dominantGains.map(getComponentLabel).join(", ");
+
+  const label =
+    dominantGains.length > 0
+      ? `${lossLabel} loss > ${gainLabel} gain`
+      : lossLabel;
+
+  const shortLabel =
+    dominantGains.length > 0 ? `${lossLabel} > ${gainLabel}` : lossLabel;
 
   return {
     cribLoss,
     dominantComponents,
+    dominantGains,
     handLoss,
     label,
     netLoss,
     playLoss,
+    shortLabel,
   };
 };
 
