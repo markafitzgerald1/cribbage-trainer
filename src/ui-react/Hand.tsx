@@ -9,7 +9,9 @@ export function Hand({
   sortOrder,
   onChange,
 }: HandProps) {
-  const handId = dealtCards.map((card) => card.rank).join("-");
+  const handId = dealtCards
+    .map((card) => `${card.rank}:${card.suit}`)
+    .join("-");
 
   return (
     <figure className={classes.figure}>

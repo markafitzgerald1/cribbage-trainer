@@ -3,6 +3,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { Hand } from "./Hand";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { SortOrder } from "../ui/SortOrder";
+import { Suit } from "../game/Card";
 import { dealHand } from "../game/dealHand";
 import { queryAllByCardText } from "./test-utils";
 import { render } from "@testing-library/react";
@@ -81,14 +82,19 @@ describe("hand component", () => {
     },
   );
 
-  it("replaces card DOM nodes when a new hand is dealt", () => {
+  it("replaces card DOM nodes when a new hand or suit changed is dealt", () => {
     const handA = dealHand(() => 0.1);
     const view = renderCards(handA, SortOrder.DealOrder);
     const [firstCheckboxA] = view.getAllByRole("checkbox");
 
+    const handWithDifferentSuits = handA.map((card) => ({
+      ...card,
+      suit: Suit.HEARTS,
+    }));
+
     view.rerender(
       <Hand
-        dealtCards={dealHand(() => 0.9)}
+        dealtCards={handWithDifferentSuits}
         onChange={jest.fn()}
         sortOrder={SortOrder.Ascending}
       />,
