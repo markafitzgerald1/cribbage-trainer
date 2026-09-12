@@ -169,21 +169,24 @@
    * for. At the headers' own size the panel took 200px of a 235px column on a
    * 844x390 phone and the results were reduced to their sticky header.
    *
-   * The lower bound is itself capped by a viewport unit. A bare rem floor
-   * grows with a phone's font-size accessibility setting and would then win
-   * outright inside this fixed-height column, which is the trap that pushed
-   * the consent banner off a short landscape screen. The cap is a no-op at the
-   * default scale, where the rem is already the smaller of the two.
+   * The lower bound is an absolute length, for the reason the stacked block
+   * sets out — a rem floor inflates with the device font-size setting inside
+   * a fixed-height column — and it is a floor rather than nothing because
+   * every term above it is viewport-relative: side-by-side mode extends down
+   * to narrow windows, where a 400px-wide one put the upper bound at 6.8px
+   * and made the whole comparison unreadable while the analysis table kept
+   * its own 1rem floor.
    */
   .cut-outcome-panel {
     font-size: clamp(
-      min(0.6rem, 1.2vw),
+      11px,
       3.4cqw,
       calc(var(--medium-text-font-size-landscape) * 0.74)
     );
   }
 
+  /* Floored like the stacked one, and for the same reason: at the narrow end of this mode 0.8em lands under 9px. */
   .footnote {
-    font-size: 0.8em;
+    font-size: max(9.5px, 0.8em);
   }
 }

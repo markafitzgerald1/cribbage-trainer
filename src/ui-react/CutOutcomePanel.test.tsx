@@ -230,6 +230,36 @@ describe("cutOutcomePanel counts", () => {
     expect(screen.getByText(summary)).toBeInTheDocument();
   });
 
+  /*
+   * The top choice's own counts, not just its label: the acceptance criterion
+   * this panel exists for is the recommendation's count on the same starter,
+   * and every other numeric assertion here reads the user's row.
+   */
+  it("counts the top choice on the same starter as the user's row", () => {
+    renderPanel(THROW_TWO_FIVES, KEEP_THE_FIVES);
+
+    expect(
+      screen.getByText(
+        "Top choice, 3\u2666 2\u2663: hand 15, crib plus 8, total 23, average 16.50",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  /*
+   * The crib's other two cards are what let a reader check its count rather
+   * than take it on trust, so their absence has to fail: every other assertion
+   * in this file passes with the header's disclosure deleted.
+   */
+  it("shows the starter and the crib's two sampled cards", () => {
+    renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES);
+
+    const header = screen.getByText("crib also gets").parentElement;
+
+    expect(header?.textContent).toBe(
+      "This cutA\u2660crib also gets8\u26654\u2665one sample, not a verdict",
+    );
+  });
+
   it("keeps the expectation beside the count for both rows", () => {
     renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES);
 
