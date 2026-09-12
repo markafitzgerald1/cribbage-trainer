@@ -10,23 +10,28 @@ import { sortCards } from "../ui/sortCards";
 /* jscpd:ignore-end */
 
 describe("hand component", () => {
-  const dealAndRender = (sortOrder: SortOrder) => {
-    const dealtHand = dealHand(Math.random);
-
-    const { getAllByRole, queryAllByText, queryByRole, queryByText } = render(
+  const renderCards = (
+    dealtCards: ReturnType<typeof dealHand>,
+    sortOrder: SortOrder,
+  ) =>
+    render(
       <Hand
-        dealtCards={dealtHand}
+        dealtCards={dealtCards}
         onChange={jest.fn()}
         sortOrder={sortOrder}
       />,
     );
 
+  const dealAndRender = (sortOrder: SortOrder) => {
+    const dealtHand = dealHand(Math.random);
+    const view = renderCards(dealtHand, sortOrder);
+
     return {
       dealtHand,
-      getAllByRole,
-      queryAllByText,
-      queryByRole,
-      queryByText,
+      getAllByRole: view.getAllByRole,
+      queryAllByText: view.queryAllByText,
+      queryByRole: view.queryByRole,
+      queryByText: view.queryByText,
     };
   };
 
@@ -75,4 +80,42 @@ describe("hand component", () => {
       });
     },
   );
+
+  it("replaces card DOM nodes when a new hand is dealt", () => {
+    const handA = dealHand(() => 0.1);
+    const view = renderCards(handA, SortOrder.DealOrder);
+    const [firstCheckboxA] = view.getAllByRole("checkbox");
+
+    view.rerender(
+      <Hand
+        dealtCards={dealHand(() => 0.9)}
+        onChange={jest.fn()}
+        sortOrder={SortOrder.Ascending}
+      />,
+    );
+
+    const [firstCheckboxB] = view.getAllByRole("checkbox");
+
+    expect(firstCheckboxB).not.toBe(firstCheckboxA);
+  });
+
+  it("preserves card DOM nodes when discard selection changes within the same hand", () => {
+    const initialCards = dealHand(() => 0.2);
+    const view = renderCards(initialCards, SortOrder.Descending);
+    const [firstCheckbox] = view.getAllByRole("checkbox");
+
+    initialCards[0]!.kept = false;
+
+    view.rerender(
+      <Hand
+        dealtCards={[...initialCards]}
+        onChange={jest.fn()}
+        sortOrder={SortOrder.Descending}
+      />,
+    );
+
+    const [updatedFirstCheckbox] = view.getAllByRole("checkbox");
+
+    expect(updatedFirstCheckbox).toBe(firstCheckbox);
+  });
 });

@@ -9,6 +9,8 @@ export function Hand({
   sortOrder,
   onChange,
 }: HandProps) {
+  const handId = dealtCards.map((card) => card.rank).join("-");
+
   return (
     <figure className={classes.figure}>
       <figcaption className={classes.figcaption}>Hand</figcaption>
@@ -19,7 +21,7 @@ export function Hand({
             dealOrderIndex={dealtCard.dealOrder}
             disabled={locked}
             kept={dealtCard.kept}
-            key={dealtCard.dealOrder}
+            key={`${handId}:${dealtCard.dealOrder}`}
             onChange={onChange}
             rank={dealtCard.rank}
             suit={dealtCard.suit}
