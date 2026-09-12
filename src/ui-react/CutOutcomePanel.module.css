@@ -131,12 +131,19 @@
   /*
    * Floored, because the viewport-relative size alone drops to about 8px on a
    * 320px-wide phone and this is the copy that stops one cut being read as a
-   * verdict. The floor is a rem so it also tracks the device font-size
-   * setting; it wins only on narrow screens and at enlarged settings, where
-   * `.dynamic-ui`'s own scroll keeps the extra height reachable.
+   * verdict.
+   *
+   * The floor is an absolute length rather than a rem on purpose. Portrait
+   * type here is sized from the viewport throughout
+   * (`--medium-text-font-size-portrait` is `5.65vw`), so a rem floor would
+   * make this one element the only thing in the mode that grows with the
+   * device font-size setting — and it would grow inside the fixed-height row
+   * it shares with the results table, which is the rem-floor trap. Capping
+   * the floor with a viewport unit instead would defeat it entirely, since
+   * the term it has to beat is itself viewport-relative.
    */
   .footnote {
-    font-size: max(0.6rem, calc(var(--medium-text-font-size-portrait) * 0.5));
+    font-size: max(9.5px, calc(var(--medium-text-font-size-portrait) * 0.5));
   }
 }
 

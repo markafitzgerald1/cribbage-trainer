@@ -62,11 +62,24 @@ const boardDiscarding = (discardIndices: readonly number[]): DealtCard[] =>
     kept: !discardIndices.includes(index),
   }));
 
-const optionFrom = (board: readonly DealtCard[], choice: Choice) => ({
+/*
+ * The expectation arrives already signed by role — the analysis negates crib
+ * points for the pone — so the fixtures sign them too. Leaving them positive
+ * would render a pone whose crib counts against them in the count column and
+ * for them in the expectation, a state production cannot produce.
+ */
+const optionFrom = (
+  board: readonly DealtCard[],
+  choice: Choice,
+  cribRole: CribRole,
+) => ({
   discard: board.filter((_, index) => choice.discardIndices.includes(index)),
   expectedHandPoints: choice.expectedHandPoints,
   keep: board.filter((_, index) => !choice.discardIndices.includes(index)),
-  signedExpectedCribPoints: choice.expectedCribPoints,
+  signedExpectedCribPoints:
+    cribRole === CribRole.Dealer
+      ? choice.expectedCribPoints
+      : -choice.expectedCribPoints,
 });
 
 const renderWith = (
@@ -92,8 +105,11 @@ const renderPanel = (
   return renderWith(
     board,
     chosen === best
-      ? [optionFrom(board, chosen)]
-      : [optionFrom(board, best), optionFrom(board, chosen)],
+      ? [optionFrom(board, chosen, cribRole)]
+      : [
+          optionFrom(board, best, cribRole),
+          optionFrom(board, chosen, cribRole),
+        ],
     cribRole,
   );
 };
@@ -146,7 +162,7 @@ describe("cutOutcomePanel", () => {
   it("renders nothing while no discard is complete", () => {
     const board = boardDiscarding([]);
     const { container } = renderWith(board, [
-      optionFrom(board, KEEP_THE_FIVES),
+      optionFrom(board, KEEP_THE_FIVES, CribRole.Dealer),
     ]);
 
     expect(container).toBeEmptyDOMElement();
@@ -204,7 +220,7 @@ describe("cutOutcomePanel counts", () => {
     {
       cribRole: CribRole.Pone,
       name: "a crib the pone loses",
-      summary: "Yours: hand 15, crib minus 8, total 7, average 16.50",
+      summary: "Yours: hand 15, crib minus 8, total 7, average 8.50",
     },
   ])("spells $name out for assistive technology", ({ cribRole, summary }) => {
     renderPanel(KEEP_THE_FIVES, THROW_TWO_FIVES, cribRole);

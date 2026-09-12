@@ -61,6 +61,16 @@ const CHOSEN = optionFrom(THROW_SIX_FIVE, 7.65, 4.12);
 const BEST = optionFrom(THROW_KING_NINE, 8.41, 3.98);
 const BOTH_ROWS = [BEST, CHOSEN];
 
+/*
+ * The crib expectation reaches this panel already signed by role, so a pone's
+ * is negative. Reusing the dealer's fixtures would show a pone gaining from a
+ * crib its own count column subtracts — a state the analysis cannot produce.
+ */
+const PONE_ROWS = [
+  optionFrom(THROW_KING_NINE, 8.41, -3.98),
+  optionFrom(THROW_SIX_FIVE, 7.65, -4.12),
+];
+
 interface CreateStoryOptions {
   readonly cribRole: CribRole;
   readonly options: readonly CutOutcomeOption[];
@@ -88,7 +98,7 @@ export const Dealer: Story = createStory({
 
 export const Pone: Story = createStory({
   cribRole: CribRole.Pone,
-  options: BOTH_ROWS,
+  options: PONE_ROWS,
   sortOrder: SortOrder.Descending,
 });
 
