@@ -123,6 +123,26 @@
   opacity: 0.75;
 }
 
+/*
+ * The one place in this panel that is deliberately rem-floored, and so the one
+ * place that grows with the device font-size setting.
+ *
+ * Everything else here is viewport-sized, which is how this app sizes type and
+ * what keeps the panel from inflating inside the fixed-height row it shares
+ * with the results table. But viewport sizing alone put this text at about 8px
+ * on a 320px-wide phone, and in side-by-side mode an enlarged device font
+ * actually made it *smaller*, because the wider `min-content` left column
+ * shrinks the container the `cqw` sizes read. This is the copy that stops one
+ * cut being read as a verdict and that carries the pegging and random-crib
+ * caveats, so it is the wrong thing to shrink at the accessibility setting
+ * meant to enlarge it.
+ *
+ * The growth is affordable here specifically: `.dynamic-ui` and the analysis
+ * figure are both scroll containers, so what this pushes down stays reachable.
+ * That is not true of the control rows and consent actions the rem-floor rule
+ * in `skills/ui-layout-and-interaction/SKILL.md` is about, which have no
+ * scroller to fall into.
+ */
 .footnote {
   line-height: 1.25;
   margin: 0.25em 0 0;
@@ -142,22 +162,8 @@
     font-size: calc(var(--medium-text-font-size-portrait) * 0.6);
   }
 
-  /*
-   * Floored, because the viewport-relative size alone drops to about 8px on a
-   * 320px-wide phone and this is the copy that stops one cut being read as a
-   * verdict.
-   *
-   * The floor is an absolute length rather than a rem on purpose. Portrait
-   * type here is sized from the viewport throughout
-   * (`--medium-text-font-size-portrait` is `5.65vw`), so a rem floor would
-   * make this one element the only thing in the mode that grows with the
-   * device font-size setting — and it would grow inside the fixed-height row
-   * it shares with the results table, which is the rem-floor trap. Capping
-   * the floor with a viewport unit instead would defeat it entirely, since
-   * the term it has to beat is itself viewport-relative.
-   */
   .footnote {
-    font-size: max(9.5px, calc(var(--medium-text-font-size-portrait) * 0.5));
+    font-size: max(0.7rem, calc(var(--medium-text-font-size-portrait) * 0.5));
   }
 }
 
@@ -185,8 +191,7 @@
     );
   }
 
-  /* Floored like the stacked one, and for the same reason: at the narrow end of this mode 0.8em lands under 9px. */
   .footnote {
-    font-size: max(9.5px, 0.8em);
+    font-size: max(0.7rem, 0.8em);
   }
 }
