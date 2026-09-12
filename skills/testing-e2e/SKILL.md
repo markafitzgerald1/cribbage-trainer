@@ -67,11 +67,13 @@ baselines so CI agrees with what was generated locally.
   spec that added it. Scope those locators — to the analysis figure, or to
   an accessible name — as part of whatever adds the second table. Do not
   reach for a `div` grid to keep them working:
-  `ScoredPossibleKeepDiscardExpandedRow` shows what that costs, declaring no
-  table, row, cell, or header roles, so a screen reader loses the row and
-  column associations a real table would have given it for free. Genuinely
-  tabular data earns a real table; the locators are the part that has to
-  change.
+  `ScoredPossibleKeepDiscardExpandedRow` shows what that costs. It keeps the
+  outer `<tr>` and `<td colSpan={5}>` that make it a row of the analysis
+  table, so those roles are intact — but the points breakdown **inside** that
+  cell is a `div` grid with no row, cell, or column-header roles, so a screen
+  reader gets no association between a number and the category heading above
+  it. Genuinely tabular data earns a real table; the locators are the part
+  that has to change.
 - Analysis tables are lazy-loaded. E2E tests that select a complete discard or
   hydrate one from a deep link must wait for `Loading analysis...` to become
   hidden and for the table to become visible before locating a result row;

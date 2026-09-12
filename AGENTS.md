@@ -321,22 +321,32 @@ they bind any PR that makes a claim about a phone or ships a guard.
   survives, `hand` remains valid standalone if `discard` is dropped, and the
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
-- **Nothing added later may draw from the injected `generateRandomNumber`.**
-  It is positional: every draw advances it, so a feature that consumes one
+- **The injected `generateRandomNumber` is one shared positional stream, and
+  two things already draw from it.** Every draw advances it, so a consumer
   changes what a seeded link deals from that point on, and nothing fails
-  loudly when it does. The telemetry `deal_nonce` sidesteps this with its own
-  source (`crypto.randomUUID`, see `skills/analytics-telemetry/SKILL.md`).
-  Prefer **deriving** a value from the six dealt cards over drawing one
-  wherever it must also be stable per hand: a memoized draw re-rolls on reload
-  and on a Back, so F5 becomes a re-roll button, while a pure function of the
-  hand settles the same value on a reload, a shared link, and a practice-drill
-  replay. Determinism alone does not make a derived value legitimate, though —
-  see the derived-inputs rule under Project overview, which is what withdrew
-  PR #797 after its derivation had solved exactly this hazard. Guard either
-  shape with an e2e test that deals twice under one seed with the feature
-  exercised and again without it, and negative-check that guard against a
-  build that does consume a draw — it is the only thing that proves the guard
-  works.
+  loudly when it does. The existing consumers are `useDealHand` (the deal
+  itself, then the crib role) and `usePracticeDrill`'s `drawNext`, which
+  samples the mistake queue — `Trainer` hands the same generator to both. So
+  starting an automatic drill really does shift the next seeded deal, and
+  that is shipped behavior, not a latent bug: state the exception rather
+  than writing this rule as an absolute, which an earlier draft did and
+  which the shipped flow already contradicted.
+  The rule for anything **new** is therefore not "never draw" but "do not
+  become a third consumer without deciding what that does to the seed
+  contract". Two ways to avoid it: the telemetry `deal_nonce` takes its own
+  source (`crypto.randomUUID`, see `skills/analytics-telemetry/SKILL.md`),
+  and **deriving** a value from the six dealt cards avoids the stream while
+  also making the value stable per hand — a memoized draw re-rolls on reload
+  and on a Back, so F5 becomes a re-roll button, while a pure function of
+  the hand settles the same value on a reload, a shared link, and a
+  practice-drill replay. Determinism alone does not make a derived value
+  legitimate, though — see the derived-inputs rule under Project overview,
+  which is what withdrew PR #797 after its derivation had solved exactly
+  this hazard. Guard a new consumer with an e2e test that deals twice under
+  one seed with that feature exercised and again without it, and
+  negative-check the guard against a build that does consume a draw. Keep
+  the practice drill out of that comparison, or it fails on shipped
+  behavior instead of on the feature under test.
 
 ## Lint gauntlet interplay (agent checklist)
 
@@ -576,20 +586,34 @@ they bind any PR that makes a claim about a phone or ships a guard.
   `.dynamic-ui` or the analysis figure has one, so height it gains stays
   reachable. That PR was later withdrawn, so the `rem` floor and its e2e
   guard are not in the app: read this bullet as a measurement, not as
-  shipped CSS. What ships is **split**, which is the reason #802 exists and
-  carries the open decision. The dialogs, the card picker, the practice
-  drill panel, and the decision-quality chart are plain-`rem` sized and do
-  follow the device font-size setting; the trainer's own reading surface —
-  hand cards, controls row, deal button, analysis table — derives from
-  `--medium-text-font-size-portrait` and `-landscape`, which are `vw`, and
-  does not. Never claim either half covers the whole app without grepping
-  for both.
+  shipped CSS. #802 carries the open decision. **Do not summarize what the
+  app does today as a list of surfaces that scale and surfaces that do
+  not** — two drafts of this paragraph tried, and both were wrong in
+  opposite directions. The behavior is per **declaration**, and often per
+  **mode**, so read the rule rather than guessing from the component:
+  - a plain `rem` size always follows the setting (most dialogs, the card
+    picker, the practice panel in portrait);
+  - `clamp(1rem, <cqw>, <vw>)` follows it **above a threshold**, because
+    `clamp` returns its minimum whenever that minimum exceeds its maximum —
+    so the analysis rows and headers in side-by-side mode do grow once a
+    scaled `1rem` passes `--medium-text-font-size-landscape`;
+  - `min(<rem>, <vw>)` **stops** following as soon as the viewport term is
+    the smaller — the practice drill panel in landscape;
+  - a size derived only from `--medium-text-font-size-portrait` or
+    `-landscape` never follows, both being `vw`;
+  - a fixed `px` size never follows either (the decision-quality chart's
+    axis labels).
+
+  One component can appear in several of those lists at different viewport
+  sizes, which is exactly why the per-surface summary keeps coming out
+  false.
   Two things to take from it. Answer the loser on its thread with the rule
   you followed, so the next round does not re-raise it as if unconsidered.
   And when a durable note like this one records a decision that a later round
   reverses, go back and rewrite it rather than leaving both versions
   standing: Codex caught an earlier draft of this very paragraph still
   describing the superseded absolute floor.
+
 - A bot's login differs between the two GitHub APIs: REST reports
   `chatgpt-codex-connector[bot]` where GraphQL reports
   `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling
