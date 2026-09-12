@@ -60,12 +60,19 @@ baselines so CI agrees with what was generated locally.
   `min-content` left column past the cards in side-by-side mode, stranding
   dead space before the analysis table. Measure the row's max-content width
   (clone it with `width: max-content`) before adding anything to it.
-- The suite locates the analysis with a bare `page.getByRole("table")` — in
-  `waitForAnalysis`, which nearly every spec calls, and again in
-  `discardTally.spec.ts`. A second table anywhere on the page therefore puts
-  those into strict-mode violation across the whole suite, not just in the
-  spec that added it. Scope those locators — to the analysis figure, or to
-  an accessible name — as part of whatever adds the second table. Do not
+- The suite locates the analysis with a bare `page.getByRole("table")` in
+  **six** places, so a second visible table anywhere puts the whole suite
+  into strict-mode violation rather than only the spec that added it. At the
+  time of writing: `renderThenSelectTwoDiscards.ts`'s `waitForAnalysis`,
+  which nearly every spec calls, `index.spec.ts`, `discardTally.spec.ts`,
+  and three separate sites in `practiceDrill.spec.ts`. **Re-derive that list
+  with a repo-wide search rather than trusting this one** — an earlier draft
+  named two of the six, and scoping only the ones a bullet happens to
+  mention leaves the rest silently targeting the wrong table. The Jest specs
+  use the same bare locator in three more places; Testing Library has no
+  strict mode, so they fail differently, but they drift the same way. Scope
+  every site — to the analysis figure, or to an accessible name — as part of
+  whatever adds the second table. Do not
   reach for a `div` grid to keep them working:
   `ScoredPossibleKeepDiscardExpandedRow` shows what that costs. It keeps the
   outer `<tr>` and `<td colSpan={5}>` that make it a row of the analysis

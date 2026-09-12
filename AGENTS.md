@@ -344,10 +344,19 @@ they bind any PR that makes a claim about a phone or ships a guard.
   contract". Two ways to avoid it: the telemetry `deal_nonce` takes its own
   source (`crypto.randomUUID`, see `skills/analytics-telemetry/SKILL.md`),
   and **deriving** a value from the six dealt cards avoids the stream while
-  also making the value stable per hand — a memoized draw re-rolls on reload
-  and on a Back, so F5 becomes a re-roll button, while a pure function of
-  the hand settles the same value on a reload, a shared link, and a
-  practice-drill replay. Determinism alone does not make a derived value
+  also making the value stable per hand. A memoized draw's value depends on
+  where the shared stream happens to sit when it draws, and that position is
+  not persisted anywhere. On a fully serialized seeded link — `hand`, `role`
+  and `seed` all present — `Trainer` short-circuits both startup draws, so a
+  reload rebuilds the same generator at position zero and a memoized
+  consumer at a fixed call site does come back the same; the earlier claim
+  here that F5 is a re-roll button was wrong about exactly the case the seed
+  contract is for. What moves the value is the position moving: Back
+  navigation, or the first transition from a seed-only URL to a serialized
+  hand, where `dealHand(generator)` runs and advances the stream. A pure
+  function of the six dealt cards has no position to depend on, so it
+  settles the same value across a reload, a shared link, a Back, and a
+  practice-drill replay alike. Determinism alone does not make a derived value
   legitimate, though — see the derived-inputs rule under Project overview,
   which is what withdrew PR #797 after its derivation had solved exactly
   this hazard. Guard a new consumer with an e2e test that deals twice under
