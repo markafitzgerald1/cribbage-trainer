@@ -490,20 +490,40 @@ they bind any PR that makes a claim about a phone or ships a guard.
 - The Codex GitHub connector reviews the current head when a PR comment says
   `@codex review` (post it with an agent-attribution prefix). When Codex
   quota is exhausted it replies "usage limits reached" instead of reviewing.
-- Codex auto review and automatic Copilot review are on (since 2026-09-07),
-  so the per-head Codex round fires on its own and you rarely post
-  `@codex review` yourself. The discipline is unchanged: iterate until a
-  round reports no issues, address every finding, resolve every thread.
-  Before asking a human to look, confirm a clean Codex round landed on the
-  exact head they will read, and request one by hand if it is missing (smart
-  detect skips heads unpredictably). The wait-for-CI ordering in the gate
-  rule binds your manual requests, not the automatic round. The budget here
-  is deliberately large because Codex is the adversarial check on agent
-  work, and successive rounds earn their cost — on #728 the second round
-  found a defect in code the first round had passed, and only the third came
-  back clean. Copilot's low-effort reviews are similarly plentiful; its
-  medium-effort reviews are the scarce resource, so spend those
-  deliberately.
+- **Codex automatic review was turned off on 2026-09-12.** Every Codex round
+  is now requested by hand: post a comment containing `@codex review`, with
+  the agent-attribution prefix. It was on from 2026-09-07 and fired per
+  pushed head, which spent the budget on intermediate pushes nobody had
+  asked to be reviewed; with several pull requests open at once that is the
+  largest avoidable cost in the loop. Automatic Copilot review remains on
+  but does not reliably re-fire on a new head, so it still needs requesting
+  by hand for the head a human will read.
+- The discipline is unchanged: iterate until a round reports no issues,
+  address every finding, resolve every thread. Before asking a human to
+  look, confirm a clean Codex round landed on the exact head they will read.
+  Successive rounds earn their cost — on #728 the second round found a
+  defect in code the first round had passed, and only the third came back
+  clean.
+- **Request a review only when required CI is green on that head.** This now
+  binds every round rather than only manual ones, because no round is
+  automatic. A review of a head that then fails CI is spent twice, and a
+  review of a head with pending checks may be reviewing code the gate is
+  about to reject.
+- **Do not serialize the two reviewers to save budget — it costs more, not
+  less.** Any push invalidates every review on the previous head, so fixing
+  Codex's findings retires Copilot's clean round and vice versa, and the two
+  never converge on one head without a third pass. Request both on the same
+  head so a single fix cycle answers both. Where budget is tight, cut
+  frequency rather than parallelism: run intermediate rounds with Codex
+  alone and spend Copilot on the head that will actually be merged.
+- **Copilot is for changes with code in them.** A documentation-only pull
+  request does not need it; Codex alone has been sufficient there. The two
+  are genuinely orthogonal on code and worth paying for — across the #791
+  family roughly six of fourteen findings were Copilot-only, including a
+  stale pull request title, a stale body claiming protection the branch did
+  not add, and a timeout path no test reached, all of which Codex passed
+  clean. Its low-effort reviews are plentiful; its medium-effort reviews are
+  the scarce resource, so spend those deliberately.
 - A Copilot review request via the REST `requested_reviewers` endpoint can
   succeed while the eventual "review" is only a COMMENTED stub saying the
   requester reached their Copilot quota. Read the review body before
