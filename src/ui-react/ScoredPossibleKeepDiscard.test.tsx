@@ -293,6 +293,15 @@ describe("calculation component", () => {
       name: "sub-optimal loss when highlighted and classified",
     },
     {
+      classification: {
+        ...mockTradeOffClassification,
+        netLoss: 0.004,
+      },
+      expectedTitle: "Chosen discard (< 0.01 pts lost): Hand loss > Crib gain",
+      isHighlighted: true,
+      name: "sub-optimal loss below 0.005 rendered with less-than precision indicator",
+    },
+    {
       classification: null,
       expectedTitle: null,
       isHighlighted: false,

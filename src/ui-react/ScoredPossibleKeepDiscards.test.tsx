@@ -334,6 +334,6 @@ describe("scored possible keep discards component", () => {
 
     expect(caption).not.toBeNull();
     expect(caption?.textContent).toContain("Sub-optimal:");
-    expect(caption?.textContent).toContain("Hand loss > Crib gain");
+    expect(caption?.textContent).toContain("Hand loss > Crib, Play gain");
   });
 });

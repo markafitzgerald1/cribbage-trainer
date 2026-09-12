@@ -45,6 +45,14 @@ export const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const BASE_TEN = 10;
 export const DISPLAY_PRECISION = BASE_TEN ** -EXPECTED_POINTS_FRACTION_DIGITS;
 
+export const formatNetLoss = (netLoss: number): string => {
+  const rounded = Number(netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
+  if (rounded === 0 && netLoss > 0) {
+    return `< ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`;
+  }
+  return netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
+};
+
 const ORDERED_COMPONENTS: readonly LossComponent[] = ["hand", "crib", "play"];
 
 interface ComponentLosses {
@@ -101,28 +109,19 @@ const getDominantLossComponents = (
   });
 };
 
-const getDominantGainComponents = (
+const getMaterialGainComponents = (
   losses: ComponentLosses,
-): readonly LossComponent[] => {
-  const maxGain = Math.max(0, -losses.hand, -losses.crib, -losses.play);
-  if (maxGain < DISPLAY_PRECISION) {
-    return [];
-  }
-  return ORDERED_COMPONENTS.filter((component) => {
-    const gain = -getComponentLoss(component, losses);
-    return (
-      gain >= DISPLAY_PRECISION &&
-      withoutFloatResidue(maxGain - gain) <= DISPLAY_PRECISION
-    );
-  });
-};
+): readonly LossComponent[] =>
+  ORDERED_COMPONENTS.filter(
+    (component) => -getComponentLoss(component, losses) >= DISPLAY_PRECISION,
+  );
 
 const getContributingLossComponents = (
   dominantLosses: readonly LossComponent[],
-  dominantGains: readonly LossComponent[],
+  gains: readonly LossComponent[],
   losses: ComponentLosses,
 ): readonly LossComponent[] => {
-  if (dominantGains.length === 0) {
+  if (gains.length === 0) {
     return dominantLosses;
   }
   const dominantLossTotal = dominantLosses.reduce(
@@ -130,11 +129,12 @@ const getContributingLossComponents = (
       withoutFloatResidue(sum + getComponentLoss(component, losses)),
     0,
   );
-  const maxGain = dominantGains.reduce(
-    (max, component) => Math.max(max, -getComponentLoss(component, losses)),
+  const totalGain = gains.reduce(
+    (sum, component) =>
+      withoutFloatResidue(sum - getComponentLoss(component, losses)),
     0,
   );
-  if (dominantLossTotal >= maxGain) {
+  if (dominantLossTotal >= totalGain) {
     return dominantLosses;
   }
   return ORDERED_COMPONENTS.filter(
@@ -155,7 +155,7 @@ export const classifyScoredMistake = (
 
   const losses = computeComponentLosses(best, chosen);
   const dominantComponents = getDominantLossComponents(losses);
-  const dominantGains = getDominantGainComponents(losses);
+  const dominantGains = getMaterialGainComponents(losses);
   const contributingLosses = getContributingLossComponents(
     dominantComponents,
     dominantGains,

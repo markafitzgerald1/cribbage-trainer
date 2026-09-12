@@ -6,9 +6,9 @@ import {
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
 import {
-  EXPECTED_POINTS_FRACTION_DIGITS,
   type MistakeClassification,
   classifyScoredMistake,
+  formatNetLoss,
 } from "../analysis/classifyMistake";
 import {
   type MouseEvent,
@@ -301,11 +301,8 @@ export function ScoredPossibleKeepDiscards({
         ) : (
           <>
             <span className={classes.subOptimalBadge}>
-              Sub-optimal:{" "}
-              {chosenClassification.netLoss.toFixed(
-                EXPECTED_POINTS_FRACTION_DIGITS,
-              )}{" "}
-              pts lost
+              Sub-optimal: {formatNetLoss(chosenClassification.netLoss)} pts
+              lost
             </span>
             <span className={classes.diagnosticReason}>
               {chosenClassification.label}

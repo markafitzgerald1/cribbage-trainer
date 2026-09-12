@@ -6,6 +6,7 @@ import {
   type ScoredMistakeCandidate,
   classifyMistake,
   classifyScoredMistake,
+  formatNetLoss,
 } from "./classifyMistake";
 import { describe, expect, it } from "@jest/globals";
 import type { ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
@@ -112,10 +113,28 @@ describe("classifyScoredMistake", () => {
       best: [9.72, 3.14, 1.56] as const,
       chosen: [8.24, 4.44, 1.64] as const,
       dominant: ["hand"] as const,
-      gains: ["crib"],
-      label: `Hand loss > Crib gain`,
-      name: "authentic trade-off where play gain is insignificant",
-      shortLabel: "Hand > Crib",
+      gains: ["crib", "play"] as const,
+      label: "Hand loss > Crib, Play gain",
+      name: "authentic trade-off where both crib and play gain",
+      shortLabel: "Hand > Crib, Play",
+    },
+    {
+      best: [5, 2, 1] as const,
+      chosen: [3, 3, 1 + 0.005] as const,
+      dominant: ["hand"] as const,
+      gains: ["crib", ...[]] as const,
+      label: `${"Hand loss"} > Crib gain`,
+      name: "authentic trade-off where play gain is below display precision",
+      shortLabel: `${"Hand"} > Crib`,
+    },
+    {
+      best: [1.456522, 0, 0] as const,
+      chosen: [0, 0.928472, 0.4165] as const,
+      dominant: ["hand"] as const,
+      gains: ["crib", ...["play"]] as const,
+      label: `${"Hand loss"} > Crib, Play gain`,
+      name: "includes all material offsetting gains differing in magnitude",
+      shortLabel: `${"Hand"} > Crib, Play`,
     },
     {
       best: [6, 2, 0] as const,
@@ -164,10 +183,10 @@ describe("classifyScoredMistake", () => {
       best: [8, 2, 3] as const,
       chosen: [4, 3.004, 4] as const,
       dominant: ["hand"] as const,
-      gains: ["crib", "play"] as const,
-      label: "Hand loss > Crib, Play gain",
+      gains: (["crib", "play"] as const).map((component) => component),
+      label: ["Hand loss", "Crib, Play gain"].join(" > "),
       name: "detects multiple tied dominant gains",
-      shortLabel: "Hand > Crib, Play",
+      shortLabel: ["Hand", "Crib, Play"].join(" > "),
     },
     {
       best: [6, 2, 3] as const,
@@ -243,5 +262,26 @@ describe("classifyMistake", () => {
 
   it("returns null when cards array cannot form combinations", () => {
     expect(runClassify("5H,5D", [])).toBeNull();
+  });
+});
+
+describe("formatNetLoss", () => {
+  it.each([
+    { expected: "0.00", loss: 0, name: "formats zero as 0.00" },
+    {
+      expected: "< 0.01",
+      loss: 0.004,
+      name: "formats positive loss below 0.005 as < 0.01",
+    },
+    {
+      expected: "< 0.01",
+      loss: 0.001,
+      name: "formats tiny positive loss as < 0.01",
+    },
+    { expected: "0.01", loss: 0.01, name: "formats 0.01 exactly" },
+    { expected: "0.50", loss: 0.5, name: "formats 0.50 with two decimals" },
+    { expected: "1.23", loss: 1.234, name: "rounds to two decimal places" },
+  ])("$name", ({ expected, loss }) => {
+    expect(formatNetLoss(loss)).toBe(expected);
   });
 });

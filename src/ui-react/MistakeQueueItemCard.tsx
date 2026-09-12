@@ -5,8 +5,11 @@ import {
   type MistakeQueueItem,
   SUCCESSES_FOR_MASTERY,
 } from "../ui/mistakeQueue";
+import {
+  type MistakeClassification,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { CribRole } from "../game/expectedCribPoints";
-import type { MistakeClassification } from "../analysis/classifyMistake";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { useMemo } from "react";
@@ -95,7 +98,7 @@ export function MistakeQueueItemCard({
         <div className={classes.itemBadges}>
           <span className={classes.roleBadge}>{roleLabel}</span>
           <span className={classes.lossBadge}>
-            {item.lossIfWrong.toFixed(DECIMAL_DIGITS)} pts lost
+            {formatNetLoss(item.lossIfWrong)} pts lost
           </span>
           {item.lossQuantile === null ? null : (
             <span
@@ -108,7 +111,7 @@ export function MistakeQueueItemCard({
             <span
               aria-label={`Previous discard driven by ${effectiveReason}`}
               className={classes.componentBadge}
-              title={`Previous discard (${effectiveLoss.toFixed(DECIMAL_DIGITS)} pts lost) driven by ${effectiveReason}`}
+              title={`Previous discard (${formatNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
             >
               Prev: {effectiveReason}
             </span>

@@ -1,9 +1,12 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
+import {
+  type MistakeClassification,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { useCallback, useState } from "react";
 import type { Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
-import type { MistakeClassification } from "../analysis/classifyMistake";
 import { PossibleHand } from "./PossibleHand";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
@@ -38,9 +41,7 @@ const toAlignedFixed = (points: number): string => {
 
 const getRowTitle = (classification?: MistakeClassification | null): string => {
   if (classification) {
-    const loss = classification.netLoss.toFixed(
-      EXPECTED_POINTS_FRACTION_DIGITS,
-    );
+    const loss = formatNetLoss(classification.netLoss);
     return `Chosen discard (${loss} pts lost): ${classification.label}`;
   }
   return "Optimal discard";
