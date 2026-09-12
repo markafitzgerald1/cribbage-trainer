@@ -9,6 +9,21 @@
   thumb", or subjective weighting in scoring algorithms. All expected values
   must be mathematically derived.
 - Primary branch: `main`; active work often happens on feature branches.
+- **Deriving a number is not enough; its inputs have to be derived too.** The
+  constraint above reads as a rule about the scoring engine, and PR #797
+  followed it to the letter while still violating it: a cut panel counted a
+  crib by exact enumeration over concrete cards, two of which were chosen by
+  hashing the dealt six, because no derivation for the opponent's discard
+  exists here. Exact arithmetic over an invented input is an invented result.
+  It was also silently inconsistent with the app's own figures —
+  `expectedCribPointsTable.json` is generated against an opponent whose
+  discard policy is trained by iterative best response, so a hash-picked pair
+  amounts to a uniform draw, and the panel set a count from one opponent model
+  beside an average from another and invited the reader to compare them. Before
+  displaying any figure, name every input it consumes and say which of
+  simulation, enumeration, or probability supplies each. A card nobody dealt
+  and no table models is not an input you have. Making the choice deterministic
+  does not fix this; it only hides that a choice was made.
 - **Product direction:** the roadmap is gated on two things the app has not
   yet earned from its own author: stickiness and trust. It does get played from
   time to time, but not often enough to call it sticky, and many of its
@@ -306,6 +321,22 @@ they bind any PR that makes a claim about a phone or ships a guard.
   survives, `hand` remains valid standalone if `discard` is dropped, and the
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
+- **Nothing added later may draw from the injected `generateRandomNumber`.**
+  It is positional: every draw advances it, so a feature that consumes one
+  changes what a seeded link deals from that point on, and nothing fails
+  loudly when it does. The telemetry `deal_nonce` sidesteps this with its own
+  source (`crypto.randomUUID`, see `skills/analytics-telemetry/SKILL.md`).
+  Prefer **deriving** a value from the six dealt cards over drawing one
+  wherever it must also be stable per hand: a memoized draw re-rolls on reload
+  and on a Back, so F5 becomes a re-roll button, while a pure function of the
+  hand settles the same value on a reload, a shared link, and a practice-drill
+  replay. Determinism alone does not make a derived value legitimate, though —
+  see the derived-inputs rule under Project overview, which is what withdrew
+  PR #797 after its derivation had solved exactly this hazard. Guard either
+  shape with an e2e test that deals twice under one seed with the feature
+  exercised and again without it, and negative-check that guard against a
+  build that does consume a draw — it is the only thing that proves the guard
+  works.
 
 ## Lint gauntlet interplay (agent checklist)
 
@@ -379,6 +410,22 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whole-context copy invalidates nothing but the lint layer, and anything
   `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
   junk lints inside Docker while never reaching CI.
+- **A generated directory has to be added to every ignore list there is, and
+  there are seven:** `.gitignore`, `.dockerignore`, `.prettierignore`,
+  `.stylelintignore`, `.markdownlintignore`, `.cspell.json`'s `ignorePaths`,
+  and `eslint.config.mjs`'s `ignores`. Enumerate them rather than counting
+  from memory — `playwright-report/` and `test-results/` were in some and not
+  others, so running the e2e suite locally left thousands of lint errors in
+  Playwright's bundled third-party JavaScript and CSS and broke
+  `verify:fast`, and therefore the pre-commit hook, on that machine only.
+  Docker and CI never saw it, because the `Dockerfile` excludes those paths;
+  only a developer who had run e2e locally could.
+- `no-bitwise` is on across `src/`, so hashing and mixing arithmetic cannot
+  reach for `^`, `>>>` or friends the way the reference implementations all
+  do. Stay in modular arithmetic instead: a multiplier and prime modulus
+  whose largest intermediate product still fits an exact double needs no
+  bit-level step. Reformulating beats a disable, which is prohibited here
+  anyway.
 - `react/hook-use-state` rejects `const [x] = useState(init)`. For
   initialize-once mutable hook state, seed an eager
   `useRef(create(...))` instead (re-render results are discarded), and keep
@@ -507,6 +554,29 @@ they bind any PR that makes a claim about a phone or ships a guard.
   claiming a Copilot review happened.
 - To find PR review threads without individual review URLs, use any available
   GitHub integration or the `gh` CLI for the repository and PR number.
+- **The two reviewers can contradict each other. Reach for this repository's
+  own written rule before the more recent comment — but a measurement beats
+  both.** On PR #797 Copilot objected to a `rem` floor on a font size as the
+  rem-floor trap, while Codex asked for that same element to be `rem`-sized
+  so it would follow the device font-size setting. The tie first went to
+  `skills/ui-layout-and-interaction/SKILL.md`, which records rem-floored
+  sizing overflowing real phones, and the element got an absolute floor.
+  Measuring it showed that was the wrong call: in side-by-side mode a larger
+  root font widens the `min-content` left column, which narrows the container
+  a right-hand panel's `cqw` sizes read, so an enlarged accessibility setting
+  made the explanatory copy _smaller_ — 13.78px to 12.11px at a 28px root.
+  The rule the tie was decided under is about control rows and consent
+  actions, which have no scroll container to fall into; text inside
+  `.dynamic-ui` or the analysis figure has one, so height it gains stays
+  reachable. That PR was later withdrawn for unrelated reasons, so **nothing
+  in the app tracks the device font-size setting today** and #802 carries the
+  open decision — do not read this bullet as describing shipped CSS.
+  Two things to take from it. Answer the loser on its thread with the rule
+  you followed, so the next round does not re-raise it as if unconsidered.
+  And when a durable note like this one records a decision that a later round
+  reverses, go back and rewrite it rather than leaving both versions
+  standing: Codex caught an earlier draft of this very paragraph still
+  describing the superseded absolute floor.
 - A bot's login differs between the two GitHub APIs: REST reports
   `chatgpt-codex-connector[bot]` where GraphQL reports
   `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling

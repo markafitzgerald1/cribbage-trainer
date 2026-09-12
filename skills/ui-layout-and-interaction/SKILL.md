@@ -110,6 +110,18 @@ once you are already editing layout or interaction code.
   anchors one (`.dynamic-ui.with-tally > :nth-last-child(2)`), and the
   conditional class driving it must come from the same predicate the child's
   own render uses or the two diverge.
+- The analysis figure is its own flex column, and anything added above the
+  results table competes with it for height rather than sitting beside it.
+  `.scored-possible-keep-discards` is `height: 100%` with `.table-container`
+  taking what is left through `flex-grow: 1`, so a sibling that refuses to
+  shrink can take all of it: a panel added above the table on PR #797 drove
+  that share to exactly zero at 380x350 with a 26px root font, and the table
+  vanished while the panel itself looked correct. That PR was withdrawn, so
+  no `min-height` floor protects the table today and the next child added
+  there inherits the whole hazard. `consentLayout.spec.ts`'s "preserves
+  usable analysis table height" case catches it — it failed on that unfixed
+  branch, which is what makes it worth trusting — so run it before assuming
+  a new child of that figure is free.
 - Aligning such a child to the **end** of its cell is not the safe way to
   stop it stretching. Items placed after the consent cell's row sit below the
   privacy links once pushed to their cell's end: `align-self: end` put the
@@ -212,6 +224,16 @@ once you are already editing layout or interaction code.
   ordinal or wall-clock `at` — and clear it outright (render-time reset,
   like `usePracticeDrill`) once its item leaves the filtered list, or
   restoring the filter silently reopens the panel.
+- Hiding a visual layout from assistive technology makes the replacement text
+  the **only** source of every fact it carried, and it is easy to leave one
+  out. A CSS-grid panel on PR #797 (withdrawn) gave each row a single spoken
+  sentence with the grid itself `aria-hidden`; the first version named the
+  columns and the numbers but not the two cards the row was about, so a
+  screen reader user was told the top choice scored more without being told
+  what it was. When you `aria-hidden` a region, list what a sighted reader
+  gets from it — headers, labels, identity, ordering — and check the
+  replacement carries each one. Assert the whole sentence in a test rather
+  than a fragment, or the omission reappears silently.
 - Freezing a control by swallowing its `onChange` leaves it focusable, still
   showing a pointer cursor, and announced as editable — a control that lies
   about being interactive. Lock it with the native `disabled` attribute

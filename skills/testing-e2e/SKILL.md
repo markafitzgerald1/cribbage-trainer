@@ -60,6 +60,13 @@ baselines so CI agrees with what was generated locally.
   `min-content` left column past the cards in side-by-side mode, stranding
   dead space before the analysis table. Measure the row's max-content width
   (clone it with `width: max-content`) before adding anything to it.
+- The suite locates the analysis with a bare `page.getByRole("table")` — in
+  `waitForAnalysis`, which nearly every spec calls, and again in
+  `discardTally.spec.ts`. A second table anywhere on the page therefore puts
+  those into strict-mode violation across the whole suite, not just in the
+  spec that added it. Build tabular UI out of a CSS grid instead, the way
+  `ScoredPossibleKeepDiscardExpandedRow` does, unless you are also prepared
+  to scope every one of those locators.
 - Analysis tables are lazy-loaded. E2E tests that select a complete discard or
   hydrate one from a deep link must wait for `Loading analysis...` to become
   hidden and for the table to become visible before locating a result row;
