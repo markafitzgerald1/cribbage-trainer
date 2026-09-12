@@ -14,12 +14,12 @@ describe("hand component", () => {
   const renderCards = (
     dealtCards: ReturnType<typeof dealHand>,
     sortOrder: SortOrder,
-    locked = false,
+    handId: string | null = null,
   ) =>
     render(
       <Hand
         dealtCards={dealtCards}
-        locked={locked}
+        handId={handId}
         onChange={jest.fn()}
         sortOrder={sortOrder}
       />,
@@ -58,12 +58,6 @@ describe("hand component", () => {
     expect(cueElement?.tagName).toBe("P");
   });
 
-  it("omits the discard prompt when cards are locked", () => {
-    const view = renderCards(dealHand(Math.random), SortOrder.Ascending, true);
-
-    expect(view.queryByText("Select two cards to discard")).toBeNull();
-  });
-
   it("has a checkbox for each dealt card", () => {
     const { dealtHand, getAllByRole } = dealAndRender(SortOrder.Ascending);
 
@@ -90,28 +84,44 @@ describe("hand component", () => {
     },
   );
 
-  it("replaces card DOM nodes when a new hand or suit changed is dealt", () => {
-    const handA = dealHand(() => 0.1);
-    const view = renderCards(handA, SortOrder.DealOrder);
-    const [firstCheckboxA] = view.getAllByRole("checkbox");
+  it.each([
+    {
+      handA: dealHand(() => 0.1),
+      handB: dealHand(() => 0.1).map((card) => ({
+        ...card,
+        suit: Suit.HEARTS,
+      })),
+      handIdA: null,
+      handIdB: null,
+      name: "suits change with identical ranks",
+    },
+    {
+      handA: dealHand(() => 0.1),
+      handB: dealHand(() => 0.1),
+      handIdA: "hand-1",
+      handIdB: "hand-2",
+      name: "handId changes with identical cards",
+    },
+  ])(
+    "replaces card DOM nodes when $name",
+    ({ handA, handB, handIdA, handIdB }) => {
+      const view = renderCards(handA, SortOrder.DealOrder, handIdA);
+      const [firstCheckboxA] = view.getAllByRole("checkbox");
 
-    const handWithDifferentSuits = handA.map((card) => ({
-      ...card,
-      suit: Suit.HEARTS,
-    }));
+      view.rerender(
+        <Hand
+          dealtCards={handB}
+          handId={handIdB}
+          onChange={jest.fn()}
+          sortOrder={SortOrder.DealOrder}
+        />,
+      );
 
-    view.rerender(
-      <Hand
-        dealtCards={handWithDifferentSuits}
-        onChange={jest.fn()}
-        sortOrder={SortOrder.Ascending}
-      />,
-    );
+      const [firstCheckboxB] = view.getAllByRole("checkbox");
 
-    const [firstCheckboxB] = view.getAllByRole("checkbox");
-
-    expect(firstCheckboxB).not.toBe(firstCheckboxA);
-  });
+      expect(firstCheckboxB).not.toBe(firstCheckboxA);
+    },
+  );
 
   it("preserves card DOM nodes when discard selection changes within the same hand", () => {
     const initialCards = dealHand(() => 0.2);
