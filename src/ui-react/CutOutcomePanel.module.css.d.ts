@@ -1,0 +1,14 @@
+export declare const average: string;
+export declare const columnHeading: string;
+export declare const count: string;
+export declare const cutHeader: string;
+export declare const cutHeaderText: string;
+export declare const cutOutcomePanel: string;
+export declare const footnote: string;
+export declare const grid: string;
+export declare const rowLabel: string;
+export declare const rowLabelCards: string;
+export declare const rowLabelText: string;
+export declare const sampleNote: string;
+export declare const starterCard: string;
+export declare const total: string;

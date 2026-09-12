@@ -78,7 +78,7 @@ const getHandAndCut = (keep: readonly Card[]) => {
   return { cutCard, hand };
 };
 
-const flushesPoints = (keep: readonly Card[]) => {
+const flushesPoints = (keep: readonly Card[], isCrib: boolean) => {
   if (keep.length < CARDS_PER_HAND || !isUnique(keep)) {
     return 0;
   }
@@ -95,7 +95,8 @@ const flushesPoints = (keep: readonly Card[]) => {
   ) {
     return CARDS_PER_HAND_WITH_CUT * HAND_POINTS.FLUSH_PER_CARD;
   }
-  return CARDS_PER_HAND * HAND_POINTS.FLUSH_PER_CARD;
+  // A crib flush must run all the way to the starter, so four matching crib cards score nothing.
+  return isCrib ? 0 : CARDS_PER_HAND * HAND_POINTS.FLUSH_PER_CARD;
 };
 
 const nobsPoints = (keep: readonly Card[]) => {
@@ -118,11 +119,24 @@ export interface HandPoints {
   runs: number;
   total: number;
 }
-export const handPoints = (keep: readonly Card[]): HandPoints => {
+export interface HandPointsOptions {
+  /*
+   * Counts the four cards as a crib rather than a kept hand. Every category
+   * scores alike except the flush, which the crib only earns when the starter
+   * shares the suit; nothing else about the count depends on whose cards these
+   * are.
+   */
+  readonly isCrib?: boolean;
+}
+
+export const handPoints = (
+  keep: readonly Card[],
+  { isCrib = false }: HandPointsOptions = {},
+): HandPoints => {
   const pairs = pairsPoints(keep);
   const fifteens = fifteensPoints(keep);
   const runs = runsPoints(keep);
-  const flushes = flushesPoints(keep);
+  const flushes = flushesPoints(keep, isCrib);
   const nobs = nobsPoints(keep);
   return {
     fifteens,

@@ -306,6 +306,20 @@ they bind any PR that makes a claim about a phone or ships a guard.
   survives, `hand` remains valid standalone if `discard` is dropped, and the
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
+- **Nothing added later may draw from the injected `generateRandomNumber`.**
+  It is positional: every draw advances it, so a feature that consumes one
+  changes what a seeded link deals from that point on, and nothing fails
+  loudly when it does. The telemetry `deal_nonce` sidesteps this with its own
+  source (`crypto.randomUUID`, see `skills/analytics-telemetry/SKILL.md`); the
+  starter cut of #717 sidesteps it by **deriving** from the six dealt cards
+  rather than drawing at all (`src/game/cutStarter.ts`). Prefer the
+  derivation where the value must also be stable per hand: a memoized draw
+  re-rolls on reload and on a Back, so F5 becomes a re-roll button, while a
+  pure function of the hand settles the same value on a reload, a shared
+  link, and a practice-drill replay. Guard either with an e2e test that deals
+  twice under one seed with the feature exercised and again without it, and
+  negative-check that guard against a build that does consume a draw — it is
+  the only thing that proves the guard works.
 
 ## Lint gauntlet interplay (agent checklist)
 
@@ -379,6 +393,21 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whole-context copy invalidates nothing but the lint layer, and anything
   `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
   junk lints inside Docker while never reaching CI.
+- **An ignore path has to be added to every ignore list, not just the ones
+  the gate reads.** `playwright-report/` and `test-results/` were in
+  `.gitignore`, `.dockerignore` and `.prettierignore` but in neither
+  `.stylelintignore` nor `eslint.config.mjs`'s `ignores`, so running the e2e
+  suite locally left thousands of lint errors in bundled third-party
+  JavaScript and CSS and broke `verify:fast` — and therefore the pre-commit
+  hook — on that machine only. Docker and CI never saw it, because the
+  `Dockerfile` excludes those paths. When a directory becomes generated
+  output, put it in all five.
+- `no-bitwise` is on across `src/`, so hashing and mixing arithmetic cannot
+  reach for `^`, `>>>` or friends the way the reference implementations all
+  do. Stay in modular arithmetic instead — a multiplier and prime modulus
+  whose largest intermediate product fits an exact double needs no bit-level
+  step (`src/game/cutStarter.ts`). Reformulating beats a disable, which is
+  prohibited here anyway.
 - `react/hook-use-state` rejects `const [x] = useState(init)`. For
   initialize-once mutable hook state, seed an eager
   `useRef(create(...))` instead (re-render results are discarded), and keep

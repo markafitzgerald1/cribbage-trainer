@@ -1,5 +1,9 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
+import {
+  formatSignedExpectedPoints,
+  toAlignedFixed,
+} from "./formatExpectedPoints";
 import { useCallback, useState } from "react";
 import type { Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
@@ -18,21 +22,7 @@ export interface ScoredPossibleKeepDiscardProps {
   readonly rowIndex: number;
 }
 
-const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const ROW_STRIPE_DIVISOR = 2;
-/*
- * The U+2212 minus sign matches the "+" advance width with tabular figures,
- * so signed columns stay aligned (the ASCII hyphen-minus is narrower).
- */
-const MINUS_SIGN = "−";
-
-const toAlignedFixed = (points: number): string => {
-  const roundedPoints = Number(points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
-
-  return roundedPoints
-    .toFixed(EXPECTED_POINTS_FRACTION_DIGITS)
-    .replace("-", MINUS_SIGN);
-};
 
 const formatDiscardLabel = (discard: readonly Card[]): string => {
   const [firstCard, secondCard] = discard as unknown as readonly [Card, Card];
@@ -40,12 +30,6 @@ const formatDiscardLabel = (discard: readonly Card[]): string => {
   const secondString = `${secondCard.rankLabel}${secondCard.suit}`;
 
   return `${firstString} ${secondString}`;
-};
-
-const formatSignedExpectedPoints = (points: number): string => {
-  const formatted = toAlignedFixed(points);
-
-  return points > 0 ? `+${formatted}` : formatted;
 };
 
 export function ScoredPossibleKeepDiscard({

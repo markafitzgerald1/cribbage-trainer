@@ -21,7 +21,22 @@ const MAX_STATEMENTS = 20;
 
 export default [
   {
-    ignores: ["dist/", "coverage/", "storybook-static/", ".claude/"],
+    /*
+     * Playwright writes its report and traces into the working tree, and both
+     * carry bundled third-party JavaScript and CSS. Every other ignore list
+     * here already excludes them (`.gitignore`, `.dockerignore`,
+     * `.prettierignore`, `.stylelintignore`), so without these two entries
+     * `verify:fast` — and therefore the pre-commit hook — fails on any machine
+     * that has run the e2e suite locally, while Docker and CI never see it.
+     */
+    ignores: [
+      "dist/",
+      "coverage/",
+      "storybook-static/",
+      "playwright-report/",
+      "test-results/",
+      ".claude/",
+    ],
   },
   ...fixupConfigRules(
     compat.extends(

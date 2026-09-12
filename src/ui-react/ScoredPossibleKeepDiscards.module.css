@@ -25,6 +25,20 @@
   flex-grow: 1;
   margin: 0;
   max-width: 100%;
+
+  /*
+   * A floor, so the cut panel sharing this flex column cannot squeeze the
+   * table to nothing on a short viewport at a large root font: the panel does
+   * not shrink, and without this the table's flex-grow share reached exactly
+   * zero at 380x350 with a 26px root. The figure is its own scroll container
+   * in both layout modes, so the overflow this can create stays reachable.
+   *
+   * Capped by a viewport unit rather than left as a bare em, because an em
+   * floor grows with a phone's font-size setting — the very condition that
+   * squeezes the column. Inert at the default scale, where the grown share is
+   * already larger than this.
+   */
+  min-height: min(3.2em, 10vh);
   min-width: 0;
   overflow: auto;
   padding-left: 0;

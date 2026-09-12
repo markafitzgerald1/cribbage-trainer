@@ -16,6 +16,7 @@ import {
   ScoredKeepDiscardSortKey,
   compareByExpectedScoreThenRankDescending,
 } from "../analysis/compareByExpectedScoreDescending";
+import { CutOutcomePanel } from "./CutOutcomePanel";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
@@ -252,6 +253,12 @@ export function ScoredPossibleKeepDiscards({
 
   return (
     <figure className={classes.scoredPossibleKeepDiscards}>
+      <CutOutcomePanel
+        cribRole={cribRole}
+        dealtCards={dealtCards}
+        scoredKeepDiscardsByNetScore={scoredKeepDiscardsByNetScore}
+        sortOrder={sortOrder}
+      />
       <div className={classes.tableContainer}>
         <table>
           <colgroup>

@@ -110,6 +110,18 @@ once you are already editing layout or interaction code.
   anchors one (`.dynamic-ui.with-tally > :nth-last-child(2)`), and the
   conditional class driving it must come from the same predicate the child's
   own render uses or the two diverge.
+- The analysis figure is its own flex column, and anything added above the
+  results table competes with it for height rather than beside it.
+  `.scored-possible-keep-discards` is `height: 100%` with
+  `.table-container` taking what is left through `flex-grow: 1`, so a
+  sibling that refuses to shrink can take all of it: #717's cut panel drove
+  that share to exactly zero at 380x350 with a 26px root font, and the table
+  vanished while the panel looked correct. The table now carries a
+  `min-height` floor, viewport-capped so it does not itself inflate with the
+  device font-size setting that caused the squeeze. `consentLayout.spec.ts`'s
+  "preserves usable analysis table height" case catches this — it failed on
+  the unfixed branch, which is what makes it worth trusting — so run it
+  before assuming a new child of that figure is free.
 - Aligning such a child to the **end** of its cell is not the safe way to
   stop it stretching. Items placed after the consent cell's row sit below the
   privacy links once pushed to their cell's end: `align-self: end` put the

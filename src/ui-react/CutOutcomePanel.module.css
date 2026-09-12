@@ -1,0 +1,151 @@
+@import url("./vars.css");
+
+/*
+ * A flex child of the analysis figure, pinned against shrinking the way its
+ * figcaption is: the table below it owns the flexible space, and a panel that
+ * collapsed under pressure would hide the very comparison it exists to show.
+ */
+.cut-outcome-panel {
+  box-sizing: border-box;
+  color: var(--text-color);
+  flex-shrink: 0;
+  font-family: var(--text-font-family);
+  min-width: 0;
+  width: 100%;
+}
+
+.cut-header {
+  align-items: baseline;
+  column-gap: 0.5em;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.95em;
+}
+
+.cut-header-text {
+  font-weight: 700;
+}
+
+/*
+ * The headline of the panel, so it is sized up from the mini-cards the rows
+ * use and the analysis table draws.
+ */
+.starter-card {
+  display: inline-flex;
+  font-size: 1.25em;
+}
+
+.sample-note {
+  font-style: italic;
+  margin-left: auto;
+  opacity: 0.75;
+}
+
+/*
+ * One grid for the headings and every row, so the columns line up without a
+ * table. A table here would put `page.getByRole("table")` — which the e2e
+ * suite calls bare, to wait for the analysis — into strict-mode violation.
+ */
+.grid {
+  align-items: baseline;
+  display: grid;
+  gap: 0.1em 0.4em;
+  grid-template-columns: minmax(0, 1fr) repeat(4, minmax(2.2em, auto));
+}
+
+.column-heading {
+  font-weight: 700;
+  opacity: 0.8;
+  text-align: right;
+}
+
+.row-label {
+  align-items: baseline;
+  column-gap: 0.3em;
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.row-label-text {
+  white-space: nowrap;
+}
+
+.row-label-cards {
+  display: inline-flex;
+  gap: 0.2em;
+}
+
+.count,
+.total,
+.average {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.total {
+  font-weight: 700;
+}
+
+/*
+ * The expectation reads as a reference figure rather than as a result, so it
+ * is deliberately quieter than the counts beside it.
+ */
+.average {
+  opacity: 0.75;
+}
+
+.footnote {
+  line-height: 1.25;
+  margin: 0.25em 0 0;
+  opacity: 0.7;
+}
+
+@media (aspect-ratio < 6 / 5) {
+  /*
+   * Smaller than the analysis table's own headers, deliberately. Stacked mode
+   * gives this panel and the results table one flexible grid row between them,
+   * and on a 390x664 phone with a tally on screen that row is about 150px: at
+   * the table's own size the panel filled it and pushed every result row out
+   * of the visible box. The table is what the user came for, so the summary
+   * yields to it.
+   */
+  .cut-outcome-panel {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.6);
+  }
+
+  .footnote {
+    font-size: calc(var(--medium-text-font-size-portrait) * 0.46);
+  }
+}
+
+@media (aspect-ratio >= 6 / 5) {
+  /*
+   * Container units track the analysis column's own width rather than the
+   * viewport, matching the table headers this panel sits above.
+   *
+   * The lower bound is itself capped by a viewport unit. A bare rem floor
+   * grows with a phone's font-size accessibility setting and would then win
+   * outright inside this fixed-height column, which is the trap that pushed
+   * the consent banner off a short landscape screen. The cap is a no-op at the
+   * default scale, where the rem is already the smaller of the two.
+   */
+  .cut-outcome-panel {
+    font-size: clamp(
+      min(0.7rem, 1.4vw),
+      4.6cqw,
+      var(--medium-text-font-size-landscape)
+    );
+  }
+
+  /*
+   * The analysis table shares this column and is the surface the user came
+   * for, so the caution text is kept to the smallest size that still reads
+   * rather than allowed to push rows off a short landscape screen. Relative to
+   * the panel's own size, so it inherits that size's viewport cap instead of
+   * introducing a second rem floor.
+   */
+  .footnote {
+    font-size: 0.68em;
+  }
+}
