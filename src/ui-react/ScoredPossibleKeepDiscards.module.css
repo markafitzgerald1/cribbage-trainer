@@ -10,6 +10,7 @@
   height: 100%;
   gap: 10px;
   margin: 0;
+  min-height: min(8rem, 20vh);
   min-width: 0;
   width: 100%;
 }
@@ -208,19 +209,23 @@
 }
 
 .loading {
+  box-sizing: border-box;
   color: var(--text-color);
   font-family: var(--text-font-family);
   font-style: italic;
+  min-height: min(8rem, 20vh);
   opacity: 0.8;
   padding: 10px;
 }
 
 .error {
   align-items: center;
+  box-sizing: border-box;
   color: var(--text-color);
   display: flex;
   font-family: var(--text-font-family);
   gap: 15px;
+  min-height: min(8rem, 20vh);
   padding: 10px;
 }
 
