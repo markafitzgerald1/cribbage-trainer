@@ -47,10 +47,10 @@ agreed, the pull request says what actually happened.
 - **One authoritative full gate per pushed head, and reviews come after it.**
   `.husky/pre-commit` runs the fast `npm run verify:fast` filter, not the
   merge gate, so a landed commit is not validated work. Before requesting a
-  Codex or Copilot review by hand, wait for required CI to be green on the
-  exact SHA — a manual review of a head that then fails CI is spent twice,
-  once on the bot's budget and once on the round it forces (the automatic
-  round is exempt: you do not control it). Run
+  Codex or Copilot review, wait for required CI to be green on the exact
+  SHA — a review of a head that then fails CI is spent twice, once on the
+  bot's budget and once on the round it forces. Both automatic reviews are
+  off, so this admits no exception. Run
   `npm run docker:build-and-test-all` locally instead only when CI cannot be
   that gate — unpushed work, or a Docker-only reproduction. A `--no-verify`
   commit skipped `verify:fast`, not CI's gate, so just run `verify:fast` by
@@ -58,13 +58,12 @@ agreed, the pull request says what actually happened.
 - During a review fix the loop is: reproduce with a regression test that
   fails against the unfixed code, run the focused test plus `verify:fast`,
   commit and push, let required CI run the full gate for that SHA, then
-  reply to and resolve the threads. The push starts the next automatic
-  Codex round; you only send `@codex review` if that round does not land
-  (see below).
-- The PR body carries a human review guide and a manual testing plan. Let the
-  automatic Copilot and Codex reviews land, run the loop to a clean round,
-  and only then ask for human review — the human's attention is the scarce
-  resource here and comes last, not first.
+  reply to and resolve the threads. Request the next Codex round yourself
+  once that CI is green — pushing no longer starts one (see below).
+- The PR body carries a human review guide and a manual testing plan. Request
+  the reviews, run the loop to a clean round, and only then ask for human
+  review — the human's attention is the scarce resource here and comes last,
+  not first.
 - The review guide is what makes a PR reviewable rather than merely correct: a
   suggested file reading order, the design decisions worth challenging rather
   than only the ones that worked, and honest flags for anything a reader would
@@ -76,14 +75,13 @@ agreed, the pull request says what actually happened.
   covers: a real phone, a real network, a real Google Analytics stream. When
   the human runs those steps, record the result in the PR body, and say
   plainly if later commits have moved the code out from under that run.
-- The automatic reviews (`AGENTS.md`, GitHub PR Reviews) do most of the
-  loop: Codex usually reviews every pushed head, Copilot the opening PR.
-  Two things they leave you. If a Codex round is missing on the head a
-  human will read — smart detect skipped it, or it came back a quota stub
-  — request `@codex review` by hand, but on a quota stub wait for the quota
-  to recover first rather than re-requesting into the same reply. And
-  Copilot's automatic review does not reliably re-fire on a new head;
-  re-request it (once CI is green) with this, since
+- **Both automatic reviews were turned off on 2026-09-12, so every round is
+  yours to request** — `@codex review` as a comment with the attribution
+  prefix, and Copilot through the endpoint below, once required CI is green
+  on that head. On a quota stub, wait for the quota to recover rather than
+  re-requesting into the same reply. `AGENTS.md` under GitHub PR Reviews
+  owns the policy for when each is worth spending. Request them on the same
+  head rather than one after the other. Request Copilot with this, since
   `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash
