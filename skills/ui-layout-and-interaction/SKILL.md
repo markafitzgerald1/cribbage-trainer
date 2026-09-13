@@ -322,15 +322,15 @@ once you are already editing layout or interaction code.
 - Primary action buttons across both the main felt ground and elevated modals
   (such as Deal, Use hand, Start drill, and Practice actions) must maintain
   at least 3:1 non-text boundary contrast against their fill (e.g. #72d572
-  border reaching 3.16:1 against #197536 fill) and against adjacent grounds
-  (3.86:1 against #1f6536 table felt, 7.10:1 against #10381b dialog surface).
+  border reaching 3.15:1 against #197536 fill) and against adjacent grounds
+  (3.86:1 against #1f6536 table felt, 7.16:1 against #10381b dialog surface).
   Because dark grounds compress luminance, darker borders cannot reach 3:1;
   high-luminance borders are mathematically required to establish legible
   component boundaries for low-vision players.
 - Persistent links rendered directly on the felt table ground (such as the
   collapsed Privacy Policy and Analytics Settings links) must maintain at
   least 4.5:1 normal-text contrast under WCAG 2.1 SC 1.4.3 (e.g. #b8e5be
-  reaching 5.01:1 against #1f6536 ground, brightening to #def8e2 at 6.40:1
+  reaching 5.04:1 against #1f6536 ground, brightening to #def8e2 at 6.27:1
   on hover and focus).
 - Radio selections and filter chips (such as Dealer/Pone role selectors and
   dialog filter groups) must distinguish their active/checked state through
