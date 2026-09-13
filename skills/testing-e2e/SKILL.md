@@ -209,3 +209,15 @@ baselines so CI agrees with what was generated locally.
     see your harness's own environment notes (for Claude Code on the web,
     `CLAUDE.md`'s Cloud sessions section) for numbers measured on a specific
     host, since they do not transfer to a different one.
+- **`scrollIntoViewIfNeeded` scrolls the document too, so it cannot be the
+  basis of a "this row still fits" guard.** A chip that has pushed its group
+  past the edge of the screen is still brought into view by scrolling the page
+  sideways, so the assertion that follows passes and the guard is inert. This
+  was caught only by negative-checking: the first version of
+  `expectChipsOnOneReachableRow` asserted the chip's box against the group's
+  after `scrollIntoViewIfNeeded`, and a build with the overflow bug deliberately
+  reintroduced still passed in all five projects. Assert the **container's**
+  box against `page.viewportSize()` instead — the same sabotage then fails at
+  548px against a 392px bound. The wider rule: when a guard is meant to catch
+  an overflow, the thing that must be inside the viewport is the box that
+  overflowed, not the element you scrolled to.

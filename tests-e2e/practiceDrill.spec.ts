@@ -206,18 +206,59 @@ test.describe("practice drill", () => {
     );
   });
 
-  const expectChipsOnOneRow = async (chips: Locator, expectedCount: number) => {
+  const boxOf = async (locator: Locator) => {
+    const box = await locator.boundingBox();
+    expect(box).not.toBeNull();
+    return {
+      left: box?.x ?? Number.NaN,
+      right: (box?.x ?? Number.NaN) + (box?.width ?? Number.NaN),
+      top: box?.y ?? Number.NaN,
+    };
+  };
+
+  /*
+   * Shared y coordinates are identical whether the row fits the screen or
+   * runs off the side, so they cannot catch a width regression on their own.
+   * The group's own box is what discriminates: a group wider than the
+   * viewport has pushed the page sideways, where one that absorbs its
+   * overflow by scrolling inside its own box stays within the screen. Do not
+   * replace this with `scrollIntoViewIfNeeded` on the chip — that scrolls the
+   * document too, so an overflowing row satisfies it and the check goes inert
+   * (confirmed by running this guard against a group missing its
+   * `min-width: 0`, which passed until the assertion moved to the group box).
+   */
+  const expectChipsOnOneReachableRow = async (
+    group: Locator,
+    expectedCount: number,
+  ) => {
+    const chips = group.locator("label");
     await expect(chips).toHaveCount(expectedCount);
     const tops = await Promise.all(
-      (await chips.all()).map(async (chip) => {
-        const box = await chip.boundingBox();
-        expect(box).not.toBeNull();
-        return box?.y ?? Number.NaN;
-      }),
+      (await chips.all()).map(async (chip) => (await boxOf(chip)).top),
     );
 
     expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(
       CHIP_ROW_TOLERANCE_PX,
+    );
+
+    const viewportWidth = group.page().viewportSize()?.width ?? Number.NaN;
+    const groupBox = await boxOf(group);
+
+    expect(groupBox.left).toBeGreaterThanOrEqual(-CHIP_ROW_TOLERANCE_PX);
+    expect(groupBox.right).toBeLessThanOrEqual(
+      viewportWidth + CHIP_ROW_TOLERANCE_PX,
+    );
+
+    const lastChip = chips.last();
+    await lastChip.scrollIntoViewIfNeeded();
+    const scrolledGroupBox = await boxOf(group);
+    const chipBox = await boxOf(lastChip);
+
+    expect(chipBox.left).toBeGreaterThanOrEqual(
+      scrolledGroupBox.left - CHIP_ROW_TOLERANCE_PX,
+    );
+    expect(chipBox.right).toBeLessThanOrEqual(
+      scrolledGroupBox.right + CHIP_ROW_TOLERANCE_PX,
     );
   };
 
@@ -239,7 +280,7 @@ test.describe("practice drill", () => {
      * top diverges from the other two by well over 2px.
      */
     const sortBy = page.getByRole("group", { name: "Sort by" });
-    await expectChipsOnOneRow(sortBy.locator("label"), SORT_BY_CHIP_COUNT);
+    await expectChipsOnOneReachableRow(sortBy, SORT_BY_CHIP_COUNT);
   });
 
   test("keeps the mistake-queue loss severity chips on one row at a large device font", async ({
@@ -260,10 +301,7 @@ test.describe("practice drill", () => {
     await openMistakeQueueAtLargeFont(page);
 
     const lossSeverity = page.getByRole("group", { name: "Loss severity" });
-    await expectChipsOnOneRow(
-      lossSeverity.locator("label"),
-      LOSS_SEVERITY_CHIP_COUNT,
-    );
+    await expectChipsOnOneReachableRow(lossSeverity, LOSS_SEVERITY_CHIP_COUNT);
   });
 
   test("shows the first mistake without scrolling in phone landscape", async ({

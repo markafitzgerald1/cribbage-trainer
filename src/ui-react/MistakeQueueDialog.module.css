@@ -528,15 +528,29 @@
    * one row in portrait instead of wrapping the last one. Scoped to a
    * dedicated class so that when quantileOptions is empty and the fieldset
    * is omitted, the Crib role group is not accidentally targeted.
+   *
+   * `min-width: 0` is what makes `overflow-x` bite: without it this flex item
+   * takes its max-content width and the group grows past the viewport rather
+   * than scrolling, so a chip too wide to fit becomes unreachable instead of
+   * scrollable. Measured at a 28px root font on a 375px viewport.
    */
   .severity-group {
     flex-basis: 100%;
+    flex-wrap: nowrap;
     gap: min(0.25rem, 0.8vw);
+    min-width: 0;
+    overflow-x: auto;
     padding: min(0.35rem, 1.2vw);
   }
 
+  /*
+   * Only the spacing is capped here. An extra font-size cap used to keep the
+   * row narrow by shrinking the type further than the sibling chips, which is
+   * what the scroll container above is for instead. These chips now take the
+   * sibling `.option` size; that size is itself viewport-capped, so it does
+   * not yet follow the device font-size setting either (see #802).
+   */
   .severity-group .option {
-    font-size: min(0.72rem, 2.7vw);
     padding: min(0.2rem, 0.8vw) min(0.35rem, 0.9vw);
   }
 

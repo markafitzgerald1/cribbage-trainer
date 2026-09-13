@@ -375,3 +375,13 @@ once you are already editing layout or interaction code.
   `#72d572` border would have collapsed the hover boundary to 1.44:1, and the
   old `#81c784` checked fill to 1.10:1 — a fix for the reported state
   creating two unreported ones.
+- **`overflow-x: auto` on a flex item does nothing until `min-width: 0` joins
+  it.** A flex item's automatic minimum size is its `min-content` width, so
+  the box grows to fit its children and never overflows itself — the
+  declaration is present, the scrollbar never appears, and the row pushes the
+  page sideways instead. Measured on `.severity-group` at a 28px root font on
+  a 375px viewport: without `min-width: 0` the group renders 550px wide
+  against a 375px screen with `scrollWidth === clientWidth`; with it the group
+  is 325px, `scrollWidth` 498px, and the last chip scrolls into reach. When a
+  row is meant to absorb its own overflow, assert the container's own box
+  against the viewport rather than trusting the declaration.
