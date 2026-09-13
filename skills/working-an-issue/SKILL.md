@@ -17,7 +17,8 @@ it from a diff.
 
 - The **issue body** is intent and accepted scope: what problem is being
   solved and what would count as solving it. It is not a running log, and it
-  does not narrate how the work went.
+  does not narrate how the work went. For a user-facing feature, it records
+  whether usage will be measured and, if not, why not.
 - A **dated edit to the issue body** is how an approved scope change is
   recorded. Scope that moves without one leaves the issue describing work
   nobody agreed to, and no reader can tell which version a reviewer read.
@@ -144,13 +145,22 @@ agreed, the pull request says what actually happened.
   - **Discovery & Design** — still being refined, not yet a scoped unit of
     work.
   - **Done** — closed.
-- Those meanings imply six board invariants, each worth checking because
+- Those meanings imply seven board invariants, each worth checking because
   nothing enforces it: every open issue is on the board; every open issue
   has a milestone; every board item has a Status set (a `--project` add
   leaves it empty, so the item shows in no column); no `Beyond MLP` item and
-  no `blocked` item sits in Todo; nothing closed sits outside Done; and
+  no `blocked` item sits in Todo; nothing closed sits outside Done;
   nothing still open sits in Done, where an accidental drop hides live work
-  while passing every other check.
+  while passing every other check; and no open umbrella issue has every native
+  sub-issue closed.
+- Detect the seventh invariant through the native relationship: read
+  `sub_issues_summary` from
+  `gh api repos/<owner>/<repo>/issues/<n>`. An open issue violates it when
+  `total > 0` and `completed == total`. A Markdown checklist of issue references
+  is not a sub-issue relationship and reports `total: 0`, so reading the issue
+  body cannot verify this invariant. #756 is currently the only umbrella in
+  either repository; guarding one card with this rule is clearer than adding a
+  `Tracking` Status option solely for it.
 - The board has no Priority field, yet the work is still ranked: priority is
   the milestone, then the Status column, then the manual top-to-bottom order
   of cards within a column. The top of Todo is the default next issue to
