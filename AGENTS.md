@@ -229,8 +229,9 @@
   filed and triaged as a lazy-analysis race on exactly that misreading: its
   quoted `76 | expect(view.queryByRole("table")).toBeNull();` and
   `at src/ui-react/TrainerPracticeDrill.test.tsx:73:5` are both reproduced
-  character-for-character by `npx jest --testTimeout=400` on a passing tree,
-  and line 76 was never reached. Read the stack frame, not the code frame.
+  character-for-character on a passing tree by
+  `npx jest --expand --testTimeout=400 --runTestsByPath <that spec>`, and
+  line 76 was never reached. Read the stack frame, not the code frame.
 - **The heavy jsdom Trainer specs run near jest's per-test budget whenever
   the machine is contended, and which one crosses first is luck.** Reproduce
   by starving jest — spin up more CPU hogs than there are cores and run
@@ -241,8 +242,10 @@
   set to 15000 in `jest.config.json`: jest's 5000 default assumes a process
   that owns the machine, while `verify:fast` runs jest concurrently with
   eleven other tasks and jest itself forks one worker fewer than the machine
-  has cores, so twenty-odd CPU-hungry processes share eight cores. Do not
-  scope a fix like this to whichever spec happened to fail, and do not reach
+  has cores — on the eight-core host these numbers come from, twenty-odd
+  CPU-hungry processes for eight cores. The ratio is what travels, not the
+  count. Do not scope a fix like this to whichever spec happened to fail,
+  and do not reach
   for a `maxWorkers` cap to get the same effect — the full suite passes
   under that starvation at 15000 with workers uncapped, and a cap would slow
   a dedicated `npm test` on a many-core CI or Docker machine.
@@ -256,7 +259,10 @@
   and before the commit. The same shape has a second edge here: a lazily
   loaded analysis that has not resolved yet is also trivially absent, so
   wait for it to be on screen first — the Jest counterpart of the rule
-  `skills/testing-e2e/SKILL.md` states for Playwright.
+  `skills/testing-e2e/SKILL.md` states for Playwright. Give that wait an
+  explicit timeout: Testing Library's `findBy*` defaults to one second and
+  `testTimeout` does not govern it, so a wait added to survive contention
+  fails at one second under exactly the contention it was added for.
 - Never judge a validation run by piping through `| tail` or `| grep`: the
   pipe masks the command's exit code and a "61 passed" line can sit directly
   below a failed-tests list. Redirect to a log file, echo `$?`, and read the

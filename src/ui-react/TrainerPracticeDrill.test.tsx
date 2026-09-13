@@ -22,6 +22,15 @@ import userEvent from "@testing-library/user-event";
 
 const MISTAKE_HAND = "5H,6H,7H,8H,9H,10H";
 
+/*
+ * Testing Library's own async timeout is one second and jest's `testTimeout`
+ * does not govern it, so every wait for the lazily loaded analysis needs its
+ * own contention margin or it fails before the raised jest budget can help.
+ * Kept well under that budget so a genuinely missing table reports itself as
+ * one rather than as a test timeout.
+ */
+const waitForAnalysis = { timeout: 10000 };
+
 const seedMistakeHand = () => {
   clearDiscardTally();
   recordDiscardDecision({
@@ -36,6 +45,9 @@ const seedMistakeHand = () => {
 };
 
 type DrillView = ReturnType<typeof renderTrainerWithInitialProps>;
+
+const findAnalysisTable = (view: DrillView) =>
+  view.findByRole("table", {}, waitForAnalysis);
 
 const clickDrillButton = (
   view: DrillView,
@@ -62,7 +74,7 @@ const openDrillFromQueue = async () => {
    * withholds nothing. Waiting is also the Jest counterpart of the rule
    * `skills/testing-e2e/SKILL.md` states for Playwright.
    */
-  await screen.findByRole("table");
+  await findAnalysisTable(view);
   await clickDrillButton(view, user, "Mistake queue");
   await clickDrillButton(view, user, "Practice this");
 
@@ -101,7 +113,7 @@ describe("trainer practice drill", () => {
 
     await clickDrillButton(view, user, "Check discard");
 
-    await expect(view.findByRole("table")).resolves.toBeInTheDocument();
+    await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
     expect(screen.getByLabelText("Practice drill")).toBeInTheDocument();
   });
 
@@ -142,6 +154,6 @@ describe("trainer practice drill", () => {
     fireEvent.popState(window);
 
     expect(screen.queryByLabelText("Practice drill")).toBeNull();
-    await expect(view.findByRole("table")).resolves.toBeInTheDocument();
+    await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
   });
 });
