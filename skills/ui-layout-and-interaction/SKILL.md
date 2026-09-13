@@ -358,3 +358,20 @@ once you are already editing layout or interaction code.
   transitioning to #218838 fill with #8cee8c border on hover/focus) so their
   boundaries exceed 3:1 contrast against both their fill and the #1f6536 table
   felt.
+- **A transparent fill is not a missing color; it is the ground, and changing
+  the ground silently retires the border that used to pass.** The sort-order
+  toggles (`SortOrderInput.module.css`) carried a `black` border that reached
+  4.09:1 against the old `green` (#008000) ground and fell to 2.97:1 against
+  the #1f6536 felt without one line of their own stylesheet changing — so no
+  diff, no gate, and no review of the touched files could surface it. When a
+  ground color moves, enumerate every control that draws its boundary in a
+  dark color against it, not merely the files the change touched. The felt
+  ground now carries `#72d572` at 3.86:1 unselected, `#245830` fill with an
+  `#8cee8c` border (5.86:1 against the fill, 4.95:1 against the felt) on
+  hover, and `#34c754` fill with `#08200d` border and text on the checked
+  toggle, where the fill itself carries the boundary at 3.18:1 against the
+  felt and the text reaches 7.72:1. Retuning one state of such a control
+  forces the others: leaving the old `#5fa7d7` hover fill under a new
+  `#72d572` border would have collapsed the hover boundary to 1.44:1, and the
+  old `#81c784` checked fill to 1.10:1 — a fix for the reported state
+  creating two unreported ones.
