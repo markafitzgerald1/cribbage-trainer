@@ -400,3 +400,31 @@ test("manually entered pone hand reaches suited analysis", async ({ page }) => {
 
   await expect(getSuitedDiscardRow(page)).toBeVisible();
 });
+
+/*
+ * The role chips are rem-sized, so a raised device font-size setting widens
+ * their row while the dialog does not follow: without `flex-wrap` the row
+ * ends at 420.5px on a 390px screen at a 28px root font, and the page's
+ * `overflow-x: hidden` means "Pone" cannot be scrolled into reach. Asserting
+ * the computed wrap mode alongside the geometry keeps the diagnosis legible
+ * if this regresses. The marker pseudo-element is not the cause -- removing
+ * it changes the row width by zero -- so do not "fix" it by shrinking
+ * markers.
+ */
+test("entered-hand role chips stay on screen at a large device font", async ({
+  page,
+}) => {
+  await openCardEntryDialog(page);
+  await page.setViewportSize(phonePortraitViewport);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  const roleGroup = page.getByRole("group", { name: "Your role" });
+  const lastChip = roleGroup.getByRole("radio").last().locator("..");
+
+  await expect
+    .poll(async () => rightEdge(await requireBoundingBox(lastChip)))
+    .toBeLessThanOrEqual(phonePortraitViewport.width);
+
+  // Names the cause when the geometry above regresses.
+  await expect(roleGroup).toHaveCSS("flex-wrap", "wrap");
+});

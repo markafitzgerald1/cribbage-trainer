@@ -17,10 +17,21 @@
   padding-right: 2rem;
 }
 
+/*
+ * Wrapping keeps both options reachable. The chips are rem-sized, so raising
+ * the device font-size setting widens the row while the dialog stays put: on
+ * a 390px screen at a 28px root font the row ends at 420.5px, past both the
+ * dialog and the viewport, and `overflow-x: hidden` on the page means the
+ * player cannot scroll sideways to reach "Pone" at all. Wrapping brings it
+ * back to 279.5px on two rows. Not caused by the marker pseudo-element
+ * below: suppressing it changes the row's width by zero, so do not "fix" a
+ * recurrence by shrinking the markers.
+ */
 .role {
   border: 2px solid color-mix(in srgb, green 40%, white);
   border-radius: 0.45rem;
   display: flex;
+  flex-wrap: wrap;
   gap: 1.25rem;
   padding: 0.75rem 1rem 0.9rem;
 }
