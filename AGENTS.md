@@ -227,11 +227,20 @@
   around the `it`, so the last context line — often an `expect` a few lines
   below — reads like the failure while being nothing but context. #804 was
   filed and triaged as a lazy-analysis race on exactly that misreading: its
-  quoted `76 | expect(view.queryByRole("table")).toBeNull();` and
-  `at src/ui-react/TrainerPracticeDrill.test.tsx:73:5` are both reproduced
-  character-for-character on a passing tree by
-  `npx jest --expand --testTimeout=400 --runTestsByPath <that spec>`, and
-  line 76 was never reached. Read the stack frame, not the code frame.
+  quoted `76 | expect(view.queryByRole("table")).toBeNull();` is the frame's
+  last context line and its `at …:73:5` is the `it` call site. The whole
+  output reproduces on a **passing** tree with:
+
+  ```bash
+  npx jest --expand --testTimeout=400 \
+    --runTestsByPath src/ui-react/TrainerPracticeDrill.test.tsx
+  ```
+
+  Against that spec as it stood at #804 the two strings matched
+  character-for-character; the numbers have since moved with the file, so
+  compare the shape rather than the lines. Line 76 was never reached. Read
+  the stack frame, not the code frame.
+
 - **The heavy jsdom Trainer specs run near jest's per-test budget whenever
   the machine is contended, and which one crosses first is luck.** Reproduce
   by starving jest — spin up more CPU hogs than there are cores and run
