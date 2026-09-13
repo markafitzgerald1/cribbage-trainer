@@ -9,6 +9,41 @@
   thumb", or subjective weighting in scoring algorithms. All expected values
   must be mathematically derived.
 - Primary branch: `main`; active work often happens on feature branches.
+- **Deriving a number is not enough; its inputs have to be derived too.** The
+  constraint above reads as a rule about the scoring engine, and PR #797
+  followed it to the letter while still violating it: a cut panel counted a
+  crib by exact enumeration over concrete cards, two of which were chosen by
+  hashing the dealt six, because no derivation for the opponent's discard
+  exists here. Exact arithmetic over an invented input is an invented result.
+  It was also silently inconsistent with the app's own figures —
+  `expectedCribPointsTable.json` is generated against an opponent whose
+  discard policy is trained by iterative best response, while the hash picks
+  one concrete pair for a given deal with probability one — a single
+  deterministic sample drawn from a uniform opponent model, not an
+  expectation over one. So the panel set a lone pseudo-sample of the wrong
+  opponent beside a converged average of the right one and invited the reader
+  to compare them. Note the wording matters and has been got wrong three
+  times on this same subject: "uniform random draw", then "spreads evenly",
+  then "amounts to a uniform draw" all smuggled a distribution into what is
+  one fixed card pair per hand. Before displaying any **scoring or
+  expected-value** figure, name every input it consumes and say where each
+  comes from: simulation, enumeration, probability, or **observed state** —
+  a direct observation of the user or the world, such as what the user
+  actually did, what the clock actually reads, or what a device actually
+  reported. That fourth source is legitimate and common: an attempt count, a
+  drill streak, a decision date, and the number of cards currently selected
+  are all observations rather than derivations, and nothing here prohibits
+  them. **Storage is transport, not provenance.** A value does not become
+  observed by having been written down and read back; it keeps whatever
+  provenance it had when it was created, and an invented one stays invented
+  however many times it round-trips through `localStorage` or a JSON
+  artifact. Persisting a figure is exactly how an illegitimate input would
+  launder itself into a later feature that never saw where it came from.
+  The rule bites on the other kind of input entirely — a
+  value that is neither derived nor observed, but invented to stand in for
+  one that was unavailable. A card nobody dealt, nobody observed, and no
+  table models is not an input you have. Making the choice deterministic
+  does not fix this; it only hides that a choice was made.
 - **Product direction:** the roadmap is gated on two things the app has not
   yet earned from its own author: stickiness and trust. It does get played from
   time to time, but not often enough to call it sticky, and many of its
@@ -309,6 +344,46 @@ they bind any PR that makes a claim about a phone or ships a guard.
   survives, `hand` remains valid standalone if `discard` is dropped, and the
   subset check turns any drift between the two params into a rejected
   `discard` instead of a silent error.
+- **The injected `generateRandomNumber` is one shared positional stream, and
+  several places already draw from it.** Every draw advances it, so a
+  consumer changes what a seeded link deals from that point on, and nothing
+  fails loudly when it does. Known call sites, as a starting inventory
+  rather than a closed list: `Trainer`'s own `useState` initializer, which
+  calls `dealHand(generator)` and then `randomCribRole(generator)` on a
+  non-deep-linked first render; `useDealHand`, which repeats that pair for
+  every later deal; and `usePracticeDrill`'s `drawNext`, which samples the
+  mistake queue. So starting an automatic drill really does shift the next
+  seeded deal, and that is shipped behavior rather than a latent bug: state
+  the exception rather than writing this rule as an absolute, which an
+  earlier draft did and which the shipped flow already contradicted.
+  **Re-derive that inventory by grep before relying on it** — an earlier
+  draft named two of the three and would have sent a seed-contract audit
+  past the startup draws entirely.
+  The rule for anything **new** is therefore not "never draw" but "do not
+  add another consumer without deciding what that does to the seed
+  contract". Two ways to avoid it: the telemetry `deal_nonce` takes its own
+  source (`crypto.randomUUID`, see `skills/analytics-telemetry/SKILL.md`),
+  and **deriving** a value from the six dealt cards avoids the stream while
+  also making the value stable per hand. A memoized draw's value depends on
+  where the shared stream happens to sit when it draws, and that position is
+  not persisted anywhere. On a fully serialized seeded link — `hand`, `role`
+  and `seed` all present — `Trainer` short-circuits both startup draws, so a
+  reload rebuilds the same generator at position zero and a memoized
+  consumer at a fixed call site does come back the same; the earlier claim
+  here that F5 is a re-roll button was wrong about exactly the case the seed
+  contract is for. What moves the value is the position moving: Back
+  navigation, or the first transition from a seed-only URL to a serialized
+  hand, where `dealHand(generator)` runs and advances the stream. A pure
+  function of the six dealt cards has no position to depend on, so it
+  settles the same value across a reload, a shared link, a Back, and a
+  practice-drill replay alike. Determinism alone does not make a derived value
+  legitimate, though — see the derived-inputs rule under Project overview,
+  which is what withdrew PR #797 after its derivation had solved exactly
+  this hazard. Guard a new consumer with an e2e test that deals twice under
+  one seed with that feature exercised and again without it, and
+  negative-check the guard against a build that does consume a draw. Keep
+  the practice drill out of that comparison, or it fails on shipped
+  behavior instead of on the feature under test.
 
 ## Lint gauntlet interplay (agent checklist)
 
@@ -382,6 +457,35 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whole-context copy invalidates nothing but the lint layer, and anything
   `.gitignore` ignores must be listed in `.dockerignore` too, or local-only
   junk lints inside Docker while never reaching CI.
+- **A generated directory needs more exclusions than it looks, and the
+  count is not the useful part — the inventory is.** The ignore lists are
+  `.gitignore`, `.dockerignore`, `.prettierignore`, `.stylelintignore`,
+  `.markdownlintignore`, `.cspell.json`'s `ignorePaths`, and
+  `eslint.config.mjs`'s `ignores`; **`tsconfig.json`'s `exclude` belongs on
+  the same list and is not an ignore file at all.** It currently includes
+  `**/*.ts` and `**/*.tsx` while excluding only `dist`, so a generated
+  directory holding any TypeScript fails `lint:tsc` — and therefore
+  `verify:fast` — no matter how many ignore files name it. Treat the list
+  above as a starting inventory to check against the verification commands
+  themselves, not as a closed set of seven: two successive drafts of this
+  bullet called it exhaustive and it was not either time. Add an entry
+  wherever that tool can reach inside the directory. Do not infer the rule
+  from the lists already here, which are not exhaustive: `dist/` and
+  `storybook-static/` are each absent from lists whose tool never matches
+  anything inside them, so a missing entry is not evidence that one is
+  unnecessary. Err toward adding, because the costs are lopsided. A
+  redundant entry is dead config; a missing one broke `verify:fast`, and
+  therefore the pre-commit hook, on one developer's machine — leaving
+  `playwright-report/` and `test-results/` unlisted meant running the e2e
+  suite locally produced thousands of lint errors out of Playwright's
+  bundled third-party JavaScript and CSS. No gate can catch that, because
+  the `Dockerfile` excludes both paths from Docker and CI alike.
+- `no-bitwise` is on across `src/`, so hashing and mixing arithmetic cannot
+  reach for `^`, `>>>` or friends the way the reference implementations all
+  do. Stay in modular arithmetic instead: a multiplier and prime modulus
+  whose largest intermediate product still fits an exact double needs no
+  bit-level step. Reformulating beats a disable, which is prohibited here
+  anyway.
 - `react/hook-use-state` rejects `const [x] = useState(init)`. For
   initialize-once mutable hook state, seed an eager
   `useRef(create(...))` instead (re-render results are discarded), and keep
@@ -510,6 +614,57 @@ they bind any PR that makes a claim about a phone or ships a guard.
   claiming a Copilot review happened.
 - To find PR review threads without individual review URLs, use any available
   GitHub integration or the `gh` CLI for the repository and PR number.
+- **The two reviewers can contradict each other. Reach for this repository's
+  own written rule before the more recent comment — but a measurement beats
+  both.** On PR #797 Copilot objected to a `rem` floor on a font size as the
+  rem-floor trap, while Codex asked for that same element to be `rem`-sized
+  so it would follow the device font-size setting. The tie first went to
+  `skills/ui-layout-and-interaction/SKILL.md`, which records rem-floored
+  sizing overflowing real phones, and the element got an absolute floor.
+  Measuring it showed that was the wrong call: in side-by-side mode a larger
+  root font widens the `min-content` left column, which narrows the container
+  a right-hand panel's `cqw` sizes read, so an enlarged accessibility setting
+  made the explanatory copy _smaller_ — 13.78px to 12.11px at a 28px root.
+  **That measurement is where this bullet stops, and it must not be read as
+  overturning the skill.** `skills/ui-layout-and-interaction/SKILL.md` still
+  says that _any_ uncapped rem lower bound inflates on a phone above default
+  font size, `clamp(1rem, …)` included, and to cap it with a viewport unit —
+  and that rule was earned on real hardware, where an uncapped floor put the
+  consent buttons out of reach while every emulated check passed. The
+  scroll-container argument for exempting scrollable explanatory text is
+  plausible and was never tested on a phone, because PR #797 was withdrawn
+  before it got there. So the skill's rule stands, this paragraph records a
+  measurement that complicates it, and **#802 is what decides between them**
+  — against a hardware measurement, which neither of these has for the
+  exception. An agent doing responsive work should follow the skill and
+  treat this as an open question, not as permission. **Do not summarize what the
+  app does today as a list of surfaces that scale and surfaces that do
+  not** — two drafts of this paragraph tried, and both were wrong in
+  opposite directions. The behavior is per **declaration**, and often per
+  **mode**, so read the rule rather than guessing from the component:
+  - a plain `rem` size always follows the setting (most dialogs, the card
+    picker, the practice panel in portrait);
+  - `clamp(1rem, <cqw>, <vw>)` follows it **above a threshold**, because
+    `clamp` returns its minimum whenever that minimum exceeds its maximum —
+    so the analysis rows and headers in side-by-side mode do grow once a
+    scaled `1rem` passes `--medium-text-font-size-landscape`;
+  - `min(<rem>, <vw>)` **stops** following as soon as the viewport term is
+    the smaller — the practice drill panel in landscape;
+  - a size derived only from `--medium-text-font-size-portrait` or
+    `-landscape` never follows, both being `vw`;
+  - a fixed `px` size never follows either (the decision-quality chart's
+    axis labels).
+
+  One component can appear in several of those lists at different viewport
+  sizes, which is exactly why the per-surface summary keeps coming out
+  false.
+  Two things to take from it. Answer the loser on its thread with the rule
+  you followed, so the next round does not re-raise it as if unconsidered.
+  And when a durable note like this one records a decision that a later round
+  reverses, go back and rewrite it rather than leaving both versions
+  standing: Codex caught an earlier draft of this very paragraph still
+  describing the superseded absolute floor.
+
 - A bot's login differs between the two GitHub APIs: REST reports
   `chatgpt-codex-connector[bot]` where GraphQL reports
   `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling
@@ -684,6 +839,87 @@ they bind any PR that makes a claim about a phone or ships a guard.
   upgrades when they do not overshadow the PR's primary purpose. How to do that
   safely — audit advisories, caret `overrides`, `.nsprc` waivers — is in
   `skills/dependency-maintenance/SKILL.md`.
+- **Falsify a claim before writing it down as guidance.** Documentation here
+  is instruction an agent will follow without re-deriving, so a confident
+  sentence that happens to be false is worse than silence — and no gate can
+  see it, because markdownlint, prettier, and cspell check lines rather than
+  truth. #803 is the worked example and it is not close: **at least
+  seventeen distinct findings — excluding duplicate comments that named one
+  defect twice — across at least eight review rounds, still climbing as this
+  was written**,
+  every one correct and **none of them in the code**. The large majority
+  landed on `AGENTS.md` itself, the rest on two skills; the source change was
+  twelve added lines against five removed and drew no comment at all. The
+  tally is written as a floor on purpose — two successive rounds corrected it,
+  and each correcting round added findings of its own, so any frozen number
+  was stale before the commit fixing it landed. A count of an ongoing thing,
+  quoted inside that thing, cannot be kept true; that is the closed-list
+  failure below wearing a different hat.
+  Two shapes accounted for nearly all of them, and both are cheap to check:
+  - **An absolute this repository already contradicts.** "Nothing may draw
+    from the injected generator" while `usePracticeDrill` does. "A generated
+    directory must join all seven ignore lists" while `dist/` and
+    `storybook-static/` are missing from several. "Nothing tracks the device
+    font-size setting" while the dialogs and card picker are `rem`-sized.
+    Before writing _never_, _always_, or _must_, run the grep that would
+    disprove it — then decide which kind of claim it was, because the two
+    kinds need opposite responses and conflating them is dangerous:
+    - A **descriptive** claim says what the code does. If the repository
+      disagrees, the claim is simply wrong: correct it, and prefer stating
+      the mechanism over the summary, since summaries are what drift.
+    - A **normative** claim says what the code must do — but first establish
+      whether the rule is **established** or one you are **proposing right
+      now**. **Establishment is decided by provenance, never by age**, and
+      an owner-approved rule is established the moment they approve it, new
+      or not — that branch wins whenever both could apply. A requirement is
+      established when it is present on an **owner-approved baseline** — the
+      target branch, not the working tree — or when the owner asked for it.
+      Anchoring to the baseline matters: a rule an agent added in an earlier
+      commit of the same PR before review is "already written" in the file it is
+      reading and still carries no authority, so commit ordering inside a
+      branch must never be what decides this. The established set here is
+      therefore: the architectural constraint, the `max-lines` cap, the
+      no-`eslint-disable` prohibition, and equally a rule they requested
+      five minutes ago. Repository disagreement with one of those is a
+      **violation, not an exception** — fix it, or escalate it, and say so
+      in the PR. A rule **you** invented, that no owner has ruled on, has no
+      such standing however authoritative it sounds, and code contradicting
+      it is evidence about the rule at least as much as about the code:
+      check it against an existing requirement, narrow or drop it when the
+      design it condemns turns out to be legitimate, and put the conflict to
+      the owner rather than settling it yourself. Do not manufacture a
+      violation by writing a `must` wider than the case warrants and then
+      obeying it. This very bullet is the worked example of the ambiguity:
+      the owner asked for it, so it is established despite being written in
+      the same PR. Only write a
+      divergence down as a documented exception when it is deliberate and you
+      can defend it;
+      `usePracticeDrill`'s draw is one, because a drill shifting the next
+      seeded deal is intended behavior. Finding hard-coded heuristics in the
+      scoring engine would be the other kind entirely: the architectural
+      constraint at the top of this file is normative, and a heuristic found
+      in the code is something to remove, never a reason to soften the rule.
+      A rule the codebase violates on its own page teaches the next agent to
+      discount rules — but weakening a rule to match a violation is worse than
+      the stale rule was.
+  - **A closed list that is not closed.** Three separate inventories fell to
+    this in one PR: the ignore lists, the RNG call sites, and the bare
+    `getByRole("table")` locators, which named two of six. A count invites an
+    agent to tick it off and stops them looking. Prefer the search command
+    that regenerates the list over the list, or write both and say plainly
+    which one is authoritative.
+
+  Both failures come from the same place: asserting a property of the whole
+  from the part you were already reading. The derived-inputs rule under
+  Project overview is a special case of this one, and writing that one down
+  did not prevent a single one of those findings — none of which targeted that
+  rule — so treat this as
+  a checking discipline to execute, not a principle to agree with. Two claims
+  in this very bullet were wrong on first draft, both caught by running the
+  check it prescribes: the source diff was called nine lines, and the
+  derived-inputs rule was called the one immediately above when it sits 810
+  lines earlier in a different section.
+
 - Capture each session's durable, non-obvious learnings — new invariants,
   debugging techniques, tooling or review-workflow gotchas — in `AGENTS.md`
   (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as

@@ -3,6 +3,7 @@
 /parcel-bundle-reports/
 /coverage/
 /playwright-report/
+/test-results/
 # Vendored lean crib EV table from simulate-cribbage-games; refresh with scripts/updateExpectedCribPointsTable.mjs.
 /src/game/expectedCribPointsTable.json
 # Vendored lean play EV table from simulate-cribbage-games; refresh with scripts/updateExpectedPlayPointsTable.mjs.

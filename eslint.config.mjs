@@ -21,7 +21,14 @@ const MAX_STATEMENTS = 20;
 
 export default [
   {
-    ignores: ["dist/", "coverage/", "storybook-static/", ".claude/"],
+    ignores: [
+      "dist/",
+      "coverage/",
+      "storybook-static/",
+      ".claude/",
+      "playwright-report/",
+      "test-results/",
+    ],
   },
   ...fixupConfigRules(
     compat.extends(
