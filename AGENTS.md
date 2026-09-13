@@ -28,11 +28,18 @@
   one fixed card pair per hand. Before displaying any **scoring or
   expected-value** figure, name every input it consumes and say where each
   comes from: simulation, enumeration, probability, or **observed state** —
-  what the user actually did, what the clock actually reads, what storage
-  actually holds. That fourth source is legitimate and common: an attempt
-  count, a drill streak, a decision date, and the number of cards currently
-  selected are all observations rather than derivations, and nothing here
-  prohibits them. The rule bites on the other kind of input entirely — a
+  a direct observation of the user or the world, such as what the user
+  actually did, what the clock actually reads, or what a device actually
+  reported. That fourth source is legitimate and common: an attempt count, a
+  drill streak, a decision date, and the number of cards currently selected
+  are all observations rather than derivations, and nothing here prohibits
+  them. **Storage is transport, not provenance.** A value does not become
+  observed by having been written down and read back; it keeps whatever
+  provenance it had when it was created, and an invented one stays invented
+  however many times it round-trips through `localStorage` or a JSON
+  artifact. Persisting a figure is exactly how an illegitimate input would
+  launder itself into a later feature that never saw where it came from.
+  The rule bites on the other kind of input entirely — a
   value that is neither derived nor observed, but invented to stand in for
   one that was unavailable. A card nobody dealt, nobody observed, and no
   table models is not an input you have. Making the choice deterministic
@@ -865,8 +872,13 @@ they bind any PR that makes a claim about a phone or ships a guard.
       now**. **Establishment is decided by provenance, never by age**, and
       an owner-approved rule is established the moment they approve it, new
       or not — that branch wins whenever both could apply. A requirement is
-      established when it is already written here, or when the owner asked
-      for it: the architectural constraint, the `max-lines` cap, the
+      established when it is present on an **owner-approved baseline** — the
+      target branch, not the working tree — or when the owner asked for it.
+      Anchoring to the baseline matters: a rule an agent added in an earlier
+      commit of the same PR before review is "already written" in the file it is
+      reading and still carries no authority, so commit ordering inside a
+      branch must never be what decides this. The established set here is
+      therefore: the architectural constraint, the `max-lines` cap, the
       no-`eslint-disable` prohibition, and equally a rule they requested
       five minutes ago. Repository disagreement with one of those is a
       **violation, not an exception** — fix it, or escalate it, and say so
