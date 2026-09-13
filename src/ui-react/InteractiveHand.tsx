@@ -42,6 +42,7 @@ const renderDrillPanel = (
 interface InteractiveHandProps {
   readonly cribRole: CribRoleType;
   readonly dealtCards: readonly DealtCard[];
+  readonly handId?: string | null | undefined;
   readonly onCardChange: (dealOrderIndex: number) => void;
   readonly sortOrder: SortOrder;
   readonly onSortOrderChange: (sortOrder: SortOrder) => void;
@@ -55,6 +56,7 @@ interface InteractiveHandProps {
 export function InteractiveHand({
   cribRole,
   dealtCards,
+  handId = null,
   onCardChange,
   sortOrder,
   onSortOrderChange,
@@ -93,6 +95,7 @@ export function InteractiveHand({
       </div>
       <Hand
         dealtCards={dealtCards}
+        handId={handId}
         locked={cardsLocked}
         onChange={onCardChange}
         sortOrder={sortOrder}
@@ -111,6 +114,7 @@ export function InteractiveHand({
 }
 
 InteractiveHand.defaultProps = {
+  handId: null,
   practiceDrill: null,
   showFreshHandNotice: false,
 };
