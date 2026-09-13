@@ -277,21 +277,20 @@ export const readDiscardTally = (now: number): DiscardTallySummary =>
  * quietly change at that moment; keeping counters means trimming costs the
  * trend its oldest detail and never costs the headline its meaning.
  */
-/*
- * Never called with a practice decision: `recordDiscardDecision` below
- * returns before reaching this for one, so there is no isPractice branch
- * here to keep in sync with that guard.
- */
 const addToLifetime = (
   lifetime: LifetimeTotals,
   decision: DiscardDecisionRecord,
-): LifetimeTotals => ({
-  ...lifetime,
-  decisions: lifetime.decisions + 1,
-  expectedPointsLossTotal:
-    lifetime.expectedPointsLossTotal + decision.expectedPointsLoss,
-  optimalDecisions: lifetime.optimalDecisions + (decision.isOptimal ? 1 : 0),
-});
+): LifetimeTotals =>
+  decision.isPractice
+    ? lifetime
+    : {
+        ...lifetime,
+        decisions: lifetime.decisions + 1,
+        expectedPointsLossTotal:
+          lifetime.expectedPointsLossTotal + decision.expectedPointsLoss,
+        optimalDecisions:
+          lifetime.optimalDecisions + (decision.isOptimal ? 1 : 0),
+      };
 
 /*
  * Every write goes through here: read what is there, refuse if a newer build
@@ -347,19 +346,6 @@ const extendStoredTally = (
  * in the caller is what makes a reload safe: a completed discard restored
  * from its own URL renders exactly as a fresh one does, and no amount of care
  * in a component can tell the two apart.
- *
- * A practice decision is never appended to `records` at all: it never
- * reaches the lifetime counters below, and every reader of `records` (the
- * trend's authentic filter, today's tally, the mistake-queue scan) excludes
- * it too, so storing it buys nothing while still spending one of the shared
- * MAX_RECORDS slots.
- * That slot used to cost nothing in practice, because a hand's handKey never
- * changed between drills of it and the very first attempt's record already
- * satisfied the handKey match below on every later one. Once the practice
- * drill began relabeling a hand's suits per attempt (#767) that stopped
- * holding: each attempt now carries a different physical-card handKey, so
- * every one would append its own record, and enough drilling could evict
- * genuine, non-practice history at the cap before this guard was added.
  */
 export const recordDiscardDecision = (
   decision: DiscardDecisionRecord,
@@ -383,9 +369,6 @@ export const recordDiscardDecision = (
     return readDiscardTally(Date.now());
   }
   return extendStoredTally(decision.at, (tally) => {
-    if (decision.isPractice) {
-      return tally;
-    }
     const existing = tally.records.find(
       (record) => record.handKey === decision.handKey,
     );
