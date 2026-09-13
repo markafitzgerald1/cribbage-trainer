@@ -1,6 +1,7 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
 import {
+  EXPECTED_POINTS_FRACTION_DIGITS,
   type MistakeClassification,
   formatNetLoss,
 } from "../analysis/classifyMistake";
@@ -23,7 +24,6 @@ export interface ScoredPossibleKeepDiscardProps {
   readonly sortOrder: SortOrder;
 }
 
-const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const ROW_STRIPE_DIVISOR = 2;
 /*
  * The U+2212 minus sign matches the "+" advance width with tabular figures,

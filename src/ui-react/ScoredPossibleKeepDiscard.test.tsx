@@ -2,10 +2,13 @@ import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
+import {
+  EXPECTED_POINTS_FRACTION_DIGITS,
+  type MistakeClassification,
+} from "../analysis/classifyMistake";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
-import type { MistakeClassification } from "../analysis/classifyMistake";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
@@ -19,7 +22,6 @@ import { handToSortedString } from "./handToSortedString.test.common";
 import { mockTradeOffClassification } from "../ui/mistakeQueue.test.common";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 
-const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const EXPECTED_CELL_COUNT = 5;
 const EXPECTED_CRIB_POINTS = 1.25;
 const EXPECTED_PLAY_POINTS = 0.75;

@@ -37,9 +37,10 @@ const createMockCandidate = (
 const createFlushCandidate = (
   values: readonly [hand: number, crib: number, play: number],
   flushes: number,
+  avgCutAddedFlushes?: number,
 ): ScoredMistakeCandidate => ({
   ...createMockCandidate(values),
-  avgCutAddedFlushes: flushes > 0 ? 0.2 : 0,
+  avgCutAddedFlushes: avgCutAddedFlushes ?? (flushes > 0 ? 0.2 : 0),
   handPointsBreakdown: {
     fifteens: 0,
     flushes,
@@ -303,20 +304,24 @@ describe("classifyScoredMistake", () => {
       name: "does not flag missed flush when hand is not a dominant or contributing loss",
     },
     {
-      bestCandidate: {
-        ...createFlushCandidate([4.2, 0, 0], 4),
-        avgCutAddedFlushes: 0.2,
-      },
-      chosenCandidate: {
-        ...createFlushCandidate([4.15, 0, 0], 4),
-        avgCutAddedFlushes: 0.15,
-      },
+      bestCandidate: createFlushCandidate([4.2, 0, 0], 4, 0.2),
+      chosenCandidate: createFlushCandidate([4.15, 0, 0], 4, 0.15),
       expected: {
         isFlushMiss: true,
         label: "Missed flush",
         shortLabel: "Missed flush",
       },
       name: "narrows to missed flush when cut-added flush EV is lost despite retaining base flush",
+    },
+    {
+      bestCandidate: createFlushCandidate([8.2, 0, 0], 4, 0.2),
+      chosenCandidate: createFlushCandidate([4.19, 0, 0], 4, 0.18),
+      expected: {
+        isFlushMiss: false,
+        label: "Hand",
+        shortLabel: "Hand",
+      },
+      name: "does not flag missed flush when non-flush hand loss dominates over minor flush EV delta",
     },
   ])("$name", ({ bestCandidate, chosenCandidate, expected }) => {
     const classification = classifyScoredMistake(

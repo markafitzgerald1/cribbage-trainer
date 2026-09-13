@@ -130,16 +130,20 @@ const getFlushExpectedPoints = (candidate: ScoredMistakeCandidate): number =>
 const isFlushMissMistake = (
   best: ScoredMistakeCandidate,
   chosen: ScoredMistakeCandidate,
-  dominantLosses: readonly LossComponent[],
+  handLoss: number,
 ): boolean => {
-  if (!dominantLosses.includes("hand")) {
+  const bestFlushEV = getFlushExpectedPoints(best);
+  if (bestFlushEV <= 0) {
     return false;
   }
-  const bestFlushEV = getFlushExpectedPoints(best);
   const chosenFlushEV = getFlushExpectedPoints(chosen);
+  const flushLoss = withoutFloatResidue(bestFlushEV - chosenFlushEV);
+  if (flushLoss < DISPLAY_PRECISION) {
+    return false;
+  }
+  const remainingHandLoss = withoutFloatResidue(handLoss - flushLoss);
   return (
-    bestFlushEV > 0 &&
-    withoutFloatResidue(bestFlushEV - chosenFlushEV) >= DISPLAY_PRECISION
+    withoutFloatResidue(remainingHandLoss - flushLoss) <= DISPLAY_PRECISION
   );
 };
 
@@ -157,7 +161,9 @@ export const classifyScoredMistake = (
   const losses = computeComponentLosses(best, chosen);
   const dominantComponents = getDominantLossComponents(losses);
   const dominantGains = getMaterialGainComponents(losses);
-  const isFlushMiss = isFlushMissMistake(best, chosen, dominantComponents);
+  const isFlushMiss =
+    dominantComponents.includes("hand") &&
+    isFlushMissMistake(best, chosen, losses.hand);
 
   const lossLabel = dominantComponents
     .map((component) => getComponentLabel(component, isFlushMiss))
