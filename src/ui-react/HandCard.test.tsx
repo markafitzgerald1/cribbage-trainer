@@ -9,6 +9,14 @@ import { getByCardText } from "./test-utils";
 import userEvent from "@testing-library/user-event";
 /* jscpd:ignore-end */
 
+const getCardCheckbox = (
+  getByRole: (role: "checkbox", options: { name: string }) => HTMLElement,
+  { rank, suit }: DealtCard,
+) =>
+  getByRole("checkbox", {
+    name: `Keep ${CARD_LABELS[rank]}${suit ?? ""}`,
+  });
+
 const getLabel = ({
   getByRole,
 }: {
@@ -44,15 +52,11 @@ describe("hand card component", () => {
     ).toBeTruthy();
   });
 
-  it("accessible name states the discard meaning", () => {
+  it("accessible name states the keep meaning", () => {
     const card = dealCard();
     const { getByRole } = renderCard(card);
 
-    expect(
-      getByRole("checkbox", {
-        name: `Discard ${CARD_LABELS[card.rank]}${card.suit}`,
-      }),
-    ).toBeTruthy();
+    expect(getCardCheckbox(getByRole, card)).toBeTruthy();
   });
 
   it("accessible name falls back gracefully when suit is omitted", () => {
@@ -68,10 +72,24 @@ describe("hand card component", () => {
 
     expect(
       getByRole("checkbox", {
-        name: `Discard ${CARD_LABELS[rank]}`,
+        name: `Keep ${CARD_LABELS[rank]}`,
       }),
     ).toBeTruthy();
   });
+
+  it.each([
+    { expectedChecked: true, kept: true },
+    { expectedChecked: false, kept: false },
+  ])(
+    "accessible name matches checked state when kept=$kept",
+    ({ expectedChecked, kept }) => {
+      const card = { ...dealCard(), kept };
+      const { getByRole } = renderCard(card);
+      const checkbox = getCardCheckbox(getByRole, card) as HTMLInputElement;
+
+      expect(checkbox.checked).toBe(expectedChecked);
+    },
+  );
 
   it("emits an onChange event on checkbox click", async () => {
     const user = userEvent.setup();

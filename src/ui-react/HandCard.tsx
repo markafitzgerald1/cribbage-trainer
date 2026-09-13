@@ -38,7 +38,7 @@ export function HandCard({
       />
       {}
       <input
-        aria-label={`Discard ${CARD_LABELS.at(rank)}${suit ?? ""}`}
+        aria-label={`Keep ${CARD_LABELS.at(rank)}${suit ?? ""}`}
         checked={kept}
         disabled={disabled}
         onChange={handleChange}
