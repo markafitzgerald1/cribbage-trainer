@@ -25,10 +25,17 @@
   to compare them. Note the wording matters and has been got wrong three
   times on this same subject: "uniform random draw", then "spreads evenly",
   then "amounts to a uniform draw" all smuggled a distribution into what is
-  one fixed card pair per hand. Before
-  displaying any figure, name every input it consumes and say which of
-  simulation, enumeration, or probability supplies each. A card nobody dealt
-  and no table models is not an input you have. Making the choice deterministic
+  one fixed card pair per hand. Before displaying any **scoring or
+  expected-value** figure, name every input it consumes and say where each
+  comes from: simulation, enumeration, probability, or **observed state** —
+  what the user actually did, what the clock actually reads, what storage
+  actually holds. That fourth source is legitimate and common: an attempt
+  count, a drill streak, a decision date, and the number of cards currently
+  selected are all observations rather than derivations, and nothing here
+  prohibits them. The rule bites on the other kind of input entirely — a
+  value that is neither derived nor observed, but invented to stand in for
+  one that was unavailable. A card nobody dealt, nobody observed, and no
+  table models is not an input you have. Making the choice deterministic
   does not fix this; it only hides that a choice was made.
 - **Product direction:** the roadmap is gated on two things the app has not
   yet earned from its own author: stickiness and trust. It does get played from
@@ -829,8 +836,10 @@ they bind any PR that makes a claim about a phone or ships a guard.
   is instruction an agent will follow without re-deriving, so a confident
   sentence that happens to be false is worse than silence — and no gate can
   see it, because markdownlint, prettier, and cspell check lines rather than
-  truth. #803 is the worked example and it is not close: **at least eighteen
-  findings across seven review rounds, still climbing as this was written**,
+  truth. #803 is the worked example and it is not close: **at least
+  seventeen distinct findings — excluding duplicate comments that named one
+  defect twice — across at least eight review rounds, still climbing as this
+  was written**,
   every one correct and **none of them in the code**. The large majority
   landed on `AGENTS.md` itself, the rest on two skills; the source change was
   twelve added lines against five removed and drew no comment at all. The
@@ -853,17 +862,24 @@ they bind any PR that makes a claim about a phone or ships a guard.
       the mechanism over the summary, since summaries are what drift.
     - A **normative** claim says what the code must do — but first establish
       whether the rule is **established** or one you are **proposing right
-      now**, because that changes everything. An established requirement is
-      one already written here or decided by the owner: the architectural
-      constraint, the `max-lines` cap, the no-`eslint-disable` prohibition.
-      Repository disagreement with one of those is a **violation, not an
-      exception** — fix it, or escalate it, and say so in the PR. A rule you
-      are inventing in this PR has no such standing, and code that
-      contradicts it is evidence about the rule at least as much as about the
-      code: check it against an existing requirement or an owner decision,
-      and narrow or drop it when the design it condemns turns out to be
-      legitimate. Do not manufacture a violation by writing a `must`
-      wider than the case warrants and then obeying it. Only write a
+      now**. **Establishment is decided by provenance, never by age**, and
+      an owner-approved rule is established the moment they approve it, new
+      or not — that branch wins whenever both could apply. A requirement is
+      established when it is already written here, or when the owner asked
+      for it: the architectural constraint, the `max-lines` cap, the
+      no-`eslint-disable` prohibition, and equally a rule they requested
+      five minutes ago. Repository disagreement with one of those is a
+      **violation, not an exception** — fix it, or escalate it, and say so
+      in the PR. A rule **you** invented, that no owner has ruled on, has no
+      such standing however authoritative it sounds, and code contradicting
+      it is evidence about the rule at least as much as about the code:
+      check it against an existing requirement, narrow or drop it when the
+      design it condemns turns out to be legitimate, and put the conflict to
+      the owner rather than settling it yourself. Do not manufacture a
+      violation by writing a `must` wider than the case warrants and then
+      obeying it. This very bullet is the worked example of the ambiguity:
+      the owner asked for it, so it is established despite being written in
+      the same PR. Only write a
       divergence down as a documented exception when it is deliberate and you
       can defend it;
       `usePracticeDrill`'s draw is one, because a drill shifting the next
