@@ -1,231 +1,48 @@
+/* jscpd:ignore-start */
 import {
-  type PracticeDrill,
-  type PracticeDrillHand,
-  type PracticeDrillPhase,
-  type PracticeVerdict,
-  usePracticeDrill,
-} from "./usePracticeDrill";
-import { act, renderHook } from "@testing-library/react";
+  DRILL_ROLE,
+  HAND_KEY,
+  type Harness,
+  NO_QUALITY,
+  OTHER_HAND,
+  OTHER_KEY,
+  SAME_CARDS,
+  analysisOf,
+  asDrillCards,
+  committedHarness,
+  drilledOnBoard,
+  drilledThrough,
+  expectDrillFinished,
+  expectDrillState,
+  expectNoDrillStarted,
+  expectNoVerdictRecorded,
+  freshHarness,
+  masterSeededHand,
+  scoredOptimalVerdict,
+  seedMistake,
+  setupHarness,
+  startedThenNext,
+} from "./usePracticeDrill.test.common";
 import {
   clearDiscardTally,
   discardTallyKey,
   readTallyForDisplay,
-  recordDiscardDecision,
   recordPracticeAttempt,
 } from "../ui/discardTally";
-import { createMockTally, mockItemA } from "../ui/mistakeQueue.test.common";
-import { describe, expect, it, jest } from "@jest/globals";
+import {
+  createMockTally,
+  mockItemA,
+  mockItemB,
+} from "../ui/mistakeQueue.test.common";
+import { describe, expect, it } from "@jest/globals";
+import {
+  permuteCardSuits,
+  suitPermutationForAttempt,
+} from "../game/suitPermutation";
 import { CribRole } from "../game/expectedCribPoints";
-import type { DealtCard } from "../game/DealtCard";
-import type { RenderedAnalysis } from "./useDiscardTelemetry";
-import { parseHand } from "../game/Card";
+import { serializeHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
-
-const HAND_KEY = mockItemA.handKey;
-const dealtCards = toDealtCards(
-  parseHand("5H,6H,7H,8H,9H,10H"),
-  parseHand("5H,6H"),
-);
-
-const analysisOf = (
-  isOptimal: boolean,
-  expectedPointsLoss: number,
-): RenderedAnalysis => ({
-  cribRole: CribRole.Dealer,
-  quality: { expectedPointsLoss, isOptimal },
-});
-
-const NO_QUALITY: RenderedAnalysis = {
-  cribRole: CribRole.Dealer,
-  quality: null,
-};
-
-const seedMistake = (handKey = HAND_KEY, discardKey = "5H,6H") =>
-  recordDiscardDecision({
-    at: Date.now(),
-    cribRole: CribRole.Dealer,
-    discardKey,
-    expectedPointsLoss: 1.5,
-    handKey,
-    isOptimal: false,
-    isPractice: false,
-  });
-
-const OTHER_KEY = "2C,3D,4S,5H,6C,7D|Pone";
-
-const masterSeededHand = () => {
-  seedMistake();
-  recordPracticeAttempt({ at: Date.now(), handKey: HAND_KEY, isOptimal: true });
-  recordPracticeAttempt({
-    at: Date.now() + 1,
-    handKey: HAND_KEY,
-    isOptimal: true,
-  });
-};
-
-interface Harness {
-  readonly auto: () => void;
-  readonly clear: () => void;
-  readonly commit: () => void;
-  readonly dealFreshHandCalls: number;
-  readonly drill: () => PracticeDrill;
-  readonly exit: () => void;
-  readonly forwardedAnalyses: readonly RenderedAnalysis[];
-  readonly loadedHands: readonly PracticeDrillHand[];
-  readonly loadHandCalls: number;
-  readonly next: () => void;
-  readonly render: (analysis: RenderedAnalysis) => void;
-  readonly replaceBoard: (props: BoardProps) => void;
-  readonly start: () => void;
-}
-
-interface BoardProps {
-  readonly cards: readonly DealtCard[];
-  readonly role: CribRole;
-}
-
-const OTHER_HAND = toDealtCards(parseHand("2C,3D,4S,5H,6C,7D"), []);
-const DRILL_ROLE = mockItemA.cribRole;
-
-const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
-  const loadedHands: PracticeDrillHand[] = [];
-  const forwardedAnalyses: RenderedAnalysis[] = [];
-  // Trainer's real loadHand swaps the board to the drilled hand; opt in when a test needs that follow-through (a Draw-another to different cards).
-  const boardControls: { rerender?: (props: BoardProps) => void } = {};
-  const loadHand = jest.fn<(hand: PracticeDrillHand) => void>((hand) => {
-    loadedHands.push(hand);
-    if (followLoadedHand) {
-      boardControls.rerender?.({
-        cards: hand.dealtCards,
-        role: hand.cribRole,
-      });
-    }
-  });
-  const dealFreshHand = jest.fn<() => void>();
-  const { rerender, result } = renderHook<PracticeDrill, BoardProps>(
-    ({ cards, role }) =>
-      usePracticeDrill({
-        cribRole: role,
-        dealFreshHand,
-        dealtCards: cards,
-        generateRandomNumber: () => 0,
-        loadHand,
-        onAnalysisRendered: (analysis) => forwardedAnalyses.push(analysis),
-      }),
-    { initialProps: { cards: dealtCards, role: DRILL_ROLE } },
-  );
-  boardControls.rerender = rerender;
-  const step = (action: (drill: PracticeDrill) => void) => {
-    act(() => {
-      action(result.current);
-    });
-  };
-  return {
-    auto: () => step((drill) => drill.handleStartAutoDrill()),
-    clear: () => step((drill) => drill.clearDrill()),
-    commit: () => step((drill) => drill.onCommit()),
-    get dealFreshHandCalls() {
-      return dealFreshHand.mock.calls.length;
-    },
-    drill: () => result.current,
-    exit: () => step((drill) => drill.onExit()),
-    get forwardedAnalyses() {
-      return forwardedAnalyses;
-    },
-    get loadHandCalls() {
-      return loadHand.mock.calls.length;
-    },
-    get loadedHands() {
-      return loadedHands;
-    },
-    next: () => step((drill) => drill.onNextHand()),
-    render: (analysis) =>
-      step((drill) => drill.handleAnalysisRendered(analysis)),
-    replaceBoard: (props) => {
-      act(() => {
-        rerender(props);
-      });
-    },
-    start: () => step((drill) => drill.handleStartDrill(mockItemA)),
-  };
-};
-
-const freshHarness = ({ seed = false } = {}): Harness => {
-  clearDiscardTally();
-  if (seed) {
-    seedMistake();
-  }
-  return setupHarness();
-};
-
-const committedHarness = (): Harness => {
-  const harness = freshHarness({ seed: true });
-  harness.start();
-  harness.commit();
-  return harness;
-};
-
-const drillAndScore = (harness: Harness, analysis: RenderedAnalysis) => {
-  harness.start();
-  harness.commit();
-  harness.render(analysis);
-};
-
-const drilledThrough = (analysis: RenderedAnalysis): Harness => {
-  const harness = freshHarness({ seed: true });
-  drillAndScore(harness, analysis);
-  return harness;
-};
-
-const scoredOptimalVerdict = (harness: Harness): PracticeVerdict | null => {
-  drillAndScore(harness, analysisOf(true, 0));
-  return harness.drill().verdict;
-};
-
-const SAME_CARDS = toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), []);
-
-// A drill committed while `board` sits on screen in place of the drilled hand.
-const drilledOnBoard = (board: BoardProps): Harness => {
-  const harness = committedHarness();
-  harness.replaceBoard(board);
-  harness.render(analysisOf(false, 0.5));
-  return harness;
-};
-
-const expectDrillState = (
-  harness: Harness,
-  active: boolean,
-  phase: PracticeDrillPhase,
-) => {
-  expect(harness.drill().isActive).toBe(active);
-  expect(harness.drill().phase).toBe(phase);
-};
-
-const expectNoVerdictRecorded = (harness: Harness) => {
-  expect(harness.drill().verdict).toBeNull();
-  expect(readTallyForDisplay().practice).toHaveLength(0);
-};
-
-const expectDrillFinished = (harness: Harness) => {
-  expectDrillState(harness, false, "choosing");
-
-  expect(harness.drill().verdict).toBeNull();
-};
-
-const expectNoDrillStarted = (harness: Harness) => {
-  expect(harness.drill().isActive).toBe(false);
-  expect(harness.loadHandCalls).toBe(0);
-  expect(harness.dealFreshHandCalls).toBe(0);
-};
-
-const startedThenNext = (
-  options: { readonly followLoadedHand?: boolean } = {},
-): Harness => {
-  const harness = setupHarness(options);
-  harness.start();
-  harness.next();
-  return harness;
-};
+/* jscpd:ignore-end */
 
 describe("usePracticeDrill", () => {
   it("loads a mistake face-up, then reveals the analysis only on commit", () => {
@@ -285,12 +102,32 @@ describe("usePracticeDrill", () => {
     expectNoVerdictRecorded(harness);
   });
 
-  it("names the discards on the verdict against the mistake's previous one", () => {
+  it("names the discards on the verdict against the mistake's previous one, both permuted to match", () => {
     const { verdict } = drilledThrough(analysisOf(false, 0.4)).drill();
 
-    expect(verdict?.chosenDiscard).toBe("5H,6H");
-    expect(verdict?.previousDiscard).toBe(mockItemA.previousDiscard);
+    expect(verdict?.chosenDiscard).toBe(serializeHand(asDrillCards("5H,6H")));
+    expect(verdict?.previousDiscard).toBe(serializeHand(asDrillCards("5H,6H")));
     expect(verdict?.previousLoss).toBe(mockItemA.previousDiscardLoss);
+  });
+
+  it("shows no previous discard when the mistake was never recorded with one", () => {
+    clearDiscardTally();
+    const harness = setupHarness({ followLoadedHand: true });
+    const permutedCards = permuteCardSuits(
+      mockItemB.cards,
+      suitPermutationForAttempt(mockItemB.handKey, mockItemB.attempts),
+    );
+
+    // FollowLoadedHand syncs the board to mockItemB's own (fully kept) permuted hand; this then picks a discard on it, mirroring a real checkbox choice.
+    harness.start(mockItemB);
+    harness.replaceBoard({
+      cards: toDealtCards(permutedCards, permutedCards.slice(0, 2)),
+      role: mockItemB.cribRole,
+    });
+    harness.commit();
+    harness.render(analysisOf(true, 0));
+
+    expect(harness.drill().verdict?.previousDiscard).toBeNull();
   });
 
   it.each([
@@ -457,7 +294,10 @@ describe("usePracticeDrill", () => {
 
   it("still records after a selection change on the same six cards", () => {
     const harness = drilledOnBoard({
-      cards: toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), parseHand("7H,8H")),
+      cards: toDealtCards(
+        asDrillCards("5H,6H,7H,8H,9H,10H"),
+        asDrillCards("7H,8H"),
+      ),
       role: DRILL_ROLE,
     });
 
@@ -473,7 +313,10 @@ describe("usePracticeDrill", () => {
 
     // Choosing a fresh discard on the restored hand must not revive the drill.
     harness.replaceBoard({
-      cards: toDealtCards(parseHand("5H,6H,7H,8H,9H,10H"), parseHand("9H,10H")),
+      cards: toDealtCards(
+        asDrillCards("5H,6H,7H,8H,9H,10H"),
+        asDrillCards("9H,10H"),
+      ),
       role: DRILL_ROLE,
     });
     expectDrillFinished(harness);

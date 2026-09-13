@@ -1,17 +1,21 @@
 /* jscpd:ignore-start */
+import { type Card, parseHand, serializeHand } from "../game/Card";
 import {
   type MistakeQueueItem,
   SUCCESSES_FOR_MASTERY,
   buildMistakeQueue,
   sampleMistakeQueueByPriority,
 } from "../ui/mistakeQueue";
+import {
+  permuteCardSuits,
+  suitPermutationForAttempt,
+} from "../game/suitPermutation";
 import { readTallyForDisplay, recordPracticeAttempt } from "../ui/discardTally";
 import { useCallback, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { discardIsComplete } from "../game/discardIsComplete";
-import { serializeHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
 
@@ -74,13 +78,42 @@ interface UsePracticeDrillArgs {
 }
 
 /*
- * The one place a drill hand is turned into cards on the board. A later
- * suit-permuted variant (#767) permutes `item.cards` here and nowhere else.
+ * Deriving the permutation from the stored handKey and the item's own
+ * attempts count — never from `generateRandomNumber` — keeps it a pure
+ * function of the mistake being drilled: attempt 3 of a given hand always
+ * shows the same relabeling, and loading it never shifts a later seeded
+ * deal (see AGENTS.md's URL analysis state section on that shared stream).
+ * `drillLive` and the previous-discard display below recompute the same
+ * value from the same two fields rather than caching it, since `activeItem`
+ * does not change for the life of one drill.
  */
+const permutedDrillCards = (item: MistakeQueueItem): Card[] =>
+  permuteCardSuits(
+    item.cards,
+    suitPermutationForAttempt(item.handKey, item.attempts),
+  );
+
+// The one place a drill hand is turned into cards on the board.
 const toDrillHand = (item: MistakeQueueItem): PracticeDrillHand => ({
   cribRole: item.cribRole,
-  dealtCards: toDealtCards(item.cards, []),
+  dealtCards: toDealtCards(permutedDrillCards(item), []),
 });
+
+/*
+ * The verdict panel's "Before" row must show the mistake's previous discard
+ * in the same relabeled suits as the hand on screen, or the two rows name
+ * cards that are not in front of the player — coherence over preserving the
+ * original record, which stays untouched in storage either way.
+ */
+const permutedPreviousDiscard = (item: MistakeQueueItem): string | null =>
+  item.previousDiscard === null
+    ? null
+    : serializeHand(
+        permuteCardSuits(
+          parseHand(item.previousDiscard),
+          suitPermutationForAttempt(item.handKey, item.attempts),
+        ),
+      );
 
 const activeHandsExist = (): boolean =>
   buildMistakeQueue(readTallyForDisplay()).some((item) => !item.isMastered);
@@ -115,11 +148,16 @@ export const usePracticeDrill = ({
    * panel showing a stale verdict over frozen, now-empty cards, the drill is
    * also over once its checked discard is gone — the hand stays on the board
    * and the analysis is simply shown, the same degradation a reload gives.
+   *
+   * Compared against the permuted cards actually loaded onto the board, not
+   * `activeItem.cards` verbatim — the two differ by suit once a drill is
+   * showing a relabeled hand, and `serializeHand` is suit-exact.
    */
   const drillLive =
     activeItem !== null &&
     cribRole === activeItem.cribRole &&
-    serializeHand(dealtCards) === serializeHand(activeItem.cards) &&
+    serializeHand(dealtCards) ===
+      serializeHand(permutedDrillCards(activeItem)) &&
     !(phase === "revealed" && !discardIsComplete(dealtCards));
 
   /*
@@ -250,7 +288,7 @@ export const usePracticeDrill = ({
         consecutiveSuccesses,
         isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
         isOptimal,
-        previousDiscard: activeItem.previousDiscard,
+        previousDiscard: permutedPreviousDiscard(activeItem),
         previousLoss: activeItem.previousDiscardLoss,
       });
     },

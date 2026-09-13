@@ -49,6 +49,14 @@
   overflow-wrap: anywhere;
 }
 
+.suit-note {
+  font-size: 0.8rem;
+  font-style: italic;
+  margin: 0;
+  opacity: 0.75;
+  overflow-wrap: anywhere;
+}
+
 .verdict-row {
   align-items: center;
   display: flex;
@@ -207,6 +215,10 @@
   .primary,
   .secondary {
     font-size: min(1rem, 1.65vw);
+  }
+
+  .suit-note {
+    font-size: min(0.8rem, 1.35vw);
   }
 
   .discard-cards {
