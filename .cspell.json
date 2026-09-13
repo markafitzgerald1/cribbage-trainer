@@ -18,6 +18,7 @@
   "words": [
     "actuals",
     "autodocs",
+    "bijections",
     "cardlabel",
     "CDHS",
     "Buildx",
@@ -78,6 +79,7 @@
     "TJQK",
     "tsbuildinfo",
     "unclustered",
+    "unpermuted",
     "unpushed",
     "unshown",
     "unvalidated",

@@ -5,29 +5,9 @@ import {
   STARTER_RANKS,
   type StarterRank,
 } from "../game/expectedCribPoints";
-import {
-  type ScoredKeepDiscard,
-  allScoredKeepDiscardsByExpectedNetScoreDescending,
-} from "./analysis";
 import { describe, expect, it } from "@jest/globals";
-import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
-import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
-import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
-
-const expectedCribPointsTable =
-  expectedCribPointsTableData as unknown as ExpectedCribPointsTable;
-const expectedPlayPointsTable =
-  expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable;
-
-const scoreDeal = (
-  cards: readonly Card[],
-  cribRole: CribRole = CribRole.Dealer,
-  table: ExpectedCribPointsTable = expectedCribPointsTable,
-) =>
-  allScoredKeepDiscardsByExpectedNetScoreDescending(cards, cribRole, {
-    crib: table,
-    play: expectedPlayPointsTable,
-  });
+import { type ScoredKeepDiscard } from "./analysis";
+import { scoreDeal } from "./analysis.test.common";
 
 const { ACE, TWO, THREE, FOUR, FIVE, SIX, EIGHT, TEN, JACK, QUEEN, KING } =
   card;

@@ -105,6 +105,8 @@ const renderChoosing = ({
     <p className={classes.prompt}>
       Choose two cards to discard, then check your answer.
     </p>
+    {/* Reshuffled from the original mistake so recognizing the picture cannot substitute for re-deriving the answer. */}
+    <p className={classes.suitNote}>Suits reshuffled for this drill.</p>
     {renderActions(
       <button
         className={classes.primary}
