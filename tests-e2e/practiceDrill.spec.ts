@@ -219,13 +219,17 @@ test.describe("practice drill", () => {
   /*
    * Shared y coordinates are identical whether the row fits the screen or
    * runs off the side, so they cannot catch a width regression on their own.
-   * The group's own box is what discriminates: a group wider than the
-   * viewport has pushed the page sideways, where one that absorbs its
-   * overflow by scrolling inside its own box stays within the screen. Do not
-   * replace this with `scrollIntoViewIfNeeded` on the chip — that scrolls the
-   * document too, so an overflowing row satisfies it and the check goes inert
-   * (confirmed by running this guard against a group missing its
-   * `min-width: 0`, which passed until the assertion moved to the group box).
+   * Two more checks do, and each catches a different half of the mechanism:
+   * the group's own box must fit the viewport (a wider one has pushed the
+   * page sideways instead of absorbing its overflow), and after scrolling
+   * *the group alone* every chip must lie inside it (a group that is not a
+   * scroll container cannot scroll, so its chips stay outside).
+   *
+   * Scroll the group directly rather than calling `scrollIntoViewIfNeeded`
+   * on the chip: that scrolls the document too, so an overflowing row
+   * satisfies it and the check goes inert. Both halves are negative-checked
+   * in Docker — dropping `min-width: 0` fails the first, dropping
+   * `overflow-x` fails the second.
    */
   const expectChipsOnOneReachableRow = async (
     group: Locator,
@@ -241,6 +245,10 @@ test.describe("practice drill", () => {
       CHIP_ROW_TOLERANCE_PX,
     );
 
+    await group.evaluate((element) => {
+      element.scrollLeft = element.scrollWidth;
+    });
+
     const viewportWidth = group.page().viewportSize()?.width ?? Number.NaN;
     const groupBox = await boxOf(group);
 
@@ -249,16 +257,10 @@ test.describe("practice drill", () => {
       viewportWidth + CHIP_ROW_TOLERANCE_PX,
     );
 
-    const lastChip = chips.last();
-    await lastChip.scrollIntoViewIfNeeded();
-    const scrolledGroupBox = await boxOf(group);
-    const chipBox = await boxOf(lastChip);
+    const chipBox = await boxOf(chips.last());
 
-    expect(chipBox.left).toBeGreaterThanOrEqual(
-      scrolledGroupBox.left - CHIP_ROW_TOLERANCE_PX,
-    );
     expect(chipBox.right).toBeLessThanOrEqual(
-      scrolledGroupBox.right + CHIP_ROW_TOLERANCE_PX,
+      groupBox.right + CHIP_ROW_TOLERANCE_PX,
     );
   };
 

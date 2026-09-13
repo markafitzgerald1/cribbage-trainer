@@ -216,8 +216,13 @@ baselines so CI agrees with what was generated locally.
   was caught only by negative-checking: the first version of
   `expectChipsOnOneReachableRow` asserted the chip's box against the group's
   after `scrollIntoViewIfNeeded`, and a build with the overflow bug deliberately
-  reintroduced still passed in all five projects. Assert the **container's**
-  box against `page.viewportSize()` instead — the same sabotage then fails at
-  548px against a 392px bound. The wider rule: when a guard is meant to catch
-  an overflow, the thing that must be inside the viewport is the box that
-  overflowed, not the element you scrolled to.
+  reintroduced still passed in all five projects. Scroll the container itself
+  (`group.evaluate((el) => { el.scrollLeft = el.scrollWidth; })`) and assert
+  two things against it: the container's own box against
+  `page.viewportSize()`, and the chip's box against the container's. The same
+  sabotage then fails at 548px against the 390px `phonePortraitViewport` plus
+  the 2px row tolerance. Both halves are needed and each catches a different
+  break — dropping `min-width: 0` widens the container past the viewport,
+  while dropping `overflow-x` leaves the container inside it with the chips
+  painting outside. The wider rule: when a guard is meant to catch an
+  overflow, assert the box that overflowed, not the element you scrolled to.
