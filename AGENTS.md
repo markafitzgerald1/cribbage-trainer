@@ -17,9 +17,15 @@
   exists here. Exact arithmetic over an invented input is an invented result.
   It was also silently inconsistent with the app's own figures —
   `expectedCribPointsTable.json` is generated against an opponent whose
-  discard policy is trained by iterative best response, so a hash-picked pair
-  amounts to a uniform draw, and the panel set a count from one opponent model
-  beside an average from another and invited the reader to compare them. Before
+  discard policy is trained by iterative best response, while the hash picks
+  one concrete pair for a given deal with probability one — a single
+  deterministic sample drawn from a uniform opponent model, not an
+  expectation over one. So the panel set a lone pseudo-sample of the wrong
+  opponent beside a converged average of the right one and invited the reader
+  to compare them. Note the wording matters and has been got wrong three
+  times on this same subject: "uniform random draw", then "spreads evenly",
+  then "amounts to a uniform draw" all smuggled a distribution into what is
+  one fixed card pair per hand. Before
   displaying any figure, name every input it consumes and say which of
   simulation, enumeration, or probability supplies each. A card nobody dealt
   and no table models is not an input you have. Making the choice deterministic
@@ -823,11 +829,16 @@ they bind any PR that makes a claim about a phone or ships a guard.
   is instruction an agent will follow without re-deriving, so a confident
   sentence that happens to be false is worse than silence — and no gate can
   see it, because markdownlint, prettier, and cspell check lines rather than
-  truth. #803 is the worked example and it is not close: five review rounds,
-  twelve findings, every one correct and **none of them in the code**. Eight
-  landed on `AGENTS.md`, three on `skills/testing-e2e/SKILL.md`, one on
-  `skills/ui-layout-and-interaction/SKILL.md`; the source change was twelve
-  added lines against five removed, and drew no comment at all.
+  truth. #803 is the worked example and it is not close: **at least eighteen
+  findings across seven review rounds, still climbing as this was written**,
+  every one correct and **none of them in the code**. The large majority
+  landed on `AGENTS.md` itself, the rest on two skills; the source change was
+  twelve added lines against five removed and drew no comment at all. The
+  tally is written as a floor on purpose — two successive rounds corrected it,
+  and each correcting round added findings of its own, so any frozen number
+  was stale before the commit fixing it landed. A count of an ongoing thing,
+  quoted inside that thing, cannot be kept true; that is the closed-list
+  failure below wearing a different hat.
   Two shapes accounted for nearly all of them, and both are cheap to check:
   - **An absolute this repository already contradicts.** "Nothing may draw
     from the injected generator" while `usePracticeDrill` does. "A generated
@@ -840,10 +851,21 @@ they bind any PR that makes a claim about a phone or ships a guard.
     - A **descriptive** claim says what the code does. If the repository
       disagrees, the claim is simply wrong: correct it, and prefer stating
       the mechanism over the summary, since summaries are what drift.
-    - A **normative** claim says what the code must do. If the repository
-      disagrees, that is a **violation, not an exception** — fix it, or
-      escalate it, and say so in the PR. Only write the divergence down as a
-      documented exception when it is deliberate and you can defend it;
+    - A **normative** claim says what the code must do — but first establish
+      whether the rule is **established** or one you are **proposing right
+      now**, because that changes everything. An established requirement is
+      one already written here or decided by the owner: the architectural
+      constraint, the `max-lines` cap, the no-`eslint-disable` prohibition.
+      Repository disagreement with one of those is a **violation, not an
+      exception** — fix it, or escalate it, and say so in the PR. A rule you
+      are inventing in this PR has no such standing, and code that
+      contradicts it is evidence about the rule at least as much as about the
+      code: check it against an existing requirement or an owner decision,
+      and narrow or drop it when the design it condemns turns out to be
+      legitimate. Do not manufacture a violation by writing a `must`
+      wider than the case warrants and then obeying it. Only write a
+      divergence down as a documented exception when it is deliberate and you
+      can defend it;
       `usePracticeDrill`'s draw is one, because a drill shifting the next
       seeded deal is intended behavior. Finding hard-coded heuristics in the
       scoring engine would be the other kind entirely: the architectural
@@ -862,8 +884,8 @@ they bind any PR that makes a claim about a phone or ships a guard.
   Both failures come from the same place: asserting a property of the whole
   from the part you were already reading. The derived-inputs rule under
   Project overview is a special case of this one, and writing that one down
-  did not prevent any of the twelve findings in the same PR — none of which
-  targeted that rule — so treat this as
+  did not prevent a single one of those findings — none of which targeted that
+  rule — so treat this as
   a checking discipline to execute, not a principle to agree with. Two claims
   in this very bullet were wrong on first draft, both caught by running the
   check it prescribes: the source diff was called nine lines, and the
