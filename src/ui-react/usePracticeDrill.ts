@@ -84,8 +84,10 @@ interface UsePracticeDrillArgs {
  * shows the same relabeling, and loading it never shifts a later seeded
  * deal (see AGENTS.md's URL analysis state section on that shared stream).
  * `drillLive` and the previous-discard display below recompute the same
- * value from the same two fields rather than caching it, since `activeItem`
- * does not change for the life of one drill.
+ * value from the same two fields rather than caching it: `activeItem`
+ * itself changes (`onNextHand` replaces it with the next drilled item), and
+ * a cache keyed on anything less than both fields could hand a later item
+ * the wrong permutation.
  */
 const permutedDrillCards = (item: MistakeQueueItem): Card[] =>
   permuteCardSuits(

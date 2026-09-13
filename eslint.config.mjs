@@ -188,6 +188,7 @@ export default [
             "gtag",
             "href",
             "interpretable",
+            "invariance",
             "jscpd",
             "JSX",
             "keydown",

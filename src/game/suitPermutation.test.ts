@@ -5,8 +5,14 @@ import { permuteCardSuits, suitPermutationForAttempt } from "./suitPermutation";
 const HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
 const OTHER_HAND_KEY = "2C,3C,4C,5C,6C,7C|Dealer";
 const ATTEMPT_SAMPLE_SIZE = 12;
+const IDENTITY_CHECK_SAMPLE_SIZE = 50;
 
 const sortedSuits = (suits: readonly string[]): string[] => [...suits].sort();
+
+const permutationsForAttempts = (count: number): readonly string[] =>
+  Array.from({ length: count }, (_, attemptIndex) =>
+    suitPermutationForAttempt(HAND_KEY, attemptIndex).join(""),
+  );
 
 describe("suitPermutationForAttempt", () => {
   it("returns a bijection of the four suits", () => {
@@ -23,11 +29,7 @@ describe("suitPermutationForAttempt", () => {
   });
 
   it("varies across attempts of the same hand", () => {
-    const permutations = Array.from(
-      { length: ATTEMPT_SAMPLE_SIZE },
-      (_, attemptIndex) =>
-        suitPermutationForAttempt(HAND_KEY, attemptIndex).join(""),
-    );
+    const permutations = permutationsForAttempts(ATTEMPT_SAMPLE_SIZE);
 
     expect(new Set(permutations).size).toBeGreaterThan(1);
   });
@@ -38,6 +40,13 @@ describe("suitPermutationForAttempt", () => {
     );
 
     expect(new Set(permutations).size).toBe(2);
+  });
+
+  it("never picks the identity mapping, so the board always visibly changes", () => {
+    const identity = SUITS.join("");
+    const permutations = permutationsForAttempts(IDENTITY_CHECK_SAMPLE_SIZE);
+
+    expect(permutations).not.toContain(identity);
   });
 });
 

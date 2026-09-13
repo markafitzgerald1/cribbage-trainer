@@ -30,10 +30,14 @@ import { toDealtCards } from "../game/toDealtCards";
 export const HAND_KEY = mockItemA.handKey;
 
 /*
- * `handleStartDrill` always drills the literal `mockItemA` fixture below, so
- * every board state representing "the drill's own hand is on screen" must be
- * built from the same permutation `beginWith` derives for it — its fixed
- * handKey and attempts — rather than mockItemA's stored (unpermuted) suits.
+ * `Harness.start` defaults to drilling the literal `mockItemA` fixture below
+ * (a test can pass another item instead, as the "no previous discard" case
+ * in usePracticeDrill.test.ts does with `mockItemB`), so every board state
+ * representing "the drill's own hand is on screen" for the default case must
+ * be built from the same permutation `beginWith` derives for that item —
+ * its fixed handKey and attempts — rather than mockItemA's stored
+ * (unpermuted) suits. A test that drills a different item must derive its
+ * own permutation from that item's handKey and attempts the same way.
  */
 const DRILL_PERMUTATION = suitPermutationForAttempt(
   mockItemA.handKey,

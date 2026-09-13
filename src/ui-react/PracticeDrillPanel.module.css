@@ -217,8 +217,14 @@
     font-size: min(1rem, 1.65vw);
   }
 
+  /*
+   * A capped font here would shrink well below a readable size at a large
+   * device font on a narrow phone (see AGENTS.md's rem-floor traps), and
+   * unlike the score text around it this note carries no figure the player
+   * needs — so it drops entirely in landscape rather than shrinking.
+   */
   .suit-note {
-    font-size: min(0.8rem, 1.35vw);
+    display: none;
   }
 
   .discard-cards {

@@ -1,8 +1,18 @@
 import { type Card, SUITS, type Suit } from "./Card";
 import { Permutation } from "js-combinatorics";
 
-// All 24 bijections of the four suits, built once from the same SUITS order every other module uses.
-const SUIT_PERMUTATIONS = new Permutation(SUITS);
+/*
+ * The 23 bijections of the four suits that actually relabel every suit,
+ * built once from the same SUITS order every other module uses. The
+ * identity mapping is excluded: selecting it would leave the board showing
+ * the stored arrangement verbatim while the panel still claimed the suits
+ * had been reshuffled.
+ */
+const NON_IDENTITY_SUIT_PERMUTATIONS: readonly (readonly Suit[])[] = [
+  ...new Permutation(SUITS),
+].filter((permutation) =>
+  permutation.some((suit, index) => suit !== SUITS.at(index)),
+);
 
 const HASH_MULTIPLIER = 31;
 const HASH_MODULUS = 1_000_000_007;
@@ -21,26 +31,27 @@ const hashString = (value: string): number =>
   );
 
 /*
- * One of the 24 bijections of the four suits, chosen deterministically from a
- * hand's identity and which attempt this is — never from the shared
- * `generateRandomNumber` stream, so loading this hand into the drill never
- * shifts a later seeded deal (see AGENTS.md's URL analysis state section on
- * that shared stream). Attempt 3 of a given hand therefore always shows the
- * same relabeling, while consecutive attempts usually differ.
+ * One of the 23 non-identity bijections of the four suits, chosen
+ * deterministically from a hand's identity and which attempt this is —
+ * never from the shared `generateRandomNumber` stream, so loading this hand
+ * into the drill never shifts a later seeded deal (see AGENTS.md's URL
+ * analysis state section on that shared stream). Attempt 3 of a given hand
+ * therefore always shows the same relabeling, while consecutive attempts
+ * usually differ, and the hand is always visibly relabeled.
  */
 export const suitPermutationForAttempt = (
   handKey: string,
   attemptIndex: number,
 ): readonly Suit[] => {
   const hash = hashString(`${handKey}#${attemptIndex}`);
-  const index = hash % Number(SUIT_PERMUTATIONS.length);
+  const index = hash % NON_IDENTITY_SUIT_PERMUTATIONS.length;
   /*
-   * `index` is always within [0, 24) from the modulo above, so `.at()`
+   * `index` is always within [0, 23) from the modulo above, so `.at()`
    * cannot return undefined here; the cast states that guarantee rather
    * than papering over a real chance of it (see mistakeQueue.ts's `itemAt`
    * for the same idiom).
    */
-  return SUIT_PERMUTATIONS.at(index) as readonly Suit[];
+  return NON_IDENTITY_SUIT_PERMUTATIONS.at(index) as readonly Suit[];
 };
 
 const suitIndex = (suit: Suit): number => SUITS.indexOf(suit);
