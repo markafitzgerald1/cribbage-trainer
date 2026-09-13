@@ -600,8 +600,9 @@ they bind any PR that makes a claim about a phone or ships a guard.
   pushed head, which spent the budget on intermediate pushes nobody had
   asked to be reviewed; with several pull requests open at once that is the
   largest avoidable cost in the loop. Automatic Copilot review remains on
-  but does not reliably re-fire on a new head, so it still needs requesting
-  by hand for the head a human will read.
+  but does not reliably re-fire on a new head, so where the spending policy
+  below calls for Copilot it needs requesting by hand for the head a human
+  will read.
 - The discipline is unchanged: iterate until a round reports no issues,
   address every finding, resolve every thread. Before asking a human to
   look, confirm a clean Codex round landed on the exact head they will read.
@@ -617,13 +618,22 @@ they bind any PR that makes a claim about a phone or ships a guard.
   violation, and it is another reason to request Copilot deliberately for
   the head that will be merged rather than relying on whatever it reviewed
   on its own.
-- **Do not serialize the two reviewers to save budget — it costs more, not
-  less.** Any push invalidates every review on the previous head, so fixing
-  Codex's findings retires Copilot's clean round and vice versa, and the two
-  never converge on one head without a third pass. Request both on the same
-  head so a single fix cycle answers both. Where budget is tight, cut
-  frequency rather than parallelism: run intermediate rounds with Codex
-  alone and spend Copilot on the head that will actually be merged.
+- **Request both reviewers on the same head. That buys fewer fix cycles, not
+  fewer requests.** An earlier draft of this bullet claimed serializing
+  costs more budget; that is arithmetically wrong whenever the first
+  reviewer finds something. Codex on the old head, then both on the fixed
+  head, is three requests where requesting both before and after the push is
+  four. What parallel actually buys is one fix cycle instead of two, and the
+  findings of both reviewers in hand before you decide how to change the
+  code — which matters when their findings interact, as they have here.
+- **The trap serialization does carry is a push in the middle.** A review
+  only ever applies to the head it ran on, so fixing Codex's findings and
+  pushing retires any Copilot round on the previous head, and vice versa.
+  Requesting the second reviewer on the _same_ head costs nothing extra and
+  keeps both rounds valid; requesting it after a push means the first
+  reviewer has to run again. Where budget is genuinely tight, cut frequency
+  rather than parallelism: run intermediate rounds with Codex alone and
+  spend Copilot on the head that will actually be merged.
 - **Spend Copilot where a change could leave two places disagreeing**, which
   is not the same as where the code is. The first draft of this bullet said
   documentation-only pull requests do not need Copilot, and the review of
