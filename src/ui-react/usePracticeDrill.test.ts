@@ -21,6 +21,7 @@ import {
   scoredOptimalVerdict,
   seedMistake,
   setupHarness,
+  startedHarness,
   startedThenNext,
 } from "./usePracticeDrill.test.common";
 import {
@@ -216,63 +217,89 @@ describe("usePracticeDrill", () => {
     expect(harness.dealFreshHandCalls).toBe(0);
   });
 
-  it.each([
-    {
-      advance: (harness: Harness) => harness.next(),
-      name: "Draw another is pressed with no active drill",
-      seed: true,
-    },
-    {
-      advance: (harness: Harness) => harness.auto(),
-      name: "auto-draw runs with no mistakes recorded",
-      seed: false,
-    },
-  ])("does nothing when $name", ({ advance, seed }) => {
-    const harness = freshHarness({ seed });
+  /*
+   * Guards the seed contract from AGENTS.md's URL analysis state section:
+   * starting a specific drill permutes suits from the item's own handKey and
+   * attempts, never from the shared generator, so it must never advance the
+   * stream a later seeded deal would draw from — while the sampler that
+   * picks the *next* hand for Draw another and auto-draw legitimately still
+   * does.
+   */
+  describe("the shared generator stream contract", () => {
+    it("never draws when starting a specific drill", () => {
+      const harness = freshHarness();
 
-    advance(harness);
+      harness.start();
 
-    expectNoDrillStarted(harness);
+      expect(harness.generateRandomNumberCalls).toBe(0);
+    });
+
+    it("still draws for Draw another", () => {
+      const harness = startedHarness();
+
+      harness.next();
+
+      expect(harness.generateRandomNumberCalls).toBeGreaterThan(0);
+    });
   });
 
-  it.each([
-    { advance: (harness: Harness) => harness.auto(), name: "an auto-draw" },
-    { advance: (harness: Harness) => harness.next(), name: "Draw another" },
-  ])("keeps drilling on $name while active hands remain", ({ advance }) => {
-    const harness = freshHarness({ seed: true });
+  describe("drawing the next hand", () => {
+    it.each([
+      {
+        advance: (harness: Harness) => harness.next(),
+        name: "Draw another is pressed with no active drill",
+        seed: true,
+      },
+      {
+        advance: (harness: Harness) => harness.auto(),
+        name: "auto-draw runs with no mistakes recorded",
+        seed: false,
+      },
+    ])("does nothing when $name", ({ advance, seed }) => {
+      const harness = freshHarness({ seed });
 
-    harness.start();
-    advance(harness);
+      advance(harness);
 
-    expectDrillState(harness, true, "choosing");
-  });
+      expectNoDrillStarted(harness);
+    });
 
-  it("interleaves — Draw another skips the hand just drilled when others are active", () => {
-    clearDiscardTally();
-    seedMistake();
-    seedMistake(OTHER_KEY, "2C,3D");
+    it.each([
+      { advance: (harness: Harness) => harness.auto(), name: "an auto-draw" },
+      { advance: (harness: Harness) => harness.next(), name: "Draw another" },
+    ])("keeps drilling on $name while active hands remain", ({ advance }) => {
+      const harness = freshHarness({ seed: true });
 
-    const harness = startedThenNext({ followLoadedHand: true });
+      harness.start();
+      advance(harness);
 
-    expect(harness.drill().activeItem?.handKey).toBe(OTHER_KEY);
-  });
+      expectDrillState(harness, true, "choosing");
+    });
 
-  it("exits to a fresh hand when Draw another finds nothing left to drill", () => {
-    clearDiscardTally();
-    masterSeededHand();
+    it("interleaves — Draw another skips the hand just drilled when others are active", () => {
+      clearDiscardTally();
+      seedMistake();
+      seedMistake(OTHER_KEY, "2C,3D");
 
-    const harness = startedThenNext();
+      const harness = startedThenNext({ followLoadedHand: true });
 
-    expect(harness.drill().isActive).toBe(false);
-    expect(harness.dealFreshHandCalls).toBe(1);
-  });
+      expect(harness.drill().activeItem?.handKey).toBe(OTHER_KEY);
+    });
 
-  it("reports whether another active hand is available", () => {
-    const harness = freshHarness({ seed: true });
+    it("exits to a fresh hand when Draw another finds nothing left to drill", () => {
+      clearDiscardTally();
+      masterSeededHand();
 
-    harness.start();
+      const harness = startedThenNext();
 
-    expect(harness.drill().hasNextHand).toBe(true);
+      expect(harness.drill().isActive).toBe(false);
+      expect(harness.dealFreshHandCalls).toBe(1);
+    });
+
+    it("reports whether another active hand is available", () => {
+      const harness = startedHarness();
+
+      expect(harness.drill().hasNextHand).toBe(true);
+    });
   });
 
   it.each([

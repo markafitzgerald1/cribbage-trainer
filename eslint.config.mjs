@@ -190,6 +190,7 @@ export default [
             "interpretable",
             "invariance",
             "jscpd",
+            "jsdom",
             "JSX",
             "keydown",
             "lang",

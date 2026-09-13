@@ -96,6 +96,7 @@ export interface Harness {
   readonly drill: () => PracticeDrill;
   readonly exit: () => void;
   readonly forwardedAnalyses: readonly RenderedAnalysis[];
+  readonly generateRandomNumberCalls: number;
   readonly loadedHands: readonly PracticeDrillHand[];
   readonly loadHandCalls: number;
   readonly next: () => void;
@@ -127,13 +128,14 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
     }
   });
   const dealFreshHand = jest.fn<() => void>();
+  const generateRandomNumber = jest.fn<() => number>(() => 0);
   const { rerender, result } = renderHook<PracticeDrill, BoardProps>(
     ({ cards, role }) =>
       usePracticeDrill({
         cribRole: role,
         dealFreshHand,
         dealtCards: cards,
-        generateRandomNumber: () => 0,
+        generateRandomNumber,
         loadHand,
         onAnalysisRendered: (analysis) => forwardedAnalyses.push(analysis),
       }),
@@ -156,6 +158,9 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
     exit: () => step((drill) => drill.onExit()),
     get forwardedAnalyses() {
       return forwardedAnalyses;
+    },
+    get generateRandomNumberCalls() {
+      return generateRandomNumber.mock.calls.length;
     },
     get loadHandCalls() {
       return loadHand.mock.calls.length;
@@ -183,9 +188,14 @@ export const freshHarness = ({ seed = false } = {}): Harness => {
   return setupHarness();
 };
 
-export const committedHarness = (): Harness => {
+export const startedHarness = (): Harness => {
   const harness = freshHarness({ seed: true });
   harness.start();
+  return harness;
+};
+
+export const committedHarness = (): Harness => {
+  const harness = startedHarness();
   harness.commit();
   return harness;
 };
