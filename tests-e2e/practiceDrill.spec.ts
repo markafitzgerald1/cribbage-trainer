@@ -230,6 +230,10 @@ test.describe("practice drill", () => {
    * satisfies it and the check goes inert. Both halves are negative-checked
    * in Docker — dropping `min-width: 0` fails the first, dropping
    * `overflow-x` fails the second.
+   *
+   * The geometry alone would still accept `overflow-x: hidden`, which script
+   * can still scroll while touch and keyboard users cannot, so a group that
+   * does overflow must also declare a mode a person can reach.
    */
   const expectChipsOnOneReachableRow = async (
     group: Locator,
@@ -245,9 +249,17 @@ test.describe("practice drill", () => {
       CHIP_ROW_TOLERANCE_PX,
     );
 
-    await group.evaluate((element) => {
+    const overflow = await group.evaluate((element) => {
       element.scrollLeft = element.scrollWidth;
+      return {
+        mode: getComputedStyle(element).overflowX,
+        overflows: element.scrollWidth > element.clientWidth,
+      };
     });
+
+    if (overflow.overflows) {
+      expect(["auto", "scroll"]).toContain(overflow.mode);
+    }
 
     const viewportWidth = group.page().viewportSize()?.width ?? Number.NaN;
     const groupBox = await boxOf(group);

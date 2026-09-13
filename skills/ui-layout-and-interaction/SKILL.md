@@ -289,12 +289,22 @@ once you are already editing layout or interaction code.
   flat and unanchored. Frame dark modals with a crisp boundary border (e.g. 2px
   solid #43a047) and distinct elevation.
 - Modal action bars that stick to the top (e.g. `position: sticky; top: 0`)
-  must explicitly reserve clearance for absolute-positioned header controls
-  like the top-right close button (`padding-right: 3.5rem`), and the close
-  button itself must carry an elevated stacking context (`z-index: 10`). Without
-  both, sticky action bars paint across the top-right corner when scrolled,
-  partially obscuring or entirely swallowing clicks intended for the close
-  action.
+  reserve clearance for absolute-positioned header controls like the top-right
+  close button (`padding-right: 3.5rem`), and the close button itself carries
+  an elevated stacking context (`z-index: 10`). `Modal` and
+  `MistakeQueueDialog` do both. **`EnterCardsDialog`'s `.actions` deliberately
+  does not, and that is an open question rather than an oversight** — do not
+  "fix" it without reading #793's open-question section first. Two
+  measurements are why: `Modal`'s `.close` is `position: absolute` inside
+  `.content`, which is the `overflow-y: auto` scroll container, so on desktop it
+  scrolls out of the viewport entirely (top edge at y = -279px at a 16px root
+  font, -1169px at 28px) and can never be underneath a sticky bar; and adding
+  the padding to a `justify-content: center` row pushes its leftmost button
+  from +5.6px to -43.4px, clipping it off the screen at a 28px root font.
+  Both are emulated, and emulated scroll behavior is evidence about desktop
+  only, so nothing was removed from the other two dialogs. What settles it is
+  one observation on a real phone: whether the close button stays in the
+  corner while the content scrolls.
 - Primary action buttons across both the main felt ground and elevated modals
   (such as Deal, Use hand, Start drill, and Practice actions) must maintain
   at least 3:1 non-text boundary contrast against their fill (e.g. #72d572
@@ -316,13 +326,21 @@ once you are already editing layout or interaction code.
   state (e.g. #34c754 reaching 4.92:1 against unselected #1a4524 and 5.89:1
   against the #10381b modal ground, paired with high-contrast #08200d text at
   7.72:1).
-- Filter groups in modals with multiple chips (such as the four Loss-severity
-  options in the mistake queue) must rebalance padding, gaps, and non-color
-  marker sizing in portrait mode so all chips fit on a single row without
-  wrapping. On narrow screens (390px) and large accessibility fonts (28px root),
-  inline radio markers add horizontal width across every chip; capping marker
-  dimensions and tightening chip padding preserves the single-line layout and
-  prevents headers from eating vertical space meant for dialog content.
+- **Wrapping filter chips are not automatically a defect; the test is
+  reachability, and a single row is required only where vertical space is
+  scarce.** The mistake queue's four Loss-severity options are the case that
+  earned the rule — its header (title, action bar, subtitle, summary cards,
+  four filter groups) pushed the top mistake off a real phone in landscape, so
+  there a wrap costs a row of content and the group tightens padding, gaps,
+  and non-color marker sizing to stay on one line. The Decision Quality Trend
+  dialog is the counter-case and ships wrapping on purpose: measured on a
+  375px viewport, its five Granularity chips take two rows at a 16px root font
+  and four at 28px, and its three Crib role chips take two at 28px, but no
+  group escapes the viewport at either size so every chip stays reachable.
+  Do not add single-row treatment to a group without a demonstrated need — the
+  cure is capped markers and tighter padding, which costs legibility, and on
+  narrow screens with large accessibility fonts inline radio markers add width
+  to every chip at once.
 - Hover and focus states for primary action buttons must maintain at least
   3:1 contrast between the border and the interactive fill (e.g. #8cee8c border
   reaching 3.17:1 against #218838 fill, 4.95:1 against #1f6536 felt, and 9.18:1
