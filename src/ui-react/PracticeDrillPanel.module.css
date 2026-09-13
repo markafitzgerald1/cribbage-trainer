@@ -151,10 +151,11 @@
 }
 
 /*
- * Lighter than the #6c8f74 the modals use for the same role: this panel sits
- * on the #1f6536 felt rather than the #10381b dialog surface, where #6c8f74
- * reaches only 1.96:1. A transparent fill has no color of its own, so the
- * border is the whole boundary and has to clear 3:1 against the felt itself.
+ * Lighter than the #6c8f74 the modals use for the same role. That border is
+ * fine where they use it -- 3.63:1 against the #10381b dialog surface -- but
+ * this panel sits on the #1f6536 felt, against which the same color reaches
+ * only 1.96:1. A transparent fill has no color of its own, so the border is
+ * the whole boundary and has to clear 3:1 against the felt itself.
  */
 .secondary {
   background-color: transparent;

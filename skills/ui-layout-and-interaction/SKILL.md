@@ -282,7 +282,18 @@ once you are already editing layout or interaction code.
 - Dark themes must satisfy WCAG 2.1 SC 1.4.11 (non-text contrast) across all
   interactive boundaries: button borders, role chips, and filter options need
   at least 3:1 contrast against both their own fill and the adjacent surface
-  (e.g. #43a047 reaching 3.47:1 against dark modal surfaces). In modals,
+  (e.g. #43a047 reaching 3.96:1 against the #10381b modal surface; an earlier
+  revision of this line said 3.47:1). **Measure against the surface the
+  control actually renders on, not the one its stylesheet neighbors use** —
+  #6c8f74 passes at 3.63:1 on that modal surface and fails at 1.96:1 on the
+  #1f6536 felt, and an audit on #793 cleared `PracticeDrillPanel`'s "Exit
+  drill" against the wrong one of those two. One control is knowingly below
+  the floor and is not yet fixed: `ScoredPossibleKeepDiscards`'s
+  `.retry-button` (#dc3545 fill and border) reaches 1.56:1 against the felt.
+  It is an error-path control, it was worse before the felt change (1.13:1
+  against the old `green`), and it deserves its own issue — so treat this
+  bullet as the standard to hold new work to rather than a description of a
+  repository that already satisfies it everywhere. In modals,
   elevated dialog surfaces must maintain distinct visual separation from the
   felt ground behind the dimmed overlay (color-mix 50% black): thin 1px borders
   or surfaces that closely match the dimmed backdrop leave dialogs looking
@@ -291,9 +302,12 @@ once you are already editing layout or interaction code.
 - Modal action bars that stick to the top (e.g. `position: sticky; top: 0`)
   reserve clearance for absolute-positioned header controls like the top-right
   close button (`padding-right: 3.5rem`), and the close button itself carries
-  an elevated stacking context (`z-index: 10`). `Modal` and
-  `MistakeQueueDialog` do both. **`EnterCardsDialog`'s `.actions` deliberately
-  does not, and that is an open question rather than an oversight** — do not
+  an elevated stacking context (`z-index: 10`). Only `MistakeQueueDialog`
+  actually reserves the clearance; the shared `Modal` contributes the
+  `z-index: 10` on `.close` and has no sticky action bar of its own, so
+  `padding-right: 3.5rem` appears in exactly one stylesheet.
+  **`EnterCardsDialog`'s `.actions` deliberately does not, and that is an open
+  question rather than an oversight** — do not
   "fix" it without reading #793's open-question section first. Two
   measurements are why: `Modal`'s `.close` is `position: absolute` inside
   `.content`, which is the `overflow-y: auto` scroll container, so on desktop it
@@ -331,9 +345,13 @@ once you are already editing layout or interaction code.
   scarce.** The mistake queue's four Loss-severity options are the case that
   earned the rule — its header (title, action bar, subtitle, summary cards,
   four filter groups) pushed the top mistake off a real phone in landscape, so
-  there a wrap costs a row of content and the group tightens padding, gaps,
-  and non-color marker sizing to stay on one line. The Decision Quality Trend
-  dialog is the counter-case and ships wrapping on purpose: measured on a
+  a wrap there costs a row of content. Note the two halves sit in different
+  media blocks: the landscape block is what tightens that header, while
+  `.severity-group`'s one-row treatment — padding, gaps, non-color marker
+  sizing, and a `min-width: 0` scroll container — is declared only in the
+  portrait (`< 6/5`) block. Landscape still lets `.filter-group` wrap.
+  The Decision Quality Trend dialog is the counter-case and ships wrapping on
+  purpose: measured on a
   375px viewport, its five Granularity chips take two rows at a 16px root font
   and four at 28px, and its three Crib role chips take two at 28px, but no
   group escapes the viewport at either size so every chip stays reachable.

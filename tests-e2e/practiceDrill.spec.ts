@@ -271,6 +271,9 @@ test.describe("practice drill", () => {
 
     const chipBox = await boxOf(chips.last());
 
+    expect(chipBox.left).toBeGreaterThanOrEqual(
+      groupBox.left - CHIP_ROW_TOLERANCE_PX,
+    );
     expect(chipBox.right).toBeLessThanOrEqual(
       groupBox.right + CHIP_ROW_TOLERANCE_PX,
     );
