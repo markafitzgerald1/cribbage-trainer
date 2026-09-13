@@ -1,6 +1,7 @@
 import { AT, EMPTY, decisionOf, summaryOf } from "./discardTally.test.common";
 import {
   clearDiscardTally,
+  discardTallyKey,
   readDiscardTally,
   recordDiscardDecision,
 } from "./discardTally";
@@ -59,6 +60,25 @@ describe("discard tally storage", () => {
         }),
       ),
     ).toStrictEqual(summaryOf(1, 4, 0));
+  });
+
+  /*
+   * A practice drill relabels a mistake's suits per attempt (#767), so
+   * repeated drills of the same underlying hand carry a different physical
+   * handKey each time and would otherwise never match an `existing` record
+   * below — growing storage without bound instead of settling on one inert
+   * entry the way a stable-handKey practice hand always has.
+   */
+  it("stores no record at all for a practice decision, however many attempts vary its handKey", () => {
+    clearDiscardTally();
+    recordDiscardDecision(
+      decisionOf({ handKey: "attempt-one", isPractice: true }),
+    );
+    recordDiscardDecision(
+      decisionOf({ handKey: "attempt-two", isPractice: true }),
+    );
+
+    expect(localStorage.getItem(discardTallyKey)).toBeNull();
   });
 
   /*
