@@ -319,3 +319,9 @@ once you are already editing layout or interaction code.
   before the `tbody tr:hover` rule with equal or greater selector specificity so
   hover highlights apply consistently to all rows rather than being masked on
   even rows.
+- Action buttons resting directly on the felt table ground (such as "Quality
+  trend" and "Mistake queue" in `DiscardTallyView`) use the high-contrast
+  primary button palette (#197536 fill with 2px solid #72d572 border,
+  transitioning to #218838 fill with #8cee8c border on hover/focus) so their
+  boundaries exceed 3:1 contrast against both their fill and the #1f6536 table
+  felt.

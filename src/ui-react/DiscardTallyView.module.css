@@ -65,8 +65,8 @@
 }
 
 .trend-button {
-  background-color: #28a745;
-  border: 1px solid #218838;
+  background-color: #197536;
+  border: 2px solid #72d572;
   border-radius: 4px;
   color: white;
   cursor: pointer;
@@ -81,13 +81,19 @@
 }
 
 .trend-button:hover {
-  background-color: #34c754;
-  border-color: #34c754;
+  background-color: #218838;
+  border-color: #8cee8c;
 }
 
 .trend-button:focus-visible {
+  border-color: #8cee8c;
   outline: none;
   box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+}
+
+.trend-button:active {
+  background-color: #0f5527;
+  border-color: #8cee8c;
 }
 
 /*
