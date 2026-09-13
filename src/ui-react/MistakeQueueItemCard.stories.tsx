@@ -4,10 +4,13 @@ import {
   clickStoryButtonExpectingCall,
   expectStoryTextVisible,
 } from "./stories.common";
+import { expect, fn, within } from "storybook/test";
+import {
+  mockItemA,
+  mockTradeOffClassification,
+} from "../ui/mistakeQueue.test.common";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
-import { fn } from "storybook/test";
-import { mockItemA } from "../ui/mistakeQueue.test.common";
 /* jscpd:ignore-end */
 
 const meta = {
@@ -64,5 +67,23 @@ export const WithLossReason: Story = {
   },
   play: async ({ canvasElement }) => {
     await expectStoryTextVisible(canvasElement, "Prev: Crib");
+  },
+};
+
+export const WithClassification: Story = {
+  args: {
+    classification: mockTradeOffClassification,
+  },
+  play: async ({ canvasElement }) => {
+    const badge = within(canvasElement).getByRole("note", {
+      name: "Previous discard driven by Hand loss > Crib gain",
+    });
+
+    await expect(badge).toBeVisible();
+    await expect(badge).toHaveTextContent("Prev: Hand > Crib");
+    await expect(badge).toHaveAttribute(
+      "title",
+      "Previous discard (0.10 pts lost) driven by Hand loss > Crib gain",
+    );
   },
 };

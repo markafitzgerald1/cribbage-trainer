@@ -294,8 +294,13 @@ export function ScoredPossibleKeepDiscards({
     if (!hasChosenCandidate) {
       return null;
     }
+    const captionAriaLabel =
+      chosenClassification === null
+        ? "Optimal discard"
+        : `Sub-optimal: ${formatNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.label}`;
     return (
       <figcaption
+        aria-label={captionAriaLabel}
         className={classes.diagnosticCaption}
         role="status"
       >
