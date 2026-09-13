@@ -295,7 +295,10 @@ export function ScoredPossibleKeepDiscards({
       return null;
     }
     return (
-      <figcaption className={classes.diagnosticCaption}>
+      <figcaption
+        className={classes.diagnosticCaption}
+        role="status"
+      >
         {chosenClassification === null ? (
           <span className={classes.optimalBadge}>Optimal discard</span>
         ) : (

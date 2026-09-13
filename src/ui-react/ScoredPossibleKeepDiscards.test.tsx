@@ -316,24 +316,26 @@ describe("scored possible keep discards component", () => {
     await expect(expectLoaded()).resolves.toBeTruthy();
   });
 
-  it("renders optimal discard caption when chosen discard is optimal", () => {
-    const cards = parseHand("5H,5D,6H,7H,8H,9H");
-    const dealtCards = toDealtCards(cards, parseHand("5H,5D"));
-    const { container } = renderScoredPossibleKeepDiscards(dealtCards);
-
-    expect(container.querySelector("figcaption")?.textContent).toBe(
-      "Optimal discard",
-    );
-  });
-
-  it("renders sub-optimal caption with diagnostic reason when chosen discard is sub-optimal", () => {
-    const cards = parseHand("4H,5D,KH,6H,8C,KC");
-    const dealtCards = toDealtCards(cards, parseHand("KH,KC"));
+  it.each([
+    {
+      cards: "5H,5D,6H,7H,8H,9H",
+      discards: "5H,5D",
+      expectedText: "Optimal discard",
+      name: "optimal discard caption when chosen discard is optimal",
+    },
+    {
+      cards: "4H,5D,KH,6H,8C,KC",
+      discards: "KH,KC",
+      expectedText: "Sub-optimal: 0.09 pts lostHand loss > Crib, Play gain",
+      name: "sub-optimal caption with diagnostic reason when chosen discard is sub-optimal",
+    },
+  ])("renders $name", ({ cards, discards, expectedText }) => {
+    const dealtCards = toDealtCards(parseHand(cards), parseHand(discards));
     const { container } = renderScoredPossibleKeepDiscards(dealtCards);
     const caption = container.querySelector("figcaption");
 
-    expect(caption).not.toBeNull();
-    expect(caption?.textContent).toContain("Sub-optimal:");
-    expect(caption?.textContent).toContain("Hand loss > Crib, Play gain");
+    expect(caption?.getAttribute("role")).toBe("status");
+
+    expect(caption?.textContent).toBe(expectedText);
   });
 });
