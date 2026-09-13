@@ -594,15 +594,16 @@ they bind any PR that makes a claim about a phone or ships a guard.
 - The Codex GitHub connector reviews the current head when a PR comment says
   `@codex review` (post it with an agent-attribution prefix). When Codex
   quota is exhausted it replies "usage limits reached" instead of reviewing.
-- **Codex automatic review was turned off on 2026-09-12.** Every Codex round
-  is now requested by hand: post a comment containing `@codex review`, with
-  the agent-attribution prefix. It was on from 2026-09-07 and fired per
-  pushed head, which spent the budget on intermediate pushes nobody had
-  asked to be reviewed; with several pull requests open at once that is the
-  largest avoidable cost in the loop. Automatic Copilot review remains on
-  but does not reliably re-fire on a new head, so where the spending policy
-  below calls for Copilot it needs requesting by hand for the head a human
-  will read.
+- **Both automatic reviews were turned off on 2026-09-12.** Every round from
+  either reviewer is now requested by hand: `@codex review` as a comment
+  with the agent-attribution prefix, and Copilot through the REST endpoint
+  below. They were on from 2026-09-07 and fired per pushed head, spending
+  budget on intermediate pushes nobody had asked to be reviewed; with
+  several pull requests open at once that was the largest avoidable cost in
+  the loop. Turning both off rather than one keeps a single rule with no
+  exceptions — an earlier draft of this section had to carve out Copilot's
+  automatic run as a case the CI-green rule could not govern, which is a
+  policy bending around a setting rather than a decision.
 - The discipline is unchanged: iterate until a round reports no issues,
   address every finding, resolve every thread. Before asking a human to
   look, confirm a clean Codex round landed on the exact head they will read.
@@ -611,13 +612,9 @@ they bind any PR that makes a claim about a phone or ships a guard.
   clean.
 - **Request a review only when required CI is green on that head.** A review
   of a head that then fails CI is spent twice, and a review of a head with
-  pending checks may be reviewing code the gate is about to reject. This
-  governs the rounds you request, which since 2026-09-12 is every Codex
-  round. It cannot govern Copilot's automatic run, which fires outside your
-  control and may land on a red or pending head — that is not a rule
-  violation, and it is another reason to request Copilot deliberately for
-  the head that will be merged rather than relying on whatever it reviewed
-  on its own.
+  pending checks may be reviewing code the gate is about to reject. Since
+  both automatic reviews are off, this governs every round without
+  exception.
 - **Request both reviewers on the same head. That buys fewer fix cycles, not
   fewer requests.** An earlier draft of this bullet claimed serializing
   costs more budget; that is arithmetically wrong whenever the first

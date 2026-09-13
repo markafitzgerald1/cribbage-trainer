@@ -47,10 +47,10 @@ agreed, the pull request says what actually happened.
 - **One authoritative full gate per pushed head, and reviews come after it.**
   `.husky/pre-commit` runs the fast `npm run verify:fast` filter, not the
   merge gate, so a landed commit is not validated work. Before requesting a
-  Codex or Copilot review by hand, wait for required CI to be green on the
-  exact SHA — a manual review of a head that then fails CI is spent twice,
-  once on the bot's budget and once on the round it forces (the automatic
-  round is exempt: you do not control it). Run
+  Codex or Copilot review, wait for required CI to be green on the exact
+  SHA — a review of a head that then fails CI is spent twice, once on the
+  bot's budget and once on the round it forces. Both automatic reviews are
+  off, so this admits no exception. Run
   `npm run docker:build-and-test-all` locally instead only when CI cannot be
   that gate — unpushed work, or a Docker-only reproduction. A `--no-verify`
   commit skipped `verify:fast`, not CI's gate, so just run `verify:fast` by
@@ -75,15 +75,13 @@ agreed, the pull request says what actually happened.
   covers: a real phone, a real network, a real Google Analytics stream. When
   the human runs those steps, record the result in the PR body, and say
   plainly if later commits have moved the code out from under that run.
-- **Codex automatic review was turned off on 2026-09-12, so every Codex
-  round is yours to request** — post a comment containing `@codex review`
-  with the attribution prefix, once required CI is green on that head. On a
-  quota stub, wait for the quota to recover rather than re-requesting into
-  the same reply. Copilot's automatic review is still on but does not
-  reliably re-fire on a new head, so request it too for the head a human
-  will read; `AGENTS.md` under GitHub PR Reviews owns the policy for when
-  each is worth spending. Request them on the same head rather than one
-  after the other. Re-request Copilot with this, since
+- **Both automatic reviews were turned off on 2026-09-12, so every round is
+  yours to request** — `@codex review` as a comment with the attribution
+  prefix, and Copilot through the endpoint below, once required CI is green
+  on that head. On a quota stub, wait for the quota to recover rather than
+  re-requesting into the same reply. `AGENTS.md` under GitHub PR Reviews
+  owns the policy for when each is worth spending. Request them on the same
+  head rather than one after the other. Request Copilot with this, since
   `gh pr edit --add-reviewer copilot` cannot resolve that login:
 
   ```bash
