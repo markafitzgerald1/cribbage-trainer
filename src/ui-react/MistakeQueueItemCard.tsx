@@ -112,6 +112,7 @@ export function MistakeQueueItemCard({
             <span
               aria-label={`Previous discard driven by ${effectiveReason}`}
               className={classes.componentBadge}
+              role="note"
               title={`Previous discard (${formatNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
             >
               Prev: {effectiveShortReason}

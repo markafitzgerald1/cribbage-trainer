@@ -33,16 +33,21 @@ const renderCard = (options: RenderCardOptions = {}) => {
 
 describe("mistakeQueueItemCard", () => {
   it("renders loss reason badge when provided", () => {
-    const { getByText, getByTitle } = renderCard({ lossReason: "Crib" });
+    const { getByRole, getByText, getByTitle } = renderCard({
+      lossReason: "Crib",
+    });
 
     expect(getByText("Prev: Crib")).toBeInTheDocument();
+    expect(
+      getByRole("note", { name: "Previous discard driven by Crib" }),
+    ).toBeInTheDocument();
     expect(
       getByTitle("Previous discard (1.00 pts lost) driven by Crib"),
     ).toBeInTheDocument();
   });
 
   it("renders loss reason and recomputed loss when classification is provided", () => {
-    const { getByText, getByTitle } = render(
+    const { getByRole, getByText, getByTitle } = render(
       <MistakeQueueItemCard
         classification={mockTradeOffClassification}
         item={mockItemA}
@@ -52,6 +57,11 @@ describe("mistakeQueueItemCard", () => {
     );
 
     expect(getByText("Prev: Hand > Crib")).toBeInTheDocument();
+    expect(
+      getByRole("note", {
+        name: "Previous discard driven by Hand loss > Crib gain",
+      }),
+    ).toBeInTheDocument();
     expect(
       getByTitle(
         "Previous discard (0.10 pts lost) driven by Hand loss > Crib gain",
