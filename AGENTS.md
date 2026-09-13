@@ -232,22 +232,28 @@
   output reproduces on a **passing** tree with:
 
   ```bash
-  npx jest --expand --testTimeout=400 \
+  npx jest --expand --coverage=false --testTimeout=1 \
     --runTestsByPath src/ui-react/TrainerPracticeDrill.test.tsx
   ```
 
-  Against that spec as it stood at #804 the two strings matched
-  character-for-character; the numbers have since moved with the file, so
-  compare the shape rather than the lines. Line 76 was never reached. Read
-  the stack frame, not the code frame.
+  A budget of 1ms rather than something near the real one because the point
+  is the output shape, and any threshold a passing test can still beat makes
+  the demonstration depend on how busy the machine is. Against that spec as
+  it stood at #804 the two strings matched character-for-character; the
+  numbers have since moved with the file, so compare the shape rather than
+  the lines. Line 76 was never reached. Read the stack frame, not the code
+  frame.
 
 - **The heavy jsdom Trainer specs run near jest's per-test budget whenever
   the machine is contended, and which one crosses first is luck.** Reproduce
   by starving jest — spin up more CPU hogs than there are cores and run
-  `nice -n 20 npx jest`. At that setting `TrainerPracticeDrill.test.tsx`
-  took 17565ms against the 17.815s recorded in #804, and the worst per-test
-  times were 5855ms, 5237ms and 5155ms spread across `TrainerUrlState`,
-  `TrainerTelemetry` and `TrainerPracticeDrill`. `testTimeout` is therefore
+  `nice -n 20 npx jest`. Two settings, and keep their figures apart: at 40
+  hogs on an eight-core host `TrainerPracticeDrill.test.tsx` took 17565ms,
+  against the 17.815s recorded in #804, and passed with its worst test at
+  4218ms of the 5000ms budget. At 72 hogs that file took 24047ms and the
+  run failed, with the worst per-test times — 5855ms, 5237ms and 5155ms —
+  spread across `TrainerUrlState`, `TrainerTelemetry` and
+  `TrainerPracticeDrill`. `testTimeout` is therefore
   set to 15000 in `jest.config.json`: jest's 5000 default assumes a process
   that owns the machine, while `verify:fast` runs jest concurrently with
   eleven other tasks and jest itself forks one worker fewer than the machine
