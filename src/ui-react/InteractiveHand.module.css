@@ -32,8 +32,8 @@
 
 .enter-cards:hover,
 .enter-cards:focus {
-  background-color: #34c754;
-  border-color: #34c754;
+  background-color: #218838;
+  border-color: #8cee8c;
   outline: none;
 }
 
@@ -43,7 +43,7 @@
 
 .enter-cards:active {
   background-color: #0f5527;
-  border-color: #0f5527;
+  border-color: #8cee8c;
 }
 
 .deal-actions {

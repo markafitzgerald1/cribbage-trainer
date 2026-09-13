@@ -306,3 +306,16 @@ once you are already editing layout or interaction code.
   light backgrounds. Action buttons within the consent dialog use consistent
   dark theme action button styling (#197536 fill with #72d572 border,
   transitioning to #218838 fill with #8cee8c border on hover and focus).
+- Active/pressed states for primary action buttons must retain a distinct,
+  high-contrast border (such as `border-color: #8cee8c;` or
+  `var(--hover-border-color)`) against darker active fills (e.g. #0f5527),
+  preventing the boundary contrast from collapsing to 1:1 when pressed.
+- When styling dialog action buttons that host nested modals (such as
+  `AnalyticsConsentDialog` hosting `Modal` for the privacy policy), scope button
+  rules to direct children (`> button`) or dedicated classes rather than
+  descendant `button` selectors so the nested modal's `.close` button is not
+  inadvertently restyled with primary action borders and backgrounds.
+- In striped data tables with hover rows, place the `tr:nth-child(even)` rule
+  before the `tbody tr:hover` rule with equal or greater selector specificity so
+  hover highlights apply consistently to all rows rather than being masked on
+  even rows.

@@ -204,12 +204,12 @@
   text-align: left;
 }
 
-.table tr:hover {
-  background-color: #1c4826;
-}
-
 .table tbody tr:nth-child(even) {
   background-color: #0f3616;
+}
+
+.table tbody tr:hover {
+  background-color: #1c4826;
 }
 
 .loss-pill {
