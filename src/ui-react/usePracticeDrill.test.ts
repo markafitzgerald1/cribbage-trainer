@@ -54,12 +54,11 @@ describe("usePracticeDrill", () => {
     expectDrillState(harness, true, "choosing");
 
     expect(harness.drill().activeItem).toBe(mockItemA);
+    // Suit-exact: a `toDrillHand` that regressed to mockItemA's own stored (unpermuted) cards would still satisfy a looser shape check here.
     expect(harness.loadedHands).toStrictEqual([
       {
         cribRole: CribRole.Dealer,
-        dealtCards: expect.arrayContaining([
-          expect.objectContaining({ kept: true }),
-        ]),
+        dealtCards: toDealtCards(asDrillCards("5H,6H,7H,8H,9H,10H"), []),
       },
     ]);
 
