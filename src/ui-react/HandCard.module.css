@@ -16,8 +16,8 @@
   cursor: pointer;
   display: flex;
   justify-content: center;
-  margin-top: 0;
-  margin-bottom: 0.4em;
+  margin-top: 0.4em;
+  margin-bottom: 0;
   font-weight: bold;
   text-align: center;
   position: relative;
@@ -28,6 +28,9 @@
   border-width: 0.022em;
   box-sizing: border-box;
   width: 1.212em;
+  transition:
+    margin-top var(--transition-duration) var(--transition-timing),
+    margin-bottom var(--transition-duration) var(--transition-timing);
 }
 
 .hand-card input[type="checkbox"] {
@@ -61,8 +64,8 @@
   background-color: #ababab;
   border-color: #616161;
   color: #5c5c5c;
-  margin-top: 0.4em;
-  margin-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0.4em;
 }
 
 /* The selection is committed once a drill choice is checked; the label should stop inviting a click. */
