@@ -26,13 +26,13 @@ const ROW_STRIPE_DIVISOR = 2;
  */
 const MINUS_SIGN = "−";
 
-const toAlignedFixed = (points: number): string => {
-  const roundedPoints = Number(points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
+const toRoundedForDisplay = (points: number): number =>
+  Number(points.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
 
-  return roundedPoints
+const toAlignedFixed = (points: number): string =>
+  toRoundedForDisplay(points)
     .toFixed(EXPECTED_POINTS_FRACTION_DIGITS)
     .replace("-", MINUS_SIGN);
-};
 
 const formatDiscardLabel = (discard: readonly Card[]): string => {
   const [firstCard, secondCard] = discard as unknown as readonly [Card, Card];
@@ -42,10 +42,17 @@ const formatDiscardLabel = (discard: readonly Card[]): string => {
   return `${firstString} ${secondString}`;
 };
 
+/*
+ * The sign follows the rounded value rather than the raw one, so a quantity
+ * that displays as zero displays as a plain "0.00": a leading "+" would claim
+ * a gain the digits on screen do not show. Reachable from the shipped table
+ * rather than hypothetical - keeping A 9 J K as dealer has an expected play
+ * delta of 0.0017, which rendered as "+0.00".
+ */
 const formatSignedExpectedPoints = (points: number): string => {
   const formatted = toAlignedFixed(points);
 
-  return points > 0 ? `+${formatted}` : formatted;
+  return toRoundedForDisplay(points) > 0 ? `+${formatted}` : formatted;
 };
 
 export function ScoredPossibleKeepDiscard({

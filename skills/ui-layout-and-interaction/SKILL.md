@@ -51,6 +51,12 @@ once you are already editing layout or interaction code.
   default-scale size unchanged, and guard it the way portrait already does:
   the same measurement repeated at a 28px root font. That guard failed on
   all five browser projects before the fix and passes after it.
+  A proposed exception — that text inside a scroll container (`.dynamic-ui`,
+  the analysis figure) can carry an uncapped floor, because the height it
+  gains stays reachable — is recorded in #802 and in `AGENTS.md`'s
+  two-reviewers bullet. It is **not** in force: it rests on a desktop
+  measurement, PR #797 was withdrawn before it reached a phone, and this
+  rule was earned on hardware. Cap the floor until #802 settles it.
 - Anything new added below the controls and cards in the side-by-side
   left column inherits that trap. The practice-drill panel
   (`PracticeDrillPanel.module.css`) went in with every gap, margin,
@@ -110,6 +116,23 @@ once you are already editing layout or interaction code.
   anchors one (`.dynamic-ui.with-tally > :nth-last-child(2)`), and the
   conditional class driving it must come from the same predicate the child's
   own render uses or the two diverge.
+- The analysis figure is its own flex column, and anything added above the
+  results table competes with it for height rather than sitting beside it.
+  `.scored-possible-keep-discards` is `height: 100%` with `.table-container`
+  taking what is left through `flex-grow: 1`, so a sibling that refuses to
+  shrink can take all of it: a panel added above the table on PR #797 drove
+  that share to exactly zero at 380x350 with a 26px root font, and the table
+  vanished while the panel itself looked correct. That PR was withdrawn, so
+  no `min-height` floor protects the table today and the next child added
+  there inherits the whole hazard. `consentLayout.spec.ts`'s "preserves
+  usable analysis table height" case is the nearest guard, and it did fail
+  on that unfixed branch — but **read what it actually asserts before
+  trusting it**: `expect(containerBounds.height).toBeGreaterThan(0)` catches
+  a total collapse only, which is what that branch happened to produce. A
+  sibling that leaves the table at some positive but unusably small height
+  passes it. Its name promises more than its assertion delivers, so a new
+  child of that figure needs a content-derived minimum asserted alongside
+  it, not a green run of this one.
 - Aligning such a child to the **end** of its cell is not the safe way to
   stop it stretching. Items placed after the consent cell's row sit below the
   privacy links once pushed to their cell's end: `align-self: end` put the
@@ -212,6 +235,16 @@ once you are already editing layout or interaction code.
   ordinal or wall-clock `at` — and clear it outright (render-time reset,
   like `usePracticeDrill`) once its item leaves the filtered list, or
   restoring the filter silently reopens the panel.
+- Hiding a visual layout from assistive technology makes the replacement text
+  the **only** source of every fact it carried, and it is easy to leave one
+  out. A CSS-grid panel on PR #797 (withdrawn) gave each row a single spoken
+  sentence with the grid itself `aria-hidden`; the first version named the
+  columns and the numbers but not the two cards the row was about, so a
+  screen reader user was told the top choice scored more without being told
+  what it was. When you `aria-hidden` a region, list what a sighted reader
+  gets from it — headers, labels, identity, ordering — and check the
+  replacement carries each one. Assert the whole sentence in a test rather
+  than a fragment, or the omission reappears silently.
 - Freezing a control by swallowing its `onChange` leaves it focusable, still
   showing a pointer cursor, and announced as editable — a control that lies
   about being interactive. Lock it with the native `disabled` attribute
