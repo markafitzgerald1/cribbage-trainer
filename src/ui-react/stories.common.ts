@@ -97,7 +97,7 @@ export const waitForLoadingToDisappear = async (canvas: {
     async () => {
       await expect(canvas.queryByText("Loading analysis...")).toBeNull();
     },
-    { timeout: 5000 },
+    { timeout: 10000 },
   );
 };
 

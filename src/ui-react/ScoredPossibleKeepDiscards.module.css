@@ -20,11 +20,51 @@
   font-weight: bold;
 }
 
+.diagnostic-caption {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.optimal-badge {
+  background-color: #eafaf1;
+  border: 1px solid #a9dfbf;
+  border-radius: 4px;
+  color: #145a32;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+.sub-optimal-badge {
+  background-color: #fdf2e9;
+  border: 1px solid #f5cba7;
+  border-radius: 4px;
+  color: #a04000;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+.diagnostic-reason {
+  background-color: #f4f1fa;
+  border: 1px solid #dcd3f2;
+  border-radius: 4px;
+  color: #4a2d82;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
 .table-container {
   box-sizing: border-box;
   flex-grow: 1;
   margin: 0;
   max-width: 100%;
+  min-height: min(3rem, 10vh);
   min-width: 0;
   overflow: auto;
   padding-left: 0;

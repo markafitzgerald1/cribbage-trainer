@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import type { DiscardDecisionRecord, StoredTally } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
+import type { MistakeClassification } from "../analysis/classifyMistake";
 import type { MistakeQueueItem } from "./mistakeQueue";
 import type { PracticeRecord } from "./practiceLedger";
 import { parseHand } from "../game/Card";
@@ -103,4 +104,16 @@ export const mockItemMastered: MistakeQueueItem = {
   previousDiscardLoss: 3.0,
   priority: 1.0,
   wrong: 1,
+};
+
+export const mockTradeOffClassification: MistakeClassification = {
+  cribLoss: -1.3,
+  dominantComponents: ["hand"],
+  dominantGains: ["crib"],
+  handLoss: 1.4,
+  isFlushMiss: false,
+  label: "Hand loss > Crib gain",
+  netLoss: 0.1,
+  playLoss: 0,
+  shortLabel: "Hand > Crib",
 };

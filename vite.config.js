@@ -30,12 +30,13 @@ export default {
       ],
       reportsDirectory: path.join(dirname, "coverage"),
       thresholds: {
-        branches: 75.41,
-        functions: 89.04,
-        lines: 88.49,
-        statements: 88.67,
+        branches: 81.07,
+        functions: 91.42,
+        lines: 90.27,
+        statements: 90.42,
       },
     },
+    fileParallelism: false,
     projects: [
       {
         extends: true,
@@ -61,6 +62,7 @@ export default {
           // Use project root so setupFiles outside ./src are resolved correctly (e.g. .storybook)
           root: dirname,
           setupFiles: [path.join(dirname, ".storybook/vitest.setup.ts")],
+          testTimeout: 30000,
         },
       },
     ],

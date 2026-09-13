@@ -1,11 +1,15 @@
-/* jscpd:ignore-start */
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
-import * as classes from "./MistakeQueueDialog.module.css";
+import * as cribLoader from "../game/expectedCribPointsTableLoader";
+import * as playLoader from "../game/expectedPlayPointsTableLoader";
 import {
   MistakeQueueDialog,
   type MistakeQueueDialogProps,
 } from "./MistakeQueueDialog";
+import {
+  cardsRow,
+  previousDiscard as previousDiscardClass,
+} from "./MistakeQueueDialog.module.css";
 import {
   createAgedOutTally,
   createAllMasteredTally,
@@ -14,12 +18,13 @@ import {
   createTwoLossTally,
 } from "./MistakeQueueDialog.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import type { StoredTally } from "../ui/discardTally";
+import { clearClassificationCache } from "./useMistakeQueueClassifications";
 import { createElement } from "react";
-/* jscpd:ignore-end */
+import { setAnalysisTables } from "./Trainer.test.common";
 
 const sampleTally = createSampleMistakeTally();
 const allMasteredTally = createAllMasteredTally();
@@ -35,6 +40,7 @@ interface QueueRenderConfig {
   readonly isDisplayed?: boolean;
   readonly onDismiss?: () => void;
   readonly queueTally?: StoredTally;
+  readonly skipSetAnalysisTables?: boolean;
   readonly sortOrder?: MistakeQueueDialogProps["sortOrder"];
   readonly useStorageFallback?: boolean;
 }
@@ -48,9 +54,14 @@ const renderQueueDialog = (config: QueueRenderConfig = {}) => {
     isDisplayed = true,
     onDismiss = jest.fn(),
     queueTally = sampleTally,
+    skipSetAnalysisTables = false,
     sortOrder,
     useStorageFallback = false,
   } = config;
+
+  if (!skipSetAnalysisTables) {
+    setAnalysisTables();
+  }
 
   if (useStorageFallback) {
     return render(
@@ -379,11 +390,11 @@ describe("mistake queue dialog", () => {
       ({ expectedCards, expectedDiscard, sortOrder }) => {
         const { container } = renderQueueDialog({ sortOrder });
 
+        expect(container.querySelector(`.${cardsRow}`)).toHaveTextContent(
+          expectedCards,
+        );
         expect(
-          container.querySelector(`.${classes.cardsRow}`),
-        ).toHaveTextContent(expectedCards);
-        expect(
-          container.querySelector(`.${classes.previousDiscard}`),
+          container.querySelector(`.${previousDiscardClass}`),
         ).toHaveTextContent(expectedDiscard);
       },
     );
@@ -398,8 +409,87 @@ describe("mistake queue dialog", () => {
       );
 
       expect(
-        nullTallyView.getByRole("region", { name: "Mistake queue" }),
+        nullTallyView.getByRole("heading", { name: "Mistake queue" }),
       ).toBeInTheDocument();
+    });
+
+    it("renders dominant component badges for mistake cards", async () => {
+      clearClassificationCache();
+      const { findAllByTitle } = renderQueueDialog();
+      const badges = await findAllByTitle(/driven by/u, {}, { timeout: 5000 });
+
+      expect(badges.length).toBeGreaterThan(0);
+    });
+
+    const runAsyncTableLoad = async () => {
+      clearClassificationCache();
+      try {
+        cribLoader.setTableSync(null);
+        playLoader.setTableSync(null);
+        const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
+
+        return await rendered.findByTitle(
+          /driven by Hand/u,
+          {},
+          { timeout: 5000 },
+        );
+      } finally {
+        setAnalysisTables();
+      }
+    };
+
+    it("asynchronously loads tables when initial tables are null", async () => {
+      const badge = await runAsyncTableLoad();
+
+      expect(badge).toBeInTheDocument();
+      expect(badge).toHaveTextContent("Prev: Hand");
+    });
+
+    const runTableLoadFailure = async () => {
+      const spy = jest
+        .spyOn(cribLoader, "loadTable")
+        .mockRejectedValueOnce(new Error("Table error"));
+      try {
+        cribLoader.setTableSync(null);
+        playLoader.setTableSync(null);
+        const { findByRole } = renderQueueDialog({
+          skipSetAnalysisTables: true,
+        });
+        const region = await findByRole("region", { name: "Mistake queue" });
+
+        return within(region);
+      } finally {
+        spy.mockRestore();
+        setAnalysisTables();
+      }
+    };
+
+    it("handles table load failure gracefully", async () => {
+      const scoped = await runTableLoadFailure();
+
+      expect(scoped.getByText(/Needs practice/u)).toBeInTheDocument();
+    });
+
+    const runPartialTablePresence = () => {
+      try {
+        setAnalysisTables();
+        playLoader.setTableSync(null);
+        const { queryByRole, unmount } = renderQueueDialog({
+          skipSetAnalysisTables: true,
+        });
+        const region = queryByRole("region", { name: "Mistake queue" });
+        unmount();
+
+        return region;
+      } finally {
+        setAnalysisTables();
+      }
+    };
+
+    it("handles partial synchronous table presence", () => {
+      const region = runPartialTablePresence();
+
+      expect(region).not.toBeNull();
     });
   });
 });

@@ -1,5 +1,10 @@
 import * as classes from "./ScoredPossibleKeepDiscard.module.css";
 import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
+import {
+  EXPECTED_POINTS_FRACTION_DIGITS,
+  type MistakeClassification,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { useCallback, useState } from "react";
 import type { Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
@@ -9,16 +14,16 @@ import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscar
 import { SortOrder } from "../ui/SortOrder";
 
 export interface ScoredPossibleKeepDiscardProps {
+  readonly classification?: MistakeClassification | null;
+  readonly cribRole: CribRole;
+  readonly isHighlighted: boolean;
+  readonly rowIndex: number;
   readonly scoredKeepDiscard: ScoredKeepDiscard<
     Card & { readonly dealOrder: number }
   >;
-  readonly cribRole: CribRole;
   readonly sortOrder: SortOrder;
-  readonly isHighlighted: boolean;
-  readonly rowIndex: number;
 }
 
-const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const ROW_STRIPE_DIVISOR = 2;
 /*
  * The U+2212 minus sign matches the "+" advance width with tabular figures,
@@ -33,6 +38,14 @@ const toAlignedFixed = (points: number): string =>
   toRoundedForDisplay(points)
     .toFixed(EXPECTED_POINTS_FRACTION_DIGITS)
     .replace("-", MINUS_SIGN);
+
+const getRowTitle = (classification?: MistakeClassification | null): string => {
+  if (classification) {
+    const loss = formatNetLoss(classification.netLoss);
+    return `Chosen discard (${loss} pts lost): ${classification.label}`;
+  }
+  return "Optimal discard";
+};
 
 const formatDiscardLabel = (discard: readonly Card[]): string => {
   const [firstCard, secondCard] = discard as unknown as readonly [Card, Card];
@@ -56,6 +69,7 @@ const formatSignedExpectedPoints = (points: number): string => {
 };
 
 export function ScoredPossibleKeepDiscard({
+  classification,
   scoredKeepDiscard,
   cribRole,
   sortOrder,
@@ -129,19 +143,28 @@ export function ScoredPossibleKeepDiscard({
     </span>
   );
 
+  const rowContent = (
+    <>
+      <td>{renderHandDiscardCell()}</td>
+      <td className={classes.scoreCell}>{handExpectedTotal}</td>
+      <td className={classes.scoreCell}>{cribExpectedTotal}</td>
+      <td className={classes.scoreCell}>{playExpectedTotal}</td>
+      <td className={classes.netScoreCell}>{netExpectedTotal}</td>
+    </>
+  );
+  const rowClassName = `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${
+    isHighlighted ? classes.highlighted : ""
+  } ${classes.clickable}`;
+
   return (
     <>
       <tr
-        className={`${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${
-          isHighlighted ? classes.highlighted : ""
-        } ${classes.clickable}`}
+        className={rowClassName}
         onClick={handleRowClick}
+        // eslint-disable-next-line no-undefined
+        title={isHighlighted ? getRowTitle(classification) : undefined}
       >
-        <td>{renderHandDiscardCell()}</td>
-        <td className={classes.scoreCell}>{handExpectedTotal}</td>
-        <td className={classes.scoreCell}>{cribExpectedTotal}</td>
-        <td className={classes.scoreCell}>{playExpectedTotal}</td>
-        <td className={classes.netScoreCell}>{netExpectedTotal}</td>
+        {rowContent}
       </tr>
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow
@@ -153,3 +176,7 @@ export function ScoredPossibleKeepDiscard({
     </>
   );
 }
+
+ScoredPossibleKeepDiscard.defaultProps = {
+  classification: null,
+};

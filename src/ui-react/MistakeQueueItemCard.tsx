@@ -5,6 +5,10 @@ import {
   type MistakeQueueItem,
   SUCCESSES_FOR_MASTERY,
 } from "../ui/mistakeQueue";
+import {
+  type MistakeClassification,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
@@ -14,7 +18,9 @@ const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
 
 export interface MistakeQueueItemCardProps {
+  readonly classification?: MistakeClassification | null;
   readonly item: MistakeQueueItem;
+  readonly lossReason?: string | null;
   readonly onPractice: ((item: MistakeQueueItem) => void) | null;
   readonly sortOrder: SortOrder;
 }
@@ -70,7 +76,9 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
   );
 
 export function MistakeQueueItemCard({
+  classification = null,
   item,
+  lossReason = null,
   onPractice,
   sortOrder,
 }: MistakeQueueItemCardProps): React.JSX.Element {
@@ -81,6 +89,9 @@ export function MistakeQueueItemCard({
     () => (onPractice === null ? null : () => onPractice(item)),
     [item, onPractice],
   );
+  const effectiveReason = classification?.label ?? lossReason;
+  const effectiveShortReason = classification?.shortLabel ?? lossReason;
+  const effectiveLoss = classification?.netLoss ?? item.previousDiscardLoss;
 
   return (
     <div className={classes.itemCard}>
@@ -88,13 +99,23 @@ export function MistakeQueueItemCard({
         <div className={classes.itemBadges}>
           <span className={classes.roleBadge}>{roleLabel}</span>
           <span className={classes.lossBadge}>
-            {item.lossIfWrong.toFixed(DECIMAL_DIGITS)} pts lost
+            {formatNetLoss(item.lossIfWrong)} pts lost
           </span>
           {item.lossQuantile === null ? null : (
             <span
               className={`${classes.quantileBadge} ${getQuantileBadgeClass(item.lossQuantile)}`}
             >
               {item.lossQuantile}
+            </span>
+          )}
+          {effectiveReason === null ? null : (
+            <span
+              aria-label={`Previous discard driven by ${effectiveReason}`}
+              className={classes.componentBadge}
+              role="note"
+              title={`Previous discard (${formatNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
+            >
+              Prev: {effectiveShortReason}
             </span>
           )}
         </div>
@@ -123,3 +144,8 @@ export function MistakeQueueItemCard({
     </div>
   );
 }
+
+MistakeQueueItemCard.defaultProps = {
+  classification: null,
+  lossReason: null,
+};

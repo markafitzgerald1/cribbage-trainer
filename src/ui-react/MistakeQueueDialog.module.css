@@ -250,6 +250,16 @@
   text-transform: uppercase;
 }
 
+.component-badge {
+  background-color: #f4f1fa;
+  border: 1px solid #dcd3f2;
+  border-radius: 4px;
+  color: #4a2d82;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+}
+
 .loss-badge {
   background-color: #fdf2e9;
   border: 1px solid #f5cba7;

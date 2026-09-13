@@ -2,6 +2,10 @@ import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
+import {
+  EXPECTED_POINTS_FRACTION_DIGITS,
+  type MistakeClassification,
+} from "../analysis/classifyMistake";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
@@ -15,9 +19,9 @@ import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
+import { mockTradeOffClassification } from "../ui/mistakeQueue.test.common";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 
-const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const EXPECTED_CELL_COUNT = 5;
 const EXPECTED_CRIB_POINTS = 1.25;
 const EXPECTED_PLAY_POINTS = 0.75;
@@ -46,8 +50,10 @@ const CRIB_STARTER_POINTS = [
 ] as const;
 
 interface RenderComponentOptions {
+  readonly classification?: MistakeClassification | null;
   readonly expectedPlayPoints?: number;
   readonly isHighlighted?: boolean;
+  readonly rowIndex?: number;
   readonly signedExpectedCribPoints?: number;
 }
 
@@ -82,8 +88,10 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 function renderComponentWithScenario(
   scenario: ReturnType<typeof setupScenario>,
   {
+    classification = null,
     expectedPlayPoints = EXPECTED_PLAY_POINTS,
     isHighlighted = false,
+    rowIndex = 0,
     signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
   }: RenderComponentOptions = {},
 ) {
@@ -143,9 +151,10 @@ function renderComponentWithScenario(
   };
 
   const props = {
+    ...(typeof classification === "undefined" ? {} : { classification }),
     cribRole: CribRole.Dealer,
     isHighlighted,
-    rowIndex: 0,
+    rowIndex,
     scoredKeepDiscard,
     sortOrder: scenario.sortOrder,
   };
@@ -280,9 +289,57 @@ describe("calculation component", () => {
 
     expect(hasBreakdownHeader()).toBe(true);
     expect(screen.getAllByText(/\+Cut avg/u)).toHaveLength(1);
+  });
 
-    toggleMainRow();
+  it.each([
+    {
+      classification: null,
+      expectedTitle: "Optimal discard",
+      isHighlighted: true,
+      name: "optimal discard when highlighted",
+    },
+    {
+      classification: mockTradeOffClassification,
+      expectedTitle: "Chosen discard (0.10 pts lost): Hand loss > Crib gain",
+      isHighlighted: true,
+      name: "sub-optimal loss when highlighted and classified",
+    },
+    {
+      classification: {
+        ...mockTradeOffClassification,
+        netLoss: 0.004,
+      },
+      expectedTitle: "Chosen discard (< 0.01 pts lost): Hand loss > Crib gain",
+      isHighlighted: true,
+      name: "sub-optimal loss below 0.005 rendered with less-than precision indicator",
+    },
+    {
+      classification: null,
+      expectedTitle: null,
+      isHighlighted: false,
+      name: "no title when not highlighted",
+    },
+  ])(
+    "should render $name",
+    ({ classification, expectedTitle, isHighlighted }) => {
+      const scenario = setupScenario("Ascending");
+      const { container } = renderComponentWithScenario(scenario, {
+        classification,
+        isHighlighted,
+      });
 
-    expect(hasBreakdownHeader()).toBe(false);
+      expect(container.querySelector("tr")?.getAttribute("title")).toBe(
+        expectedTitle,
+      );
+    },
+  );
+
+  it("should apply evenRow stripe class when rowIndex is odd", () => {
+    const scenario = setupScenario("Ascending");
+    const { container } = renderComponentWithScenario(scenario, {
+      rowIndex: 1,
+    });
+
+    expect(container.querySelector("tr")?.className).toContain("mock-evenRow");
   });
 });

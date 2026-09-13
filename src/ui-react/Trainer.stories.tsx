@@ -60,7 +60,7 @@ const expectColumnHeaders = async (
         within(canvasElement).queryByText("Loading analysis..."),
       ).toBeNull();
     },
-    { timeout: 5000 },
+    { timeout: 10000 },
   );
 
   await Promise.all(

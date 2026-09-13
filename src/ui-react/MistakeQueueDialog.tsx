@@ -28,6 +28,7 @@ import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import Modal from "./Modal";
 import { SortOrder } from "../ui/SortOrder";
 import { useCloseOnEscape } from "./useCloseOnEscape";
+import { useMistakeQueueClassifications } from "./useMistakeQueueClassifications";
 
 const SORT_OPTIONS: readonly DialogFilterOption<MistakeQueueSortOrder>[] = [
   { label: "Priority", value: "priority" },
@@ -161,6 +162,8 @@ function buildMistakeQueueBaseData(tally: StoredTally): MistakeQueueBaseData {
   };
 }
 
+export { clearClassificationCache } from "./useMistakeQueueClassifications";
+
 const PAGE_SIZE = 50;
 
 export function MistakeQueueDialog({
@@ -263,6 +266,12 @@ export function MistakeQueueDialog({
     filters.sort,
     filters.status,
   ]);
+
+  const getClassification = useMistakeQueueClassifications(
+    show,
+    derivedQueueData?.sortedItems ?? null,
+    visibleCount,
+  );
 
   if (!show || baseQueueData === null || derivedQueueData === null) {
     return null;
@@ -369,6 +378,7 @@ export function MistakeQueueDialog({
             <>
               {sortedItems.slice(0, visibleCount).map((item) => (
                 <MistakeQueueItemCard
+                  classification={getClassification(item)}
                   item={item}
                   key={item.handKey}
                   onPractice={onStartDrill}

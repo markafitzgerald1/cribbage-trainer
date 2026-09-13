@@ -14,3 +14,7 @@ export const scoreColumn: string;
 export const loading: string;
 export const error: string;
 export const retryButton: string;
+export const diagnosticCaption: string;
+export const optimalBadge: string;
+export const subOptimalBadge: string;
+export const diagnosticReason: string;
