@@ -7,6 +7,8 @@ export interface DiscardableComparableCard extends ComparableCard {
 
 export interface HandProps {
   readonly dealtCards: readonly DiscardableComparableCard[];
+  // Unique per-hand instance identifier to isolate card DOM keys across deals.
+  readonly handId?: string | null | undefined;
   // Locks every card checkbox — see HandCard's `disabled`.
   readonly locked?: boolean;
   readonly onChange: (dealOrderIndex: number) => void;

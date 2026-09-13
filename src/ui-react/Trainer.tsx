@@ -362,6 +362,7 @@ export function Trainer({
         <InteractiveHand
           cribRole={cribRole}
           dealtCards={dealtCards}
+          handId={currentHandScope().handId}
           onCardChange={toggleKept}
           onDeal={dealNewHand}
           onEnterCards={enterCardsDialog.handleOpen}
