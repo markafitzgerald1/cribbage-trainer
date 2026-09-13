@@ -30,10 +30,10 @@
 }
 
 .optimal-badge {
-  background-color: rgb(255 255 255 / 20%);
-  border: 1px solid rgb(255 255 255 / 40%);
+  background-color: #eafaf1;
+  border: 1px solid #a9dfbf;
   border-radius: 4px;
-  color: #fff;
+  color: #145a32;
   font-size: 0.82em;
   font-weight: 700;
   padding: 3px 8px;
