@@ -78,21 +78,21 @@ interface UsePracticeDrillArgs {
 }
 
 /*
- * Deriving the permutation from the stored handKey and the item's own
+ * Deriving the permutation from the item's own cards, stored handKey, and
  * attempts count — never from `generateRandomNumber` — keeps it a pure
  * function of the mistake being drilled: attempt 3 of a given hand always
  * shows the same relabeling, and loading it never shifts a later seeded
  * deal (see AGENTS.md's URL analysis state section on that shared stream).
  * `drillLive` and the previous-discard display below recompute the same
- * value from the same two fields rather than caching it: `activeItem`
+ * value from the same three fields rather than caching it: `activeItem`
  * itself changes (`onNextHand` replaces it with the next drilled item), and
- * a cache keyed on anything less than both fields could hand a later item
- * the wrong permutation.
+ * a cache keyed on anything less than all three could hand a later item the
+ * wrong permutation.
  */
 const permutedDrillCards = (item: MistakeQueueItem): Card[] =>
   permuteCardSuits(
     item.cards,
-    suitPermutationForAttempt(item.handKey, item.attempts),
+    suitPermutationForAttempt(item.cards, item.handKey, item.attempts),
   );
 
 // The one place a drill hand is turned into cards on the board.
@@ -113,7 +113,7 @@ const permutedPreviousDiscard = (item: MistakeQueueItem): string | null =>
     : serializeHand(
         permuteCardSuits(
           parseHand(item.previousDiscard),
-          suitPermutationForAttempt(item.handKey, item.attempts),
+          suitPermutationForAttempt(item.cards, item.handKey, item.attempts),
         ),
       );
 

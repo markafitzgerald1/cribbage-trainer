@@ -40,6 +40,7 @@ export const HAND_KEY = mockItemA.handKey;
  * own permutation from that item's handKey and attempts the same way.
  */
 const DRILL_PERMUTATION = suitPermutationForAttempt(
+  mockItemA.cards,
   mockItemA.handKey,
   mockItemA.attempts,
 );

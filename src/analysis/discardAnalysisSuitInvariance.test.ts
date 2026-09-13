@@ -21,12 +21,13 @@ const ROTATE_SUITS: readonly Suit[] = [
 ];
 
 /*
- * Every field `ScoredKeepDiscard` carries except `discard`, `keep`, and
- * `cribStarterPoints` themselves. The first two name specific (now
- * differently-suited) cards, so they are compared separately, by rank, via
- * `discardRankKey` below. `cribStarterPoints` embeds concrete remaining
- * suits of its own (which starters share a suit relation), so it needs the
- * relabeling `comparableCribStarterPoints` below rather than a byte-for-byte
+ * Every field `ScoredKeepDiscard` carries except `discard`, `keep`, and the
+ * suit-sensitive fields handled separately below. `discard`/`keep` name
+ * specific (now differently-suited) cards, so they are compared by rank via
+ * `discardRankKey`. `cribStarterPoints` and the five `*Contributions`
+ * arrays each embed concrete suits of their own — which starters or which
+ * remaining cut cards produced a given relation — so they need
+ * `suitSensitiveFieldsMappedThrough` below rather than a byte-for-byte
  * match. Every field listed here, by contrast, is a plain number or a
  * rank-keyed breakdown with no suit information embedded, so it must come
  * out byte-identical under a global relabeling; a suit-sensitive regression
@@ -39,6 +40,7 @@ interface ComparableFields {
   readonly avgCutAddedNobs: number;
   readonly avgCutAddedPairs: number;
   readonly avgCutAddedRuns: number;
+  readonly cutCountsRemaining: ScoredKeepDiscard<Card>["cutCountsRemaining"];
   readonly expectedCribPointBreakdown: ScoredKeepDiscard<Card>["expectedCribPointBreakdown"];
   readonly expectedCribPoints: number;
   readonly expectedHandPoints: number;
@@ -57,6 +59,7 @@ const toComparable = (
   avgCutAddedNobs: scoredKeepDiscard.avgCutAddedNobs,
   avgCutAddedPairs: scoredKeepDiscard.avgCutAddedPairs,
   avgCutAddedRuns: scoredKeepDiscard.avgCutAddedRuns,
+  cutCountsRemaining: scoredKeepDiscard.cutCountsRemaining,
   expectedCribPointBreakdown: scoredKeepDiscard.expectedCribPointBreakdown,
   expectedCribPoints: scoredKeepDiscard.expectedCribPoints,
   expectedHandPoints: scoredKeepDiscard.expectedHandPoints,
@@ -71,15 +74,11 @@ const toComparable = (
 const relabelSuit = (suit: Suit): Suit =>
   ROTATE_SUITS.at(SUITS.indexOf(suit)) as Suit;
 
+const identitySuit = (suit: Suit): Suit => suit;
+
 /*
  * `cribStarterPoints` names, per starter rank, which concrete remaining
- * suits share each crib-scoring relation to the discard. That is real suit
- * data, not incidental to it, so proving invariance here means showing the
- * ORIGINAL deal's relabeled through the exact same permutation — not merely
- * discarding the field, which would silently stop checking it, and not
- * comparing it raw, which the mismatch above shows fails by construction.
- * `mapSuit` is `relabelSuit` for the original side and the identity for the
- * permuted side, which is already in the relabeled space. Suits within a
+ * suits share each crib-scoring relation to the discard. Suits within a
  * relation are sorted after mapping: a relabeling can permute which
  * concrete suits fall in one bucket without changing their enumeration
  * order, which carries no meaning of its own.
@@ -87,7 +86,7 @@ const relabelSuit = (suit: Suit): Suit =>
 const cribStarterPointsMappedThrough = (
   scoredKeepDiscard: ScoredKeepDiscard<Card>,
   mapSuit: (suit: Suit) => Suit,
-): unknown =>
+) =>
   scoredKeepDiscard.cribStarterPoints.map((starterPoints) => ({
     ...starterPoints,
     starterSuitRelationPoints: starterPoints.starterSuitRelationPoints.map(
@@ -98,7 +97,60 @@ const cribStarterPointsMappedThrough = (
     ),
   }));
 
-const identitySuit = (suit: Suit): Suit => suit;
+type Contribution = ScoredKeepDiscard<Card>["fifteensContributions"][number];
+
+/*
+ * Each of the five `*Contributions` arrays names, per category, which
+ * specific remaining card would add its points if cut as the starter — so
+ * `cutCard` carries a concrete suit of its own. Sorted by (rank, mapped
+ * suit) after mapping so a matching physical card lands in the same
+ * position on both sides regardless of which concrete suits a relabeling
+ * assigns, the same reasoning as the starter-points sort above.
+ */
+const contributionsMappedThrough = (
+  contributions: readonly Contribution[],
+  mapSuit: (suit: Suit) => Suit,
+): readonly Contribution[] =>
+  contributions
+    .map((contribution) => ({
+      ...contribution,
+      cutCard: {
+        ...contribution.cutCard,
+        suit: mapSuit(contribution.cutCard.suit),
+      },
+    }))
+    .sort((first, second) =>
+      first.cutCard.rank === second.cutCard.rank
+        ? first.cutCard.suit.localeCompare(second.cutCard.suit)
+        : first.cutCard.rank - second.cutCard.rank,
+    );
+
+const suitSensitiveFieldsMappedThrough = (
+  scoredKeepDiscard: ScoredKeepDiscard<Card>,
+  mapSuit: (suit: Suit) => Suit,
+): unknown => ({
+  cribStarterPoints: cribStarterPointsMappedThrough(scoredKeepDiscard, mapSuit),
+  fifteensContributions: contributionsMappedThrough(
+    scoredKeepDiscard.fifteensContributions,
+    mapSuit,
+  ),
+  flushesContributions: contributionsMappedThrough(
+    scoredKeepDiscard.flushesContributions,
+    mapSuit,
+  ),
+  nobsContributions: contributionsMappedThrough(
+    scoredKeepDiscard.nobsContributions,
+    mapSuit,
+  ),
+  pairsContributions: contributionsMappedThrough(
+    scoredKeepDiscard.pairsContributions,
+    mapSuit,
+  ),
+  runsContributions: contributionsMappedThrough(
+    scoredKeepDiscard.runsContributions,
+    mapSuit,
+  ),
+});
 
 // The two discarded ranks, sorted — unique per candidate because every test hand below deals six distinct ranks, and suit-independent so it identifies the same decision across a relabeling.
 const discardRankKey = (cards: readonly Card[]): string =>
@@ -146,11 +198,11 @@ describe("discard analysis under a global suit permutation", () => {
     );
     expect(
       byDiscardRank(permutedResults, (scoredKeepDiscard) =>
-        cribStarterPointsMappedThrough(scoredKeepDiscard, identitySuit),
+        suitSensitiveFieldsMappedThrough(scoredKeepDiscard, identitySuit),
       ),
     ).toStrictEqual(
       byDiscardRank(originalResults, (scoredKeepDiscard) =>
-        cribStarterPointsMappedThrough(scoredKeepDiscard, relabelSuit),
+        suitSensitiveFieldsMappedThrough(scoredKeepDiscard, relabelSuit),
       ),
     );
     expect(discardRankKey(permutedResults[0]!.discard)).toBe(

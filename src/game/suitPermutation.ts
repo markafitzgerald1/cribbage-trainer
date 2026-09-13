@@ -30,31 +30,57 @@ const hashString = (value: string): number =>
     0,
   );
 
+const suitIndex = (suit: Suit): number => SUITS.indexOf(suit);
+
 /*
- * One of the 23 non-identity bijections of the four suits, chosen
- * deterministically from a hand's identity and which attempt this is —
- * never from the shared `generateRandomNumber` stream, so loading this hand
- * into the drill never shifts a later seeded deal (see AGENTS.md's URL
- * analysis state section on that shared stream). Attempt 3 of a given hand
- * therefore always shows the same relabeling, while consecutive attempts
- * usually differ, and the hand is always visibly relabeled.
+ * A permutation excluding the global identity can still leave a hand
+ * visually unchanged: if the hand uses only some of the four suits, a
+ * permutation that fixes every suit the hand actually uses — and only
+ * shuffles the unused ones among themselves — is non-identity overall but
+ * identity on this hand. A single-suited hand (an all-hearts flush, say)
+ * has the most room for this: 5 of the 23 non-identity permutations fix
+ * hearts while permuting the other three among themselves. Requiring at
+ * least one USED suit to move rules those out; a hand using all four suits
+ * can never trigger this, since any non-identity permutation must move one
+ * of them.
+ */
+const movesAnyUsedSuit = (
+  permutation: readonly Suit[],
+  usedSuits: ReadonlySet<Suit>,
+): boolean =>
+  [...usedSuits].some((suit) => permutation.at(suitIndex(suit)) !== suit);
+
+/*
+ * One of the non-identity bijections of the four suits that also visibly
+ * relabels this specific hand, chosen deterministically from the hand's
+ * identity and which attempt this is — never from the shared
+ * `generateRandomNumber` stream, so loading this hand into the drill never
+ * shifts a later seeded deal (see AGENTS.md's URL analysis state section on
+ * that shared stream). Attempt 3 of a given hand therefore always shows the
+ * same relabeling, while consecutive attempts usually differ, and the hand
+ * is always visibly relabeled regardless of how many suits it uses.
  */
 export const suitPermutationForAttempt = (
+  cards: readonly Card[],
   handKey: string,
   attemptIndex: number,
 ): readonly Suit[] => {
+  const usedSuits = new Set(cards.map((card) => card.suit));
+  const candidates = NON_IDENTITY_SUIT_PERMUTATIONS.filter((permutation) =>
+    movesAnyUsedSuit(permutation, usedSuits),
+  );
   const hash = hashString(`${handKey}#${attemptIndex}`);
-  const index = hash % NON_IDENTITY_SUIT_PERMUTATIONS.length;
+  const index = hash % candidates.length;
   /*
-   * `index` is always within [0, 23) from the modulo above, so `.at()`
-   * cannot return undefined here; the cast states that guarantee rather
-   * than papering over a real chance of it (see mistakeQueue.ts's `itemAt`
-   * for the same idiom).
+   * `index` is always within [0, candidates.length) from the modulo above,
+   * so `.at()` cannot return undefined here; the cast states that guarantee
+   * rather than papering over a real chance of it (see mistakeQueue.ts's
+   * `itemAt` for the same idiom). `candidates` is never empty: a hand using
+   * all four suits keeps every one of the 23 non-identity permutations, and
+   * even the most concentrated case — a single used suit — still leaves 18.
    */
-  return NON_IDENTITY_SUIT_PERMUTATIONS.at(index) as readonly Suit[];
+  return candidates.at(index) as readonly Suit[];
 };
-
-const suitIndex = (suit: Suit): number => SUITS.indexOf(suit);
 
 /*
  * Cribbage has no trump, and suits affect scoring only through flushes and

@@ -115,7 +115,11 @@ describe("usePracticeDrill", () => {
     const harness = setupHarness({ followLoadedHand: true });
     const permutedCards = permuteCardSuits(
       mockItemB.cards,
-      suitPermutationForAttempt(mockItemB.handKey, mockItemB.attempts),
+      suitPermutationForAttempt(
+        mockItemB.cards,
+        mockItemB.handKey,
+        mockItemB.attempts,
+      ),
     );
 
     // FollowLoadedHand syncs the board to mockItemB's own (fully kept) permuted hand; this then picks a discard on it, mirroring a real checkbox choice.

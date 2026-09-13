@@ -49,11 +49,17 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * Full opacity, unlike `.not-recorded`'s dimmed treatment elsewhere: that
+ * text sits on a near-white pill, where dimming still clears WCAG AA, but
+ * this note sits directly on the panel's green background, where the same
+ * dimming on `--text-color` drops contrast to roughly 3.1:1. Italics carry
+ * the "secondary" styling here instead.
+ */
 .suit-note {
   font-size: 0.8rem;
   font-style: italic;
   margin: 0;
-  opacity: 0.75;
   overflow-wrap: anywhere;
 }
 
