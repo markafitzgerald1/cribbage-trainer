@@ -59,7 +59,7 @@
   }
 
   .cue {
-    font-size: min(0.75rem, 1.5vw);
+    font-size: 0.75rem;
     margin-bottom: min(0.15rem, 0.3vw);
   }
 
