@@ -835,9 +835,23 @@ they bind any PR that makes a claim about a phone or ships a guard.
     `storybook-static/` are missing from several. "Nothing tracks the device
     font-size setting" while the dialogs and card picker are `rem`-sized.
     Before writing _never_, _always_, or _must_, run the grep that would
-    disprove it, and if the repository disagrees, document the exception
-    instead — a rule the codebase violates on its own page teaches the next
-    agent to discount rules.
+    disprove it — then decide which kind of claim it was, because the two
+    kinds need opposite responses and conflating them is dangerous:
+    - A **descriptive** claim says what the code does. If the repository
+      disagrees, the claim is simply wrong: correct it, and prefer stating
+      the mechanism over the summary, since summaries are what drift.
+    - A **normative** claim says what the code must do. If the repository
+      disagrees, that is a **violation, not an exception** — fix it, or
+      escalate it, and say so in the PR. Only write the divergence down as a
+      documented exception when it is deliberate and you can defend it;
+      `usePracticeDrill`'s draw is one, because a drill shifting the next
+      seeded deal is intended behavior. Finding hard-coded heuristics in the
+      scoring engine would be the other kind entirely: the architectural
+      constraint at the top of this file is normative, and a heuristic found
+      in the code is something to remove, never a reason to soften the rule.
+      A rule the codebase violates on its own page teaches the next agent to
+      discount rules — but weakening a rule to match a violation is worse than
+      the stale rule was.
   - **A closed list that is not closed.** Three separate inventories fell to
     this in one PR: the ignore lists, the RNG call sites, and the bare
     `getByRole("table")` locators, which named two of six. A count invites an
@@ -848,7 +862,8 @@ they bind any PR that makes a claim about a phone or ships a guard.
   Both failures come from the same place: asserting a property of the whole
   from the part you were already reading. The derived-inputs rule under
   Project overview is a special case of this one, and writing that one down
-  did not prevent the eleven other findings in the same PR — so treat this as
+  did not prevent any of the twelve findings in the same PR — none of which
+  targeted that rule — so treat this as
   a checking discipline to execute, not a principle to agree with. Two claims
   in this very bullet were wrong on first draft, both caught by running the
   check it prescribes: the source diff was called nine lines, and the
