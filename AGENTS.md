@@ -615,20 +615,21 @@ they bind any PR that makes a claim about a phone or ships a guard.
   pending checks may be reviewing code the gate is about to reject. Since
   both automatic reviews are off, this governs every round without
   exception.
-- **Request both reviewers on the same head. That buys fewer fix cycles, not
-  fewer requests.** An earlier draft of this bullet claimed serializing
-  costs more budget; that is arithmetically wrong whenever the first
-  reviewer finds something. Codex on the old head, then both on the fixed
-  head, is three requests where requesting both before and after the push is
-  four. What parallel actually buys is one fix cycle instead of two, and the
-  findings of both reviewers in hand before you decide how to change the
-  code — which matters when their findings interact, as they have here.
-- **The trap serialization does carry is a push in the middle.** A review
-  only ever applies to the head it ran on, so fixing Codex's findings and
-  pushing retires any Copilot round on the previous head, and vice versa.
-  Requesting the second reviewer on the _same_ head costs nothing extra and
-  keeps both rounds valid; requesting it after a push means the first
-  reviewer has to run again. Where budget is genuinely tight, cut frequency
+- **A review applies only to the head it ran on, and a push retires every
+  review on the previous head.** That is the whole mechanic; everything
+  below follows from it and nothing else about ordering is generally true.
+  Three drafts of this bullet each asserted a general benefit for requesting
+  both reviewers at once — that serializing costs more, that same-head
+  requests cost nothing extra, that parallel saves a fix cycle — and Codex
+  falsified all three, because whether any of them holds depends on whether
+  a push lands between the two requests. State the mechanic, not a rule of
+  thumb dressed as one.
+- **What follows from it.** On a head you expect to push from — because the
+  first reviewer found something, or you already know of work outstanding —
+  the second request is wasted, so fix first and request both on the
+  corrected head. On the head you intend to merge, request both: there is no
+  push coming, so neither round is retired and you get both perspectives
+  before a human spends attention. Where budget is tight, cut frequency
   rather than parallelism: run intermediate rounds with Codex alone and
   spend Copilot on the head that will actually be merged.
 - **Spend Copilot where a change could leave two places disagreeing**, which
