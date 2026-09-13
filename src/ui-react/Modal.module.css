@@ -17,8 +17,13 @@
 }
 
 .content {
-  background: color-mix(in srgb, lightgreen 30%, white);
+  background: #10381b;
+  border: 2px solid #43a047;
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 60%),
+    0 2px 6px rgb(0 0 0 / 40%);
   box-sizing: border-box;
+  color: var(--text-color);
   width: min(43em, calc(100% - 2rem));
   padding: var(--spacing);
   border-radius: 5px;
@@ -39,8 +44,10 @@
   position: absolute;
   top: 15px;
   right: 15px;
-  background: color-mix(in srgb, lightgreen 30%, white);
-  border: 1px solid lightgrey;
+  z-index: 10;
+  background: transparent;
+  border: 1px solid #6c8f74;
+  color: var(--text-color);
   font-size: medium;
   cursor: pointer;
   padding: 5px 7px;
@@ -52,7 +59,7 @@
 
 .close:hover,
 .close:focus {
-  background: color-mix(in srgb, lightgreen 80%, white);
-  border-color: grey;
+  background: color-mix(in srgb, #28a745 20%, transparent);
+  border-color: #a7c7ad;
   outline: none;
 }

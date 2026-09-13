@@ -17,7 +17,7 @@
 
 .enter-cards {
   background-color: #197536;
-  border: 2px solid #0f5527;
+  border: 2px solid #72d572;
   border-radius: 10px;
   color: white;
   cursor: pointer;
@@ -32,8 +32,8 @@
 
 .enter-cards:hover,
 .enter-cards:focus {
-  background-color: #34c754;
-  border-color: #34c754;
+  background-color: #218838;
+  border-color: #8cee8c;
   outline: none;
 }
 
@@ -43,7 +43,7 @@
 
 .enter-cards:active {
   background-color: #0f5527;
-  border-color: #0f5527;
+  border-color: #8cee8c;
 }
 
 .deal-actions {
@@ -81,7 +81,7 @@
  * rem-floor trap in AGENTS.md's responsive invariants).
  */
 .fresh-hand-notice {
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 10px;
   color: var(--text-color);
   font-family: var(--text-font-family);

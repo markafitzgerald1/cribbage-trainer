@@ -1,7 +1,7 @@
 @import url("./vars.css");
 
 .dialog {
-  color: #143b18;
+  color: #eef8ef;
   display: flex;
   flex-direction: column;
   font-size: 1rem;
@@ -13,7 +13,7 @@
 }
 
 .title {
-  color: #0b2f10;
+  color: #eef8ef;
   font-size: 1.8rem;
   line-height: 1;
   margin: 0;
@@ -21,7 +21,7 @@
 }
 
 .subtitle {
-  color: #315d36;
+  color: #a8d5af;
   font-size: 0.85rem;
   line-height: 1.35;
   margin: 0;
@@ -33,19 +33,21 @@
  * — the same short-screen rule already applied to the enter-cards dialog.
  */
 .action-bar {
-  background-color: #fff;
+  background-color: #10381b;
+  box-sizing: border-box;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.25rem 0;
+  padding: 0.25rem 3.5rem 0.25rem 0;
   position: sticky;
   top: 0;
   z-index: 3;
 }
 
 .start-drill-button {
+  align-items: center;
   background-color: #197536;
-  border: 2px solid #0f5527;
+  border: 2px solid #72d572;
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
@@ -65,14 +67,14 @@
 .start-drill-button:hover:not(:disabled),
 .start-drill-button:focus-visible:not(:disabled) {
   background-color: #218838;
-  border-color: #218838;
+  border-color: #8cee8c;
 }
 
 .done-button {
   background-color: transparent;
   border: 2px solid #6c8f74;
   border-radius: 8px;
-  color: #143b18;
+  color: #eef8ef;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 700;
@@ -81,7 +83,8 @@
 
 .done-button:hover,
 .done-button:focus-visible {
-  border-color: #218838;
+  background-color: color-mix(in srgb, #28a745 20%, transparent);
+  border-color: #34c754;
 }
 
 /*
@@ -92,8 +95,8 @@
  * they are omitted here rather than set and always overridden.
  */
 .controls {
-  background-color: #f7faf8;
-  border-bottom: 1px solid #d0e5d4;
+  background-color: #14361b;
+  border-bottom: 1px solid #285430;
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -101,7 +104,7 @@
 }
 
 .filter-group {
-  border: 1.5px solid color-mix(in srgb, green 35%, white);
+  border: 1.5px solid color-mix(in srgb, green 40%, white);
   border-radius: 0.45rem;
   display: flex;
   flex-wrap: wrap;
@@ -111,7 +114,7 @@
 }
 
 .filter-group legend {
-  color: #1d4f22;
+  color: #a8d5af;
   font-size: 0.8rem;
   font-weight: 700;
   padding: 0 0.25rem;
@@ -128,10 +131,10 @@
 }
 
 .option {
-  background-color: #e4f4e6;
-  border: 1.5px solid #397a40;
+  background-color: #1a4524;
+  border: 1.5px solid #43a047;
   border-radius: 6px;
-  color: #143b18;
+  color: #eef8ef;
   cursor: pointer;
   display: block;
   font-size: 0.8rem;
@@ -144,15 +147,32 @@
     color var(--transition-duration) var(--transition-timing);
 }
 
+.option::before {
+  border: 1.5px solid #a8d5af;
+  border-radius: 50%;
+  box-sizing: border-box;
+  content: "";
+  display: inline-block;
+  height: 0.55em;
+  margin-right: 0.35em;
+  vertical-align: middle;
+  width: 0.55em;
+}
+
 .option:hover {
-  background-color: #c8efcd;
-  border-color: #218838;
+  background-color: #245830;
+  border-color: #34c754;
 }
 
 .input:checked + .option {
-  background-color: #28a745;
-  border-color: #218838;
-  color: #fff;
+  background-color: #34c754;
+  border-color: #08200d;
+  color: #08200d;
+}
+
+.input:checked + .option::before {
+  background-color: #08200d;
+  border: 1.5px solid #08200d;
 }
 
 .input:focus-visible + .option {
@@ -160,7 +180,8 @@
 }
 
 .input:checked + .option:hover {
-  background-color: #218838;
+  background-color: #2eb34b;
+  border-color: #08200d;
 }
 
 .summary-cards {
@@ -170,8 +191,8 @@
 }
 
 .summary-card {
-  background-color: #f1f9f2;
-  border: 1px solid #c3e6cb;
+  background-color: #163e1f;
+  border: 1px solid #2d6b38;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -182,7 +203,7 @@
 
 .summary-label {
   align-items: center;
-  color: #155724;
+  color: #a8d5af;
   display: flex;
   font-size: 0.72rem;
   font-weight: 600;
@@ -200,7 +221,7 @@
 }
 
 .summary-value {
-  color: #0b2f10;
+  color: #eef8ef;
   font-size: 1.2rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -214,10 +235,10 @@
 }
 
 .item-card {
-  background-color: #fff;
-  border: 1px solid #cce3d0;
+  background-color: #14361b;
+  border: 1px solid #285430;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -240,10 +261,10 @@
 }
 
 .role-badge {
-  background-color: #eaf3ec;
-  border: 1px solid #b8dabf;
+  background-color: #1a4524;
+  border: 1px solid #43a047;
   border-radius: 4px;
-  color: #1a4f21;
+  color: #eef8ef;
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.15rem 0.4rem;
@@ -251,10 +272,10 @@
 }
 
 .loss-badge {
-  background-color: #fdf2e9;
-  border: 1px solid #f5cba7;
+  background-color: #4a270f;
+  border: 1px solid #7e4419;
   border-radius: 4px;
-  color: #a04000;
+  color: #f6c095;
   font-family: var(--tabular-nums-font-family);
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
@@ -271,21 +292,21 @@
 }
 
 .quantile-high {
-  background-color: #fadbd8;
-  border: 1px solid #f5b7b1;
-  color: #922b21;
+  background-color: #4a151b;
+  border: 1px solid #7d2630;
+  color: #f5b7b1;
 }
 
 .quantile-medium {
-  background-color: #fef9e7;
-  border: 1px solid #f9e79f;
-  color: #7d6608;
+  background-color: #443708;
+  border: 1px solid #78620e;
+  color: #f9e79f;
 }
 
 .quantile-low {
-  background-color: #e8f8f5;
-  border: 1px solid #a3e4d7;
-  color: #117864;
+  background-color: #0e3b32;
+  border: 1px solid #1a6b5a;
+  color: #a3e4d7;
 }
 
 .status-badge {
@@ -296,27 +317,35 @@
 }
 
 .mastered-badge {
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  color: #155724;
+  background-color: #164322;
+  border: 1px solid #2d6b38;
+  color: #a8d5af;
 }
 
 .active-badge {
-  background-color: #e8f4f8;
-  border: 1px solid #bee5eb;
-  color: #0c5460;
+  background-color: #103b47;
+  border: 1px solid #1f6477;
+  color: #bee5eb;
 }
 
 .cards-row {
   align-items: center;
-  display: flex;
+  background-color: #f4f8f4;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #143b18;
+  display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  font-family: var(--card-font-family);
+  gap: 0.25rem;
+  max-width: 100%;
+  padding: 0.1rem 0.35rem;
+  width: fit-content;
 }
 
 .item-footer {
   align-items: center;
-  border-top: 1px solid #eef5f0;
+  border-top: 1px solid #244b2c;
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
@@ -326,7 +355,7 @@
 
 .previous-discard {
   align-items: center;
-  color: #384e3b;
+  color: #a8d5af;
   display: flex;
   flex-wrap: wrap;
   font-size: 0.82rem;
@@ -338,13 +367,13 @@
 }
 
 .no-previous-discard {
-  color: #6c757d;
+  color: #8fa894;
   font-style: italic;
 }
 
 .item-stats {
   align-items: center;
-  color: #4a634e;
+  color: #a8d5af;
   display: flex;
   flex-wrap: wrap;
   font-family: var(--tabular-nums-font-family);
@@ -354,20 +383,20 @@
 }
 
 .empty-state {
-  background-color: #f8faf8;
-  border: 1.5px dashed #c2d6c6;
+  background-color: #14361b;
+  border: 1.5px dashed #43a047;
   border-radius: 8px;
-  color: #436047;
+  color: #a8d5af;
   font-size: 0.95rem;
   padding: 2rem 1.5rem;
   text-align: center;
 }
 
 .all-mastered-notice {
-  background-color: #eafaf1;
-  border: 1.5px solid #a9dfbf;
+  background-color: #14361b;
+  border: 1.5px solid #43a047;
   border-radius: 8px;
-  color: #196f3d;
+  color: #eef8ef;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -376,14 +405,14 @@
 }
 
 .all-mastered-heading {
-  color: #145a32;
+  color: #eef8ef;
   font-size: 1.3rem;
   font-weight: 700;
   margin: 0;
 }
 
 .all-mastered-body {
-  color: #1e8449;
+  color: #a8d5af;
   font-size: 0.9rem;
   line-height: 1.4;
   margin: 0;
@@ -396,10 +425,10 @@
 }
 
 .show-more-button {
-  background-color: #e4f4e6;
-  border: 1.5px solid #397a40;
+  background-color: #1a4524;
+  border: 1.5px solid #43a047;
   border-radius: 6px;
-  color: #143b18;
+  color: #eef8ef;
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 700;
@@ -410,8 +439,8 @@
 }
 
 .show-more-button:hover {
-  background-color: #c8efcd;
-  border-color: #218838;
+  background-color: #245830;
+  border-color: #34c754;
 }
 
 .show-more-button:focus-visible {
@@ -420,10 +449,10 @@
 
 .practice-button {
   align-self: flex-start;
-  background-color: #e4f4e6;
-  border: 1.5px solid #397a40;
+  background-color: #1a4524;
+  border: 1.5px solid #43a047;
   border-radius: 6px;
-  color: #143b18;
+  color: #eef8ef;
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 700;
@@ -435,8 +464,8 @@
 
 .practice-button:hover,
 .practice-button:focus-visible {
-  background-color: #c8efcd;
-  border-color: #218838;
+  background-color: #245830;
+  border-color: #34c754;
 }
 
 @media (aspect-ratio < 6 / 5) {
@@ -472,15 +501,6 @@
     padding: min(0.4rem, 1.4vw) min(0.55rem, 1.7vw) min(0.45rem, 1.6vw);
   }
 
-  /*
-   * The Loss-severity group (always last) has the widest chips; give it the
-   * modal's full width rather than its shrink-wrapped size so its four
-   * options stay on one row in portrait instead of wrapping the last one.
-   */
-  .filter-group:last-child {
-    flex-basis: 100%;
-  }
-
   .filter-group legend {
     font-size: min(0.8rem, 3.2vw);
   }
@@ -492,8 +512,38 @@
    */
   .option {
     font-size: min(0.8rem, 3.2vw);
-    padding: min(0.25rem, 0.9vw) min(0.5rem, 1.4vw);
+    padding: min(0.25rem, 0.9vw) min(0.45rem, 1.2vw);
     white-space: nowrap;
+  }
+
+  .option::before {
+    height: min(0.5em, 1.8vw);
+    margin-right: min(0.25em, 0.9vw);
+    width: min(0.5em, 1.8vw);
+  }
+
+  /*
+   * The Loss-severity group has the widest chips; give it the modal's full
+   * width rather than its shrink-wrapped size so its four options stay on
+   * one row in portrait instead of wrapping the last one. Scoped to a
+   * dedicated class so that when quantileOptions is empty and the fieldset
+   * is omitted, the Crib role group is not accidentally targeted.
+   */
+  .severity-group {
+    flex-basis: 100%;
+    gap: min(0.25rem, 0.8vw);
+    padding: min(0.35rem, 1.2vw);
+  }
+
+  .severity-group .option {
+    font-size: min(0.72rem, 2.7vw);
+    padding: min(0.2rem, 0.8vw) min(0.35rem, 0.9vw);
+  }
+
+  .severity-group .option::before {
+    height: min(0.45em, 1.6vw);
+    margin-right: min(0.18em, 0.7vw);
+    width: min(0.45em, 1.6vw);
   }
 
   .summary-cards {
@@ -533,7 +583,7 @@
 
   .action-bar {
     gap: 0.4rem;
-    padding: 0.15rem 0;
+    padding: 0.15rem 3.5rem 0.15rem 0;
   }
 
   .start-drill-button,

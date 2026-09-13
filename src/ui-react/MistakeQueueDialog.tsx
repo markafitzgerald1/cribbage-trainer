@@ -348,7 +348,10 @@ export function MistakeQueueDialog({
           />
           {quantileOptions.length > 0 && (
             <DialogFilterGroup
-              classes={classes}
+              classes={{
+                ...classes,
+                filterGroup: `${classes.filterGroup} ${classes.severityGroup}`,
+              }}
               currentValue={filters.quantile}
               groupName="mistake-quantile-filter"
               legendText="Loss severity"

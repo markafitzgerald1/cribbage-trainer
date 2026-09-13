@@ -7,7 +7,7 @@
  * above it and never widens the column into the analysis table's share.
  */
 .panel {
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 10px;
   box-sizing: border-box;
   color: var(--text-color);
@@ -134,7 +134,7 @@
 
 .primary {
   background-color: #197536;
-  border: 2px solid #0f5527;
+  border: 2px solid #72d572;
   color: #fff;
 }
 
@@ -145,8 +145,8 @@
 
 .primary:hover:not(:disabled),
 .primary:focus-visible:not(:disabled) {
-  background-color: #34c754;
-  border-color: #34c754;
+  background-color: #218838;
+  border-color: #8cee8c;
   outline: none;
 }
 
@@ -158,6 +158,7 @@
 
 .secondary:hover,
 .secondary:focus-visible {
+  background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #a7c7ad;
   outline: none;
 }

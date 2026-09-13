@@ -279,3 +279,82 @@ once you are already editing layout or interaction code.
   the record is genuinely absent. Fall back to the local estimate rather
   than asserting the record non-null — the whole tally is read-only in
   that tab until reload anyway.
+- Dark themes must satisfy WCAG 2.1 SC 1.4.11 (non-text contrast) across all
+  interactive boundaries: button borders, role chips, and filter options need
+  at least 3:1 contrast against both their own fill and the adjacent surface
+  (e.g. #43a047 reaching 3.47:1 against dark modal surfaces). In modals,
+  elevated dialog surfaces must maintain distinct visual separation from the
+  felt ground behind the dimmed overlay (color-mix 50% black): thin 1px borders
+  or surfaces that closely match the dimmed backdrop leave dialogs looking
+  flat and unanchored. Frame dark modals with a crisp boundary border (e.g. 2px
+  solid #43a047) and distinct elevation.
+- Modal action bars that stick to the top (e.g. `position: sticky; top: 0`)
+  must explicitly reserve clearance for absolute-positioned header controls
+  like the top-right close button (`padding-right: 3.5rem`), and the close
+  button itself must carry an elevated stacking context (`z-index: 10`). Without
+  both, sticky action bars paint across the top-right corner when scrolled,
+  partially obscuring or entirely swallowing clicks intended for the close
+  action.
+- Primary action buttons across both the main felt ground and elevated modals
+  (such as Deal, Use hand, Start drill, and Practice actions) must maintain
+  at least 3:1 non-text boundary contrast against their fill (e.g. #72d572
+  border reaching 3.16:1 against #197536 fill) and against adjacent grounds
+  (3.86:1 against #1f6536 table felt, 7.10:1 against #10381b dialog surface).
+  Because dark grounds compress luminance, darker borders cannot reach 3:1;
+  high-luminance borders are mathematically required to establish legible
+  component boundaries for low-vision players.
+- Persistent links rendered directly on the felt table ground (such as the
+  collapsed Privacy Policy and Analytics Settings links) must maintain at
+  least 4.5:1 normal-text contrast under WCAG 2.1 SC 1.4.3 (e.g. #b8e5be
+  reaching 5.01:1 against #1f6536 ground, brightening to #def8e2 at 6.40:1
+  on hover and focus).
+- Radio selections and filter chips (such as Dealer/Pone role selectors and
+  dialog filter groups) must distinguish their active/checked state through
+  both non-color visual indicators (such as an inline radio circle or dot
+  pseudo-element that avoids altering accessible text names) and distinct state
+  colors where the selected fill contrasts at least 3:1 against the unselected
+  state (e.g. #34c754 reaching 4.92:1 against unselected #1a4524 and 5.89:1
+  against the #10381b modal ground, paired with high-contrast #08200d text at
+  7.72:1).
+- Filter groups in modals with multiple chips (such as the four Loss-severity
+  options in the mistake queue) must rebalance padding, gaps, and non-color
+  marker sizing in portrait mode so all chips fit on a single row without
+  wrapping. On narrow screens (390px) and large accessibility fonts (28px root),
+  inline radio markers add horizontal width across every chip; capping marker
+  dimensions and tightening chip padding preserves the single-line layout and
+  prevents headers from eating vertical space meant for dialog content.
+- Hover and focus states for primary action buttons must maintain at least
+  3:1 contrast between the border and the interactive fill (e.g. #8cee8c border
+  reaching 3.17:1 against #218838 fill, 4.95:1 against #1f6536 felt, and 9.18:1
+  against #10381b modal ground) to ensure interactive boundaries remain legible
+  under WCAG 2.1 SC 1.4.11 during interaction.
+- Do not use positional selectors like `:last-child` for filter groups whose
+  presence depends on conditional data (such as the mistake queue's
+  Loss-severity group, which is omitted when fewer than three distinct loss
+  values exist). Scoping multi-chip portrait sizing to a dedicated class (e.g.
+  `.severity-group`) prevents child-shift regressions where other controls
+  (like Crib role) are inadvertently shrunk.
+- The analytics consent dialog and settings panel use the dark modal surface
+  (#10381b, border 2px solid #43a047, box-shadow, and #eef8ef text) rather than
+  light backgrounds. Action buttons within the consent dialog use consistent
+  dark theme action button styling (#197536 fill with #72d572 border,
+  transitioning to #218838 fill with #8cee8c border on hover and focus).
+- Active/pressed states for primary action buttons must retain a distinct,
+  high-contrast border (such as `border-color: #8cee8c;` or
+  `var(--hover-border-color)`) against darker active fills (e.g. #0f5527),
+  preventing the boundary contrast from collapsing to 1:1 when pressed.
+- When styling dialog action buttons that host nested modals (such as
+  `AnalyticsConsentDialog` hosting `Modal` for the privacy policy), scope button
+  rules to direct children (`> button`) or dedicated classes rather than
+  descendant `button` selectors so the nested modal's `.close` button is not
+  inadvertently restyled with primary action borders and backgrounds.
+- In striped data tables with hover rows, place the `tr:nth-child(even)` rule
+  before the `tbody tr:hover` rule with equal or greater selector specificity so
+  hover highlights apply consistently to all rows rather than being masked on
+  even rows.
+- Action buttons resting directly on the felt table ground (such as "Quality
+  trend" and "Mistake queue" in `DiscardTallyView`) use the high-contrast
+  primary button palette (#197536 fill with 2px solid #72d572 border,
+  transitioning to #218838 fill with #8cee8c border on hover/focus) so their
+  boundaries exceed 3:1 contrast against both their fill and the #1f6536 table
+  felt.
