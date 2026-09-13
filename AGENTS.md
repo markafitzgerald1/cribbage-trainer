@@ -222,6 +222,41 @@
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.
+- **A jest failure whose stack frame points at the `it(...)` line is a
+  timeout, not the assertion the code frame shows.** Jest prints a code frame
+  around the `it`, so the last context line — often an `expect` a few lines
+  below — reads like the failure while being nothing but context. #804 was
+  filed and triaged as a lazy-analysis race on exactly that misreading: its
+  quoted `76 | expect(view.queryByRole("table")).toBeNull();` and
+  `at src/ui-react/TrainerPracticeDrill.test.tsx:73:5` are both reproduced
+  character-for-character by `npx jest --testTimeout=400` on a passing tree,
+  and line 76 was never reached. Read the stack frame, not the code frame.
+- **The heavy jsdom Trainer specs run near jest's per-test budget whenever
+  the machine is contended, and which one crosses first is luck.** Reproduce
+  by starving jest — spin up more CPU hogs than there are cores and run
+  `nice -n 20 npx jest`. At that setting `TrainerPracticeDrill.test.tsx`
+  took 17565ms against the 17.815s recorded in #804, and the worst per-test
+  times were 5855ms, 5237ms and 5155ms spread across `TrainerUrlState`,
+  `TrainerTelemetry` and `TrainerPracticeDrill`. `testTimeout` is therefore
+  set to 15000 in `jest.config.json`: jest's 5000 default assumes a process
+  that owns the machine, while `verify:fast` runs jest concurrently with
+  eleven other tasks and jest itself forks one worker fewer than the machine
+  has cores, so twenty-odd CPU-hungry processes share eight cores. Do not
+  scope a fix like this to whichever spec happened to fail, and do not reach
+  for a `maxWorkers` cap to get the same effect — the full suite passes
+  under that starvation at 15000 with workers uncapped, and a cap would slow
+  a dedicated `npm test` on a many-core CI or Docker machine.
+- **A negative assertion needs the state it denies to have been reachable at
+  that exact moment, or it passes against code that does nothing.**
+  `TrainerPracticeDrill`'s "withholds the analysis until the drill choice is
+  committed" sampled `queryByRole("table")` while the drill board still had
+  no discard selected, so `discardIsComplete` alone kept the table away and
+  the test passed unchanged against a `Trainer` with the whole withholding
+  clause deleted. The load-bearing window is after the two cards are picked
+  and before the commit. The same shape has a second edge here: a lazily
+  loaded analysis that has not resolved yet is also trivially absent, so
+  wait for it to be on screen first — the Jest counterpart of the rule
+  `skills/testing-e2e/SKILL.md` states for Playwright.
 - Never judge a validation run by piping through `| tail` or `| grep`: the
   pipe masks the command's exit code and a "61 passed" line can sit directly
   below a failed-tests list. Redirect to a log file, echo `$?`, and read the

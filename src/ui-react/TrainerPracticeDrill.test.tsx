@@ -55,17 +55,30 @@ const openDrillFromQueue = async () => {
     initialDiscards: parseHand("5H,6H"),
   });
 
+  /*
+   * The pre-drill analysis has to be on screen before the drill opens, or
+   * "withholds the analysis" passes vacuously: a table that never rendered
+   * is trivially absent, so the assertion would hold against a Trainer that
+   * withholds nothing. Waiting is also the Jest counterpart of the rule
+   * `skills/testing-e2e/SKILL.md` states for Playwright.
+   */
+  await screen.findByRole("table");
   await clickDrillButton(view, user, "Mistake queue");
   await clickDrillButton(view, user, "Practice this");
 
   return { user, view };
 };
 
+const chooseDrillDiscard = (
+  view: DrillView,
+  user: ReturnType<typeof userEvent.setup>,
+) => clickIndices(view.getAllByRole, [0, 1], user);
+
 const commitDrillChoice = async (
   view: DrillView,
   user: ReturnType<typeof userEvent.setup>,
 ) => {
-  await clickIndices(view.getAllByRole, [0, 1], user);
+  await chooseDrillDiscard(view, user);
   await clickDrillButton(view, user, "Check discard");
 };
 
@@ -75,9 +88,20 @@ describe("trainer practice drill", () => {
 
     expect(view.queryByRole("table")).toBeNull();
 
-    await commitDrillChoice(view, user);
+    await chooseDrillDiscard(view, user);
 
-    expect(view.getByRole("table")).toBeInTheDocument();
+    /*
+     * The only window in which withholding is the drill's doing: a complete
+     * discard is on the board, so nothing but the choosing phase is keeping
+     * the analysis off screen. Sampling before the two cards are picked
+     * cannot distinguish a drill that withholds from an incomplete discard,
+     * and passes against a Trainer that withholds nothing.
+     */
+    expect(view.queryByRole("table")).toBeNull();
+
+    await clickDrillButton(view, user, "Check discard");
+
+    await expect(view.findByRole("table")).resolves.toBeInTheDocument();
     expect(screen.getByLabelText("Practice drill")).toBeInTheDocument();
   });
 
@@ -118,6 +142,6 @@ describe("trainer practice drill", () => {
     fireEvent.popState(window);
 
     expect(screen.queryByLabelText("Practice drill")).toBeNull();
-    expect(view.getByRole("table")).toBeInTheDocument();
+    await expect(view.findByRole("table")).resolves.toBeInTheDocument();
   });
 });
