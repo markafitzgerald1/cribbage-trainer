@@ -632,9 +632,11 @@ they bind any PR that makes a claim about a phone or ships a guard.
   had just created inside `AGENTS.md` and a passage in
   `skills/working-an-issue/SKILL.md` still describing the behavior being
   removed. A prose-only change to a contract spread across several files is
-  exactly the shape Copilot reads well. What genuinely does not need it is a
-  change confined to one file with no counterpart elsewhere. The
-  orthogonality is real and measured: across the #791 family roughly six of
+  exactly the shape Copilot reads well. A change confined to one file with no
+  counterpart elsewhere is the lowest-priority candidate when budget is
+  short — not a change that needs no review, which the evidence here is far
+  too thin to claim. The orthogonality is real and measured: across the #791
+  family roughly six of
   fourteen findings were Copilot-only, including a stale pull request title,
   a body claiming protection the branch did not add, and a timeout path no
   test reached. Its low-effort reviews are plentiful; its medium-effort

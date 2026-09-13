@@ -60,10 +60,10 @@ agreed, the pull request says what actually happened.
   commit and push, let required CI run the full gate for that SHA, then
   reply to and resolve the threads. Request the next Codex round yourself
   once that CI is green — pushing no longer starts one (see below).
-- The PR body carries a human review guide and a manual testing plan. Let the
-  automatic Copilot and Codex reviews land, run the loop to a clean round,
-  and only then ask for human review — the human's attention is the scarce
-  resource here and comes last, not first.
+- The PR body carries a human review guide and a manual testing plan. Request
+  the reviews, run the loop to a clean round, and only then ask for human
+  review — the human's attention is the scarce resource here and comes last,
+  not first.
 - The review guide is what makes a PR reviewable rather than merely correct: a
   suggested file reading order, the design decisions worth challenging rather
   than only the ones that worked, and honest flags for anything a reader would
