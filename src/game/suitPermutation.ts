@@ -2,11 +2,15 @@ import { type Card, SUITS, type Suit } from "./Card";
 import { Permutation } from "js-combinatorics";
 
 /*
- * The 23 bijections of the four suits that actually relabel every suit,
- * built once from the same SUITS order every other module uses. The
- * identity mapping is excluded: selecting it would leave the board showing
- * the stored arrangement verbatim while the panel still claimed the suits
- * had been reshuffled.
+ * The 23 non-identity bijections of the four suits, built once from the
+ * same SUITS order every other module uses. Non-identity overall does not
+ * mean every suit moves — a transposition fixes two of the four — so this
+ * set alone does not guarantee a given hand visibly changes; the used-suit
+ * filter in `suitPermutationForAttempt` below is what guarantees that. What
+ * this set rules out is only the one case no filter is needed for: the
+ * global identity, which would leave the board showing the stored
+ * arrangement verbatim while the panel still claimed the suits had been
+ * reshuffled.
  */
 const NON_IDENTITY_SUIT_PERMUTATIONS: readonly (readonly Suit[])[] = [
   ...new Permutation(SUITS),
