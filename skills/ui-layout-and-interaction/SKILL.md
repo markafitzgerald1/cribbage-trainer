@@ -472,8 +472,13 @@ once you are already editing layout or interaction code.
   `#1f6536` felt. Use it rather than `outline: none` plus a palette change;
   the palette change is still worth keeping, but as reinforcement rather than
   as the signal. Both reviewers found this independently on #793, one control
-  at a time — when a focus rule anywhere suppresses the outline, grep for
-  `outline: none` rather than fixing the one you were shown. The one that
+  at a time — when a focus rule anywhere turns out to have no real indicator,
+  audit all of them rather than fixing the one you were shown. Grepping
+  `outline: none` is not that audit and will miss the commonest shape: four
+  mistake-queue buttons had focus sharing a single rule with hover, so the two
+  states rendered identically and nothing was ever suppressed. Walk every
+  `:focus` and `:focus-visible` rule and ask what a keyboard user actually
+  sees. The one that
   legitimately keeps it is `CardGridPicker`'s `.card`, which sits on a
   near-white tile and has its own visible `:focus-visible` treatment.
   A clipped radio is the other case worth knowing: it cannot show an outline

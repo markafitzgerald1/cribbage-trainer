@@ -88,6 +88,15 @@
   border-color: #8cee8c;
 }
 
+/*
+ * Focus-only. The rule above is shared with hover, so without this the two
+ * states render identically and focus says nothing.
+ */
+.start-drill-button:focus-visible:not(:disabled) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 /* Keeps the light border while pressed; the darker fill alone would hide it. */
 .start-drill-button:active:not(:disabled) {
   background-color: #0f5527;
@@ -109,6 +118,15 @@
 .done-button:focus-visible {
   background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #34c754;
+}
+
+/*
+ * Focus-only. The rule above is shared with hover, so without this the two
+ * states render identically and focus says nothing.
+ */
+.done-button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /*
@@ -486,6 +504,8 @@
 
 .show-more-button:focus-visible {
   box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .practice-button {
@@ -507,6 +527,15 @@
 .practice-button:focus-visible {
   background-color: #245830;
   border-color: #34c754;
+}
+
+/*
+ * Focus-only. The rule above is shared with hover, so without this the two
+ * states render identically and focus says nothing.
+ */
+.practice-button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 @media (aspect-ratio < 6 / 5) {
