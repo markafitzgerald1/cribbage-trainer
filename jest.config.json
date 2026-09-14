@@ -31,14 +31,13 @@
     "\\.module\\.css$": "<rootDir>/__mocks__/styleMock.ts"
   },
   "testEnvironment": "jsdom",
-  "testTimeout": 60000,
-  "maxWorkers": 2,
   "testPathIgnorePatterns": [
     "<rootDir>/\\.claude/",
     "<rootDir>/scripts/",
     "<rootDir>/tests-e2e/",
     "<rootDir>/tests-examples"
   ],
+  "testTimeout": 15000,
   "transform": {
     "^.+\\.tsx?$": "babel-jest"
   }

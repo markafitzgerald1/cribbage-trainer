@@ -266,12 +266,15 @@
  * keep/discard labels do.
  */
 .decision-detail-cards {
+  --card-red-suit-color: #8c1228;
+
   align-items: center;
-  background-color: #f4f8f4;
+  background-color: #dfe8e1;
   border-radius: 4px;
   color: #143b18;
   display: inline-flex;
   font-family: var(--card-font-family);
+  font-weight: 700;
   gap: 0.25rem;
   padding: 0.1rem 0.35rem;
 }

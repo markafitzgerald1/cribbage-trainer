@@ -414,12 +414,15 @@ once you are already editing layout or interaction code.
   it.** A flex item's automatic minimum size is its `min-content` width, so
   the box grows to fit its children and never overflows itself — the
   declaration is present, the scrollbar never appears, and the row pushes the
-  page sideways instead. Measured on `.severity-group` at a 28px root font on
-  a 375px viewport: without `min-width: 0` the group renders 550px wide
-  against a 375px screen with `scrollWidth === clientWidth`; with it the group
-  is 325px, `scrollWidth` 498px, and the last chip scrolls into reach. When a
-  row is meant to absorb its own overflow, assert the container's own box
-  against the viewport rather than trusting the declaration.
+  page sideways instead. When a row is meant to absorb its own overflow,
+  assert the container's own box against the viewport rather than trusting
+  the declaration. **The measurements that taught this came from a
+  `.severity-group` treatment that no longer exists** — at a 28px root font on
+  a 375px viewport it rendered 550px wide with `scrollWidth === clientWidth`
+  without `min-width: 0`, and 325px with `scrollWidth` 498px once it had it.
+  That row now wraps instead, because scrolling cropped a label; see the
+  wrapping bullet above. The CSS mechanic is what to keep here, not the
+  treatment it was learned on.
 - **A modal's close button must not live inside the box that scrolls, and
   moving the scroll off that box detaches every absolutely positioned thing
   inside it.** `Modal`'s `.close` was `position: absolute` against `.content`,
