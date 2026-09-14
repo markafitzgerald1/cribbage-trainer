@@ -1,3 +1,5 @@
+@import url("./vars.css");
+
 /*
  * Sized in em against the grid cell's inherited font rather than in rem. A
  * rem lower bound scales with the device font-size setting on a phone and

@@ -1,3 +1,5 @@
+@import url("./vars.css");
+
 .deal-button {
   --bg-color: #197536;
   --hover-bg-color: #218838;

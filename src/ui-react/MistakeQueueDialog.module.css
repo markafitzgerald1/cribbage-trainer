@@ -199,8 +199,15 @@
   border: 1.5px solid #08200d;
 }
 
+/*
+ * The clipped radio cannot show an outline itself, so its label carries the
+ * ring. The 45%-alpha shadow this replaces composited to about #207c36 on
+ * the dark modal surface -- roughly 2.49:1, which is not a focus indicator.
+ */
 .input:focus-visible + .option {
-  box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
+  box-shadow: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .input:checked + .option:hover {
