@@ -8,6 +8,15 @@
   gap: 0.85rem;
   max-height: 85vh;
   overflow-y: auto;
+
+  /*
+   * No top padding, because this element is the scroll container: a sticky
+   * child sticks to its content-box edge, so padding here would become a
+   * strip of scrolled content above the stuck bar -- measured at 20px with a
+   * filter group showing through, since `Modal`'s `.body > *` rule applies
+   * spacing to it. That spacing moves onto `.title`, which scrolls away.
+   */
+  padding-top: 0;
   padding-right: 0.25rem;
 
   /*
@@ -28,6 +37,7 @@
   line-height: 1;
   margin: 0;
   padding-right: 2rem;
+  padding-top: var(--spacing);
 }
 
 .subtitle {

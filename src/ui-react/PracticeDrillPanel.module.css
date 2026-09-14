@@ -153,17 +153,17 @@
   opacity: 0.5;
 }
 
-/* Keeps the light border while pressed; the darker fill alone would hide it. */
-.primary:active:not(:disabled) {
-  background-color: #0f5527;
-  border-color: #8cee8c;
-}
-
 .primary:hover:not(:disabled),
 .primary:focus-visible:not(:disabled) {
   background-color: #218838;
   border-color: #8cee8c;
   outline: none;
+}
+
+/* Keeps the light border while pressed; the darker fill alone would hide it. */
+.primary:active:not(:disabled) {
+  background-color: #0f5527;
+  border-color: #8cee8c;
 }
 
 /*

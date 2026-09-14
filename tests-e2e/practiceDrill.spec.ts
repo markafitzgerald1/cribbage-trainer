@@ -210,6 +210,7 @@ test.describe("practice drill", () => {
     const box = await locator.boundingBox();
     expect(box).not.toBeNull();
     return {
+      bottom: (box?.y ?? Number.NaN) + (box?.height ?? Number.NaN),
       left: box?.x ?? Number.NaN,
       right: (box?.x ?? Number.NaN) + (box?.width ?? Number.NaN),
       top: box?.y ?? Number.NaN,
@@ -263,12 +264,25 @@ test.describe("practice drill", () => {
       (await chips.all()).map(async (chip) => boxOf(chip)),
     );
 
+    /*
+     * Both axes: `boundingBox` still reports geometry for a chip an ancestor
+     * has clipped, so checking only the horizontal edges would miss a group
+     * whose height cannot hold the rows it wrapped onto. Measured against the
+     * group rather than the viewport on purpose -- this panel scrolls, so a
+     * group below the fold is reachable rather than broken.
+     */
     chipBoxes.forEach((chipBox) => {
       expect(chipBox.left).toBeGreaterThanOrEqual(
         groupBox.left - CHIP_ROW_TOLERANCE_PX,
       );
       expect(chipBox.right).toBeLessThanOrEqual(
         groupBox.right + CHIP_ROW_TOLERANCE_PX,
+      );
+      expect(chipBox.top).toBeGreaterThanOrEqual(
+        groupBox.top - CHIP_ROW_TOLERANCE_PX,
+      );
+      expect(chipBox.bottom).toBeLessThanOrEqual(
+        groupBox.bottom + CHIP_ROW_TOLERANCE_PX,
       );
     });
   };
