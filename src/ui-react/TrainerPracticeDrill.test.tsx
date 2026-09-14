@@ -22,6 +22,23 @@ import userEvent from "@testing-library/user-event";
 
 const MISTAKE_HAND = "5H,6H,7H,8H,9H,10H";
 
+/*
+ * Testing Library's own async timeout is one second and jest's `testTimeout`
+ * does not govern it, so every wait for the lazily loaded analysis needs its
+ * own contention margin or it fails before the raised jest budget can help.
+ *
+ * This must stay strictly and generously below that budget, because a wait
+ * that expires says "unable to find element" while a test that runs out of
+ * budget says only that it timed out — and a test here can spend this wait
+ * twice, so a legitimate slow first wait plus a fully expired second one has
+ * to still land inside the budget. 8000 against 15000 does: under the
+ * starvation rig that reproduces #804 the worst analysis wait measured
+ * 3825ms and the worst test 10818ms, so the wait keeps a 2.1x margin while
+ * the budget is what binds first — which is the ordering that matters, since
+ * a wait that bound first would become the next flake.
+ */
+const waitForAnalysis = { timeout: 8000 };
+
 const seedMistakeHand = () => {
   clearDiscardTally();
   recordDiscardDecision({
@@ -36,6 +53,9 @@ const seedMistakeHand = () => {
 };
 
 type DrillView = ReturnType<typeof renderTrainerWithInitialProps>;
+
+const findAnalysisTable = (view: DrillView) =>
+  view.findByRole("table", {}, waitForAnalysis);
 
 const clickDrillButton = (
   view: DrillView,
@@ -55,17 +75,30 @@ const openDrillFromQueue = async () => {
     initialDiscards: parseHand("5H,6H"),
   });
 
+  /*
+   * The pre-drill analysis has to be on screen before the drill opens, or
+   * "withholds the analysis" passes vacuously: a table that never rendered
+   * is trivially absent, so the assertion would hold against a Trainer that
+   * withholds nothing. Waiting is also the Jest counterpart of the rule
+   * `skills/testing-e2e/SKILL.md` states for Playwright.
+   */
+  await findAnalysisTable(view);
   await clickDrillButton(view, user, "Mistake queue");
   await clickDrillButton(view, user, "Practice this");
 
   return { user, view };
 };
 
+const chooseDrillDiscard = (
+  view: DrillView,
+  user: ReturnType<typeof userEvent.setup>,
+) => clickIndices(view.getAllByRole, [0, 1], user);
+
 const commitDrillChoice = async (
   view: DrillView,
   user: ReturnType<typeof userEvent.setup>,
 ) => {
-  await clickIndices(view.getAllByRole, [0, 1], user);
+  await chooseDrillDiscard(view, user);
   await clickDrillButton(view, user, "Check discard");
 };
 
@@ -75,9 +108,20 @@ describe("trainer practice drill", () => {
 
     expect(view.queryByRole("table")).toBeNull();
 
-    await commitDrillChoice(view, user);
+    await chooseDrillDiscard(view, user);
 
-    expect(view.getByRole("table")).toBeInTheDocument();
+    /*
+     * The only window in which withholding is the drill's doing: a complete
+     * discard is on the board, so nothing but the choosing phase is keeping
+     * the analysis off screen. Sampling before the two cards are picked
+     * cannot distinguish a drill that withholds from an incomplete discard,
+     * and passes against a Trainer that withholds nothing.
+     */
+    expect(view.queryByRole("table")).toBeNull();
+
+    await clickDrillButton(view, user, "Check discard");
+
+    await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
     expect(screen.getByLabelText("Practice drill")).toBeInTheDocument();
   });
 
@@ -118,6 +162,6 @@ describe("trainer practice drill", () => {
     fireEvent.popState(window);
 
     expect(screen.queryByLabelText("Practice drill")).toBeNull();
-    expect(view.getByRole("table")).toBeInTheDocument();
+    await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
   });
 });

@@ -30,6 +30,59 @@ green build status.
   build, lint, and Storybook coverage have passed, rerun
   `npm run docker:run-e2e-only` to verify the remaining Playwright tail before
   reporting final validation.
+- **A jest failure whose stack frame points at the `it(...)` line is a
+  timeout, not the assertion the code frame shows.** Jest prints a code frame
+  around the `it`, so the last context line — often an `expect` a few lines
+  below — reads like the failure while being nothing but context. #804 was
+  filed and triaged as a lazy-analysis race on exactly that misreading: its
+  quoted `76 | expect(view.queryByRole("table")).toBeNull();` is the frame's
+  last context line and its `at …:73:5` is the `it` call site. The whole
+  output reproduces on a **passing** tree with:
+
+  ```bash
+  npx jest --expand --coverage=false --testTimeout=1 \
+    --runTestsByPath src/ui-react/TrainerPracticeDrill.test.tsx
+  ```
+
+  A budget of 1ms rather than something near the real one because the point
+  is the output shape, and any threshold a passing test can still beat makes
+  the demonstration depend on how busy the machine is. Against that spec as
+  it stood at #804 the two strings matched character-for-character; the
+  numbers have since moved with the file, so compare the shape rather than
+  the lines. Line 76 was never reached. Read the stack frame, not the code
+  frame.
+
+- **The heavy jsdom Trainer specs run near jest's per-test budget whenever
+  the machine is contended, and which one crosses first is luck.** Reproduce
+  by starving jest — spin up more CPU hogs than there are cores and run
+  `nice -n 20 npx jest`. Two settings, and keep their figures apart: at 40
+  hogs on an eight-core host `TrainerPracticeDrill.test.tsx` took 17565ms,
+  against the 17.815s recorded in #804, and passed with its worst test at
+  4218ms of the 5000ms budget. At 72 hogs that file took 24047ms and the
+  run failed, with the worst per-test times — 5855ms, 5237ms and 5155ms —
+  spread across `TrainerUrlState`, `TrainerTelemetry` and
+  `TrainerPracticeDrill`. `testTimeout` is therefore
+  set to 15000 in `jest.config.json`: jest's 5000 default assumes a process
+  that owns the machine, while `verify:fast` runs jest concurrently with
+  eleven other tasks and jest itself forks one worker fewer than the machine
+  has cores — on the eight-core host these numbers come from, twenty-odd
+  CPU-hungry processes for eight cores. The ratio is what travels, not the
+  count. Do not scope a fix like this to whichever spec happened to fail,
+  and do not reach
+  for a `maxWorkers` cap to get the same effect — the full suite passes
+  under that starvation at 15000 with workers uncapped, and a cap would slow
+  a dedicated `npm test` on a many-core CI or Docker machine.
+- **Re-measure the budget on the branch that changes the specs, not the one
+  that found the problem.** The 5855/5237/5155ms figures above are the
+  pre-fix suite; PR #810, which fixed #804, made `TrainerPracticeDrill` wait
+  for the pre-drill analysis, and that added work to it. Eleven further
+  72-hog runs on that branch put per-run worst tests at 6676, 6749, 6996,
+  7282, 7507, 7572, 7795, 8375, 8588, 8839 and 10818ms — so the real margin
+  at 15000 is 1.39x, not the 3x the pre-fix numbers implied, and a budget of
+  10000 would have failed one of those eleven runs outright. Tightening a
+  timeout is worth doing, but a number taken from a measurement of different
+  code is not evidence about the code being shipped, and one run is not a
+  margin.
 - Before the slow Docker run, iterate with `npm run verify:fast` — the
   `npm install`-only checks, concurrently, in about 20 seconds. It is also
   the pre-commit hook, but do not treat a landed commit as proof it ran:
