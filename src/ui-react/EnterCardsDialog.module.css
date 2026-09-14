@@ -188,14 +188,16 @@
 .use-hand:focus {
   background-color: #218838;
   border-color: #8cee8c;
-  outline: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .clear:hover,
 .clear:focus {
   background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #34c754;
-  outline: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .use-hand:focus,

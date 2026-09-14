@@ -456,3 +456,16 @@ once you are already editing layout or interaction code.
   that assert each chip is **whole inside its group** rather than that the
   chips share a row, because the row assertion is what the cropping mechanism
   was invented to satisfy.
+- **A palette shift is not a focus indicator.** Every control on the dark
+  grounds suppressed the native outline and relied on its hover treatment to
+  double as focus, which moves the fill and border by roughly 1.28:1 each —
+  and where a shadow was added instead, `rgb(52 208 88 / 30%)` reaches only
+  1.52:1 against the felt. With four consent actions side by side, or Deal
+  next to Enter cards, a keyboard user cannot tell which one they are on.
+  `--focus-ring` in `vars.css` is the shared answer: `2px solid #def8e2` at a
+  2px offset, 11.62:1 on the `#10381b` dialog surface and 6.27:1 on the
+  `#1f6536` felt. Use it rather than `outline: none` plus a palette change;
+  the palette change is still worth keeping, but as reinforcement rather than
+  as the signal. Both reviewers found this independently on #793, one control
+  at a time — when a focus rule anywhere suppresses the outline, grep for
+  `outline: none` rather than fixing the one you were shown.

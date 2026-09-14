@@ -157,7 +157,8 @@
 .primary:focus-visible:not(:disabled) {
   background-color: #218838;
   border-color: #8cee8c;
-  outline: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Keeps the light border while pressed; the darker fill alone would hide it. */
@@ -183,7 +184,8 @@
 .secondary:focus-visible {
   background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #def8e2;
-  outline: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /*

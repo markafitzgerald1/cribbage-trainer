@@ -219,7 +219,8 @@
 .detail-close:hover,
 .detail-close:focus-visible {
   border-color: #def8e2;
-  outline: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .decision-detail-actions {
@@ -247,7 +248,8 @@
 .decision-detail-practice:focus-visible {
   background-color: #218838;
   border-color: #8cee8c;
-  outline: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Keeps the light border while pressed; the darker fill alone would hide it. */
