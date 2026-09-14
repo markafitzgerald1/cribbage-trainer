@@ -1,4 +1,4 @@
-import { SUITS, Suit, parseHand } from "./Card";
+import { type Card, SUITS, Suit, parseHand } from "./Card";
 import { describe, expect, it } from "@jest/globals";
 import { permuteCardSuits, suitPermutationForView } from "./suitPermutation";
 
@@ -6,31 +6,65 @@ const HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
 const HAND_CARDS = parseHand("5H,6H,7H,8H,9H,10H");
 const OTHER_HAND_KEY = "2C,3C,4C,5C,6C,7C|Dealer";
 const OTHER_HAND_CARDS = parseHand("2C,3C,4C,5C,6C,7C");
+/*
+ * The reported bug's own reproduction hand: all four suits, so a check
+ * that only one of them moves between views cannot pass here by using up
+ * its one degree of freedom on an unused suit the way a single-suited
+ * hand's could.
+ */
+const MIXED_SUIT_HAND_KEY = "10H,7D,5S,5D,AC,AS|Dealer";
+const MIXED_SUIT_HAND_CARDS = parseHand("10H,7D,5S,5D,AC,AS");
+const MIXED_SUIT_HAND_USED_SUITS = [
+  Suit.HEARTS,
+  Suit.DIAMONDS,
+  Suit.SPADES,
+  Suit.CLUBS,
+];
 const VIEW_SAMPLE_SIZE = 12;
 const IDENTITY_CHECK_SAMPLE_SIZE = 50;
 
 const sortedSuits = (suits: readonly string[]): string[] => [...suits].sort();
 
-const permutationsAcrossViews = (count: number): readonly (readonly Suit[])[] =>
+const permutationsAcrossViewsFor = (
+  cards: readonly Card[],
+  handKey: string,
+  count: number,
+): readonly (readonly Suit[])[] =>
   Array.from({ length: count }, (_, viewIndex) =>
-    suitPermutationForView(HAND_CARDS, HAND_KEY, viewIndex),
+    suitPermutationForView(cards, handKey, viewIndex),
   );
+
+const permutationsAcrossViews = (count: number) =>
+  permutationsAcrossViewsFor(HAND_CARDS, HAND_KEY, count);
 
 const permutationsForViews = (count: number): readonly string[] =>
   permutationsAcrossViews(count).map((permutation) => permutation.join(""));
 
+const targetsForSuit = (
+  permutations: readonly (readonly Suit[])[],
+  suit: Suit,
+): readonly (Suit | undefined)[] => {
+  const suitPosition = SUITS.indexOf(suit);
+  return permutations.map((permutation) => permutation.at(suitPosition));
+};
+
 const heartsTargetsAcrossViews = (
   count: number,
-): readonly (Suit | undefined)[] => {
-  const heartsIndex = SUITS.indexOf(Suit.HEARTS);
-  return permutationsAcrossViews(count).map((permutation) =>
-    permutation.at(heartsIndex),
-  );
-};
+): readonly (Suit | undefined)[] =>
+  targetsForSuit(permutationsAcrossViews(count), Suit.HEARTS);
 
 const expectNoConsecutiveRepeats = (values: readonly unknown[]) => {
   for (let index = 1; index < values.length; index += 1) {
     expect(values.at(index)).not.toBe(values.at(index - 1));
+  }
+};
+
+const expectNoConsecutiveRepeatsPerSuit = (
+  permutations: readonly (readonly Suit[])[],
+  suits: readonly Suit[],
+) => {
+  for (const suit of suits) {
+    expectNoConsecutiveRepeats(targetsForSuit(permutations, suit));
   }
 };
 
@@ -88,23 +122,40 @@ describe("suitPermutationForView", () => {
   });
 
   /*
-   * Defect: `movesAnyUsedSuit` (the prior name for this check) only ever
-   * compared against the stored hand's own identity mapping, so two
-   * consecutive views could leave a hand looking exactly like it did last
-   * time — the used-suit check needs a per-view reference, not one
-   * hardcoded to identity, or a mixed-suit hand could as easily repeat.
-   * This is also the tightest case for the guarantee: only 18 of the 23
-   * non-identity permutations move Hearts at all, and only a third of
-   * those avoid whatever suit the previous view already sent Hearts to
-   * (see suitPermutation.ts's own comment on this bound), so a
-   * single-suited hand is what would surface a candidate pool run dry.
-   * `usePracticeDrill.test.ts` covers the same guarantee end to end against
-   * the exact mixed-suit hand this bug was reported and reproduced on.
+   * Defect: the used-suit check only ever compared against the stored
+   * hand's own identity mapping, so two consecutive views could leave a
+   * hand looking exactly like it did last time — the check needs a
+   * per-view reference, not one fixed to identity. This is also the
+   * tightest case for satisfiability: only 18 of the 23 non-identity
+   * permutations move Hearts at all, and only a third of those avoid
+   * whatever suit the previous view already sent Hearts to (see
+   * suitPermutation.ts's own comment on this bound), so a single-suited
+   * hand is what would surface a candidate pool run dry.
    */
   it("never repeats a single-suited hand's own suit target between consecutive views", () => {
     const heartsTargets = heartsTargetsAcrossViews(IDENTITY_CHECK_SAMPLE_SIZE);
 
     expectNoConsecutiveRepeats(heartsTargets);
+  });
+
+  /*
+   * Defect: requiring only SOME used suit to differ (an earlier version of
+   * this guarantee) let a mixed-suit hand keep most of its suits mapped
+   * identically to the previous view while just one moved — the reported
+   * bug's own reproduction left three of its six cards (5S, AC, AS)
+   * unchanged between two committed drills. A single-suited hand's test
+   * above cannot catch that: with only one used suit, "some" and "every"
+   * are the same check. This hand uses all four, so each is checked
+   * independently.
+   */
+  it("moves every suit a mixed-suit hand uses between consecutive views, not just one of them", () => {
+    const permutations = permutationsAcrossViewsFor(
+      MIXED_SUIT_HAND_CARDS,
+      MIXED_SUIT_HAND_KEY,
+      IDENTITY_CHECK_SAMPLE_SIZE,
+    );
+
+    expectNoConsecutiveRepeatsPerSuit(permutations, MIXED_SUIT_HAND_USED_SUITS);
   });
 });
 

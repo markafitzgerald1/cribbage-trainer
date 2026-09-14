@@ -34,20 +34,26 @@ const hashString = (value: string): number =>
 const suitIndex = (suit: Suit): number => SUITS.indexOf(suit);
 
 /*
- * Whether `permutation` sends some suit the hand actually uses somewhere
- * different from where `reference` sends that same suit. Comparing against
- * the identity mapping (every suit mapped to itself) answers "does this
- * visibly change the stored hand"; comparing against a prior view's own
- * permutation answers "does this visibly change relative to what was just
- * shown" — the same question, generalized to an arbitrary reference instead
- * of one fixed to identity.
+ * Whether `permutation` sends EVERY suit the hand actually uses somewhere
+ * different from where `reference` sends that same suit — not merely some of
+ * them. A `some` check here (this function's first version) let a mixed-suit
+ * hand keep several of its suits mapped identically to a prior view while
+ * only one moved: exactly the "half the hand looked the same as last time"
+ * defect this guarantee exists to rule out. A single-suited hand's own
+ * regression test could not catch that gap, because with only one used suit
+ * "some" and "every" are the same check — a mixed-suit hand is what
+ * surfaces it. Comparing against the identity mapping (every suit mapped to
+ * itself) answers "does this visibly change the stored hand"; comparing
+ * against a prior view's own permutation answers "does this visibly change
+ * relative to what was just shown" — the same question, generalized to an
+ * arbitrary reference instead of one fixed to identity.
  */
-const differsOnUsedSuits = (
+const allUsedSuitsDiffer = (
   permutation: readonly Suit[],
   reference: readonly Suit[],
   usedSuits: ReadonlySet<Suit>,
 ): boolean =>
-  [...usedSuits].some(
+  [...usedSuits].every(
     (suit) => permutation.at(suitIndex(suit)) !== reference.at(suitIndex(suit)),
   );
 
@@ -64,8 +70,8 @@ const candidatesRelabeling = (
 ): readonly (readonly Suit[])[] =>
   NON_IDENTITY_SUIT_PERMUTATIONS.filter(
     (permutation) =>
-      differsOnUsedSuits(permutation, SUITS, usedSuits) &&
-      differsOnUsedSuits(permutation, reference, usedSuits),
+      allUsedSuitsDiffer(permutation, SUITS, usedSuits) &&
+      allUsedSuitsDiffer(permutation, reference, usedSuits),
   );
 
 /*
@@ -82,13 +88,12 @@ const candidatesRelabeling = (
  * The contract is that a view is visibly relabeled relative to the view it
  * replaces: view 0 relative to the stored hand (there is no earlier view to
  * compare against), and every later view relative to the immediately
- * preceding one. "Usually differs" is not that contract — two attempt
- * indices whose hashes land on candidates that happen to agree on every
- * suit this hand uses would satisfy "usually" while silently showing the
- * same picture twice in a row. Each view is also still checked against the
- * stored hand itself, not only its immediate predecessor, so a longer
- * sequence can never drift back onto the literal recorded mistake and make
- * the "suits reshuffled" panel copy false again several views in.
+ * preceding one — on every suit the hand uses, not just one of them, or a
+ * mixed-suit hand could keep most of its suits looking like the prior view
+ * while only one moved. Each view is also still checked against the stored
+ * hand itself, not only its immediate predecessor, so a longer sequence can
+ * never drift back onto the literal recorded mistake and make the "suits
+ * reshuffled" panel copy false again several views in.
  */
 export const suitPermutationForView = (
   cards: readonly Card[],
@@ -107,14 +112,13 @@ export const suitPermutationForView = (
      * above, so `.at()` cannot return undefined here; the cast states that
      * guarantee rather than papering over a real chance of it (see
      * mistakeQueue.ts's `itemAt` for the same idiom). `candidates` is never
-     * empty: differing from identity alone leaves at least 18 of the 23 (a
-     * single used suit, the sharpest case — see the module comment above).
-     * Of those 18, a hand's one used suit can only be sent to one of the
-     * other three suits, six permutations to a destination, so excluding
-     * whichever destination `previous` already used removes at most six,
-     * leaving at least twelve. More used suits only relaxes this further:
-     * differing from `previous` needs just one of them to land somewhere
-     * new, not all of them.
+     * empty, checked by exhaustive enumeration over all 24 suit
+     * permutations for every hand size: using all four suits is the
+     * tightest case — the 9 derangements of identity (permutations moving
+     * every position) are the only candidates once identity is excluded on
+     * every used suit, and even the least favorable `previous` among those
+     * 9 still leaves 2 of them differing from `previous` on every position
+     * too. Fewer used suits only relaxes this further.
      */
     current = candidates.at(index) as readonly Suit[];
     previous = current;
