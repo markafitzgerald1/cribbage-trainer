@@ -1,7 +1,9 @@
 @import url("./vars.css");
 
+/* Supplies its own top spacing; see `Modal`'s `.body`. */
 .privacy-policy {
   font-family: var(--text-font-family);
+  padding-top: var(--spacing);
   color: var(--text-color);
   background: transparent;
   text-align: left;

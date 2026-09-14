@@ -89,14 +89,12 @@
   /*
    * No top padding: a sticky child sticks to the scroll container's content-box
    * edge, so any top padding here becomes a strip of scrolled content showing
-   * above the stuck bar -- 22px of card picker, reported from a phone. The
-   * spacing moves onto the children instead, where it scrolls away with them.
+   * above the stuck bar -- 22px of card picker, reported from a phone. Each
+   * child supplies its own top spacing instead, in its own stylesheet: a
+   * shared `.body > *` rule here would tie the result to CSS-module import
+   * order, because it ties on specificity with the dialogs' own rules.
    */
   padding: 0 var(--spacing) var(--spacing);
-}
-
-.body > * {
-  padding-top: var(--spacing);
 }
 
 .close {
