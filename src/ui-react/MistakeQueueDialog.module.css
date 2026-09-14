@@ -70,6 +70,12 @@
   border-color: #8cee8c;
 }
 
+/* Keeps the light border while pressed; the darker fill alone would hide it. */
+.start-drill-button:active:not(:disabled) {
+  background-color: #0f5527;
+  border-color: #8cee8c;
+}
+
 .done-button {
   background-color: transparent;
   border: 2px solid #6c8f74;

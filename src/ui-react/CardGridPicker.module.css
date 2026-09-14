@@ -8,9 +8,19 @@
 .grid {
   display: grid;
   grid-auto-flow: column;
-  grid-template-columns: repeat(4, minmax(4.25rem, 1fr));
+
+  /*
+   * The track minimums are capped with a viewport unit because a bare rem
+   * floor inflates with the device font-size setting while the modal does
+   * not: at a 28px root on a 390px screen the 3.75rem portrait minimum forced
+   * 105px columns, putting the clubs column's right edge at 499px and making
+   * the dialog pan sideways by 139px to reach it. Capped, the same case gives
+   * 69px columns ending at 340px with no pan, and the default font size is
+   * unchanged.
+   */
+  grid-template-columns: repeat(4, minmax(min(4.25rem, 8vw), 1fr));
   grid-template-rows: repeat(13, minmax(3rem, auto));
-  gap: 0.35rem;
+  gap: min(0.35rem, 1.2vw);
   max-width: 100%;
   width: 46rem;
 }
@@ -69,7 +79,7 @@
 
 @media (aspect-ratio < 6 / 5) {
   .grid {
-    grid-template-columns: repeat(4, minmax(3.75rem, 1fr));
+    grid-template-columns: repeat(4, minmax(min(3.75rem, 16vw), 1fr));
     width: 42rem;
   }
 

@@ -474,3 +474,25 @@ test("the close button and card tiles stay usable once the picker scrolls", asyn
 
   await expect(page.getByText("5 of 6")).toBeVisible();
 });
+
+/*
+ * The picker's track minimums are rem, so a raised device font-size setting
+ * grows the columns while the modal does not follow. Uncapped, a 28px root on
+ * a 390px screen forced 105px columns and put the clubs column's right edge
+ * at 499px, panning the dialog sideways by 139px to reach a suit the player
+ * has to be able to pick. The right-hand column is the one to assert: the
+ * scroll guard above only ever touches the first.
+ */
+test("every suit column stays on screen at a large device font", async ({
+  page,
+}) => {
+  await openCardEntryDialog(page);
+  await page.setViewportSize(phonePortraitViewport);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+
+  const clubs = page.getByRole("button", { exact: true, name: "A♣" });
+
+  await expect
+    .poll(async () => rightEdge(await requireBoundingBox(clubs)))
+    .toBeLessThanOrEqual(phonePortraitViewport.width);
+});

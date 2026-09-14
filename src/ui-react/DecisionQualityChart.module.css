@@ -250,6 +250,12 @@
   outline: none;
 }
 
+/* Keeps the light border while pressed; the darker fill alone would hide it. */
+.decision-detail-practice:active {
+  background-color: #0f5527;
+  border-color: #8cee8c;
+}
+
 .decision-detail-row {
   align-items: center;
   display: flex;
