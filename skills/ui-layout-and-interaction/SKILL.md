@@ -483,8 +483,9 @@ once you are already editing layout or interaction code.
   near-white tile and has its own visible `:focus-visible` treatment.
   A clipped radio is the other case worth knowing: it cannot show an outline
   itself, so the ring goes on the label it is paired with.
-- **One vertical scroll container per modal.** A dialog that sets its own
-  `overflow-y: auto` inside `Modal`'s scrolling `.body` chains the two: at a
+- **One _dialog-level_ vertical scroll container per modal.** A dialog that
+  sets its own `overflow-y: auto` inside `Modal`'s scrolling `.body` chains
+  the two: at a
   340px-high landscape viewport the panel caps at 308px while a `94vh` dialog
   reached 319.6px, so scrolling the inner one to its end carried on into the
   outer and dragged the sticky action bar 39.5px up the panel — sticky in
@@ -493,4 +494,7 @@ once you are already editing layout or interaction code.
   scroll the bar pins flush with nothing showing above it. A `vh` cap on a
   child of a panel that is itself capped in `vh` is the shape to watch for,
   since the two are measured against the same viewport but not against each
-  other.
+  other. A capped region inside the flow is a different thing and is fine:
+  the trend dialog's `.table-wrapper` keeps `max-height: 220px; overflow:
+auto` deliberately, because it cannot chain the whole panel the way a
+  second full-height dialog scroll container does.

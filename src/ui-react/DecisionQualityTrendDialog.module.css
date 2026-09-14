@@ -9,11 +9,13 @@
 
   /*
    * No scroll container and no height cap here: `Modal`'s `.body` owns the
-   * vertical scrolling for this dialog. Both scrolling meant the two chained
-   * -- at a 340px-high landscape viewport the panel caps at 308px while a
-   * `94vh` dialog reached 319.6px, so scrolling the inner one to its end
-   * carried on into the outer and dragged the "sticky" action bar 39.5px up
-   * with it. One scroller keeps the bar where sticky promises.
+   * dialog-level vertical scrolling. Both scrolling meant the two chained --
+   * at a 340px-high landscape viewport the panel caps at 308px while a `94vh`
+   * dialog reached 319.6px, so scrolling the inner one to its end carried on
+   * into the outer and dragged the "sticky" action bar 39.5px up with it.
+   * (`.table-wrapper` below keeps its own scroller on purpose: it is a capped
+   * region inside the flow rather than a second full-height dialog scroller,
+   * so it cannot chain the whole panel.)
    *
    * `.body` has no top padding, so the bar sticks flush to the panel edge,
    * and `.title` carries the resting spacing and scrolls away with the rest.
@@ -180,12 +182,17 @@
 }
 
 /*
- * `.dialog` is a fixed-height flex column that scrolls its own overflow, and a
- * scroll container's flex item has an automatic minimum size of 0. Without
- * `flex-shrink: 0` this wrapper collapsed to zero height whenever the chart
- * above it filled the dialog — on a short landscape viewport the whole table
- * became unreachable, not merely scrolled past. Holding its box lets the
- * dialog scroll down to it instead.
+ * A flex item that is itself a scroll container has an automatic minimum size
+ * of 0, so without `flex-shrink: 0` this wrapper collapsed to zero height
+ * whenever the chart above it filled the column — on a short landscape
+ * viewport the whole table became unreachable, not merely scrolled past.
+ * Holding its box lets the panel scroll down to it instead.
+ *
+ * Its own `max-height` and `overflow` stay: this is a deliberately capped
+ * region within the flow, not a second dialog-level scroller. `.dialog` no
+ * longer scrolls itself — `Modal`'s `.body` does — so the premise this
+ * comment used to give for `flex-shrink: 0` has changed while the need for
+ * it has not.
  */
 .table-wrapper {
   flex-shrink: 0;
