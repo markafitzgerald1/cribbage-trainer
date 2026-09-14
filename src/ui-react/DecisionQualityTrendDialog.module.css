@@ -6,24 +6,22 @@
   flex-direction: column;
   font-size: 1rem;
   gap: 0.9rem;
-  max-height: 85vh;
-  overflow-y: auto;
 
   /*
-   * Deliberately no top padding: this element is the scroll container, and a
-   * sticky child sticks to its content-box edge, so padding here becomes a
-   * strip of scrolled content above the stuck bar -- 20px of it, with a
-   * filter group showing through, when this was measured. `.title` carries
-   * the spacing instead, and scrolls away with the content.
+   * No scroll container and no height cap here: `Modal`'s `.body` owns the
+   * vertical scrolling for this dialog. Both scrolling meant the two chained
+   * -- at a 340px-high landscape viewport the panel caps at 308px while a
+   * `94vh` dialog reached 319.6px, so scrolling the inner one to its end
+   * carried on into the outer and dragged the "sticky" action bar 39.5px up
+   * with it. One scroller keeps the bar where sticky promises.
+   *
+   * `.body` has no top padding, so the bar sticks flush to the panel edge,
+   * and `.title` carries the resting spacing and scrolls away with the rest.
    */
 
   /*
-   * Positioned because it is also the scroll container. The filter chips hide
-   * their radios with `position: absolute`, and a static scroll container
-   * leaves those radios anchored to `Modal`'s `.body` instead: scrolling this
-   * dialog moved each label while its radio stayed put, drifting by exactly
-   * the scroll distance, until an invisible radio sat over the content below
-   * and could intercept its clicks.
+   * Positioned so the radios the chips hide with `position: absolute` are
+   * contained here and travel with their labels when the panel scrolls.
    */
   position: relative;
   padding-right: 0.25rem;

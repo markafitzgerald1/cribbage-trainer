@@ -291,8 +291,9 @@ once you are already editing layout or interaction code.
   "Exit drill" and `DecisionQualityChart`'s `.detail-close` — so a shared
   border color is a standing invitation to audit the stylesheet rather than
   the screen. Both now use #a7c7ad, which clears 3:1 on every ground it
-  meets. One control is knowingly below the floor and is not yet fixed: `ScoredPossibleKeepDiscards`'s
-  `.retry-button` (#dc3545 fill and border) reaches 1.56:1 against the felt.
+  meets. One control is knowingly below the floor and is not yet fixed:
+  `ScoredPossibleKeepDiscards`'s `.retry-button` (#dc3545 fill and border)
+  reaches 1.56:1 against the felt.
   It is an error-path control, it was worse before the felt change (1.13:1
   against the old `green`), and it deserves its own issue — so treat this
   bullet as the standard to hold new work to rather than a description of a
@@ -437,7 +438,8 @@ once you are already editing layout or interaction code.
   had already shown the close button reaching y = -279px at a 16px root font
   and -1169px at 28px. The fix is a `.body` wrapper that scrolls while
   `.content` stays put, and it has two consequences worth knowing before
-  repeating it. First, the scrolling element must carry `position: relative`: the
+  repeating it. First, the scrolling element must carry `position: relative`:
+  the
   dialogs hide their radio inputs with `position: absolute`, and once
   `.content` stopped scrolling those inputs stayed anchored to it — after a
   300px scroll the Pone radio sat at y = 118.9 while its own label was at
@@ -469,3 +471,14 @@ once you are already editing layout or interaction code.
   as the signal. Both reviewers found this independently on #793, one control
   at a time — when a focus rule anywhere suppresses the outline, grep for
   `outline: none` rather than fixing the one you were shown.
+- **One vertical scroll container per modal.** A dialog that sets its own
+  `overflow-y: auto` inside `Modal`'s scrolling `.body` chains the two: at a
+  340px-high landscape viewport the panel caps at 308px while a `94vh` dialog
+  reached 319.6px, so scrolling the inner one to its end carried on into the
+  outer and dragged the sticky action bar 39.5px up the panel — sticky in
+  name only. The queue and trend dialogs now declare neither `overflow-y` nor
+  a `vh` height cap and let `.body` do the scrolling; with 265px of real
+  scroll the bar pins flush with nothing showing above it. A `vh` cap on a
+  child of a panel that is itself capped in `vh` is the shape to watch for,
+  since the two are measured against the same viewport but not against each
+  other.
