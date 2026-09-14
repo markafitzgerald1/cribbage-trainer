@@ -16,7 +16,7 @@ import {
 import { expect, jest } from "@jest/globals";
 import {
   permuteCardSuits,
-  suitPermutationForAttempt,
+  suitPermutationForView,
 } from "../game/suitPermutation";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
@@ -35,17 +35,22 @@ export const HAND_KEY = mockItemA.handKey;
  * in usePracticeDrill.test.ts does with `mockItemB`), so every board state
  * representing "the drill's own hand is on screen" for the default case must
  * be built from the same permutation `beginWith` derives for that item —
- * its fixed handKey and attempts — rather than mockItemA's stored
- * (unpermuted) suits. A test that drills a different item must derive its
- * own permutation from that item's handKey and attempts the same way.
+ * rather than mockItemA's stored (unpermuted) suits. `beginWith` derives it
+ * from a view count kept in the hook (see usePracticeDrill.ts), never from
+ * `mockItemA.attempts`, and a fresh harness's very first `start()` call is
+ * always that hand's view 0, which is the only view this helper builds — a
+ * test that starts the SAME harness's drill on this hand again needs its own
+ * later-view permutation instead (see the repeated-view tests in
+ * usePracticeDrill.test.ts, which compare `loadedHands` structurally rather
+ * than recomputing an expected later view here). A test that drills a
+ * different item must derive its own permutation from that item's handKey
+ * the same way.
  */
-const DRILL_PERMUTATION = suitPermutationForAttempt(
-  mockItemA.cards,
-  mockItemA.handKey,
-  mockItemA.attempts,
-);
 export const asDrillCards = (hand: string) =>
-  permuteCardSuits(parseHand(hand), DRILL_PERMUTATION);
+  permuteCardSuits(
+    parseHand(hand),
+    suitPermutationForView(mockItemA.cards, mockItemA.handKey, 0),
+  );
 
 export const dealtCards = toDealtCards(
   asDrillCards("5H,6H,7H,8H,9H,10H"),
@@ -180,12 +185,18 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
   };
 };
 
-export const freshHarness = ({ seed = false } = {}): Harness => {
+export const freshHarness = ({
+  followLoadedHand = false,
+  seed = false,
+}: {
+  readonly followLoadedHand?: boolean;
+  readonly seed?: boolean;
+} = {}): Harness => {
   clearDiscardTally();
   if (seed) {
     seedMistake();
   }
-  return setupHarness();
+  return setupHarness({ followLoadedHand });
 };
 
 export const startedHarness = (): Harness => {

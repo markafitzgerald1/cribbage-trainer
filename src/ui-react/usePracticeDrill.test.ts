@@ -38,12 +38,21 @@ import {
 import { describe, expect, it } from "@jest/globals";
 import {
   permuteCardSuits,
-  suitPermutationForAttempt,
+  suitPermutationForView,
 } from "../game/suitPermutation";
 import { CribRole } from "../game/expectedCribPoints";
+import type { PracticeDrillHand } from "./usePracticeDrill";
 import { serializeHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
+
+const expectNoConsecutiveRepeats = (hands: readonly PracticeDrillHand[]) => {
+  for (let view = 1; view < hands.length; view += 1) {
+    expect(hands[view]!.dealtCards).not.toStrictEqual(
+      hands[view - 1]!.dealtCards,
+    );
+  }
+};
 
 describe("usePracticeDrill", () => {
   it("loads a mistake face-up, then reveals the analysis only on commit", () => {
@@ -64,6 +73,51 @@ describe("usePracticeDrill", () => {
 
     harness.commit();
     expectDrillState(harness, true, "revealed");
+  });
+
+  /*
+   * Defect: the permutation was keyed on item.attempts, which only advances
+   * on a committed Check discard. Exiting a drill and re-entering it
+   * without committing left attempts unchanged, so the board came back
+   * byte-identical — pure recall, the one thing this feature exists to
+   * prevent (reported and reproduced against the deployed preview).
+   */
+  it("shows a different board when a drill is exited without committing and reopened", () => {
+    const harness = freshHarness();
+
+    harness.start();
+    harness.exit();
+    harness.start();
+
+    expect(harness.loadedHands).toHaveLength(2);
+    expect(harness.loadedHands[1]!.dealtCards).not.toStrictEqual(
+      harness.loadedHands[0]!.dealtCards,
+    );
+  });
+
+  /*
+   * Defect: differing from the STORED hand is not the same guarantee as
+   * differing from the PREVIOUS view. The reported reproduction drilled this same
+   * mistake twice, correctly advancing past the stored arrangement both
+   * times, and still showed three of its six cards (5S, AC, AS) unchanged
+   * from the first view to the second. Each view must be visibly relabeled
+   * relative to the one it replaces, not merely relative to what was
+   * originally recorded. Eight repeated views of mockItemA's own handKey is
+   * enough to reliably exercise that — a filter checking only against the
+   * stored hand repeats mockItemA's own suit by view 6 of this specific
+   * sequence, deterministically, not just on average. Committing after
+   * every view, including the last, keeps the loop free of a conditional.
+   */
+  it("keeps relabeling a repeatedly-drilled mistake relative to its own last view, not just the stored hand", () => {
+    const harness = freshHarness();
+    const repeatedViews = 8;
+
+    for (let view = 0; view < repeatedViews; view += 1) {
+      harness.start();
+      harness.commit();
+    }
+
+    expectNoConsecutiveRepeats(harness.loadedHands);
   });
 
   it("forwards every analysis to the caller's own handler", () => {
@@ -115,11 +169,8 @@ describe("usePracticeDrill", () => {
     const harness = setupHarness({ followLoadedHand: true });
     const permutedCards = permuteCardSuits(
       mockItemB.cards,
-      suitPermutationForAttempt(
-        mockItemB.cards,
-        mockItemB.handKey,
-        mockItemB.attempts,
-      ),
+      // This harness's very first start(), so mockItemB's own view 0.
+      suitPermutationForView(mockItemB.cards, mockItemB.handKey, 0),
     );
 
     // FollowLoadedHand syncs the board to mockItemB's own (fully kept) permuted hand; this then picks a discard on it, mirroring a real checkbox choice.
@@ -266,7 +317,8 @@ describe("usePracticeDrill", () => {
       { advance: (harness: Harness) => harness.auto(), name: "an auto-draw" },
       { advance: (harness: Harness) => harness.next(), name: "Draw another" },
     ])("keeps drilling on $name while active hands remain", ({ advance }) => {
-      const harness = freshHarness({ seed: true });
+      // With only one active mistake, both redraw it under a new view; the board must follow, as it always does outside a test harness, or the drill wrongly reads as exited.
+      const harness = freshHarness({ followLoadedHand: true, seed: true });
 
       harness.start();
       advance(harness);

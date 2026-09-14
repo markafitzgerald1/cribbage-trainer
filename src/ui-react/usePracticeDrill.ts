@@ -8,7 +8,7 @@ import {
 } from "../ui/mistakeQueue";
 import {
   permuteCardSuits,
-  suitPermutationForAttempt,
+  suitPermutationForView,
 } from "../game/suitPermutation";
 import { readTallyForDisplay, recordPracticeAttempt } from "../ui/discardTally";
 import { useCallback, useRef, useState } from "react";
@@ -79,26 +79,38 @@ interface UsePracticeDrillArgs {
 
 /*
  * Deriving the permutation from the item's own cards, stored handKey, and
- * attempts count — never from `generateRandomNumber` — keeps it a pure
- * function of the mistake being drilled: attempt 3 of a given hand always
- * shows the same relabeling, and loading it never shifts a later seeded
- * deal (see AGENTS.md's URL analysis state section on that shared stream).
+ * which VIEW this is — never from `generateRandomNumber` — keeps it a pure
+ * function of the mistake being drilled and how many times it has been
+ * loaded: loading never shifts a later seeded deal (see AGENTS.md's URL
+ * analysis state section on that shared stream). Deliberately not
+ * `item.attempts`: that only advances on a committed Check discard, so
+ * exiting a drill and re-entering it without committing kept landing on the
+ * same attempt count and therefore the exact same relabeling — recall, the
+ * one thing this feature exists to defeat. `viewIndex` instead comes from
+ * `viewCounts` below, a count of views rather than commits.
+ *
  * `drillLive` and the previous-discard display below recompute the same
- * value from the same three fields rather than caching it: `activeItem`
- * itself changes (`onNextHand` replaces it with the next drilled item), and
- * a cache keyed on anything less than all three could hand a later item the
- * wrong permutation.
+ * value from the same arguments rather than caching it: `activeItem` itself
+ * changes (`onNextHand` replaces it with the next drilled item), and a cache
+ * keyed on anything less than all of `item`, `handKey` and `viewIndex`
+ * could hand a later view the wrong permutation.
  */
-const permutedDrillCards = (item: MistakeQueueItem): Card[] =>
+const permutedDrillCards = (
+  item: MistakeQueueItem,
+  viewIndex: number,
+): Card[] =>
   permuteCardSuits(
     item.cards,
-    suitPermutationForAttempt(item.cards, item.handKey, item.attempts),
+    suitPermutationForView(item.cards, item.handKey, viewIndex),
   );
 
 // The one place a drill hand is turned into cards on the board.
-const toDrillHand = (item: MistakeQueueItem): PracticeDrillHand => ({
+const toDrillHand = (
+  item: MistakeQueueItem,
+  viewIndex: number,
+): PracticeDrillHand => ({
   cribRole: item.cribRole,
-  dealtCards: toDealtCards(permutedDrillCards(item), []),
+  dealtCards: toDealtCards(permutedDrillCards(item, viewIndex), []),
 });
 
 /*
@@ -107,13 +119,16 @@ const toDrillHand = (item: MistakeQueueItem): PracticeDrillHand => ({
  * cards that are not in front of the player — coherence over preserving the
  * original record, which stays untouched in storage either way.
  */
-const permutedPreviousDiscard = (item: MistakeQueueItem): string | null =>
+const permutedPreviousDiscard = (
+  item: MistakeQueueItem,
+  viewIndex: number,
+): string | null =>
   item.previousDiscard === null
     ? null
     : serializeHand(
         permuteCardSuits(
           parseHand(item.previousDiscard),
-          suitPermutationForAttempt(item.cards, item.handKey, item.attempts),
+          suitPermutationForView(item.cards, item.handKey, viewIndex),
         ),
       );
 
@@ -129,11 +144,26 @@ export const usePracticeDrill = ({
   onAnalysisRendered,
 }: UsePracticeDrillArgs): PracticeDrill => {
   const [activeItem, setActiveItem] = useState<MistakeQueueItem | null>(null);
+  // Which view of activeItem is on screen, captured alongside it in beginWith so every read of the two during its lifetime agrees.
+  const [activeViewIndex, setActiveViewIndex] = useState(0);
   const [phase, setPhase] = useState<PracticeDrillPhase>("choosing");
   const [verdict, setVerdict] = useState<PracticeVerdict | null>(null);
   const [hasNextHand, setHasNextHand] = useState(false);
   // Guards a single record per committed choice; onAnalysisRendered re-fires on every re-sort.
   const recordedRef = useRef(false);
+  /*
+   * How many times this browser tab has loaded each mistake, keyed by
+   * handKey rather than object identity: sampling can hand back a fresh
+   * MistakeQueueItem object for the same underlying mistake, and it still
+   * owes that mistake the next view in its sequence, not a reset one.
+   * Session-scoped rather than persisted on the mistake queue item on
+   * purpose — storing it would mean extending MistakeQueueItem's own
+   * shape, which is out of this feature's scope (see AGENTS.md's
+   * mistake-queue scope note); resetting on reload costs nothing the
+   * browse-and-back-out flow this exists for actually does, since that
+   * flow never reloads in the middle of it.
+   */
+  const viewCounts = useRef(new Map<string, number>());
 
   /*
    * A drill owns the board only while its own six cards and crib role are on
@@ -159,8 +189,16 @@ export const usePracticeDrill = ({
     activeItem !== null &&
     cribRole === activeItem.cribRole &&
     serializeHand(dealtCards) ===
-      serializeHand(permutedDrillCards(activeItem)) &&
+      serializeHand(permutedDrillCards(activeItem, activeViewIndex)) &&
     !(phase === "revealed" && !discardIsComplete(dealtCards));
+
+  const resetActiveDrill = useCallback(() => {
+    setActiveItem(null);
+    setActiveViewIndex(0);
+    setPhase("choosing");
+    setVerdict(null);
+    setHasNextHand(false);
+  }, []);
 
   /*
    * When the drill stops holding the board it is finished, not merely
@@ -172,20 +210,20 @@ export const usePracticeDrill = ({
    * so it needs no reset here.
    */
   if (activeItem !== null && !drillLive) {
-    setActiveItem(null);
-    setPhase("choosing");
-    setVerdict(null);
-    setHasNextHand(false);
+    resetActiveDrill();
   }
 
   const beginWith = useCallback(
     (item: MistakeQueueItem) => {
       recordedRef.current = false;
+      const viewIndex = viewCounts.current.get(item.handKey) ?? 0;
+      viewCounts.current.set(item.handKey, viewIndex + 1);
       setActiveItem(item);
+      setActiveViewIndex(viewIndex);
       setPhase("choosing");
       setVerdict(null);
       setHasNextHand(activeHandsExist());
-      loadHand(toDrillHand(item));
+      loadHand(toDrillHand(item, viewIndex));
     },
     [loadHand],
   );
@@ -209,11 +247,8 @@ export const usePracticeDrill = ({
 
   const clearDrill = useCallback(() => {
     recordedRef.current = false;
-    setActiveItem(null);
-    setPhase("choosing");
-    setVerdict(null);
-    setHasNextHand(false);
-  }, []);
+    resetActiveDrill();
+  }, [resetActiveDrill]);
 
   // "Exit drill": drop practice and deal a fresh authentic hand rather than leaving the drilled study hand on the board.
   const onExit = useCallback(() => {
@@ -290,11 +325,11 @@ export const usePracticeDrill = ({
         consecutiveSuccesses,
         isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
         isOptimal,
-        previousDiscard: permutedPreviousDiscard(activeItem),
+        previousDiscard: permutedPreviousDiscard(activeItem, activeViewIndex),
         previousLoss: activeItem.previousDiscardLoss,
       });
     },
-    [activeItem, dealtCards, onAnalysisRendered, phase],
+    [activeItem, activeViewIndex, dealtCards, onAnalysisRendered, phase],
   );
 
   /*
