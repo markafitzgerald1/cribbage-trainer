@@ -280,10 +280,19 @@ once you are already editing layout or interaction code.
   than asserting the record non-null — the whole tally is read-only in
   that tab until reload anyway.
 - Dark themes must satisfy WCAG 2.1 SC 1.4.11 (non-text contrast) across all
-  interactive boundaries: button borders, role chips, and filter options need
-  at least 3:1 contrast against both their own fill and the adjacent surface
+  interactive boundaries: button borders, role chips, and filter options must
+  be told apart from the adjacent surface by **some** color at 3:1 or better
   (e.g. #43a047 reaching 3.96:1 against the #10381b modal surface; an earlier
-  revision of this line said 3.47:1). **Measure against the surface the
+  revision of this line said 3.47:1). Usually that color is the border, and
+  then the border is what has to clear 3:1. It is not always: the checked
+  sort-order chip documented below pairs a #34c754 fill with a deliberately
+  dark #08200d border, and the fill carries the boundary at 3.18:1 against
+  the felt while that border sits at 2.43:1 against the same felt.
+  So measure the color that actually separates the control from its
+  surroundings rather than the `border-color` declaration by reflex — an
+  earlier revision of this line demanded 3:1 from every border against both
+  its fill and the surface, which condemned a chip this same file documents
+  as correct. **Measure against the surface the
   control actually renders on, not the one its stylesheet neighbors use** —
   #6c8f74 passes at 3.63:1 on that modal surface and fails at 1.96:1 on the
   #1f6536 felt and at 2.86:1 on the chart's #22482e detail panel. #793 cleared
@@ -495,6 +504,6 @@ once you are already editing layout or interaction code.
   child of a panel that is itself capped in `vh` is the shape to watch for,
   since the two are measured against the same viewport but not against each
   other. A capped region inside the flow is a different thing and is fine:
-  the trend dialog's `.table-wrapper` keeps `max-height: 220px; overflow:
-auto` deliberately, because it cannot chain the whole panel the way a
-  second full-height dialog scroll container does.
+  the trend dialog's `.table-wrapper` keeps its own `overflow: auto` under a
+  220px `max-height` deliberately, because it cannot chain the whole panel
+  the way a second full-height dialog scroll container does.
