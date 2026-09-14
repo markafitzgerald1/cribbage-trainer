@@ -26,10 +26,18 @@ const MISTAKE_HAND = "5H,6H,7H,8H,9H,10H";
  * Testing Library's own async timeout is one second and jest's `testTimeout`
  * does not govern it, so every wait for the lazily loaded analysis needs its
  * own contention margin or it fails before the raised jest budget can help.
- * Kept well under that budget so a genuinely missing table reports itself as
- * one rather than as a test timeout.
+ *
+ * This must stay strictly and generously below that budget, because a wait
+ * that expires says "unable to find element" while a test that runs out of
+ * budget says only that it timed out — and a test here can spend this wait
+ * twice, so a legitimate slow first wait plus a fully expired second one has
+ * to still land inside the budget. 8000 against 15000 does: under the
+ * starvation rig that reproduces #804 the worst analysis wait measured
+ * 3825ms and the worst test 10818ms, so the wait keeps a 2.1x margin while
+ * the budget is what binds first — which is the ordering that matters, since
+ * a wait that bound first would become the next flake.
  */
-const waitForAnalysis = { timeout: 10000 };
+const waitForAnalysis = { timeout: 8000 };
 
 const seedMistakeHand = () => {
   clearDiscardTally();
