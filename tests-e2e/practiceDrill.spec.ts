@@ -225,6 +225,25 @@ test.describe("practice drill", () => {
    * group is inside the viewport, and say nothing about how many rows that
    * takes.
    */
+  /*
+   * Only for groups whose wrapping would be a regression. Loss severity wraps
+   * on purpose, so it uses the visibility helper alone; Sort by is held on one
+   * row by the portrait sizing caps, and a wrap there means those caps have
+   * slipped. Horizontal containment cannot see that, since wrapped chips are
+   * still fully inside their group.
+   */
+  const expectChipsShareARow = async (group: Locator) => {
+    const tops = await Promise.all(
+      (await group.locator("label").all()).map(
+        async (chip) => (await boxOf(chip)).top,
+      ),
+    );
+
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(
+      CHIP_ROW_TOLERANCE_PX,
+    );
+  };
+
   const expectChipsFullyVisible = async (
     group: Locator,
     expectedCount: number,
@@ -273,6 +292,7 @@ test.describe("practice drill", () => {
      */
     const sortBy = page.getByRole("group", { name: "Sort by" });
     await expectChipsFullyVisible(sortBy, SORT_BY_CHIP_COUNT);
+    await expectChipsShareARow(sortBy);
   });
 
   test("keeps every mistake-queue loss severity chip fully visible at a large device font", async ({

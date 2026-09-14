@@ -286,9 +286,12 @@ once you are already editing layout or interaction code.
   revision of this line said 3.47:1). **Measure against the surface the
   control actually renders on, not the one its stylesheet neighbors use** —
   #6c8f74 passes at 3.63:1 on that modal surface and fails at 1.96:1 on the
-  #1f6536 felt, and an audit on #793 cleared `PracticeDrillPanel`'s "Exit
-  drill" against the wrong one of those two. One control is knowingly below
-  the floor and is not yet fixed: `ScoredPossibleKeepDiscards`'s
+  #1f6536 felt and at 2.86:1 on the chart's #22482e detail panel. #793 cleared
+  that same color against the wrong surface **twice** — `PracticeDrillPanel`'s
+  "Exit drill" and `DecisionQualityChart`'s `.detail-close` — so a shared
+  border color is a standing invitation to audit the stylesheet rather than
+  the screen. Both now use #a7c7ad, which clears 3:1 on every ground it
+  meets. One control is knowingly below the floor and is not yet fixed: `ScoredPossibleKeepDiscards`'s
   `.retry-button` (#dc3545 fill and border) reaches 1.56:1 against the felt.
   It is an error-path control, it was worse before the felt change (1.13:1
   against the old `green`), and it deserves its own issue — so treat this
@@ -344,11 +347,13 @@ once you are already editing layout or interaction code.
   scarce.** The mistake queue's four Loss-severity options are the case that
   earned the rule — its header (title, action bar, subtitle, summary cards,
   four filter groups) pushed the top mistake off a real phone in landscape, so
-  a wrap there costs a row of content. Note the two halves sit in different
-  media blocks: the landscape block is what tightens that header, while
-  `.severity-group`'s one-row treatment — padding, gaps, non-color marker
-  sizing, and a `min-width: 0` scroll container — is declared only in the
-  portrait (`< 6/5`) block. Landscape still lets `.filter-group` wrap.
+  a wrap there costs a row of content. What that bought in the end is
+  narrower than it sounds: `.severity-group` is declared only in the portrait
+  (`< 6/5`) block, where it takes the modal's full width and tightens padding,
+  gaps and marker sizing so the four chips fit **when they can** — and then
+  wraps when they cannot. It is not held to one row. The `nowrap` +
+  `overflow-x: auto` version that was is gone, because it cropped the last
+  threshold's final digit; landscape has always let `.filter-group` wrap.
   The Decision Quality Trend dialog is the counter-case and ships wrapping on
   purpose: measured on a
   375px viewport, its five Granularity chips take two rows at a 16px root font

@@ -197,9 +197,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Lighter than the #6c8f74 the modals use for this role: this button sits on
+ * the detail panel's #22482e, not the #10381b dialog surface, and #6c8f74
+ * reaches only 2.86:1 there. A transparent fill makes the border the whole
+ * boundary, so it has to clear 3:1 against the panel itself.
+ */
 .detail-close {
   background: transparent;
-  border: 1px solid #6c8f74;
+  border: 1px solid #a7c7ad;
   border-radius: 6px;
   color: inherit;
   cursor: pointer;
@@ -212,7 +218,7 @@
 
 .detail-close:hover,
 .detail-close:focus-visible {
-  border-color: #a7c7ad;
+  border-color: #def8e2;
   outline: none;
 }
 
