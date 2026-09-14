@@ -270,10 +270,10 @@ describe("usePracticeDrill", () => {
   /*
    * Guards the seed contract from AGENTS.md's URL analysis state section:
    * starting a specific drill permutes suits from the item's own handKey and
-   * attempts, never from the shared generator, so it must never advance the
-   * stream a later seeded deal would draw from — while the sampler that
-   * picks the *next* hand for Draw another and auto-draw legitimately still
-   * does.
+   * this session's view count, never from the shared generator, so it must
+   * never advance the stream a later seeded deal would draw from — while
+   * the sampler that picks the *next* hand for Draw another and auto-draw
+   * legitimately still does.
    */
   describe("the shared generator stream contract", () => {
     it("never draws when starting a specific drill", () => {

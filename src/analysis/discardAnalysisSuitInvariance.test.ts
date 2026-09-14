@@ -2,6 +2,7 @@ import { type Card, SUITS, Suit, parseHand } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
 import type { ScoredKeepDiscard } from "./analysis";
+import { maxExpectedNetPoints } from "./discardQuality";
 import { permuteCardSuits } from "../game/suitPermutation";
 import { scoreDeal } from "./analysis.test.common";
 
@@ -174,6 +175,33 @@ function byDiscardRank<Projected>(
   ].sort(([firstKey], [secondKey]) => firstKey.localeCompare(secondKey));
 }
 
+/*
+ * The rank keys of whichever discard(s) tie for the top expectedNetPoints —
+ * not just the array's own first element, which `compareByExpectedScoreDescending`
+ * breaks ties in by the kept cards' suit order. A relabeling can reorder
+ * genuinely-tied candidates against each other without changing which
+ * candidates are tied for best, so comparing this set is what "the app's
+ * top recommendation is suit-invariant" actually means; requiring the
+ * array's first element to match by identity would fail on a tie a
+ * relabeling is free to reorder, even though every candidate's own numbers
+ * (verified above) are already unchanged.
+ */
+const topDiscardRankKeys = (
+  scoredKeepDiscards: readonly ScoredKeepDiscard<Card>[],
+): readonly string[] => {
+  const topScore = maxExpectedNetPoints(scoredKeepDiscards);
+  return [
+    ...new Set(
+      scoredKeepDiscards
+        .filter(
+          (scoredKeepDiscard) =>
+            scoredKeepDiscard.expectedNetPoints === topScore,
+        )
+        .map((scoredKeepDiscard) => discardRankKey(scoredKeepDiscard.discard)),
+    ),
+  ].sort();
+};
+
 describe("discard analysis under a global suit permutation", () => {
   it.each([
     {
@@ -205,8 +233,8 @@ describe("discard analysis under a global suit permutation", () => {
         suitSensitiveFieldsMappedThrough(scoredKeepDiscard, relabelSuit),
       ),
     );
-    expect(discardRankKey(permutedResults[0]!.discard)).toBe(
-      discardRankKey(originalResults[0]!.discard),
+    expect(topDiscardRankKeys(permutedResults)).toStrictEqual(
+      topDiscardRankKeys(originalResults),
     );
   });
 });

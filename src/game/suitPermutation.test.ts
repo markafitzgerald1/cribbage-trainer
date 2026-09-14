@@ -127,10 +127,11 @@ describe("suitPermutationForView", () => {
    * hand looking exactly like it did last time — the check needs a
    * per-view reference, not one fixed to identity. This is also the
    * tightest case for satisfiability: only 18 of the 23 non-identity
-   * permutations move Hearts at all, and only a third of those avoid
-   * whatever suit the previous view already sent Hearts to (see
-   * suitPermutation.ts's own comment on this bound), so a single-suited
-   * hand is what would surface a candidate pool run dry.
+   * permutations move Hearts at all, split evenly three ways by which of
+   * the other three suits they send Hearts to, so two thirds of those 18
+   * avoid whichever one suit the previous view already sent Hearts to (see
+   * suitPermutation.ts's own comment on this bound) — a single-suited hand
+   * is what would surface a candidate pool run dry, not a generous one.
    */
   it("never repeats a single-suited hand's own suit target between consecutive views", () => {
     const heartsTargets = heartsTargetsAcrossViews(IDENTITY_CHECK_SAMPLE_SIZE);

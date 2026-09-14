@@ -94,16 +94,38 @@ const candidatesRelabeling = (
  * hand itself, not only its immediate predecessor, so a longer sequence can
  * never drift back onto the literal recorded mistake and make the "suits
  * reshuffled" panel copy false again several views in.
+ *
+ * Memoized per handKey, holding only the single most recently computed
+ * view: `usePracticeDrill`, the only caller, both re-requests the SAME
+ * viewIndex on every render while a view is on screen and, when it does
+ * advance, always asks for exactly the next consecutive integer, never a
+ * skip or a step backward. Either of those is answered in one step from
+ * the cached entry; only a fresh handKey, or a caller outside that pattern,
+ * falls back to replaying the walk from view 0. Without this, a heavily
+ * redrilled mistake's every render would redo that whole walk again, since
+ * `viewIndex` only grows across a session and nothing else bounds it.
  */
+const lastViewByHandKey = new Map<
+  string,
+  { readonly permutation: readonly Suit[]; readonly viewIndex: number }
+>();
+
 export const suitPermutationForView = (
   cards: readonly Card[],
   handKey: string,
   viewIndex: number,
 ): readonly Suit[] => {
+  const cached = lastViewByHandKey.get(handKey) ?? null;
+  if (cached && cached.viewIndex === viewIndex) {
+    return cached.permutation;
+  }
+  const resumedFrom =
+    cached && cached.viewIndex === viewIndex - 1 ? cached : null;
   const usedSuits = new Set(cards.map((card) => card.suit));
-  let previous: readonly Suit[] = SUITS;
-  let current: readonly Suit[] = SUITS;
-  for (let step = 0; step <= viewIndex; step += 1) {
+  let previous: readonly Suit[] = resumedFrom ? resumedFrom.permutation : SUITS;
+  let current: readonly Suit[] = previous;
+  const startStep = resumedFrom ? viewIndex : 0;
+  for (let step = startStep; step <= viewIndex; step += 1) {
     const candidates = candidatesRelabeling(usedSuits, previous);
     const hash = hashString(`${handKey}#${step}`);
     const index = hash % candidates.length;
@@ -123,6 +145,7 @@ export const suitPermutationForView = (
     current = candidates.at(index) as readonly Suit[];
     previous = current;
   }
+  lastViewByHandKey.set(handKey, { permutation: current, viewIndex });
   return current;
 };
 
