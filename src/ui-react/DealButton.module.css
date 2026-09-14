@@ -56,8 +56,14 @@
   }
 }
 
+/*
+ * A coarse pointer drops the focus ring, which is right for a tap but leaves
+ * a keyboard user on a touch device with no focus indicator at all -- the
+ * border is the resting one. Swap the border instead of removing everything.
+ */
 @media (hover: none) and (pointer: coarse) {
   .deal-button:focus {
+    border-color: var(--hover-border-color);
     box-shadow: none;
   }
 }

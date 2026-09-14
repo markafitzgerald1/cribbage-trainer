@@ -8,6 +8,16 @@
   gap: 0.9rem;
   max-height: 85vh;
   overflow-y: auto;
+
+  /*
+   * Positioned because it is also the scroll container. The filter chips hide
+   * their radios with `position: absolute`, and a static scroll container
+   * leaves those radios anchored to `Modal`'s `.body` instead: scrolling this
+   * dialog moved each label while its radio stayed put, drifting by exactly
+   * the scroll distance, until an invisible radio sat over the content below
+   * and could intercept its clicks.
+   */
+  position: relative;
   padding-right: 0.25rem;
   width: min(56rem, 100%);
 }
