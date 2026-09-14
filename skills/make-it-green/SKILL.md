@@ -74,14 +74,15 @@ green build status.
   a dedicated `npm test` on a many-core CI or Docker machine.
 - **Re-measure the budget on the branch that changes the specs, not the one
   that found the problem.** The 5855/5237/5155ms figures above are the
-  pre-fix suite; #804's own fix made `TrainerPracticeDrill` wait for the
-  pre-drill analysis, which added work to it. Eleven further 72-hog runs on
-  the fixed branch put per-run worst tests at 6676, 6749, 6996, 7282, 7507,
-  7572, 7795, 8375, 8588, 8839 and 10818ms — so the real margin at 15000 is
-  1.39x, not the 3x the pre-fix numbers implied, and a budget of 10000 would
-  have failed one of those eleven runs outright. Tightening a timeout is
-  worth doing, but a number taken from a measurement of different code is
-  not evidence about the code being shipped, and one run is not a margin.
+  pre-fix suite; PR #810, which fixed #804, made `TrainerPracticeDrill` wait
+  for the pre-drill analysis, and that added work to it. Eleven further
+  72-hog runs on that branch put per-run worst tests at 6676, 6749, 6996,
+  7282, 7507, 7572, 7795, 8375, 8588, 8839 and 10818ms — so the real margin
+  at 15000 is 1.39x, not the 3x the pre-fix numbers implied, and a budget of
+  10000 would have failed one of those eleven runs outright. Tightening a
+  timeout is worth doing, but a number taken from a measurement of different
+  code is not evidence about the code being shipped, and one run is not a
+  margin.
 - Before the slow Docker run, iterate with `npm run verify:fast` — the
   `npm install`-only checks, concurrently, in about 20 seconds. It is also
   the pre-commit hook, but do not treat a landed commit as proof it ran:
