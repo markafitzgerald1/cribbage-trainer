@@ -66,16 +66,26 @@
 }
 
 /*
- * The mini keep/discard labels are bare rank+suit glyphs (#222 / #c41e3a),
- * which all but vanish on the panel's green. A near-white pill puts them on
- * the same ground a real card gives them.
+ * The mini keep/discard labels are bare rank+suit glyphs, which all but
+ * vanish on the panel's green, so they need a card-like ground.
+ */
+
+/*
+ * A muted card tone rather than near-white: at #f4f8f4 this pill was the
+ * brightest thing left on a phone at night and washed out the glyphs sitting
+ * on it (reported in #793's hardware testing). The bold weight and the darker
+ * red matter as much as the tone -- the card font's rank+suit runs are thin
+ * at this size, which is what the brightness was drowning.
  */
 .discard-cards {
+  --card-red-suit-color: #8c1228;
+
   align-items: center;
-  background-color: #f4f8f4;
+  background-color: #dfe8e1;
   border-radius: 4px;
   color: #143b18;
   display: inline-flex;
+  font-weight: 700;
   gap: 0.25rem;
   padding: 0.1rem 0.3rem;
 }

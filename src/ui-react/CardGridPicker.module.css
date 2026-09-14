@@ -1,11 +1,18 @@
 @import url("./vars.css");
 
+/*
+ * An explicit width rather than only flexible columns, so the modal panel
+ * (which shrink-wraps) has something to wrap to. With `1fr` columns alone the
+ * panel collapsed to the grid's min-content and the tiles shrank to 68px.
+ */
 .grid {
   display: grid;
   grid-auto-flow: column;
   grid-template-columns: repeat(4, minmax(4.25rem, 1fr));
   grid-template-rows: repeat(13, minmax(3rem, auto));
   gap: 0.35rem;
+  max-width: 100%;
+  width: 46rem;
 }
 
 .card {
@@ -63,6 +70,7 @@
 @media (aspect-ratio < 6 / 5) {
   .grid {
     grid-template-columns: repeat(4, minmax(3.75rem, 1fr));
+    width: 42rem;
   }
 
   .card {

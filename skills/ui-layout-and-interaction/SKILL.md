@@ -421,3 +421,31 @@ once you are already editing layout or interaction code.
   is 325px, `scrollWidth` 498px, and the last chip scrolls into reach. When a
   row is meant to absorb its own overflow, assert the container's own box
   against the viewport rather than trusting the declaration.
+- **A modal's close button must not live inside the box that scrolls, and
+  moving the scroll off that box detaches every absolutely positioned thing
+  inside it.** `Modal`'s `.close` was `position: absolute` against `.content`,
+  which was also the `overflow-y: auto` scroll container, so scrolling the
+  card picker carried the only visible way out of the dialog off the top of
+  the screen — confirmed on a real phone in #793, after emulated measurements
+  had already shown the close button reaching y = -279px at a 16px root font
+  and -1169px at 28px. The fix is a `.body` wrapper that scrolls while
+  `.content` stays put, and it has two consequences worth knowing before
+  repeating it. First, the scrolling element must carry `position: relative`: the
+  dialogs hide their radio inputs with `position: absolute`, and once
+  `.content` stopped scrolling those inputs stayed anchored to it — after a
+  300px scroll the Pone radio sat at y = 118.9 while its own label was at
+  -184.1, hovering over the card grid and eating clicks meant for the tiles.
+  Second, the scrolling element must have **no top padding**: a sticky child
+  sticks to the content-box edge, so top padding becomes a strip of content
+  showing above the stuck bar — 22px of card picker, also reported from the
+  phone. Put that spacing on its children, where it scrolls away
+  with them.
+- **A scrolling strip hides content more thoroughly than a wrapped row does.**
+  The mistake queue's Loss-severity chips were kept on one line with
+  `flex-wrap: nowrap` plus `overflow-x: auto`, which satisfied a one-row guard
+  while cropping "Low < 0.31" to "Low < 0.3" — the threshold's last digit sat
+  behind a scroll affordance most people never notice. Wrapping costs a row of
+  vertical space; cropping costs the number. Prefer the wrap, and write guards
+  that assert each chip is **whole inside its group** rather than that the
+  chips share a row, because the row assertion is what the cropping mechanism
+  was invented to satisfy.

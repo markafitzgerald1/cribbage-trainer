@@ -217,49 +217,20 @@ test.describe("practice drill", () => {
   };
 
   /*
-   * Shared y coordinates are identical whether the row fits the screen or
-   * runs off the side, so they cannot catch a width regression on their own.
-   * Two more checks do, and each catches a different half of the mechanism:
-   * the group's own box must fit the viewport (a wider one has pushed the
-   * page sideways instead of absorbing its overflow), and after scrolling
-   * *the group alone* every chip must lie inside it (a group that is not a
-   * scroll container cannot scroll, so its chips stay outside).
-   *
-   * Scroll the group directly rather than calling `scrollIntoViewIfNeeded`
-   * on the chip: that scrolls the document too, so an overflowing row
-   * satisfies it and the check goes inert. Both halves are negative-checked
-   * in Docker — dropping `min-width: 0` fails the first, dropping
-   * `overflow-x` fails the second.
-   *
-   * The geometry alone would still accept `overflow-x: hidden`, which script
-   * can still scroll while touch and keyboard users cannot, so a group that
-   * does overflow must also declare a mode a person can reach.
+   * Every chip must be legible in full, which is a different claim from
+   * fitting on one row -- and the stronger one. An earlier version of this
+   * guard asserted a single row, and the non-wrapping scroll strip that
+   * satisfied it cropped "Low < 0.31" to "Low < 0.3" behind a scroll strip
+   * nobody notices. So: assert each chip is whole inside its group and the
+   * group is inside the viewport, and say nothing about how many rows that
+   * takes.
    */
-  const expectChipsOnOneReachableRow = async (
+  const expectChipsFullyVisible = async (
     group: Locator,
     expectedCount: number,
   ) => {
     const chips = group.locator("label");
     await expect(chips).toHaveCount(expectedCount);
-    const tops = await Promise.all(
-      (await chips.all()).map(async (chip) => (await boxOf(chip)).top),
-    );
-
-    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(
-      CHIP_ROW_TOLERANCE_PX,
-    );
-
-    const overflow = await group.evaluate((element) => {
-      element.scrollLeft = element.scrollWidth;
-      return {
-        mode: getComputedStyle(element).overflowX,
-        overflows: element.scrollWidth > element.clientWidth,
-      };
-    });
-
-    if (overflow.overflows) {
-      expect(["auto", "scroll"]).toContain(overflow.mode);
-    }
 
     const viewportWidth = group.page().viewportSize()?.width ?? Number.NaN;
     const groupBox = await boxOf(group);
@@ -269,14 +240,18 @@ test.describe("practice drill", () => {
       viewportWidth + CHIP_ROW_TOLERANCE_PX,
     );
 
-    const chipBox = await boxOf(chips.last());
+    const chipBoxes = await Promise.all(
+      (await chips.all()).map(async (chip) => boxOf(chip)),
+    );
 
-    expect(chipBox.left).toBeGreaterThanOrEqual(
-      groupBox.left - CHIP_ROW_TOLERANCE_PX,
-    );
-    expect(chipBox.right).toBeLessThanOrEqual(
-      groupBox.right + CHIP_ROW_TOLERANCE_PX,
-    );
+    chipBoxes.forEach((chipBox) => {
+      expect(chipBox.left).toBeGreaterThanOrEqual(
+        groupBox.left - CHIP_ROW_TOLERANCE_PX,
+      );
+      expect(chipBox.right).toBeLessThanOrEqual(
+        groupBox.right + CHIP_ROW_TOLERANCE_PX,
+      );
+    });
   };
 
   const openMistakeQueueAtLargeFont = async (page: Page) => {
@@ -285,7 +260,7 @@ test.describe("practice drill", () => {
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
   };
 
-  test("keeps the mistake-queue sort chips on one row at a large device font", async ({
+  test("keeps every mistake-queue sort chip fully visible at a large device font", async ({
     page,
   }) => {
     await openMistakeQueueAtLargeFont(page);
@@ -297,10 +272,10 @@ test.describe("practice drill", () => {
      * top diverges from the other two by well over 2px.
      */
     const sortBy = page.getByRole("group", { name: "Sort by" });
-    await expectChipsOnOneReachableRow(sortBy, SORT_BY_CHIP_COUNT);
+    await expectChipsFullyVisible(sortBy, SORT_BY_CHIP_COUNT);
   });
 
-  test("keeps the mistake-queue loss severity chips on one row at a large device font", async ({
+  test("keeps every mistake-queue loss severity chip fully visible at a large device font", async ({
     page,
   }) => {
     await page.evaluate(
@@ -318,7 +293,7 @@ test.describe("practice drill", () => {
     await openMistakeQueueAtLargeFont(page);
 
     const lossSeverity = page.getByRole("group", { name: "Loss severity" });
-    await expectChipsOnOneReachableRow(lossSeverity, LOSS_SEVERITY_CHIP_COUNT);
+    await expectChipsFullyVisible(lossSeverity, LOSS_SEVERITY_CHIP_COUNT);
   });
 
   test("shows the first mistake without scrolling in phone landscape", async ({

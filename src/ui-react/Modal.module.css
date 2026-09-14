@@ -24,11 +24,30 @@
     0 2px 6px rgb(0 0 0 / 40%);
   box-sizing: border-box;
   color: var(--text-color);
-  width: min(43em, calc(100% - 2rem));
-  padding: var(--spacing);
+
+  /*
+   * Shrink-wrap the panel rather than always taking the reading width: the
+   * card picker is narrower than 43em, and a fixed panel left 274px of dead
+   * green down the right of the Enter cards dialog on a desktop window.
+   * Children that want the full reading measure still get it via the cap.
+   */
+  width: fit-content;
+  max-width: min(43em, calc(100% - 2rem));
   border-radius: 5px;
   max-height: calc(100% - 2rem);
-  overflow-y: auto;
+
+  /*
+   * The panel itself must not scroll: `.close` is positioned against it, and
+   * when the panel was the scroll container the X scrolled away with the
+   * content -- confirmed on a real phone in #793's manual testing, where the
+   * card picker scrolled the only way out of the dialog off screen. The
+   * scrolling moves to `.body`, which also carries the padding, so a sticky
+   * child sticks flush to the panel edge instead of leaving a strip of
+   * scrolled content showing above it.
+   */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   position: relative;
   font-family: var(--text-font-family);
 
@@ -38,6 +57,35 @@
    * inherits that compaction regardless of where it is mounted.
    */
   font-size: clamp(1.125rem, 2vw, 1.5rem);
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+
+  /*
+   * Must be the containing block for the content it scrolls. The clipped
+   * radio inputs the dialogs hide behind their chips are `position: absolute`,
+   * and while `.content` both scrolled and contained them that was invisible.
+   * Moving the scroll here without this left them anchored to a panel that no
+   * longer moves: after a 300px scroll the Pone radio stayed at y=118.9 while
+   * its label went to -184.1, so it hovered over the card grid and swallowed
+   * clicks meant for the tiles.
+   */
+  position: relative;
+
+  /*
+   * No top padding: a sticky child sticks to the scroll container's content-box
+   * edge, so any top padding here becomes a strip of scrolled content showing
+   * above the stuck bar -- 22px of card picker, reported from a phone. The
+   * spacing moves onto the children instead, where it scrolls away with them.
+   */
+  padding: 0 var(--spacing) var(--spacing);
+}
+
+.body > * {
+  padding-top: var(--spacing);
 }
 
 .close {

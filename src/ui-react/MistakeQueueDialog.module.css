@@ -328,15 +328,25 @@
   color: #bee5eb;
 }
 
+/*
+ * A muted card tone rather than near-white: at #f4f8f4 this pill was the
+ * brightest thing left on a phone at night and washed out the glyphs sitting
+ * on it (reported in #793's hardware testing). The bold weight and the darker
+ * red matter as much as the tone -- the card font's rank+suit runs are thin
+ * at this size, which is what the brightness was drowning.
+ */
 .cards-row {
+  --card-red-suit-color: #8c1228;
+
   align-items: center;
-  background-color: #f4f8f4;
+  background-color: #dfe8e1;
   border-radius: 4px;
   box-sizing: border-box;
   color: #143b18;
   display: inline-flex;
   flex-wrap: wrap;
   font-family: var(--card-font-family);
+  font-weight: 700;
   gap: 0.25rem;
   max-width: 100%;
   padding: 0.1rem 0.35rem;
@@ -524,31 +534,30 @@
 
   /*
    * The Loss-severity group has the widest chips; give it the modal's full
-   * width rather than its shrink-wrapped size so its four options stay on
-   * one row in portrait instead of wrapping the last one. Scoped to a
-   * dedicated class so that when quantileOptions is empty and the fieldset
-   * is omitted, the Crib role group is not accidentally targeted.
+   * width rather than its shrink-wrapped size, so it has the most room to fit
+   * them before wrapping. Scoped to a dedicated class so that when
+   * quantileOptions is empty and the fieldset is omitted, the Crib role group
+   * is not accidentally targeted.
    *
-   * `min-width: 0` is what makes `overflow-x` bite: without it this flex item
-   * takes its max-content width and the group grows past the viewport rather
-   * than scrolling, so a chip too wide to fit becomes unreachable instead of
-   * scrollable. Measured at a 28px root font on a 375px viewport.
+   * It wraps rather than scrolling. A `nowrap` + `overflow-x: auto` row did
+   * keep the four chips on one line, but it cropped the last one -- "Low <
+   * 0.31" lost its final digit, and reading it meant scrolling a strip most
+   * people will not notice is scrollable. A wrapped second row costs vertical
+   * space; a cropped label costs the number itself. Reported from a phone in
+   * #793's hardware testing.
    */
   .severity-group {
     flex-basis: 100%;
-    flex-wrap: nowrap;
     gap: min(0.25rem, 0.8vw);
-    min-width: 0;
-    overflow-x: auto;
     padding: min(0.35rem, 1.2vw);
   }
 
   /*
    * Only the spacing is capped here. An extra font-size cap used to keep the
-   * row narrow by shrinking the type further than the sibling chips, which is
-   * what the scroll container above is for instead. These chips now take the
-   * sibling `.option` size; that size is itself viewport-capped, so it does
-   * not yet follow the device font-size setting either (see #802).
+   * row narrow by shrinking the type further than the sibling chips; these
+   * chips now take the sibling `.option` size and wrap when they must. That
+   * size is itself viewport-capped, so it does not yet follow the device
+   * font-size setting either (see #802).
    */
   .severity-group .option {
     padding: min(0.2rem, 0.8vw) min(0.35rem, 0.9vw);
