@@ -222,6 +222,20 @@
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.
+- **A negative assertion needs the state it denies to have been reachable at
+  that exact moment, or it passes against code that does nothing.**
+  `TrainerPracticeDrill`'s "withholds the analysis until the drill choice is
+  committed" sampled `queryByRole("table")` while the drill board still had
+  no discard selected, so `discardIsComplete` alone kept the table away and
+  the test passed unchanged against a `Trainer` with the whole withholding
+  clause deleted. The load-bearing window is after the two cards are picked
+  and before the commit. The same shape has a second edge here: a lazily
+  loaded analysis that has not resolved yet is also trivially absent, so
+  wait for it to be on screen first — the Jest counterpart of the rule
+  `skills/testing-e2e/SKILL.md` states for Playwright. Give that wait an
+  explicit timeout: Testing Library's `findBy*` defaults to one second and
+  `testTimeout` does not govern it, so a wait added to survive contention
+  fails at one second under exactly the contention it was added for.
 - Never judge a validation run by piping through `| tail` or `| grep`: the
   pipe masks the command's exit code and a "61 passed" line can sit directly
   below a failed-tests list. Redirect to a log file, echo `$?`, and read the
