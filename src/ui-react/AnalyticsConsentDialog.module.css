@@ -115,7 +115,19 @@
   > button:not(.privacy-policy-link):focus-visible {
   background-color: #218838;
   border-color: #8cee8c;
-  outline: none;
+}
+
+/*
+ * A real focus ring, not just the hover palette. These four actions sit next
+ * to each other, and the hover treatment only moves the fill and border by
+ * about 1.28:1 each -- far too little to say which one a keyboard user has
+ * landed on. The outline is the thing that answers that.
+ */
+.analytics-consent-dialog > button:not(.privacy-policy-link):focus-visible,
+.analytics-consent-dialog-fading
+  > button:not(.privacy-policy-link):focus-visible {
+  outline: 2px solid #def8e2;
+  outline-offset: 2px;
 }
 
 .analytics-consent-dialog > button:not(.privacy-policy-link):active,

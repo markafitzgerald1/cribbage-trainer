@@ -34,11 +34,20 @@
   color: var(--card-black-suit-color, #222);
   cursor: pointer;
   display: flex;
-  font-size: 1.35rem;
+
+  /*
+   * Capped like the track it sits in. Capping the column width alone left the
+   * type growing while the tile shrank, so at a 36px root font on a 390px
+   * screen "10♣" measured 80px inside a 65px tile and spilled 7.5px into the
+   * next suit column. The cap still lets the label follow the device font
+   * setting from 24px up to about 35px before it stops, which leaves 6.5px of
+   * room in the narrowest tile.
+   */
+  font-size: min(1.35rem, 8vw);
   font-weight: 700;
   justify-content: center;
-  min-height: 3rem;
-  padding: 0.35rem 0.5rem;
+  min-height: min(3rem, 11vw);
+  padding: min(0.35rem, 1.2vw) min(0.5rem, 1.6vw);
 
   /*
    * Fill the grid track explicitly rather than relying on default stretch
@@ -84,7 +93,7 @@
   }
 
   .card {
-    font-size: 1.5rem;
-    min-height: 3.15rem;
+    font-size: min(1.5rem, 9vw);
+    min-height: min(3.15rem, 12vw);
   }
 }

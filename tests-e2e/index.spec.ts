@@ -13,6 +13,7 @@ import {
   renderThenSelectTwoDiscards,
   waitForAnalysis,
 } from "./renderThenSelectTwoDiscards";
+import { openCardEntryDialog } from "./openCardEntryDialog";
 
 const expectedHtmlLanguage = "en";
 
@@ -331,11 +332,6 @@ test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
   expect(tableBounds.x).toBeGreaterThanOrEqual(rightEdge(handBounds));
 });
 
-const openCardEntryDialog = async (page: Page) => {
-  await page.goto("/?seed=manual-entry");
-  await page.getByRole("button", { name: "Enter cards" }).click();
-};
-
 // Guards against style leaks singling out the grid's first item.
 // A global sibling-margin rule once indented every card except the Ace of
 // Spades, making it look wider than its peers.
@@ -399,100 +395,4 @@ test("manually entered pone hand reaches suited analysis", async ({ page }) => {
   await waitForAnalysis(page);
 
   await expect(getSuitedDiscardRow(page)).toBeVisible();
-});
-
-/*
- * The role chips are rem-sized, so a raised device font-size setting widens
- * their row while the dialog does not follow: without `flex-wrap` the row
- * ends at 420.5px on a 390px screen at a 28px root font, and the page's
- * `overflow-x: hidden` means "Pone" cannot be scrolled into reach. Asserting
- * the computed wrap mode alongside the geometry keeps the diagnosis legible
- * if this regresses. The marker pseudo-element is not the cause -- removing
- * it changes the row width by zero -- so do not "fix" it by shrinking
- * markers.
- */
-test("entered-hand role chips stay on screen at a large device font", async ({
-  page,
-}) => {
-  await openCardEntryDialog(page);
-  await page.setViewportSize(phonePortraitViewport);
-  await page.addStyleTag({ content: "html { font-size: 28px; }" });
-
-  const roleGroup = page.getByRole("group", { name: "Your role" });
-  const lastChip = roleGroup.getByRole("radio").last().locator("..");
-
-  await expect
-    .poll(async () => rightEdge(await requireBoundingBox(lastChip)))
-    .toBeLessThanOrEqual(phonePortraitViewport.width);
-
-  // Names the cause when the geometry above regresses.
-  await expect(roleGroup).toHaveCSS("flex-wrap", "wrap");
-});
-
-/*
- * Guards the structural fix for the close button scrolling away, reported
- * from a real phone: `Modal`'s panel no longer scrolls, an inner element
- * does, so the X stays anchored. Reverting that fails this on both counts.
- * The tile click is the second half of the same fix -- each role radio is
- * `position: absolute`, so a panel that stops scrolling strands them over
- * the card grid, where they intercept clicks meant for the tiles.
- */
-test("the close button and card tiles stay usable once the picker scrolls", async ({
-  page,
-}) => {
-  await openCardEntryDialog(page);
-  await page.setViewportSize(phonePortraitViewport);
-
-  const closeButton = page.getByRole("button", { name: "Close modal" });
-  const beforeScroll = await requireBoundingBox(closeButton);
-
-  /*
-   * Scroll the panel itself as well as everything inside it. Scrolling only
-   * the descendants made this guard inert: in a build where the panel is the
-   * scroll container -- the bug -- nothing moved and every assertion below
-   * passed vacuously.
-   */
-  await closeButton.locator("..").evaluate((panel) => {
-    [panel, ...panel.querySelectorAll("div")].forEach((element) => {
-      element.scrollTop = element.scrollHeight;
-    });
-  });
-
-  const afterScroll = await requireBoundingBox(closeButton);
-
-  expect(afterScroll.y).toBeCloseTo(beforeScroll.y, 0);
-
-  /*
-   * The seeded hand is already full, so the unselected tiles are disabled and
-   * the honest interaction is deselecting one. The count is what proves the
-   * click landed: a stranded radio over the grid swallows it, and the dialog
-   * still reads "6 of 6".
-   */
-  await expect(page.getByText("6 of 6")).toBeVisible();
-
-  await page.getByRole("button", { exact: true, name: "Q♠" }).click();
-
-  await expect(page.getByText("5 of 6")).toBeVisible();
-});
-
-/*
- * The picker's track minimums are rem, so a raised device font-size setting
- * grows the columns while the modal does not follow. Uncapped, a 28px root on
- * a 390px screen forced 105px columns and put the clubs column's right edge
- * at 499px, panning the dialog sideways by 139px to reach a suit the player
- * has to be able to pick. The right-hand column is the one to assert: the
- * scroll guard above only ever touches the first.
- */
-test("every suit column stays on screen at a large device font", async ({
-  page,
-}) => {
-  await openCardEntryDialog(page);
-  await page.setViewportSize(phonePortraitViewport);
-  await page.addStyleTag({ content: "html { font-size: 28px; }" });
-
-  const clubs = page.getByRole("button", { exact: true, name: "A♣" });
-
-  await expect
-    .poll(async () => rightEdge(await requireBoundingBox(clubs)))
-    .toBeLessThanOrEqual(phonePortraitViewport.width);
 });
