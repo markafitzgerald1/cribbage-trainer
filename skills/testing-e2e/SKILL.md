@@ -209,20 +209,22 @@ baselines so CI agrees with what was generated locally.
     see your harness's own environment notes (for Claude Code on the web,
     `CLAUDE.md`'s Cloud sessions section) for numbers measured on a specific
     host, since they do not transfer to a different one.
-- **`scrollIntoViewIfNeeded` scrolls the document too, so it cannot be the
-  basis of a "this row still fits" guard.** A chip that has pushed its group
-  past the edge of the screen is still brought into view by scrolling the page
-  sideways, so the assertion that follows passes and the guard is inert. This
-  was caught only by negative-checking: the first version of
-  `expectChipsOnOneReachableRow` asserted the chip's box against the group's
-  after `scrollIntoViewIfNeeded`, and a build with the overflow bug deliberately
-  reintroduced still passed in all five projects. Scroll the container itself
-  (`group.evaluate((el) => { el.scrollLeft = el.scrollWidth; })`) and assert
-  two things against it: the container's own box against
-  `page.viewportSize()`, and the chip's box against the container's. The same
-  sabotage then fails at 548px against the 390px `phonePortraitViewport` plus
-  the 2px row tolerance. Both halves are needed and each catches a different
-  break — dropping `min-width: 0` widens the container past the viewport,
-  while dropping `overflow-x` leaves the container inside it with the chips
-  painting outside. The wider rule: when a guard is meant to catch an
-  overflow, assert the box that overflowed, not the element you scrolled to.
+- **A guard that scrolls must scroll the thing the bug moves, or it proves
+  nothing.** Two versions of the same guard went inert on #793 in the same
+  way. Asserting a chip's box after `scrollIntoViewIfNeeded` passed against a
+  deliberately broken build in all five projects, because that call scrolls
+  the document too, so an overflowing row satisfies it. Then a modal guard
+  that scrolled only the panel's descendants passed against a build where the
+  panel itself was the scroll container — the exact bug it existed to catch —
+  because nothing moved. Both were caught only by negative-checking, and both
+  were fixed by scrolling the element under suspicion explicitly: the row's
+  own container, or `[panel, ...panel.querySelectorAll("div")]`. The sabotage
+  then fails loudly, the modal one reporting the close button at y = -194
+  where it should sit at 33. The wider rule: assert the box that moved, and
+  make sure your scroll step could actually move it.
+- `expectChipsFullyVisible` in `practiceDrill.spec.ts` is the shape to copy
+  for chip rows: it asserts each chip is whole inside its group and the group
+  inside the viewport, and says nothing about how many rows that takes. An
+  earlier version asserted a single row, which a `nowrap` + `overflow-x: auto`
+  strip satisfied while cropping a label — the row assertion was what the
+  cropping mechanism existed to satisfy.

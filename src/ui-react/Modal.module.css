@@ -12,6 +12,17 @@
 
 :root {
   --spacing: 20px;
+
+  /*
+   * What a sticky action bar must leave clear of `.close`, in px rather than
+   * rem on purpose. The button does not scale with the device font setting --
+   * its `font-size: medium` is 16px and its `right` inset is 15px whatever the
+   * root is -- so it measures a constant 26.7px wide and needs 43.7px of
+   * corner at every root font. The 3.5rem this replaces reserved 56px at the
+   * default and 126px at a 36px root, taking width from the action row exactly
+   * where a phone has least to spare.
+   */
+  --close-clearance: 56px;
   --extra-spacing: 80px;
   --total-spacing: calc(var(--spacing) + var(--extra-spacing));
 }

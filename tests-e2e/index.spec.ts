@@ -428,3 +428,49 @@ test("entered-hand role chips stay on screen at a large device font", async ({
   // Names the cause when the geometry above regresses.
   await expect(roleGroup).toHaveCSS("flex-wrap", "wrap");
 });
+
+/*
+ * Guards the structural fix for the close button scrolling away, reported
+ * from a real phone: `Modal`'s panel no longer scrolls, an inner element
+ * does, so the X stays anchored. Reverting that fails this on both counts.
+ * The tile click is the second half of the same fix -- each role radio is
+ * `position: absolute`, so a panel that stops scrolling strands them over
+ * the card grid, where they intercept clicks meant for the tiles.
+ */
+test("the close button and card tiles stay usable once the picker scrolls", async ({
+  page,
+}) => {
+  await openCardEntryDialog(page);
+  await page.setViewportSize(phonePortraitViewport);
+
+  const closeButton = page.getByRole("button", { name: "Close modal" });
+  const beforeScroll = await requireBoundingBox(closeButton);
+
+  /*
+   * Scroll the panel itself as well as everything inside it. Scrolling only
+   * the descendants made this guard inert: in a build where the panel is the
+   * scroll container -- the bug -- nothing moved and every assertion below
+   * passed vacuously.
+   */
+  await closeButton.locator("..").evaluate((panel) => {
+    [panel, ...panel.querySelectorAll("div")].forEach((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+  });
+
+  const afterScroll = await requireBoundingBox(closeButton);
+
+  expect(afterScroll.y).toBeCloseTo(beforeScroll.y, 0);
+
+  /*
+   * The seeded hand is already full, so the unselected tiles are disabled and
+   * the honest interaction is deselecting one. The count is what proves the
+   * click landed: a stranded radio over the grid swallows it, and the dialog
+   * still reads "6 of 6".
+   */
+  await expect(page.getByText("6 of 6")).toBeVisible();
+
+  await page.getByRole("button", { exact: true, name: "Q♠" }).click();
+
+  await expect(page.getByText("5 of 6")).toBeVisible();
+});

@@ -141,7 +141,7 @@
   gap: 0.75rem;
   justify-content: center;
   margin-inline: calc(-1 * var(--spacing));
-  padding: 0.2rem 3.5rem 0.2rem var(--spacing);
+  padding: 0.2rem var(--close-clearance) 0.2rem var(--spacing);
   position: sticky;
   top: 0;
   z-index: 1;

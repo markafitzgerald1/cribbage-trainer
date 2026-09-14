@@ -299,26 +299,25 @@ once you are already editing layout or interaction code.
   or surfaces that closely match the dimmed backdrop leave dialogs looking
   flat and unanchored. Frame dark modals with a crisp boundary border (e.g. 2px
   solid #43a047) and distinct elevation.
-- Modal action bars that stick to the top (e.g. `position: sticky; top: 0`)
-  reserve clearance for absolute-positioned header controls like the top-right
-  close button (`padding-right: 3.5rem`), and the close button itself carries
-  an elevated stacking context (`z-index: 10`). Only `MistakeQueueDialog`
-  actually reserves the clearance; the shared `Modal` contributes the
-  `z-index: 10` on `.close` and has no sticky action bar of its own, so
-  `padding-right: 3.5rem` appears in exactly one stylesheet.
-  **`EnterCardsDialog`'s `.actions` deliberately does not, and that is an open
-  question rather than an oversight** — do not
-  "fix" it without reading #793's open-question section first. Two
-  measurements are why: `Modal`'s `.close` is `position: absolute` inside
-  `.content`, which is the `overflow-y: auto` scroll container, so on desktop it
-  scrolls out of the viewport entirely (top edge at y = -279px at a 16px root
-  font, -1169px at 28px) and can never be underneath a sticky bar; and adding
-  the padding to a `justify-content: center` row pushes its leftmost button
-  from +5.6px to -43.4px, clipping it off the screen at a 28px root font.
-  Both are emulated, and emulated scroll behavior is evidence about desktop
-  only, so nothing was removed from the other two dialogs. What settles it is
-  one observation on a real phone: whether the close button stays in the
-  corner while the content scrolls.
+- Every modal action bar that sticks to the top (`position: sticky; top: 0`)
+  reserves clearance for the absolutely positioned close button, and the
+  button carries `z-index: 10`. Both `MistakeQueueDialog` and
+  `EnterCardsDialog` do this; the shared `Modal` contributes the stacking rule
+  and the clearance token but has no sticky bar of its own. **Reserve it in
+  px, not rem.** `.close` does not scale with the device font setting — its
+  `font-size: medium` is 16px and its `right` inset 15px whatever the root is
+  — so it measures a constant 26.7px wide and needs 43.7px of corner at every
+  root font. The `3.5rem` this replaced reserved 56px at the default and 126px
+  at a 36px root, taking width from the action row exactly where a phone has
+  least to spare. `--close-clearance` in `Modal.module.css` is the single
+  value; a sticky bar pairs it with `flex-wrap: wrap` so a large device font
+  wraps the buttons instead of clipping them.
+
+  This was an open question for most of #793 and is now closed by hardware: on
+  a real phone the close button scrolled away with the picker, so the clearance
+  is load-bearing rather than defensive. See the modal-scroll bullet below for
+  the structural fix and the two traps that came with it.
+
 - Primary action buttons across both the main felt ground and elevated modals
   (such as Deal, Use hand, Start drill, and Practice actions) must maintain
   at least 3:1 non-text boundary contrast against their fill (e.g. #72d572

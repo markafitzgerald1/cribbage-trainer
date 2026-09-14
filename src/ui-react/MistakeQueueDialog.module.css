@@ -38,7 +38,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.25rem 3.5rem 0.25rem 0;
+  padding: 0.25rem var(--close-clearance) 0.25rem 0;
   position: sticky;
   top: 0;
   z-index: 3;
@@ -606,7 +606,7 @@
 
   .action-bar {
     gap: 0.4rem;
-    padding: 0.15rem 3.5rem 0.15rem 0;
+    padding: 0.15rem var(--close-clearance) 0.15rem 0;
   }
 
   .start-drill-button,
