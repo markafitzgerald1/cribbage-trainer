@@ -516,9 +516,12 @@
   }
 
   /*
-   * Tighter than the other chips so the four Loss-severity options
-   * ("All", "High >= x", "Med x-y", "Low < x") sit on one row in portrait
-   * rather than wrapping the last one.
+   * Tighter than the other chips so more of them fit a phone's width before
+   * the row wraps. Fitting is the goal, not a one-row invariant: the group
+   * wraps when it must, and `white-space: nowrap` here keeps each chip's own
+   * label whole rather than breaking "Low < 0.31" across lines. An earlier
+   * revision held the four Loss-severity options to a single row with a
+   * horizontal scroll strip, which cropped that last digit.
    */
   .option {
     font-size: min(0.8rem, 3.2vw);
