@@ -70,9 +70,10 @@ describe("stray drill record sweep", () => {
     },
     {
       /*
-       * The row the over-broad fix reverted during #808 took with it. A drilled mistake's own
-       * key is the identity relabeling of itself, so the exact-key check has
-       * to spare it before the signature check ever sees it.
+       * The row the over-broad fix reverted during #808's review took with
+       * it. A drilled mistake's own key is the identity relabeling of
+       * itself, so the exact-key check has to spare it before the signature
+       * check ever sees it.
        */
       expected: [DRILLED_KEY],
       name: "keeps a practice row carrying the drilled hand's own key",
@@ -133,8 +134,8 @@ const storedTallyOf = (
   practice: readonly PracticeRecord[],
 ) => storedWith({ practice, records, revision: 3, skipped: [], version: 5 });
 
-describe("stray drill rows already in storage", () => {
-  it("are gone the first time the tally is read", () => {
+describe("sweeping a tally already in storage", () => {
+  it("drops the stray rows the first time it is read", () => {
     storeRaw(asJson(storedTallyOf(SWEPT_PAIR, DRILLED_LEDGER)));
 
     expect(
@@ -148,7 +149,7 @@ describe("stray drill rows already in storage", () => {
    * including the manually entered practice row, which shares nothing with
    * the drilled hand but its `isPractice` flag.
    */
-  it("leave a tally that predates them byte-identical", () => {
+  it("leaves a tally that predates the defect byte-identical", () => {
     const untouched = [AUTHENTIC, recordOf(MANUAL_KEY, true, AT + 1)];
     storeRaw(asJson(storedTallyOf(untouched, DRILLED_LEDGER)));
 
