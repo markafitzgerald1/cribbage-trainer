@@ -107,9 +107,15 @@ describe("usePracticeDrill", () => {
    * stored hand repeats mockItemA's own suit by view 6 of this specific
    * sequence, deterministically, not just on average. Committing after
    * every view, including the last, keeps the loop free of a conditional.
+   * The board must follow each loaded hand (`followLoadedHand: true`), or
+   * `drillLive`'s board-match check sees the still-stale prior view on the
+   * very next `start()`, resets the drill mid-render, and every `commit()`
+   * after the first becomes a no-op on an already-inactive drill — still
+   * exercising `suitPermutationForView`'s sequence via `loadedHands`, but
+   * not the hook's live-board path a real repeated drill actually takes.
    */
   it("keeps relabeling a repeatedly-drilled mistake relative to its own last view, not just the stored hand", () => {
-    const harness = freshHarness();
+    const harness = freshHarness({ followLoadedHand: true });
     const repeatedViews = 8;
 
     for (let view = 0; view < repeatedViews; view += 1) {
