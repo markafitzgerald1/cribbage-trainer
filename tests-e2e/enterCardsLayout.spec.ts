@@ -101,18 +101,21 @@ test("every suit column stays on screen at a large device font", async ({
   await page.setViewportSize(phonePortraitViewport);
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
+  /*
+   * One tile from each end of the row: `CARD_GRID_SUIT_ORDER` runs spades
+   * through clubs, so clubs is the rightmost column and spades the
+   * leftmost. Measuring both edges of the same tile proves nothing about
+   * the far column -- a grid clipped on the left keeps the clubs tile
+   * wholly on screen.
+   */
   const clubs = page.getByRole("button", { exact: true, name: "A♣" });
+  const spades = page.getByRole("button", { exact: true, name: "A♠" });
 
   await expect
     .poll(async () => rightEdge(await requireBoundingBox(clubs)))
     .toBeLessThanOrEqual(phonePortraitViewport.width);
-  /*
-   * The left edge is the other half: a grid pushed off screen leftwards
-   * keeps its right edge inside the viewport while the first suit column
-   * is unreachable.
-   */
   await expect
-    .poll(async () => (await requireBoundingBox(clubs)).x)
+    .poll(async () => (await requireBoundingBox(spades)).x)
     .toBeGreaterThanOrEqual(0);
 });
 

@@ -171,6 +171,9 @@
 .primary:focus-visible:not(:disabled) {
   background-color: #218838;
   border-color: #8cee8c;
+}
+
+.primary:focus-visible:not(:disabled) {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
@@ -198,6 +201,9 @@
 .secondary:focus-visible {
   background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #def8e2;
+}
+
+.secondary:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }

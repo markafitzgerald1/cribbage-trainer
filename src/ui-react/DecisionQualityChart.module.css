@@ -219,6 +219,9 @@
 .detail-close:hover,
 .detail-close:focus-visible {
   border-color: #def8e2;
+}
+
+.detail-close:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
@@ -248,6 +251,9 @@
 .decision-detail-practice:focus-visible {
   background-color: #218838;
   border-color: #8cee8c;
+}
+
+.decision-detail-practice:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
