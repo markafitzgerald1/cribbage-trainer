@@ -78,6 +78,16 @@
   color: #def8e2;
 }
 
+/*
+ * The color shift alone is not an indicator here: this control has no border
+ * or fill of its own to move, and the resting text is already legible, so a
+ * keyboard user has nothing to compare against.
+ */
+.privacy-policy-link:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .preference-links {
   white-space: nowrap;
 }

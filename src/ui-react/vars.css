@@ -5,12 +5,15 @@
   --clickable-border-width: thin;
 
   /*
-   * Every control on the dark grounds suppresses the native outline, and the
-   * palette change left behind is not a focus indicator: hover and focus move
+   * For the controls that consume this token, the palette change they used to
+   * rely on is not a focus indicator: hover and focus move
    * the fill and border by about 1.28:1 each, and the 30%-alpha shadow some
    * of them add reaches only 1.52:1 against the felt. This ring is the thing
    * that actually answers "which control am I on" -- 11.62:1 on the #10381b
-   * dialog surface, 6.27:1 on the #1f6536 felt.
+   * dialog surface, 6.27:1 on the #1f6536 felt. Not every control on these
+   * grounds consumes it: `CardGridPicker`, `SortOrderInput` and `HandCard`
+   * carry their own treatments, so do not read this as a repository-wide
+   * invariant.
    */
   --focus-ring: 2px solid #def8e2;
   --focus-ring-offset: 2px;
