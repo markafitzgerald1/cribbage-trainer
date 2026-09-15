@@ -188,6 +188,11 @@ test.describe("mistake queue layout", () => {
     await expect(lossBadge).toBeVisible();
     const box = await lossBadge.boundingBox();
     expect(box).not.toBeNull();
+    /*
+     * A badge entirely above the scrollport also has a bottom under the
+     * viewport height, so the top edge is half of this claim.
+     */
+    expect(box?.y ?? Number.NaN).toBeGreaterThanOrEqual(0);
     expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(shortHeight);
   });
 

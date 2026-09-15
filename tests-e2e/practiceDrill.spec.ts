@@ -26,15 +26,31 @@ test.describe("practice drill", () => {
   test("withholds the analysis until the discard is checked, then shows a verdict", async ({
     page,
   }) => {
+    /*
+     * Render the analysis once on the board hand before drilling. Two things
+     * would otherwise make the absence below trivial and the guard inert: an
+     * incomplete discard hides the table on its own, and the table is lazily
+     * loaded, so it is also missing while its chunk resolves. Showing it
+     * first settles both -- the chunk is loaded and this page has proved it
+     * renders a complete discard -- so afterwards only withholding explains
+     * an empty board. Negative-checked: without this the sabotaged build
+     * passed in four of five projects.
+     */
+    await selectTwoDiscards(page);
+    await waitForAnalysis(page);
+    await expect(page.getByRole("table")).toBeVisible();
+
     await startDrillOnFirstMistake(page);
 
-    await expect(page.getByRole("table")).toBeHidden();
-    await expect(
-      page.getByRole("button", { name: "Check discard" }),
-    ).toBeDisabled();
+    const checkDiscard = page.getByRole("button", { name: "Check discard" });
+    await expect(checkDiscard).toBeDisabled();
 
     await selectTwoDiscards(page);
-    await page.getByRole("button", { name: "Check discard" }).click();
+
+    await expect(checkDiscard).toBeEnabled();
+    await expect(page.getByRole("table")).toBeHidden();
+
+    await checkDiscard.click();
     await waitForAnalysis(page);
 
     await expect(page.getByRole("table")).toBeVisible();

@@ -106,6 +106,14 @@ test("every suit column stays on screen at a large device font", async ({
   await expect
     .poll(async () => rightEdge(await requireBoundingBox(clubs)))
     .toBeLessThanOrEqual(phonePortraitViewport.width);
+  /*
+   * The left edge is the other half: a grid pushed off screen leftwards
+   * keeps its right edge inside the viewport while the first suit column
+   * is unreachable.
+   */
+  await expect
+    .poll(async () => (await requireBoundingBox(clubs)).x)
+    .toBeGreaterThanOrEqual(0);
 });
 
 /*

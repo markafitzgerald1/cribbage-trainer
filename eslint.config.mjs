@@ -227,6 +227,7 @@ export default [
             "rescales",
             "rgb",
             "royale",
+            "scrollport",
             "seedrandom",
             "Serializable",
             "svg",

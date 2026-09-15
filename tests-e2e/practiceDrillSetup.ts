@@ -132,6 +132,11 @@ export const expectActionWithinViewport = async (
   await expect(button).toBeVisible();
   const box = await button.boundingBox();
   expect(box).not.toBeNull();
+  /*
+   * Both edges: `toBeVisible` says rendered, not on screen, and bounding
+   * only the bottom lets an action scrolled clean above the viewport pass.
+   */
+  expect(box?.y ?? Number.NaN).toBeGreaterThanOrEqual(0);
   expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(
     viewportHeight,
   );

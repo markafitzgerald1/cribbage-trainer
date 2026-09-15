@@ -222,6 +222,21 @@ baselines so CI agrees with what was generated locally.
   then fails loudly, the modal one reporting the close button at y = -194
   where it should sit at 33. The wider rule: assert the box that moved, and
   make sure your scroll step could actually move it.
+- **A `toBeHidden` on lazily loaded content is satisfied by the race, not by
+  the code you are testing.** The drill's "withholds the analysis" guard
+  asserted `getByRole("table")` hidden before either discard card was
+  selected, so an incomplete discard hid it and the test passed against a
+  build with the withholding clause deleted. Moving the assertion into the
+  window after both selections was **still** not enough: the analysis is
+  lazily loaded, so it is equally absent while its chunk resolves, and the
+  sabotaged build passed in four of five projects — firefox alone failed,
+  was retried, and reported `1 flaky` with an exit code of 0, which reads as
+  a pass. Render the thing once by a route that is supposed to show it —
+  here, completing a discard on the board hand — before asserting it is
+  absent anywhere else. That loads the chunk and proves on the same page
+  that the content renders, so the later absence has one explanation left.
+  Sabotage until **every** project fails: a single-project failure among
+  passes is the signature of a race, not of a guard.
 - `expectChipsFullyVisible` in `mistakeQueueLayout.spec.ts` is the shape to copy
   for chip rows: it asserts each chip is whole inside its group and the group
   inside the viewport, and says nothing about how many rows that takes. An
