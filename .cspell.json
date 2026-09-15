@@ -64,6 +64,7 @@
     "popstate",
     "radiogroup",
     "reinjecting",
+    "relabelings",
     "rerender",
     "rerenders",
     "rhysd",

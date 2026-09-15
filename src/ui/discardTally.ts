@@ -11,6 +11,7 @@ import {
 } from "./practiceLedger";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 import { isObject } from "./isObject";
+import { withoutStrayDrillRecords } from "./strayDrillRecords";
 export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
 /*
@@ -172,12 +173,23 @@ const readStoredTally = (): StoredTally | null => {
     return emptyTally;
   }
   const { records } = candidate;
+  const practice = Array.isArray(candidate.practice)
+    ? candidate.practice.filter(isStoredPracticeRecord)
+    : [];
   return {
     lifetime: parseLifetime(candidate.lifetime),
-    practice: Array.isArray(candidate.practice)
-      ? candidate.practice.filter(isStoredPracticeRecord)
-      : [],
-    records: Array.isArray(records) ? normalizeStoredRecords(records) : [],
+    practice,
+    /*
+     * Swept on every read rather than once behind a version bump. The sweep
+     * is idempotent, so repeating it costs a Set lookup per practice row and
+     * nothing else, while a bump would rewrite the stored `version` of a
+     * tally that predates the defect and make it unreadable to any older
+     * deploy still in a tab — a steep price for a cleanup.
+     */
+    records: withoutStrayDrillRecords(
+      Array.isArray(records) ? normalizeStoredRecords(records) : [],
+      practice,
+    ),
     // Absent in a tally written before revisions were kept, which simply starts the count.
     revision: typeof candidate.revision === "number" ? candidate.revision : 0,
     skipped: Array.isArray(candidate.skipped)

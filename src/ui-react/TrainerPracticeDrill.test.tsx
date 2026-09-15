@@ -133,6 +133,16 @@ describe("trainer practice drill", () => {
 
     expect(tally.practice).toHaveLength(1);
     expect(tally.lifetime.decisions).toBe(1);
+    /*
+     * The whole of #809 in one line. The board shows a suit-relabeled
+     * stand-in for the drilled mistake, so deriving the record key from the
+     * cards on screen appended a second row under a key naming six cards
+     * nobody was dealt; keying it by the hand being practiced lets
+     * recordDiscardDecision's idempotency absorb the attempt instead.
+     */
+    expect(tally.records.map((record) => record.handKey)).toStrictEqual([
+      `${MISTAKE_HAND}|Dealer`,
+    ]);
   });
 
   it("deals a fresh authentic hand after exiting the drill", async () => {
