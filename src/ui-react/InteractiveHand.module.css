@@ -34,6 +34,9 @@
 .enter-cards:focus {
   background-color: #218838;
   border-color: #8cee8c;
+}
+
+.enter-cards:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }

@@ -195,6 +195,9 @@
 .use-hand:focus {
   background-color: #218838;
   border-color: #8cee8c;
+}
+
+.use-hand:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }
@@ -203,6 +206,9 @@
 .clear:focus {
   background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #34c754;
+}
+
+.clear:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }

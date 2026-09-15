@@ -118,6 +118,9 @@
 .close:focus {
   background: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #a7c7ad;
+}
+
+.close:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
 }

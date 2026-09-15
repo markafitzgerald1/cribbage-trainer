@@ -492,6 +492,22 @@ once you are already editing layout or interaction code.
   near-white tile and has its own visible `:focus-visible` treatment.
   A clipped radio is the other case worth knowing: it cannot show an outline
   itself, so the ring goes on the label it is paired with.
+- **Hang the ring on `:focus-visible`, never bare `:focus`.** A touch browser
+  focuses a button when it is tapped, so a ring on `:focus` fires on every
+  tap — and the hover-and-focus rules these grounds are full of make that
+  easy to do by accident, since swapping one `outline: none` for the ring
+  silently promotes a shared `:hover, :focus` rule into a tap indicator.
+  `DealButton` showed the shape at its sharpest: a
+  `@media (hover: none) and (pointer: coarse)` block existed precisely to
+  drop the ring on touch, cleared `box-shadow`, and could not clear an
+  `outline` that had not existed when it was written, so the comment
+  promising no ring on a tap sat directly above a rule that produced one.
+  `:focus-visible` is what that block was approximating, so the fix retired
+  it: the keyboard user on a touch device now gets the real ring instead of
+  a border swap stood in for it. Four rules here carried the ring on bare
+  `:focus` — Deal, Enter cards, Use hand / Clear, and the modal close — and
+  only one had a comment to contradict, so grep the selectors rather than
+  trusting the prose.
 - **One _dialog-level_ vertical scroll container per modal.** A dialog that
   sets its own `overflow-y: auto` inside `Modal`'s scrolling `.body` chains
   the two: at a

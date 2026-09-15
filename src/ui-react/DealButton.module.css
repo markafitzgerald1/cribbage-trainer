@@ -33,7 +33,7 @@
   border-color: var(--hover-border-color);
 }
 
-.deal-button:focus {
+.deal-button:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
   box-shadow: 0 0 0 2px var(--focus-shadow-color);
@@ -56,17 +56,5 @@
         var(--font-size-landscape) * var(--vertical-padding-multiplier)
       )
       calc(var(--font-size-landscape) * var(--horizontal-padding-multiplier));
-  }
-}
-
-/*
- * A coarse pointer drops the focus ring, which is right for a tap but leaves
- * a keyboard user on a touch device with no focus indicator at all -- the
- * border is the resting one. Swap the border instead of removing everything.
- */
-@media (hover: none) and (pointer: coarse) {
-  .deal-button:focus {
-    border-color: var(--hover-border-color);
-    box-shadow: none;
   }
 }

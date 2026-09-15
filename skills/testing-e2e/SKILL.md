@@ -222,7 +222,7 @@ baselines so CI agrees with what was generated locally.
   then fails loudly, the modal one reporting the close button at y = -194
   where it should sit at 33. The wider rule: assert the box that moved, and
   make sure your scroll step could actually move it.
-- `expectChipsFullyVisible` in `practiceDrill.spec.ts` is the shape to copy
+- `expectChipsFullyVisible` in `mistakeQueueLayout.spec.ts` is the shape to copy
   for chip rows: it asserts each chip is whole inside its group and the group
   inside the viewport, and says nothing about how many rows that takes. An
   earlier version asserted a single row, which a `nowrap` + `overflow-x: auto`
