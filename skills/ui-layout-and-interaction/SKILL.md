@@ -508,6 +508,19 @@ once you are already editing layout or interaction code.
   `:focus` — Deal, Enter cards, Use hand / Clear, and the modal close — and
   only one had a comment to contradict, so grep the selectors rather than
   trusting the prose.
+- **And do not let hover share the ring's rule.** The mirror image: four
+  rules gave `outline: var(--focus-ring)` to a combined
+  `:hover, :focus-visible` selector, so hovering one drill action while
+  tabbing to another ringed both and the focus target stopped being
+  identifiable — the one job the token has. Share the fill and border if
+  you like, since those are reinforcement; the outline goes in a rule of
+  its own. Both reviewers found this independently, and Copilot carried it
+  further: a bare `:focus` leaves the **hover palette** stuck on a tapped
+  button even where the ring is already keyed correctly, so these controls
+  now key their whole focus treatment — palette, shadow, and ring — to
+  `:focus-visible`. Two greps cover the family: any rule whose body has
+  `outline: var(--focus-ring)` and whose selector mentions `:hover`, and
+  any `:focus` not spelled `:focus-visible`.
 - **One _dialog-level_ vertical scroll container per modal.** A dialog that
   sets its own `overflow-y: auto` inside `Modal`'s scrolling `.body` chains
   the two: at a

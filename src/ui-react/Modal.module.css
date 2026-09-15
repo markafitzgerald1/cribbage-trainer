@@ -115,7 +115,7 @@
 }
 
 .close:hover,
-.close:focus {
+.close:focus-visible {
   background: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #a7c7ad;
 }

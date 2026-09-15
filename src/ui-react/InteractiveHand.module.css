@@ -31,18 +31,15 @@
 }
 
 .enter-cards:hover,
-.enter-cards:focus {
+.enter-cards:focus-visible {
   background-color: #218838;
   border-color: #8cee8c;
 }
 
 .enter-cards:focus-visible {
+  box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
   outline: var(--focus-ring);
   outline-offset: var(--focus-ring-offset);
-}
-
-.enter-cards:focus {
-  box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
 }
 
 .enter-cards:active {

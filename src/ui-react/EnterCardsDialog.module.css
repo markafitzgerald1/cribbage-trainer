@@ -192,7 +192,7 @@
 }
 
 .use-hand:hover,
-.use-hand:focus {
+.use-hand:focus-visible {
   background-color: #218838;
   border-color: #8cee8c;
 }
@@ -203,7 +203,7 @@
 }
 
 .clear:hover,
-.clear:focus {
+.clear:focus-visible {
   background-color: color-mix(in srgb, #28a745 20%, transparent);
   border-color: #34c754;
 }
@@ -213,8 +213,8 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.use-hand:focus,
-.clear:focus {
+.use-hand:focus-visible,
+.clear:focus-visible {
   box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
 }
 
