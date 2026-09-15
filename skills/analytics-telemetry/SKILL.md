@@ -84,6 +84,35 @@ be inferred from repository changes.
   (#24/#19/#719) need the same rule against browser storage, since they must
   work with analytics declined: share this logic rather than duplicating it,
   because jscpd runs at 0%.
+- **One screen can be two hands, and the shared reporting path has to carry
+  both.** `useAnalysisReporting` fans one `onAnalysisRendered` out to
+  telemetry and to the local tally, and since #767/#808 a practice drill can
+  put a suit-relabeled stand-in for a stored mistake on the board. So
+  `useDiscardTally` keeps the **board key** — the cards on screen, which is
+  what `reportHandOrigin` filed provenance under and what therefore decides
+  `isPractice` — apart from the **decision key**, derived by inverting that
+  relabeling, which is what the stored record is keyed by. Deriving both from
+  the physical `dealtCards` is #809: every committed drill attempt escaped
+  `recordDiscardDecision`'s idempotency and appended a row naming six cards
+  nobody was dealt. When the board is showing its own cards the two keys are
+  the same string, which is exactly why collapsing them looks harmless.
+- That relabeling travels as a **second argument beside** `RenderedAnalysis`,
+  never as a field on it, and the placement is the point. `RenderedAnalysis`
+  is what `useDiscardTelemetry` consumes on the way to the wire, so keeping a
+  card-derived value off that type makes the card-free payload invariant
+  structural rather than one more thing `reportDiscardScored` has to get
+  right. Anything else the tally alone needs belongs in the same position.
+- **The practice ledger records drilled hands and nothing else**, because
+  `recordPracticeAttempt` has exactly one caller: `usePracticeDrill`. A
+  manually entered or seeded-session hand records an `isPractice: true`
+  decision with no ledger entry, and no mistake-queue entry either, since
+  `buildMistakeQueue` builds from non-practice records. So "a practice row
+  matching no stored mistake" is not a safe test for anything — it selects
+  precisely the rows `discardDecisionRecord.ts` promises are kept and merely
+  excluded from the headline averages. #809 proposed it as the criterion for
+  its cleanup sweep and it would have re-landed the fix reverted during
+  #808's review; the sweep that shipped keys on being a suit relabeling of a
+  ledger entry instead.
 - Telemetry bookkeeping advances even while consent withholds transmission,
   because an unsent exposure still informs the next choice. Each tracked
   exposure therefore records whether it actually reached Google Analytics, and

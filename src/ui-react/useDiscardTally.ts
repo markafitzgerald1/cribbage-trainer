@@ -8,12 +8,31 @@ import type {
   HandReplacementCause,
   RenderedAnalysis,
 } from "./useDiscardTelemetry";
+import { type Suit, serializeHand } from "../game/Card";
+import {
+  invertSuitPermutation,
+  permuteCardSuits,
+} from "../game/suitPermutation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { discardIsComplete } from "../game/discardIsComplete";
-import { serializeHand } from "../game/Card";
 import { toHandKey } from "../ui/handKey";
+
+/*
+ * What the board is showing, when it is not showing its own cards: the
+ * global suit renaming a practice drill applied to a stored hand to put a
+ * relabeled stand-in for it on screen. Callers that are showing the cards
+ * they mean pass null, which is every path but a drill.
+ *
+ * A renaming rather than a canonical key, because the discard is just as
+ * relabeled as the hand: undoing one relabeling recovers both, so a record
+ * written from it names a discard that is actually in the hand it names.
+ * Cribbage has no trump and suits reach scoring only through flushes and his
+ * nobs, both preserved under a global renaming, so nothing derived from the
+ * recovered cards differs from what the stored hand would have derived.
+ */
+export type DisplayedHandRelabeling = readonly Suit[];
 
 interface UseDiscardTallyProps {
   readonly cribRole: CribRole;
@@ -59,7 +78,10 @@ export type ReportHandRestored = (
 ) => void;
 
 export interface DiscardTally {
-  readonly reportAnalysisRendered: (analysis: RenderedAnalysis) => void;
+  readonly reportAnalysisRendered: (
+    analysis: RenderedAnalysis,
+    displayedAs: DisplayedHandRelabeling | null,
+  ) => void;
   readonly reportHandOrigin: ReportHandOrigin;
   readonly reportHandRestored: ReportHandRestored;
   readonly summary: DiscardTallySummary;
@@ -263,12 +285,32 @@ export const useDiscardTally = ({
   );
 
   const reportAnalysisRendered = useCallback(
-    ({ cribRole: scoredRole, quality }: RenderedAnalysis) => {
+    (
+      { cribRole: scoredRole, quality }: RenderedAnalysis,
+      displayedAs: DisplayedHandRelabeling | null,
+    ) => {
       if (quality === null) {
         return;
       }
-      const handKey = toHandKey(dealtCards, scoredRole);
-      const discardKey = serializeHand(dealtCards.filter((card) => !card.kept));
+      /*
+       * Two keys, because a drill puts a relabeled stand-in on the board and
+       * the two questions then have different answers. `boardKey` is the
+       * hand on screen, which is what provenance was filed under when that
+       * hand was loaded. `handKey` below is the hand the decision is
+       * actually about, and a drill's is the stored mistake's own key — so
+       * recordDiscardDecision's idempotency absorbs a re-attempt into the
+       * record of the hand being practiced, instead of appending one row per
+       * attempt under a key naming cards the player never met (#809).
+       */
+      const boardKey = toHandKey(dealtCards, scoredRole);
+      const decidedCards =
+        displayedAs === null
+          ? dealtCards
+          : permuteCardSuits(dealtCards, invertSuitPermutation(displayedAs));
+      const handKey = toHandKey(decidedCards, scoredRole);
+      const discardKey = serializeHand(
+        decidedCards.filter((card) => !card.kept),
+      );
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
@@ -284,15 +326,17 @@ export const useDiscardTally = ({
            * can vouch for.
            */
           /*
-           * Looked up by the same key the record carries. Keying provenance on
-           * cards alone let a hand re-entered under the opposite role mark the
-           * dealt hand as practice, so its authentic decision was recorded and
-           * then left out of every figure shown.
+           * Looked up by the hand on screen, which is the key reportHandOrigin
+           * filed this hand under — for a drill, the relabeled cards it loaded.
+           * Keying provenance on cards alone let a hand re-entered under the
+           * opposite role mark the dealt hand as practice, so its authentic
+           * decision was recorded and then left out of every figure shown; the
+           * role is still in this key, so that stays fixed.
            *
            * An unknown hand counts as practice: it can only be one this
            * session never dealt.
            */
-          isPractice: practiceByHand.current.get(handKey) ?? true,
+          isPractice: practiceByHand.current.get(boardKey) ?? true,
         }),
       );
     },

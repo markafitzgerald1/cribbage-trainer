@@ -419,6 +419,26 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whose `ignorePaths` — not `.gitignore` — sets its sweep). A new word may
   trip one, both, or neither — run each checker and add the word only where
   it is actually flagged.
+  One axis on which they differ is **dialect**, and it is worth knowing
+  because nothing in either config hints at it: on #809's branch cspell's
+  `en` accepted the British `relabelled` and `relabelling` while eslint's
+  dictionary rejected both, so those spellings cleared one gate and failed
+  the other. Not every British spelling splits them — the British form of
+  `practiced` was rejected by both on that same branch, and cspell rejects
+  it here too, which is why this bullet describes it instead of quoting
+  it — so run each checker rather than reasoning from the dialect. Prefer
+  the American spelling this repository already uses over teaching either
+  dictionary a variant.
+- **`@typescript-eslint/no-unnecessary-type-assertion` and `tsc` can
+  disagree about the same cast**, and the rule is the one that is wrong.
+  Under `noUncheckedIndexedAccess`,
+  `renamed.get(card.suit) ?? (SUITS.at(n) as Suit)` fails `lint:tsc` without
+  the assertion and is reported as unnecessary with it, because the rule
+  reads the contextual type of a `??` right operand as one that already
+  admits `undefined`. Lift the asserted expression into a named function
+  with an explicit return type — `const suitAt = (index: number): Suit =>
+SUITS.at(index) as Suit;` — and both gates pass; a file-scoped disable is
+  prohibited here anyway.
 - `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
   at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
   spies (see `index.test.tsx` for the established idiom).

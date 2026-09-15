@@ -167,3 +167,19 @@ export function permuteCardSuits<CardType extends Card>(
     suit: permutation.at(suitIndex(card.suit)) as Suit,
   }));
 }
+
+/*
+ * The relabeling that undoes `permutation`, so a caller holding cards built
+ * by `permuteCardSuits` can recover the ones they were built from. Cribbage
+ * has no trump, so this is only ever a renaming: it recovers the original
+ * cards exactly, and nothing about what the hand is worth moves either way.
+ *
+ * `indexOf` always finds the suit, because every value here is one of the 24
+ * bijections of SUITS, so the cast states what that guarantees rather than
+ * papering over a real chance of undefined (see `itemAt` in mistakeQueue.ts
+ * for the same idiom).
+ */
+export const invertSuitPermutation = (
+  permutation: readonly Suit[],
+): readonly Suit[] =>
+  SUITS.map((suit) => SUITS.at(permutation.indexOf(suit)) as Suit);
