@@ -4,6 +4,7 @@
     "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",
     "!src/game/parseCards.common.ts",
+    "!src/analysis/analysis.test.common.ts",
     "!src/ui/discardQualityTrend.test.common.ts",
     "!src/ui/discardTally.test.common.ts",
     "!src/ui-react/DecisionQualityChart.test.common.tsx",
@@ -16,6 +17,7 @@
     "!src/ui-react/useDiscardTally.test.common.ts",
     "!src/ui-react/useDiscardTelemetry.test.common.ts",
     "!src/ui-react/useDiscardTelemetryConsentTiming.test.common.tsx",
+    "!src/ui-react/usePracticeDrill.test.common.ts",
     "!src/ui-react/*.stories.{ts,tsx}",
     "!src/ui-react/stories.common.ts"
   ],
