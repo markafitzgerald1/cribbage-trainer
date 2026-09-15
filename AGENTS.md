@@ -647,29 +647,23 @@ they bind any PR that makes a claim about a phone or ships a guard.
   rather than parallelism: run intermediate rounds with Codex alone and
   spend Copilot on the head that will actually be merged.
 - **A merge-main push retires the reviews by the letter of that rule, but
-  often not in substance — check before spending a round on it.** With
-  several pull requests open at once, every merge to main pushes every other
-  branch, so treating each such push as retiring both reviewers costs two
-  fresh rounds per open branch per merge. Most of those rounds read nothing
-  the reviewers have not already passed. The test is mechanical rather than a
-  judgement call: diff the last-reviewed head against the new head, and if no
-  changed file is one this branch itself touches **and** the merge resolved no
-  conflict, the earlier rounds still apply and no new one is needed. Say in
-  the pull request which heads were reviewed and why the delta did not need a
-  round, so the next reader can check the reasoning rather than trust it.
-  Worked both ways here on 2026-09-13 and 2026-09-14. #798 merged on rounds
-  that had run one head earlier, because the only delta was #806's
-  documentation arriving verbatim from main. When #810 merged, its changes to
-  `AGENTS.md`, `skills/`, `jest.config.json` and
-  `TrainerPracticeDrill.test.tsx` touched nothing in #793, which is CSS, and
-  nothing in #808, whose practice specs are different files — but #795 also
-  sets `testTimeout` in `jest.config.json`, so that one did need a round.
-- **A conflict resolution is new code, and nothing has reviewed it.** That is
-  the other half of the bullet above and the reason it is phrased as two
-  conditions rather than one. Resolving a conflict means choosing what the
-  merged file says, which no earlier round saw and which the gate cannot
-  judge — a resolution that compiles and passes is exactly what a wrong
-  choice looks like. Review the head that carries it.
+  often not in substance.** With several pull requests open, every merge to
+  main pushes every other branch, so reading the rule strictly costs two
+  fresh rounds per open branch per merge, most of them reading nothing
+  either reviewer has already passed. The test is mechanical: diff the
+  last-reviewed head against the new head, and if no changed file is one
+  this branch touches **and** the merge resolved no conflict, the earlier
+  rounds still apply. State in the pull request which heads were reviewed
+  and why the delta needed no round. The conflict condition is not a
+  detail — resolving one means choosing what the merged file says, which no
+  round has seen and a green gate cannot vouch for. Both halves were
+  exercised here across 2026-09-13 and 2026-09-14: #798 merged on rounds one
+  head old, its only delta being #806's documentation arriving verbatim,
+  while #810's merge left #793 and #808 needing nothing and forced a round
+  on #795, which sets the same `jest.config.json` line. The test is about
+  file overlap, so it does not see a semantic interaction without one — main
+  changing a function your branch calls, in a file your branch never
+  touched. Treat it as sufficient for the common case, not as a proof.
 - **Spend Copilot where a change could leave two places disagreeing**, which
   is not the same as where the code is. The first draft of this bullet said
   documentation-only pull requests do not need Copilot, and the review of
