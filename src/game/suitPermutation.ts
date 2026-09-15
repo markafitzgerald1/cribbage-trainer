@@ -75,6 +75,22 @@ const candidatesRelabeling = (
   );
 
 /*
+ * Memoized per handKey, holding only the single most recently computed
+ * view: `usePracticeDrill`, the only caller, both re-requests the SAME
+ * viewIndex on every render while a view is on screen and, when it does
+ * advance, always asks for exactly the next consecutive integer, never a
+ * skip or a step backward. Either of those is answered in one step from
+ * the cached entry; only a fresh handKey, or a caller outside that pattern,
+ * falls back to replaying the walk from view 0. Without this, a heavily
+ * redrilled mistake's every render would redo that whole walk again, since
+ * `viewIndex` only grows across a session and nothing else bounds it.
+ */
+const lastViewByHandKey = new Map<
+  string,
+  { readonly permutation: readonly Suit[]; readonly viewIndex: number }
+>();
+
+/*
  * One of the non-identity bijections of the four suits, chosen
  * deterministically from the hand's identity and how many times THIS
  * SESSION has viewed it — never from the shared `generateRandomNumber`
@@ -94,22 +110,7 @@ const candidatesRelabeling = (
  * hand itself, not only its immediate predecessor, so a longer sequence can
  * never drift back onto the literal recorded mistake and make the "suits
  * reshuffled" panel copy false again several views in.
- *
- * Memoized per handKey, holding only the single most recently computed
- * view: `usePracticeDrill`, the only caller, both re-requests the SAME
- * viewIndex on every render while a view is on screen and, when it does
- * advance, always asks for exactly the next consecutive integer, never a
- * skip or a step backward. Either of those is answered in one step from
- * the cached entry; only a fresh handKey, or a caller outside that pattern,
- * falls back to replaying the walk from view 0. Without this, a heavily
- * redrilled mistake's every render would redo that whole walk again, since
- * `viewIndex` only grows across a session and nothing else bounds it.
  */
-const lastViewByHandKey = new Map<
-  string,
-  { readonly permutation: readonly Suit[]; readonly viewIndex: number }
->();
-
 export const suitPermutationForView = (
   cards: readonly Card[],
   handKey: string,

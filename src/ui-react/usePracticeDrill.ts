@@ -78,16 +78,10 @@ interface UsePracticeDrillArgs {
 }
 
 /*
- * Deriving the permutation from the item's own cards, stored handKey, and
- * which VIEW this is — never from `generateRandomNumber` — keeps it a pure
- * function of the mistake being drilled and how many times it has been
- * loaded: loading never shifts a later seeded deal (see AGENTS.md's URL
- * analysis state section on that shared stream). Deliberately not
- * `item.attempts`: that only advances on a committed Check discard, so
- * exiting a drill and re-entering it without committing kept landing on the
- * same attempt count and therefore the exact same relabeling — recall, the
- * one thing this feature exists to defeat. `viewIndex` instead comes from
- * `viewCounts` below, a count of views rather than commits.
+ * `suitPermutationForView`'s own doc comment covers why this derives from a
+ * view count rather than `item.attempts` or the shared `generateRandomNumber`
+ * stream; `viewIndex` here comes from `viewCounts` below, a count of views
+ * rather than commits.
  *
  * `drillLive` and the previous-discard display below recompute the same
  * value from the same arguments rather than caching it: `activeItem` itself
