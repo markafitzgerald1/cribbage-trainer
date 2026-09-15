@@ -27,7 +27,7 @@ const Modal = forwardRef<HTMLDivElement, ModalProps>(
           >
             X
           </button>
-          {children}
+          <div className={classes.body}>{children}</div>
         </div>
       </div>
     );

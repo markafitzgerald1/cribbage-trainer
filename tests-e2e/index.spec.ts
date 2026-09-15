@@ -13,6 +13,7 @@ import {
   renderThenSelectTwoDiscards,
   waitForAnalysis,
 } from "./renderThenSelectTwoDiscards";
+import { openCardEntryDialog } from "./openCardEntryDialog";
 
 const expectedHtmlLanguage = "en";
 
@@ -330,11 +331,6 @@ test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
 
   expect(tableBounds.x).toBeGreaterThanOrEqual(rightEdge(handBounds));
 });
-
-const openCardEntryDialog = async (page: Page) => {
-  await page.goto("/?seed=manual-entry");
-  await page.getByRole("button", { name: "Enter cards" }).click();
-};
 
 // Guards against style leaks singling out the grid's first item.
 // A global sibling-margin rule once indented every card except the Ace of

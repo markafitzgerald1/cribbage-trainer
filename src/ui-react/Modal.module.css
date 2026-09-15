@@ -12,18 +12,53 @@
 
 :root {
   --spacing: 20px;
+
+  /*
+   * What a sticky action bar must leave clear of `.close`, in px rather than
+   * rem on purpose. The button does not scale with the device font setting --
+   * its `font-size: medium` is 16px and its `right` inset is 15px whatever the
+   * root is -- so it measures a constant 26.7px wide and needs 43.7px of
+   * corner at every root font. The 3.5rem this replaces reserved 56px at the
+   * default and 126px at a 36px root, taking width from the action row exactly
+   * where a phone has least to spare.
+   */
+  --close-clearance: 56px;
   --extra-spacing: 80px;
   --total-spacing: calc(var(--spacing) + var(--extra-spacing));
 }
 
 .content {
-  background: color-mix(in srgb, lightgreen 30%, white);
+  background: #10381b;
+  border: 2px solid #43a047;
+  box-shadow:
+    0 8px 24px rgb(0 0 0 / 60%),
+    0 2px 6px rgb(0 0 0 / 40%);
   box-sizing: border-box;
-  width: min(43em, calc(100% - 2rem));
-  padding: var(--spacing);
+  color: var(--text-color);
+
+  /*
+   * Shrink-wrap the panel rather than always taking the reading width: the
+   * card picker is narrower than 43em, and a fixed panel left 274px of dead
+   * green down the right of the Enter cards dialog on a desktop window.
+   * Children that want the full reading measure still get it via the cap.
+   */
+  width: fit-content;
+  max-width: min(43em, calc(100% - 2rem));
   border-radius: 5px;
   max-height: calc(100% - 2rem);
-  overflow-y: auto;
+
+  /*
+   * The panel itself must not scroll: `.close` is positioned against it, and
+   * when the panel was the scroll container the X scrolled away with the
+   * content -- confirmed on a real phone in #793's manual testing, where the
+   * card picker scrolled the only way out of the dialog off screen. The
+   * scrolling moves to `.body`, which also carries the padding, so a sticky
+   * child sticks flush to the panel edge instead of leaving a strip of
+   * scrolled content showing above it.
+   */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   position: relative;
   font-family: var(--text-font-family);
 
@@ -35,12 +70,41 @@
   font-size: clamp(1.125rem, 2vw, 1.5rem);
 }
 
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+
+  /*
+   * Must be the containing block for the content it scrolls. The clipped
+   * radio inputs the dialogs hide behind their chips are `position: absolute`,
+   * and while `.content` both scrolled and contained them that was invisible.
+   * Moving the scroll here without this left them anchored to a panel that no
+   * longer moves: after a 300px scroll the Pone radio stayed at y=118.9 while
+   * its label went to -184.1, so it hovered over the card grid and swallowed
+   * clicks meant for the tiles.
+   */
+  position: relative;
+
+  /*
+   * No top padding: a sticky child sticks to the scroll container's content-box
+   * edge, so any top padding here becomes a strip of scrolled content showing
+   * above the stuck bar -- 22px of card picker, reported from a phone. Each
+   * child supplies its own top spacing instead, in its own stylesheet: a
+   * shared `.body > *` rule here would tie the result to CSS-module import
+   * order, because it ties on specificity with the dialogs' own rules.
+   */
+  padding: 0 var(--spacing) var(--spacing);
+}
+
 .close {
   position: absolute;
   top: 15px;
   right: 15px;
-  background: color-mix(in srgb, lightgreen 30%, white);
-  border: 1px solid lightgrey;
+  z-index: 10;
+  background: transparent;
+  border: 1px solid #6c8f74;
+  color: var(--text-color);
   font-size: medium;
   cursor: pointer;
   padding: 5px 7px;
@@ -51,8 +115,12 @@
 }
 
 .close:hover,
-.close:focus {
-  background: color-mix(in srgb, lightgreen 80%, white);
-  border-color: grey;
-  outline: none;
+.close:focus-visible {
+  background: color-mix(in srgb, #28a745 20%, transparent);
+  border-color: #a7c7ad;
+}
+
+.close:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }

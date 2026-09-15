@@ -224,7 +224,7 @@ test("Privacy Policy link has a high-contrast color on the consent surface", asy
 
   await expect(
     page.getByRole("button", { ...exactTextMatch, name: "Privacy Policy" }),
-  ).toHaveCSS("color", "rgb(0, 0, 0)");
+  ).toHaveCSS("color", "rgb(184, 229, 190)");
 });
 
 const minPrivacyPolicyFontSizePx = 16;
