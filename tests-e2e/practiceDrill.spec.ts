@@ -358,6 +358,26 @@ test.describe("practice drill", () => {
     await expect(outcome).toBeInViewport();
   });
 
+  /*
+   * Jest/jsdom never evaluates the `@media (aspect-ratio >= 6 / 5)` rule
+   * that hides this note, so a media-query regression could silently put
+   * the extra row back into the height-constrained landscape panel without
+   * any unit test catching it.
+   */
+  test("shows the suit-reshuffled note in portrait, hides it in landscape", async ({
+    page,
+  }) => {
+    await page.setViewportSize(phonePortraitViewport);
+    await startDrillOnFirstMistake(page);
+
+    const suitNote = page.getByText("Suits reshuffled for this drill.");
+    await expect(suitNote).toBeVisible();
+
+    await page.setViewportSize(phoneLandscapeViewport);
+
+    await expect(suitNote).toBeHidden();
+  });
+
   test("the quality trend table can be scrolled to its rightmost column", async ({
     page,
   }) => {

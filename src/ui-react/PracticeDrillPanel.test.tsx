@@ -37,6 +37,12 @@ const renderPanel = (
   );
 
 describe("practiceDrillPanel", () => {
+  it("tells the player suits were reshuffled while choosing", () => {
+    const { getByText } = renderPanel();
+
+    expect(getByText("Suits reshuffled for this drill.")).toBeInTheDocument();
+  });
+
   it("keeps Check discard disabled until two cards are discarded", () => {
     const { getByRole, rerender } = renderPanel();
 

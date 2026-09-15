@@ -49,6 +49,20 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * Full opacity, unlike `.not-recorded`'s dimmed treatment elsewhere: that
+ * text sits on a near-white pill, where dimming still clears WCAG AA, but
+ * this note sits directly on the panel's green background, where the same
+ * dimming on `--text-color` drops contrast to roughly 3.1:1. Italics carry
+ * the "secondary" styling here instead.
+ */
+.suit-note {
+  font-size: 0.8rem;
+  font-style: italic;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .verdict-row {
   align-items: center;
   display: flex;
@@ -207,6 +221,16 @@
   .primary,
   .secondary {
     font-size: min(1rem, 1.65vw);
+  }
+
+  /*
+   * A capped font here would shrink well below a readable size at a large
+   * device font on a narrow phone (see AGENTS.md's rem-floor traps), and
+   * unlike the score text around it this note carries no figure the player
+   * needs — so it drops entirely in landscape rather than shrinking.
+   */
+  .suit-note {
+    display: none;
   }
 
   .discard-cards {
