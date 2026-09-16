@@ -76,14 +76,14 @@ export const WithClassification: Story = {
   },
   play: async ({ canvasElement }) => {
     const badge = within(canvasElement).getByRole("note", {
-      name: "Previous discard driven by Hand loss > Crib gain",
+      name: "Previous discard driven by 1.30 Crib gain does not cover 1.40 Hand loss",
     });
 
     await expect(badge).toBeVisible();
     await expect(badge).toHaveTextContent("Prev: Hand > Crib");
     await expect(badge).toHaveAttribute(
       "title",
-      "Previous discard (0.10 pts lost) driven by Hand loss > Crib gain",
+      "Previous discard (0.10 pts lost) driven by 1.30 Crib gain does not cover 1.40 Hand loss",
     );
   },
 };
