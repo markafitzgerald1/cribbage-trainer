@@ -311,7 +311,7 @@ describe("calculation component", () => {
         netLoss: 0.004,
       },
       expectedTitle:
-        "Chosen discard (< 0.01 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
+        "Chosen discard (less than 0.01 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
       isHighlighted: true,
       name: "sub-optimal loss below 0.005 rendered with less-than precision indicator",
     },

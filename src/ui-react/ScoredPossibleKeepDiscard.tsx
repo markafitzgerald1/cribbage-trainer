@@ -3,7 +3,7 @@ import * as parentClasses from "./ScoredPossibleKeepDiscards.module.css";
 import {
   EXPECTED_POINTS_FRACTION_DIGITS,
   type MistakeClassification,
-  formatNetLoss,
+  formatAccessibleNetLoss,
 } from "../analysis/classifyMistake";
 import { useCallback, useState } from "react";
 import type { Card } from "../game/Card";
@@ -41,7 +41,7 @@ const toAlignedFixed = (points: number): string =>
 
 const getRowTitle = (classification?: MistakeClassification | null): string => {
   if (classification) {
-    const loss = formatNetLoss(classification.netLoss);
+    const loss = formatAccessibleNetLoss(classification.netLoss);
     return `Chosen discard (${loss} pts lost): ${classification.accessibleLabel}`;
   }
   return "Optimal discard";

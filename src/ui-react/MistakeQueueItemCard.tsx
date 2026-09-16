@@ -7,6 +7,7 @@ import {
 } from "../ui/mistakeQueue";
 import {
   type MistakeClassification,
+  formatAccessibleNetLoss,
   formatNetLoss,
 } from "../analysis/classifyMistake";
 import { CribRole } from "../game/expectedCribPoints";
@@ -113,7 +114,7 @@ export function MistakeQueueItemCard({
               aria-label={`Previous discard driven by ${effectiveReason}`}
               className={classes.componentBadge}
               role="note"
-              title={`Previous discard (${formatNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
+              title={`Previous discard (${formatAccessibleNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
             >
               Prev: {effectiveShortReason}
             </span>

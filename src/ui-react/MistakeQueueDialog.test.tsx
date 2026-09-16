@@ -468,6 +468,7 @@ describe("mistake queue dialog", () => {
         .spyOn(cribLoader, "loadTable")
         .mockRejectedValueOnce(new Error("Table error"));
       try {
+        clearClassificationCache();
         cribLoader.setTableSync(null);
         playLoader.setTableSync(null);
         const { findByRole } = renderQueueDialog({

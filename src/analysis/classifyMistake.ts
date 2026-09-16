@@ -52,13 +52,19 @@ export const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const BASE_TEN = 10;
 export const DISPLAY_PRECISION = BASE_TEN ** -EXPECTED_POINTS_FRACTION_DIGITS;
 
-export const formatNetLoss = (netLoss: number): string => {
+const formatLossAmount = (netLoss: number, subCentPrefix: string): string => {
   const rounded = Number(netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
   if (rounded === 0 && netLoss > 0) {
-    return `< ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`;
+    return `${subCentPrefix} ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`;
   }
   return netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
 };
+
+export const formatNetLoss = (netLoss: number): string =>
+  formatLossAmount(netLoss, "<");
+
+export const formatAccessibleNetLoss = (netLoss: number): string =>
+  formatLossAmount(netLoss, "less than");
 
 const ORDERED_COMPONENTS: readonly LossComponent[] = ["hand", "crib", "play"];
 

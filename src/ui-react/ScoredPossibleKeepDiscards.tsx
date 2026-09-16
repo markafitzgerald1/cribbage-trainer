@@ -8,6 +8,7 @@ import {
 import {
   type MistakeClassification,
   classifyScoredMistake,
+  formatAccessibleNetLoss,
   formatNetLoss,
 } from "../analysis/classifyMistake";
 import {
@@ -297,7 +298,7 @@ export function ScoredPossibleKeepDiscards({
     const captionAriaLabel =
       chosenClassification === null
         ? "Optimal discard"
-        : `Sub-optimal: ${formatNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.accessibleLabel}`;
+        : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
         aria-label={captionAriaLabel}
