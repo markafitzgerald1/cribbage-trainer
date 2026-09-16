@@ -1070,17 +1070,24 @@ they bind any PR that makes a claim about a phone or ships a guard.
   more spans in this very file, one of them inside the bullet being added
   about a different lint trap, and each was caught by a reviewer rather than
   by the author or a gate. So check mechanically instead of carefully. A
-  de-indented continuation is the visible symptom, and it starts a line with
-  ordinary text where list content should be indented:
+  de-indented continuation is the visible symptom, and it starts a line at
+  column zero that is neither a heading nor a list marker:
 
   ```bash
-  grep --line-number '^[a-z`]' AGENTS.md
+  grep --line-number '^[^ #-]' AGENTS.md
   ```
 
-  Prose paragraphs at column zero are legitimate and show up too, so read the
-  hits rather than counting them; a hit that is the tail of a `gh`, `npx` or
-  `const` line is the bug. Prefer a fenced block over a long span — a fence
-  cannot be reflowed into this failure at all.
+  The character class matters and was got wrong the first time. A class of
+  only lowercase letters missed a continuation beginning with a capital —
+  which is what the motivating breakage was — so the check reported nothing
+  for the exact defect it existed to find. Verified by reintroducing all
+  three of the spans #814 broke into a copy of this file: the pattern above
+  finds all three, the lowercase one found two. Prose paragraphs at column
+  zero are legitimate and show up too, so read the hits rather than counting
+  them; a hit that is the tail of a shell command or a declaration is the
+  bug. It stays a heuristic rather than a gate, since a continuation starting
+  with a list marker still slips past. Prefer a fenced block over a long
+  span — a fence cannot be reflowed into this failure at all.
 
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.

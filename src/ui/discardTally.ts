@@ -188,8 +188,9 @@ const readStoredTally = (): StoredTally | null => {
      * row's key. Measured at the 10,000-record cap on a desktop Node 24
      * build, 50 practice rows against 50 drilled hands cost 0.25ms per read
      * and an implausible 10,000 practice rows against 200 drilled hands cost
-     * 0.66ms; a phone is slower by a small multiple and still far inside a
-     * frame. Re-measure rather than trust these if the shape changes.
+     * 0.66ms. That is the whole of the evidence: no phone was measured, so
+     * this says nothing about the hardware the app is actually used on.
+     * Re-measure rather than trust these if the shape changes.
      *
      * This is read-time filtering, not a write: every reader above is clean
      * immediately, and storage itself stops holding the row at the next write

@@ -74,10 +74,14 @@ const recencyOf = (record: DiscardDecisionRecord): number =>
   record.recencyAt ?? record.at;
 
 /*
- * When #808 merged, and so the earliest instant any build could have written
- * a stray: before it, drilling a mistake dealt that mistake's own cards again
- * and `recordDiscardDecision`'s idempotency absorbed the re-attempt, so a
- * relabeled practice row written earlier came from something else.
+ * When #808 merged: a conservative bound on the production era, not on the
+ * code. Before the merge, production drilled a mistake by dealing that
+ * mistake's own cards again and `recordDiscardDecision`'s idempotency
+ * absorbed the re-attempt — but PR previews and local checkouts ran the
+ * offending code earlier, and #809's own reproduction came from a live #808
+ * preview, so strays dated before this do exist. They are spared, which is
+ * the safe direction; what this cannot claim is to be the earliest instant
+ * any build could write one.
  *
  * This is a conservative filter, NOT a necessary condition of a stray, and
  * not proof of era. Two separate reasons, both raised in review after
@@ -170,8 +174,13 @@ const drilledHandsBySignature = (
  * entry has since been evicted, and one whose ledger write never landed —
  * the decision row and the practice attempt are separate `localStorage`
  * writes, so a quota failure between them persists the row without the entry
- * that identifies it. Both err toward keeping an invisible row, which is the
- * direction to err in.
+ * that identifies it. Both err toward keeping a row, which is the direction
+ * to err in, but not toward keeping an invisible one: a retained row still
+ * occupies a slot under `MAX_RECORDS`, so it can evict authentic history on
+ * a later write, and `computeDiscardQualityTrend` derives `isAtRecordCap`
+ * from `tally.records.length` without excluding practice rows, which the
+ * trend dialog then shows. Hidden from the averages, the chart points and
+ * the mistake queue is not the same as hidden.
  */
 export const withoutStrayDrillRecords = (
   records: readonly DiscardDecisionRecord[],
