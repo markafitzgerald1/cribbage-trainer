@@ -435,10 +435,14 @@ they bind any PR that makes a claim about a phone or ships a guard.
   `renamed.get(card.suit) ?? (SUITS.at(n) as Suit)` fails `lint:tsc` without
   the assertion and is reported as unnecessary with it, because the rule
   reads the contextual type of a `??` right operand as one that already
-  admits `undefined`. Lift the asserted expression into a named function
-  with an explicit return type — `const suitAt = (index: number): Suit =>
-SUITS.at(index) as Suit;` — and both gates pass; a file-scoped disable is
+  admits `undefined`. Lift the asserted expression into a named function with
+  an explicit return type and both gates pass; a file-scoped disable is
   prohibited here anyway.
+
+  ```ts
+  const suitAt = (index: number): Suit => SUITS.at(index) as Suit;
+  ```
+
 - `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
   at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
   spies (see `index.test.tsx` for the established idiom).

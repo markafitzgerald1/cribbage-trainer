@@ -1,5 +1,8 @@
 import {
-  AT,
+  DRILL_RELABELING_SHIPPED_AT,
+  withoutStrayDrillRecords,
+} from "./strayDrillRecords";
+import {
   asJson,
   storeRaw,
   storedRecords,
@@ -10,7 +13,6 @@ import { readTallyForDisplay, recordSkippedHand } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DiscardDecisionRecord } from "./discardDecisionRecord";
 import type { PracticeRecord } from "./practiceLedger";
-import { withoutStrayDrillRecords } from "./strayDrillRecords";
 
 /*
  * The exact pair #809 captured from a live #808 preview: one committed drill
@@ -24,34 +26,68 @@ const STRAY_KEY = "7D,AC,10H,AS,5S,5D|Pone";
 const OTHER_ROLE_KEY = "7D,AC,10H,AS,5S,5D|Dealer";
 // Typed into "Enter cards" rather than dealt: recorded as practice, and no drill ever touched it.
 const MANUAL_KEY = "2C,3D,4S,6H,8C,9D|Dealer";
+/*
+ * A relabeling of the drilled hand that swaps only diamonds and spades,
+ * leaving hearts and clubs where it found them. `suitPermutationForView`
+ * cannot produce it — every view moves every suit the hand uses — so however
+ * much it looks like a stray, a drill did not write it.
+ */
+const FIXED_SUIT_KEY = "7H,AS,10D,AC,5C,5H|Pone";
+// A third relabeling of the same six ranks, moving every suit of both keys above.
+const THIRD_RELABELING_KEY = "7S,AH,10C,AD,5D,5S|Pone";
+
+/*
+ * Every fixture below is dated after the build that could first write a
+ * stray, derived from the cutoff itself rather than restated, so a change to
+ * the cutoff cannot leave these tests asserting against the wrong era.
+ */
+const DRILLED_AT = DRILL_RELABELING_SHIPPED_AT + 1_000;
 
 const recordOf = (
   handKey: string,
   isPractice: boolean,
-  at = AT,
-): DiscardDecisionRecord => ({
-  at,
-  cribRole: CribRole.Pone,
-  discardKey: "5H,6H",
-  expectedPointsLoss: 1.5,
-  handKey,
-  isOptimal: false,
-  isPractice,
-  recencyAt: at,
-});
+  {
+    at = DRILLED_AT,
+    withRecency = true,
+  }: { at?: number; withRecency?: boolean } = {},
+): DiscardDecisionRecord => {
+  const record = {
+    at,
+    cribRole: CribRole.Pone,
+    discardKey: "5H,6H",
+    expectedPointsLoss: 1.5,
+    handKey,
+    isOptimal: false,
+    isPractice,
+  };
+  // A record written before recencyAt existed simply omits it, which is what a legacy row looks like.
+  return withRecency ? { ...record, recencyAt: at } : record;
+};
+
+/*
+ * Dated later than every record below, which is the order the two writes
+ * actually happen in: recordPracticeAttempt forces its lastAttemptAt past the
+ * decision recency recordDiscardDecision just wrote for the same commit.
+ */
+const LAST_ATTEMPT_AT = DRILLED_AT + 10;
 
 const DRILLED_LEDGER: readonly PracticeRecord[] = [
   {
     attempts: 1,
     consecutiveSuccesses: 0,
     handKey: DRILLED_KEY,
-    lastAttemptAt: AT,
+    lastAttemptAt: LAST_ATTEMPT_AT,
     totalWrongLoss: 1.5,
     wrong: 1,
   },
 ];
 
 const AUTHENTIC = recordOf(DRILLED_KEY, false);
+
+const ledgerEntryFor = (handKey: string): PracticeRecord => ({
+  ...(DRILLED_LEDGER.at(0) as PracticeRecord),
+  handKey,
+});
 const STRAY = recordOf(STRAY_KEY, true);
 const SWEPT_PAIR: readonly DiscardDecisionRecord[] = [AUTHENTIC, STRAY];
 
@@ -85,6 +121,54 @@ describe("stray drill record sweep", () => {
       name: "keeps a manually entered practice row no drill relabeled",
       practice: DRILLED_LEDGER,
       records: [recordOf(MANUAL_KEY, true)],
+    },
+    {
+      expected: [FIXED_SUIT_KEY],
+      name: "keeps a relabeling that leaves one of the hand's suits in place",
+      practice: DRILLED_LEDGER,
+      records: [recordOf(FIXED_SUIT_KEY, true)],
+    },
+    {
+      /*
+       * Written after the hand's last drill, so no drill of it can have
+       * written this row: the practice attempt for a commit always lands
+       * after the decision record that commit wrote.
+       */
+      expected: [STRAY_KEY],
+      name: "keeps a practice row recorded after the hand's last drill",
+      practice: DRILLED_LEDGER,
+      records: [recordOf(STRAY_KEY, true, { at: LAST_ATTEMPT_AT + 1 })],
+    },
+    {
+      expected: [],
+      name: "drops a stray written before recencyAt was recorded at all",
+      practice: DRILLED_LEDGER,
+      records: [recordOf(STRAY_KEY, true, { withRecency: false })],
+    },
+    {
+      /*
+       * Written before suit-permuted drills existed, so whatever it is, a
+       * drill did not write it — which is what makes #809's guarantee about
+       * a tally predating #808 hold rather than merely usually hold.
+       */
+      expected: [STRAY_KEY],
+      name: "keeps a relabeled row written before #808 shipped",
+      practice: DRILLED_LEDGER,
+      records: [
+        recordOf(STRAY_KEY, true, { at: DRILL_RELABELING_SHIPPED_AT - 1 }),
+      ],
+    },
+    {
+      expected: [],
+      name: "drops a stray when several drilled hands share one signature",
+      practice: [...DRILLED_LEDGER, ledgerEntryFor(STRAY_KEY)],
+      records: [recordOf(THIRD_RELABELING_KEY, true)],
+    },
+    {
+      expected: [DRILLED_KEY],
+      name: "ignores a ledger entry whose hand key cannot be parsed",
+      practice: [ledgerEntryFor("not a hand key"), ...DRILLED_LEDGER],
+      records: SWEPT_PAIR,
     },
     {
       expected: [STRAY_KEY],
@@ -150,10 +234,13 @@ describe("sweeping a tally already in storage", () => {
    * the drilled hand but its `isPractice` flag.
    */
   it("leaves a tally that predates the defect byte-identical", () => {
-    const untouched = [AUTHENTIC, recordOf(MANUAL_KEY, true, AT + 1)];
+    const untouched = [
+      AUTHENTIC,
+      recordOf(MANUAL_KEY, true, { at: DRILLED_AT + 1 }),
+    ];
     storeRaw(asJson(storedTallyOf(untouched, DRILLED_LEDGER)));
 
-    recordSkippedHand(AT + 2);
+    recordSkippedHand(DRILLED_AT + 2);
 
     expect(storedRecords()).toStrictEqual(untouched);
   });
