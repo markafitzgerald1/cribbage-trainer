@@ -79,16 +79,25 @@ const recencyOf = (record: DiscardDecisionRecord): number =>
  * and `recordDiscardDecision`'s idempotency absorbed the re-attempt, so a
  * relabeled practice row written earlier came from something else.
  *
- * `at` is the wall clock of the browser that wrote the row, not release
- * provenance, and no release provenance was ever persisted to consult
- * instead — which is the whole difficulty of a migration written after the
- * fact. So read this as a filter that can only ever spare rows, never as
- * proof of era. It removes nothing that the conditions below would have
- * kept, and on any roughly correct clock it protects every pre-#808 row; on
- * a clock running far enough ahead of the cutoff a pre-#808 row loses that
- * protection and falls to the conditions below like any other. An earlier
- * version of this comment claimed no clock error could cost a row, which is
- * false in exactly that direction — both reviewers of #814 caught it.
+ * This is a conservative filter, NOT a necessary condition of a stray, and
+ * not proof of era. Two separate reasons, both raised in review after
+ * earlier drafts of this comment claimed more than the data supports:
+ *
+ * A stray written by a browser clock running behind the cutoff fails this
+ * check and is kept, so not every stray satisfies it — which is what a
+ * necessary condition would mean. And a row written after the cutoff is not
+ * thereby post-#808: the production deploy follows the merge, and a tab
+ * holding the old bundle goes on writing with the old code indefinitely
+ * after both, so a legitimate row can carry a later `at` on a perfectly
+ * correct clock. No timestamp can separate those, because `at` is the
+ * writing browser's wall clock and no release provenance was ever persisted
+ * to consult instead — the whole difficulty of a migration written after the
+ * fact.
+ *
+ * What it does buy, and the only claim made for it: relative to the
+ * necessary conditions below, it can only ever spare rows. It never causes a
+ * deletion those conditions would not already have made, and on a roughly
+ * correct clock it spares the great majority of genuinely older rows.
  */
 export const DRILL_RELABELING_SHIPPED_AT = Date.parse("2026-09-15T04:01:53Z");
 
@@ -138,15 +147,17 @@ const drilledHandsBySignature = (
  * merely excluded from the headline averages.
  *
  * So a row is swept only when it meets every necessary condition of a stray
- * that survives in what was written: it was recorded no earlier than the
- * build that could first produce one, it is a suit relabeling of a hand that
+ * that survives in what was written — it is a suit relabeling of a hand that
  * was actually drilled, it is not that hand's own key, that relabeling moves
- * every suit the hand uses, and it was recorded before the hand's last drill.
- * Each is documented above where it is derived. None of them is sufficient on
- * its own, and even together they do not amount to proof. Any row recorded
- * since #808 shipped that satisfies all five is indistinguishable from a
- * stray, because nothing recorded at the time says which code path wrote it
- * and no amount of reading storage can recover that. Every source of an
+ * every suit the hand uses, and it was recorded before the hand's last drill
+ * — and additionally clears the release cutoff above, which is a
+ * conservative filter rather than a fifth necessary condition and is
+ * documented as such where it is defined. Each is derived where it is
+ * declared. None of them is sufficient on
+ * its own, and even together they do not amount to proof. Any row that
+ * satisfies all of them is indistinguishable from a stray, because nothing
+ * recorded at the time says which code path wrote it and no amount of
+ * reading storage can recover that. Every source of an
  * `isPractice` row qualifies, not just hand entry: a seeded session's own
  * deals and a deep-linked hand are recorded the same way and have no ledger
  * entry either, so they sit in the ambiguous set on identical terms. Both

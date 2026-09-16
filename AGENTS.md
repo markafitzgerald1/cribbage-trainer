@@ -1074,7 +1074,7 @@ they bind any PR that makes a claim about a phone or ships a guard.
   ordinary text where list content should be indented:
 
   ```bash
-  grep -n '^[a-z`]' AGENTS.md
+  grep --line-number '^[a-z`]' AGENTS.md
   ```
 
   Prose paragraphs at column zero are legitimate and show up too, so read the

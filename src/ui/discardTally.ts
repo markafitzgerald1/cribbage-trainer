@@ -180,11 +180,26 @@ const readStoredTally = (): StoredTally | null => {
     lifetime: parseLifetime(candidate.lifetime),
     practice,
     /*
-     * Swept on every read rather than once behind a version bump. The sweep
-     * is idempotent, so repeating it costs a Set lookup per practice row and
-     * nothing else, while a bump would rewrite the stored `version` of a
-     * tally that predates the defect and make it unreadable to any older
-     * deploy still in a tab — a steep price for a cleanup.
+     * Filtered on every read rather than migrated once behind a version bump,
+     * which would rewrite the stored `version` of a tally that predates the
+     * defect and make it unreadable to any older deploy still in a tab — a
+     * steep price for a cleanup. Repeating the filter is not free, though:
+     * each read parses and canonicalizes every ledger hand and every practice
+     * row's key. Measured at the 10,000-record cap on a desktop Node 24
+     * build, 50 practice rows against 50 drilled hands cost 0.25ms per read
+     * and an implausible 10,000 practice rows against 200 drilled hands cost
+     * 0.66ms; a phone is slower by a small multiple and still far inside a
+     * frame. Re-measure rather than trust these if the shape changes.
+     *
+     * This is read-time filtering, not a write: every reader above is clean
+     * immediately, and storage itself stops holding the row at the next write
+     * that goes through `extendStoredTally`, which persists what was read.
+     * A tally nobody writes to again keeps its stray bytes, which costs the
+     * quota they occupy and nothing else, since no reader can see them.
+     * Persisting during a read was the alternative and is worse: every tab
+     * merely displaying the tally would bump `revision`, which is the one
+     * signal other tabs use to decide storage has moved, and `basisFor` would
+     * then drop their unsaved hands.
      */
     records: withoutStrayDrillRecords(
       Array.isArray(records) ? normalizeStoredRecords(records) : [],

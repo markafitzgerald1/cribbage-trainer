@@ -1,18 +1,20 @@
+/* jscpd:ignore-start */
 import {
   DRILL_RELABELING_SHIPPED_AT,
   withoutStrayDrillRecords,
 } from "./strayDrillRecords";
 import {
-  asJson,
-  storeRaw,
-  storedRecords,
-  storedWith,
-} from "./discardTally.test.common";
+  type SkippedHand,
+  discardTallyKey,
+  readTallyForDisplay,
+  recordSkippedHand,
+} from "./discardTally";
+import { asJson, storeRaw, storedWith } from "./discardTally.test.common";
 import { describe, expect, it } from "@jest/globals";
-import { readTallyForDisplay, recordSkippedHand } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DiscardDecisionRecord } from "./discardDecisionRecord";
 import type { PracticeRecord } from "./practiceLedger";
+/* jscpd:ignore-end */
 
 /*
  * The exact pair #809 captured from a live #808 preview: one committed drill
@@ -104,6 +106,9 @@ const PRE_SHIP_LEDGER: readonly PracticeRecord[] = [
 ];
 const STRAY = recordOf(STRAY_KEY, true);
 const SWEPT_PAIR: readonly DiscardDecisionRecord[] = [AUTHENTIC, STRAY];
+
+const storedTally = (): unknown =>
+  JSON.parse(localStorage.getItem(discardTallyKey) as string);
 
 const keysAfterSweep = (
   records: readonly DiscardDecisionRecord[],
@@ -230,7 +235,14 @@ describe("stray drill record sweep", () => {
 const storedTallyOf = (
   records: readonly DiscardDecisionRecord[],
   practice: readonly PracticeRecord[],
-) => storedWith({ practice, records, revision: 3, skipped: [], version: 5 });
+) => ({
+  ...storedWith({}),
+  practice,
+  records,
+  revision: 3,
+  skipped: [] as readonly SkippedHand[],
+  version: 5,
+});
 
 describe("sweeping a tally already in storage", () => {
   it("drops the stray rows the first time it is read", () => {
@@ -250,16 +262,29 @@ describe("sweeping a tally already in storage", () => {
    * the whole tally after the cutoff, as an earlier version of this test
    * did, made it pass against a build with no cutoff at all and proved
    * nothing about the criterion it names.
+   *
+   * A write is forced rather than avoided, because the read path alone
+   * writes nothing: asserting that storage is unchanged across a bare read
+   * would hold against any implementation at all. What has to survive is a
+   * round trip through a real write, and everything the tally carries is
+   * compared, not just the records — the three things a skip is supposed to
+   * move are stated as what they become rather than skipped over.
    */
-  it("leaves a tally that predates the defect byte-identical", () => {
+  it("leaves everything in a tally that predates the defect", () => {
     const untouched = [
       recordOf(DRILLED_KEY, false, { at: BEFORE_SHIPPED }),
       recordOf(STRAY_KEY, true, { at: BEFORE_SHIPPED + 1 }),
     ];
-    storeRaw(asJson(storedTallyOf(untouched, PRE_SHIP_LEDGER)));
+    const before = storedTallyOf(untouched, PRE_SHIP_LEDGER);
+    storeRaw(asJson(before));
 
     recordSkippedHand(BEFORE_SHIPPED + 100);
 
-    expect(storedRecords()).toStrictEqual(untouched);
+    expect(storedTally()).toStrictEqual({
+      ...before,
+      lifetime: { ...before.lifetime, skippedHands: 1 },
+      revision: before.revision + 1,
+      skipped: [{ at: BEFORE_SHIPPED + 100 }],
+    });
   });
 });
