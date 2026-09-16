@@ -24,6 +24,7 @@ export interface ScoredMistakeCandidate {
 }
 
 export interface MistakeClassification {
+  readonly accessibleLabel: string;
   readonly cribLoss: number;
   readonly dominantComponents: readonly LossComponent[];
   readonly dominantGains: readonly LossComponent[];
@@ -144,6 +145,19 @@ const isFlushMissMistake = (
   );
 };
 
+const formatComponentItem = (
+  component: LossComponent,
+  amount: number,
+  isFlushMiss: boolean,
+): string =>
+  `${amount.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)} ${getComponentLabel(component, isFlushMiss)}`;
+
+const formatComponentList = (
+  items: readonly string[],
+  separator: string,
+  suffix: "gain" | "loss",
+): string => `${items.join(separator)} ${suffix}`;
+
 export const classifyScoredMistake = (
   best: ScoredMistakeCandidate,
   chosen: ScoredMistakeCandidate,
@@ -162,22 +176,42 @@ export const classifyScoredMistake = (
     dominantComponents.includes("hand") &&
     isFlushMissMistake(best, chosen, losses.hand);
 
+  const lossItems = dominantComponents.map((component) =>
+    formatComponentItem(
+      component,
+      getComponentLoss(component, losses),
+      isFlushMiss,
+    ),
+  );
+  const gainItems = dominantGains.map((component) =>
+    formatComponentItem(component, -getComponentLoss(component, losses), false),
+  );
+
+  const lossPart = formatComponentList(lossItems, " + ", "loss");
+  const gainPart = formatComponentList(gainItems, " + ", "gain");
+  const label =
+    dominantGains.length > 0 ? `${gainPart} < ${lossPart}` : lossPart;
+
+  const accessibleLossPart = formatComponentList(lossItems, " and ", "loss");
+  const accessibleGainPart = formatComponentList(gainItems, " and ", "gain");
+  const coverVerb =
+    dominantGains.length > 1 ? "do not cover" : "does not cover";
+  const accessibleLabel =
+    dominantGains.length > 0
+      ? `${accessibleGainPart} ${coverVerb} ${accessibleLossPart}`
+      : accessibleLossPart;
+
   const lossLabel = dominantComponents
     .map((component) => getComponentLabel(component, isFlushMiss))
     .join(", ");
   const gainLabel = dominantGains
     .map((component) => getComponentLabel(component, false))
     .join(", ");
-
-  const label =
-    dominantGains.length > 0
-      ? `${lossLabel} loss > ${gainLabel} gain`
-      : lossLabel;
-
   const shortLabel =
     dominantGains.length > 0 ? `${lossLabel} > ${gainLabel}` : lossLabel;
 
   return {
+    accessibleLabel,
     cribLoss: losses.crib,
     dominantComponents,
     dominantGains,

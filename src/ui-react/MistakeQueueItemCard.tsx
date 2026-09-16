@@ -89,7 +89,7 @@ export function MistakeQueueItemCard({
     () => (onPractice === null ? null : () => onPractice(item)),
     [item, onPractice],
   );
-  const effectiveReason = classification?.label ?? lossReason;
+  const effectiveReason = classification?.accessibleLabel ?? lossReason;
   const effectiveShortReason = classification?.shortLabel ?? lossReason;
   const effectiveLoss = classification?.netLoss ?? item.previousDiscardLoss;
 

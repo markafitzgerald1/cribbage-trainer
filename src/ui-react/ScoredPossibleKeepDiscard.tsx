@@ -42,7 +42,7 @@ const toAlignedFixed = (points: number): string =>
 const getRowTitle = (classification?: MistakeClassification | null): string => {
   if (classification) {
     const loss = formatNetLoss(classification.netLoss);
-    return `Chosen discard (${loss} pts lost): ${classification.label}`;
+    return `Chosen discard (${loss} pts lost): ${classification.accessibleLabel}`;
   }
   return "Optimal discard";
 };

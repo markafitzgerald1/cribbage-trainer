@@ -107,12 +107,13 @@ export const mockItemMastered: MistakeQueueItem = {
 };
 
 export const mockTradeOffClassification: MistakeClassification = {
+  accessibleLabel: "1.30 Crib gain does not cover 1.40 Hand loss",
   cribLoss: -1.3,
   dominantComponents: ["hand"],
   dominantGains: ["crib"],
   handLoss: 1.4,
   isFlushMiss: false,
-  label: "Hand loss > Crib gain",
+  label: "1.30 Crib gain < 1.40 Hand loss",
   netLoss: 0.1,
   playLoss: 0,
   shortLabel: "Hand > Crib",

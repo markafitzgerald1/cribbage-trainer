@@ -16,6 +16,9 @@ const invalidItem: MistakeQueueItem = {
   previousDiscard: "ZZ,YY",
 };
 
+const EXPECTED_MOCK_ITEM_A_LABEL =
+  "0.03 Play gain < 2.33 Hand + 0.14 Crib loss";
+
 const renderAndFlushPromises = async () => {
   const rendered = renderHook(() =>
     useMistakeQueueClassifications(true, [mockItemA], 10),
@@ -95,7 +98,7 @@ const runChunkingTest = (): readonly [string | null, string | null] => {
     advanceNextTask();
 
     expect(rendered.result.current(queue[0]!)?.label).toBe(
-      "Hand, Crib loss > Play gain",
+      EXPECTED_MOCK_ITEM_A_LABEL,
     );
     expect(rendered.result.current(queue[1]!)).toBeNull();
 
@@ -217,7 +220,7 @@ describe("useMistakeQueueClassifications", () => {
       target: mockItemB,
     },
     {
-      expected: "Hand, Crib loss > Play gain",
+      expected: EXPECTED_MOCK_ITEM_A_LABEL,
       expectedLossPositive: true,
       items: [mockItemA],
       name: "caches and returns classification for valid item",
@@ -258,7 +261,7 @@ describe("useMistakeQueueClassifications", () => {
   it("loads tables asynchronously when tables are initially null", async () => {
     const label = await runAsyncLoadTest();
 
-    expect(label).toBe("Hand, Crib loss > Play gain");
+    expect(label).toBe(EXPECTED_MOCK_ITEM_A_LABEL);
   });
 
   it("handles table load rejection gracefully", async () => {
@@ -288,7 +291,7 @@ describe("useMistakeQueueClassifications", () => {
   it("processes items in chunks and schedules remaining chunks", () => {
     const [secondClassification, thirdClassification] = runChunkingTest();
 
-    expect(secondClassification).toBe("Hand, Crib loss > Play gain");
+    expect(secondClassification).toBe(EXPECTED_MOCK_ITEM_A_LABEL);
     expect(thirdClassification).toBeNull();
   });
 
@@ -301,7 +304,7 @@ describe("useMistakeQueueClassifications", () => {
   it("clears classification cache via clearClassificationCache", () => {
     const [initialLabel, resetClassification] = runClearCacheTest();
 
-    expect(initialLabel).toBe("Hand, Crib loss > Play gain");
+    expect(initialLabel).toBe(EXPECTED_MOCK_ITEM_A_LABEL);
     expect(resetClassification).toBeNull();
   });
 });

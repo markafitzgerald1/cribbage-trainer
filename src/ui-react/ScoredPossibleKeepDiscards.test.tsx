@@ -328,8 +328,9 @@ describe("scored possible keep discards component", () => {
       cards: "4H,5D,KH,6H,8C,KC",
       discards: "KH,KC",
       expectedAriaLabel:
-        "Sub-optimal: 0.09 pts lost. Hand loss > Crib, Play gain",
-      expectedText: "Sub-optimal: 0.09 pts lostHand loss > Crib, Play gain",
+        "Sub-optimal: 0.09 pts lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+      expectedText:
+        "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
       name: "sub-optimal caption with diagnostic reason when chosen discard is sub-optimal",
     },
   ])(

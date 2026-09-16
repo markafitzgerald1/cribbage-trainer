@@ -297,7 +297,7 @@ export function ScoredPossibleKeepDiscards({
     const captionAriaLabel =
       chosenClassification === null
         ? "Optimal discard"
-        : `Sub-optimal: ${formatNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.label}`;
+        : `Sub-optimal: ${formatNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
         aria-label={captionAriaLabel}

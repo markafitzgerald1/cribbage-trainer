@@ -445,11 +445,12 @@ describe("mistake queue dialog", () => {
         playLoader.setTableSync(null);
         const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
 
-        return await rendered.findByTitle(
-          /driven by Hand/u,
+        const badges = await rendered.findAllByTitle(
+          /driven by/u,
           {},
           { timeout: 5000 },
         );
+        return badges[0]!;
       } finally {
         setAnalysisTables();
       }

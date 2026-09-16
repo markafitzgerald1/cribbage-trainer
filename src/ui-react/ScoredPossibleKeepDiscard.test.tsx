@@ -300,7 +300,8 @@ describe("calculation component", () => {
     },
     {
       classification: mockTradeOffClassification,
-      expectedTitle: "Chosen discard (0.10 pts lost): Hand loss > Crib gain",
+      expectedTitle:
+        "Chosen discard (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
       isHighlighted: true,
       name: "sub-optimal loss when highlighted and classified",
     },
@@ -309,7 +310,8 @@ describe("calculation component", () => {
         ...mockTradeOffClassification,
         netLoss: 0.004,
       },
-      expectedTitle: "Chosen discard (< 0.01 pts lost): Hand loss > Crib gain",
+      expectedTitle:
+        "Chosen discard (< 0.01 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
       isHighlighted: true,
       name: "sub-optimal loss below 0.005 rendered with less-than precision indicator",
     },
