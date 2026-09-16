@@ -76,7 +76,7 @@
 }
 
 .data-point:hover,
-.data-point:focus {
+.data-point:focus-visible {
   r: 6px;
   stroke: white;
   stroke-width: 2.5;
@@ -197,9 +197,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Lighter than the #6c8f74 the modals use for this role: this button sits on
+ * the detail panel's #22482e, not the #10381b dialog surface, and #6c8f74
+ * reaches only 2.86:1 there. A transparent fill makes the border the whole
+ * boundary, so it has to clear 3:1 against the panel itself.
+ */
 .detail-close {
   background: transparent;
-  border: 1px solid #6c8f74;
+  border: 1px solid #a7c7ad;
   border-radius: 6px;
   color: inherit;
   cursor: pointer;
@@ -212,8 +218,12 @@
 
 .detail-close:hover,
 .detail-close:focus-visible {
-  border-color: #a7c7ad;
-  outline: none;
+  border-color: #def8e2;
+}
+
+.detail-close:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .decision-detail-actions {
@@ -224,7 +234,7 @@
 /* Jump straight from the chart into a drill on this exact mistake. */
 .decision-detail-practice {
   background-color: #197536;
-  border: 2px solid #0f5527;
+  border: 2px solid #72d572;
   border-radius: 8px;
   color: #fff;
   cursor: pointer;
@@ -239,9 +249,19 @@
 
 .decision-detail-practice:hover,
 .decision-detail-practice:focus-visible {
-  background-color: #34c754;
-  border-color: #34c754;
-  outline: none;
+  background-color: #218838;
+  border-color: #8cee8c;
+}
+
+.decision-detail-practice:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Keeps the light border while pressed; the darker fill alone would hide it. */
+.decision-detail-practice:active {
+  background-color: #0f5527;
+  border-color: #8cee8c;
 }
 
 .decision-detail-row {
@@ -266,12 +286,15 @@
  * keep/discard labels do.
  */
 .decision-detail-cards {
+  --card-red-suit-color: #8c1228;
+
   align-items: center;
-  background-color: #f4f8f4;
+  background-color: #dfe8e1;
   border-radius: 4px;
   color: #143b18;
   display: inline-flex;
   font-family: var(--card-font-family);
+  font-weight: 700;
   gap: 0.25rem;
   padding: 0.1rem 0.35rem;
 }

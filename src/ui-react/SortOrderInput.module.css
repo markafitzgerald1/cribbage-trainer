@@ -43,7 +43,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: solid var(--clickable-border-width) black;
+  border: solid var(--clickable-border-width) #72d572;
   color: var(--text-color);
   border-radius: 8px;
   transition:
@@ -57,7 +57,8 @@
 }
 
 .label:hover {
-  background-color: #5fa7d7;
+  background-color: #245830;
+  border-color: #8cee8c;
   box-shadow: 0 3px 5px rgb(0 0 0 / 10%);
   transform: scale(1.05);
 }
@@ -68,8 +69,10 @@
   outline-offset: 2px;
 }
 
-.input[type="radio"]:checked + label {
-  background: #81c784;
+.input[type="radio"]:checked + .label {
+  background: #34c754;
+  border-color: #08200d;
+  color: #08200d;
   box-shadow: 0 3px 5px rgb(0 0 0 / 20%);
 }
 

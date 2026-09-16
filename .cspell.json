@@ -70,6 +70,7 @@
     "rhysd",
     "royale",
     "satisfiability",
+    "scrollport",
     "seedrandom",
     "setsid",
     "shellcheck",
@@ -86,6 +87,7 @@
     "unshown",
     "unvalidated",
     "Vite",
+    "WCAG",
     "worktree",
     "worktrees"
   ]

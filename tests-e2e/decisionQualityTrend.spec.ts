@@ -1,8 +1,12 @@
 import { type Page, expect, test } from "@playwright/test";
+import { constantHandQuery, phonePortraitViewport } from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
-import { constantHandQuery } from "./layoutMeasurements";
+import { LARGE_ROOT_FONT } from "./practiceDrillSetup";
+import { expectChipsFullyVisible } from "./chipContainment";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
+const GRANULARITY_CHIP_COUNT = 5;
+const CRIB_ROLE_CHIP_COUNT = 3;
 const YEAR = 2026;
 const MONTH = 7;
 const START_DAY = 10;
@@ -137,6 +141,31 @@ test.describe("decision quality over time trend dialog", () => {
     await expect(
       page.getByRole("cell", { exact: true, name: "12" }),
     ).toBeVisible();
+  });
+
+  /*
+   * The PR that restyled this dialog measured these groups wrapping to two
+   * and four rows at a 28px root font and claimed every chip stays reachable
+   * anyway, which is the difference between this dialog and the mistake
+   * queue -- there, a group escaped the viewport. Nothing held that claim
+   * open, so a future spacing change could push a chip off screen with the
+   * gate still green.
+   */
+  test("keeps the trend filter chips reachable at a large device font", async ({
+    page,
+  }) => {
+    await page.setViewportSize(phonePortraitViewport);
+    await page.getByRole("button", { name: "Quality trend" }).click();
+    await page.addStyleTag({ content: LARGE_ROOT_FONT });
+
+    await expectChipsFullyVisible(
+      page.getByRole("group", { name: "Granularity" }),
+      GRANULARITY_CHIP_COUNT,
+    );
+    await expectChipsFullyVisible(
+      page.getByRole("group", { name: "Crib role" }),
+      CRIB_ROLE_CHIP_COUNT,
+    );
   });
 
   test("closes dialog with close button and with Escape key", async ({

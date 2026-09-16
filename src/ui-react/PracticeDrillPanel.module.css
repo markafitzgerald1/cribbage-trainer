@@ -7,7 +7,7 @@
  * above it and never widens the column into the analysis table's share.
  */
 .panel {
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 10px;
   box-sizing: border-box;
   color: var(--text-color);
@@ -80,16 +80,26 @@
 }
 
 /*
- * The mini keep/discard labels are bare rank+suit glyphs (#222 / #c41e3a),
- * which all but vanish on the panel's green. A near-white pill puts them on
- * the same ground a real card gives them.
+ * The mini keep/discard labels are bare rank+suit glyphs, which all but
+ * vanish on the panel's green, so they need a card-like ground.
+ */
+
+/*
+ * A muted card tone rather than near-white: at #f4f8f4 this pill was the
+ * brightest thing left on a phone at night and washed out the glyphs sitting
+ * on it (reported in #793's hardware testing). The bold weight and the darker
+ * red matter as much as the tone -- the card font's rank+suit runs are thin
+ * at this size, which is what the brightness was drowning.
  */
 .discard-cards {
+  --card-red-suit-color: #8c1228;
+
   align-items: center;
-  background-color: #f4f8f4;
+  background-color: #dfe8e1;
   border-radius: 4px;
   color: #143b18;
   display: inline-flex;
+  font-weight: 700;
   gap: 0.25rem;
   padding: 0.1rem 0.3rem;
 }
@@ -148,7 +158,7 @@
 
 .primary {
   background-color: #197536;
-  border: 2px solid #0f5527;
+  border: 2px solid #72d572;
   color: #fff;
 }
 
@@ -159,21 +169,43 @@
 
 .primary:hover:not(:disabled),
 .primary:focus-visible:not(:disabled) {
-  background-color: #34c754;
-  border-color: #34c754;
-  outline: none;
+  background-color: #218838;
+  border-color: #8cee8c;
 }
 
+.primary:focus-visible:not(:disabled) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Keeps the light border while pressed; the darker fill alone would hide it. */
+.primary:active:not(:disabled) {
+  background-color: #0f5527;
+  border-color: #8cee8c;
+}
+
+/*
+ * Lighter than the #6c8f74 the modals use for the same role. That border is
+ * fine where they use it -- 3.63:1 against the #10381b dialog surface -- but
+ * this panel sits on the #1f6536 felt, against which the same color reaches
+ * only 1.96:1. A transparent fill has no color of its own, so the border is
+ * the whole boundary and has to clear 3:1 against the felt itself.
+ */
 .secondary {
   background-color: transparent;
-  border: 2px solid #6c8f74;
+  border: 2px solid #a7c7ad;
   color: var(--text-color);
 }
 
 .secondary:hover,
 .secondary:focus-visible {
-  border-color: #a7c7ad;
-  outline: none;
+  background-color: color-mix(in srgb, #28a745 20%, transparent);
+  border-color: #def8e2;
+}
+
+.secondary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /*

@@ -31,6 +31,7 @@ export const quantileHigh: string;
 export const quantileLow: string;
 export const quantileMedium: string;
 export const roleBadge: string;
+export const severityGroup: string;
 export const showMoreButton: string;
 export const statusBadge: string;
 export const subtitle: string;
