@@ -71,4 +71,36 @@ describe("loss formatting", () => {
     );
     expect(classification?.shortLabel).toBe("Crib gain <= Hand loss");
   });
+
+  it("uses '<=' when multiple displayed loss components sum to displayed gain with float residue", () => {
+    const classification = classifyScoredMistake(
+      {
+        expectedHandPoints: 10.17,
+        expectedNetPoints: 13.211,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: 1.04,
+        },
+        signedExpectedCribPoints: 2,
+      },
+      {
+        expectedHandPoints: 10,
+        expectedNetPoints: 13.21,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: 1,
+        },
+        signedExpectedCribPoints: 2.21,
+      },
+    );
+
+    expect(classification?.comparisonOperator).toBe("<=");
+    expect(classification?.label).toBe(
+      "0.21 Crib gain <= 0.17 Hand + 0.04 Play loss",
+    );
+    expect(classification?.accessibleLabel).toBe(
+      "0.21 Crib gain does not quite cover 0.17 Hand and 0.04 Play loss",
+    );
+    expect(classification?.shortLabel).toBe("Crib gain <= Hand, Play loss");
+  });
 });

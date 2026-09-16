@@ -52,6 +52,12 @@ export interface ClassifyMistakeParams {
 export const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const BASE_TEN = 10;
 export const DISPLAY_PRECISION = BASE_TEN ** -EXPECTED_POINTS_FRACTION_DIGITS;
+const CENTS_PER_POINT = BASE_TEN ** EXPECTED_POINTS_FRACTION_DIGITS;
+
+const toDisplayedCents = (amount: number): number =>
+  Math.round(
+    Number(amount.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)) * CENTS_PER_POINT,
+  );
 
 const formatLossAmount = (netLoss: number, subCentPrefix: string): string => {
   const rounded = Number(netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
@@ -204,28 +210,18 @@ const buildMistakeLabels = ({
       ? formatComponentList(gainItems, " + ", "gain")
       : null;
 
-  const totalGainFormatted = materialGains.reduce(
+  const totalGainCents = materialGains.reduce(
     (sum, component) =>
-      sum +
-      Number(
-        (-getComponentLoss(component, losses)).toFixed(
-          EXPECTED_POINTS_FRACTION_DIGITS,
-        ),
-      ),
+      sum + toDisplayedCents(-getComponentLoss(component, losses)),
     0,
   );
-  const totalLossFormatted = materialComponents.reduce(
+  const totalLossCents = materialComponents.reduce(
     (sum, component) =>
-      sum +
-      Number(
-        getComponentLoss(component, losses).toFixed(
-          EXPECTED_POINTS_FRACTION_DIGITS,
-        ),
-      ),
+      sum + toDisplayedCents(getComponentLoss(component, losses)),
     0,
   );
   const comparisonOperator: "<" | "<=" =
-    totalGainFormatted === totalLossFormatted ? "<=" : "<";
+    totalGainCents === totalLossCents ? "<=" : "<";
 
   const label =
     gainPart === null
