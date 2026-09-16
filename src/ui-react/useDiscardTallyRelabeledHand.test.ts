@@ -95,9 +95,11 @@ describe("a board showing a relabeled stand-in for another hand", () => {
 
   /*
    * The defect #809 reports, end to end at this layer: before the relabeling
-   * was threaded through, each committed drill attempt derived a fresh key
-   * from the relabeled cards, escaped recordDiscardDecision's idempotency,
-   * and appended one row per attempt naming six cards nobody was dealt.
+   * was threaded through, a committed drill attempt derived its key from the
+   * relabeled cards, escaped recordDiscardDecision's idempotency, and
+   * appended a row naming six cards nobody was dealt — one per distinct
+   * relabeling rather than one per attempt, since a hand using few suits
+   * exhausts its relabelings and later views reuse an absorbed key.
    */
   it("adds no second row for a hand already recorded", () => {
     scoreRelabeledBoard({ seedFirst: true });

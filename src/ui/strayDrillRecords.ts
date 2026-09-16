@@ -16,9 +16,11 @@ const suitAt = (index: number): Suit => SUITS.at(index) as Suit;
  * A hand key with its suits renamed in order of first appearance. A global
  * suit renaming is the only thing a practice drill ever does to a stored
  * mistake, and two keys related by one reduce to the same signature while
- * two that are not cannot — so a single Set lookup answers "is this a
+ * two that are not cannot — so keying a Map by signature answers "is this a
  * relabeling of something that was drilled" without building all 23
- * candidate keys for every ledger entry. The crib role rides along
+ * candidate keys for every ledger entry. Answering it still costs parsing
+ * and canonicalizing the row, the Map lookup, and a scan of the matching
+ * bucket; only the exact-key exemption below is a bare Set lookup. The crib role rides along
  * untouched, so the same six cards under the other role never collide.
  *
  * Takes a parsed hand rather than a key, so there is no unreachable branch

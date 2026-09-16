@@ -194,7 +194,9 @@ const readStoredTally = (): StoredTally | null => {
      *
      * This is read-time filtering, not a write: every reader above is clean
      * immediately, and storage itself stops holding the row at the next write
-     * that goes through `extendStoredTally`, which persists what was read.
+     * through `extendStoredTally` that actually persists — a quota failure or
+     * a storage-disabled browser leaves the original bytes in place and keeps
+     * the swept tally in memory only.
      * A tally nobody writes to again keeps its stray bytes, which costs the
      * quota they occupy and nothing else, since no reader can see them.
      * Persisting during a read was the alternative and is worse: every tab

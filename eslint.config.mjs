@@ -157,6 +157,7 @@ export default [
             "bitwise",
             "callee",
             "camelcase",
+            "canonicalizing",
             "cardinality",
             "charset",
             "checkbox",

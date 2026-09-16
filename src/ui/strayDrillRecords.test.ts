@@ -67,16 +67,19 @@ const recordOf = (
 };
 
 /*
- * Dated later than every record below, which is the order the two writes
- * actually happen in: recordPracticeAttempt forces its lastAttemptAt past the
- * decision recency recordDiscardDecision just wrote for the same commit.
+ * Dated later than the same-commit fixtures, which is the order the two
+ * writes actually happen in: recordPracticeAttempt forces its lastAttemptAt
+ * past the decision recency recordDiscardDecision just wrote for that commit.
+ * The recency-guard case below deliberately breaks that ordering by dating a
+ * record after it, which is the whole point of that case.
  */
 const LAST_ATTEMPT_AT = DRILLED_AT + 10;
 
 /*
- * A tally written before suit-permuted drills shipped: its rows and its
- * ledger all predate the cutoff, which is the only thing standing between
- * its relabeled practice row and the sweep.
+ * A tally whose rows and ledger all predate the production cutoff, which is
+ * the only thing standing between its relabeled practice row and the sweep.
+ * Older than the cutoff is not the same as older than the code — previews
+ * ran it first — so this says when the row was written, not what wrote it.
  */
 const BEFORE_SHIPPED = DRILL_RELABELING_SHIPPED_AT - 100_000;
 
@@ -166,12 +169,14 @@ describe("stray drill record sweep", () => {
     },
     {
       /*
-       * Written before suit-permuted drills existed, so whatever it is, a
-       * drill did not write it — which is what makes #809's guarantee about
-       * a tally predating #808 hold rather than merely usually hold.
+       * Dated before the production cutoff, so the sweep spares it. That is
+       * all this proves: the fixture at the top of this file came from a
+       * live #808 preview, which ran the offending code before the merge, so
+       * a row this old can perfectly well be a real stray. The test is about
+       * the filter being conservative, not about the row's origin.
        */
       expected: [STRAY_KEY],
-      name: "keeps a relabeled row written before #808 shipped",
+      name: "keeps a relabeled row dated before the production cutoff",
       practice: DRILLED_LEDGER,
       records: [
         recordOf(STRAY_KEY, true, { at: DRILL_RELABELING_SHIPPED_AT - 1 }),
@@ -254,7 +259,8 @@ describe("sweeping a tally already in storage", () => {
   });
 
   /*
-   * #809's own acceptance criterion, and the load-bearing part is that the
+   * #809's acceptance criterion as far as it can be met, and the
+   * load-bearing part is that the
    * practice row here is a relabeling of the drilled hand which satisfies
    * every other condition of a stray — same ranks in deal order, same role,
    * every used suit moved, recorded before the hand's last drill. Only the
@@ -270,7 +276,7 @@ describe("sweeping a tally already in storage", () => {
    * compared, not just the records — the three things a skip is supposed to
    * move are stated as what they become rather than skipped over.
    */
-  it("leaves everything in a tally that predates the defect", () => {
+  it("leaves everything in a tally dated before the cutoff", () => {
     const untouched = [
       recordOf(DRILLED_KEY, false, { at: BEFORE_SHIPPED }),
       recordOf(STRAY_KEY, true, { at: BEFORE_SHIPPED + 1 }),

@@ -299,8 +299,10 @@ export const useDiscardTally = ({
        * hand was loaded. `handKey` below is the hand the decision is
        * actually about, and a drill's is the stored mistake's own key — so
        * recordDiscardDecision's idempotency absorbs a re-attempt into the
-       * record of the hand being practiced, instead of appending one row per
-       * attempt under a key naming cards the player never met (#809).
+       * record of the hand being practiced, instead of appending a row under
+       * a key naming cards the player never met — one per distinct
+       * relabeling, since a hand using few suits soon reuses a key that
+       * idempotency then absorbs (#809).
        */
       const boardKey = toHandKey(dealtCards, scoredRole);
       const decidedCards =
