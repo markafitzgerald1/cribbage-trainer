@@ -670,6 +670,26 @@ they bind any PR that makes a claim about a phone or ships a guard.
   before a human spends attention. Where budget is tight, cut frequency
   rather than parallelism: run intermediate rounds with Codex alone and
   spend Copilot on the head that will actually be merged.
+- **Merging main into a branch retires its reviews by the letter of that
+  rule, but often not in substance.** Merging one pull request does not push
+  anybody else's branch; it leaves theirs behind, and each must take main in
+  before it can merge, which is the push that retires its rounds. With
+  several open at once that still costs two fresh rounds per branch per
+  merge, most reading nothing either reviewer has already passed. The test
+  is mechanical and runs **per reviewer**, since Codex-only intermediate
+  rounds leave the two tied to different heads: diff that reviewer's own
+  last-reviewed head against the new one, and if no changed file is one this
+  branch touches **and** the merge resolved no conflict, that reviewer's
+  round still applies. The conflict condition is not a detail — resolving
+  one means choosing what the merged file says, which no round has seen and
+  a green gate cannot vouch for. Nor is the test a proof: it keys on file
+  overlap, so it cannot see main changing a function this branch calls in a
+  file it never touched. That residue is a judgement to make, not a check to
+  run. Say in the pull request which head each reviewer last read and why
+  the delta needed no round. Worked both ways here on 2026-09-13: #798
+  merged on rounds one head old, its only delta being #806's documentation
+  arriving verbatim, while #810's merge forced a round on #795 alone, which
+  sets the same `jest.config.json` line it did.
 - **Spend Copilot where a change could leave two places disagreeing**, which
   is not the same as where the code is. The first draft of this bullet said
   documentation-only pull requests do not need Copilot, and the review of
