@@ -71,6 +71,13 @@ const recordOf = (
  */
 const LAST_ATTEMPT_AT = DRILLED_AT + 10;
 
+/*
+ * A tally written before suit-permuted drills shipped: its rows and its
+ * ledger all predate the cutoff, which is the only thing standing between
+ * its relabeled practice row and the sweep.
+ */
+const BEFORE_SHIPPED = DRILL_RELABELING_SHIPPED_AT - 100_000;
+
 const DRILLED_LEDGER: readonly PracticeRecord[] = [
   {
     attempts: 1,
@@ -88,6 +95,13 @@ const ledgerEntryFor = (handKey: string): PracticeRecord => ({
   ...(DRILLED_LEDGER.at(0) as PracticeRecord),
   handKey,
 });
+
+const PRE_SHIP_LEDGER: readonly PracticeRecord[] = [
+  {
+    ...(DRILLED_LEDGER.at(0) as PracticeRecord),
+    lastAttemptAt: BEFORE_SHIPPED + 50,
+  },
+];
 const STRAY = recordOf(STRAY_KEY, true);
 const SWEPT_PAIR: readonly DiscardDecisionRecord[] = [AUTHENTIC, STRAY];
 
@@ -228,19 +242,23 @@ describe("sweeping a tally already in storage", () => {
   });
 
   /*
-   * A tally written before suit-permuted drills existed has no stray to find,
-   * so reading it and writing it back must return the same rows it held —
-   * including the manually entered practice row, which shares nothing with
-   * the drilled hand but its `isPractice` flag.
+   * #809's own acceptance criterion, and the load-bearing part is that the
+   * practice row here is a relabeling of the drilled hand which satisfies
+   * every other condition of a stray — same ranks in deal order, same role,
+   * every used suit moved, recorded before the hand's last drill. Only the
+   * #808 cutoff keeps it, so this fails if that cutoff is removed. Dating
+   * the whole tally after the cutoff, as an earlier version of this test
+   * did, made it pass against a build with no cutoff at all and proved
+   * nothing about the criterion it names.
    */
   it("leaves a tally that predates the defect byte-identical", () => {
     const untouched = [
-      AUTHENTIC,
-      recordOf(MANUAL_KEY, true, { at: DRILLED_AT + 1 }),
+      recordOf(DRILLED_KEY, false, { at: BEFORE_SHIPPED }),
+      recordOf(STRAY_KEY, true, { at: BEFORE_SHIPPED + 1 }),
     ];
-    storeRaw(asJson(storedTallyOf(untouched, DRILLED_LEDGER)));
+    storeRaw(asJson(storedTallyOf(untouched, PRE_SHIP_LEDGER)));
 
-    recordSkippedHand(DRILLED_AT + 2);
+    recordSkippedHand(BEFORE_SHIPPED + 100);
 
     expect(storedRecords()).toStrictEqual(untouched);
   });

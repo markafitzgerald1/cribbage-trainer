@@ -92,10 +92,17 @@ be inferred from repository changes.
   what `reportHandOrigin` filed provenance under and what therefore decides
   `isPractice` — apart from the **decision key**, derived by inverting that
   relabeling, which is what the stored record is keyed by. Deriving both from
-  the physical `dealtCards` is #809: every committed drill attempt escaped
+  the physical `dealtCards` is #809: a committed drill attempt escaped
   `recordDiscardDecision`'s idempotency and appended a row naming six cards
-  nobody was dealt. When the board is showing its own cards the two keys are
-  the same string, which is exactly why collapsing them looks harmless.
+  nobody was dealt. One row per distinct relabeling, not one per attempt —
+  `suitPermutationForView` rules out the identity and the previous view, not
+  every earlier one, so a hand using few suits exhausts its relabelings and
+  later views land on a key already recorded, which idempotency absorbs; a
+  single-suited hand has only three. Reaching for "one row per attempt" as
+  the growth model overstates it, and the correction came from a review round
+  rather than from anyone re-reading the generator. When the board is showing
+  its own cards the two keys are the same string, which is exactly why
+  collapsing them looks harmless.
 - That relabeling travels as a **second argument beside** `RenderedAnalysis`,
   never as a field on it, and the placement is the point. `RenderedAnalysis`
   is what `useDiscardTelemetry` consumes on the way to the wire, so keeping a

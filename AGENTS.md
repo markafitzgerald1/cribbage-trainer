@@ -789,18 +789,21 @@ they bind any PR that makes a claim about a phone or ships a guard.
   absolute path (`/opt/homebrew/bin/gh`) and drive loops from a file
   (`done < file`) rather than a pipe.
 - **A GraphQL rate limit reaches `gh project` as `unknown owner type`**, which
-  reads as a broken command rather than a quota to wait out — and `gh api
-rate_limit` reports a full 5000 remaining in both buckets while it is in
-  force, because the limit being hit is not the one that endpoint describes.
+  reads as a broken command rather than a quota to wait out. The rate-limit
+  endpoint reports a full 5000 remaining in both buckets while it is in force,
+  because the limit being hit is not the one that endpoint describes.
   `gh project list`, `view`, and `item-list` all failed that way on #809 while
-  REST calls (`gh api user`, `gh api repos/.../check-runs`) kept working, and
-  all three worked again untouched once the window cleared. Confirm the cause
-  with `gh api graphql`, which returns the real `RATE_LIMIT` error, before
-  concluding anything about the project or the owner. What provokes it is
-  polling: a 30-second `gh pr checks` loop watching a PR's CI is enough, since
-  that command is GraphQL too. Watch CI through `gh api
-repos/<owner>/<repo>/commits/<sha>/check-runs` instead, which is REST and
-  spends a different budget.
+  REST calls kept working, and all three worked again untouched once the
+  window cleared. Confirm the cause with `gh api graphql`, which returns the
+  real `RATE_LIMIT` error, before concluding anything about the project or the
+  owner. What provokes it is polling: a 30-second `gh pr checks` loop watching
+  a PR's CI is enough, since that command is GraphQL too. Watch CI through the
+  REST check-runs endpoint instead, which spends a different budget.
+
+  ```bash
+  gh api rate_limit
+  gh api repos/<owner>/<repo>/commits/<sha>/check-runs
+  ```
 
 ## Husky/hooks
 
@@ -1062,6 +1065,23 @@ repos/<owner>/<repo>/commits/<sha>/check-runs` instead, which is REST and
   prettier, and cspell all pass on the wreckage — the same
   lines-not-structure blind spot as the heading rule above. Two instances
   existed here at once, one of them live for months.
+
+  Knowing the rule is demonstrably not enough to follow it: #814 broke three
+  more spans in this very file, one of them inside the bullet being added
+  about a different lint trap, and each was caught by a reviewer rather than
+  by the author or a gate. So check mechanically instead of carefully. A
+  de-indented continuation is the visible symptom, and it starts a line with
+  ordinary text where list content should be indented:
+
+  ```bash
+  grep -n '^[a-z`]' AGENTS.md
+  ```
+
+  Prose paragraphs at column zero are legitimate and show up too, so read the
+  hits rather than counting them; a hit that is the tail of a `gh`, `npx` or
+  `const` line is the bug. Prefer a fenced block over a long span — a fence
+  cannot be reflowed into this failure at all.
+
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
 

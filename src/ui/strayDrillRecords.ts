@@ -75,17 +75,20 @@ const recencyOf = (record: DiscardDecisionRecord): number =>
 
 /*
  * When #808 merged, and so the earliest instant any build could have written
- * a stray: before it, drilling a mistake dealt that mistake's own cards
- * again and `recordDiscardDecision`'s idempotency absorbed the re-attempt, so a
- * relabeled practice row in an older tally was written by something else and
- * is legitimate by construction. This is what makes #809's "a tally that
- * predates #808 is left untouched" a guarantee rather than a likelihood.
+ * a stray: before it, drilling a mistake dealt that mistake's own cards again
+ * and `recordDiscardDecision`'s idempotency absorbed the re-attempt, so a
+ * relabeled practice row written earlier came from something else.
  *
- * Deliberately the merge instant rather than the deploy that followed it, and
- * compared against the record's own `at` — the wall clock of the browser that
- * wrote it. A clock running behind only dates a real stray before the cutoff
- * and spares it, which costs an invisible row; no clock error can make this
- * remove a row it would otherwise have kept.
+ * `at` is the wall clock of the browser that wrote the row, not release
+ * provenance, and no release provenance was ever persisted to consult
+ * instead — which is the whole difficulty of a migration written after the
+ * fact. So read this as a filter that can only ever spare rows, never as
+ * proof of era. It removes nothing that the conditions below would have
+ * kept, and on any roughly correct clock it protects every pre-#808 row; on
+ * a clock running far enough ahead of the cutoff a pre-#808 row loses that
+ * protection and falls to the conditions below like any other. An earlier
+ * version of this comment claimed no clock error could cost a row, which is
+ * false in exactly that direction — both reviewers of #814 caught it.
  */
 export const DRILL_RELABELING_SHIPPED_AT = Date.parse("2026-09-15T04:01:53Z");
 
@@ -118,7 +121,12 @@ const drilledHandsBySignature = (
  * nothing else it can rule out. Between #808 shipping and #809 landing, every
  * committed drill attempt keyed its decision record by the relabeled cards on
  * screen, so it escaped `recordDiscardDecision`'s idempotency and appended a
- * row naming six cards the player was never dealt. A code change cannot reach
+ * row naming six cards the player was never dealt. One row per distinct
+ * relabeling rather than one per attempt: `suitPermutationForView` rules out
+ * the identity and the previous view, not every earlier one, so a hand using
+ * few suits exhausts its relabelings and later views land on a key already
+ * recorded, which idempotency then absorbs. A single-suited hand has only
+ * three. A code change cannot reach
  * back into `localStorage`, so those rows are swept here instead.
  *
  * The test is narrower than "matches no stored mistake", which was the shape
@@ -135,17 +143,24 @@ const drilledHandsBySignature = (
  * was actually drilled, it is not that hand's own key, that relabeling moves
  * every suit the hand uses, and it was recorded before the hand's last drill.
  * Each is documented above where it is derived. None of them is sufficient on
- * its own, and even together they do not amount to proof: a hand typed in
- * since #808 shipped that happens to satisfy all five is indistinguishable
- * from a stray, because nothing recorded at the time says which code path
- * wrote the row and no amount of reading storage can recover it. Both
- * reviewers of #814 raised that, and it is why the conditions are stacked
- * rather than reduced to the cheapest one: each shrinks the ambiguous set
- * without ever costing a row that is provably legitimate.
+ * its own, and even together they do not amount to proof. Any row recorded
+ * since #808 shipped that satisfies all five is indistinguishable from a
+ * stray, because nothing recorded at the time says which code path wrote it
+ * and no amount of reading storage can recover that. Every source of an
+ * `isPractice` row qualifies, not just hand entry: a seeded session's own
+ * deals and a deep-linked hand are recorded the same way and have no ledger
+ * entry either, so they sit in the ambiguous set on identical terms. Both
+ * reviewers of #814 raised this, and it is why the conditions are stacked
+ * rather than reduced to the cheapest one: each shrinks that set without
+ * ever costing a row the remaining conditions would have kept.
  *
  * Idempotent by construction: one pass leaves nothing that a second could
- * match. A stray whose ledger entry has since been evicted is undetectable
- * and stays.
+ * match. Two kinds of stray are undetectable here and stay: one whose ledger
+ * entry has since been evicted, and one whose ledger write never landed —
+ * the decision row and the practice attempt are separate `localStorage`
+ * writes, so a quota failure between them persists the row without the entry
+ * that identifies it. Both err toward keeping an invisible row, which is the
+ * direction to err in.
  */
 export const withoutStrayDrillRecords = (
   records: readonly DiscardDecisionRecord[],
