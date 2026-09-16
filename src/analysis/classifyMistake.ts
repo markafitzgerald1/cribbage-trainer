@@ -108,13 +108,10 @@ const computeComponentLosses = (
 
 const getDominantLossComponents = (
   losses: ComponentLosses,
-): readonly LossComponent[] => {
-  const maxLoss = Math.max(0, losses.hand, losses.crib, losses.play);
-  return ORDERED_COMPONENTS.filter((component) => {
-    const loss = getComponentLoss(component, losses);
-    return loss > 0 && withoutFloatResidue(maxLoss - loss) <= DISPLAY_PRECISION;
-  });
-};
+): readonly LossComponent[] =>
+  ORDERED_COMPONENTS.filter(
+    (component) => getComponentLoss(component, losses) >= DISPLAY_PRECISION,
+  );
 
 const getMaterialGainComponents = (
   losses: ComponentLosses,
