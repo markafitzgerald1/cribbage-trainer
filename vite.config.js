@@ -36,7 +36,6 @@ export default {
         statements: 90.41,
       },
     },
-    fileParallelism: false,
     projects: [
       {
         extends: true,
@@ -62,7 +61,6 @@ export default {
           // Use project root so setupFiles outside ./src are resolved correctly (e.g. .storybook)
           root: dirname,
           setupFiles: [path.join(dirname, ".storybook/vitest.setup.ts")],
-          testTimeout: 30000,
         },
       },
     ],
