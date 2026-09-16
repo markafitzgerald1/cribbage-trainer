@@ -27,6 +27,12 @@ describe("loss formatting", () => {
       visible: "< 0.01",
     },
     {
+      accessible: "less than 0.01",
+      loss: 0.006,
+      name: "formats positive loss between 0.005 and 0.01 with sub-cent indicator",
+      visible: "< 0.01",
+    },
+    {
       accessible: "0.01",
       loss: 0.01,
       name: "formats 0.01 exactly",

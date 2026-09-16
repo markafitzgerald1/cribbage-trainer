@@ -60,8 +60,7 @@ const toDisplayedCents = (amount: number): number =>
   );
 
 const formatLossAmount = (netLoss: number, subCentPrefix: string): string => {
-  const rounded = Number(netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS));
-  if (rounded === 0 && netLoss > 0) {
+  if (netLoss > 0 && netLoss < DISPLAY_PRECISION) {
     return `${subCentPrefix} ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`;
   }
   return netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
