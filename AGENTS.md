@@ -784,6 +784,19 @@ SUITS.at(index) as Suit;` — and both gates pass; a file-scoped disable is
   `while` loop fed by a pipe), failing with `gh: command not found`. Use the
   absolute path (`/opt/homebrew/bin/gh`) and drive loops from a file
   (`done < file`) rather than a pipe.
+- **A GraphQL rate limit reaches `gh project` as `unknown owner type`**, which
+  reads as a broken command rather than a quota to wait out — and `gh api
+rate_limit` reports a full 5000 remaining in both buckets while it is in
+  force, because the limit being hit is not the one that endpoint describes.
+  `gh project list`, `view`, and `item-list` all failed that way on #809 while
+  REST calls (`gh api user`, `gh api repos/.../check-runs`) kept working, and
+  all three worked again untouched once the window cleared. Confirm the cause
+  with `gh api graphql`, which returns the real `RATE_LIMIT` error, before
+  concluding anything about the project or the owner. What provokes it is
+  polling: a 30-second `gh pr checks` loop watching a PR's CI is enough, since
+  that command is GraphQL too. Watch CI through `gh api
+repos/<owner>/<repo>/commits/<sha>/check-runs` instead, which is REST and
+  spends a different budget.
 
 ## Husky/hooks
 
