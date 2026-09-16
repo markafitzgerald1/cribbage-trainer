@@ -9,6 +9,7 @@ import {
 import {
   cardsRow,
   previousDiscard as previousDiscardClass,
+  severityGroup as severityGroupClass,
 } from "./MistakeQueueDialog.module.css";
 import {
   createAgedOutTally,
@@ -283,7 +284,7 @@ describe("mistake queue dialog", () => {
       ).toBeNull();
       expect(
         rendered.getByRole("group", { name: "Crib role" }).className,
-      ).not.toContain(classes.severityGroup);
+      ).not.toContain(severityGroupClass);
       expect([
         rendered.queryByText("low"),
         rendered.queryByText("medium"),
@@ -300,8 +301,8 @@ describe("mistake queue dialog", () => {
       });
       const roleGroup = rendered.getByRole("group", { name: "Crib role" });
 
-      expect(severityGroup.className).toContain(classes.severityGroup);
-      expect(roleGroup.className).not.toContain(classes.severityGroup);
+      expect(severityGroup.className).toContain(severityGroupClass);
+      expect(roleGroup.className).not.toContain(severityGroupClass);
     });
 
     it("paginates list and renders more items when Show more is clicked", () => {
@@ -426,7 +427,9 @@ describe("mistake queue dialog", () => {
         nullTallyView.getByRole("heading", { name: "Mistake queue" }),
       ).toBeInTheDocument();
     });
+  });
 
+  describe("dominant component classification badges", () => {
     it("renders dominant component badges for mistake cards", async () => {
       clearClassificationCache();
       const { findAllByTitle } = renderQueueDialog();
