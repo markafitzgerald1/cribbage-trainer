@@ -75,7 +75,7 @@ const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
   }
   return (
     <p className={classes.outcomeMiss}>
-      {formatLoss(verdict.chosenLoss)} behind the best discard — streak reset.
+      {formatLoss(verdict.chosenLoss)} behind the best discard.
     </p>
   );
 };

@@ -53,6 +53,8 @@ export const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const BASE_TEN = 10;
 export const DISPLAY_PRECISION = BASE_TEN ** -EXPECTED_POINTS_FRACTION_DIGITS;
 const CENTS_PER_POINT = BASE_TEN ** EXPECTED_POINTS_FRACTION_DIGITS;
+const GAIN_SIGN_MULTIPLIER = -1;
+const LOSS_SIGN_MULTIPLIER = 1;
 
 const toDisplayedCents = (amount: number): number =>
   Math.round(
@@ -121,19 +123,46 @@ const computeComponentLosses = (
   ),
 });
 
+const sortComponentsByContribution = (
+  components: readonly LossComponent[],
+  getAmount: (component: LossComponent) => number,
+): readonly LossComponent[] =>
+  [...components].sort((firstComponent, secondComponent) => {
+    const diff =
+      toDisplayedCents(getAmount(secondComponent)) -
+      toDisplayedCents(getAmount(firstComponent));
+    if (diff !== 0) {
+      return diff;
+    }
+    return (
+      ORDERED_COMPONENTS.indexOf(firstComponent) -
+      ORDERED_COMPONENTS.indexOf(secondComponent)
+    );
+  });
+
+const getMaterialComponentsBySign = (
+  losses: ComponentLosses,
+  multiplier: typeof LOSS_SIGN_MULTIPLIER | typeof GAIN_SIGN_MULTIPLIER,
+): readonly LossComponent[] => {
+  const getContribution = (component: LossComponent) =>
+    multiplier * getComponentLoss(component, losses);
+  return sortComponentsByContribution(
+    ORDERED_COMPONENTS.filter(
+      (component) => getContribution(component) >= DISPLAY_PRECISION,
+    ),
+    getContribution,
+  );
+};
+
 const getMaterialLossComponents = (
   losses: ComponentLosses,
 ): readonly LossComponent[] =>
-  ORDERED_COMPONENTS.filter(
-    (component) => getComponentLoss(component, losses) >= DISPLAY_PRECISION,
-  );
+  getMaterialComponentsBySign(losses, LOSS_SIGN_MULTIPLIER);
 
 const getMaterialGainComponents = (
   losses: ComponentLosses,
 ): readonly LossComponent[] =>
-  ORDERED_COMPONENTS.filter(
-    (component) => -getComponentLoss(component, losses) >= DISPLAY_PRECISION,
-  );
+  getMaterialComponentsBySign(losses, GAIN_SIGN_MULTIPLIER);
 
 const getFlushExpectedPoints = (candidate: ScoredMistakeCandidate): number =>
   (candidate.handPointsBreakdown?.flushes ?? 0) +

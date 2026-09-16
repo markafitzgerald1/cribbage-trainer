@@ -397,6 +397,7 @@ export function Trainer({
             <ScoredPossibleKeepDiscards
               cribRole={cribRole}
               dealtCards={dealtCards}
+              isPracticeDrill={drill.isActive}
               onAnalysisRendered={drill.handleAnalysisRendered}
               onScoreSortKeyChange={changeScoreSortKey}
               scoreSortKey={scoreSortKey}

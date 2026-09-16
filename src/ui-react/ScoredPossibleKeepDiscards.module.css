@@ -63,6 +63,27 @@
   max-width: 100%;
 }
 
+/*
+ * In practice drill mode, vertical space is under severe pressure in portrait
+ * because the practice panel sits above the analysis table. Tightening caption
+ * gap, padding, and font size modestly stops the classification label from wrapping
+ * and preserves discard row visibility without touching the main view caption (#802).
+ */
+.in-drill {
+  gap: 2px;
+}
+
+.in-drill .diagnostic-caption {
+  gap: 4px;
+}
+
+.in-drill .optimal-badge,
+.in-drill .sub-optimal-badge,
+.in-drill .diagnostic-reason {
+  font-size: 0.74em;
+  padding: 2px 6px;
+}
+
 .table-container {
   box-sizing: border-box;
   flex-grow: 1;

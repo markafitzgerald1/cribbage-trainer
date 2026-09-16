@@ -109,4 +109,75 @@ describe("loss formatting", () => {
     );
     expect(classification?.shortLabel).toBe("Crib gain <= Hand, Play loss");
   });
+
+  it.each([
+    {
+      best: {
+        expectedHandPoints: 0,
+        expectedNetPoints: 0.88,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: 0.63,
+        },
+        signedExpectedCribPoints: 0.25,
+      },
+      chosen: {
+        expectedHandPoints: 0.59,
+        expectedNetPoints: 0.59,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0,
+      },
+      expectedAccessible:
+        "0.59 Hand gain does not cover 0.63 Play and 0.25 Crib loss",
+      expectedGains: ["hand"] as const,
+      expectedLabel: "0.59 Hand gain < 0.63 Play + 0.25 Crib loss",
+      expectedMaterials: ["play", "crib"] as const,
+      expectedShort: "Hand gain < Play, Crib loss",
+      name: "orders components descending by absolute contribution",
+    },
+    {
+      best: {
+        expectedHandPoints: 0.399,
+        expectedNetPoints: 1.8,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: 0.401,
+        },
+        signedExpectedCribPoints: 0.4,
+      },
+      chosen: {
+        expectedHandPoints: 0,
+        expectedNetPoints: 0.6,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0,
+      },
+      expectedAccessible: "0.40 Hand and 0.40 Crib and 0.40 Play loss",
+      expectedGains: [] as const,
+      expectedLabel: "0.40 Hand + 0.40 Crib + 0.40 Play loss",
+      expectedMaterials: ["hand", "crib", "play"] as const,
+      expectedShort: "Hand, Crib, Play loss",
+      name: "falls back to table column order when components tie at display precision",
+    },
+  ])(
+    "$name",
+    ({
+      best,
+      chosen,
+      expectedAccessible,
+      expectedGains,
+      expectedLabel,
+      expectedMaterials,
+      expectedShort,
+    }) => {
+      const classification = classifyScoredMistake(best, chosen);
+
+      expect(classification?.materialComponents).toStrictEqual(
+        expectedMaterials,
+      );
+      expect(classification?.materialGains).toStrictEqual(expectedGains);
+      expect(classification?.label).toBe(expectedLabel);
+      expect(classification?.shortLabel).toBe(expectedShort);
+      expect(classification?.accessibleLabel).toBe(expectedAccessible);
+    },
+  );
 });

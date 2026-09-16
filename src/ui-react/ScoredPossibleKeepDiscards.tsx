@@ -36,6 +36,7 @@ import { getDiscardQuality } from "../analysis/discardQuality";
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
+  readonly isPracticeDrill?: boolean;
 
   /**
    * Loads the crib EV table. Injectable so stories and tests can exercise the
@@ -173,6 +174,7 @@ const useExpectedTables = (
 export function ScoredPossibleKeepDiscards({
   cribRole,
   dealtCards,
+  isPracticeDrill = false,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
   onAnalysisRendered,
@@ -359,7 +361,11 @@ export function ScoredPossibleKeepDiscards({
   );
 
   return (
-    <figure className={classes.scoredPossibleKeepDiscards}>
+    <figure
+      className={`${classes.scoredPossibleKeepDiscards} ${
+        isPracticeDrill ? classes.inDrill : ""
+      }`}
+    >
       {renderCaption()}
       <div className={classes.tableContainer}>
         <table>
@@ -381,6 +387,7 @@ export function ScoredPossibleKeepDiscards({
 }
 
 ScoredPossibleKeepDiscards.defaultProps = {
+  isPracticeDrill: false,
   loadCribTable: cribLoader.loadTable,
   loadPlayTable: playLoader.loadTable,
 };
