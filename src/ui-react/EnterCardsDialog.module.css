@@ -1,32 +1,51 @@
 @import url("./vars.css");
 
+/*
+ * Supplies its own top spacing. `Modal` deliberately leaves its scrolling
+ * element without top padding -- a sticky child would otherwise stick below
+ * it, leaving a strip of scrolled content above the bar -- and a shared
+ * `.body > *` rule there would tie the result to CSS-module import order,
+ * since it ties on specificity with this rule.
+ */
 .dialog {
-  color: #143b18;
+  color: #eef8ef;
   display: flex;
   flex-direction: column;
   font-size: 1.2rem;
   gap: 0.9rem;
-  width: min(46rem, 100%);
+  padding-top: var(--spacing);
+  width: 100%;
 }
 
 .title {
-  color: #0b2f10;
+  color: #eef8ef;
   font-size: 2rem;
   line-height: 1;
   margin: 0;
   padding-right: 2rem;
 }
 
+/*
+ * Wrapping keeps both options reachable. The chips are rem-sized, so raising
+ * the device font-size setting widens the row while the dialog stays put: on
+ * a 390px screen at a 28px root font the row ends at 420.5px, past both the
+ * dialog and the viewport, and `overflow-x: hidden` on the page means the
+ * player cannot scroll sideways to reach "Pone" at all. Wrapping brings it
+ * back to 279.5px on two rows. Not caused by the marker pseudo-element
+ * below: suppressing it changes the row's width by zero, so do not "fix" a
+ * recurrence by shrinking the markers.
+ */
 .role {
-  border: 2px solid color-mix(in srgb, green 35%, white);
+  border: 2px solid color-mix(in srgb, green 40%, white);
   border-radius: 0.45rem;
   display: flex;
+  flex-wrap: wrap;
   gap: 1.25rem;
   padding: 0.75rem 1rem 0.9rem;
 }
 
 .role legend {
-  color: #1d4f22;
+  color: #a8d5af;
   font-size: 1.05rem;
   font-weight: 700;
   padding: 0 0.35rem;
@@ -46,9 +65,10 @@
 }
 
 .role-option {
-  background-color: #e4f4e6;
-  border: 2px solid #397a40;
+  background-color: #1a4524;
+  border: 2px solid #43a047;
   border-radius: 10px;
+  color: #eef8ef;
   display: block;
   font-weight: 700;
   padding: 0.45rem 0.85rem;
@@ -59,27 +79,54 @@
     color var(--transition-duration) var(--transition-timing);
 }
 
+.role-option::before {
+  border: 1.5px solid #a8d5af;
+  border-radius: 50%;
+  box-sizing: border-box;
+  content: "";
+  display: inline-block;
+  height: 0.55em;
+  margin-right: 0.4em;
+  vertical-align: middle;
+  width: 0.55em;
+}
+
 .role-option:hover {
-  background-color: #c8efcd;
-  border-color: #218838;
-}
-
-.role input:checked + .role-option {
-  background-color: #28a745;
-  border-color: #218838;
-  color: white;
-}
-
-.role input:focus-visible + .role-option {
-  box-shadow: 0 0 0 2px rgb(52 208 88 / 45%);
-}
-
-.role input:checked + .role-option:hover {
-  background-color: #34c754;
+  background-color: #245830;
   border-color: #34c754;
 }
 
+.role input:checked + .role-option {
+  background-color: #34c754;
+  border-color: #08200d;
+  color: #08200d;
+}
+
+.role input:checked + .role-option::before {
+  background-color: #08200d;
+  border: 1.5px solid #08200d;
+}
+
+/*
+ * The clipped radio cannot show an outline itself, so its label carries the
+ * ring. The 45%-alpha shadow this replaces composited to about #207c36 on
+ * the dark modal surface -- roughly 2.49:1, which is not a focus indicator.
+ */
+.role input:focus-visible + .role-option {
+  box-shadow: none;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.role input:checked + .role-option:hover {
+  background-color: #2eb34b;
+  border-color: #08200d;
+}
+
 .selected {
+  --card-black-suit-color: #eef8ef;
+  --card-red-suit-color: #ff8594;
+
   align-items: center;
   display: flex;
   flex-wrap: wrap;
@@ -93,13 +140,23 @@
   margin-right: 0.5rem;
 }
 
+/*
+ * Bleeds over the scroll container's side padding so no scrolled content
+ * shows beside the bar once it sticks, and reserves the close button's
+ * corner -- which became load-bearing when `.close` stopped scrolling away.
+ * Wraps rather than clipping: at a large device font the two buttons plus
+ * that reserved corner exceed a phone's width.
+ */
 .actions {
   align-items: center;
-  background: color-mix(in srgb, lightgreen 30%, white);
+  background: #10381b;
+  box-sizing: border-box;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   justify-content: center;
-  padding: 0.2rem 0;
+  margin-inline: calc(-1 * var(--spacing));
+  padding: 0.2rem var(--close-clearance) 0.2rem var(--spacing);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -111,10 +168,7 @@
 
 .use-hand,
 .clear {
-  background-color: #28a745;
-  border: 2px solid #218838;
   border-radius: 10px;
-  color: white;
   cursor: pointer;
   font-size: 1.3rem;
   font-weight: 700;
@@ -125,29 +179,48 @@
     box-shadow var(--transition-duration) var(--transition-timing);
 }
 
+.use-hand {
+  background-color: #197536;
+  border: 2px solid #72d572;
+  color: white;
+}
+
 .clear {
-  background-color: #e4f4e6;
-  border-color: #397a40;
-  color: #143b18;
+  background-color: transparent;
+  border: 2px solid #6c8f74;
+  color: #eef8ef;
 }
 
 .use-hand:hover,
-.use-hand:focus,
-.clear:hover,
-.clear:focus {
-  background-color: #34c754;
-  border-color: #34c754;
-  outline: none;
+.use-hand:focus-visible {
+  background-color: #218838;
+  border-color: #8cee8c;
 }
 
-.use-hand:focus,
-.clear:focus {
+.use-hand:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.clear:hover,
+.clear:focus-visible {
+  background-color: color-mix(in srgb, #28a745 20%, transparent);
+  border-color: #34c754;
+}
+
+.clear:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.use-hand:focus-visible,
+.clear:focus-visible {
   box-shadow: 0 0 0 2px rgb(52 208 88 / 30%);
 }
 
 .use-hand:active {
   background-color: #218838;
-  border-color: #218838;
+  border-color: #8cee8c;
 }
 
 .use-hand:disabled,
@@ -160,7 +233,7 @@
   .dialog {
     font-size: 1.3rem;
     gap: 1rem;
-    width: min(42rem, 100%);
+    width: 100%;
   }
 
   .title {

@@ -1,9 +1,11 @@
 @import url("./vars.css");
 
+/* Supplies its own top spacing; see `Modal`'s `.body`. */
 .privacy-policy {
   font-family: var(--text-font-family);
-  color: color-mix(in srgb, black 80%, white);
-  background: color-mix(in srgb, lightgreen 30%, white);
+  padding-top: var(--spacing);
+  color: var(--text-color);
+  background: transparent;
   text-align: left;
 }
 
@@ -37,5 +39,11 @@
 }
 
 .privacy-policy a {
+  color: #7ff0a0;
   overflow-wrap: break-word;
+}
+
+.privacy-policy a:hover,
+.privacy-policy a:focus-visible {
+  color: #a8d5af;
 }
