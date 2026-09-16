@@ -30,30 +30,30 @@
 }
 
 .optimal-badge {
-  background-color: #eafaf1;
+  background-color: #164322;
   border: 1px solid #a9dfbf;
   border-radius: 4px;
-  color: #145a32;
+  color: #eafaf1;
   font-size: 0.82em;
   font-weight: 700;
   padding: 3px 8px;
 }
 
 .sub-optimal-badge {
-  background-color: #fdf2e9;
+  background-color: #4a270f;
   border: 1px solid #f5cba7;
   border-radius: 4px;
-  color: #a04000;
+  color: #fdf2e9;
   font-size: 0.82em;
   font-weight: 700;
   padding: 3px 8px;
 }
 
 .diagnostic-reason {
-  background-color: #f4f1fa;
+  background-color: #2b1d42;
   border: 1px solid #dcd3f2;
   border-radius: 4px;
-  color: #4a2d82;
+  color: #f4f1fa;
   font-size: 0.82em;
   font-weight: 700;
   padding: 3px 8px;
