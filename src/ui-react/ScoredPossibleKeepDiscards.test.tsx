@@ -345,4 +345,31 @@ describe("scored possible keep discards component", () => {
       expect(caption?.textContent).toBe(expectedText);
     },
   );
+
+  it("renders gain and loss sides in separate diagnosticSide inline elements", () => {
+    const dealtCards = toDealtCards(
+      parseHand("4H,5D,KH,6H,8C,KC"),
+      parseHand("KH,KC"),
+    );
+    const { container } = renderScoredPossibleKeepDiscards(dealtCards);
+    const sides = container.querySelectorAll("span[class*='diagnosticSide']");
+
+    expect(sides).toHaveLength(2);
+    expect(sides[0]?.textContent).toBe("1.31 Crib + 0.08 Play gain");
+    expect(sides[1]?.textContent).toBe("< 1.48 Hand loss");
+  });
+
+  it("renders a single diagnosticSide element when there are no offsetting gains", () => {
+    const cards = parseHand("5H,5D,JC,QH,KS,9D");
+    const dealtCards = toDealtCards(cards, parseHand("5H,5D"));
+    const { container } = renderScoredPossibleKeepDiscards(dealtCards, {
+      cribRole: CribRole.Pone,
+    });
+    const sides = container.querySelectorAll("span[class*='diagnosticSide']");
+
+    expect(sides).toHaveLength(1);
+    expect(sides[0]?.textContent).toBe(
+      "7.57 Hand + 5.18 Crib + 0.53 Play loss",
+    );
+  });
 });

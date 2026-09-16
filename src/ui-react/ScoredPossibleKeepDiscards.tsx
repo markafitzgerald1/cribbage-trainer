@@ -313,7 +313,20 @@ export function ScoredPossibleKeepDiscards({
               lost
             </span>
             <span className={classes.diagnosticReason}>
-              {chosenClassification.label}
+              {chosenClassification.gainPart === null ? (
+                <span className={classes.diagnosticSide}>
+                  {chosenClassification.lossPart}
+                </span>
+              ) : (
+                <>
+                  <span className={classes.diagnosticSide}>
+                    {chosenClassification.gainPart}
+                  </span>{" "}
+                  <span className={classes.diagnosticSide}>
+                    &lt; {chosenClassification.lossPart}
+                  </span>
+                </>
+              )}
             </span>
           </>
         )}

@@ -28,9 +28,11 @@ export interface MistakeClassification {
   readonly cribLoss: number;
   readonly dominantComponents: readonly LossComponent[];
   readonly dominantGains: readonly LossComponent[];
+  readonly gainPart: string | null;
   readonly handLoss: number;
   readonly isFlushMiss: boolean;
   readonly label: string;
+  readonly lossPart: string;
   readonly netLoss: number;
   readonly playLoss: number;
   readonly shortLabel: string;
@@ -188,18 +190,23 @@ export const classifyScoredMistake = (
   );
 
   const lossPart = formatComponentList(lossItems, " + ", "loss");
-  const gainPart = formatComponentList(gainItems, " + ", "gain");
-  const label =
-    dominantGains.length > 0 ? `${gainPart} < ${lossPart}` : lossPart;
+  const gainPart =
+    dominantGains.length > 0
+      ? formatComponentList(gainItems, " + ", "gain")
+      : null;
+  const label = gainPart === null ? lossPart : `${gainPart} < ${lossPart}`;
 
   const accessibleLossPart = formatComponentList(lossItems, " and ", "loss");
-  const accessibleGainPart = formatComponentList(gainItems, " and ", "gain");
+  const accessibleGainPart =
+    dominantGains.length > 0
+      ? formatComponentList(gainItems, " and ", "gain")
+      : null;
   const coverVerb =
     dominantGains.length > 1 ? "do not cover" : "does not cover";
   const accessibleLabel =
-    dominantGains.length > 0
-      ? `${accessibleGainPart} ${coverVerb} ${accessibleLossPart}`
-      : accessibleLossPart;
+    accessibleGainPart === null
+      ? accessibleLossPart
+      : `${accessibleGainPart} ${coverVerb} ${accessibleLossPart}`;
 
   const lossLabel = dominantComponents
     .map((component) => getComponentLabel(component, isFlushMiss))
@@ -215,9 +222,11 @@ export const classifyScoredMistake = (
     cribLoss: losses.crib,
     dominantComponents,
     dominantGains,
+    gainPart,
     handLoss: losses.hand,
     isFlushMiss,
     label,
+    lossPart,
     netLoss,
     playLoss: losses.play,
     shortLabel,

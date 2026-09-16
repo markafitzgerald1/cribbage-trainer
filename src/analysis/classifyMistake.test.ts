@@ -299,6 +299,39 @@ describe("classifyScoredMistake", () => {
     },
   );
 
+  it("exposes gainPart and lossPart for phone portrait line break cases", () => {
+    const dualGains = classifyScoredMistake(
+      createMockCandidate([0, 1.32, 0]),
+      createMockCandidate([0.65, 0, 0.5]),
+    );
+    const dualLosses = classifyScoredMistake(
+      createMockCandidate([0, 1.06, 0.42]),
+      createMockCandidate([0.61, 0, 0]),
+    );
+    const pureLoss = classifyScoredMistake(
+      createMockCandidate([1.4, 0, 0]),
+      createMockCandidate([0, 0, 0]),
+    );
+
+    expect(dualGains).toMatchObject({
+      gainPart: "0.65 Hand + 0.50 Play gain",
+      label: "0.65 Hand + 0.50 Play gain < 1.32 Crib loss",
+      lossPart: "1.32 Crib loss",
+    });
+    expect(dualLosses).toMatchObject({
+      accessibleLabel:
+        "0.61 Hand gain does not cover 1.06 Crib and 0.42 Play loss",
+      gainPart: "0.61 Hand gain",
+      label: "0.61 Hand gain < 1.06 Crib + 0.42 Play loss",
+      lossPart: "1.06 Crib + 0.42 Play loss",
+    });
+    expect(pureLoss).toMatchObject({
+      gainPart: null,
+      label: "1.40 Hand loss",
+      lossPart: "1.40 Hand loss",
+    });
+  });
+
   it.each([
     {
       bestCandidate: createFlushCandidate([4.2, 0, 0], 4),

@@ -59,6 +59,11 @@
   padding: 3px 8px;
 }
 
+.diagnostic-side {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .table-container {
   box-sizing: border-box;
   flex-grow: 1;
