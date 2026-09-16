@@ -1,9 +1,12 @@
+@import url("./vars.css");
+
 .deal-button {
-  --bg-color: #28a745;
-  --hover-color: #34c754;
-  --active-color: #218838;
+  --bg-color: #197536;
+  --hover-bg-color: #218838;
+  --hover-border-color: #8cee8c;
+  --active-color: #0f5527;
   --focus-shadow-color: rgb(52 208 88 / 30%);
-  --border-color: #218838;
+  --border-color: #72d572;
   --font-size-portrait: calc(var(--medium-text-font-size-portrait) * 0.6667);
   --font-size-landscape: calc(var(--medium-text-font-size-portrait) * 0.4);
   --vertical-padding-multiplier: 0.425;
@@ -21,17 +24,18 @@
 }
 
 .deal-button:hover {
-  background-color: var(--hover-color);
-  border-color: var(--hover-color);
+  background-color: var(--hover-bg-color);
+  border-color: var(--hover-border-color);
 }
 
 .deal-button:active {
   background-color: var(--active-color);
-  border-color: var(--active-color);
+  border-color: var(--hover-border-color);
 }
 
-.deal-button:focus {
-  outline: none;
+.deal-button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
   box-shadow: 0 0 0 2px var(--focus-shadow-color);
 }
 
@@ -52,11 +56,5 @@
         var(--font-size-landscape) * var(--vertical-padding-multiplier)
       )
       calc(var(--font-size-landscape) * var(--horizontal-padding-multiplier));
-  }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .deal-button:focus {
-    box-shadow: none;
   }
 }

@@ -270,6 +270,9 @@ describe("mistake queue dialog", () => {
       expect(
         rendered.queryByRole("group", { name: "Loss severity" }),
       ).toBeNull();
+      expect(
+        rendered.getByRole("group", { name: "Crib role" }).className,
+      ).not.toContain(classes.severityGroup);
       expect([
         rendered.queryByText("low"),
         rendered.queryByText("medium"),
@@ -277,6 +280,17 @@ describe("mistake queue dialog", () => {
       ]).toStrictEqual([null, null, null]);
       expect(rendered.getByText("2.00 pts lost")).toBeInTheDocument();
       expect(rendered.getByText("1.50 pts lost")).toBeInTheDocument();
+    });
+
+    it("scopes severityGroup class only to the loss severity filter group", () => {
+      const rendered = renderQueueDialog();
+      const severityGroup = rendered.getByRole("group", {
+        name: "Loss severity",
+      });
+      const roleGroup = rendered.getByRole("group", { name: "Crib role" });
+
+      expect(severityGroup.className).toContain(classes.severityGroup);
+      expect(roleGroup.className).not.toContain(classes.severityGroup);
     });
 
     it("paginates list and renders more items when Show more is clicked", () => {
