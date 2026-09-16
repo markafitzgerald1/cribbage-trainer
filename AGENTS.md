@@ -1015,6 +1015,28 @@ they bind any PR that makes a claim about a phone or ships a guard.
   derived-inputs rule was called the one immediately above when it sits 810
   lines earlier in a different section.
 
+  **Fixing a claim where a reviewer pointed at it is not fixing the claim.**
+  A sentence that was worth writing once usually got written three or four
+  times — in the module comment, in a test comment, in the skill, and in the
+  pull request body — and correcting only the cited copy leaves the others
+  standing and contradicting the fix. #814 lost a whole review round to this:
+  six of one round's ten findings were claims already reported as fixed,
+  surviving somewhere else. So repair by searching for the claim, not by
+  editing the line, and re-run the search before reporting it fixed:
+
+  ```bash
+  grep -rin "row per attempt" src skills AGENTS.md
+  ```
+
+  Check the pull request body too, which no repository grep reaches — keep a
+  copy on disk and search that alongside. And read the hits rather than
+  counting them: after a correction the surviving matches should all be the
+  corrected wording or a findings table describing the repair, and an empty
+  result is more often a broken command than a clean file (a shell variable
+  that expanded to nothing sends `grep` to stdin and it reports success
+  having read no files at all, which happened here while checking exactly
+  this).
+
 - Capture each session's durable, non-obvious learnings — new invariants,
   debugging techniques, tooling or review-workflow gotchas — in `AGENTS.md`
   (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as
