@@ -80,39 +80,34 @@ export const useMistakeQueueClassifications = (
   }, [show, sortedItems, tables]);
 
   useEffect(() => {
-    if (!show || tables === null || sortedItems === null) {
-      return () => {
-        // No pending classification tasks while hidden or uninitialized.
-      };
-    }
-    const visible = sortedItems.slice(0, visibleCount);
-    const pendingItems = visible.filter(hasPreviousDiscard);
-    if (pendingItems.length === 0) {
-      return () => {
-        // All visible items are already cached.
-      };
-    }
-
-    let index = 0;
     const timeoutRef = {
       current: null as ReturnType<typeof setTimeout> | null,
     };
-    const processNextChunk = () => {
-      const chunk = pendingItems.slice(index, index + CHUNK_SIZE);
-      for (const item of chunk) {
-        classifyAndCacheItem(item, tables);
-      }
-      index += chunk.length;
-      setClassifications(new Map(classificationCache));
-      if (index < pendingItems.length) {
+    if (show && tables !== null && sortedItems !== null) {
+      const visible = sortedItems.slice(0, visibleCount);
+      const pendingItems = visible.filter(hasPreviousDiscard);
+      if (pendingItems.length > 0) {
+        let index = 0;
+        const processNextChunk = () => {
+          const chunk = pendingItems.slice(index, index + CHUNK_SIZE);
+          for (const item of chunk) {
+            classifyAndCacheItem(item, tables);
+          }
+          index += chunk.length;
+          setClassifications(new Map(classificationCache));
+          if (index < pendingItems.length) {
+            timeoutRef.current = setTimeout(processNextChunk, 0);
+          }
+        };
+
         timeoutRef.current = setTimeout(processNextChunk, 0);
       }
-    };
-
-    timeoutRef.current = setTimeout(processNextChunk, 0);
+    }
 
     return () => {
-      clearTimeout(timeoutRef.current as ReturnType<typeof setTimeout>);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
     };
   }, [show, sortedItems, tables, visibleCount]);
 
