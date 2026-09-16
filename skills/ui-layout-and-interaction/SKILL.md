@@ -51,6 +51,12 @@ once you are already editing layout or interaction code.
   default-scale size unchanged, and guard it the way portrait already does:
   the same measurement repeated at a 28px root font. That guard failed on
   all five browser projects before the fix and passes after it.
+  A proposed exception — that text inside a scroll container (`.dynamic-ui`,
+  the analysis figure) can carry an uncapped floor, because the height it
+  gains stays reachable — is recorded in #802 and in `AGENTS.md`'s
+  two-reviewers bullet. It is **not** in force: it rests on a desktop
+  measurement, PR #797 was withdrawn before it reached a phone, and this
+  rule was earned on hardware. Cap the floor until #802 settles it.
 - Anything new added below the controls and cards in the side-by-side
   left column inherits that trap. The practice-drill panel
   (`PracticeDrillPanel.module.css`) went in with every gap, margin,
@@ -110,6 +116,23 @@ once you are already editing layout or interaction code.
   anchors one (`.dynamic-ui.with-tally > :nth-last-child(2)`), and the
   conditional class driving it must come from the same predicate the child's
   own render uses or the two diverge.
+- The analysis figure is its own flex column, and anything added above the
+  results table competes with it for height rather than sitting beside it.
+  `.scored-possible-keep-discards` is `height: 100%` with `.table-container`
+  taking what is left through `flex-grow: 1`, so a sibling that refuses to
+  shrink can take all of it: a panel added above the table on PR #797 drove
+  that share to exactly zero at 380x350 with a 26px root font, and the table
+  vanished while the panel itself looked correct. That PR was withdrawn, so
+  no `min-height` floor protects the table today and the next child added
+  there inherits the whole hazard. `consentLayout.spec.ts`'s "preserves
+  usable analysis table height" case is the nearest guard, and it did fail
+  on that unfixed branch — but **read what it actually asserts before
+  trusting it**: `expect(containerBounds.height).toBeGreaterThan(0)` catches
+  a total collapse only, which is what that branch happened to produce. A
+  sibling that leaves the table at some positive but unusably small height
+  passes it. Its name promises more than its assertion delivers, so a new
+  child of that figure needs a content-derived minimum asserted alongside
+  it, not a green run of this one.
 - Aligning such a child to the **end** of its cell is not the safe way to
   stop it stretching. Items placed after the consent cell's row sit below the
   privacy links once pushed to their cell's end: `align-self: end` put the
@@ -212,6 +235,16 @@ once you are already editing layout or interaction code.
   ordinal or wall-clock `at` — and clear it outright (render-time reset,
   like `usePracticeDrill`) once its item leaves the filtered list, or
   restoring the filter silently reopens the panel.
+- Hiding a visual layout from assistive technology makes the replacement text
+  the **only** source of every fact it carried, and it is easy to leave one
+  out. A CSS-grid panel on PR #797 (withdrawn) gave each row a single spoken
+  sentence with the grid itself `aria-hidden`; the first version named the
+  columns and the numbers but not the two cards the row was about, so a
+  screen reader user was told the top choice scored more without being told
+  what it was. When you `aria-hidden` a region, list what a sighted reader
+  gets from it — headers, labels, identity, ordering — and check the
+  replacement carries each one. Assert the whole sentence in a test rather
+  than a fragment, or the omission reappears silently.
 - Freezing a control by swallowing its `onChange` leaves it focusable, still
   showing a pointer cursor, and announced as editable — a control that lies
   about being interactive. Lock it with the native `disabled` attribute
@@ -246,3 +279,260 @@ once you are already editing layout or interaction code.
   the record is genuinely absent. Fall back to the local estimate rather
   than asserting the record non-null — the whole tally is read-only in
   that tab until reload anyway.
+- Dark themes must satisfy WCAG 2.1 SC 1.4.11 (non-text contrast) across all
+  interactive boundaries: button borders, role chips, and filter options must
+  be told apart from the adjacent surface by **some** color at 3:1 or better
+  (e.g. #43a047 reaching 3.96:1 against the #10381b modal surface; an earlier
+  revision of this line said 3.47:1). Usually that color is the border, and
+  then the border is what has to clear 3:1. It is not always: the checked
+  sort-order chip documented below pairs a #34c754 fill with a deliberately
+  dark #08200d border, and the fill carries the boundary at 3.18:1 against
+  the felt while that border sits at 2.43:1 against the same felt.
+  So measure the color that actually separates the control from its
+  surroundings rather than the `border-color` declaration by reflex — an
+  earlier revision of this line demanded 3:1 from every border against both
+  its fill and the surface, which condemned a chip this same file documents
+  as correct. **Measure against the surface the
+  control actually renders on, not the one its stylesheet neighbors use** —
+  #6c8f74 passes at 3.63:1 on that modal surface and fails at 1.96:1 on the
+  #1f6536 felt and at 2.86:1 on the chart's #22482e detail panel. #793 cleared
+  that same color against the wrong surface **twice** — `PracticeDrillPanel`'s
+  "Exit drill" and `DecisionQualityChart`'s `.detail-close` — so a shared
+  border color is a standing invitation to audit the stylesheet rather than
+  the screen. Both now use #a7c7ad, which clears 3:1 on every ground it
+  meets. One control is knowingly below the floor and is not yet fixed:
+  `ScoredPossibleKeepDiscards`'s `.retry-button` (#dc3545 fill and border)
+  reaches 1.56:1 against the felt.
+  It is an error-path control, it was worse before the felt change (1.13:1
+  against the old `green`), and it deserves its own issue — so treat this
+  bullet as the standard to hold new work to rather than a description of a
+  repository that already satisfies it everywhere. In modals,
+  elevated dialog surfaces must maintain distinct visual separation from the
+  felt ground behind the dimmed overlay (color-mix 50% black): thin 1px borders
+  or surfaces that closely match the dimmed backdrop leave dialogs looking
+  flat and unanchored. Frame dark modals with a crisp boundary border (e.g. 2px
+  solid #43a047) and distinct elevation.
+- Every modal action bar that sticks to the top (`position: sticky; top: 0`)
+  reserves clearance for the absolutely positioned close button, and the
+  button carries `z-index: 10`. Both `MistakeQueueDialog` and
+  `EnterCardsDialog` do this; the shared `Modal` contributes the stacking rule
+  and the clearance token but has no sticky bar of its own. **Reserve it in
+  px, not rem.** `.close` does not scale with the device font setting — its
+  `font-size: medium` is 16px and its `right` inset 15px whatever the root is
+  — so it measures a constant 26.7px wide and needs 43.7px of corner at every
+  root font. The `3.5rem` this replaced reserved 56px at the default and 126px
+  at a 36px root, taking width from the action row exactly where a phone has
+  least to spare. `--close-clearance` in `Modal.module.css` is the single
+  value; a sticky bar pairs it with `flex-wrap: wrap` so a large device font
+  wraps the buttons instead of clipping them.
+
+  This was an open question for most of #793 and is now closed by hardware: on
+  a real phone the close button scrolled away with the picker, so the clearance
+  is load-bearing rather than defensive. See the modal-scroll bullet below for
+  the structural fix and the two traps that came with it.
+
+- Primary action buttons across both the main felt ground and elevated modals
+  (such as Deal, Use hand, Start drill, and Practice actions) must maintain
+  at least 3:1 non-text boundary contrast against their fill (e.g. #72d572
+  border reaching 3.15:1 against #197536 fill) and against adjacent grounds
+  (3.86:1 against #1f6536 table felt, 7.16:1 against #10381b dialog surface).
+  Because dark grounds compress luminance, darker borders cannot reach 3:1;
+  high-luminance borders are mathematically required to establish legible
+  component boundaries for low-vision players.
+- Persistent links rendered directly on the felt table ground (such as the
+  collapsed Privacy Policy and Analytics Settings links) must maintain at
+  least 4.5:1 normal-text contrast under WCAG 2.1 SC 1.4.3 (e.g. #b8e5be
+  reaching 5.04:1 against #1f6536 ground, brightening to #def8e2 at 6.27:1
+  on hover and focus).
+- Radio selections and filter chips (such as Dealer/Pone role selectors and
+  dialog filter groups) must distinguish their active/checked state through
+  both non-color visual indicators (such as an inline radio circle or dot
+  pseudo-element that avoids altering accessible text names) and distinct state
+  colors where the selected fill contrasts at least 3:1 against the unselected
+  state (e.g. #34c754 reaching 4.92:1 against unselected #1a4524 and 5.89:1
+  against the #10381b modal ground, paired with high-contrast #08200d text at
+  7.72:1).
+- **Wrapping filter chips are not automatically a defect; the test is
+  reachability, and a single row is required only where vertical space is
+  scarce.** The mistake queue's four Loss-severity options are the case that
+  earned the rule — its header (title, action bar, subtitle, summary cards,
+  four filter groups) pushed the top mistake off a real phone in landscape, so
+  a wrap there costs a row of content. What that bought in the end is
+  narrower than it sounds: `.severity-group` is declared only in the portrait
+  (`< 6/5`) block, where it takes the modal's full width and tightens padding,
+  gaps and marker sizing so the four chips fit **when they can** — and then
+  wraps when they cannot. It is not held to one row. The `nowrap` +
+  `overflow-x: auto` version that was is gone, because it cropped the last
+  threshold's final digit; landscape has always let `.filter-group` wrap.
+  The Decision Quality Trend dialog is the counter-case and ships wrapping on
+  purpose: measured on a
+  375px viewport, its five Granularity chips take two rows at a 16px root font
+  and four at 28px, and its three Crib role chips take two at 28px, but no
+  group escapes the viewport at either size so every chip stays reachable.
+  Do not add single-row treatment to a group without a demonstrated need — the
+  cure is capped markers and tighter padding, which costs legibility, and on
+  narrow screens with large accessibility fonts inline radio markers add width
+  to every chip at once.
+- Hover and focus states for primary action buttons must maintain at least
+  3:1 contrast between the border and the interactive fill (e.g. #8cee8c border
+  reaching 3.17:1 against #218838 fill, 4.95:1 against #1f6536 felt, and 9.18:1
+  against #10381b modal ground) to ensure interactive boundaries remain legible
+  under WCAG 2.1 SC 1.4.11 during interaction.
+- Do not use positional selectors like `:last-child` for filter groups whose
+  presence depends on conditional data (such as the mistake queue's
+  Loss-severity group, which is omitted when fewer than three distinct loss
+  values exist). Scoping multi-chip portrait sizing to a dedicated class (e.g.
+  `.severity-group`) prevents child-shift regressions where other controls
+  (like Crib role) are inadvertently shrunk.
+- The analytics consent dialog and settings panel use the dark modal surface
+  (#10381b, border 2px solid #43a047, box-shadow, and #eef8ef text) rather than
+  light backgrounds. Action buttons within the consent dialog use consistent
+  dark theme action button styling (#197536 fill with #72d572 border,
+  transitioning to #218838 fill with #8cee8c border on hover and focus).
+- Active/pressed states for primary action buttons must retain a distinct,
+  high-contrast border (such as `border-color: #8cee8c;` or
+  `var(--hover-border-color)`) against darker active fills (e.g. #0f5527),
+  preventing the boundary contrast from collapsing to 1:1 when pressed.
+- When styling dialog action buttons that host nested modals (such as
+  `AnalyticsConsentDialog` hosting `Modal` for the privacy policy), scope button
+  rules to direct children (`> button`) or dedicated classes rather than
+  descendant `button` selectors so the nested modal's `.close` button is not
+  inadvertently restyled with primary action borders and backgrounds.
+- In striped data tables with hover rows, place the `tr:nth-child(even)` rule
+  before the `tbody tr:hover` rule with equal or greater selector specificity so
+  hover highlights apply consistently to all rows rather than being masked on
+  even rows.
+- Action buttons resting directly on the felt table ground (such as "Quality
+  trend" and "Mistake queue" in `DiscardTallyView`) use the high-contrast
+  primary button palette (#197536 fill with 2px solid #72d572 border,
+  transitioning to #218838 fill with #8cee8c border on hover/focus) so their
+  boundaries exceed 3:1 contrast against both their fill and the #1f6536 table
+  felt.
+- **A transparent fill is not a missing color; it is the ground, and changing
+  the ground silently retires the border that used to pass.** The sort-order
+  toggles (`SortOrderInput.module.css`) carried a `black` border that reached
+  4.09:1 against the old `green` (#008000) ground and fell to 2.97:1 against
+  the #1f6536 felt without one line of their own stylesheet changing — so no
+  diff, no gate, and no review of the touched files could surface it. When a
+  ground color moves, enumerate every control that draws its boundary in a
+  dark color against it, not merely the files the change touched. The felt
+  ground now carries `#72d572` at 3.86:1 unselected, `#245830` fill with an
+  `#8cee8c` border (5.86:1 against the fill, 4.95:1 against the felt) on
+  hover, and `#34c754` fill with `#08200d` border and text on the checked
+  toggle, where the fill itself carries the boundary at 3.18:1 against the
+  felt and the text reaches 7.72:1. Retuning one state of such a control
+  forces the others: leaving the old `#5fa7d7` hover fill under a new
+  `#72d572` border would have collapsed the hover boundary to 1.44:1, and the
+  old `#81c784` checked fill to 1.10:1 — a fix for the reported state
+  creating two unreported ones.
+- **`overflow-x: auto` on a flex item does nothing until `min-width: 0` joins
+  it.** A flex item's automatic minimum size is its `min-content` width, so
+  the box grows to fit its children and never overflows itself — the
+  declaration is present, the scrollbar never appears, and the row pushes the
+  page sideways instead. When a row is meant to absorb its own overflow,
+  assert the container's own box against the viewport rather than trusting
+  the declaration. **The measurements that taught this came from a
+  `.severity-group` treatment that no longer exists** — at a 28px root font on
+  a 375px viewport it rendered 550px wide with `scrollWidth === clientWidth`
+  without `min-width: 0`, and 325px with `scrollWidth` 498px once it had it.
+  That row now wraps instead, because scrolling cropped a label; see the
+  wrapping bullet above. The CSS mechanic is what to keep here, not the
+  treatment it was learned on.
+- **A modal's close button must not live inside the box that scrolls, and
+  moving the scroll off that box detaches every absolutely positioned thing
+  inside it.** `Modal`'s `.close` was `position: absolute` against `.content`,
+  which was also the `overflow-y: auto` scroll container, so scrolling the
+  card picker carried the only visible way out of the dialog off the top of
+  the screen — confirmed on a real phone in #793, after emulated measurements
+  had already shown the close button reaching y = -279px at a 16px root font
+  and -1169px at 28px. The fix is a `.body` wrapper that scrolls while
+  `.content` stays put, and it has two consequences worth knowing before
+  repeating it. First, the scrolling element must carry `position: relative`:
+  the
+  dialogs hide their radio inputs with `position: absolute`, and once
+  `.content` stopped scrolling those inputs stayed anchored to it — after a
+  300px scroll the Pone radio sat at y = 118.9 while its own label was at
+  -184.1, hovering over the card grid and eating clicks meant for the tiles.
+  Second, the scrolling element must have **no top padding**: a sticky child
+  sticks to the content-box edge, so top padding becomes a strip of content
+  showing above the stuck bar — 22px of card picker, also reported from the
+  phone. Put that spacing on its children, where it scrolls away
+  with them.
+- **A scrolling strip hides content more thoroughly than a wrapped row does.**
+  The mistake queue's Loss-severity chips were kept on one line with
+  `flex-wrap: nowrap` plus `overflow-x: auto`, which satisfied a one-row guard
+  while cropping "Low < 0.31" to "Low < 0.3" — the threshold's last digit sat
+  behind a scroll affordance most people never notice. Wrapping costs a row of
+  vertical space; cropping costs the number. Prefer the wrap, and write guards
+  that assert each chip is **whole inside its group** rather than that the
+  chips share a row, because the row assertion is what the cropping mechanism
+  was invented to satisfy.
+- **A palette shift is not a focus indicator.** Eleven controls on the dark
+  grounds _used to_ suppress the native outline and lean on their hover
+  treatment to double as focus — they no longer do, so read this as the
+  reasoning behind `--focus-ring` rather than as a description of the current
+  selectors. A hover treatment moves the fill and border by roughly 1.28:1
+  each —
+  and where a shadow was added instead, `rgb(52 208 88 / 30%)` reaches only
+  1.52:1 against the felt. With four consent actions side by side, or Deal
+  next to Enter cards, a keyboard user cannot tell which one they are on.
+  `--focus-ring` in `vars.css` is the shared answer: `2px solid #def8e2` at a
+  2px offset, 11.62:1 on the `#10381b` dialog surface and 6.27:1 on the
+  `#1f6536` felt. Use it rather than `outline: none` plus a palette change;
+  the palette change is still worth keeping, but as reinforcement rather than
+  as the signal. Both reviewers found this independently on #793, one control
+  at a time — when a focus rule anywhere turns out to have no real indicator,
+  audit all of them rather than fixing the one you were shown. Grepping
+  `outline: none` is not that audit and will miss the commonest shape: four
+  mistake-queue buttons had focus sharing a single rule with hover, so the two
+  states rendered identically and nothing was ever suppressed. Walk every
+  `:focus` and `:focus-visible` rule and ask what a keyboard user actually
+  sees. The one that
+  legitimately keeps it is `CardGridPicker`'s `.card`, which sits on a
+  near-white tile and has its own visible `:focus-visible` treatment.
+  A clipped radio is the other case worth knowing: it cannot show an outline
+  itself, so the ring goes on the label it is paired with.
+- **Hang the ring on `:focus-visible`, never bare `:focus`.** A touch browser
+  focuses a button when it is tapped, so a ring on `:focus` fires on every
+  tap — and the hover-and-focus rules these grounds are full of make that
+  easy to do by accident, since swapping one `outline: none` for the ring
+  silently promotes a shared `:hover, :focus` rule into a tap indicator.
+  `DealButton` showed the shape at its sharpest: a
+  `@media (hover: none) and (pointer: coarse)` block existed precisely to
+  drop the ring on touch, cleared `box-shadow`, and could not clear an
+  `outline` that had not existed when it was written, so the comment
+  promising no ring on a tap sat directly above a rule that produced one.
+  `:focus-visible` is what that block was approximating, so the fix retired
+  it: the keyboard user on a touch device now gets the real ring instead of
+  a border swap stood in for it. Four rules here carried the ring on bare
+  `:focus` — Deal, Enter cards, Use hand / Clear, and the modal close — and
+  only one had a comment to contradict, so grep the selectors rather than
+  trusting the prose.
+- **And do not let hover share the ring's rule.** The mirror image: four
+  rules gave `outline: var(--focus-ring)` to a combined
+  `:hover, :focus-visible` selector, so hovering one drill action while
+  tabbing to another ringed both and the focus target stopped being
+  identifiable — the one job the token has. Share the fill and border if
+  you like, since those are reinforcement; the outline goes in a rule of
+  its own. Both reviewers found this independently, and Copilot carried it
+  further: a bare `:focus` leaves the **hover palette** stuck on a tapped
+  button even where the ring is already keyed correctly, so these controls
+  now key their whole focus treatment — palette, shadow, and ring — to
+  `:focus-visible`. Two greps cover the family: any rule whose body has
+  `outline: var(--focus-ring)` and whose selector mentions `:hover`, and
+  any `:focus` not spelled `:focus-visible`.
+- **One _dialog-level_ vertical scroll container per modal.** A dialog that
+  sets its own `overflow-y: auto` inside `Modal`'s scrolling `.body` chains
+  the two: at a
+  340px-high landscape viewport the panel caps at 308px while a `94vh` dialog
+  reached 319.6px, so scrolling the inner one to its end carried on into the
+  outer and dragged the sticky action bar 39.5px up the panel — sticky in
+  name only. The queue and trend dialogs now declare neither `overflow-y` nor
+  a `vh` height cap and let `.body` do the scrolling; with 265px of real
+  scroll the bar pins flush with nothing showing above it. A `vh` cap on a
+  child of a panel that is itself capped in `vh` is the shape to watch for,
+  since the two are measured against the same viewport but not against each
+  other. A capped region inside the flow is a different thing and is fine:
+  the trend dialog's `.table-wrapper` keeps its own `overflow: auto` under a
+  220px `max-height` deliberately, because it cannot chain the whole panel
+  the way a second full-height dialog scroll container does.

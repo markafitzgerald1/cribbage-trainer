@@ -60,6 +60,27 @@ baselines so CI agrees with what was generated locally.
   `min-content` left column past the cards in side-by-side mode, stranding
   dead space before the analysis table. Measure the row's max-content width
   (clone it with `width: max-content`) before adding anything to it.
+- The suite locates the analysis with a bare `page.getByRole("table")` in
+  **six** places, so a second visible table anywhere puts the whole suite
+  into strict-mode violation rather than only the spec that added it. At the
+  time of writing: `renderThenSelectTwoDiscards.ts`'s `waitForAnalysis`,
+  which nearly every spec calls, `index.spec.ts`, `discardTally.spec.ts`,
+  and three separate sites in `practiceDrill.spec.ts`. **Re-derive that list
+  with a repo-wide search rather than trusting this one** — an earlier draft
+  named two of the six, and scoping only the ones a bullet happens to
+  mention leaves the rest silently targeting the wrong table. The Jest specs
+  use the same bare locator in three more places; Testing Library has no
+  strict mode, so they fail differently, but they drift the same way. Scope
+  every site — to the analysis figure, or to an accessible name — as part of
+  whatever adds the second table. Do not
+  reach for a `div` grid to keep them working:
+  `ScoredPossibleKeepDiscardExpandedRow` shows what that costs. It keeps the
+  outer `<tr>` and `<td colSpan={5}>` that make it a row of the analysis
+  table, so those roles are intact — but the points breakdown **inside** that
+  cell is a `div` grid with no row, cell, or column-header roles, so a screen
+  reader gets no association between a number and the category heading above
+  it. Genuinely tabular data earns a real table; the locators are the part
+  that has to change.
 - Analysis tables are lazy-loaded. E2E tests that select a complete discard or
   hydrate one from a deep link must wait for `Loading analysis...` to become
   hidden and for the table to become visible before locating a result row;
@@ -188,3 +209,37 @@ baselines so CI agrees with what was generated locally.
     see your harness's own environment notes (for Claude Code on the web,
     `CLAUDE.md`'s Cloud sessions section) for numbers measured on a specific
     host, since they do not transfer to a different one.
+- **A guard that scrolls must scroll the thing the bug moves, or it proves
+  nothing.** Two versions of the same guard went inert on #793 in the same
+  way. Asserting a chip's box after `scrollIntoViewIfNeeded` passed against a
+  deliberately broken build in all five projects, because that call scrolls
+  the document too, so an overflowing row satisfies it. Then a modal guard
+  that scrolled only the panel's descendants passed against a build where the
+  panel itself was the scroll container — the exact bug it existed to catch —
+  because nothing moved. Both were caught only by negative-checking, and both
+  were fixed by scrolling the element under suspicion explicitly: the row's
+  own container, or `[panel, ...panel.querySelectorAll("div")]`. The sabotage
+  then fails loudly, the modal one reporting the close button at y = -194
+  where it should sit at 33. The wider rule: assert the box that moved, and
+  make sure your scroll step could actually move it.
+- **A `toBeHidden` on lazily loaded content is satisfied by the race, not by
+  the code you are testing.** The drill's "withholds the analysis" guard
+  asserted `getByRole("table")` hidden before either discard card was
+  selected, so an incomplete discard hid it and the test passed against a
+  build with the withholding clause deleted. Moving the assertion into the
+  window after both selections was **still** not enough: the analysis is
+  lazily loaded, so it is equally absent while its chunk resolves, and the
+  sabotaged build passed in four of five projects — firefox alone failed,
+  was retried, and reported `1 flaky` with an exit code of 0, which reads as
+  a pass. Render the thing once by a route that is supposed to show it —
+  here, completing a discard on the board hand — before asserting it is
+  absent anywhere else. That loads the chunk and proves on the same page
+  that the content renders, so the later absence has one explanation left.
+  Sabotage until **every** project fails: a single-project failure among
+  passes is the signature of a race, not of a guard.
+- `expectChipsFullyVisible` in `mistakeQueueLayout.spec.ts` is the shape to copy
+  for chip rows: it asserts each chip is whole inside its group and the group
+  inside the viewport, and says nothing about how many rows that takes. An
+  earlier version asserted a single row, which a `nowrap` + `overflow-x: auto`
+  strip satisfied while cropping a label — the row assertion was what the
+  cropping mechanism existed to satisfy.

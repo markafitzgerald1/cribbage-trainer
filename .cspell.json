@@ -18,6 +18,7 @@
   "words": [
     "actuals",
     "autodocs",
+    "bijections",
     "cardlabel",
     "CDHS",
     "Buildx",
@@ -67,6 +68,8 @@
     "rerenders",
     "rhysd",
     "royale",
+    "satisfiability",
+    "scrollport",
     "seedrandom",
     "setsid",
     "shellcheck",
@@ -78,10 +81,12 @@
     "TJQK",
     "tsbuildinfo",
     "unclustered",
+    "unpermuted",
     "unpushed",
     "unshown",
     "unvalidated",
     "Vite",
+    "WCAG",
     "worktree",
     "worktrees"
   ]

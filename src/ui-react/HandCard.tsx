@@ -1,5 +1,5 @@
 import * as classes from "./HandCard.module.css";
-import { Rank, Suit } from "../game/Card";
+import { CARD_LABELS, Rank, Suit } from "../game/Card";
 import { CardLabel } from "./CardLabel";
 import { useCallback } from "react";
 
@@ -38,6 +38,7 @@ export function HandCard({
       />
       {}
       <input
+        aria-label={`Keep ${CARD_LABELS.at(rank)}${suit ?? ""}`}
         checked={kept}
         disabled={disabled}
         onChange={handleChange}

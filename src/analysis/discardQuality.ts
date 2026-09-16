@@ -17,6 +17,16 @@ export interface ScoredKeepDiscardChoice {
   readonly expectedNetPoints: number;
 }
 
+// Taken as a maximum rather than as the first element, so a caller's ordering is its own business.
+export const maxExpectedNetPoints = (
+  scoredKeepDiscards: readonly { readonly expectedNetPoints: number }[],
+): number =>
+  Math.max(
+    ...scoredKeepDiscards.map(
+      (scoredKeepDiscard) => scoredKeepDiscard.expectedNetPoints,
+    ),
+  );
+
 export interface DiscardQuality {
   readonly expectedPointsLoss: number;
   /*
@@ -61,12 +71,7 @@ export const getDiscardQuality = (
   if (!chosen) {
     return null;
   }
-  // Taken as a maximum rather than as the first element, so a caller's ordering is its own business.
-  const bestExpectedNetPoints = Math.max(
-    ...scoredKeepDiscards.map(
-      (scoredKeepDiscard) => scoredKeepDiscard.expectedNetPoints,
-    ),
-  );
+  const bestExpectedNetPoints = maxExpectedNetPoints(scoredKeepDiscards);
   // Compared at full precision rather than at the two decimals the trainer displays: the loss is what the choice actually cost against this model, and the flag below has to mean the top choice rather than "within a hundredth of it".
   const expectedPointsLoss = withoutFloatResidue(
     bestExpectedNetPoints - chosen.expectedNetPoints,
