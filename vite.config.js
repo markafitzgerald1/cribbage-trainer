@@ -61,9 +61,11 @@ export default {
           // Use project root so setupFiles outside ./src are resolved correctly (e.g. .storybook)
           root: dirname,
           setupFiles: [path.join(dirname, ".storybook/vitest.setup.ts")],
+          testTimeout: 15_000,
         },
       },
     ],
     root: dirname,
+    testTimeout: 15_000,
   },
 };

@@ -6,8 +6,6 @@ import {
   type ScoredMistakeCandidate,
   classifyMistake,
   classifyScoredMistake,
-  formatAccessibleNetLoss,
-  formatNetLoss,
 } from "./classifyMistake";
 import { describe, expect, it } from "@jest/globals";
 import type { ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
@@ -267,6 +265,24 @@ describe("classifyScoredMistake", () => {
       name: "detects dual material gains offsetting single dominant crib loss",
       shortLabel: "Crib > Hand, Play",
     },
+    {
+      best: [0.021739, 0, 0] as const,
+      chosen: [0, 0.019424, 0] as readonly [number, number, number],
+      dominant: ["hand"] as const,
+      gains: ["crib"] as const,
+      label: "0.02 Crib gain <= 0.02 Hand loss",
+      name: "formats less-than-or-equal when rounded gain matches rounded loss",
+      shortLabel: "Hand > Crib",
+    },
+    {
+      best: [0.004, 0, 0] as const,
+      chosen: [0, 0, 0] as const,
+      dominant: [] as const,
+      gains: [] as const,
+      label: "< 0.01 loss",
+      name: "falls back to sub-cent label when all deltas are below precision",
+      shortLabel: "< 0.01",
+    },
   ])(
     "$name",
     ({ best, chosen, dominant, gains = [], label, shortLabel = label }) => {
@@ -278,8 +294,8 @@ describe("classifyScoredMistake", () => {
       expect(classification).not.toBeNull();
       expect(classification?.accessibleLabel).not.toMatch(/[<>]/u);
       expect({
-        dominant: classification?.dominantComponents,
-        gains: classification?.dominantGains,
+        dominant: classification?.materialComponents,
+        gains: classification?.materialGains,
         label: classification?.label,
         shortLabel: classification?.shortLabel,
       }).toStrictEqual({
@@ -313,8 +329,13 @@ describe("classifyScoredMistake", () => {
       createMockCandidate([1.4, 0, 0]),
       createMockCandidate([0, 0, 0]),
     );
+    const equalGainLoss = classifyScoredMistake(
+      createMockCandidate([0.021739, 0, 0]),
+      createMockCandidate([0, 0.019424, 0]),
+    );
 
     expect(dualGains).toMatchObject({
+      comparisonOperator: "<",
       gainPart: "0.65 Hand + 0.50 Play gain",
       label: "0.65 Hand + 0.50 Play gain < 1.32 Crib loss",
       lossPart: "1.32 Crib loss",
@@ -322,11 +343,19 @@ describe("classifyScoredMistake", () => {
     expect(dualLosses).toMatchObject({
       accessibleLabel:
         "0.61 Hand gain does not cover 1.06 Crib and 0.42 Play loss",
+      comparisonOperator: "<",
       gainPart: "0.61 Hand gain",
       label: "0.61 Hand gain < 1.06 Crib + 0.42 Play loss",
       lossPart: "1.06 Crib + 0.42 Play loss",
     });
+    expect(equalGainLoss).toMatchObject({
+      comparisonOperator: "<=",
+      gainPart: "0.02 Crib gain",
+      label: "0.02 Crib gain <= 0.02 Hand loss",
+      lossPart: "0.02 Hand loss",
+    });
     expect(pureLoss).toMatchObject({
+      comparisonOperator: "<",
       gainPart: null,
       label: "1.40 Hand loss",
       lossPart: "1.40 Hand loss",
@@ -400,6 +429,28 @@ describe("classifyScoredMistake", () => {
       },
       name: "does not flag missed flush when non-flush hand loss dominates over minor flush EV delta",
     },
+    {
+      bestCandidate: createFlushCandidate([1.4, 0, 0], 1.3),
+      chosenCandidate: createMockCandidate([0, 0, 0]),
+      expected: {
+        accessibleLabel: "1.40 Hand loss",
+        isFlushMiss: false,
+        label: "1.40 Hand loss",
+        shortLabel: "Hand",
+      },
+      name: "does not flag missed flush when hand loss is only partially explained by flush",
+    },
+    {
+      bestCandidate: createFlushCandidate([2.76, 0, 0], 4.2),
+      chosenCandidate: createMockCandidate([0, 0, 0]),
+      expected: {
+        accessibleLabel: "2.76 Hand loss",
+        isFlushMiss: false,
+        label: "2.76 Hand loss",
+        shortLabel: "Hand",
+      },
+      name: "does not flag missed flush when flush delta substantially exceeds hand loss",
+    },
   ])("$name", ({ bestCandidate, chosenCandidate, expected }) => {
     const classification = classifyScoredMistake(
       bestCandidate,
@@ -434,7 +485,7 @@ describe("classifyMistake", () => {
   });
 
   it("classifies an authentic decision that misses a 4-card flush", () => {
-    const flushCards = parseHand("2H,4H,6H,8H,10S,KS");
+    const flushCards = parseHand("2H,4H,6H,8H,6C,8C");
     const result = runClassify("6H,8H", flushCards);
 
     expect(result).not.toBeNull();
@@ -455,49 +506,5 @@ describe("classifyMistake", () => {
 
   it("returns null when cards array cannot form combinations", () => {
     expect(runClassify("5H,5D", [])).toBeNull();
-  });
-});
-
-describe("loss formatting", () => {
-  it.each([
-    {
-      accessible: "0.00",
-      loss: 0,
-      name: "formats zero as 0.00",
-      visible: "0.00",
-    },
-    {
-      accessible: "less than 0.01",
-      loss: 0.004,
-      name: "formats positive loss below 0.005 with sub-cent indicator",
-      visible: "< 0.01",
-    },
-    {
-      accessible: "less than 0.01",
-      loss: 0.001,
-      name: "formats tiny positive loss with sub-cent indicator",
-      visible: "< 0.01",
-    },
-    {
-      accessible: "0.01",
-      loss: 0.01,
-      name: "formats 0.01 exactly",
-      visible: "0.01",
-    },
-    {
-      accessible: "0.50",
-      loss: 0.5,
-      name: "formats 0.50 with two decimals",
-      visible: "0.50",
-    },
-    {
-      accessible: "1.23",
-      loss: 1.234,
-      name: "rounds to two decimal places",
-      visible: "1.23",
-    },
-  ])("$name", ({ accessible, loss, visible }) => {
-    expect(formatNetLoss(loss)).toBe(visible);
-    expect(formatAccessibleNetLoss(loss)).toBe(accessible);
   });
 });

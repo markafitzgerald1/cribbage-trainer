@@ -213,8 +213,16 @@ test("preserves usable analysis table height when controls overflow in stacked m
   const dynamicUi = page.locator(".dynamic-ui, [class*='dynamic-ui']").first();
   const analysisElement = dynamicUi.locator(":scope > :nth-child(2)");
   const tableContainer = analysisElement.locator("[class*='table-container']");
-  const containerBounds = await requireBoundingBox(tableContainer);
-  expect(containerBounds.height).toBeGreaterThan(0);
+  const header = tableContainer.locator("thead");
+  const firstRow = tableContainer.locator("tbody tr").first();
+  const [containerBounds, headerBounds, rowBounds] = await Promise.all([
+    requireBoundingBox(tableContainer),
+    requireBoundingBox(header),
+    requireBoundingBox(firstRow),
+  ]);
+  expect(containerBounds.height).toBeGreaterThanOrEqual(
+    headerBounds.height + rowBounds.height,
+  );
 });
 
 test("Privacy Policy link has a high-contrast color on the consent surface", async ({

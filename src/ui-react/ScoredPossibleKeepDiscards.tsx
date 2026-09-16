@@ -324,7 +324,8 @@ export function ScoredPossibleKeepDiscards({
                     {chosenClassification.gainPart}
                   </span>{" "}
                   <span className={classes.diagnosticSide}>
-                    &lt; {chosenClassification.lossPart}
+                    {chosenClassification.comparisonOperator}{" "}
+                    {chosenClassification.lossPart}
                   </span>
                 </>
               )}
