@@ -56,7 +56,7 @@ describe("mistakeQueueItemCard", () => {
       />,
     );
 
-    expect(getByText("Prev: Hand > Crib")).toBeInTheDocument();
+    expect(getByText("Prev: Crib gain < Hand loss")).toBeInTheDocument();
     expect(
       getByRole("note", {
         name: "Previous discard driven by 1.30 Crib gain does not cover 1.40 Hand loss",

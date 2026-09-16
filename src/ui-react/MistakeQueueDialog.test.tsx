@@ -460,7 +460,7 @@ describe("mistake queue dialog", () => {
       const badge = await runAsyncTableLoad();
 
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent("Prev: Hand");
+      expect(badge).toHaveTextContent("Prev: Play gain < Hand, Crib loss");
     });
 
     const runTableLoadFailure = async () => {

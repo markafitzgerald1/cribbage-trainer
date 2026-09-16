@@ -1,5 +1,10 @@
+import {
+  classifyScoredMistake,
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "./classifyMistake";
 import { describe, expect, it } from "@jest/globals";
-import { formatAccessibleNetLoss, formatNetLoss } from "./classifyMistake";
+import { ZERO_EXPECTED_PLAY_POINTS } from "./analysis";
 
 describe("loss formatting", () => {
   it.each([
@@ -42,5 +47,28 @@ describe("loss formatting", () => {
   ])("$name", ({ accessible, loss, visible }) => {
     expect(formatNetLoss(loss)).toBe(visible);
     expect(formatAccessibleNetLoss(loss)).toBe(accessible);
+  });
+
+  it("uses 'does not quite cover' when rounded gain matches rounded loss", () => {
+    const classification = classifyScoredMistake(
+      {
+        expectedHandPoints: 0.021739,
+        expectedNetPoints: 0.021739,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0,
+      },
+      {
+        expectedHandPoints: 0,
+        expectedNetPoints: 0.019424,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0.019424,
+      },
+    );
+
+    expect(classification?.comparisonOperator).toBe("<=");
+    expect(classification?.accessibleLabel).toBe(
+      "0.02 Crib gain does not quite cover 0.02 Hand loss",
+    );
+    expect(classification?.shortLabel).toBe("Crib gain <= Hand loss");
   });
 });

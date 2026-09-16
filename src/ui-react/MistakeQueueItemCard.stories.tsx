@@ -80,7 +80,7 @@ export const WithClassification: Story = {
     });
 
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveTextContent("Prev: Hand > Crib");
+    await expect(badge).toHaveTextContent("Prev: Crib gain < Hand loss");
     await expect(badge).toHaveAttribute(
       "title",
       "Previous discard (0.10 pts lost) driven by 1.30 Crib gain does not cover 1.40 Hand loss",

@@ -119,5 +119,5 @@ export const mockTradeOffClassification: MistakeClassification = {
   materialGains: ["crib"],
   netLoss: 0.1,
   playLoss: 0,
-  shortLabel: "Hand > Crib",
+  shortLabel: "Crib gain < Hand loss",
 };

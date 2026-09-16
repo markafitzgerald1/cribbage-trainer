@@ -237,8 +237,11 @@ const buildMistakeLabels = ({
     materialGains.length > 0
       ? formatComponentList(gainItems, " and ", "gain")
       : null;
+  const quite = comparisonOperator === "<=" ? "quite " : "";
   const coverVerb =
-    materialGains.length > 1 ? "do not cover" : "does not cover";
+    materialGains.length > 1
+      ? `do not ${quite}cover`
+      : `does not ${quite}cover`;
   const accessibleLabel =
     accessibleGainPart === null
       ? accessibleLossPart
@@ -251,7 +254,9 @@ const buildMistakeLabels = ({
     .map((component) => getComponentLabel(component, false))
     .join(", ");
   const shortLabel =
-    materialGains.length > 0 ? `${lossLabel} > ${gainLabel}` : lossLabel;
+    materialGains.length > 0
+      ? `${gainLabel} gain ${comparisonOperator} ${lossLabel} loss`
+      : `${lossLabel} loss`;
 
   return {
     accessibleLabel,
@@ -284,7 +289,7 @@ const createSubPrecisionClassification = (
     materialGains: [],
     netLoss,
     playLoss: losses.play,
-    shortLabel: `< ${formattedThreshold}`,
+    shortLabel: lossPart,
   };
 };
 
