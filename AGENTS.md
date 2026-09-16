@@ -1025,7 +1025,7 @@ they bind any PR that makes a claim about a phone or ships a guard.
   editing the line, and re-run the search before reporting it fixed:
 
   ```bash
-  grep -rin "row per attempt" src skills AGENTS.md
+  grep --recursive --ignore-case --line-number "row per attempt" src skills AGENTS.md
   ```
 
   Check the pull request body too, which no repository grep reaches — keep a

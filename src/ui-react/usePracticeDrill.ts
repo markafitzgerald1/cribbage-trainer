@@ -80,9 +80,14 @@ interface UsePracticeDrillArgs {
 }
 
 /*
- * The one renaming a given view of a drilled mistake is shown under: the
- * cards on the board, the "Before" discard beside them, and the identity the
- * tally is told to undo all come from this call, so they cannot disagree.
+ * The renaming a given view of a drilled mistake is shown under. Three
+ * callers need it — the cards on the board, the "Before" discard beside
+ * them, and the identity the tally is told to undo — and each calls this
+ * independently rather than sharing one computed value. What keeps them
+ * agreeing is that the result is a pure function of `item` and `viewIndex`
+ * and all three pass the same pair, not that a single value is threaded
+ * through them: pass a different pair from any one of them and they diverge
+ * silently.
  *
  * `suitPermutationForView`'s own doc comment covers why it derives from a
  * view count rather than `item.attempts` or the shared `generateRandomNumber`

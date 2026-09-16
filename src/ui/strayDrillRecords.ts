@@ -20,8 +20,9 @@ const suitAt = (index: number): Suit => SUITS.at(index) as Suit;
  * relabeling of something that was drilled" without building all 23
  * candidate keys for every ledger entry. Answering it still costs parsing
  * and canonicalizing the row, the Map lookup, and a scan of the matching
- * bucket; only the exact-key exemption below is a bare Set lookup. The crib role rides along
- * untouched, so the same six cards under the other role never collide.
+ * bucket; only the exact-key exemption below is a bare Set lookup. The crib
+ * role rides along untouched, so the same six cards under the other role
+ * never collide.
  *
  * Takes a parsed hand rather than a key, so there is no unreachable branch
  * here for a key that does not parse: both callers below have already parsed
@@ -172,12 +173,20 @@ const drilledHandsBySignature = (
  * ever costing a row the remaining conditions would have kept.
  *
  * Idempotent by construction: one pass leaves nothing that a second could
- * match. Two kinds of stray are undetectable here and stay: one whose ledger
- * entry has since been evicted, and one whose ledger write never landed —
+ * match. Three kinds of stray are undetectable here and stay. One whose
+ * ledger entry has since been evicted. One whose ledger write never landed —
  * the decision row and the practice attempt are separate `localStorage`
  * writes, so a quota failure between them persists the row without the entry
- * that identifies it. Both err toward keeping a row, which is the direction
- * to err in, but not toward keeping an invisible one: a retained row still
+ * that identifies it. And one whose relabeled key collides exactly with some
+ * OTHER drilled hand's key, which the exact-key exemption then spares: that
+ * needs the other hand's own decision record to have been evicted while its
+ * ledger entry survived, since otherwise the colliding row would have been
+ * absorbed by idempotency rather than appended. The exemption is not worth
+ * narrowing to catch it, because narrowing it is what would start deleting
+ * the original-key rows this whole module exists to protect.
+ *
+ * All three err toward keeping a row, which is the direction to err in, but
+ * not toward keeping an invisible one: a retained row still
  * occupies a slot under `MAX_RECORDS`, so it can evict authentic history on
  * a later write, and `computeDiscardQualityTrend` derives `isAtRecordCap`
  * from `tally.records.length` without excluding practice rows, which the

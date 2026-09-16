@@ -189,6 +189,19 @@ describe("stray drill record sweep", () => {
       records: [recordOf(THIRD_RELABELING_KEY, true)],
     },
     {
+      /*
+       * A stray of one drilled hand whose relabeled key lands exactly on a
+       * second drilled hand's key. The exact-key exemption spares it, so it
+       * survives as a stray — the third undetectable case the module
+       * documents. Narrowing the exemption to catch it is what would start
+       * deleting the original-key rows this module exists to protect.
+       */
+      expected: [STRAY_KEY],
+      name: "spares a stray colliding with another drilled hand's key",
+      practice: [...DRILLED_LEDGER, ledgerEntryFor(STRAY_KEY)],
+      records: [STRAY],
+    },
+    {
       expected: [DRILLED_KEY],
       name: "ignores a ledger entry whose hand key cannot be parsed",
       practice: [ledgerEntryFor("not a hand key"), ...DRILLED_LEDGER],
