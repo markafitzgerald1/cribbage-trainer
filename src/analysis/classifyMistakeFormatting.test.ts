@@ -1,4 +1,5 @@
 import {
+  type ScoredMistakeCandidate,
   classifyScoredMistake,
   formatAccessibleNetLoss,
   formatNetLoss,
@@ -109,6 +110,21 @@ describe("loss formatting", () => {
     );
     expect(classification?.shortLabel).toBe("Crib gain <= Hand, Play loss");
   });
+
+  const ZERO_CANDIDATE = {
+    expectedHandPoints: 0,
+    expectedNetPoints: 0,
+    expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+    signedExpectedCribPoints: 0,
+  };
+
+  const createFlushCandidate = (flushes: number): ScoredMistakeCandidate =>
+    ({
+      ...ZERO_CANDIDATE,
+      expectedHandPoints: 1,
+      expectedNetPoints: 1,
+      handPointsBreakdown: { flushes },
+    }) as unknown as ScoredMistakeCandidate;
 
   it.each([
     {
@@ -270,6 +286,41 @@ describe("loss formatting", () => {
       expectedMaterials: ["play", "hand"] as const,
       expectedShort: "Play, Hand loss",
       name: "reconciles component deficit to match displayed net loss",
+    },
+    {
+      best: {
+        ...ZERO_CANDIDATE,
+        expectedHandPoints: 0.0051,
+        expectedNetPoints: 0.0102,
+        signedExpectedCribPoints: 0.0051,
+      },
+      chosen: ZERO_CANDIDATE,
+      expectedAccessible: "0.01 Crib loss",
+      expectedGains: [] as const,
+      expectedLabel: "0.01 Crib loss",
+      expectedMaterials: ["crib"] as const,
+      expectedShort: "Crib loss",
+      name: "reconciles when two one-cent losses combine to one displayed net cent",
+    },
+    {
+      best: createFlushCandidate(0.991),
+      chosen: ZERO_CANDIDATE,
+      expectedAccessible: "1.00 Hand loss",
+      expectedGains: [] as const,
+      expectedLabel: "1.00 Hand loss",
+      expectedMaterials: ["hand"] as const,
+      expectedShort: "Hand loss",
+      name: "retains generic hand label when flush loss rounds to a different cent than hand loss",
+    },
+    {
+      best: createFlushCandidate(0.999),
+      chosen: ZERO_CANDIDATE,
+      expectedAccessible: "1.00 Missed flush loss",
+      expectedGains: [] as const,
+      expectedLabel: "1.00 Missed flush loss",
+      expectedMaterials: ["hand"] as const,
+      expectedShort: "Missed flush loss",
+      name: "narrows to missed flush loss when flush and hand loss match at display precision",
     },
   ])(
     "$name",

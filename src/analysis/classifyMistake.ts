@@ -177,8 +177,7 @@ const isFlushMissMistake = (
   if (flushLoss < DISPLAY_PRECISION) {
     return false;
   }
-  const remainingHandLoss = Math.abs(withoutFloatResidue(handLoss - flushLoss));
-  return remainingHandLoss <= DISPLAY_PRECISION;
+  return toDisplayedCents(handLoss) === toDisplayedCents(flushLoss);
 };
 
 interface MistakeLabelInput extends Pick<
@@ -201,7 +200,7 @@ const adjustComponentDelta = (
   isExcess: boolean,
 ): void => {
   const candidates = componentList.filter((item) =>
-    item.isLoss === isExcess ? item.cents > 1 : true,
+    item.isLoss === isExcess ? item.cents > 0 : true,
   );
   candidates.sort((first, second) => {
     const errorDiff = isExcess
@@ -281,20 +280,17 @@ const formatComponentList = (
   suffix: "gain" | "loss",
 ): string => `${items.join(separator)} ${suffix}`;
 
-interface FormattedMistakeLabels {
-  readonly accessibleLabel: string;
-  readonly comparisonOperator: "<" | "<=";
-  readonly gainPart: string | null;
-  readonly label: string;
-  readonly lossPart: string;
-  readonly shortLabel: string;
-}
+type FormattedMistakeLabels = Omit<
+  MistakeClassification,
+  "cribLoss" | "handLoss" | "netLoss" | "playLoss"
+>;
 
 const formatAccessibleMistakeLabel = (
-  accessibleLossPart: string,
+  lossItems: readonly string[],
   gainItems: readonly string[],
   comparisonOperator: "<" | "<=",
 ): string => {
+  const accessibleLossPart = formatComponentList(lossItems, " and ", "loss");
   if (gainItems.length === 0) {
     return accessibleLossPart;
   }
@@ -305,20 +301,22 @@ const formatAccessibleMistakeLabel = (
   return `${accessibleGainPart} ${coverVerb} ${accessibleLossPart}`;
 };
 
-const formatShortMistakeLabel = (
-  input: MistakeLabelInput,
-  comparisonOperator: "<" | "<=",
-): string => {
-  const lossLabel = input.materialComponents
-    .map((component) => getComponentLabel(component, input.isFlushMiss))
+type ShortLabelInput = Pick<
+  FormattedMistakeLabels,
+  "comparisonOperator" | "isFlushMiss" | "materialComponents" | "materialGains"
+>;
+
+const formatShortMistakeLabel = (labels: ShortLabelInput): string => {
+  const lossLabel = labels.materialComponents
+    .map((component) => getComponentLabel(component, labels.isFlushMiss))
     .join(", ");
-  if (input.materialGains.length === 0) {
+  if (labels.materialGains.length === 0) {
     return `${lossLabel} loss`;
   }
-  const gainLabel = input.materialGains
+  const gainLabel = labels.materialGains
     .map((component) => getComponentLabel(component, false))
     .join(", ");
-  return `${gainLabel} gain ${comparisonOperator} ${lossLabel} loss`;
+  return `${gainLabel} gain ${labels.comparisonOperator} ${lossLabel} loss`;
 };
 
 const buildMistakeLabels = (
@@ -340,19 +338,20 @@ const buildMistakeLabels = (
   };
 
   const sortedLosses = sortComponentsByCents(
-    input.materialComponents,
+    input.materialComponents.filter(
+      (component) => getCents(component, true) > 0,
+    ),
     (component) => getCents(component, true),
   );
-  const sortedGains = sortComponentsByCents(input.materialGains, (component) =>
-    getCents(component, false),
+  const sortedGains = sortComponentsByCents(
+    input.materialGains.filter((component) => getCents(component, false) > 0),
+    (component) => getCents(component, false),
   );
 
+  const isFlushMiss = sortedLosses.includes("hand") && input.isFlushMiss;
+
   const lossItems = sortedLosses.map((component) =>
-    formatComponentItem(
-      component,
-      getCents(component, true),
-      input.isFlushMiss,
-    ),
+    formatComponentItem(component, getCents(component, true), isFlushMiss),
   );
   const gainItems = sortedGains.map((component) =>
     formatComponentItem(component, getCents(component, false), false),
@@ -380,20 +379,27 @@ const buildMistakeLabels = (
       ? lossPart
       : `${gainPart} ${comparisonOperator} ${lossPart}`;
 
-  const accessibleLossPart = formatComponentList(lossItems, " and ", "loss");
   const accessibleLabel = formatAccessibleMistakeLabel(
-    accessibleLossPart,
+    lossItems,
     gainItems,
     comparisonOperator,
   );
-  const shortLabel = formatShortMistakeLabel(input, comparisonOperator);
+  const shortLabel = formatShortMistakeLabel({
+    comparisonOperator,
+    isFlushMiss,
+    materialComponents: sortedLosses,
+    materialGains: sortedGains,
+  });
 
   return {
     accessibleLabel,
     comparisonOperator,
     gainPart,
+    isFlushMiss,
     label,
     lossPart,
+    materialComponents: sortedLosses,
+    materialGains: sortedGains,
     shortLabel,
   };
 };
@@ -462,9 +468,6 @@ export const classifyScoredMistake = (
     ...labels,
     cribLoss: losses.crib,
     handLoss: losses.hand,
-    isFlushMiss,
-    materialComponents,
-    materialGains,
     netLoss,
     playLoss: losses.play,
   };
