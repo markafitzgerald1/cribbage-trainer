@@ -181,6 +181,73 @@ describe("loss formatting", () => {
       expectedShort: "< 0.01 loss",
       name: "falls back to sub-precision when omitted sub-cent loss causes displayed gain to exceed displayed loss",
     },
+    {
+      best: {
+        expectedHandPoints: 0,
+        expectedNetPoints: 0,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0.525437,
+      },
+      chosen: {
+        expectedHandPoints: 0.521739,
+        expectedNetPoints: -0.042898,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: -0.0392,
+        },
+        signedExpectedCribPoints: 0,
+      },
+      expectedAccessible:
+        "0.52 Hand gain does not cover 0.52 Crib and 0.04 Play loss",
+      expectedGains: ["hand"] as const,
+      expectedLabel: "0.52 Hand gain < 0.52 Crib + 0.04 Play loss",
+      expectedMaterials: ["crib", "play"] as const,
+      expectedShort: "Hand gain < Crib, Play loss",
+      name: "reconciles rounded components to match displayed net loss",
+    },
+    {
+      best: {
+        expectedHandPoints: 6.0,
+        expectedNetPoints: 10.0,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 4.0,
+      },
+      chosen: {
+        expectedHandPoints: 5.973,
+        expectedNetPoints: 9.926,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 3.953,
+      },
+      expectedAccessible: "0.05 Crib and 0.02 Hand loss",
+      expectedGains: [] as const,
+      expectedLabel: "0.05 Crib + 0.02 Hand loss",
+      expectedMaterials: ["crib", "hand"] as const,
+      expectedShort: "Crib, Hand loss",
+      name: "breaks component reconciliation ties using canonical component order",
+    },
+    {
+      best: {
+        expectedHandPoints: 6.0,
+        expectedNetPoints: 6.0,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0,
+      },
+      chosen: {
+        expectedHandPoints: 5.976,
+        expectedNetPoints: 5.942,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: -0.034,
+        },
+        signedExpectedCribPoints: 0,
+      },
+      expectedAccessible: "0.04 Play and 0.02 Hand loss",
+      expectedGains: [] as const,
+      expectedLabel: "0.04 Play + 0.02 Hand loss",
+      expectedMaterials: ["play", "hand"] as const,
+      expectedShort: "Play, Hand loss",
+      name: "reconciles component deficit to match displayed net loss",
+    },
   ])(
     "$name",
     ({

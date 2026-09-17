@@ -100,7 +100,7 @@ describe("classifyScoredMistake", () => {
     },
     {
       best: [6, 4, 3] as const,
-      chosen: [4, 2.004, 1.005] as const,
+      chosen: [4, 2.002, 0.998] as const,
       dominant: ["hand", "crib", "play"] as const,
       label: "2.00 Hand + 2.00 Crib + 2.00 Play loss",
       name: "three-way tie within 0.01 precision",
@@ -143,7 +143,7 @@ describe("classifyScoredMistake", () => {
     },
     {
       best: [5, 2, 1] as const,
-      chosen: [3, 3, 1 + 0.005] as const,
+      chosen: [3, 3, 1 + 0.004] as const,
       dominant: ["hand"] as const,
       gains: ["crib", ...[]] as const,
       label: `${"1.00 Crib gain"} < 2.00 Hand loss`,
