@@ -66,6 +66,5 @@ export default {
       },
     ],
     root: dirname,
-    testTimeout: 15_000,
   },
 };

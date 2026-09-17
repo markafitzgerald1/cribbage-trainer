@@ -67,6 +67,24 @@ const testScoredPossibilitiesNoExpansionScreenshot = () =>
     await expect(page).toHaveScreenshot();
   });
 
+const SUB_OPTIMAL_CARD_INDEX = 4;
+const SUB_OPTIMAL_DISCARD_INDICES: readonly [number, number] = [
+  0,
+  SUB_OPTIMAL_CARD_INDEX,
+];
+
+const testSubOptimalDiscardScreenshot = () =>
+  test("sub-optimal discard shows diagnostic caption still visually the same", async ({
+    page,
+  }) => {
+    await renderThenSelectTwoDiscards(page, constantHandQuery, {
+      acceptAnalytics: true,
+      discardIndices: SUB_OPTIMAL_DISCARD_INDICES,
+    });
+
+    await expect(page).toHaveScreenshot();
+  });
+
 const testExpandedRowScreenshot = () =>
   test("scored possibilities with one row expanded still visually the same", async ({
     page,
@@ -174,6 +192,7 @@ const testScreenshots = () => {
   testEnterCardsDialogScreenshot();
   testPrivacyPolicyScreenshot();
   testScoredPossibilitiesNoExpansionScreenshot();
+  testSubOptimalDiscardScreenshot();
   testExpandedRowScreenshot();
   testDoubleExpandedScreenshot();
   testCribExpandedScreenshot();
