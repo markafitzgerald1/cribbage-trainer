@@ -141,13 +141,11 @@ const getMaterialComponentsBySign = (
   losses: ComponentLosses,
   multiplier: typeof LOSS_SIGN_MULTIPLIER | typeof GAIN_SIGN_MULTIPLIER,
 ): readonly LossComponent[] => {
-  const getContribution = (component: LossComponent) =>
-    multiplier * getComponentLoss(component, losses);
+  const getCents = (component: LossComponent) =>
+    toDisplayedCents(multiplier * getComponentLoss(component, losses));
   return sortComponentsByCents(
-    ORDERED_COMPONENTS.filter(
-      (component) => getContribution(component) >= DISPLAY_PRECISION,
-    ),
-    (component) => toDisplayedCents(getContribution(component)),
+    ORDERED_COMPONENTS.filter((component) => getCents(component) > 0),
+    getCents,
   );
 };
 

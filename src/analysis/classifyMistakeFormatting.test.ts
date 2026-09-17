@@ -160,10 +160,10 @@ describe("loss formatting", () => {
     },
     {
       best: {
-        expectedHandPoints: 0.011,
-        expectedNetPoints: 0.02,
+        expectedHandPoints: 0.013,
+        expectedNetPoints: 0.017,
         expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
-        signedExpectedCribPoints: 0.009,
+        signedExpectedCribPoints: 0.004,
       },
       chosen: {
         expectedHandPoints: 0,
@@ -180,6 +180,29 @@ describe("loss formatting", () => {
       expectedMaterials: [] as const,
       expectedShort: "< 0.01 loss",
       name: "falls back to sub-precision when omitted sub-cent loss causes displayed gain to exceed displayed loss",
+    },
+    {
+      best: {
+        expectedHandPoints: 0,
+        expectedNetPoints: 0.08767,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0.00977,
+      },
+      chosen: {
+        expectedHandPoints: 0,
+        expectedNetPoints: 0,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: -0.0779,
+        },
+        signedExpectedCribPoints: 0,
+      },
+      expectedAccessible: "0.08 Play and 0.01 Crib loss",
+      expectedGains: [] as const,
+      expectedLabel: "0.08 Play + 0.01 Crib loss",
+      expectedMaterials: ["play", "crib"] as const,
+      expectedShort: "Play, Crib loss",
+      name: "includes components between 0.005 and 0.01 that display as one cent",
     },
     {
       best: {

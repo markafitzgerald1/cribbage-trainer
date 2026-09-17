@@ -108,7 +108,7 @@ describe("classifyScoredMistake", () => {
     },
     {
       best: [8, 4, 1] as const,
-      chosen: [6, 4 - 0.005, 1] as const,
+      chosen: [6, 4 - 0.004, 1] as const,
       dominant: ["hand"] as const,
       label: "2.00 Hand loss",
       name: "ignores loss below display precision threshold",
@@ -188,7 +188,7 @@ describe("classifyScoredMistake", () => {
     },
     {
       best: [8, 2, 1] as const,
-      chosen: [6, 2 + 0.005, 1] as const,
+      chosen: [6, 2 + 0.004, 1] as const,
       dominant: (["hand"] as const).map((component) => component),
       label: `${"2.00 Hand loss"}`,
       name: "ignores offsetting gain below display precision threshold",
