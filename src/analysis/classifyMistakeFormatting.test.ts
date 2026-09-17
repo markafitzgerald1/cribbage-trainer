@@ -245,12 +245,12 @@ describe("loss formatting", () => {
         signedExpectedCribPoints: 0,
       },
       expectedAccessible:
-        "0.52 Hand gain does not cover 0.52 Crib and 0.04 Play loss",
+        "0.52 Hand gain does not cover 0.53 Crib and 0.04 Play loss",
       expectedGains: ["hand"] as const,
-      expectedLabel: "0.52 Hand gain < 0.52 Crib + 0.04 Play loss",
+      expectedLabel: "0.52 Hand gain < 0.53 Crib + 0.04 Play loss",
       expectedMaterials: ["crib", "play"] as const,
       expectedShort: "Hand gain < Crib, Play loss",
-      name: "reconciles rounded components to match displayed net loss",
+      name: "preserves derived values in component labels when components sum to different rounded net",
     },
     {
       best: {
@@ -265,12 +265,12 @@ describe("loss formatting", () => {
         expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
         signedExpectedCribPoints: 3.953,
       },
-      expectedAccessible: "0.05 Crib and 0.02 Hand loss",
+      expectedAccessible: "0.05 Crib and 0.03 Hand loss",
       expectedGains: [] as const,
-      expectedLabel: "0.05 Crib + 0.02 Hand loss",
+      expectedLabel: "0.05 Crib + 0.03 Hand loss",
       expectedMaterials: ["crib", "hand"] as const,
       expectedShort: "Crib, Hand loss",
-      name: "breaks component reconciliation ties using canonical component order",
+      name: "formats components according to derived rounded values",
     },
     {
       best: {
@@ -288,12 +288,12 @@ describe("loss formatting", () => {
         },
         signedExpectedCribPoints: 0,
       },
-      expectedAccessible: "0.04 Play and 0.02 Hand loss",
+      expectedAccessible: "0.03 Play and 0.02 Hand loss",
       expectedGains: [] as const,
-      expectedLabel: "0.04 Play + 0.02 Hand loss",
+      expectedLabel: "0.03 Play + 0.02 Hand loss",
       expectedMaterials: ["play", "hand"] as const,
       expectedShort: "Play, Hand loss",
-      name: "reconciles component deficit to match displayed net loss",
+      name: "orders components by magnitude using derived rounded values",
     },
     {
       best: {
@@ -303,12 +303,12 @@ describe("loss formatting", () => {
         signedExpectedCribPoints: 0.0051,
       },
       chosen: ZERO_CANDIDATE,
-      expectedAccessible: "0.01 Crib loss",
+      expectedAccessible: "0.01 Hand and 0.01 Crib loss",
       expectedGains: [] as const,
-      expectedLabel: "0.01 Crib loss",
-      expectedMaterials: ["crib"] as const,
-      expectedShort: "Crib loss",
-      name: "reconciles when two one-cent losses combine to one displayed net cent",
+      expectedLabel: "0.01 Hand + 0.01 Crib loss",
+      expectedMaterials: ["hand", "crib"] as const,
+      expectedShort: "Hand, Crib loss",
+      name: "retains both one-cent components when both round to display precision",
     },
     {
       ...HAND_LOSS_EXPECTED,
@@ -339,27 +339,12 @@ describe("loss formatting", () => {
       },
       chosen: ZERO_CANDIDATE,
       expectedAccessible:
-        "0.83 Crib gain does not cover 4.20 Missed flush and 0.03 Play loss",
+        "0.82 Crib gain does not cover 4.20 Missed flush and 0.03 Play loss",
       expectedGains: ["crib"] as const,
-      expectedLabel: "0.83 Crib gain < 4.20 Missed flush + 0.03 Play loss",
+      expectedLabel: "0.82 Crib gain < 4.20 Missed flush + 0.03 Play loss",
       expectedMaterials: ["hand", "play"] as const,
       expectedShort: "Crib gain < Missed flush, Play loss",
-      name: "retains initial flush contribution during reconciliation with non-flush components",
-    },
-    {
-      ...HAND_LOSS_EXPECTED,
-      best: {
-        ...createFlushCandidate(1.0051),
-        expectedHandPoints: 1.0051,
-        expectedNetPoints: 1.0,
-        expectedPlayPoints: {
-          ...ZERO_EXPECTED_PLAY_POINTS,
-          delta: 0.0051,
-        },
-        signedExpectedCribPoints: 0,
-      },
-      chosen: ZERO_CANDIDATE,
-      name: "reverts flush label when reconciliation adjusts hand cents",
+      name: "preserves derived values for flush loss and crib gain",
     },
     {
       best: {
@@ -374,12 +359,12 @@ describe("loss formatting", () => {
       },
       chosen: ZERO_CANDIDATE,
       expectedAccessible:
-        "0.10 Play gain does not cover 4.20 Missed flush and 0.01 Crib loss",
+        "0.09 Play gain does not cover 4.20 Missed flush and 0.01 Crib loss",
       expectedGains: ["play"] as const,
-      expectedLabel: "0.10 Play gain < 4.20 Missed flush + 0.01 Crib loss",
+      expectedLabel: "0.09 Play gain < 4.20 Missed flush + 0.01 Crib loss",
       expectedMaterials: ["hand", "crib"] as const,
       expectedShort: "Play gain < Missed flush, Crib loss",
-      name: "preserves one-cent components during reconciliation when alternate candidate exists",
+      name: "preserves derived one-cent components without adjusting other components",
     },
   ])(
     "$name",
