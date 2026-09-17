@@ -361,6 +361,26 @@ describe("loss formatting", () => {
       chosen: ZERO_CANDIDATE,
       name: "reverts flush label when reconciliation adjusts hand cents",
     },
+    {
+      best: {
+        ...createFlushCandidate(4.195652),
+        expectedHandPoints: 4.195652,
+        expectedNetPoints: 4.114102,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: -0.0878,
+        },
+        signedExpectedCribPoints: 0.00625,
+      },
+      chosen: ZERO_CANDIDATE,
+      expectedAccessible:
+        "0.10 Play gain does not cover 4.20 Missed flush and 0.01 Crib loss",
+      expectedGains: ["play"] as const,
+      expectedLabel: "0.10 Play gain < 4.20 Missed flush + 0.01 Crib loss",
+      expectedMaterials: ["hand", "crib"] as const,
+      expectedShort: "Play gain < Missed flush, Crib loss",
+      name: "preserves one-cent components during reconciliation when alternate candidate exists",
+    },
   ])(
     "$name",
     ({

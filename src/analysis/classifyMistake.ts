@@ -63,12 +63,10 @@ const toDisplayedCents = (amount: number): number =>
     Number(amount.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)) * CENTS_PER_POINT,
   );
 
-const formatLossAmount = (netLoss: number, subCentPrefix: string): string => {
-  if (netLoss > 0 && netLoss < DISPLAY_PRECISION) {
-    return `${subCentPrefix} ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`;
-  }
-  return netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
-};
+const formatLossAmount = (netLoss: number, subCentPrefix: string): string =>
+  netLoss > 0 && netLoss < DISPLAY_PRECISION
+    ? `${subCentPrefix} ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`
+    : netLoss.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
 
 export const formatNetLoss = (netLoss: number): string =>
   formatLossAmount(netLoss, "<");
@@ -126,16 +124,11 @@ const sortComponentsByCents = (
   components: readonly LossComponent[],
   getCents: (component: LossComponent) => number,
 ): readonly LossComponent[] =>
-  [...components].sort((firstComponent, secondComponent) => {
-    const diff = getCents(secondComponent) - getCents(firstComponent);
-    if (diff !== 0) {
-      return diff;
-    }
-    return (
-      ORDERED_COMPONENTS.indexOf(firstComponent) -
-      ORDERED_COMPONENTS.indexOf(secondComponent)
-    );
-  });
+  [...components].sort(
+    (first, second) =>
+      getCents(second) - getCents(first) ||
+      ORDERED_COMPONENTS.indexOf(first) - ORDERED_COMPONENTS.indexOf(second),
+  );
 
 const getMaterialComponentsBySign = (
   losses: ComponentLosses,
@@ -162,12 +155,13 @@ const isFlushMissMistake = (
   if (bestFlushEV <= 0) {
     return false;
   }
-  const chosenFlushEV = getFlushExpectedPoints(chosen);
-  const flushLoss = withoutFloatResidue(bestFlushEV - chosenFlushEV);
-  if (flushLoss < DISPLAY_PRECISION) {
-    return false;
-  }
-  return toDisplayedCents(handLoss) === toDisplayedCents(flushLoss);
+  const flushLoss = withoutFloatResidue(
+    bestFlushEV - getFlushExpectedPoints(chosen),
+  );
+  return (
+    flushLoss >= DISPLAY_PRECISION &&
+    toDisplayedCents(handLoss) === toDisplayedCents(flushLoss)
+  );
 };
 
 interface MistakeLabelInput extends Pick<
@@ -185,19 +179,34 @@ interface ComponentCents {
   readonly isLoss: boolean;
 }
 
+const FLUSH_PREFERENCE_WEIGHT = 2;
+const PRESERVE_PREFERENCE_WEIGHT = 1;
+
+const getCandidateScore = (
+  item: ComponentCents,
+  isExcess: boolean,
+  isFlushMiss: boolean,
+): number =>
+  (isFlushMiss && item.component === "hand" ? 0 : FLUSH_PREFERENCE_WEIGHT) +
+  (item.isLoss === isExcess && item.cents === 1
+    ? 0
+    : PRESERVE_PREFERENCE_WEIGHT);
+
 const adjustComponentDelta = (
   componentList: ComponentCents[],
   isExcess: boolean,
   isFlushMiss: boolean,
 ): void => {
-  const eligible = componentList.filter((item) =>
-    item.isLoss === isExcess ? item.cents > 0 : true,
+  const eligible = componentList.filter(
+    (item) => item.isLoss !== isExcess || item.cents > 0,
   );
-  const candidates =
-    isFlushMiss && eligible.some((item) => item.component !== "hand")
-      ? eligible.filter((item) => item.component !== "hand")
-      : eligible;
-  candidates.sort((first, second) => {
+  eligible.sort((first, second) => {
+    const scoreDiff =
+      getCandidateScore(second, isExcess, isFlushMiss) -
+      getCandidateScore(first, isExcess, isFlushMiss);
+    if (scoreDiff !== 0) {
+      return scoreDiff;
+    }
     const errorDiff = isExcess
       ? second.error - first.error
       : first.error - second.error;
@@ -210,10 +219,26 @@ const adjustComponentDelta = (
     );
   });
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const chosen = candidates[0]!;
+  const chosen = eligible[0]!;
   chosen.cents +=
     chosen.isLoss === isExcess ? ADJUST_DECREMENT : ADJUST_INCREMENT;
   chosen.error += isExcess ? ADJUST_DECREMENT : ADJUST_INCREMENT;
+};
+
+const toComponentCents = (
+  component: LossComponent,
+  losses: ComponentLosses,
+  isLoss: boolean,
+): ComponentCents => {
+  const signMultiplier = isLoss ? LOSS_SIGN_MULTIPLIER : GAIN_SIGN_MULTIPLIER;
+  const raw = signMultiplier * getComponentLoss(component, losses);
+  const cents = toDisplayedCents(raw);
+  return {
+    cents,
+    component,
+    error: signMultiplier * (cents - raw * CENTS_PER_POINT),
+    isLoss,
+  };
 };
 
 const reconcileComponentCents = (
@@ -221,26 +246,12 @@ const reconcileComponentCents = (
   targetNetCents: number,
 ): ReadonlyMap<LossComponent, number> => {
   const componentList: ComponentCents[] = [
-    ...input.materialComponents.map((component) => {
-      const rawLoss = getComponentLoss(component, input.losses);
-      const initialCents = toDisplayedCents(rawLoss);
-      return {
-        cents: initialCents,
-        component,
-        error: initialCents - rawLoss * CENTS_PER_POINT,
-        isLoss: true,
-      };
-    }),
-    ...input.materialGains.map((component) => {
-      const rawGain = -getComponentLoss(component, input.losses);
-      const initialCents = toDisplayedCents(rawGain);
-      return {
-        cents: initialCents,
-        component,
-        error: rawGain * CENTS_PER_POINT - initialCents,
-        isLoss: false,
-      };
-    }),
+    ...input.materialComponents.map((component) =>
+      toComponentCents(component, input.losses, true),
+    ),
+    ...input.materialGains.map((component) =>
+      toComponentCents(component, input.losses, false),
+    ),
   ];
 
   const computeImpliedNetCents = (): number =>
@@ -265,12 +276,6 @@ const formatComponentItem = (
 ): string =>
   `${(cents / CENTS_PER_POINT).toFixed(EXPECTED_POINTS_FRACTION_DIGITS)} ${getComponentLabel(component, isFlushMiss)}`;
 
-const formatComponentList = (
-  items: readonly string[],
-  separator: string,
-  suffix: "gain" | "loss",
-): string => `${items.join(separator)} ${suffix}`;
-
 type FormattedMistakeLabels = Omit<
   MistakeClassification,
   "cribLoss" | "handLoss" | "netLoss" | "playLoss"
@@ -281,15 +286,14 @@ const formatAccessibleMistakeLabel = (
   gainItems: readonly string[],
   comparisonOperator: "<" | "<=",
 ): string => {
-  const accessibleLossPart = formatComponentList(lossItems, " and ", "loss");
+  const accessibleLossPart = `${lossItems.join(" and ")} loss`;
   if (gainItems.length === 0) {
     return accessibleLossPart;
   }
-  const accessibleGainPart = formatComponentList(gainItems, " and ", "gain");
+  const accessibleGainPart = `${gainItems.join(" and ")} gain`;
   const quite = comparisonOperator === "<=" ? "quite " : "";
-  const coverVerb =
-    gainItems.length > 1 ? `do not ${quite}cover` : `does not ${quite}cover`;
-  return `${accessibleGainPart} ${coverVerb} ${accessibleLossPart}`;
+  const verb = `do${gainItems.length > 1 ? "" : "es"} not ${quite}cover`;
+  return `${accessibleGainPart} ${verb} ${accessibleLossPart}`;
 };
 
 type ShortLabelInput = Pick<
@@ -363,9 +367,9 @@ const buildMistakeLabels = (
   const comparisonOperator: "<" | "<=" =
     totalGainCents === totalLossCents ? "<=" : "<";
 
-  const lossPart = formatComponentList(lossItems, " + ", "loss");
+  const lossPart = `${lossItems.join(" + ")} loss`;
   const gainPart =
-    gainItems.length > 0 ? formatComponentList(gainItems, " + ", "gain") : null;
+    gainItems.length > 0 ? `${gainItems.join(" + ")} gain` : null;
   const label =
     gainPart === null
       ? lossPart
@@ -400,12 +404,10 @@ const createSubPrecisionClassification = (
   losses: ComponentLosses,
   netLoss: number,
 ): MistakeClassification => {
-  const formattedThreshold = DISPLAY_PRECISION.toFixed(
-    EXPECTED_POINTS_FRACTION_DIGITS,
-  );
-  const lossPart = `< ${formattedThreshold} loss`;
+  const threshold = DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
+  const lossPart = `< ${threshold} loss`;
   return {
-    accessibleLabel: `less than ${formattedThreshold} loss`,
+    accessibleLabel: `less than ${threshold} loss`,
     comparisonOperator: "<",
     cribLoss: losses.crib,
     gainPart: null,
@@ -458,17 +460,15 @@ export const classifyScoredMistake = (
     netLoss,
   });
 
-  if (labels === null) {
-    return createSubPrecisionClassification(losses, netLoss);
-  }
-
-  return {
-    ...labels,
-    cribLoss: losses.crib,
-    handLoss: losses.hand,
-    netLoss,
-    playLoss: losses.play,
-  };
+  return labels === null
+    ? createSubPrecisionClassification(losses, netLoss)
+    : {
+        ...labels,
+        cribLoss: losses.crib,
+        handLoss: losses.hand,
+        netLoss,
+        playLoss: losses.play,
+      };
 };
 
 const parsePreviousDiscardSafely = (
@@ -508,8 +508,5 @@ export const classifyMistake = ({
   );
 
   const [best] = scored;
-  if (!best || !chosen) {
-    return null;
-  }
-  return classifyScoredMistake(best, chosen);
+  return best && chosen ? classifyScoredMistake(best, chosen) : null;
 };
