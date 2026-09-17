@@ -162,10 +162,25 @@ agreed, the pull request says what actually happened.
 - The board has no Priority field, yet the work is still ranked: priority is
   the milestone, then the Status column, then the manual top-to-bottom order
   of cards within a column. The top of Todo is the default next issue to
-  pick up — and `Minimum Lovable Product` is the active milestone with
-  `Beyond MLP` deferred. An agent that hunts for a Priority field finds none
-  and can misread the board as a flat bag of work; one that treats Todo as
-  unordered picks the wrong issue next.
+  pick up — and `MLP` is the active milestone with `Beyond MLP` deferred. An
+  agent that hunts for a Priority field finds none and can misread the board
+  as a flat bag of work; one that treats Todo as unordered picks the wrong
+  issue next. Within Todo the milestone discriminates almost nothing, since
+  nearly every card there is `MLP`; the manual order is what carries the
+  ranking, and `Paused` is where the milestone actually separates things.
+- **`Waiting on` is a board field, and a stale one is worse than an empty
+  one.** It holds the issue numbers a card is blocked by, terse — `#725`,
+  `#627 + #725` — and it is populated only where a blocker is real, which
+  was eleven of roughly ninety open issues when it was added on 2026-09-16.
+  Most work has no blocker and an empty field is the correct answer for it.
+  The failure mode is the opposite one: #764 carried "blocked by #763" in
+  its body long after #763 merged, and by the time anyone checked, its own
+  stated trigger had fired eleven qualifying pull requests earlier. So when
+  you merge something, clear it from any `Waiting on` that names it, and
+  when you find a blocker already satisfied, say so on the issue rather than
+  leaving the next reader to re-derive it. Prefer the issue body as the
+  place that explains _why_ something waits; the field is a scanning aid
+  pointing at it, not a substitute.
 - The board spans two repositories whose issue numbers are scoped
   independently, so two unrelated issues can carry the same number and meet
   on one board. A board audit must therefore key each item on the repository
