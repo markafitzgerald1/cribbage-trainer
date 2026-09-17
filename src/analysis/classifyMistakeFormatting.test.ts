@@ -126,6 +126,14 @@ describe("loss formatting", () => {
       handPointsBreakdown: { flushes },
     }) as unknown as ScoredMistakeCandidate;
 
+  const HAND_LOSS_EXPECTED = {
+    expectedAccessible: "1.00 Hand loss",
+    expectedGains: [] as const,
+    expectedLabel: "1.00 Hand loss",
+    expectedMaterials: ["hand"] as const,
+    expectedShort: "Hand loss",
+  };
+
   it.each([
     {
       best: {
@@ -303,13 +311,9 @@ describe("loss formatting", () => {
       name: "reconciles when two one-cent losses combine to one displayed net cent",
     },
     {
+      ...HAND_LOSS_EXPECTED,
       best: createFlushCandidate(0.991),
       chosen: ZERO_CANDIDATE,
-      expectedAccessible: "1.00 Hand loss",
-      expectedGains: [] as const,
-      expectedLabel: "1.00 Hand loss",
-      expectedMaterials: ["hand"] as const,
-      expectedShort: "Hand loss",
       name: "retains generic hand label when flush loss rounds to a different cent than hand loss",
     },
     {
@@ -321,6 +325,41 @@ describe("loss formatting", () => {
       expectedMaterials: ["hand"] as const,
       expectedShort: "Missed flush loss",
       name: "narrows to missed flush loss when flush and hand loss match at display precision",
+    },
+    {
+      best: {
+        ...createFlushCandidate(4.195652),
+        expectedHandPoints: 4.195652,
+        expectedNetPoints: 3.403848,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: 0.0314,
+        },
+        signedExpectedCribPoints: -0.823204,
+      },
+      chosen: ZERO_CANDIDATE,
+      expectedAccessible:
+        "0.83 Crib gain does not cover 4.20 Missed flush and 0.03 Play loss",
+      expectedGains: ["crib"] as const,
+      expectedLabel: "0.83 Crib gain < 4.20 Missed flush + 0.03 Play loss",
+      expectedMaterials: ["hand", "play"] as const,
+      expectedShort: "Crib gain < Missed flush, Play loss",
+      name: "retains initial flush contribution during reconciliation with non-flush components",
+    },
+    {
+      ...HAND_LOSS_EXPECTED,
+      best: {
+        ...createFlushCandidate(1.0051),
+        expectedHandPoints: 1.0051,
+        expectedNetPoints: 1.0,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: 0.0051,
+        },
+        signedExpectedCribPoints: 0,
+      },
+      chosen: ZERO_CANDIDATE,
+      name: "reverts flush label when reconciliation adjusts hand cents",
     },
   ])(
     "$name",

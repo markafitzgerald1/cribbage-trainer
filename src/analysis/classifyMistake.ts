@@ -149,16 +149,6 @@ const getMaterialComponentsBySign = (
   );
 };
 
-const getMaterialLossComponents = (
-  losses: ComponentLosses,
-): readonly LossComponent[] =>
-  getMaterialComponentsBySign(losses, LOSS_SIGN_MULTIPLIER);
-
-const getMaterialGainComponents = (
-  losses: ComponentLosses,
-): readonly LossComponent[] =>
-  getMaterialComponentsBySign(losses, GAIN_SIGN_MULTIPLIER);
-
 const getFlushExpectedPoints = (candidate: ScoredMistakeCandidate): number =>
   (candidate.handPointsBreakdown?.flushes ?? 0) +
   (candidate.avgCutAddedFlushes ?? 0);
@@ -198,10 +188,15 @@ interface ComponentCents {
 const adjustComponentDelta = (
   componentList: ComponentCents[],
   isExcess: boolean,
+  isFlushMiss: boolean,
 ): void => {
-  const candidates = componentList.filter((item) =>
+  const eligible = componentList.filter((item) =>
     item.isLoss === isExcess ? item.cents > 0 : true,
   );
+  const candidates =
+    isFlushMiss && eligible.some((item) => item.component !== "hand")
+      ? eligible.filter((item) => item.component !== "hand")
+      : eligible;
   candidates.sort((first, second) => {
     const errorDiff = isExcess
       ? second.error - first.error
@@ -255,13 +250,9 @@ const reconcileComponentCents = (
     );
 
   let delta = computeImpliedNetCents() - targetNetCents;
-  while (delta > 0) {
-    adjustComponentDelta(componentList, true);
-    delta -= 1;
-  }
-  while (delta < 0) {
-    adjustComponentDelta(componentList, false);
-    delta += 1;
+  while (delta !== 0) {
+    adjustComponentDelta(componentList, delta > 0, input.isFlushMiss);
+    delta += delta > 0 ? ADJUST_DECREMENT : ADJUST_INCREMENT;
   }
 
   return new Map(componentList.map((item) => [item.component, item.cents]));
@@ -331,24 +322,25 @@ const buildMistakeLabels = (
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return reconciledCents.get(component)!;
     }
-    const raw = isLoss
-      ? getComponentLoss(component, input.losses)
-      : -getComponentLoss(component, input.losses);
+    const raw =
+      (isLoss ? LOSS_SIGN_MULTIPLIER : GAIN_SIGN_MULTIPLIER) *
+      getComponentLoss(component, input.losses);
     return toDisplayedCents(raw);
   };
 
   const sortedLosses = sortComponentsByCents(
-    input.materialComponents.filter(
-      (component) => getCents(component, true) > 0,
-    ),
+    input.materialComponents.filter((comp) => getCents(comp, true) > 0),
     (component) => getCents(component, true),
   );
   const sortedGains = sortComponentsByCents(
-    input.materialGains.filter((component) => getCents(component, false) > 0),
+    input.materialGains.filter((comp) => getCents(comp, false) > 0),
     (component) => getCents(component, false),
   );
 
-  const isFlushMiss = sortedLosses.includes("hand") && input.isFlushMiss;
+  const isFlushMiss =
+    sortedLosses.includes("hand") &&
+    input.isFlushMiss &&
+    getCents("hand", true) === toDisplayedCents(input.losses.hand);
 
   const lossItems = sortedLosses.map((component) =>
     formatComponentItem(component, getCents(component, true), isFlushMiss),
@@ -441,8 +433,14 @@ export const classifyScoredMistake = (
   }
 
   const losses = computeComponentLosses(best, chosen);
-  const materialComponents = getMaterialLossComponents(losses);
-  const materialGains = getMaterialGainComponents(losses);
+  const materialComponents = getMaterialComponentsBySign(
+    losses,
+    LOSS_SIGN_MULTIPLIER,
+  );
+  const materialGains = getMaterialComponentsBySign(
+    losses,
+    GAIN_SIGN_MULTIPLIER,
+  );
 
   if (materialComponents.length === 0) {
     return createSubPrecisionClassification(losses, netLoss);
