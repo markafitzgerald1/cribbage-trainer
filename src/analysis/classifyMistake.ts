@@ -220,7 +220,7 @@ const buildMistakeLabels = ({
   losses,
   materialComponents,
   materialGains,
-}: MistakeLabelInput): FormattedMistakeLabels => {
+}: MistakeLabelInput): FormattedMistakeLabels | null => {
   const lossItems = materialComponents.map((component) =>
     formatComponentItem(
       component,
@@ -248,6 +248,9 @@ const buildMistakeLabels = ({
       sum + toDisplayedCents(getComponentLoss(component, losses)),
     0,
   );
+  if (totalGainCents > totalLossCents) {
+    return null;
+  }
   const comparisonOperator: "<" | "<=" =
     totalGainCents === totalLossCents ? "<=" : "<";
 
@@ -346,6 +349,10 @@ export const classifyScoredMistake = (
     materialComponents,
     materialGains,
   });
+
+  if (labels === null) {
+    return createSubPrecisionClassification(losses, netLoss);
+  }
 
   return {
     accessibleLabel: labels.accessibleLabel,

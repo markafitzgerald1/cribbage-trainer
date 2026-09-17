@@ -158,6 +158,29 @@ describe("loss formatting", () => {
       expectedShort: "Hand, Crib, Play loss",
       name: "falls back to table column order when components tie at display precision",
     },
+    {
+      best: {
+        expectedHandPoints: 0.011,
+        expectedNetPoints: 0.02,
+        expectedPlayPoints: ZERO_EXPECTED_PLAY_POINTS,
+        signedExpectedCribPoints: 0.009,
+      },
+      chosen: {
+        expectedHandPoints: 0,
+        expectedNetPoints: 0.016,
+        expectedPlayPoints: {
+          ...ZERO_EXPECTED_PLAY_POINTS,
+          delta: 0.016,
+        },
+        signedExpectedCribPoints: 0,
+      },
+      expectedAccessible: "less than 0.01 loss",
+      expectedGains: [] as const,
+      expectedLabel: "< 0.01 loss",
+      expectedMaterials: [] as const,
+      expectedShort: "< 0.01 loss",
+      name: "falls back to sub-precision when omitted sub-cent loss causes displayed gain to exceed displayed loss",
+    },
   ])(
     "$name",
     ({
