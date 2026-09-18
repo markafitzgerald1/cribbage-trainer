@@ -424,6 +424,9 @@ describe("mistake queue dialog", () => {
       );
 
       expect(
+        nullTallyView.getByRole("region", { name: "Mistake queue" }),
+      ).toBeInTheDocument();
+      expect(
         nullTallyView.getByRole("heading", { name: "Mistake queue" }),
       ).toBeInTheDocument();
     });
