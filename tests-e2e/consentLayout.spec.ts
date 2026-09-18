@@ -202,7 +202,7 @@ test("preserves usable analysis table height when controls overflow in stacked m
     },
   );
   await page.goto("/");
-  await page.addStyleTag({ content: "html { font-size: 26px; }" });
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   const checkboxes = page.getByRole("checkbox");
   await checkboxes.nth(0).click();
@@ -220,9 +220,11 @@ test("preserves usable analysis table height when controls overflow in stacked m
     requireBoundingBox(header),
     requireBoundingBox(firstRow),
   ]);
+  const uncappedLargeRootMinHeight = 94;
   expect(containerBounds.height).toBeGreaterThanOrEqual(
     headerBounds.height + rowBounds.height,
   );
+  expect(containerBounds.height).toBeLessThan(uncappedLargeRootMinHeight);
 });
 
 test("Privacy Policy link has a high-contrast color on the consent surface", async ({

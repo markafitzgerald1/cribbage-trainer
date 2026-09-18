@@ -89,7 +89,7 @@
   flex-grow: 1;
   margin: 0;
   max-width: 100%;
-  min-height: calc(44px + 1.8rem);
+  min-height: calc(44px + min(1.8rem, 10vw));
   min-width: 0;
   overflow: auto;
   padding-left: 0;

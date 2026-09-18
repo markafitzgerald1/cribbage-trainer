@@ -191,7 +191,7 @@ once you are already editing layout or interaction code.
 - Multi-component tradeoff captions (e.g.
   `0.61 Hand gain < 1.06 Crib + 0.42 Play loss`) wrap in mobile portrait at
   enlarged device fonts or browser zoom. Wrap each side in an inline element
-  with `display: inline-block` (`.diagnosticSide`) so the break occurs cleanly
+  with `display: inline-block` (`.diagnostic-side`) so the break occurs cleanly
   at the comparison operator (`<`) into two self-contained clauses, rather than
   breaking mid-phrase or orphaning "loss".
 - In stacked mode during practice drill review, the drill panel sits directly
