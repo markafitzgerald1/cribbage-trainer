@@ -9,6 +9,7 @@ import { type Page, expect, test } from "@playwright/test";
 import {
   phoneLandscapeViewport,
   phonePortraitViewport,
+  requireBoundingBox,
 } from "./layoutMeasurements";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
@@ -208,5 +209,46 @@ test.describe("practice drill", () => {
     await firstBucketRow.scrollIntoViewIfNeeded();
 
     await expect(firstBucketRow).toBeInViewport();
+  });
+
+  /*
+   * In practice drill mode on a portrait phone, the drill panel sits directly
+   * above the analysis table. Tightened caption gaps, padding, and font sizes
+   * scoped to .in-drill ensure the diagnostic caption does not wrap and multiple
+   * discard rows remain visible within the table container without scrolling.
+   */
+  test("diagnostic caption and multiple analysis rows stay visible during drill review at large root font in portrait", async ({
+    page,
+  }) => {
+    await startDrillOnFirstMistake(page);
+    await page.setViewportSize(phonePortraitViewport);
+    await page.addStyleTag({ content: LARGE_ROOT_FONT });
+
+    await selectTwoDiscards(page);
+    await page.getByRole("button", { name: "Check discard" }).click();
+    await waitForAnalysis(page);
+
+    const analysisFigure = page
+      .locator("figure")
+      .filter({ has: page.getByRole("table") });
+    const caption = analysisFigure.locator("figcaption");
+    await expect(caption).toBeInViewport();
+
+    // The tightened in-drill caption styles keep the diagnostic caption compact.
+    const maxCompactCaptionHeight = 65;
+    const captionBox = await requireBoundingBox(caption);
+    expect(captionBox.height).toBeLessThan(maxCompactCaptionHeight);
+
+    // At least two analysis rows remain visible within the viewport and scroll area.
+    const tableContainer = analysisFigure.locator(
+      "[class*='table-container'], [class*='tableContainer']",
+    );
+    const rows = tableContainer.locator("tbody tr");
+    await expect(rows.nth(0)).toBeInViewport();
+    await expect(rows.nth(1)).toBeInViewport();
+
+    const minTwoRowsContainerHeight = 95;
+    const containerBox = await requireBoundingBox(tableContainer);
+    expect(containerBox.height).toBeGreaterThan(minTwoRowsContainerHeight);
   });
 });
