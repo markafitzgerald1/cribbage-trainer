@@ -85,6 +85,25 @@ const testSubOptimalDiscardScreenshot = () =>
     await expect(page).toHaveScreenshot();
   });
 
+const TIED_OPTIMAL_CARD_INDEX = 5;
+const TIED_OPTIMAL_HAND_QUERY = "?hand=9D,9C,9H,4C,4H,3S&role=pone&seed=e2e";
+const TIED_OPTIMAL_DISCARD_INDICES: readonly [number, number] = [
+  0,
+  TIED_OPTIMAL_CARD_INDEX,
+];
+
+const testTiedOptimalDiscardScreenshot = () =>
+  test("tied optimal discard shows margin and equal-best tiers still visually the same", async ({
+    page,
+  }) => {
+    await renderThenSelectTwoDiscards(page, TIED_OPTIMAL_HAND_QUERY, {
+      acceptAnalytics: true,
+      discardIndices: TIED_OPTIMAL_DISCARD_INDICES,
+    });
+
+    await expect(page).toHaveScreenshot();
+  });
+
 const testExpandedRowScreenshot = () =>
   test("scored possibilities with one row expanded still visually the same", async ({
     page,
@@ -193,6 +212,7 @@ const testScreenshots = () => {
   testPrivacyPolicyScreenshot();
   testScoredPossibilitiesNoExpansionScreenshot();
   testSubOptimalDiscardScreenshot();
+  testTiedOptimalDiscardScreenshot();
   testExpandedRowScreenshot();
   testDoubleExpandedScreenshot();
   testCribExpandedScreenshot();
