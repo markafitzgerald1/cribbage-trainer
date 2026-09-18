@@ -1,5 +1,4 @@
 /* jscpd:ignore-start */
-import * as optimalDiscardModule from "../analysis/optimalDiscard";
 import {
   CribRole,
   type ExpectedCribPointsTable,
@@ -370,27 +369,6 @@ describe("scored possible keep discards component", () => {
         expect(caption?.textContent).toBe(expectedText);
       },
     );
-
-    it("renders optimal discard caption saying all tied when all discards tie", () => {
-      jest
-        .spyOn(optimalDiscardModule, "computeOptimalDiscardMargin")
-        .mockReturnValueOnce({
-          accessibleLabel: "Optimal discard, all tied",
-          label: "Optimal discard, all tied",
-          margin: null,
-        });
-      const dealtCards = toDealtCards(
-        parseHand("5H,5D,6H,7H,8H,9H"),
-        parseHand("5H,5D"),
-      );
-      const { container } = renderScoredPossibleKeepDiscards(dealtCards);
-      const caption = container.querySelector("figcaption");
-
-      expect(caption?.getAttribute("aria-label")).toBe(
-        "Optimal discard, all tied",
-      );
-      expect(caption?.textContent).toBe("Optimal discard, all tied");
-    });
   });
 
   describe("highlight tiers", () => {

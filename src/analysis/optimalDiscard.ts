@@ -1,7 +1,4 @@
-import {
-  DISPLAY_PRECISION,
-  EXPECTED_POINTS_FRACTION_DIGITS,
-} from "./classifyMistake";
+import { formatAccessibleNetLoss, formatNetLoss } from "./classifyMistake";
 import { withoutFloatResidue } from "./discardQuality";
 
 export interface OptimalDiscardMargin {
@@ -45,15 +42,8 @@ export const computeOptimalDiscardMargin = (
   }
 
   const margin = withoutFloatResidue(bestNet - runnerUp.expectedNetPoints);
-  const formattedMargin =
-    margin < DISPLAY_PRECISION
-      ? `< ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`
-      : margin.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
-
-  const accessibleMargin =
-    margin < DISPLAY_PRECISION
-      ? `less than ${DISPLAY_PRECISION.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`
-      : margin.toFixed(EXPECTED_POINTS_FRACTION_DIGITS);
+  const formattedMargin = formatNetLoss(margin);
+  const accessibleMargin = formatAccessibleNetLoss(margin);
 
   return {
     accessibleLabel: `Optimal discard, ${accessibleMargin} better than next`,

@@ -58,7 +58,6 @@ interface RenderComponentOptions {
   readonly classification?: MistakeClassification | null;
   readonly expectedPlayPoints?: number;
   readonly highlightTier?: DiscardHighlightTier;
-  readonly isHighlighted?: boolean;
   readonly rowIndex?: number;
   readonly signedExpectedCribPoints?: number;
 }
@@ -96,8 +95,7 @@ function renderComponentWithScenario(
   {
     classification = null,
     expectedPlayPoints = EXPECTED_PLAY_POINTS,
-    highlightTier,
-    isHighlighted = false,
+    highlightTier = "none",
     rowIndex = 0,
     signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
   }: RenderComponentOptions = {},
@@ -157,13 +155,10 @@ function renderComponentWithScenario(
     signedExpectedCribPoints,
   };
 
-  const effectiveTier: DiscardHighlightTier =
-    highlightTier ?? (isHighlighted ? "chosen" : "none");
-
   const props = {
     ...(typeof classification === "undefined" ? {} : { classification }),
     cribRole: CribRole.Dealer,
-    highlightTier: effectiveTier,
+    highlightTier,
     rowIndex,
     scoredKeepDiscard,
     sortOrder: scenario.sortOrder,
@@ -176,10 +171,10 @@ function renderComponentWithScenario(
   );
 }
 
-const highlightedPresent = (isHighlighted: boolean) => {
+const highlightedPresent = (highlightTier: DiscardHighlightTier) => {
   const scenario = setupScenario("Ascending");
   const { container } = renderComponentWithScenario(scenario, {
-    isHighlighted,
+    highlightTier,
   });
   const rowClass = container.querySelector("tr")?.className ?? "";
 
@@ -222,9 +217,9 @@ describe("calculation component", () => {
     },
   );
 
-  it("should toggle highlighted class based on prop", () => {
-    expect(highlightedPresent(true)).toBe(true);
-    expect(highlightedPresent(false)).toBe(false);
+  it("should apply highlighted class when tier is chosen", () => {
+    expect(highlightedPresent("chosen")).toBe(true);
+    expect(highlightedPresent("none")).toBe(false);
   });
 
   it.each([
@@ -357,14 +352,14 @@ describe("calculation component", () => {
     {
       classification: null,
       expectedTitle: "Optimal discard",
-      isHighlighted: true,
+      highlightTier: "chosen" as const,
       name: "optimal discard when highlighted",
     },
     {
       classification: mockTradeOffClassification,
       expectedTitle:
         "Chosen discard (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
-      isHighlighted: true,
+      highlightTier: "chosen" as const,
       name: "sub-optimal loss when highlighted and classified",
     },
     {
@@ -374,22 +369,22 @@ describe("calculation component", () => {
       },
       expectedTitle:
         "Chosen discard (less than 0.01 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
-      isHighlighted: true,
+      highlightTier: "chosen" as const,
       name: "sub-optimal loss below 0.005 rendered with less-than precision indicator",
     },
     {
       classification: null,
       expectedTitle: null,
-      isHighlighted: false,
+      highlightTier: "none" as const,
       name: "no title when not highlighted",
     },
   ])(
     "should render $name",
-    ({ classification, expectedTitle, isHighlighted }) => {
+    ({ classification, expectedTitle, highlightTier }) => {
       const scenario = setupScenario("Ascending");
       const { container } = renderComponentWithScenario(scenario, {
         classification,
-        isHighlighted,
+        highlightTier,
       });
 
       expect(container.querySelector("tr")?.getAttribute("title")).toBe(

@@ -359,12 +359,7 @@ export function ScoredPossibleKeepDiscards({
   };
 
   const renderScoringTableBody = () => {
-    const [bestCandidate] = scoredKeepDiscardsByNetScore;
-    if (!bestCandidate) {
-      return <tbody />;
-    }
-
-    const bestNet = bestCandidate.expectedNetPoints;
+    const bestNet = scoredKeepDiscardsByNetScore[0]?.expectedNetPoints ?? 0;
 
     return (
       <tbody>

@@ -142,7 +142,6 @@ interface CreateStoryOptions {
   readonly discard: readonly StoryCard[];
   readonly expectedCribPointBreakdown?: typeof cribPointBreakdown;
   readonly highlightTier?: DiscardHighlightTier;
-  readonly isHighlighted?: boolean;
   readonly keep: readonly StoryCard[];
   readonly sortOrder: SortOrder;
 }
@@ -154,18 +153,15 @@ const createStory = ({
   cribPoints = 1.25,
   cribStarterPoints: storyCribStarterPoints = cribStarterPoints,
   expectedCribPointBreakdown,
-  highlightTier,
-  isHighlighted = false,
+  highlightTier = "none",
 }: CreateStoryOptions): Story => {
   const cutAdded = expectedCutAddedPoints(keep, discard);
   const handExpectedPoints = expectedHandPoints(keep, discard).total;
   const points = handPoints(keep);
-  const effectiveTier: DiscardHighlightTier =
-    highlightTier ?? (isHighlighted ? "chosen" : "none");
   return {
     args: {
       cribRole: CribRole.Dealer,
-      highlightTier: effectiveTier,
+      highlightTier,
       rowIndex: 0,
       scoredKeepDiscard: {
         ...toCutBreakdown(cutAdded),
@@ -201,7 +197,7 @@ export const JackSixFiveFourDiscardKingQueenSortedDescending: Story =
 export const JackSixFiveFourDiscardKingQueenSortedDescendingHighlighted: Story =
   createStory({
     ...jackSixFiveFourKeepKingQueenDiscard,
-    isHighlighted: true,
+    highlightTier: "chosen",
     sortOrder: SortOrder.Descending,
   });
 
@@ -248,7 +244,7 @@ export const SuitedCribDetailsExpanded: Story = createStory({
     createCard(Rank.TWO, Suit.DIAMONDS),
   ],
   expectedCribPointBreakdown: cribPointBreakdown,
-  isHighlighted: true,
+  highlightTier: "chosen",
   keep: [
     createCard(Rank.THREE, Suit.HEARTS),
     createCard(Rank.FOUR, Suit.SPADES),
