@@ -175,16 +175,18 @@ export function ScoredPossibleKeepDiscard({
     </>
   );
   const tierClass = getTierClass(highlightTier);
+  const rowTitle = getRowTitle(highlightTier, classification);
   const rowClassName =
     `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${classes.clickable}`.trim();
 
   return (
     <>
       <tr
+        aria-description={rowTitle}
         className={rowClassName}
         data-highlight-tier={highlightTier}
         onClick={handleRowClick}
-        title={getRowTitle(highlightTier, classification)}
+        title={rowTitle}
       >
         {rowContent}
       </tr>

@@ -229,6 +229,7 @@ describe("calculation component", () => {
 
   it.each([
     {
+      expectedDescription: "Optimal discard",
       expectedTier: "chosen",
       expectedTitle: "Optimal discard",
       highlightTier: "chosen" as const,
@@ -237,6 +238,7 @@ describe("calculation component", () => {
       name: "chosen tier",
     },
     {
+      expectedDescription: "Equal-best discard",
       expectedTier: "equal-best",
       expectedTitle: "Equal-best discard",
       highlightTier: "equal-best" as const,
@@ -245,6 +247,7 @@ describe("calculation component", () => {
       name: "equal-best tier",
     },
     {
+      expectedDescription: null,
       expectedTier: "none",
       expectedTitle: null,
       highlightTier: "none" as const,
@@ -254,7 +257,14 @@ describe("calculation component", () => {
     },
   ])(
     "renders row for $name with correct class, data attribute, and title",
-    ({ expectedTier, expectedTitle, highlightTier, isChosen, isEqualBest }) => {
+    ({
+      expectedDescription,
+      expectedTier,
+      expectedTitle,
+      highlightTier,
+      isChosen,
+      isEqualBest,
+    }) => {
       const { container } = renderComponentWithScenario(
         setupScenario("Ascending"),
         { highlightTier },
@@ -263,6 +273,7 @@ describe("calculation component", () => {
 
       expect(tr?.getAttribute("data-highlight-tier")).toBe(expectedTier);
       expect(tr?.getAttribute("title")).toBe(expectedTitle);
+      expect(tr?.getAttribute("aria-description")).toBe(expectedDescription);
       expect(tr?.className.includes("highlighted")).toBe(isChosen);
       expect(tr?.className.includes("equalBest")).toBe(isEqualBest);
     },
