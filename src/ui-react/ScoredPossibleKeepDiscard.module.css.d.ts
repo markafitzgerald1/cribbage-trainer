@@ -8,3 +8,4 @@ export const highlighted: string;
 export const netScoreCell: string;
 export const scoreCell: string;
 export const scoredPossibleKeepDiscard: string;
+export const visuallyHidden: string;

@@ -7,10 +7,14 @@ export interface OptimalDiscardMargin {
   readonly margin: number | null;
 }
 
+export const DISTINCT_NET_SCORE_THRESHOLD = 0.0001;
+
 export const isEqualBestCandidate = (
   bestNet: number,
   candidateNet: number,
-): boolean => withoutFloatResidue(bestNet - candidateNet) === 0;
+): boolean =>
+  Math.abs(withoutFloatResidue(bestNet - candidateNet)) <
+  DISTINCT_NET_SCORE_THRESHOLD;
 
 export const computeOptimalDiscardMargin = (
   scoredCandidatesByNetDescending: readonly {
@@ -29,7 +33,8 @@ export const computeOptimalDiscardMargin = (
   const bestNet = bestCandidate.expectedNetPoints;
   const runnerUp = scoredCandidatesByNetDescending.find(
     (candidate) =>
-      withoutFloatResidue(bestNet - candidate.expectedNetPoints) > 0,
+      withoutFloatResidue(bestNet - candidate.expectedNetPoints) >=
+      DISTINCT_NET_SCORE_THRESHOLD,
   );
 
   if (!runnerUp) {

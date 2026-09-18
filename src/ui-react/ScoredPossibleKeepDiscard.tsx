@@ -133,8 +133,25 @@ export function ScoredPossibleKeepDiscard({
     rowIndex % ROW_STRIPE_DIVISOR === 0
       ? parentClasses.oddRow
       : parentClasses.evenRow;
+  const tierClass = getTierClass(highlightTier);
+  const rowTitle = getRowTitle(highlightTier, classification);
+  const descriptionId = rowTitle
+    ? `scored-discard-${rowIndex}-description`
+    : // eslint-disable-next-line no-undefined
+      undefined;
+  const rowClassName =
+    `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${classes.clickable}`.trim();
+
   const renderHandDiscardCell = () => (
     <span className={classes.handDiscardCell}>
+      {rowTitle && descriptionId ? (
+        <span
+          className={classes.visuallyHidden}
+          id={descriptionId}
+        >
+          {rowTitle}
+        </span>
+      ) : null}
       <PossibleHand
         dealtCards={keep}
         sortOrder={sortOrder}
@@ -174,14 +191,11 @@ export function ScoredPossibleKeepDiscard({
       <td className={classes.netScoreCell}>{netExpectedTotal}</td>
     </>
   );
-  const tierClass = getTierClass(highlightTier);
-  const rowTitle = getRowTitle(highlightTier, classification);
-  const rowClassName =
-    `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${classes.clickable}`.trim();
 
   return (
     <>
       <tr
+        aria-describedby={descriptionId}
         aria-description={rowTitle}
         className={rowClassName}
         data-highlight-tier={highlightTier}

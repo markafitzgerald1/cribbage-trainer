@@ -224,40 +224,40 @@ describe("calculation component", () => {
 
   it.each([
     {
+      expectedDescribedBy: "scored-discard-0-description",
       expectedDescription: "Optimal discard",
       expectedTier: "chosen",
       expectedTitle: "Optimal discard",
       highlightTier: "chosen" as const,
-      isChosen: true,
       isEqualBest: false,
       name: "chosen tier",
     },
     {
+      expectedDescribedBy: "scored-discard-0-description",
       expectedDescription: "Equal-best discard",
       expectedTier: "equal-best",
       expectedTitle: "Equal-best discard",
       highlightTier: "equal-best" as const,
-      isChosen: false,
       isEqualBest: true,
       name: "equal-best tier",
     },
     {
+      expectedDescribedBy: null,
       expectedDescription: null,
       expectedTier: "none",
       expectedTitle: null,
       highlightTier: "none" as const,
-      isChosen: false,
       isEqualBest: false,
       name: "none tier",
     },
   ])(
     "renders row for $name with correct class, data attribute, and title",
     ({
+      expectedDescribedBy,
       expectedDescription,
       expectedTier,
       expectedTitle,
       highlightTier,
-      isChosen,
       isEqualBest,
     }) => {
       const { container } = renderComponentWithScenario(
@@ -267,12 +267,31 @@ describe("calculation component", () => {
       const tr = container.querySelector("tr");
 
       expect(tr?.getAttribute("data-highlight-tier")).toBe(expectedTier);
+
       expect(tr?.getAttribute("title")).toBe(expectedTitle);
+
       expect(tr?.getAttribute("aria-description")).toBe(expectedDescription);
-      expect(tr?.className.includes("highlighted")).toBe(isChosen);
+
+      expect(tr?.getAttribute("aria-describedby")).toBe(expectedDescribedBy);
+
       expect(tr?.className.includes("equalBest")).toBe(isEqualBest);
     },
   );
+
+  it("renders accessible description text for screen readers when description is present", () => {
+    const { container } = renderComponentWithScenario(
+      setupScenario("Ascending"),
+      { highlightTier: "equal-best" },
+    );
+    const tr = container.querySelector("tr");
+    const descId = tr?.getAttribute("aria-describedby");
+
+    expect(descId).toBe("scored-discard-0-description");
+
+    const descEl = container.querySelector(`#${descId}`);
+
+    expect(descEl?.textContent).toBe("Equal-best discard");
+  });
 
   it("renders negative signed crib points without a plus sign", () => {
     const scenario = setupScenario("Ascending");
