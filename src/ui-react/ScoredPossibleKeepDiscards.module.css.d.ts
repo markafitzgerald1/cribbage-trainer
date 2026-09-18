@@ -20,3 +20,4 @@ export const subOptimalBadge: string;
 export const diagnosticReason: string;
 export const diagnosticSide: string;
 export const inDrill: string;
+export const visuallyHiddenDescriptions: string;

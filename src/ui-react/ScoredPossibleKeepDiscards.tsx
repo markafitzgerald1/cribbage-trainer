@@ -8,6 +8,7 @@ import {
 import {
   type DiscardHighlightTier,
   ScoredPossibleKeepDiscard,
+  getRowTitle,
 } from "./ScoredPossibleKeepDiscard";
 import {
   type MistakeClassification,
@@ -243,6 +244,28 @@ export function ScoredPossibleKeepDiscards({
       ),
     [scoredKeepDiscardsByNetScore, scoreSortKey],
   );
+  const scoredKeepDiscardsWithTiers = useMemo(() => {
+    const bestNet = scoredKeepDiscardsByNetScore[0]?.expectedNetPoints ?? 0;
+
+    return scoredKeepDiscards.map((scoredKeepDiscard, index) => {
+      const isChosen = scoredKeepDiscard.keep.every((card) => card.kept);
+      const isEqualBest =
+        !isChosen &&
+        isEqualBestCandidate(bestNet, scoredKeepDiscard.expectedNetPoints);
+      const highlightTier = getHighlightTier(isChosen, isEqualBest);
+      const rowTitle = getRowTitle(
+        highlightTier,
+        isChosen ? chosenClassification : null,
+      );
+
+      return {
+        highlightTier,
+        rowIndex: index,
+        rowTitle,
+        scoredKeepDiscard,
+      };
+    });
+  }, [chosenClassification, scoredKeepDiscards, scoredKeepDiscardsByNetScore]);
   const handleScoreSortClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       onScoreSortKeyChange(
@@ -358,35 +381,42 @@ export function ScoredPossibleKeepDiscards({
     );
   };
 
-  const renderScoringTableBody = () => {
-    const bestNet = scoredKeepDiscardsByNetScore[0]?.expectedNetPoints ?? 0;
+  const renderScoringTableBody = () => (
+    <tbody>
+      {scoredKeepDiscardsWithTiers.map(
+        ({ highlightTier, rowIndex, scoredKeepDiscard }) => (
+          <ScoredPossibleKeepDiscard
+            classification={
+              highlightTier === "chosen" ? chosenClassification : null
+            }
+            cribRole={cribRole}
+            highlightTier={highlightTier}
+            key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
+              .map((dealtCard) => dealtCard.dealOrder)
+              .join("")}
+            rowIndex={rowIndex}
+            scoredKeepDiscard={scoredKeepDiscard}
+            sortOrder={sortOrder}
+          />
+        ),
+      )}
+    </tbody>
+  );
 
-    return (
-      <tbody>
-        {scoredKeepDiscards.map((scoredKeepDiscard, index) => {
-          const isChosen = scoredKeepDiscard.keep.every((card) => card.kept);
-          const isEqualBest =
-            !isChosen &&
-            isEqualBestCandidate(bestNet, scoredKeepDiscard.expectedNetPoints);
-          const highlightTier = getHighlightTier(isChosen, isEqualBest);
-
-          return (
-            <ScoredPossibleKeepDiscard
-              classification={isChosen ? chosenClassification : null}
-              cribRole={cribRole}
-              highlightTier={highlightTier}
-              key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
-                .map((dealtCard) => dealtCard.dealOrder)
-                .join("")}
-              rowIndex={index}
-              scoredKeepDiscard={scoredKeepDiscard}
-              sortOrder={sortOrder}
-            />
-          );
-        })}
-      </tbody>
-    );
-  };
+  const renderDescriptions = () => (
+    <div className={classes.visuallyHiddenDescriptions}>
+      {scoredKeepDiscardsWithTiers.map(({ rowIndex, rowTitle }) =>
+        rowTitle ? (
+          <span
+            id={`scored-discard-${rowIndex}-description`}
+            key={`scored-discard-${rowIndex}-description`}
+          >
+            {rowTitle}
+          </span>
+        ) : null,
+      )}
+    </div>
+  );
 
   return (
     <figure
@@ -409,6 +439,7 @@ export function ScoredPossibleKeepDiscards({
           {renderScoringTableHead()}
           {renderScoringTableBody()}
         </table>
+        {renderDescriptions()}
       </div>
     </figure>
   );

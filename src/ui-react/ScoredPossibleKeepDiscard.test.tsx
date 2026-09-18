@@ -6,6 +6,7 @@ import {
 import {
   type DiscardHighlightTier,
   ScoredPossibleKeepDiscard,
+  getRowTitle,
 } from "./ScoredPossibleKeepDiscard";
 import {
   EXPECTED_POINTS_FRACTION_DIGITS,
@@ -225,7 +226,6 @@ describe("calculation component", () => {
   it.each([
     {
       expectedDescribedBy: "scored-discard-0-description",
-      expectedDescription: "Optimal discard",
       expectedTier: "chosen",
       expectedTitle: "Optimal discard",
       highlightTier: "chosen" as const,
@@ -234,7 +234,6 @@ describe("calculation component", () => {
     },
     {
       expectedDescribedBy: "scored-discard-0-description",
-      expectedDescription: "Equal-best discard",
       expectedTier: "equal-best",
       expectedTitle: "Equal-best discard",
       highlightTier: "equal-best" as const,
@@ -243,7 +242,6 @@ describe("calculation component", () => {
     },
     {
       expectedDescribedBy: null,
-      expectedDescription: null,
       expectedTier: "none",
       expectedTitle: null,
       highlightTier: "none" as const,
@@ -254,7 +252,6 @@ describe("calculation component", () => {
     "renders row for $name with correct class, data attribute, and title",
     ({
       expectedDescribedBy,
-      expectedDescription,
       expectedTier,
       expectedTitle,
       highlightTier,
@@ -266,32 +263,61 @@ describe("calculation component", () => {
       );
       const tr = container.querySelector("tr");
 
-      expect(tr?.getAttribute("data-highlight-tier")).toBe(expectedTier);
+      expect({
+        ariaDescribedBy: tr?.getAttribute("aria-describedby"),
+        ariaDescription: tr?.getAttribute("aria-description"),
+        hasEqualBestClass: tr?.className.includes("equalBest"),
+        highlightTier: tr?.getAttribute("data-highlight-tier"),
+        title: tr?.getAttribute("title"),
+      }).toStrictEqual({
+        ariaDescribedBy: expectedDescribedBy,
+        ariaDescription: null,
+        hasEqualBestClass: isEqualBest,
+        highlightTier: expectedTier,
+        title: expectedTitle,
+      });
 
-      expect(tr?.getAttribute("title")).toBe(expectedTitle);
-
-      expect(tr?.getAttribute("aria-description")).toBe(expectedDescription);
-
-      expect(tr?.getAttribute("aria-describedby")).toBe(expectedDescribedBy);
-
-      expect(tr?.className.includes("equalBest")).toBe(isEqualBest);
+      expect(
+        screen
+          .getAllByRole("cell")
+          .some((cell) => cell.querySelector("[id]") !== null),
+      ).toBe(false);
     },
   );
 
-  it("renders accessible description text for screen readers when description is present", () => {
-    const { container } = renderComponentWithScenario(
-      setupScenario("Ascending"),
-      { highlightTier: "equal-best" },
-    );
-    const tr = container.querySelector("tr");
-    const descId = tr?.getAttribute("aria-describedby");
-
-    expect(descId).toBe("scored-discard-0-description");
-
-    const descEl = container.querySelector(`#${descId}`);
-
-    expect(descEl?.textContent).toBe("Equal-best discard");
-  });
+  it.each([
+    {
+      classification: null,
+      expected: "Optimal discard",
+      highlightTier: "chosen" as const,
+      name: "chosen tier without classification",
+    },
+    {
+      classification: mockTradeOffClassification,
+      expected:
+        "Chosen discard (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
+      highlightTier: "chosen" as const,
+      name: "chosen tier with classification",
+    },
+    {
+      classification: null,
+      expected: "Equal-best discard",
+      highlightTier: "equal-best" as const,
+      name: "equal-best tier",
+    },
+    {
+      classification: null,
+      // eslint-disable-next-line no-undefined
+      expected: undefined,
+      highlightTier: "none" as const,
+      name: "none tier",
+    },
+  ])(
+    "computes row title for $name",
+    ({ classification, expected, highlightTier }) => {
+      expect(getRowTitle(highlightTier, classification)).toBe(expected);
+    },
+  );
 
   it("renders negative signed crib points without a plus sign", () => {
     const scenario = setupScenario("Ascending");

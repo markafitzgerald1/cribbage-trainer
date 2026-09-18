@@ -335,8 +335,8 @@ describe("scored possible keep discards component", () => {
         cards: "9D,9C,9H,4C,4H,3S",
         cribRole: CribRole.Pone,
         discards: "3S,9C",
-        expectedAriaLabel: "Optimal discard, 0.37 better than next",
-        expectedText: "Optimal discard, 0.37 better than next",
+        expectedAriaLabel: "Optimal discard, 0.37 better than next distinct",
+        expectedText: "Optimal discard, 0.37 better than next distinct",
         name: "optimal discard caption when top choices tie",
       },
       {
@@ -372,23 +372,64 @@ describe("scored possible keep discards component", () => {
   });
 
   describe("highlight tiers", () => {
-    it("marks all three tied discards when three discards tie for best, with the chosen one clearly strongest", () => {
+    it("marks all three tied discards when three discards tie for best, with chosen row highlighted and accessible descriptions outside cells", () => {
       const { container } = renderPoneAnalysis("9D,9C,9H,4C,4H,3S", "3S,9C");
-      const rows = container.querySelectorAll<HTMLTableRowElement>("tbody tr");
-      const [row0, row1, row2, row3] = rows;
-
-      expect(row0?.getAttribute("data-highlight-tier")).toBe("chosen");
-      expect(row0?.className).toContain("highlighted");
-      expect(row1?.getAttribute("data-highlight-tier")).toBe("equal-best");
-      expect(row2?.getAttribute("data-highlight-tier")).toBe("equal-best");
-      expect(row3?.getAttribute("data-highlight-tier")).toBe("none");
-    });
-
-    it("marks chosen sub-optimal row as chosen and all tied top rows as equal-best", () => {
-      const { container } = renderPoneAnalysis("9D,9C,9H,4C,4H,3S", "9D,9C");
       const rows = Array.from(
         container.querySelectorAll<HTMLTableRowElement>("tbody tr"),
       );
+      const rowSummaries = rows.slice(0, 4).map((row) => ({
+        describedBy: row.getAttribute("aria-describedby"),
+        hasHighlightedClass: row.className.includes("highlighted"),
+        tier: row.getAttribute("data-highlight-tier"),
+      }));
+
+      expect(rowSummaries).toStrictEqual([
+        {
+          describedBy: "scored-discard-0-description",
+          hasHighlightedClass: true,
+          tier: "chosen",
+        },
+        {
+          describedBy: "scored-discard-1-description",
+          hasHighlightedClass: false,
+          tier: "equal-best",
+        },
+        {
+          describedBy: "scored-discard-2-description",
+          hasHighlightedClass: false,
+          tier: "equal-best",
+        },
+        {
+          describedBy: null,
+          hasHighlightedClass: false,
+          tier: "none",
+        },
+      ]);
+
+      // Ensure no description spans exist inside table cells (preventing double announcement)
+      const cellIds = screen
+        .getAllByRole("cell")
+        .flatMap((cell) => Array.from(cell.querySelectorAll("[id]")));
+
+      expect(cellIds).toHaveLength(0);
+
+      // Verify description elements outside table
+      const descriptions = [0, 1, 2].map(
+        (index) =>
+          container.querySelector(`#scored-discard-${index}-description`)
+            ?.textContent,
+      );
+
+      expect(descriptions).toStrictEqual([
+        "Optimal discard",
+        "Equal-best discard",
+        "Equal-best discard",
+      ]);
+    });
+
+    it("marks chosen sub-optimal row as chosen and all tied top rows as equal-best", () => {
+      renderPoneAnalysis("9D,9C,9H,4C,4H,3S", "9D,9C");
+      const rows = screen.getAllByRole("row").slice(1);
       const chosenRow = rows.find(
         (row) => row.getAttribute("data-highlight-tier") === "chosen",
       );

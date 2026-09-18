@@ -276,3 +276,12 @@
 .retry-button:active {
   background-color: #bd2130;
 }
+
+.visually-hidden-descriptions {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}

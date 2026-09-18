@@ -7,14 +7,10 @@ export interface OptimalDiscardMargin {
   readonly margin: number | null;
 }
 
-export const DISTINCT_NET_SCORE_THRESHOLD = 0.0001;
-
 export const isEqualBestCandidate = (
   bestNet: number,
   candidateNet: number,
-): boolean =>
-  Math.abs(withoutFloatResidue(bestNet - candidateNet)) <
-  DISTINCT_NET_SCORE_THRESHOLD;
+): boolean => withoutFloatResidue(bestNet - candidateNet) === 0;
 
 export const computeOptimalDiscardMargin = (
   scoredCandidatesByNetDescending: readonly {
@@ -33,8 +29,7 @@ export const computeOptimalDiscardMargin = (
   const bestNet = bestCandidate.expectedNetPoints;
   const runnerUp = scoredCandidatesByNetDescending.find(
     (candidate) =>
-      withoutFloatResidue(bestNet - candidate.expectedNetPoints) >=
-      DISTINCT_NET_SCORE_THRESHOLD,
+      withoutFloatResidue(bestNet - candidate.expectedNetPoints) > 0,
   );
 
   if (!runnerUp) {
@@ -46,13 +41,19 @@ export const computeOptimalDiscardMargin = (
     };
   }
 
+  const [, secondCandidate] = scoredCandidatesByNetDescending;
+  const hasTopTie =
+    typeof secondCandidate !== "undefined" &&
+    withoutFloatResidue(bestNet - secondCandidate.expectedNetPoints) === 0;
+  const comparisonTarget = hasTopTie ? "next distinct" : "next";
+
   const margin = withoutFloatResidue(bestNet - runnerUp.expectedNetPoints);
   const formattedMargin = formatNetLoss(margin);
   const accessibleMargin = formatAccessibleNetLoss(margin);
 
   return {
-    accessibleLabel: `Optimal discard, ${accessibleMargin} better than next`,
-    label: `Optimal discard, ${formattedMargin} better than next`,
+    accessibleLabel: `Optimal discard, ${accessibleMargin} better than ${comparisonTarget}`,
+    label: `Optimal discard, ${formattedMargin} better than ${comparisonTarget}`,
     margin,
   };
 };

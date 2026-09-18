@@ -51,7 +51,7 @@ const getTierClass = (tier: DiscardHighlightTier): string => {
   return "";
 };
 
-const getRowTitle = (
+export const getRowTitle = (
   tier: DiscardHighlightTier,
   classification?: MistakeClassification | null,
 ): string | undefined => {
@@ -144,14 +144,6 @@ export function ScoredPossibleKeepDiscard({
 
   const renderHandDiscardCell = () => (
     <span className={classes.handDiscardCell}>
-      {rowTitle && descriptionId ? (
-        <span
-          className={classes.visuallyHidden}
-          id={descriptionId}
-        >
-          {rowTitle}
-        </span>
-      ) : null}
       <PossibleHand
         dealtCards={keep}
         sortOrder={sortOrder}
@@ -196,7 +188,6 @@ export function ScoredPossibleKeepDiscard({
     <>
       <tr
         aria-describedby={descriptionId}
-        aria-description={rowTitle}
         className={rowClassName}
         data-highlight-tier={highlightTier}
         onClick={handleRowClick}
