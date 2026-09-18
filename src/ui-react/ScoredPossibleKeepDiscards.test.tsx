@@ -1,4 +1,5 @@
 /* jscpd:ignore-start */
+import * as optimalDiscardModule from "../analysis/optimalDiscard";
 import {
   CribRole,
   type ExpectedCribPointsTable,
@@ -123,6 +124,12 @@ const getColumnValues = (container: HTMLElement, cellIndex: number) =>
 
       return Number(cellText);
     },
+  );
+
+const renderPoneAnalysis = (cards: string, discards: string) =>
+  renderScoredPossibleKeepDiscards(
+    toDealtCards(parseHand(cards), parseHand(discards)),
+    { cribRole: CribRole.Pone },
   );
 
 describe("scored possible keep discards component", () => {
@@ -316,35 +323,114 @@ describe("scored possible keep discards component", () => {
     await expect(expectLoaded()).resolves.toBeTruthy();
   });
 
-  it.each([
-    {
-      cards: "5H,5D,6H,7H,8H,9H",
-      discards: "5H,5D",
-      expectedAriaLabel: "Optimal discard",
-      expectedText: "Optimal discard",
-      name: "optimal discard caption when chosen discard is optimal",
-    },
-    {
-      cards: "4H,5D,KH,6H,8C,KC",
-      discards: "KH,KC",
-      expectedAriaLabel:
-        "Sub-optimal: 0.09 pts lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
-      expectedText:
-        "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
-      name: "sub-optimal caption with diagnostic reason when chosen discard is sub-optimal",
-    },
-  ])(
-    "renders $name",
-    ({ cards, discards, expectedAriaLabel, expectedText }) => {
-      const dealtCards = toDealtCards(parseHand(cards), parseHand(discards));
+  describe("caption diagnostics and optimal margin", () => {
+    it.each([
+      {
+        cards: "5H,5D,6H,7H,8H,9H",
+        discards: "5H,5D",
+        expectedAriaLabel: "Optimal discard, 4.05 better than next",
+        expectedText: "Optimal discard, 4.05 better than next",
+        name: "optimal discard caption when chosen discard is optimal",
+      },
+      {
+        cards: "9D,9C,9H,4C,4H,3S",
+        cribRole: CribRole.Pone,
+        discards: "3S,9C",
+        expectedAriaLabel: "Optimal discard, 0.37 better than next",
+        expectedText: "Optimal discard, 0.37 better than next",
+        name: "optimal discard caption when top choices tie",
+      },
+      {
+        cards: "4H,5D,KH,6H,8C,KC",
+        cribRole: CribRole.Dealer,
+        discards: "KH,KC",
+        expectedAriaLabel:
+          "Sub-optimal: 0.09 pts lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+        expectedText:
+          "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
+        name: "sub-optimal caption with diagnostic reason when chosen discard is sub-optimal",
+      },
+    ])(
+      "renders $name",
+      ({
+        cards,
+        cribRole = CribRole.Dealer,
+        discards,
+        expectedAriaLabel,
+        expectedText,
+      }) => {
+        const dealtCards = toDealtCards(parseHand(cards), parseHand(discards));
+        const { container } = renderScoredPossibleKeepDiscards(dealtCards, {
+          cribRole,
+        });
+        const caption = container.querySelector("figcaption");
+
+        expect(caption?.getAttribute("role")).toBe("status");
+        expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
+        expect(caption?.textContent).toBe(expectedText);
+      },
+    );
+
+    it("renders optimal discard caption saying all tied when all discards tie", () => {
+      jest
+        .spyOn(optimalDiscardModule, "computeOptimalDiscardMargin")
+        .mockReturnValueOnce({
+          accessibleLabel: "Optimal discard, all tied",
+          label: "Optimal discard, all tied",
+          margin: null,
+        });
+      const dealtCards = toDealtCards(
+        parseHand("5H,5D,6H,7H,8H,9H"),
+        parseHand("5H,5D"),
+      );
       const { container } = renderScoredPossibleKeepDiscards(dealtCards);
       const caption = container.querySelector("figcaption");
 
-      expect(caption?.getAttribute("role")).toBe("status");
-      expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
-      expect(caption?.textContent).toBe(expectedText);
-    },
-  );
+      expect(caption?.getAttribute("aria-label")).toBe(
+        "Optimal discard, all tied",
+      );
+      expect(caption?.textContent).toBe("Optimal discard, all tied");
+    });
+  });
+
+  describe("highlight tiers", () => {
+    it("marks all three tied discards when three discards tie for best, with the chosen one clearly strongest", () => {
+      const { container } = renderPoneAnalysis("9D,9C,9H,4C,4H,3S", "3S,9C");
+      const rows = container.querySelectorAll<HTMLTableRowElement>("tbody tr");
+      const [row0, row1, row2, row3] = rows;
+
+      expect(row0?.getAttribute("data-highlight-tier")).toBe("chosen");
+      expect(row0?.className).toContain("highlighted");
+      expect(row1?.getAttribute("data-highlight-tier")).toBe("equal-best");
+      expect(row2?.getAttribute("data-highlight-tier")).toBe("equal-best");
+      expect(row3?.getAttribute("data-highlight-tier")).toBe("none");
+    });
+
+    it("marks chosen sub-optimal row as chosen and all tied top rows as equal-best", () => {
+      const { container } = renderPoneAnalysis("9D,9C,9H,4C,4H,3S", "9D,9C");
+      const rows = Array.from(
+        container.querySelectorAll<HTMLTableRowElement>("tbody tr"),
+      );
+      const chosenRow = rows.find(
+        (row) => row.getAttribute("data-highlight-tier") === "chosen",
+      );
+      const equalBestRows = rows.filter(
+        (row) => row.getAttribute("data-highlight-tier") === "equal-best",
+      );
+      const equalBestTiersAndTitles = equalBestRows.map((row) => ({
+        hasEqualBestClass: row.className.includes("equalBest"),
+        title: row.getAttribute("title"),
+      }));
+
+      expect(chosenRow?.className).toContain("highlighted");
+      expect(equalBestRows).toHaveLength(3);
+      expect(equalBestTiersAndTitles).toStrictEqual([
+        { hasEqualBestClass: true, title: "Equal-best discard" },
+        { hasEqualBestClass: true, title: "Equal-best discard" },
+        { hasEqualBestClass: true, title: "Equal-best discard" },
+      ]);
+    });
+  });
 
   it("renders gain and loss sides in separate diagnosticSide inline elements", () => {
     const dealtCards = toDealtCards(
@@ -371,5 +457,11 @@ describe("scored possible keep discards component", () => {
     expect(sides[0]?.textContent).toBe(
       "7.57 Hand + 5.18 Crib + 0.53 Play loss",
     );
+  });
+
+  it("renders empty table body when no candidates exist", () => {
+    const { container } = renderScoredPossibleKeepDiscards([]);
+
+    expect(container.querySelectorAll("tbody tr")).toHaveLength(0);
   });
 });

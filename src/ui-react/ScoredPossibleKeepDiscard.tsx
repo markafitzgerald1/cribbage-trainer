@@ -13,10 +13,12 @@ import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
 
+export type DiscardHighlightTier = "chosen" | "equal-best" | "none";
+
 export interface ScoredPossibleKeepDiscardProps {
   readonly classification?: MistakeClassification | null;
   readonly cribRole: CribRole;
-  readonly isHighlighted: boolean;
+  readonly highlightTier: DiscardHighlightTier;
   readonly rowIndex: number;
   readonly scoredKeepDiscard: ScoredKeepDiscard<
     Card & { readonly dealOrder: number }
@@ -39,12 +41,32 @@ const toAlignedFixed = (points: number): string =>
     .toFixed(EXPECTED_POINTS_FRACTION_DIGITS)
     .replace("-", MINUS_SIGN);
 
-const getRowTitle = (classification?: MistakeClassification | null): string => {
-  if (classification) {
-    const loss = formatAccessibleNetLoss(classification.netLoss);
-    return `Chosen discard (${loss} pts lost): ${classification.accessibleLabel}`;
+const getTierClass = (tier: DiscardHighlightTier): string => {
+  if (tier === "chosen") {
+    return classes.highlighted;
   }
-  return "Optimal discard";
+  if (tier === "equal-best") {
+    return classes.equalBest;
+  }
+  return "";
+};
+
+const getRowTitle = (
+  tier: DiscardHighlightTier,
+  classification?: MistakeClassification | null,
+): string | undefined => {
+  if (tier === "chosen") {
+    if (classification) {
+      const loss = formatAccessibleNetLoss(classification.netLoss);
+      return `Chosen discard (${loss} pts lost): ${classification.accessibleLabel}`;
+    }
+    return "Optimal discard";
+  }
+  if (tier === "equal-best") {
+    return "Equal-best discard";
+  }
+  // eslint-disable-next-line no-undefined
+  return undefined;
 };
 
 const formatDiscardLabel = (discard: readonly Card[]): string => {
@@ -72,8 +94,8 @@ export function ScoredPossibleKeepDiscard({
   classification,
   scoredKeepDiscard,
   cribRole,
+  highlightTier,
   sortOrder,
-  isHighlighted,
   rowIndex,
 }: ScoredPossibleKeepDiscardProps) {
   const {
@@ -152,17 +174,17 @@ export function ScoredPossibleKeepDiscard({
       <td className={classes.netScoreCell}>{netExpectedTotal}</td>
     </>
   );
-  const rowClassName = `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${
-    isHighlighted ? classes.highlighted : ""
-  } ${classes.clickable}`;
+  const tierClass = getTierClass(highlightTier);
+  const rowClassName =
+    `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${classes.clickable}`.trim();
 
   return (
     <>
       <tr
         className={rowClassName}
+        data-highlight-tier={highlightTier}
         onClick={handleRowClick}
-        // eslint-disable-next-line no-undefined
-        title={isHighlighted ? getRowTitle(classification) : undefined}
+        title={getRowTitle(highlightTier, classification)}
       >
         {rowContent}
       </tr>

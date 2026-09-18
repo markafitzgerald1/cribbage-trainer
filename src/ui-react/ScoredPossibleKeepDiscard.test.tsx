@@ -1,7 +1,12 @@
+/* jscpd:ignore-start */
 import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
+import {
+  type DiscardHighlightTier,
+  ScoredPossibleKeepDiscard,
+} from "./ScoredPossibleKeepDiscard";
 import {
   EXPECTED_POINTS_FRACTION_DIGITS,
   type MistakeClassification,
@@ -10,7 +15,6 @@ import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
-import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createElement } from "react";
 import { dealHand } from "../game/dealHand";
@@ -21,6 +25,7 @@ import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
 import { mockTradeOffClassification } from "../ui/mistakeQueue.test.common";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
+/* jscpd:ignore-end */
 
 const EXPECTED_CELL_COUNT = 5;
 const EXPECTED_CRIB_POINTS = 1.25;
@@ -52,6 +57,7 @@ const CRIB_STARTER_POINTS = [
 interface RenderComponentOptions {
   readonly classification?: MistakeClassification | null;
   readonly expectedPlayPoints?: number;
+  readonly highlightTier?: DiscardHighlightTier;
   readonly isHighlighted?: boolean;
   readonly rowIndex?: number;
   readonly signedExpectedCribPoints?: number;
@@ -90,6 +96,7 @@ function renderComponentWithScenario(
   {
     classification = null,
     expectedPlayPoints = EXPECTED_PLAY_POINTS,
+    highlightTier,
     isHighlighted = false,
     rowIndex = 0,
     signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
@@ -150,10 +157,13 @@ function renderComponentWithScenario(
     signedExpectedCribPoints,
   };
 
+  const effectiveTier: DiscardHighlightTier =
+    highlightTier ?? (isHighlighted ? "chosen" : "none");
+
   const props = {
     ...(typeof classification === "undefined" ? {} : { classification }),
     cribRole: CribRole.Dealer,
-    isHighlighted,
+    highlightTier: effectiveTier,
     rowIndex,
     scoredKeepDiscard,
     sortOrder: scenario.sortOrder,
@@ -216,6 +226,47 @@ describe("calculation component", () => {
     expect(highlightedPresent(true)).toBe(true);
     expect(highlightedPresent(false)).toBe(false);
   });
+
+  it.each([
+    {
+      expectedTier: "chosen",
+      expectedTitle: "Optimal discard",
+      highlightTier: "chosen" as const,
+      isChosen: true,
+      isEqualBest: false,
+      name: "chosen tier",
+    },
+    {
+      expectedTier: "equal-best",
+      expectedTitle: "Equal-best discard",
+      highlightTier: "equal-best" as const,
+      isChosen: false,
+      isEqualBest: true,
+      name: "equal-best tier",
+    },
+    {
+      expectedTier: "none",
+      expectedTitle: null,
+      highlightTier: "none" as const,
+      isChosen: false,
+      isEqualBest: false,
+      name: "none tier",
+    },
+  ])(
+    "renders row for $name with correct class, data attribute, and title",
+    ({ expectedTier, expectedTitle, highlightTier, isChosen, isEqualBest }) => {
+      const { container } = renderComponentWithScenario(
+        setupScenario("Ascending"),
+        { highlightTier },
+      );
+      const tr = container.querySelector("tr");
+
+      expect(tr?.getAttribute("data-highlight-tier")).toBe(expectedTier);
+      expect(tr?.getAttribute("title")).toBe(expectedTitle);
+      expect(tr?.className.includes("highlighted")).toBe(isChosen);
+      expect(tr?.className.includes("equalBest")).toBe(isEqualBest);
+    },
+  );
 
   it("renders negative signed crib points without a plus sign", () => {
     const scenario = setupScenario("Ascending");
