@@ -18,6 +18,7 @@ export type DiscardHighlightTier = "chosen" | "equal-best" | "none";
 export interface ScoredPossibleKeepDiscardProps {
   readonly classification?: MistakeClassification | null;
   readonly cribRole: CribRole;
+  readonly descriptionId?: string | null;
   readonly highlightTier: DiscardHighlightTier;
   readonly rowIndex: number;
   readonly scoredKeepDiscard: ScoredKeepDiscard<
@@ -94,6 +95,7 @@ export function ScoredPossibleKeepDiscard({
   classification,
   scoredKeepDiscard,
   cribRole,
+  descriptionId,
   highlightTier,
   sortOrder,
   rowIndex,
@@ -135,10 +137,6 @@ export function ScoredPossibleKeepDiscard({
       : parentClasses.evenRow;
   const tierClass = getTierClass(highlightTier);
   const rowTitle = getRowTitle(highlightTier, classification);
-  const descriptionId = rowTitle
-    ? `scored-discard-${rowIndex}-description`
-    : // eslint-disable-next-line no-undefined
-      undefined;
   const rowClassName =
     `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${classes.clickable}`.trim();
 
@@ -187,7 +185,11 @@ export function ScoredPossibleKeepDiscard({
   return (
     <>
       <tr
-        aria-describedby={descriptionId}
+        aria-describedby={
+          descriptionId ??
+          // eslint-disable-next-line no-undefined
+          undefined
+        }
         className={rowClassName}
         data-highlight-tier={highlightTier}
         onClick={handleRowClick}
@@ -208,4 +210,5 @@ export function ScoredPossibleKeepDiscard({
 
 ScoredPossibleKeepDiscard.defaultProps = {
   classification: null,
+  descriptionId: null,
 };

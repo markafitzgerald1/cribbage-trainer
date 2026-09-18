@@ -257,8 +257,12 @@ export function ScoredPossibleKeepDiscards({
         highlightTier,
         isChosen ? chosenClassification : null,
       );
+      const descriptionId = rowTitle
+        ? `scored-discard-${index}-description`
+        : null;
 
       return {
+        descriptionId,
         highlightTier,
         rowIndex: index,
         rowTitle,
@@ -384,12 +388,13 @@ export function ScoredPossibleKeepDiscards({
   const renderScoringTableBody = () => (
     <tbody>
       {scoredKeepDiscardsWithTiers.map(
-        ({ highlightTier, rowIndex, scoredKeepDiscard }) => (
+        ({ descriptionId, highlightTier, rowIndex, scoredKeepDiscard }) => (
           <ScoredPossibleKeepDiscard
             classification={
               highlightTier === "chosen" ? chosenClassification : null
             }
             cribRole={cribRole}
+            descriptionId={descriptionId}
             highlightTier={highlightTier}
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
               .map((dealtCard) => dealtCard.dealOrder)
@@ -405,11 +410,11 @@ export function ScoredPossibleKeepDiscards({
 
   const renderDescriptions = () => (
     <div className={classes.visuallyHiddenDescriptions}>
-      {scoredKeepDiscardsWithTiers.map(({ rowIndex, rowTitle }) =>
-        rowTitle ? (
+      {scoredKeepDiscardsWithTiers.map(({ descriptionId, rowTitle }) =>
+        descriptionId && rowTitle ? (
           <span
-            id={`scored-discard-${rowIndex}-description`}
-            key={`scored-discard-${rowIndex}-description`}
+            id={descriptionId}
+            key={descriptionId}
           >
             {rowTitle}
           </span>

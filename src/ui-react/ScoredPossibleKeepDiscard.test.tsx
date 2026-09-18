@@ -57,6 +57,7 @@ const CRIB_STARTER_POINTS = [
 
 interface RenderComponentOptions {
   readonly classification?: MistakeClassification | null;
+  readonly descriptionId?: string | null;
   readonly expectedPlayPoints?: number;
   readonly highlightTier?: DiscardHighlightTier;
   readonly rowIndex?: number;
@@ -95,6 +96,7 @@ function renderComponentWithScenario(
   scenario: ReturnType<typeof setupScenario>,
   {
     classification = null,
+    descriptionId = null,
     expectedPlayPoints = EXPECTED_PLAY_POINTS,
     highlightTier = "none",
     rowIndex = 0,
@@ -158,6 +160,7 @@ function renderComponentWithScenario(
 
   const props = {
     ...(typeof classification === "undefined" ? {} : { classification }),
+    ...(typeof descriptionId === "undefined" ? {} : { descriptionId }),
     cribRole: CribRole.Dealer,
     highlightTier,
     rowIndex,
@@ -225,22 +228,34 @@ describe("calculation component", () => {
 
   it.each([
     {
+      descriptionId: "scored-discard-0-description",
       expectedDescribedBy: "scored-discard-0-description",
       expectedTier: "chosen",
       expectedTitle: "Optimal discard",
       highlightTier: "chosen" as const,
       isEqualBest: false,
-      name: "chosen tier",
+      name: "chosen tier with description ID",
     },
     {
+      descriptionId: "scored-discard-0-description",
       expectedDescribedBy: "scored-discard-0-description",
       expectedTier: "equal-best",
       expectedTitle: "Equal-best discard",
       highlightTier: "equal-best" as const,
       isEqualBest: true,
-      name: "equal-best tier",
+      name: "equal-best tier with description ID",
     },
     {
+      descriptionId: null,
+      expectedDescribedBy: null,
+      expectedTier: "chosen",
+      expectedTitle: "Optimal discard",
+      highlightTier: "chosen" as const,
+      isEqualBest: false,
+      name: "chosen tier without description ID (standalone)",
+    },
+    {
+      descriptionId: null,
       expectedDescribedBy: null,
       expectedTier: "none",
       expectedTitle: null,
@@ -251,6 +266,7 @@ describe("calculation component", () => {
   ])(
     "renders row for $name with correct class, data attribute, and title",
     ({
+      descriptionId,
       expectedDescribedBy,
       expectedTier,
       expectedTitle,
@@ -259,7 +275,7 @@ describe("calculation component", () => {
     }) => {
       const { container } = renderComponentWithScenario(
         setupScenario("Ascending"),
-        { highlightTier },
+        { descriptionId, highlightTier },
       );
       const tr = container.querySelector("tr");
 
