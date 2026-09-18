@@ -14,10 +14,10 @@
   display: flex;
   flex-direction: column;
   font-family: var(--text-font-family);
-  gap: 0.4rem;
-  margin-top: 0.5rem;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
   min-width: 0;
-  padding: 0.5rem 0.6rem;
+  padding: 0.35rem 0.5rem;
   width: 100%;
 }
 
@@ -26,10 +26,10 @@
   background-color: #2f7d3a;
   border-radius: 4px;
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 0.1rem 0.4rem;
+  padding: 0.08rem 0.35rem;
   text-transform: uppercase;
 }
 
@@ -37,13 +37,13 @@
 .verdict {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.25rem;
   min-width: 0;
 }
 
 .prompt {
-  font-size: 1rem;
-  line-height: 1.3;
+  font-size: 0.95rem;
+  line-height: 1.25;
   margin: 0;
   opacity: 0.9;
   overflow-wrap: anywhere;
@@ -57,7 +57,7 @@
  * the "secondary" styling here instead.
  */
 .suit-note {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-style: italic;
   margin: 0;
   overflow-wrap: anywhere;
@@ -67,14 +67,14 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.25rem;
   min-width: 0;
 }
 
 .verdict-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  min-width: 3.4rem;
+  min-width: 3.1rem;
   opacity: 0.85;
   text-transform: uppercase;
 }
@@ -100,19 +100,19 @@
   color: #143b18;
   display: inline-flex;
   font-weight: 700;
-  gap: 0.25rem;
-  padding: 0.1rem 0.3rem;
+  gap: 0.2rem;
+  padding: 0.08rem 0.25rem;
 }
 
 .not-recorded {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-style: italic;
   opacity: 0.7;
 }
 
 .verdict-loss {
   font-family: var(--card-font-family);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   margin-left: auto;
 }
@@ -120,9 +120,9 @@
 .outcome-good,
 .outcome-mastered,
 .outcome-miss {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -139,7 +139,7 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .primary,
@@ -147,9 +147,9 @@
   border-radius: 8px;
   cursor: pointer;
   font-family: var(--text-font-family);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  padding: 0.35em 0.7em;
+  padding: 0.25em 0.6em;
   transition:
     background-color var(--transition-duration) var(--transition-timing),
     border-color var(--transition-duration) var(--transition-timing);

@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  gap: 10px;
+  gap: 4px;
   margin: 0;
   min-height: min(8rem, 20vh);
   min-width: 0;
@@ -20,11 +20,76 @@
   font-weight: bold;
 }
 
+.diagnostic-caption {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.optimal-badge {
+  background-color: #164322;
+  border: 1px solid #a9dfbf;
+  border-radius: 4px;
+  color: #eafaf1;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+.sub-optimal-badge {
+  background-color: #4a270f;
+  border: 1px solid #f5cba7;
+  border-radius: 4px;
+  color: #fdf2e9;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+.diagnostic-reason {
+  background-color: #2b1d42;
+  border: 1px solid #dcd3f2;
+  border-radius: 4px;
+  color: #f4f1fa;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+.diagnostic-side {
+  display: inline-block;
+  max-width: 100%;
+}
+
+/*
+ * In practice drill mode, vertical space is under severe pressure in portrait
+ * because the practice panel sits above the analysis table. Tightening caption
+ * gap, padding, and font size modestly stops the classification label from wrapping
+ * and preserves discard row visibility without touching the main view caption (#802).
+ */
+.in-drill {
+  gap: 2px;
+}
+
+.in-drill .diagnostic-caption {
+  gap: 4px;
+}
+
+.in-drill .optimal-badge,
+.in-drill .sub-optimal-badge,
+.in-drill .diagnostic-reason {
+  font-size: 0.74em;
+  padding: 2px 6px;
+}
+
 .table-container {
   box-sizing: border-box;
   flex-grow: 1;
   margin: 0;
   max-width: 100%;
+  min-height: calc(44px + min(1.8rem, 10vw));
   min-width: 0;
   overflow: auto;
   padding-left: 0;

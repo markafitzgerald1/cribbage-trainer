@@ -233,6 +233,7 @@ export default [
             "svg",
             "tagline",
             "tbody",
+            "thead",
             "tsconfig",
             "tsx",
             "ul",

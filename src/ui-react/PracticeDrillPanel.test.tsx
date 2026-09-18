@@ -103,19 +103,28 @@ describe("practiceDrillPanel", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the loss magnitude and a missing previous discard on a miss", () => {
+  it.each([
+    {
+      expectedOutcome: "0.42 behind the best discard.",
+      loss: 0.42,
+      name: "shows the loss magnitude and a missing previous discard on a miss",
+    },
+    {
+      expectedOutcome: "< 0.01 behind the best discard.",
+      loss: 0.003754,
+      name: "formats sub-cent loss as '< 0.01' in verdict outcome",
+    },
+  ])("$name", ({ expectedOutcome, loss }) => {
     const { getByText } = renderPanel({
       phase: "revealed",
       verdict: sampleVerdict({
-        chosenLoss: 0.42,
+        chosenLoss: loss,
         isOptimal: false,
         previousDiscard: null,
       }),
     });
 
-    expect(
-      getByText("0.42 behind the best discard — streak reset."),
-    ).toBeInTheDocument();
+    expect(getByText(expectedOutcome)).toBeInTheDocument();
     expect(getByText("not recorded")).toBeInTheDocument();
   });
 

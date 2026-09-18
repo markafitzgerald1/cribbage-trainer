@@ -188,6 +188,20 @@ once you are already editing layout or interaction code.
 - A phone-width portrait viewport cannot fit enlarged scores alongside six
   mini-cards, the arrow, and four numeric columns. Meaningful score-size
   increases need the horizontal-mini-card redesign, not portrait font bumps.
+- Multi-component tradeoff captions (e.g.
+  `0.61 Hand gain < 1.06 Crib + 0.42 Play loss`) wrap in mobile portrait at
+  enlarged device fonts or browser zoom. Wrap each side in an inline element
+  with `display: inline-block` (`.diagnostic-side`) so the break occurs cleanly
+  at the comparison operator (`<`) into two self-contained clauses, rather than
+  breaking mid-phrase or orphaning "loss".
+- In stacked mode during practice drill review, the drill panel sits directly
+  above the analysis table in Trainer's column. Unwrapped outcome lines,
+  excessive vertical margins or gaps, and wrapping captions steal vertical space
+  from the flex-child results table until only a single discard row remains
+  visible. Scoping tightened padding, gaps, and modest font reductions to
+  practice mode (`.in-drill`) keeps the classification label on a single line
+  and preserves multiple visible discard rows without modifying the main view's
+  typography (owned by #802).
 
 **Interaction design and visual-state debugging:**
 

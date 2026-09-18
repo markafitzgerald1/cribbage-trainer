@@ -14,11 +14,25 @@ export const waitForAnalysis = async (page: Page) => {
   await page.getByRole("table").waitFor({ state: "visible" });
 };
 
+export interface RenderDiscardsOptions {
+  readonly acceptAnalytics?: boolean;
+  readonly discardIndices?: readonly [number, number];
+}
+
+const DEFAULT_DISCARD_INDICES: readonly [number, number] = [0, 1];
+
 export const renderThenSelectTwoDiscards = async (
   page: Page,
   constantSeedQuery: string,
-  acceptAnalytics = false,
+  optionsOrAcceptAnalytics: boolean | RenderDiscardsOptions = false,
 ) => {
+  const options =
+    typeof optionsOrAcceptAnalytics === "boolean"
+      ? { acceptAnalytics: optionsOrAcceptAnalytics }
+      : optionsOrAcceptAnalytics;
+  const acceptAnalytics = Boolean(options.acceptAnalytics);
+  const discardIndices = options.discardIndices ?? DEFAULT_DISCARD_INDICES;
+
   // Stored consent loads the real tag against the e2e test measurement ID, so keep those requests inside CI.
   await blockGoogleAnalytics(page);
 
@@ -44,9 +58,8 @@ export const renderThenSelectTwoDiscards = async (
 
   await page.goto(`/${constantSeedQuery}`);
 
-  const discardCount = 2;
   const checkboxes = page.getByRole("checkbox");
-  for (let index = 0; index < discardCount; index += 1) {
+  for (const index of discardIndices) {
     // eslint-disable-next-line no-await-in-loop
     await checkboxes.nth(index).click();
   }

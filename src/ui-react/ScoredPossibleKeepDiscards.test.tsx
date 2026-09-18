@@ -66,67 +66,66 @@ const REPORTED_ANALYSIS_CASES = [
   },
 ];
 
-describe("scored possible keep discards component", () => {
-  const mathRandom = Math.random;
+const mathRandom = Math.random;
 
-  interface RenderOptions {
-    readonly cribRole?: CribRole;
-    readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
-    readonly onScoreSortKeyChange?: (
-      scoreSortKey: ScoredKeepDiscardSortKey,
-    ) => void;
-    readonly preload?: boolean;
-    readonly scoreSortKey?: ScoredKeepDiscardSortKey;
+interface RenderOptions {
+  readonly cribRole?: CribRole;
+  readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
+  readonly onScoreSortKeyChange?: (
+    scoreSortKey: ScoredKeepDiscardSortKey,
+  ) => void;
+  readonly preload?: boolean;
+  readonly scoreSortKey?: ScoredKeepDiscardSortKey;
+}
+
+const renderScoredPossibleKeepDiscards = (
+  dealtCards: DealtCard[],
+  {
+    cribRole = CribRole.Dealer,
+    onAnalysisRendered = jest.fn(),
+    onScoreSortKeyChange = jest.fn(),
+    preload = true,
+    scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
+  }: RenderOptions = {},
+) => {
+  if (preload) {
+    setTableSync(
+      expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+    );
+    setPlayTableSync(
+      expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
+    );
   }
 
-  const renderScoredPossibleKeepDiscards = (
-    dealtCards: DealtCard[],
-    {
-      cribRole = CribRole.Dealer,
-      onAnalysisRendered = jest.fn(),
-      onScoreSortKeyChange = jest.fn(),
-      preload = true,
-      scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
-    }: RenderOptions = {},
-  ) => {
-    if (preload) {
-      setTableSync(
-        expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
-      );
-      setPlayTableSync(
-        expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
-      );
-    }
+  return render(
+    <ScoredPossibleKeepDiscards
+      cribRole={cribRole}
+      dealtCards={dealtCards}
+      onAnalysisRendered={onAnalysisRendered}
+      onScoreSortKeyChange={onScoreSortKeyChange}
+      scoreSortKey={scoreSortKey}
+      sortOrder={SortOrder.Ascending}
+    />,
+  );
+};
 
-    return render(
-      <ScoredPossibleKeepDiscards
-        cribRole={cribRole}
-        dealtCards={dealtCards}
-        onAnalysisRendered={onAnalysisRendered}
-        onScoreSortKeyChange={onScoreSortKeyChange}
-        scoreSortKey={scoreSortKey}
-        sortOrder={SortOrder.Ascending}
-      />,
-    );
-  };
+const dealAndRender = () => {
+  const dealtHand = dealHand(mathRandom);
+  const { container } = renderScoredPossibleKeepDiscards(dealtHand);
 
-  const dealAndRender = () => {
-    const dealtHand = dealHand(mathRandom);
-    const { container } = renderScoredPossibleKeepDiscards(dealtHand);
+  return { container, dealtHand };
+};
 
-    return { container, dealtHand };
-  };
-  const getColumnValues = (container: HTMLElement, cellIndex: number) =>
-    Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr")).map(
-      (row) => {
-        const cellText = row.cells
-          .item(cellIndex)
-          ?.textContent?.replace("▸", "");
+const getColumnValues = (container: HTMLElement, cellIndex: number) =>
+  Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr")).map(
+    (row) => {
+      const cellText = row.cells.item(cellIndex)?.textContent?.replace("▸", "");
 
-        return Number(cellText);
-      },
-    );
+      return Number(cellText);
+    },
+  );
 
+describe("scored possible keep discards component", () => {
   it("should render each possible keep and discard pair exactly once", () => {
     const { container } = dealAndRender();
 
@@ -315,5 +314,62 @@ describe("scored possible keep discards component", () => {
     // Eventually should render content
 
     await expect(expectLoaded()).resolves.toBeTruthy();
+  });
+
+  it.each([
+    {
+      cards: "5H,5D,6H,7H,8H,9H",
+      discards: "5H,5D",
+      expectedAriaLabel: "Optimal discard",
+      expectedText: "Optimal discard",
+      name: "optimal discard caption when chosen discard is optimal",
+    },
+    {
+      cards: "4H,5D,KH,6H,8C,KC",
+      discards: "KH,KC",
+      expectedAriaLabel:
+        "Sub-optimal: 0.09 pts lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+      expectedText:
+        "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
+      name: "sub-optimal caption with diagnostic reason when chosen discard is sub-optimal",
+    },
+  ])(
+    "renders $name",
+    ({ cards, discards, expectedAriaLabel, expectedText }) => {
+      const dealtCards = toDealtCards(parseHand(cards), parseHand(discards));
+      const { container } = renderScoredPossibleKeepDiscards(dealtCards);
+      const caption = container.querySelector("figcaption");
+
+      expect(caption?.getAttribute("role")).toBe("status");
+      expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
+      expect(caption?.textContent).toBe(expectedText);
+    },
+  );
+
+  it("renders gain and loss sides in separate diagnosticSide inline elements", () => {
+    const dealtCards = toDealtCards(
+      parseHand("4H,5D,KH,6H,8C,KC"),
+      parseHand("KH,KC"),
+    );
+    const { container } = renderScoredPossibleKeepDiscards(dealtCards);
+    const sides = container.querySelectorAll("span[class*='diagnosticSide']");
+
+    expect(sides).toHaveLength(2);
+    expect(sides[0]?.textContent).toBe("1.31 Crib + 0.08 Play gain");
+    expect(sides[1]?.textContent).toBe("< 1.48 Hand loss");
+  });
+
+  it("renders a single diagnosticSide element when there are no offsetting gains", () => {
+    const cards = parseHand("5H,5D,JC,QH,KS,9D");
+    const dealtCards = toDealtCards(cards, parseHand("5H,5D"));
+    const { container } = renderScoredPossibleKeepDiscards(dealtCards, {
+      cribRole: CribRole.Pone,
+    });
+    const sides = container.querySelectorAll("span[class*='diagnosticSide']");
+
+    expect(sides).toHaveLength(1);
+    expect(sides[0]?.textContent).toBe(
+      "7.57 Hand + 5.18 Crib + 0.53 Play loss",
+    );
   });
 });
