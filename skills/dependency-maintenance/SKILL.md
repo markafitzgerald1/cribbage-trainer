@@ -44,11 +44,29 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   is relative to each scan path, so keep `.jscpd.json` explicit with
   `path: ["src"]` and `pattern: "**/*.ts*"` rather than relying on `.gitignore`
   filtering.
-- Keep Playwright updates in the dedicated `playwright-sync` Dependabot group.
-  Its version is pinned twice: in `package.json` and in the `Dockerfile` base
-  image tag. Dependabot can update only the npm dependency, and the resulting
-  e2e failure names neither the group nor the stale `Dockerfile`; when that
-  group fails, compare both pins before debugging the tests.
+- **Dependabot replaces a group pull request rather than rebasing it when
+  the group recalculates.** Merging two other dependency pull requests
+  closed #813 with "these dependencies are updatable in another way" and
+  opened #836 two minutes later carrying the recomputed group. Nothing
+  announces this on the closed pull request beyond that one line, so an
+  agent or a note holding the old number reports work already done, and a
+  queued instruction to "do #813 next" points at nothing. Re-read the open
+  pull request list before starting queued dependency work rather than
+  trusting a number written down earlier, and expect the replacement to
+  carry a different update count than the one you triaged.
+- Keep Playwright updates in the dedicated `playwright-sync` Dependabot
+  group. Its version is pinned twice: in `package.json` and in the
+  `Dockerfile` base image tag. The group is a `multi-ecosystem-group`
+  spanning npm and docker precisely so both move together, and #838 shows it
+  doing that — `Dockerfile`, `package.json` and the lockfile in one pull
+  request. #707 is the counter-example and predates that configuration
+  working: only the npm side moved, the container's browsers stopped
+  matching the client, and the e2e failure named neither the group nor the
+  stale `Dockerfile`, so it sat red for six weeks. The check is therefore
+  not "bump the Dockerfile too" but "did both halves fire": a
+  `playwright-sync` pull request touching only `package.json` is the broken
+  shape, and comparing the two pins is what tells you before you start
+  debugging tests.
 - Use `npm run deps:update:minor` for routine refreshes; handle larger major
   upgrades separately if they would dominate the change set.
 - When `npm run lint:audit` (better-npm-audit) fails on freshly published

@@ -850,6 +850,18 @@ they bind any PR that makes a claim about a phone or ships a guard.
   standing: Codex caught an earlier draft of this very paragraph still
   describing the superseded absolute floor.
 
+- **A clean Codex round can leave nothing in the reviews API.** A round that
+  finds something submits a review, which
+  `repos/{owner}/{repo}/pulls/{n}/reviews` returns. A round that finds
+  nothing posted only an issue comment on #834 and #835, and that endpoint
+  stayed empty for both. Polling it therefore cannot distinguish a clean
+  round from a round that has not run, because the silence is identical: a
+  watch keyed on it here reported no review for thirty minutes after both
+  rounds had in fact landed within four. Poll the issue comments endpoint
+  too and treat a comment from the connector as the round. This is the
+  bot-login trap below wearing different clothes — a query that looks
+  correct, matches nothing, and returns a confident zero that reads as an
+  answer about the world rather than about the query.
 - A bot's login differs between the two GitHub APIs: REST reports
   `chatgpt-codex-connector[bot]` where GraphQL reports
   `chatgpt-codex-connector`. Filtering REST results on the GraphQL spelling
