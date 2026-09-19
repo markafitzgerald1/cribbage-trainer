@@ -173,25 +173,40 @@ const drilledHandsBySignature = (
  * ever costing a row the remaining conditions would have kept.
  *
  * Idempotent by construction: one pass leaves nothing that a second could
- * match. Three kinds of stray are undetectable here and stay. One whose
- * ledger entry has since been evicted. One whose ledger write never landed —
- * the decision row and the practice attempt are separate `localStorage`
- * writes, so a quota failure between them persists the row without the entry
- * that identifies it. And one whose relabeled key collides exactly with some
- * OTHER drilled hand's key, which the exact-key exemption then spares: that
- * needs the other hand's own decision record to have been evicted while its
- * ledger entry survived, since otherwise the colliding row would have been
- * absorbed by idempotency rather than appended. The exemption is not worth
- * narrowing to catch it, because narrowing it is what would start deleting
- * the original-key rows this whole module exists to protect.
+ * match.
  *
- * All three err toward keeping a row, which is the direction to err in, but
- * not toward keeping an invisible one: a retained row still
- * occupies a slot under `MAX_RECORDS`, so it can evict authentic history on
- * a later write, and `computeDiscardQualityTrend` derives `isAtRecordCap`
- * from `tally.records.length` without excluding practice rows, which the
- * trend dialog then shows. Hidden from the averages, the chart points and
- * the mistake queue is not the same as hidden.
+ * **A stray survives whenever any one of the conditions fails for it**, and
+ * that statement rather than a list is the complete account — the third
+ * count this comment tried to give was contradicted by the cutoff's own
+ * paragraph above, which is the failure mode this module is otherwise about.
+ * To enumerate the cases, read the conditions and negate each in turn rather
+ * than trusting a tally here. Two are worth knowing because neither is
+ * visible from the conditions themselves: the decision row and the practice
+ * attempt are separate `localStorage` writes, so a quota failure between
+ * them persists a row whose identifying ledger entry never landed; and a
+ * relabeled key can collide exactly with some OTHER drilled hand's key,
+ * which the exact-key exemption then spares, needing that hand's own
+ * decision record to have been evicted while its ledger entry survived,
+ * since otherwise idempotency would have absorbed the colliding row rather
+ * than appending it. That exemption is not worth narrowing to catch it,
+ * because narrowing it is what would start deleting the original-key rows
+ * this whole module exists to protect.
+ *
+ * Every one of them errs toward keeping a row, which is the safer direction
+ * but is not a harmless one. A retained row occupies a slot under
+ * `MAX_RECORDS`, so it can evict authentic history on a later write, and
+ * `computeDiscardQualityTrend` derives `isAtRecordCap` from
+ * `tally.records.length` without excluding practice rows, which the trend
+ * dialog then shows. Worse, and the reason keeping a row is not free:
+ * `recordDiscardDecision` matches its idempotency key on `handKey` alone,
+ * with no `isPractice` qualification, so a retained row claims that key. If
+ * those six cards are ever dealt authentically in that same order under that
+ * same role, the real decision is skipped along with its lifetime
+ * contribution, silently. An exactly ordered six-card collision from a real
+ * deal is somewhere around one in 10^10, so this is a correctness statement
+ * rather than a practical hazard — but it is the true cost of a retained
+ * row, and hidden from the averages, the chart points and the mistake queue
+ * is not the same as hidden.
  */
 export const withoutStrayDrillRecords = (
   records: readonly DiscardDecisionRecord[],
