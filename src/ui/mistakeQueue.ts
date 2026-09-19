@@ -129,9 +129,13 @@ interface HandAggregate {
 /*
  * `originalAt` tracks the earliest `at` seen for a handKey across every
  * duplicate, independently of which duplicate's other fields win below.
- * Normal play never records two DiscardDecisionRecords for one handKey —
- * recordDiscardDecision is idempotent by handKey — so duplicates arise only
- * from a genuinely rare cross-tab race or from hand-edited/legacy storage.
+ * Normal play never records two *authentic* DiscardDecisionRecords for one
+ * handKey — recordDiscardDecision absorbs an authentic decision into an
+ * authentic record of that hand — so duplicates here arise only from a
+ * genuinely rare cross-tab race or from hand-edited/legacy storage. The
+ * qualifier is not pedantry: since #830 a practice record and an authentic
+ * one can validly share a handKey, and only the isMistake filter below
+ * keeping practice out is what leaves this map seeing at most one row.
  * The rest of the aggregate (loss, discard, recency) still tracks whichever
  * duplicate is most recent, since that is the mistake's current state; only
  * the moment the player first made it stays fixed to the earliest record,
