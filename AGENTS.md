@@ -620,10 +620,13 @@ they bind any PR that makes a claim about a phone or ships a guard.
   recovers reliably; and with rename detection on, a record's path field is
   empty and the old and new paths follow as separate records. Use
   `--numstat -z` and attribute a rename to its new path.
-- The gate blocks nothing until a human adds `pull-request-size` to the
-  repository's required status checks, which is a repository setting no
-  workflow can declare. Until then it is advisory, and a red run on it is
-  still a run that has told you something.
+- The gate blocks nothing until a human adds it to the repository's required
+  status checks, which is a repository setting no workflow can declare. The
+  context to add is the **job** name, `measure-pull-request-size`, not the
+  workflow name `pull-request-size` — GitHub's required-checks list is keyed
+  on job names, and picking the workflow name there silently requires a
+  check that never reports. Until someone does that the gate is advisory,
+  and a red run on it is still a run that has told you something.
 
 ## Code style and conventions
 

@@ -81,6 +81,7 @@
     "setsid",
     "shellcheck",
     "smol",
+    "startswith",
     "stylelint",
     "stylelintignore",
     "stylesheet",

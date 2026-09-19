@@ -59,9 +59,15 @@ jobs:
           REPORT_FILE: ${{ runner.temp }}/pr-size-report.md
           STATUS: ${{ steps.measure.outputs.status }}
         run: |
-          EXISTING=$(gh api --paginate --slurp \
+          set -o pipefail
+          # gh rejects --slurp together with --jq, so the pages are slurped by
+          # a separate jq instead: --paginate alone emits one JSON array per
+          # page, and gh's own --jq would then run per page and miss a match
+          # on any page after the first.
+          EXISTING=$(gh api --paginate \
             "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
-            --jq 'add | map(select(.body | startswith(env.MARKER))) | .[0].id // empty')
+            | jq --slurp --raw-output --arg marker "$MARKER" \
+              'add // [] | map(select(.body | startswith($marker))) | .[0].id // empty')
           if [ -z "$EXISTING" ] && [ "$STATUS" = "pass" ]; then
             echo "Within budget and no existing report; nothing to post."
             exit 0
