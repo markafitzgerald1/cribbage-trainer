@@ -17,13 +17,16 @@ import {
 } from "./stories.common";
 import { Rank, Suit, createCard } from "../game/Card";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
+import mistakeFixtures, {
+  DRILLED_HAND_KEY,
+  STRAY_HAND_KEY,
+} from "./MistakeQueueDialog.test.common";
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { Trainer } from "./Trainer";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { discardTallyKey } from "../ui/discardTally";
 import { getSortOrderName } from "../ui/SortOrderName";
-import mistakeFixtures from "./MistakeQueueDialog.test.common";
 
 const SEED = "1";
 
@@ -370,16 +373,16 @@ export const ChangedManualEntryApplies = {
   play: createManualEntryPlay(["A♠", "A♣"]),
 };
 
+// Seeds a stored tally for the story and clears it afterwards; Storybook runs the returned teardown after play.
+const seedStoredTally = (createTally: () => unknown) => () => {
+  localStorage.setItem(discardTallyKey, JSON.stringify(createTally()));
+  return () => {
+    localStorage.removeItem(discardTallyKey);
+  };
+};
+
 export const PracticeDrillFromMistakeQueue = {
-  beforeEach: () => {
-    localStorage.setItem(
-      discardTallyKey,
-      JSON.stringify(mistakeFixtures.createSampleMistakeTally()),
-    );
-    return () => {
-      localStorage.removeItem(discardTallyKey);
-    };
-  },
+  beforeEach: seedStoredTally(mistakeFixtures.createSampleMistakeTally),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     await fireEvent.click(getButton(canvasElement, "Mistake queue"));
     const canvas = within(canvasElement);
@@ -406,5 +409,31 @@ export const PracticeDrillFromMistakeQueue = {
     await expect(
       canvas.getByText("Practice ended — fresh hand dealt."),
     ).toBeVisible();
+  },
+};
+
+/*
+ * The #809 sweep, end to end in a real browser rather than only in Jest.
+ * Its whole point is that nothing on screen changes — every consumer already
+ * filters practice rows — so the assertion is against storage, which is the
+ * only place the migration is observable. The write is forced by completing
+ * a discard, because the sweep filters on read and persists at the next
+ * write that lands.
+ */
+export const SweepsStrayDrillRowsOnWrite = {
+  beforeEach: seedStoredTally(mistakeFixtures.createStraySweepTally),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    // Asserted before the write, or a fixture that never carried a stray would pass this story vacuously.
+    await expect(localStorage.getItem(discardTallyKey)).toContain(
+      STRAY_HAND_KEY,
+    );
+
+    await clickFirstTwoCheckboxes(canvasElement);
+    await within(canvasElement).findByRole("table");
+
+    const swept = localStorage.getItem(discardTallyKey) ?? "";
+
+    await expect(swept).not.toContain(STRAY_HAND_KEY);
+    await expect(swept).toContain(DRILLED_HAND_KEY);
   },
 };
