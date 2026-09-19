@@ -1,6 +1,10 @@
 /* jscpd:ignore-start */
 import { CARDS, type Card, Rank, Suit, createCard } from "../game/Card";
 import {
+  type DiscardHighlightTier,
+  ScoredPossibleKeepDiscard,
+} from "./ScoredPossibleKeepDiscard";
+import {
   type Meta,
   SORT_ORDER_NAMES,
   SortOrder,
@@ -14,7 +18,6 @@ import {
   toCutBreakdown,
 } from "../game/expectedCutAddedPoints";
 import { CribRole } from "../game/expectedCribPoints";
-import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { createElement } from "react";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
@@ -138,7 +141,7 @@ interface CreateStoryOptions {
     typeof cribStarterPoints | typeof suitedCribStarterPoints;
   readonly discard: readonly StoryCard[];
   readonly expectedCribPointBreakdown?: typeof cribPointBreakdown;
-  readonly isHighlighted?: boolean;
+  readonly highlightTier?: DiscardHighlightTier;
   readonly keep: readonly StoryCard[];
   readonly sortOrder: SortOrder;
 }
@@ -150,7 +153,7 @@ const createStory = ({
   cribPoints = 1.25,
   cribStarterPoints: storyCribStarterPoints = cribStarterPoints,
   expectedCribPointBreakdown,
-  isHighlighted = false,
+  highlightTier = "none",
 }: CreateStoryOptions): Story => {
   const cutAdded = expectedCutAddedPoints(keep, discard);
   const handExpectedPoints = expectedHandPoints(keep, discard).total;
@@ -158,7 +161,7 @@ const createStory = ({
   return {
     args: {
       cribRole: CribRole.Dealer,
-      isHighlighted,
+      highlightTier,
       rowIndex: 0,
       scoredKeepDiscard: {
         ...toCutBreakdown(cutAdded),
@@ -194,7 +197,14 @@ export const JackSixFiveFourDiscardKingQueenSortedDescending: Story =
 export const JackSixFiveFourDiscardKingQueenSortedDescendingHighlighted: Story =
   createStory({
     ...jackSixFiveFourKeepKingQueenDiscard,
-    isHighlighted: true,
+    highlightTier: "chosen",
+    sortOrder: SortOrder.Descending,
+  });
+
+export const JackSixFiveFourDiscardKingQueenSortedDescendingEqualBest: Story =
+  createStory({
+    ...jackSixFiveFourKeepKingQueenDiscard,
+    highlightTier: "equal-best",
     sortOrder: SortOrder.Descending,
   });
 
@@ -234,7 +244,7 @@ export const SuitedCribDetailsExpanded: Story = createStory({
     createCard(Rank.TWO, Suit.DIAMONDS),
   ],
   expectedCribPointBreakdown: cribPointBreakdown,
-  isHighlighted: true,
+  highlightTier: "chosen",
   keep: [
     createCard(Rank.THREE, Suit.HEARTS),
     createCard(Rank.FOUR, Suit.SPADES),

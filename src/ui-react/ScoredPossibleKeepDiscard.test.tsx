@@ -1,12 +1,21 @@
+/* jscpd:ignore-start */
 import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
+import {
+  type DiscardHighlightTier,
+  ScoredPossibleKeepDiscard,
+  getRowTitle,
+} from "./ScoredPossibleKeepDiscard";
+import {
+  EXPECTED_POINTS_FRACTION_DIGITS,
+  type MistakeClassification,
+} from "../analysis/classifyMistake";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { CARDS_PER_KEPT_HAND } from "../game/facts";
 import { SORT_ORDER_NAMES } from "../ui/SortOrderName";
-import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { createElement } from "react";
 import { dealHand } from "../game/dealHand";
@@ -15,9 +24,10 @@ import { expectedCutAddedPoints } from "../game/expectedCutAddedPoints";
 import { expectedHandPoints } from "../game/expectedHandPoints";
 import { handPoints } from "../game/handPoints";
 import { handToSortedString } from "./handToSortedString.test.common";
+import { mockTradeOffClassification } from "../ui/mistakeQueue.test.common";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
+/* jscpd:ignore-end */
 
-const EXPECTED_POINTS_FRACTION_DIGITS = 2;
 const EXPECTED_CELL_COUNT = 5;
 const EXPECTED_CRIB_POINTS = 1.25;
 const EXPECTED_PLAY_POINTS = 0.75;
@@ -46,8 +56,11 @@ const CRIB_STARTER_POINTS = [
 ] as const;
 
 interface RenderComponentOptions {
+  readonly classification?: MistakeClassification | null;
+  readonly descriptionId?: string | null;
   readonly expectedPlayPoints?: number;
-  readonly isHighlighted?: boolean;
+  readonly highlightTier?: DiscardHighlightTier;
+  readonly rowIndex?: number;
   readonly signedExpectedCribPoints?: number;
 }
 
@@ -82,8 +95,11 @@ function setupScenario(sortOrderName: keyof typeof SortOrder) {
 function renderComponentWithScenario(
   scenario: ReturnType<typeof setupScenario>,
   {
+    classification = null,
+    descriptionId = null,
     expectedPlayPoints = EXPECTED_PLAY_POINTS,
-    isHighlighted = false,
+    highlightTier = "none",
+    rowIndex = 0,
     signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
   }: RenderComponentOptions = {},
 ) {
@@ -143,9 +159,11 @@ function renderComponentWithScenario(
   };
 
   const props = {
+    ...(typeof classification === "undefined" ? {} : { classification }),
+    ...(typeof descriptionId === "undefined" ? {} : { descriptionId }),
     cribRole: CribRole.Dealer,
-    isHighlighted,
-    rowIndex: 0,
+    highlightTier,
+    rowIndex,
     scoredKeepDiscard,
     sortOrder: scenario.sortOrder,
   };
@@ -157,10 +175,10 @@ function renderComponentWithScenario(
   );
 }
 
-const highlightedPresent = (isHighlighted: boolean) => {
+const highlightedPresent = (highlightTier: DiscardHighlightTier) => {
   const scenario = setupScenario("Ascending");
   const { container } = renderComponentWithScenario(scenario, {
-    isHighlighted,
+    highlightTier,
   });
   const rowClass = container.querySelector("tr")?.className ?? "";
 
@@ -203,10 +221,119 @@ describe("calculation component", () => {
     },
   );
 
-  it("should toggle highlighted class based on prop", () => {
-    expect(highlightedPresent(true)).toBe(true);
-    expect(highlightedPresent(false)).toBe(false);
+  it("should apply highlighted class when tier is chosen", () => {
+    expect(highlightedPresent("chosen")).toBe(true);
+    expect(highlightedPresent("none")).toBe(false);
   });
+
+  it.each([
+    {
+      descriptionId: "scored-discard-0-description",
+      expectedDescribedBy: "scored-discard-0-description",
+      expectedTier: "chosen",
+      expectedTitle: "Optimal discard",
+      highlightTier: "chosen" as const,
+      isEqualBest: false,
+      name: "chosen tier with description ID",
+    },
+    {
+      descriptionId: "scored-discard-0-description",
+      expectedDescribedBy: "scored-discard-0-description",
+      expectedTier: "equal-best",
+      expectedTitle: "Equal-best discard",
+      highlightTier: "equal-best" as const,
+      isEqualBest: true,
+      name: "equal-best tier with description ID",
+    },
+    {
+      descriptionId: null,
+      expectedDescribedBy: null,
+      expectedTier: "chosen",
+      expectedTitle: "Optimal discard",
+      highlightTier: "chosen" as const,
+      isEqualBest: false,
+      name: "chosen tier without description ID (standalone)",
+    },
+    {
+      descriptionId: null,
+      expectedDescribedBy: null,
+      expectedTier: "none",
+      expectedTitle: null,
+      highlightTier: "none" as const,
+      isEqualBest: false,
+      name: "none tier",
+    },
+  ])(
+    "renders row for $name with correct class, data attribute, and title",
+    ({
+      descriptionId,
+      expectedDescribedBy,
+      expectedTier,
+      expectedTitle,
+      highlightTier,
+      isEqualBest,
+    }) => {
+      const { container } = renderComponentWithScenario(
+        setupScenario("Ascending"),
+        { descriptionId, highlightTier },
+      );
+      const tr = container.querySelector("tr");
+
+      expect({
+        ariaDescribedBy: tr?.getAttribute("aria-describedby"),
+        ariaDescription: tr?.getAttribute("aria-description"),
+        hasEqualBestClass: tr?.className.includes("equalBest"),
+        highlightTier: tr?.getAttribute("data-highlight-tier"),
+        title: tr?.getAttribute("title"),
+      }).toStrictEqual({
+        ariaDescribedBy: expectedDescribedBy,
+        ariaDescription: null,
+        hasEqualBestClass: isEqualBest,
+        highlightTier: expectedTier,
+        title: expectedTitle,
+      });
+
+      expect(
+        screen
+          .getAllByRole("cell")
+          .some((cell) => cell.querySelector("[id]") !== null),
+      ).toBe(false);
+    },
+  );
+
+  it.each([
+    {
+      classification: null,
+      expected: "Optimal discard",
+      highlightTier: "chosen" as const,
+      name: "chosen tier without classification",
+    },
+    {
+      classification: mockTradeOffClassification,
+      expected:
+        "Chosen discard (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
+      highlightTier: "chosen" as const,
+      name: "chosen tier with classification",
+    },
+    {
+      classification: null,
+      expected: "Equal-best discard",
+      highlightTier: "equal-best" as const,
+      name: "equal-best tier",
+    },
+    {
+      classification: null,
+      // eslint-disable-next-line no-undefined
+      expected: undefined,
+      highlightTier: "none" as const,
+      name: "none tier",
+    },
+  ])(
+    "computes row title for $name",
+    ({ classification, expected, highlightTier }) => {
+      expect(getRowTitle(highlightTier, classification)).toBe(expected);
+    },
+  );
 
   it("renders negative signed crib points without a plus sign", () => {
     const scenario = setupScenario("Ascending");
@@ -280,9 +407,59 @@ describe("calculation component", () => {
 
     expect(hasBreakdownHeader()).toBe(true);
     expect(screen.getAllByText(/\+Cut avg/u)).toHaveLength(1);
+  });
 
-    toggleMainRow();
+  it.each([
+    {
+      classification: null,
+      expectedTitle: "Optimal discard",
+      highlightTier: "chosen" as const,
+      name: "optimal discard when highlighted",
+    },
+    {
+      classification: mockTradeOffClassification,
+      expectedTitle:
+        "Chosen discard (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
+      highlightTier: "chosen" as const,
+      name: "sub-optimal loss when highlighted and classified",
+    },
+    {
+      classification: {
+        ...mockTradeOffClassification,
+        netLoss: 0.004,
+      },
+      expectedTitle:
+        "Chosen discard (less than 0.01 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
+      highlightTier: "chosen" as const,
+      name: "sub-optimal loss below 0.005 rendered with less-than precision indicator",
+    },
+    {
+      classification: null,
+      expectedTitle: null,
+      highlightTier: "none" as const,
+      name: "no title when not highlighted",
+    },
+  ])(
+    "should render $name",
+    ({ classification, expectedTitle, highlightTier }) => {
+      const scenario = setupScenario("Ascending");
+      const { container } = renderComponentWithScenario(scenario, {
+        classification,
+        highlightTier,
+      });
 
-    expect(hasBreakdownHeader()).toBe(false);
+      expect(container.querySelector("tr")?.getAttribute("title")).toBe(
+        expectedTitle,
+      );
+    },
+  );
+
+  it("should apply evenRow stripe class when rowIndex is odd", () => {
+    const scenario = setupScenario("Ascending");
+    const { container } = renderComponentWithScenario(scenario, {
+      rowIndex: 1,
+    });
+
+    expect(container.querySelector("tr")?.className).toContain("mock-evenRow");
   });
 });

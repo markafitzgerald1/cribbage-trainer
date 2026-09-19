@@ -3,9 +3,8 @@ import type { PracticeDrillPhase, PracticeVerdict } from "./usePracticeDrill";
 import { SUCCESSES_FOR_MASTERY } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
+import { formatNetLoss } from "../analysis/classifyMistake";
 import { parseHand } from "../game/Card";
-
-const LOSS_DIGITS = 2;
 
 export interface PracticeDrillPanelProps {
   readonly canCommit: boolean;
@@ -30,7 +29,7 @@ interface VerdictRow {
  * "Avg loss" already show what a discard gave up: it is a cost, never a gain,
  * so a sign would only be noise.
  */
-const formatLoss = (loss: number): string => loss.toFixed(LOSS_DIGITS);
+const formatLoss = (loss: number): string => formatNetLoss(loss);
 
 const renderDiscard = (
   discard: string | null,
@@ -75,7 +74,7 @@ const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
   }
   return (
     <p className={classes.outcomeMiss}>
-      {formatLoss(verdict.chosenLoss)} behind the best discard — streak reset.
+      {formatLoss(verdict.chosenLoss)} behind the best discard.
     </p>
   );
 };
