@@ -421,9 +421,7 @@ describe("groupCutsByResults", () => {
       runs: getContributions(runs),
     });
 
-    expect(result).toMatchObject(
-      expectedGroups as unknown as Record<string, unknown>[],
-    );
+    expect(result).toMatchObject(expectedGroups);
   });
 
   it("groups cuts by rank when scores differ; uses rank shorthand when all share a tier", () => {

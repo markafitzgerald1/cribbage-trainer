@@ -44,6 +44,11 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   is relative to each scan path, so keep `.jscpd.json` explicit with
   `path: ["src"]` and `pattern: "**/*.ts*"` rather than relying on `.gitignore`
   filtering.
+- Keep Playwright updates in the dedicated `playwright-sync` Dependabot group.
+  Its version is pinned twice: in `package.json` and in the `Dockerfile` base
+  image tag. Dependabot can update only the npm dependency, and the resulting
+  e2e failure names neither the group nor the stale `Dockerfile`; when that
+  group fails, compare both pins before debugging the tests.
 - Use `npm run deps:update:minor` for routine refreshes; handle larger major
   upgrades separately if they would dominate the change set.
 - When `npm run lint:audit` (better-npm-audit) fails on freshly published
@@ -61,6 +66,12 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   still fixed none of the three. Note that a caret override does not
   self-heal on `npm install` — only `npm audit fix` or
   `npm update <package>` re-resolves an existing lock entry.
+- A caret override is flexible within its major line, but it can still make a
+  routine grouped upgrade unresolvable when a direct dependency crosses that
+  boundary. The `ERESOLVE` output can be hundreds of lines of dependency tree
+  around a four-line conflict: first reduce it to the root request, override,
+  and peer range, then either move the whole compatible family together or
+  hold it on the supported major.
 - The flagged packages are almost always dev/build dependencies that are
   not shipped in the production bundle; confirm with
   `npm ls <package> --omit=dev`, which prints an empty tree when nothing
