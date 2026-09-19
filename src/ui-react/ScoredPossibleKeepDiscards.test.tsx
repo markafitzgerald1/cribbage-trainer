@@ -17,7 +17,6 @@ import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
-import { markedRoleCostTexts } from "./test-utils";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 import { toDealtCards } from "../game/toDealtCards";
@@ -388,9 +387,13 @@ describe("scored possible keep discards component", () => {
         expect(caption?.getAttribute("role")).toBe("status");
         expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
         expect(caption?.textContent).toBe(expectedText);
-        expect(markedRoleCostTexts(container)).toStrictEqual(
-          expectedMarkedTexts,
-        );
+        // Mocked CSS modules render the class as mock-<name>; only a reversed-role figure that cost nothing carries it.
+        expect(
+          Array.from(
+            container.querySelectorAll(".mock-costsNothing"),
+            (element) => element.textContent,
+          ),
+        ).toStrictEqual(expectedMarkedTexts);
       },
     );
   });

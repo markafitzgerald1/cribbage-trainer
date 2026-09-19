@@ -38,15 +38,3 @@ export const queryAllByCardText = (
   container: TestContainerQueryAll,
   text: string,
 ) => container.queryAllByText(createMatcher(text));
-
-/*
- * The role costs a badge marked as costing nothing under the reversed crib
- * role. CSS modules are mocked as mock-<name> under Jest, so the class is
- * the only observable here; that the class renders as a green underline is
- * asserted in Storybook and Playwright, where the stylesheet actually loads.
- */
-export const markedRoleCostTexts = (root: ParentNode) =>
-  Array.from(
-    root.querySelectorAll(".mock-costsNothing"),
-    (element) => element.textContent,
-  );

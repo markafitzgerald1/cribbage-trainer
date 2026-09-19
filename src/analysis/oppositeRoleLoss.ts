@@ -69,25 +69,16 @@ export const oppositeRoleExpectedPointsLoss = ({
 
 export interface RoleLossPairLabel {
   readonly accessibleLabel: string;
-
   // Everything up to the reversed-role figure, separator included, so a caller can mark that figure without re-deriving where its clause starts.
   readonly leadingText: string;
-
   // Empty only when no reversed-role figure was ever measured.
   readonly oppositeRoleCost: string;
   readonly oppositeRoleCostsNothing: boolean;
 }
 
-const NO_COST = formatNetLoss(0);
-
-/*
- * Read from the formatter the reader is looking at rather than from the raw
- * number, so the mark cannot disagree with the glyphs beside it. This is an
- * exact zero and not a rounded one: `formatNetLoss` prints a positive
- * sub-cent loss as "< 0.01", so no cost that exists reaches "0.00", and
- * there is no tolerance here to tune.
- */
-const costsNothing = (loss: number): boolean => formatNetLoss(loss) === NO_COST;
+// Read from the formatter the reader sees, so a mark cannot disagree with the glyphs beside it, and exact rather than rounded: a positive sub-cent loss prints "< 0.01", never "0.00". No tolerance to tune.
+const costsNothing = (loss: number): boolean =>
+  formatNetLoss(loss) === formatNetLoss(0);
 
 /*
  * States the two measured costs and stops there. Deliberately not "you
@@ -100,10 +91,8 @@ const costsNothing = (loss: number): boolean => formatNetLoss(loss) === NO_COST;
  * printing a zero nobody measured.
  *
  * `oppositeRoleCostsNothing` marks the one pairing that says anything: the
- * same two cards cost nothing under the reversed role and something under
- * the role held. Two costs, or two zeroes, are just numbers. It stays a
- * mark on the figure rather than a verdict in words, for the reason the
- * pair replaced a flag in the first place.
+ * same cards cost nothing under the reversed role and something under the
+ * role held. Two costs, or two zeroes, are just numbers.
  */
 export const roleLossPairLabel = (
   cribRole: CribRole,

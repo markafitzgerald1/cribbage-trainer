@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import * as roleLossClasses from "./RoleLossPairText.module.css";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import {
@@ -11,7 +12,6 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { MistakeClassification } from "../analysis/classifyMistake";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
-import { markedRoleCostTexts } from "./test-utils";
 
 interface RenderCardOptions {
   readonly classification?: MistakeClassification | null;
@@ -84,18 +84,20 @@ describe("mistakeQueueItemCard", () => {
     {
       cribRole: CribRole.Dealer,
       expectedLabel: "1.00 as dealer, 0.00 as pone",
-      expectedMarkedTexts: ["0.00 as pone"],
+      expectedMarkClass: roleLossClasses.costsNothing,
       expectedName:
         "Previous discard cost 1.00 points lost as dealer, 0.00 as pone",
+      expectedOppositeCost: "0.00 as pone",
       name: "names both role costs for a dealer",
       oppositeRoleLoss: 0,
     },
     {
       cribRole: CribRole.Pone,
       expectedLabel: "1.00 as pone, 0.00 as dealer",
-      expectedMarkedTexts: ["0.00 as dealer"],
+      expectedMarkClass: roleLossClasses.costsNothing,
       expectedName:
         "Previous discard cost 1.00 points lost as pone, 0.00 as dealer",
+      expectedOppositeCost: "0.00 as dealer",
       name: "names both role costs for a pone",
       oppositeRoleLoss: 0,
     },
@@ -106,9 +108,10 @@ describe("mistakeQueueItemCard", () => {
     {
       cribRole: CribRole.Dealer,
       expectedLabel: "1.00 as dealer, 0.75 as pone",
-      expectedMarkedTexts: [],
+      expectedMarkClass: "",
       expectedName:
         "Previous discard cost 1.00 points lost as dealer, 0.75 as pone",
+      expectedOppositeCost: "0.75 as pone",
       name: "leaves a reversed role that also cost points unmarked",
       oppositeRoleLoss: 0.75,
     },
@@ -117,8 +120,9 @@ describe("mistakeQueueItemCard", () => {
     ({
       cribRole,
       expectedLabel,
-      expectedMarkedTexts,
+      expectedMarkClass,
       expectedName,
+      expectedOppositeCost,
       oppositeRoleLoss,
     }) => {
       const { getByRole, getByText } = renderCard({
@@ -134,7 +138,7 @@ describe("mistakeQueueItemCard", () => {
 
       expect(badge).toHaveTextContent(expectedLabel);
       expect(badge).toHaveAttribute("title", expectedName);
-      expect(markedRoleCostTexts(badge)).toStrictEqual(expectedMarkedTexts);
+      expect(getByText(expectedOppositeCost).className).toBe(expectedMarkClass);
       expect(getByText("Prev: Crib gain < Hand loss")).toBeInTheDocument();
     },
   );

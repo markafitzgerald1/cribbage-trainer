@@ -2,10 +2,8 @@ import * as classes from "./RoleLossPairText.module.css";
 import type { RoleLossPairLabel } from "../analysis/oppositeRoleLoss";
 
 /*
- * Shared by the analysis caption and the mistake queue card, which show the
- * same pair in differently styled badges: both need the reversed-role figure
- * in an element of its own so it can be marked, and jscpd counts the second
- * spelling of that composition as a clone.
+ * Shared by the analysis caption and the mistake queue card, whose badges
+ * differ but whose pair does not: jscpd counts a second spelling as a clone.
  */
 export const renderRoleLossPairText = (
   pair: RoleLossPairLabel,
