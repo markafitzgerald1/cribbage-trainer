@@ -188,9 +188,33 @@ be inferred from repository changes.
   predates that contract and is kept for schema continuity. `randomUUID` is
   secure-context only, which every context this app runs in satisfies (HTTPS
   Pages, `localhost` dev and preview, jsdom's `http://localhost/`), so there
-  is deliberately no fallback branch — one would be unreachable in production
-  under the 100% branch-coverage gate. Serving the app from a plain-`http`
-  LAN address would break it; use a PR preview for device testing.
+  is deliberately no fallback branch. **The reason is the key space, not the
+  coverage gate.** An earlier version of this bullet said a fallback branch
+  "would be unreachable in production under the 100% branch-coverage gate",
+  which is the wrong defense of the right conclusion: coverage is measured by
+  tests rather than by production, and this repository already stubs globals
+  in exactly that shape (`jest.spyOn(window.history, "pushState")` in
+  `TrainerUrlState.test.tsx`, restored in a `finally`), so a test could always
+  have covered that branch. The argument that does hold is the one above — a
+  substitute value would enter a key space warehouse analysis may join on,
+  carrying none of the global-uniqueness guarantee the schema assumes, and no
+  consumer downstream could tell the two apart. A fallback would also need
+  randomness from somewhere, and the injected `generateRandomNumber` is fenced
+  off by the seed contract in `AGENTS.md`, so it is a seed-contract hazard as
+  well as a schema one. Failing loudly in a context the app is not served from
+  beats emitting quietly wrong analytics from it.
+- Serving the app from a plain-`http` LAN address therefore white-screens it,
+  and there are two ways round that rather than one. A PR preview remains the
+  answer whenever the origin itself matters — a trusted certificate, the
+  production base path, or origin-scoped consent. For iterating on a visual
+  change against a phone, `npm run start:https` serves the dev server over TLS
+  on the LAN, which makes the origin a secure context and costs one
+  certificate warning per device instead of a deploy per look; README, "Reach
+  the dev server from a phone", has the steps. Measured on #819 at one LAN
+  address with the same build: over HTTPS `isSecureContext` was `true`,
+  `crypto.randomUUID` resolved, and the trainer rendered with a clean console;
+  over plain `http` it was `false`, `randomUUID` was `undefined`, and the page
+  threw `crypto.randomUUID is not a function` and rendered nothing.
 - `generated_from_seed` marks hands a seeded session generated, because a
   seeded sequence can be replayed or memorized and its decisions would bias
   population skill statistics. The rule: a hand is seed-derived when the

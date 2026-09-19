@@ -181,6 +181,12 @@
 ## Core commands
 
 - Dev server: `npm start` (opens <http://localhost:5173>).
+- Dev server reachable from a phone: `npm run start:https`, which listens on
+  the LAN over TLS. Plain `http` to a LAN address white-screens the app,
+  because `crypto.randomUUID` is secure-context only — so `npm start --host`
+  is not the shortcut it looks like. Costs one self-signed certificate warning
+  per device; README, "Reach the dev server from a phone", has the steps, and
+  `skills/analytics-telemetry/SKILL.md` has why the call site has no fallback.
 - Build: `npm run build`.
 - Prod preview server: `npm run build` then
   `npm run start:production-preview` (opens <http://localhost:4173>).
