@@ -387,14 +387,15 @@ export function ScoredPossibleKeepDiscards({
       return null;
     }
     const oppositeRole = oppositeRoleLabel(cribRole);
+    // Placed to match the rendered order below, so what a screen reader hears is the order a sighted reader sees.
     const oppositeRoleCause =
       chosenClassification?.isOppositeRoleOptimal === true
-        ? `. ${oppositeRole.accessibleLabel}`
+        ? `${oppositeRole.accessibleLabel}. `
         : "";
     const captionAriaLabel =
       chosenClassification === null
         ? optimalMargin.accessibleLabel
-        : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.accessibleLabel}${oppositeRoleCause}`;
+        : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${oppositeRoleCause}${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
         aria-label={captionAriaLabel}
@@ -409,6 +410,8 @@ export function ScoredPossibleKeepDiscards({
               Sub-optimal: {formatNetLoss(chosenClassification.netLoss)} pts
               lost
             </span>
+            {/* Before the decomposition, not after it: the decomposition is the widest chip and always takes a row of its own on a portrait phone, so a cause placed after it starts a third row while the same chip placed here shares the first one (#824, measured against the #802 caption-height guard). */}
+            {renderOppositeRoleNote(chosenClassification, oppositeRole.label)}
             <span className={classes.diagnosticReason}>
               {chosenClassification.gainPart === null ? (
                 <span className={classes.diagnosticSide}>
@@ -426,7 +429,6 @@ export function ScoredPossibleKeepDiscards({
                 </>
               )}
             </span>
-            {renderOppositeRoleNote(chosenClassification, oppositeRole.label)}
           </>
         )}
       </figcaption>

@@ -481,6 +481,24 @@ once you are already editing layout or interaction code.
   that assert each chip is **whole inside its group** rather than that the
   chips share a row, because the row assertion is what the cropping mechanism
   was invented to satisfy.
+- **In a wrapping chip row, source order decides the row count, and the
+  cheapest fix for a row too many is to move the new chip rather than
+  shrink it.** Flex wrapping is greedy and first-fit, never best-fit, so a
+  narrow chip appended after the widest one always starts a fresh row even
+  when it would have fitted beside the first. Adding the #824 cause chip to
+  the analysis caption took it from two rows to three at a 28px root font in
+  portrait — 86px against the 65px cap `practiceDrill.spec.ts` enforces for
+  drill review, which also dropped the table container to 83px against its
+  95px floor, so both halves of that guard failed in all five projects.
+  Moving the same chip to sit between the points-lost badge and the
+  decomposition returned the caption to 56px and the container to 111px with
+  no styling change at all: the decomposition is 342px of a 365px row and
+  therefore always takes a row of its own, while the badge and the cause are
+  212px and 141px and share one. Measure the children's boxes
+  (`element.children` with `getBoundingClientRect`) before reaching for a
+  smaller font or a shorter label — and note the slack you end up with,
+  since first-fit packing means a few extra characters in any earlier chip
+  re-breaks the row.
 - **A palette shift is not a focus indicator.** Eleven controls on the dark
   grounds _used to_ suppress the native outline and lean on their hover
   treatment to double as focus — they no longer do, so read this as the
