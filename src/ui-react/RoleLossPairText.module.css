@@ -1,0 +1,12 @@
+/*
+ * Marks the reversed-role figure that cost nothing while the role actually
+ * held did. Both cues are load-bearing and both are free of layout cost,
+ * which the badge's 331px of a 365px row requires; the measurements and the
+ * contrast figures are in skills/ui-layout-and-interaction/SKILL.md.
+ */
+.costs-nothing {
+  color: #7ee68a;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}

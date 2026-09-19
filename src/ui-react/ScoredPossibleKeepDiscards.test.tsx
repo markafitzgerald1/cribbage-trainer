@@ -17,6 +17,7 @@ import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
+import { markedRoleCostTexts } from "./test-utils";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 import { toDealtCards } from "../game/toDealtCards";
@@ -333,6 +334,7 @@ describe("scored possible keep discards component", () => {
         cards: "5H,5D,6H,7H,8H,9H",
         discards: "5H,5D",
         expectedAriaLabel: "Optimal discard, 4.05 better than next",
+        expectedMarkedTexts: [],
         expectedText: "Optimal discard, 4.05 better than next",
         name: "optimal discard caption when chosen discard is optimal",
       },
@@ -341,6 +343,7 @@ describe("scored possible keep discards component", () => {
         cribRole: CribRole.Pone,
         discards: "3S,9C",
         expectedAriaLabel: "Optimal discard, 0.37 better than next distinct",
+        expectedMarkedTexts: [],
         expectedText: "Optimal discard, 0.37 better than next distinct",
         name: "optimal discard caption when top choices tie",
       },
@@ -350,6 +353,7 @@ describe("scored possible keep discards component", () => {
         discards: "KH,KC",
         expectedAriaLabel:
           "Sub-optimal: 0.09 points lost as dealer, 3.12 as pone. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+        expectedMarkedTexts: [],
         expectedText:
           "Sub-optimal: 0.09 as dealer, 3.12 as pone1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
         name: "sub-optimal caption pairing both role costs with the diagnostic reason",
@@ -360,6 +364,7 @@ describe("scored possible keep discards component", () => {
         discards: "9D,3S",
         expectedAriaLabel:
           "Sub-optimal: 3.11 points lost as dealer, 0.00 as pone. 0.64 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
+        expectedMarkedTexts: ["0.00 as pone"],
         expectedText:
           "Sub-optimal: 3.11 as dealer, 0.00 as pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
         name: "a zero cost under the reversed role stated as a figure, not as a diagnosis",
@@ -371,6 +376,7 @@ describe("scored possible keep discards component", () => {
         cribRole = CribRole.Dealer,
         discards,
         expectedAriaLabel,
+        expectedMarkedTexts,
         expectedText,
       }) => {
         const dealtCards = toDealtCards(parseHand(cards), parseHand(discards));
@@ -382,6 +388,9 @@ describe("scored possible keep discards component", () => {
         expect(caption?.getAttribute("role")).toBe("status");
         expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
         expect(caption?.textContent).toBe(expectedText);
+        expect(markedRoleCostTexts(container)).toStrictEqual(
+          expectedMarkedTexts,
+        );
       },
     );
   });

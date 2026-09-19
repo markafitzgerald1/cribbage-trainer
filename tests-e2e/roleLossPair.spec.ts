@@ -40,6 +40,17 @@ test.describe("both crib-role costs for the chosen discard", () => {
     await expect(caption).toContainText("3.11 as dealer, 0.00 as pone");
     // The component decomposition is still there: the pair is evidence beside it, not a replacement for it.
     await expect(caption).toContainText("Crib");
+
+    /*
+     * The reversed-role figure is the one thing on this caption a reader can
+     * act on, so it is marked in two ways rather than one: dropping either
+     * fails here. Color alone would leave the pair reading as flatly as any
+     * other two numbers, which is what this treatment exists to fix.
+     */
+    const freeRoleCost = caption.getByText("0.00 as pone");
+
+    await expect(freeRoleCost).toHaveCSS("text-decoration-line", "underline");
+    await expect(freeRoleCost).toHaveCSS("color", "rgb(126, 230, 138)");
   });
 
   test("states two positive costs when the discard is wrong under both roles", async ({
@@ -49,8 +60,13 @@ test.describe("both crib-role costs for the chosen discard", () => {
       discardIndices: BOTH_ROLES_COSTLY_DISCARD_INDICES,
     });
 
-    await expect(page.getByRole("status")).toContainText(
-      "3.46 as dealer, 0.82 as pone",
+    const caption = page.getByRole("status");
+
+    await expect(caption).toContainText("3.46 as dealer, 0.82 as pone");
+    // Nothing here is free, so nothing is marked; the mark has to mean this hand rather than this badge.
+    await expect(caption.getByText("0.82 as pone")).toHaveCSS(
+      "text-decoration-line",
+      "none",
     );
   });
 });

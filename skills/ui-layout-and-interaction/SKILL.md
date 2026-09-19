@@ -503,6 +503,29 @@ once you are already editing layout or interaction code.
   already carried one of its two numbers rather than live on that margin.
   The order: measure, reorder if it fits comfortably, merge into an existing
   chip if it does not, and only then shrink anything.
+- **Once a chip is merged into, emphasis inside it has to cost no layout.**
+  With #824's pair folded into the sub-optimal badge, that badge measured
+  331px of a 365px row in exactly the case the #802 guard samples — drill
+  review at a 28px root font in portrait — so 34px was the entire budget for
+  marking one of its two figures. That is less than it sounds: an inline
+  pill like the trend dialog's zero-loss treatment costs roughly 11px of
+  padding, a leading glyph about as much again, and the string's own width
+  varies across engines by more than either, so a marker measured as fitting
+  in Chromium can still start a third row in WebKit. `color` and
+  `text-decoration` change neither dimension and are what to reach for.
+  Measure the badge rather than the caption: the guard asserts the caption's
+  height, but it is the badge's width against its row that decides it.
+- **Reuse the zero-loss green rather than picking a hue, and never ship it
+  alone.** A loss of exactly zero already reads green here — the trend
+  dialog's `.loss-pill-optimal` fills at #1b732f — so a second marker for
+  the same fact in some other color would read as a different fact. The
+  color is only half of the signal, though: #824's marked figure carries a
+  2px underline as well, because it sits inside a badge whose other text is
+  near-white and nothing else tells them apart. Contrast is per ground and
+  these badges are opaque, so measure against the badge fill, not the felt
+  behind it: #7ee68a reaches 8.55:1 on the caption badge's #4a270f and
+  7.87:1 on the queue badge's #123b40, and clears 4.5:1 on the #1f6536 felt
+  as well, which is the ground it would inherit if either fill were dropped.
 - **A palette shift is not a focus indicator.** Eleven controls on the dark
   grounds _used to_ suppress the native outline and lean on their hover
   treatment to double as focus — they no longer do, so read this as the

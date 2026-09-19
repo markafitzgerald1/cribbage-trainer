@@ -8,7 +8,6 @@ import {
   SortOrder,
   type StoryObj,
   createArgTypes,
-  expectStoryTextVisible,
   playDoubleExpanded,
   playToggle,
   toDealtCards,
@@ -129,11 +128,22 @@ export const RoleLossPair: Story = {
   ),
   play: async ({ canvasElement }) => {
     await waitForLoadingToDisappear(within(canvasElement));
+    const canvas = within(canvasElement);
 
-    await expectStoryTextVisible(
-      canvasElement,
+    await expect(canvas.getByRole("status")).toHaveTextContent(
       "Sub-optimal: 3.11 as dealer, 0.00 as pone",
     );
+
+    /*
+     * Assert what the reader sees rather than the class that produced it.
+     * The underline is the half of the treatment that survives for anyone
+     * who cannot separate the green from the badge's own text, so a change
+     * that kept the color and dropped it should fail here.
+     */
+    const rendered = window.getComputedStyle(canvas.getByText("0.00 as pone"));
+
+    await expect(rendered.textDecorationLine).toBe("underline");
+    await expect(rendered.color).toBe("rgb(126, 230, 138)");
   },
 };
 

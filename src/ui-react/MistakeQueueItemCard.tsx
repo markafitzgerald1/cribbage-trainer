@@ -13,6 +13,7 @@ import {
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
+import { renderRoleLossPairText } from "./RoleLossPairText";
 import { roleLossPairLabel } from "../analysis/oppositeRoleLoss";
 import { useMemo } from "react";
 
@@ -79,12 +80,12 @@ const renderRoleLossPairBadge = (
   if (item.previousDiscardOppositeRoleLoss === null) {
     return null;
   }
-  const { accessibleLabel, label } = roleLossPairLabel(
+  const pair = roleLossPairLabel(
     item.cribRole,
     item.previousDiscardLoss,
     item.previousDiscardOppositeRoleLoss,
   );
-  const description = `Previous discard cost ${accessibleLabel}`;
+  const description = `Previous discard cost ${pair.accessibleLabel}`;
   return (
     <span
       aria-label={description}
@@ -92,7 +93,7 @@ const renderRoleLossPairBadge = (
       role="note"
       title={description}
     >
-      {label}
+      {renderRoleLossPairText(pair)}
     </span>
   );
 };

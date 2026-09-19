@@ -43,6 +43,7 @@ import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { SortOrder } from "../ui/SortOrder";
 import { getDiscardQuality } from "../analysis/discardQuality";
+import { renderRoleLossPairText } from "./RoleLossPairText";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
@@ -411,7 +412,7 @@ export function ScoredPossibleKeepDiscards({
         ) : (
           <>
             <span className={classes.subOptimalBadge}>
-              Sub-optimal: {rolePair.label}
+              Sub-optimal: {renderRoleLossPairText(rolePair)}
             </span>
             <span className={classes.diagnosticReason}>
               {chosenClassification.gainPart === null ? (

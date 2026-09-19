@@ -69,8 +69,25 @@ export const oppositeRoleExpectedPointsLoss = ({
 
 export interface RoleLossPairLabel {
   readonly accessibleLabel: string;
-  readonly label: string;
+
+  // Everything up to the reversed-role figure, separator included, so a caller can mark that figure without re-deriving where its clause starts.
+  readonly leadingText: string;
+
+  // Empty only when no reversed-role figure was ever measured.
+  readonly oppositeRoleCost: string;
+  readonly oppositeRoleCostsNothing: boolean;
 }
+
+const NO_COST = formatNetLoss(0);
+
+/*
+ * Read from the formatter the reader is looking at rather than from the raw
+ * number, so the mark cannot disagree with the glyphs beside it. This is an
+ * exact zero and not a rounded one: `formatNetLoss` prints a positive
+ * sub-cent loss as "< 0.01", so no cost that exists reaches "0.00", and
+ * there is no tolerance here to tune.
+ */
+const costsNothing = (loss: number): boolean => formatNetLoss(loss) === NO_COST;
 
 /*
  * States the two measured costs and stops there. Deliberately not "you
@@ -81,6 +98,12 @@ export interface RoleLossPairLabel {
  * recorded before store version 6 has none — and the wording then falls
  * back to the single figure this caption carried before #824 rather than
  * printing a zero nobody measured.
+ *
+ * `oppositeRoleCostsNothing` marks the one pairing that says anything: the
+ * same two cards cost nothing under the reversed role and something under
+ * the role held. Two costs, or two zeroes, are just numbers. It stays a
+ * mark on the figure rather than a verdict in words, for the reason the
+ * pair replaced a flag in the first place.
  */
 export const roleLossPairLabel = (
   cribRole: CribRole,
@@ -90,12 +113,17 @@ export const roleLossPairLabel = (
   if (oppositeLoss === null) {
     return {
       accessibleLabel: `${formatAccessibleNetLoss(actualLoss)} points lost`,
-      label: `${formatNetLoss(actualLoss)} pts lost`,
+      leadingText: `${formatNetLoss(actualLoss)} pts lost`,
+      oppositeRoleCost: "",
+      oppositeRoleCostsNothing: false,
     };
   }
   const opposite = `${formatNetLoss(oppositeLoss)} as ${cribRoleName(oppositeCribRole(cribRole))}`;
   return {
     accessibleLabel: `${formatAccessibleNetLoss(actualLoss)} points lost as ${cribRoleName(cribRole)}, ${opposite}`,
-    label: `${formatNetLoss(actualLoss)} as ${cribRoleName(cribRole)}, ${opposite}`,
+    leadingText: `${formatNetLoss(actualLoss)} as ${cribRoleName(cribRole)}, `,
+    oppositeRoleCost: opposite,
+    oppositeRoleCostsNothing:
+      costsNothing(oppositeLoss) && !costsNothing(actualLoss),
   };
 };

@@ -96,17 +96,47 @@ describe("wording for a pair of role costs", () => {
       actualLoss: 3.05,
       cribRole: CribRole.Dealer,
       expectedAccessible: "3.05 points lost as dealer, 0.00 as pone",
-      expectedLabel: "3.05 as dealer, 0.00 as pone",
-      name: "names the role held first",
+      expectedCostsNothing: true,
+      expectedLeading: "3.05 as dealer, ",
+      expectedOpposite: "0.00 as pone",
+      name: "names the role held first and marks the free reversed role",
       oppositeLoss: 0,
     },
     {
       actualLoss: 1.4,
       cribRole: CribRole.Pone,
       expectedAccessible: "1.40 points lost as pone, 2.60 as dealer",
-      expectedLabel: "1.40 as pone, 2.60 as dealer",
-      name: "states both costs when neither is zero",
+      expectedCostsNothing: false,
+      expectedLeading: "1.40 as pone, ",
+      expectedOpposite: "2.60 as dealer",
+      name: "states both costs and marks neither when both cost something",
       oppositeLoss: 2.6,
+    },
+    /*
+     * A sub-cent loss prints as "< 0.01" rather than rounding to "0.00", so
+     * the mark cannot be claimed by a cost that exists. This is the case a
+     * near-zero tolerance would have swallowed, and the reason none is used.
+     */
+    {
+      actualLoss: 1.4,
+      cribRole: CribRole.Dealer,
+      expectedAccessible: "1.40 points lost as dealer, < 0.01 as pone",
+      expectedCostsNothing: false,
+      expectedLeading: "1.40 as dealer, ",
+      expectedOpposite: "< 0.01 as pone",
+      name: "withholds the mark from a reversed role that costs under a cent",
+      oppositeLoss: 0.004,
+    },
+    // Two zeroes say nothing about the roles, so neither figure is marked.
+    {
+      actualLoss: 0,
+      cribRole: CribRole.Dealer,
+      expectedAccessible: "0.00 points lost as dealer, 0.00 as pone",
+      expectedCostsNothing: false,
+      expectedLeading: "0.00 as dealer, ",
+      expectedOpposite: "0.00 as pone",
+      name: "withholds the mark when the role actually held cost nothing too",
+      oppositeLoss: 0,
     },
   ])(
     "$name",
@@ -114,14 +144,18 @@ describe("wording for a pair of role costs", () => {
       actualLoss,
       cribRole,
       expectedAccessible,
-      expectedLabel,
+      expectedCostsNothing,
+      expectedLeading,
+      expectedOpposite,
       oppositeLoss,
     }) => {
       expect(
         roleLossPairLabel(cribRole, actualLoss, oppositeLoss),
       ).toStrictEqual({
         accessibleLabel: expectedAccessible,
-        label: expectedLabel,
+        leadingText: expectedLeading,
+        oppositeRoleCost: expectedOpposite,
+        oppositeRoleCostsNothing: expectedCostsNothing,
       });
     },
   );
@@ -130,7 +164,9 @@ describe("wording for a pair of role costs", () => {
   it("falls back to the single figure when the reversed-role cost is unknown", () => {
     expect(roleLossPairLabel(CribRole.Dealer, 3.05, null)).toStrictEqual({
       accessibleLabel: "3.05 points lost",
-      label: "3.05 pts lost",
+      leadingText: "3.05 pts lost",
+      oppositeRoleCost: "",
+      oppositeRoleCostsNothing: false,
     });
   });
 });
