@@ -44,6 +44,16 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   is relative to each scan path, so keep `.jscpd.json` explicit with
   `path: ["src"]` and `pattern: "**/*.ts*"` rather than relying on `.gitignore`
   filtering.
+- **Dependabot replaces a group pull request rather than rebasing it when
+  the group recalculates.** Merging two other dependency pull requests
+  closed #813 with "these dependencies are updatable in another way" and
+  opened #836 two minutes later carrying the recomputed group. Nothing
+  announces this on the closed pull request beyond that one line, so an
+  agent or a note holding the old number reports work already done, and a
+  queued instruction to "do #813 next" points at nothing. Re-read the open
+  pull request list before starting queued dependency work rather than
+  trusting a number written down earlier, and expect the replacement to
+  carry a different update count than the one you triaged.
 - Keep Playwright updates in the dedicated `playwright-sync` Dependabot group.
   Its version is pinned twice: in `package.json` and in the `Dockerfile` base
   image tag. Dependabot can update only the npm dependency, and the resulting
