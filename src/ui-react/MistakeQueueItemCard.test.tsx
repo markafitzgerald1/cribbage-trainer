@@ -4,9 +4,11 @@ import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import {
   mockItemA,
+  mockOppositeRoleClassification,
   mockTradeOffClassification,
 } from "../ui/mistakeQueue.test.common";
 import { CribRole } from "../game/expectedCribPoints";
+import type { MistakeClassification } from "../analysis/classifyMistake";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
 
@@ -17,6 +19,19 @@ interface RenderCardOptions {
 }
 
 const noop = () => null;
+
+const renderClassifiedCard = (
+  classification: MistakeClassification | null,
+  cribRole: CribRole = mockItemA.cribRole,
+) =>
+  render(
+    <MistakeQueueItemCard
+      classification={classification}
+      item={{ ...mockItemA, cribRole }}
+      onPractice={null}
+      sortOrder={SortOrder.DealOrder}
+    />,
+  );
 
 const renderCard = (options: RenderCardOptions = {}) => {
   const { item = mockItemA, lossReason, onPractice = noop } = options;
@@ -47,13 +62,8 @@ describe("mistakeQueueItemCard", () => {
   });
 
   it("renders loss reason and recomputed loss when classification is provided", () => {
-    const { getByRole, getByText, getByTitle } = render(
-      <MistakeQueueItemCard
-        classification={mockTradeOffClassification}
-        item={mockItemA}
-        onPractice={null}
-        sortOrder={SortOrder.DealOrder}
-      />,
+    const { getByRole, getByText, getByTitle } = renderClassifiedCard(
+      mockTradeOffClassification,
     );
 
     expect(getByText("Prev: Crib gain < Hand loss")).toBeInTheDocument();
@@ -68,6 +78,49 @@ describe("mistakeQueueItemCard", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it.each([
+    {
+      classification: mockOppositeRoleClassification,
+      cribRole: CribRole.Dealer,
+      expectedLabel: "Optimal as pone",
+      expectedName: "Previous discard optimal as pone, not as dealer",
+      name: "names the reversed role for a dealer",
+    },
+    {
+      classification: mockOppositeRoleClassification,
+      cribRole: CribRole.Pone,
+      expectedLabel: "Optimal as dealer",
+      expectedName: "Previous discard optimal as dealer, not as pone",
+      name: "names the reversed role for a pone",
+    },
+  ])(
+    "$name, beside the component badge rather than instead of it",
+    ({ classification, cribRole, expectedLabel, expectedName }) => {
+      const { getByRole, getByText } = renderClassifiedCard(
+        classification,
+        cribRole,
+      );
+
+      const badge = getByRole("note", { name: expectedName });
+
+      expect(badge).toHaveTextContent(expectedLabel);
+      expect(badge).toHaveAttribute("title", expectedName);
+      expect(getByText("Prev: Crib gain < Hand loss")).toBeInTheDocument();
+    },
+  );
+
+  it.each([
+    { classification: mockTradeOffClassification, name: "is false" },
+    { classification: null, name: "is absent" },
+  ])(
+    "renders no reversed-role badge when the opposite-role flag $name",
+    ({ classification }) => {
+      const { queryByRole } = renderClassifiedCard(classification);
+
+      expect(queryByRole("note", { name: /optimal as/u })).toBeNull();
+    },
+  );
 
   it("does not render loss reason badge when lossReason is null", () => {
     const { queryByTitle } = renderCard({ lossReason: null });

@@ -349,6 +349,16 @@ describe("scored possible keep discards component", () => {
           "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
         name: "sub-optimal caption with diagnostic reason when chosen discard is sub-optimal",
       },
+      {
+        cards: "9D,9C,9H,4C,4H,3S",
+        cribRole: CribRole.Dealer,
+        discards: "9D,3S",
+        expectedAriaLabel:
+          "Sub-optimal: 3.11 pts lost. optimal as pone, not as dealer. 0.64 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
+        expectedText:
+          "Sub-optimal: 3.11 pts lostOptimal as pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
+        name: "reversed-role cause beside the component decomposition, not instead of it",
+      },
     ])(
       "renders $name",
       ({

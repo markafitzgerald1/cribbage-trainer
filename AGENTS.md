@@ -475,7 +475,13 @@ they bind any PR that makes a claim about a phone or ships a guard.
   near-identical test blocks are the most common trip-up: as soon as a
   setup or assertion pattern of two-plus statements appears twice, extract
   it into a named helper (e.g. a click-and-assert or render-with-props
-  function) rather than waiting for the jscpd failure.
+  function) rather than waiting for the jscpd failure. The vendored-table
+  preamble is the one most new analysis specs write by reflex: a local
+  `tables` object built by casting the two imported JSON artifacts is a
+  clone the moment a second file spells it out. Import
+  `expectedCribPointsTable` and `expectedPlayPointsTable` from
+  `src/analysis/analysis.test.common.ts`, which exists for this and is
+  already excluded from `collectCoverageFrom`.
 - jscpd normalizes identifiers and literal values, so two blocks whose only
   differences are variable names or string/number/boolean literals still
   count as clones — enumerated `<Trainer …={…}>` prop lists in two files, or
@@ -504,6 +510,23 @@ they bind any PR that makes a claim about a phone or ships a guard.
   Docker run to discover, since `npm test -- --coverage=false` hides it.
   Prefer formulations with no dead branch (compute `indexOf` and `substring`
   from the same string) over a nullish fallback that can never fire.
+  Two shapes recur and both have a branch-free spelling, found while adding
+  the #824 reversed-role comparison:
+  - **Locating a row and then guarding against its absence.** `find(...)`
+    types as `T | undefined`, so the `undefined` arm has to be written and
+    can be unreachable. Take a maximum over a filtered list instead —
+    `maxExpectedNetPoints(scored.filter(matches))`, which is
+    `Math.max(...[])` and therefore `-Infinity` when nothing matches — and
+    the absent case falls out of the arithmetic with no branch to cover.
+    `src/analysis/discardQuality.ts` already exports that helper.
+  - **Two guards where only one is reachable.** `a === null || b === null`
+    is fully covered only if each operand is decisive on its own somewhere.
+    In `ScoredPossibleKeepDiscards` the tables can be null while no
+    classification exists, but never the reverse, so
+    `tables === null || classification === null` covers all three outcomes
+    and the same pair written the other way round does not. Order the
+    operands so the one that fires alone comes first, rather than adding a
+    test for a state the code cannot reach.
 - The Dockerfile builds its lint surface and its test/build surface from
   different copies. `COPY . .` immediately before `RUN npm run lint` hands lint
   the entire build context, so no file can be missing from the gate; the

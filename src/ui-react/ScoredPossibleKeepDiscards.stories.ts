@@ -1,19 +1,20 @@
 /* jscpd:ignore-start */
 import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import * as playLoader from "../game/expectedPlayPointsTableLoader";
+import { CARDS, parseHand } from "../game/Card";
 import {
   type Meta,
   SORT_ORDER_NAMES,
   SortOrder,
   type StoryObj,
   createArgTypes,
+  expectStoryTextVisible,
   playDoubleExpanded,
   playToggle,
   toDealtCards,
   waitForLoadingToDisappear,
 } from "./stories.common";
 import { expect, fireEvent, fn, within } from "storybook/test";
-import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
@@ -113,6 +114,23 @@ export const SortedByHandPoints: Story = {
     });
 
     await expect(handHeader).toHaveAttribute("aria-sort", "descending");
+  },
+};
+
+/*
+ * Discarding the 9 of diamonds and the 3 of spades here is exactly equal-best
+ * as pone and gives up 3.11 points as dealer, so the caption shows the #824
+ * cause beside the component decomposition it does not replace.
+ */
+export const OppositeRoleOptimalDiscard: Story = {
+  ...createStory(
+    toDealtCards(parseHand("9D,9C,9H,4C,4H,3S"), [0, 5]),
+    SortOrder.Descending,
+  ),
+  play: async ({ canvasElement }) => {
+    await waitForLoadingToDisappear(within(canvasElement));
+
+    await expectStoryTextVisible(canvasElement, "Optimal as pone");
   },
 };
 

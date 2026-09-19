@@ -113,6 +113,7 @@ export const mockTradeOffClassification: MistakeClassification = {
   gainPart: "1.30 Crib gain",
   handLoss: 1.4,
   isFlushMiss: false,
+  isOppositeRoleOptimal: false,
   label: "1.30 Crib gain < 1.40 Hand loss",
   lossPart: "1.40 Hand loss",
   materialComponents: ["hand"],
@@ -120,4 +121,10 @@ export const mockTradeOffClassification: MistakeClassification = {
   netLoss: 0.1,
   playLoss: 0,
   shortLabel: "Crib gain < Hand loss",
+};
+
+// Spread rather than spelled out so the two mocks cannot drift, and so jscpd sees no second copy of the same object literal.
+export const mockOppositeRoleClassification: MistakeClassification = {
+  ...mockTradeOffClassification,
+  isOppositeRoleOptimal: true,
 };

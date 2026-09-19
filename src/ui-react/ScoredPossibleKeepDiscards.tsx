@@ -15,6 +15,7 @@ import {
   classifyScoredMistake,
   formatAccessibleNetLoss,
   formatNetLoss,
+  isOptimalUnderOppositeRole,
 } from "../analysis/classifyMistake";
 import {
   type MouseEvent,
@@ -41,6 +42,7 @@ import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { SortOrder } from "../ui/SortOrder";
 import { getDiscardQuality } from "../analysis/discardQuality";
+import { oppositeRoleLabel } from "../analysis/oppositeRoleLabel";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
@@ -124,48 +126,83 @@ const scoreColumns = [
   },
 ] as const;
 
+interface ExpectedTables {
+  readonly crib: ExpectedCribPointsTable;
+  readonly play: ExpectedPlayPointsTable;
+}
+
+const renderOppositeRoleNote = (
+  classification: MistakeClassification,
+  label: string,
+): React.JSX.Element | null =>
+  classification.isOppositeRoleOptimal ? (
+    <span className={classes.oppositeRoleNote}>{label}</span>
+  ) : null;
+
 interface ChosenDiagnosticInfo {
   readonly chosenClassification: MistakeClassification | null;
   readonly hasChosenCandidate: boolean;
   readonly optimalMargin: OptimalDiscardMargin;
 }
 
-const useChosenDiagnosticInfo = (
-  scoredOptions: readonly ScoredKeepDiscard<DealtCard>[],
-): ChosenDiagnosticInfo =>
+interface ChosenDiagnosticInput {
+  readonly cribRole: CribRole;
+  readonly dealtCards: readonly DealtCard[];
+  readonly scoredOptions: readonly ScoredKeepDiscard<DealtCard>[];
+  readonly tables: ExpectedTables | null;
+}
+
+const useChosenDiagnosticInfo = ({
+  cribRole,
+  dealtCards,
+  scoredOptions,
+  tables,
+}: ChosenDiagnosticInput): ChosenDiagnosticInfo =>
   useMemo(() => {
     const chosen =
       scoredOptions.find((option) =>
         option.discard.every((card) => !card.kept),
       ) ?? null;
     const [best] = scoredOptions;
-    const chosenClassification =
+    const baseClassification =
       best && chosen ? classifyScoredMistake(best, chosen) : null;
 
     return {
-      chosenClassification,
+      /*
+       * The reversed-role enumeration runs only once the first pass has
+       * already called the choice a mistake, so an optimal discard never
+       * pays for it. The discarded cards come from `dealtCards` rather than
+       * from the matched option so that no second narrowing against null is
+       * needed here: the two cards not kept are the discard, by definition.
+       */
+      chosenClassification:
+        tables === null || baseClassification === null
+          ? baseClassification
+          : {
+              ...baseClassification,
+              isOppositeRoleOptimal: isOptimalUnderOppositeRole({
+                cards: dealtCards,
+                chosenDiscardCards: dealtCards.filter((card) => !card.kept),
+                cribRole,
+                tables,
+              }),
+            },
       hasChosenCandidate: chosen !== null,
       optimalMargin: computeOptimalDiscardMargin(scoredOptions),
     };
-  }, [scoredOptions]);
+  }, [cribRole, dealtCards, scoredOptions, tables]);
 
 interface ExpectedTablesState {
   readonly handleRetry: () => void;
   readonly loadError: boolean;
-  readonly tables: {
-    readonly crib: ExpectedCribPointsTable;
-    readonly play: ExpectedPlayPointsTable;
-  } | null;
+  readonly tables: ExpectedTables | null;
 }
 
 const useExpectedTables = (
   loadCribTable: () => Promise<ExpectedCribPointsTable>,
   loadPlayTable: () => Promise<ExpectedPlayPointsTable>,
 ): ExpectedTablesState => {
-  const [tables, setTables] = useState<{
-    readonly crib: ExpectedCribPointsTable;
-    readonly play: ExpectedPlayPointsTable;
-  } | null>(() => {
+  const [tables, setTables] = useState<ExpectedTables | null>(() => {
     const crib = cribLoader.getTableSync();
     const play = playLoader.getTableSync();
     return crib && play ? { crib, play } : null;
@@ -221,7 +258,12 @@ export function ScoredPossibleKeepDiscards({
     [cribRole, dealtCards, tables],
   );
   const { chosenClassification, hasChosenCandidate, optimalMargin } =
-    useChosenDiagnosticInfo(scoredKeepDiscardsByNetScore);
+    useChosenDiagnosticInfo({
+      cribRole,
+      dealtCards,
+      scoredOptions: scoredKeepDiscardsByNetScore,
+      tables,
+    });
   const renderedAnalysis = useMemo(
     (): RenderedAnalysis => ({
       cribRole,
@@ -344,10 +386,16 @@ export function ScoredPossibleKeepDiscards({
     if (!hasChosenCandidate) {
       return null;
     }
+    const oppositeRole = oppositeRoleLabel(cribRole);
+    // Placed to match the rendered order below, so what a screen reader hears is the order a sighted reader sees.
+    const oppositeRoleCause =
+      chosenClassification?.isOppositeRoleOptimal === true
+        ? `${oppositeRole.accessibleLabel}. `
+        : "";
     const captionAriaLabel =
       chosenClassification === null
         ? optimalMargin.accessibleLabel
-        : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.accessibleLabel}`;
+        : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${oppositeRoleCause}${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
         aria-label={captionAriaLabel}
@@ -362,6 +410,8 @@ export function ScoredPossibleKeepDiscards({
               Sub-optimal: {formatNetLoss(chosenClassification.netLoss)} pts
               lost
             </span>
+            {/* Before the decomposition, not after it: the decomposition is the widest chip and always takes a row of its own on a portrait phone, so a cause placed after it starts a third row while the same chip placed here shares the first one (#824, measured against the #802 caption-height guard). */}
+            {renderOppositeRoleNote(chosenClassification, oppositeRole.label)}
             <span className={classes.diagnosticReason}>
               {chosenClassification.gainPart === null ? (
                 <span className={classes.diagnosticSide}>
