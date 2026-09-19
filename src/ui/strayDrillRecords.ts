@@ -133,8 +133,9 @@ const drilledHandsBySignature = (
  *
  * Idempotent: one pass leaves nothing a second could match. Retaining a row
  * is the safe direction but not a free one — it holds a slot under
- * `MAX_RECORDS`, feeds `isAtRecordCap`, and owns its `handKey` against a
- * later authentic deal of those cards (#830).
+ * `MAX_RECORDS` and feeds `isAtRecordCap`. It no longer costs a later
+ * authentic deal of those cards its record: `recordDiscardDecision` matches
+ * an authentic decision only against an authentic row (#830).
  */
 export const withoutStrayDrillRecords = (
   records: readonly DiscardDecisionRecord[],

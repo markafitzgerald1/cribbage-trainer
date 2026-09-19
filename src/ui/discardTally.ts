@@ -359,11 +359,33 @@ const extendStoredTally = (
 };
 
 /*
- * Idempotent by hand rather than by call. Collapsing repeats here rather than
- * in the caller is what makes a reload safe: a completed discard restored
- * from its own URL renders exactly as a fresh one does, and no amount of care
+ * Which stored record, if any, this decision is a repeat of. Idempotency is
+ * by hand rather than by call: collapsing repeats here rather than in the
+ * caller is what makes a reload safe, since a completed discard restored
+ * from its own URL renders exactly as a fresh one does and no amount of care
  * in a component can tell the two apart.
+ *
+ * Directional on purpose, and both directions are load-bearing. A practice
+ * record must not absorb an authentic decision: practice covers manually
+ * entered, seeded, deep-linked and history-restored hands as well as retained
+ * drill rows, and any of them owning a hand's key would drop a later
+ * authentic deal of those six cards in that order and role — silently, since
+ * the loss is a decision that was never counted and no figure afterwards
+ * looks wrong (#830). An authentic record must still absorb a practice
+ * decision, because that is how a drill's attempt folds into the record of
+ * the hand it stands in for instead of appending a row naming cards the
+ * player never met (#809).
  */
+const repeatOf = (
+  records: readonly DiscardDecisionRecord[],
+  decision: DiscardDecisionRecord,
+): DiscardDecisionRecord | undefined =>
+  records.find(
+    (record) =>
+      record.handKey === decision.handKey &&
+      (!record.isPractice || decision.isPractice),
+  );
+
 export const recordDiscardDecision = (
   decision: DiscardDecisionRecord,
 ): DiscardTallySummary => {
@@ -386,10 +408,7 @@ export const recordDiscardDecision = (
     return readDiscardTally(Date.now());
   }
   return extendStoredTally(decision.at, (tally) => {
-    const existing = tally.records.find(
-      (record) => record.handKey === decision.handKey,
-    );
-    if (existing) {
+    if (repeatOf(tally.records, decision)) {
       return tally;
     }
     const recencyAt = tally.practice.reduce(
