@@ -77,34 +77,13 @@ const recencyOf = (record: DiscardDecisionRecord): number =>
   record.recencyAt ?? record.at;
 
 /*
- * When #808 merged: a conservative bound on the production era, not on the
- * code. Before the merge, production drilled a mistake by dealing that
- * mistake's own cards again and `recordDiscardDecision`'s idempotency
- * absorbed the re-attempt — but PR previews and local checkouts ran the
- * offending code earlier, and #809's own reproduction came from a live #808
- * preview, so strays dated before this do exist. They are spared, which is
- * the safe direction; what this cannot claim is to be the earliest instant
- * any build could write one.
- *
- * This is a conservative filter, NOT a necessary condition of a stray, and
- * not proof of era. Two separate reasons, both raised in review after
- * earlier drafts of this comment claimed more than the data supports:
- *
- * A stray written by a browser clock running behind the cutoff fails this
- * check and is kept, so not every stray satisfies it — which is what a
- * necessary condition would mean. And a row written after the cutoff is not
- * thereby post-#808: the production deploy follows the merge, and a tab
- * holding the old bundle goes on writing with the old code indefinitely
- * after both, so a legitimate row can carry a later `at` on a perfectly
- * correct clock. No timestamp can separate those, because `at` is the
- * writing browser's wall clock and no release provenance was ever persisted
- * to consult instead — the whole difficulty of a migration written after the
- * fact.
- *
- * What it does buy, and the only claim made for it: relative to the
- * necessary conditions below, it can only ever spare rows. It never causes a
- * deletion those conditions would not already have made, and on a roughly
- * correct clock it spares the great majority of genuinely older rows.
+ * When #808 merged, used as a filter and not as a necessary condition of a
+ * stray: previews and local checkouts ran the offending code before the
+ * merge, `at` is the writing browser's wall clock rather than release
+ * provenance, and no provenance was ever persisted to consult instead. So it
+ * proves nothing about era. What it buys is one-directional — relative to
+ * the conditions below it can only spare rows, never cause a deletion they
+ * would not already have made. #814 has the argument.
  */
 export const DRILL_RELABELING_SHIPPED_AT = Date.parse("2026-09-15T04:01:53Z");
 
@@ -133,80 +112,29 @@ const drilledHandsBySignature = (
 };
 
 /*
- * Drops the practice rows that #808's suit-permuted drills left behind, and
- * nothing else it can rule out. Between #808 shipping and #809 landing, every
- * committed drill attempt keyed its decision record by the relabeled cards on
- * screen, so it escaped `recordDiscardDecision`'s idempotency and appended a
- * row naming six cards the player was never dealt. One row per distinct
- * relabeling rather than one per attempt: `suitPermutationForView` rules out
- * the identity and the previous view, not every earlier one, so a hand using
- * few suits exhausts its relabelings and later views land on a key already
- * recorded, which idempotency then absorbs. A single-suited hand has only
- * three. A code change cannot reach
- * back into `localStorage`, so those rows are swept here instead.
+ * Drops the rows #808's suit-permuted drills left behind: each committed
+ * attempt keyed its record by the relabeled cards on screen, escaping
+ * `recordDiscardDecision`'s idempotency, and a code change cannot reach back
+ * into `localStorage`.
  *
- * The test is narrower than "matches no stored mistake", which was the shape
- * #809 proposed: a manually entered or seeded-session hand also records with
- * `isPractice: true` and has no ledger entry and no mistake-queue entry of its
- * own, because only the drill calls `recordPracticeAttempt`. Deleting those is
- * exactly what the over-broad fix reverted during #808's review took with
- * it, against `discardDecisionRecord`'s own contract that they are kept and
- * merely excluded from the headline averages.
+ * Every condition below is a necessary condition of a stray, derived where
+ * it is declared, and the release cutoff above is a filter on top. The
+ * obvious test — a practice row matching no stored mistake — is not one of
+ * them and must not become one: manually entered, seeded and deep-linked
+ * hands all record as practice with no ledger entry, and deleting them is
+ * what the over-broad fix reverted during #808's review did.
  *
- * So a row is swept only when it meets every necessary condition of a stray
- * that survives in what was written — it is a suit relabeling of a hand that
- * was actually drilled, it is not that hand's own key, that relabeling moves
- * every suit the hand uses, and it was recorded before the hand's last drill
- * — and additionally clears the release cutoff above, which is a
- * conservative filter rather than a fifth necessary condition and is
- * documented as such where it is defined. Each is derived where it is
- * declared. None of them is sufficient on
- * its own, and even together they do not amount to proof. Any row that
- * satisfies all of them is indistinguishable from a stray, because nothing
- * recorded at the time says which code path wrote it and no amount of
- * reading storage can recover that. Every source of an
- * `isPractice` row qualifies, not just hand entry: a seeded session's own
- * deals and a deep-linked hand are recorded the same way and have no ledger
- * entry either, so they sit in the ambiguous set on identical terms. Both
- * reviewers of #814 raised this, and it is why the conditions are stacked
- * rather than reduced to the cheapest one: each shrinks that set without
- * ever costing a row the remaining conditions would have kept.
+ * None of the conditions is sufficient even together, so a row satisfying
+ * all of them is indistinguishable from a stray; stacking them shrinks that
+ * ambiguity without ever costing a row the rest would have kept. A stray
+ * survives whenever any one fails, which is the whole account — negate the
+ * conditions rather than trusting a list, since three attempts at listing
+ * the cases here were each contradicted by another paragraph.
  *
- * Idempotent by construction: one pass leaves nothing that a second could
- * match.
- *
- * **A stray survives whenever any one of the conditions fails for it**, and
- * that statement rather than a list is the complete account — the third
- * count this comment tried to give was contradicted by the cutoff's own
- * paragraph above, which is the failure mode this module is otherwise about.
- * To enumerate the cases, read the conditions and negate each in turn rather
- * than trusting a tally here. Two are worth knowing because neither is
- * visible from the conditions themselves: the decision row and the practice
- * attempt are separate `localStorage` writes, so a quota failure between
- * them persists a row whose identifying ledger entry never landed; and a
- * relabeled key can collide exactly with some OTHER drilled hand's key,
- * which the exact-key exemption then spares, needing that hand's own
- * decision record to have been evicted while its ledger entry survived,
- * since otherwise idempotency would have absorbed the colliding row rather
- * than appending it. That exemption is not worth narrowing to catch it,
- * because narrowing it is what would start deleting the original-key rows
- * this whole module exists to protect.
- *
- * Every one of them errs toward keeping a row, which is the safer direction
- * but is not a harmless one. A retained row occupies a slot under
- * `MAX_RECORDS`, so it can evict authentic history on a later write, and
- * `computeDiscardQualityTrend` derives `isAtRecordCap` from
- * `tally.records.length` without excluding practice rows, which the trend
- * dialog then shows. Worse, and the reason keeping a row is not free:
- * `recordDiscardDecision` matches its idempotency key on `handKey` alone,
- * with no `isPractice` qualification, so a retained row claims that key. If
- * those six cards are ever dealt authentically in that same order under that
- * same role, the real decision is skipped along with its lifetime
- * contribution, silently. An exactly ordered six-card collision from a real
- * deal is somewhere around one in 10^10, so this is a correctness statement
- * rather than a practical hazard — but it is the true cost of a retained
- * row, and hidden from the averages, the chart points and the mistake queue
- * is not the same as hidden.
+ * Idempotent: one pass leaves nothing a second could match. Retaining a row
+ * is the safe direction but not a free one — it holds a slot under
+ * `MAX_RECORDS`, feeds `isAtRecordCap`, and owns its `handKey` against a
+ * later authentic deal of those cards (#830).
  */
 export const withoutStrayDrillRecords = (
   records: readonly DiscardDecisionRecord[],

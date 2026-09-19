@@ -180,31 +180,16 @@ const readStoredTally = (): StoredTally | null => {
     lifetime: parseLifetime(candidate.lifetime),
     practice,
     /*
-     * Filtered on every read rather than migrated once behind a version bump,
-     * which would rewrite the stored `version` of a tally that predates the
-     * defect and make it unreadable to any older deploy still in a tab — a
-     * steep price for a cleanup. Repeating the filter is not free, though:
-     * each read parses and canonicalizes every ledger hand and every practice
-     * row's key. Measured at the 10,000-record cap on a desktop Node 24
-     * build, 50 practice rows against 50 drilled hands cost 0.25ms per read
-     * and an implausible 10,000 practice rows against 200 drilled hands cost
-     * 0.66ms. That is the whole of the evidence: no phone was measured, so
-     * this says nothing about the hardware the app is actually used on.
-     * Re-measure rather than trust these if the shape changes.
-     *
-     * This is read-time filtering, not a write: every reader above is clean
-     * immediately, and storage itself stops holding the row at the next write
-     * through `extendStoredTally` that actually persists — a quota failure or
-     * a storage-disabled browser leaves the original bytes in place and keeps
-     * the swept tally in memory only.
-     * A tally nobody writes to again keeps its stray bytes, and they are not
-     * free: no reader can see them, but every later read pays to parse,
-     * canonicalize and filter them again, which is the same per-read work
-     * measured above rather than a one-off.
-     * Persisting during a read was the alternative and is worse: every tab
-     * merely displaying the tally would bump `revision`, which is the one
-     * signal other tabs use to decide storage has moved, and `basisFor` would
-     * then drop their unsaved hands.
+     * Filtered on every read rather than migrated behind a version bump,
+     * which would make a tally predating the defect unreadable to an older
+     * deploy still open in a tab. Readers are clean immediately; the bytes
+     * go at the next write that actually persists, so a quota failure leaves
+     * them in place and every later read pays to filter them again. Measured
+     * at the record cap on desktop Node 24: 0.25ms per read for 50 practice
+     * rows against 50 drilled hands, 0.66ms for an implausible all-practice
+     * tally, and no phone was measured. Persisting during a read is worse —
+     * every tab merely displaying the tally would bump `revision`, and
+     * `basisFor` would drop other tabs' unsaved hands.
      */
     records: withoutStrayDrillRecords(
       Array.isArray(records) ? normalizeStoredRecords(records) : [],
