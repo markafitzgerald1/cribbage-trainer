@@ -13,6 +13,7 @@ import {
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
+import { oppositeRoleLabel } from "../analysis/oppositeRoleLabel";
 import { useMemo } from "react";
 
 const PERCENT_MULTIPLIER = 100;
@@ -64,6 +65,32 @@ const renderPreviousDiscard = (
     )}
   </div>
 );
+
+/*
+ * Sits beside the component badge rather than replacing it (#824): the
+ * decomposition stays true and carries the magnitudes, while this names the
+ * cause the decomposition cannot express.
+ */
+const renderOppositeRoleBadge = (
+  classification: MistakeClassification | null,
+  cribRole: CribRole,
+): React.JSX.Element | null => {
+  if (classification?.isOppositeRoleOptimal !== true) {
+    return null;
+  }
+  const { accessibleLabel, label } = oppositeRoleLabel(cribRole);
+  const description = `Previous discard ${accessibleLabel}`;
+  return (
+    <span
+      aria-label={description}
+      className={classes.oppositeRoleBadge}
+      role="note"
+      title={description}
+    >
+      {label}
+    </span>
+  );
+};
 
 const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
   item.isMastered ? (
@@ -119,6 +146,7 @@ export function MistakeQueueItemCard({
               Prev: {effectiveShortReason}
             </span>
           )}
+          {renderOppositeRoleBadge(classification, item.cribRole)}
         </div>
         <div>{renderStatusBadge(item)}</div>
       </div>

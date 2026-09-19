@@ -23,6 +23,7 @@ export const itemStats: string;
 export const lossBadge: string;
 export const masteredBadge: string;
 export const noPreviousDiscard: string;
+export const oppositeRoleBadge: string;
 export const option: string;
 export const paginationRow: string;
 export const previousDiscard: string;

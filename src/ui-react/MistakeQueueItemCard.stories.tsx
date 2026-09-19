@@ -7,6 +7,7 @@ import {
 import { expect, fn, within } from "storybook/test";
 import {
   mockItemA,
+  mockOppositeRoleClassification,
   mockTradeOffClassification,
 } from "../ui/mistakeQueue.test.common";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
@@ -67,6 +68,23 @@ export const WithLossReason: Story = {
   },
   play: async ({ canvasElement }) => {
     await expectStoryTextVisible(canvasElement, "Prev: Crib");
+  },
+};
+
+// Both badges are asserted together because the #824 cause sits beside the component decomposition rather than replacing it.
+export const WithOppositeRoleCause: Story = {
+  args: {
+    classification: mockOppositeRoleClassification,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const cause = canvas.getByRole("note", {
+      name: "Previous discard optimal as pone, not as dealer",
+    });
+
+    await expect(cause).toBeVisible();
+    await expect(cause).toHaveTextContent("Optimal as pone");
+    await expect(canvas.getByText("Prev: Crib gain < Hand loss")).toBeVisible();
   },
 };
 
