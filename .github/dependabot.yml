@@ -30,6 +30,14 @@ updates:
       # Blocked by @typescript-eslint peer range (ERESOLVE in PR #662).
       - dependency-name: "typescript"
         versions: [">=7.0.0 <=7.0.2"]
+      # Bounded to the current release (not >=5) so the ignore ages out and
+      # prompts a periodic compatibility re-check, matching the eslint entry.
+      # Blocked by @storybook/addon-vitest@10.6.0's ^3.0.0 || ^4.0.0 peer
+      # range. Vitest 5 becomes available when Storybook widens that range.
+      - dependency-name: "vitest"
+        versions: [">=5.0.0 <=5.0.1"]
+      - dependency-name: "@vitest/*"
+        versions: [">=5.0.0 <=5.0.1"]
       - dependency-name: "playwright"
       - dependency-name: "@playwright/test"
 
