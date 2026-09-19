@@ -1,0 +1,109 @@
+name: pull-request-size
+on:
+  # labeled/unlabeled are what make the size-exception label an escape hatch
+  # that works without a push. This lives in its own workflow rather than in
+  # npm-build-test-upload-artifact-and-deploy.yml precisely because of those
+  # two types: adding them there would rebuild the Docker gate and republish
+  # the Pages preview every time a label is toggled.
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+concurrency:
+  # Keyed on the pull request rather than the branch, since this workflow only
+  # ever runs on pull_request. cancel-in-progress is deliberately false: a
+  # label event does not change the head SHA, so cancelling would leave a
+  # CANCELLED check-run for this job on the *current* head, which #786
+  # records keeping merge BLOCKED until the next push. That would make the
+  # label escape hatch recoverable only by the push it exists to avoid. The
+  # main workflow can afford cancellation because its cancellations always
+  # land on a superseded SHA; this one cannot. Runs queue instead, which
+  # costs seconds because the gate installs nothing.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  measure-pull-request-size:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # to post and update the sticky size report comment
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # The merge base is only reachable with both sides' full history.
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: ".nvmrc"
+
+      # continue-on-error so an over-cap pull request still gets its report
+      # comment; the final step turns the recorded outcome back into a
+      # failure. No npm install: the gate is dependency-free on purpose, so a
+      # label toggle costs seconds rather than a full install.
+      - id: measure
+        name: Measure source lines changed against the merge base
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          PR_SIZE_REPORT_FILE: ${{ runner.temp }}/pr-size-report.md
+        run: node scripts/prSizeGate.mjs "$BASE_SHA" "$HEAD_SHA"
+
+      # Skipped for fork pull requests, whose token cannot write comments, and
+      # whenever the measurement produced no status - an empty marker would
+      # match the first comment on the pull request and overwrite it.
+      # continue-on-error so a GitHub API hiccup cannot fail the gate for a
+      # reason that is not the size verdict. The report is a convenience; the
+      # verdict lives in the measure step's outcome and the job summary. An
+      # earlier `gh api --slurp` bug failed this step and reddened the check
+      # at a moment when red was independently expected, and only the job log
+      # separated the two - isolating the step removes that class, not just
+      # that instance.
+      - name: Post or update the size report comment
+        continue-on-error: true
+        if: steps.measure.outputs.status != '' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MARKER: ${{ steps.measure.outputs.marker }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPORT_FILE: ${{ runner.temp }}/pr-size-report.md
+          STATUS: ${{ steps.measure.outputs.status }}
+        run: |
+          set -o pipefail
+          # gh rejects --slurp together with --jq, so the pages are slurped by
+          # a separate jq instead: --paginate alone emits one JSON array per
+          # page, and gh's own --jq would then run per page and miss a match
+          # on any page after the first.
+          EXISTING=$(gh api --paginate \
+            "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+            | jq --slurp --raw-output --arg marker "$MARKER" \
+              'add // [] | map(select(.body | startswith($marker))) | .[0].id // empty')
+          if [ -z "$EXISTING" ] && [ "$STATUS" = "pass" ]; then
+            echo "Within budget and no existing report; nothing to post."
+            exit 0
+          fi
+          if [ -n "$EXISTING" ]; then
+            gh api --method PATCH \
+              "repos/$GITHUB_REPOSITORY/issues/comments/$EXISTING" \
+              --field "body=@$REPORT_FILE" --silent
+          else
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+              --field "body=@$REPORT_FILE" --silent
+          fi
+
+      - name: Fail when the gate did not pass
+        if: steps.measure.outcome == 'failure'
+        env:
+          STATUS: ${{ steps.measure.outputs.status }}
+        run: |
+          if [ "$STATUS" = "fail" ]; then
+            echo "::error::Too many gated source lines changed. The job summary and the size report comment carry the per-bucket counts and the remedy."
+          else
+            echo "::error::The pull request size measurement did not run to completion; see the step log above."
+          fi
+          exit 1

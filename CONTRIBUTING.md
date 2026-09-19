@@ -84,6 +84,15 @@ npm run docker:build-and-test-all
   so a branch without an open PR gets no CI.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages.
+- A second workflow, `.github/workflows/pull-request-size.yml`, measures how
+  many **source** lines a pull request changes against its merge base and
+  fails above 400, warning above 250. Lockfiles, Markdown, tests, stories,
+  `tests-e2e/`, and binary files are reported separately and do not count
+  toward that total, so a dependency bump or a well-tested change is not
+  penalised. If a change genuinely cannot be split, apply the
+  `size-exception` label — the workflow re-runs on `labeled`/`unlabeled`, so
+  no push is needed — and say in the description why. Reproduce the number
+  locally with `node scripts/prSizeGate.mjs <base-ref> <head-ref>`.
 
 ## Commit messages
 
