@@ -197,8 +197,10 @@ const readStoredTally = (): StoredTally | null => {
      * through `extendStoredTally` that actually persists — a quota failure or
      * a storage-disabled browser leaves the original bytes in place and keeps
      * the swept tally in memory only.
-     * A tally nobody writes to again keeps its stray bytes, which costs the
-     * quota they occupy and nothing else, since no reader can see them.
+     * A tally nobody writes to again keeps its stray bytes, and they are not
+     * free: no reader can see them, but every later read pays to parse,
+     * canonicalize and filter them again, which is the same per-read work
+     * measured above rather than a one-off.
      * Persisting during a read was the alternative and is worse: every tab
      * merely displaying the tally would bump `revision`, which is the one
      * signal other tabs use to decide storage has moved, and `basisFor` would

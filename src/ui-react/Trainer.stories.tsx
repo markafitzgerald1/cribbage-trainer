@@ -414,9 +414,13 @@ export const PracticeDrillFromMistakeQueue = {
 
 /*
  * The #809 sweep, end to end in a real browser rather than only in Jest.
- * Its whole point is that nothing on screen changes — every consumer already
- * filters practice rows — so the assertion is against storage, which is the
- * only place the migration is observable. The write is forced by completing
+ * Nothing on screen changes for this fixture, so the assertion is against
+ * storage. That is a property of the fixture and not of the sweep: at the
+ * record cap, dropping a stray takes `tally.records.length` back under
+ * `MAX_RECORDS`, and `computeDiscardQualityTrend` reads that length without
+ * excluding practice rows, so the trend dialog's cap notice can disappear.
+ * A capped fixture would therefore have a visible effect worth asserting on
+ * screen; this one does not. The write is forced by completing
  * a discard, because the sweep filters on read and persists at the next
  * write that lands.
  */

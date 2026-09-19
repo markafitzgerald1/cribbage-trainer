@@ -205,8 +205,12 @@
   threshold pinned to the first turned the second red on nothing at all.
   Statements, functions and lines were identical across both runs, so the
   jitter is branches specifically rather than coverage generally. A quarter
-  point of margin absorbs it and is still far tighter than any real
-  regression. The two disagree by a
+  point of margin absorbs it, and the trade is explicit rather than free: a
+  regression smaller than the margin now passes, so roughly a quarter point
+  of branch coverage and a fifth of a point of function coverage can be lost
+  without the gate noticing. That is the price of not failing builds on
+  noise, and it is the reason to keep the margin at the measured variance
+  rather than rounding it up for comfort. The two disagree by a
   branch or so, and a threshold set from the local number can fail the build
   during `storybook:test:coverage` — a _build_ step, before any test runs —
   which reads as an unrelated breakage. **Which way they differ is not
