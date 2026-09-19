@@ -20,6 +20,7 @@ import {
 } from "../game/suitPermutation";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import type { DisplayedHandRelabeling } from "./useDiscardTally";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { mockItemA } from "../ui/mistakeQueue.test.common";
@@ -101,6 +102,8 @@ export interface Harness {
   readonly drill: () => PracticeDrill;
   readonly exit: () => void;
   readonly forwardedAnalyses: readonly RenderedAnalysis[];
+  // What each forwarded analysis said the board was showing: a drill's relabeling, or null for the board's own cards.
+  readonly forwardedRelabelings: readonly (DisplayedHandRelabeling | null)[];
   readonly generateRandomNumberCalls: number;
   readonly loadedHands: readonly PracticeDrillHand[];
   readonly loadHandCalls: number;
@@ -121,6 +124,7 @@ export const DRILL_ROLE = mockItemA.cribRole;
 export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
   const loadedHands: PracticeDrillHand[] = [];
   const forwardedAnalyses: RenderedAnalysis[] = [];
+  const forwardedRelabelings: (DisplayedHandRelabeling | null)[] = [];
   // Trainer's real loadHand swaps the board to the drilled hand; opt in when a test needs that follow-through (a Draw-another to different cards).
   const boardControls: { rerender?: (props: BoardProps) => void } = {};
   const loadHand = jest.fn<(hand: PracticeDrillHand) => void>((hand) => {
@@ -142,7 +146,10 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
         dealtCards: cards,
         generateRandomNumber,
         loadHand,
-        onAnalysisRendered: (analysis) => forwardedAnalyses.push(analysis),
+        onAnalysisRendered: (analysis, displayedAs) => {
+          forwardedAnalyses.push(analysis);
+          forwardedRelabelings.push(displayedAs);
+        },
       }),
     { initialProps: { cards: dealtCards, role: DRILL_ROLE } },
   );
@@ -163,6 +170,9 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
     exit: () => step((drill) => drill.onExit()),
     get forwardedAnalyses() {
       return forwardedAnalyses;
+    },
+    get forwardedRelabelings() {
+      return forwardedRelabelings;
     },
     get generateRandomNumberCalls() {
       return generateRandomNumber.mock.calls.length;

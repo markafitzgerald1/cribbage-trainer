@@ -6,11 +6,14 @@ import {
   type RenderedAnalysis,
   useDiscardTelemetry,
 } from "./useDiscardTelemetry";
+import {
+  type DisplayedHandRelabeling,
+  useDiscardTally,
+} from "./useDiscardTally";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import { useCallback } from "react";
-import { useDiscardTally } from "./useDiscardTally";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*
  * The telemetry surface, plus what the tally needs on top of it. Replacing a
@@ -41,10 +44,27 @@ export type ReportHistoryNavigation = (
   cribRole: CribRole | null,
 ) => void;
 
+/*
+ * The one asymmetry between the two readers, and the reason this signature
+ * is not simply telemetry's. A practice drill can put a suit-relabeled
+ * stand-in for a stored hand on the board, which the local tally has to undo
+ * before it can say which decision was made (#809); telemetry has no use for
+ * it and must not receive it, since its payloads are card-free and a suit
+ * renaming is card data. Passing it beside the analysis rather than inside
+ * `RenderedAnalysis` is what makes that structural instead of a rule someone
+ * has to keep: the value never reaches the type telemetry consumes. Null
+ * from every caller showing the cards it means.
+ */
+export type ReportAnalysisRendered = (
+  analysis: RenderedAnalysis,
+  displayedAs: DisplayedHandRelabeling | null,
+) => void;
+
 export interface AnalysisReporting extends Omit<
   DiscardTelemetry,
-  "reportHandReplaced" | "reportHistoryNavigation"
+  "reportAnalysisRendered" | "reportHandReplaced" | "reportHistoryNavigation"
 > {
+  readonly reportAnalysisRendered: ReportAnalysisRendered;
   readonly reportHandReplaced: ReportHandReplaced;
   readonly reportHistoryNavigation: ReportHistoryNavigation;
   readonly tallySummary: DiscardTallySummary;
@@ -82,10 +102,10 @@ export const useAnalysisReporting = (
     summary: tallySummary,
   } = tally;
 
-  const reportAnalysisRendered = useCallback(
-    (analysis: RenderedAnalysis) => {
+  const reportAnalysisRendered: ReportAnalysisRendered = useCallback(
+    (analysis, displayedAs) => {
       reportAnalysisToTelemetry(analysis);
-      addAnalysisToTally(analysis);
+      addAnalysisToTally(analysis, displayedAs);
     },
     [addAnalysisToTally, reportAnalysisToTelemetry],
   );

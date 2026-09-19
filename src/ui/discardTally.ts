@@ -11,6 +11,7 @@ import {
 } from "./practiceLedger";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 import { isObject } from "./isObject";
+import { withoutStrayDrillRecords } from "./strayDrillRecords";
 export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
 /*
@@ -172,12 +173,28 @@ const readStoredTally = (): StoredTally | null => {
     return emptyTally;
   }
   const { records } = candidate;
+  const practice = Array.isArray(candidate.practice)
+    ? candidate.practice.filter(isStoredPracticeRecord)
+    : [];
   return {
     lifetime: parseLifetime(candidate.lifetime),
-    practice: Array.isArray(candidate.practice)
-      ? candidate.practice.filter(isStoredPracticeRecord)
-      : [],
-    records: Array.isArray(records) ? normalizeStoredRecords(records) : [],
+    practice,
+    /*
+     * Filtered on every read rather than migrated behind a version bump,
+     * which would make a tally predating the defect unreadable to an older
+     * deploy still open in a tab. Readers are clean immediately; the bytes
+     * go at the next write that actually persists, so a quota failure leaves
+     * them in place and every later read pays to filter them again. Measured
+     * at the record cap on desktop Node 24: 0.25ms per read for 50 practice
+     * rows against 50 drilled hands, 0.66ms for an implausible all-practice
+     * tally, and no phone was measured. Persisting during a read is worse —
+     * every tab merely displaying the tally would bump `revision`, and
+     * `basisFor` would drop other tabs' unsaved hands.
+     */
+    records: withoutStrayDrillRecords(
+      Array.isArray(records) ? normalizeStoredRecords(records) : [],
+      practice,
+    ),
     // Absent in a tally written before revisions were kept, which simply starts the count.
     revision: typeof candidate.revision === "number" ? candidate.revision : 0,
     skipped: Array.isArray(candidate.skipped)

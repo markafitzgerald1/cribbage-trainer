@@ -1,4 +1,8 @@
-import { type DiscardTally, useDiscardTally } from "./useDiscardTally";
+import {
+  type DiscardTally,
+  type DisplayedHandRelabeling,
+  useDiscardTally,
+} from "./useDiscardTally";
 import type {
   HandReplacementCause,
   RenderedAnalysis,
@@ -6,6 +10,7 @@ import type {
 import { act, renderHook } from "@testing-library/react";
 import { clearDiscardTally, readDiscardTally } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
+import type { DealtCard } from "../game/DealtCard";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 
@@ -27,30 +32,53 @@ const scoredAnalysis: RenderedAnalysis = {
   quality: { expectedPointsLoss: 2, isOptimal: false },
 };
 
-// Reporting a score sets state, so every call goes through act rather than each test remembering to.
+/*
+ * Reporting a score sets state, so every call goes through act rather than
+ * each test remembering to. `displayedAs` is what a practice drill passes to
+ * say the board is showing a relabeled stand-in; null is every other caller,
+ * which is the default here because it is also the default in the app.
+ */
 export const reportScore = (
   tally: DiscardTally,
   analysis: RenderedAnalysis = scoredAnalysis,
+  displayedAs: DisplayedHandRelabeling | null = null,
 ) => {
   act(() => {
-    tally.reportAnalysisRendered(analysis);
+    tally.reportAnalysisRendered(analysis, displayedAs);
   });
 };
 
 // Each hand replacement opens its own telemetry scope, so deriving the identifier from the cards keeps every hand distinct without a parameter at each call.
 export const scopeFor = (hand: string) => `${hand}-scope`;
 
+const noteOriginWith = (
+  tally: DiscardTally,
+  cause: HandReplacementCause,
+  { cards, handId }: { cards: readonly DealtCard[]; handId: string },
+) => {
+  act(() => {
+    tally.reportHandOrigin(cards, cause, {
+      cribRole: CribRole.Dealer,
+      handId,
+    });
+  });
+};
+
 export const noteOrigin = (
   tally: DiscardTally,
   hand: string,
   cause: HandReplacementCause,
 ) => {
-  act(() => {
-    tally.reportHandOrigin(handOf(hand), cause, {
-      cribRole: CribRole.Dealer,
-      handId: scopeFor(hand),
-    });
-  });
+  noteOriginWith(tally, cause, { cards: handOf(hand), handId: scopeFor(hand) });
+};
+
+// The same, for a board whose cards no hand string describes — a drill's relabeled stand-in.
+export const noteOriginOfCards = (
+  tally: DiscardTally,
+  cards: readonly DealtCard[],
+  cause: HandReplacementCause,
+) => {
+  noteOriginWith(tally, cause, { cards, handId: "relabeled-hand-scope" });
 };
 
 /*

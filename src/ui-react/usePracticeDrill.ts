@@ -14,7 +14,9 @@ import { readTallyForDisplay, recordPracticeAttempt } from "../ui/discardTally";
 import { useCallback, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import type { DisplayedHandRelabeling } from "./useDiscardTally";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
+import type { ReportAnalysisRendered } from "./useAnalysisReporting";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
@@ -74,29 +76,39 @@ interface UsePracticeDrillArgs {
   readonly generateRandomNumber: () => number;
   // The manual hand-load path, so the loaded hand is flagged practice and never enters the headline averages.
   readonly loadHand: (hand: PracticeDrillHand) => void;
-  readonly onAnalysisRendered: (analysis: RenderedAnalysis) => void;
+  readonly onAnalysisRendered: ReportAnalysisRendered;
 }
 
 /*
- * `suitPermutationForView`'s own doc comment covers why this derives from a
+ * The renaming a given view of a drilled mistake is shown under. Three
+ * callers need it — the cards on the board, the "Before" discard beside
+ * them, and the identity the tally is told to undo — and each calls this
+ * independently rather than sharing one computed value. What keeps them
+ * agreeing is that the result is a pure function of `item` and `viewIndex`
+ * and all three pass the same pair, not that a single value is threaded
+ * through them: pass a different pair from any one of them and they diverge
+ * silently.
+ *
+ * `suitPermutationForView`'s own doc comment covers why it derives from a
  * view count rather than `item.attempts` or the shared `generateRandomNumber`
  * stream; `viewIndex` here comes from `viewCounts` below, a count of views
  * rather than commits.
  *
- * `drillLive` and the previous-discard display below recompute the same
- * value from the same arguments rather than caching it: `activeItem` itself
- * changes (`onNextHand` replaces it with the next drilled item), and a cache
- * keyed on anything less than all of `item`, `handKey` and `viewIndex`
- * could hand a later view the wrong permutation.
+ * Every caller recomputes this from the same arguments rather than caching
+ * it: `activeItem` itself changes (`onNextHand` replaces it with the next
+ * drilled item), and a cache keyed on anything less than all of `item`,
+ * `handKey` and `viewIndex` could hand a later view the wrong permutation.
  */
+const drillRelabeling = (
+  item: MistakeQueueItem,
+  viewIndex: number,
+): DisplayedHandRelabeling =>
+  suitPermutationForView(item.cards, item.handKey, viewIndex);
+
 const permutedDrillCards = (
   item: MistakeQueueItem,
   viewIndex: number,
-): Card[] =>
-  permuteCardSuits(
-    item.cards,
-    suitPermutationForView(item.cards, item.handKey, viewIndex),
-  );
+): Card[] => permuteCardSuits(item.cards, drillRelabeling(item, viewIndex));
 
 // The one place a drill hand is turned into cards on the board.
 const toDrillHand = (
@@ -122,7 +134,7 @@ const permutedPreviousDiscard = (
     : serializeHand(
         permuteCardSuits(
           parseHand(item.previousDiscard),
-          suitPermutationForView(item.cards, item.handKey, viewIndex),
+          drillRelabeling(item, viewIndex),
         ),
       );
 
@@ -269,7 +281,19 @@ export const usePracticeDrill = ({
 
   const handleAnalysisRendered = useCallback(
     (analysis: RenderedAnalysis) => {
-      onAnalysisRendered(analysis);
+      /*
+       * The board is this drill's relabeled stand-in for `activeItem`, so the
+       * tally is told which renaming to undo before it decides what decision
+       * it just watched (#809). The render-time reset above is what makes the
+       * bare null check enough: `activeItem` is non-null only in a committed
+       * render where this drill still holds the board.
+       */
+      onAnalysisRendered(
+        analysis,
+        activeItem === null
+          ? null
+          : drillRelabeling(activeItem, activeViewIndex),
+      );
       if (
         activeItem === null ||
         analysis.cribRole !== activeItem.cribRole ||

@@ -1,6 +1,10 @@
 import { type Card, SUITS, Suit, parseHand } from "./Card";
 import { describe, expect, it } from "@jest/globals";
-import { permuteCardSuits, suitPermutationForView } from "./suitPermutation";
+import {
+  invertSuitPermutation,
+  permuteCardSuits,
+  suitPermutationForView,
+} from "./suitPermutation";
 
 const HAND_KEY = "5H,6H,7H,8H,9H,10H|Dealer";
 const HAND_CARDS = parseHand("5H,6H,7H,8H,9H,10H");
@@ -186,5 +190,40 @@ describe("permuteCardSuits", () => {
 
     expect(permuted[0]!.suit).toBe(permuted[4]!.suit);
     expect(permuted[1]!.suit).toBe(permuted[5]!.suit);
+  });
+});
+
+describe("invertSuitPermutation", () => {
+  const MIXED_SUITS_TO_INVERT = parseHand("2C,3D,4H,5S,6C,7D");
+
+  /*
+   * Across every view of every hand this file exercises, not one chosen
+   * permutation, because an inverse that happened to be its own permutation
+   * would pass a single case while losing the cards on any other.
+   */
+  it.each([...Array(VIEW_SAMPLE_SIZE).keys()])(
+    "recovers the original cards from view %i",
+    (viewIndex) => {
+      const permutation = suitPermutationForView(
+        MIXED_SUIT_HAND_CARDS,
+        MIXED_SUIT_HAND_KEY,
+        viewIndex,
+      );
+
+      const recovered = permuteCardSuits(
+        permuteCardSuits(MIXED_SUITS_TO_INVERT, permutation),
+        invertSuitPermutation(permutation),
+      );
+
+      expect(recovered).toStrictEqual(MIXED_SUITS_TO_INVERT);
+    },
+  );
+
+  it("is itself a permutation of the four suits", () => {
+    const permutation = suitPermutationForView(HAND_CARDS, HAND_KEY, 3);
+
+    expect(sortedSuits(invertSuitPermutation(permutation))).toStrictEqual(
+      sortedSuits(SUITS),
+    );
   });
 });
