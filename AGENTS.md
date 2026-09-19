@@ -195,8 +195,18 @@
 - Playwright e2e report viewer: `npx --no-install playwright show-report`.
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 - Storybook coverage: run `npm run storybook:test:coverage`, then update the
-  Vite `test.coverage.thresholds` block to the exact reported totals — the
-  totals **Docker** reports, not the local run's. The two disagree by a
+  Vite `test.coverage.thresholds` block to sit a little **under** the totals
+  **Docker** reports — not at them, and not at the local run's.
+  **Under, because pinning the exact total fails**, and this bullet used to
+  say to pin it while its own closing line warned that a rerun will not
+  match exactly; the two halves contradicted each other and #814 hit the
+  contradiction. Two Docker runs there, on code differing only by a
+  documentation edit, reported branches at 81.81 and then 81.75, so a
+  threshold pinned to the first turned the second red on nothing at all.
+  Statements, functions and lines were identical across both runs, so the
+  jitter is branches specifically rather than coverage generally. A quarter
+  point of margin absorbs it and is still far tighter than any real
+  regression. The two disagree by a
   branch or so, and a threshold set from the local number can fail the build
   during `storybook:test:coverage` — a _build_ step, before any test runs —
   which reads as an unrelated breakage. **Which way they differ is not
