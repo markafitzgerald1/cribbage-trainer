@@ -1,4 +1,4 @@
-import { type Card, isSamePhysicalCard, parseHand } from "../game/Card";
+import { type Card, parseHand } from "../game/Card";
 import type {
   CribRole,
   ExpectedCribPointsTable,
@@ -7,11 +7,10 @@ import type {
   ExpectedPlayPoints,
   ExpectedPlayPointsTable,
 } from "../game/expectedPlayPoints";
-import { maxExpectedNetPoints, withoutFloatResidue } from "./discardQuality";
+import { isChosenDiscard, withoutFloatResidue } from "./discardQuality";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import type { HandPoints } from "../game/handPoints";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "./analysis";
-import { oppositeCribRole } from "./oppositeRoleLabel";
 
 export type LossComponent = "crib" | "hand" | "play";
 
@@ -31,14 +30,6 @@ export interface MistakeClassification {
   readonly gainPart: string | null;
   readonly handLoss: number;
   readonly isFlushMiss: boolean;
-  /*
-   * Whether this same discard is equal-best once the crib role is reversed:
-   * correct reasoning applied to the wrong premise, rather than a
-   * misread of the hand, the crib or the pegging (#824). It names a
-   * cause and never replaces the component decomposition above, which stays
-   * true and still carries the magnitudes.
-   */
-  readonly isOppositeRoleOptimal: boolean;
   readonly label: string;
   readonly lossPart: string;
   readonly materialComponents: readonly LossComponent[];
@@ -188,7 +179,7 @@ const formatComponentItem = (
 
 type FormattedMistakeLabels = Omit<
   MistakeClassification,
-  "cribLoss" | "handLoss" | "isOppositeRoleOptimal" | "netLoss" | "playLoss"
+  "cribLoss" | "handLoss" | "netLoss" | "playLoss"
 >;
 
 const formatAccessibleMistakeLabel = (
@@ -304,7 +295,6 @@ const createSubPrecisionClassification = (
     gainPart: null,
     handLoss: losses.hand,
     isFlushMiss: false,
-    isOppositeRoleOptimal: false,
     label: lossPart,
     lossPart,
     materialComponents: [],
@@ -357,12 +347,6 @@ export const classifyScoredMistake = (
         ...labels,
         cribLoss: losses.crib,
         handLoss: losses.hand,
-        /*
-         * Left false here on purpose: deciding it needs the whole deal and
-         * both crib roles, which two already-scored candidates cannot
-         * supply. `classifyMistake` below, which has them, sets it.
-         */
-        isOppositeRoleOptimal: false,
         netLoss,
         playLoss: losses.play,
       };
@@ -377,72 +361,6 @@ const parsePreviousDiscardSafely = (
   } catch {
     return null;
   }
-};
-
-const isChosenDiscard = (
-  option: { readonly discard: readonly Card[] },
-  chosenDiscardCards: readonly Card[],
-): boolean =>
-  option.discard.every((card) =>
-    chosenDiscardCards.some((chosenCard) =>
-      isSamePhysicalCard(chosenCard, card),
-    ),
-  );
-
-export interface OppositeRoleParams extends Omit<
-  ClassifyMistakeParams,
-  "previousDiscard"
-> {
-  readonly chosenDiscardCards: readonly Card[];
-}
-
-/*
- * Runs the app's own enumeration a second time with the crib role reversed
- * and asks whether the player's discard is equal-best there. Both sides are
- * derived results over the same six dealt cards, so the comparison consumes
- * no input the actual-role analysis did not already consume.
- *
- * The test is strict equality rather than a tolerance, and that is a
- * measurement rather than a preference: over 5,000 enumerated deals,
- * relaxing "optimal under the reversed role" from exact to a quarter of a
- * point moved the hit rate only from 58.10% to 62.88% of deals, so a
- * tolerance would buy an eighth of the phenomenon at the price of a constant
- * nothing derives.
- *
- * Both quantities are taken as a maximum over the enumeration rather than
- * by locating a row, so neither can be missing and no unreachable
- * defensive branch is created. A chosen discard absent from the list —
- * which cannot happen, since the caller has already found it under the
- * other role — would yield -Infinity and read as not equal-best.
- */
-export const isOptimalUnderOppositeRole = ({
-  cards,
-  chosenDiscardCards,
-  cribRole,
-  tables,
-}: OppositeRoleParams): boolean => {
-  const scored = allScoredKeepDiscardsByExpectedNetScoreDescending(
-    cards,
-    oppositeCribRole(cribRole),
-    tables,
-  );
-  /*
-   * Spelled out rather than borrowed from `optimalDiscard`'s
-   * `isEqualBestCandidate`, which would make this module and that one
-   * import each other. It is the same rule `getDiscardQuality` applies to
-   * `isOptimal`, and the freedom from an invented tolerance comes from
-   * `withoutFloatResidue` itself, not from either wrapper.
-   */
-  return (
-    withoutFloatResidue(
-      maxExpectedNetPoints(scored) -
-        maxExpectedNetPoints(
-          scored.filter((option) =>
-            isChosenDiscard(option, chosenDiscardCards),
-          ),
-        ),
-    ) === 0
-  );
 };
 
 export const classifyMistake = ({
@@ -467,18 +385,5 @@ export const classifyMistake = ({
   );
 
   const [best] = scored;
-  const classification =
-    best && chosen ? classifyScoredMistake(best, chosen) : null;
-  // An optimal choice cannot be this mistake, so the second enumeration is skipped rather than computed and discarded.
-  return classification === null
-    ? null
-    : {
-        ...classification,
-        isOppositeRoleOptimal: isOptimalUnderOppositeRole({
-          cards,
-          chosenDiscardCards,
-          cribRole,
-          tables,
-        }),
-      };
+  return best && chosen ? classifyScoredMistake(best, chosen) : null;
 };

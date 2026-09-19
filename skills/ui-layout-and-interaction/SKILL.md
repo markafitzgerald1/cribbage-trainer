@@ -496,9 +496,13 @@ once you are already editing layout or interaction code.
   therefore always takes a row of its own, while the badge and the cause are
   212px and 141px and share one. Measure the children's boxes
   (`element.children` with `getBoundingClientRect`) before reaching for a
-  smaller font or a shorter label — and note the slack you end up with,
-  since first-fit packing means a few extra characters in any earlier chip
-  re-breaks the row.
+  smaller font or a shorter label. Note the slack, though, because
+  reordering only buys what is left on the row: 8px in that case, which a
+  couple of extra characters in any earlier chip would have eaten, and the
+  shipped #824 change went on to fold the new text into the badge that
+  already carried one of its two numbers rather than live on that margin.
+  The order: measure, reorder if it fits comfortably, merge into an existing
+  chip if it does not, and only then shrink anything.
 - **A palette shift is not a focus indicator.** Eleven controls on the dark
   grounds _used to_ suppress the native outline and lean on their hover
   treatment to double as focus — they no longer do, so read this as the

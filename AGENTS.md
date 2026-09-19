@@ -238,6 +238,17 @@
 - For focused Jest/debug runs, pass `--coverage=false` when you only need
   targeted test signal; global coverage thresholds can make otherwise passing
   `--runTestsByPath` suites exit nonzero.
+- **Bumping `discardTally.ts`'s `CURRENT_VERSION` breaks assertions in three
+  specs, and the number is spelled three different ways.** Going 5 to 6 for
+  #824 needed: the plain `expect(tally.version).toBe(…)` and the test title
+  naming the version in `discardTallyRecovery.test.ts`, a **JSON substring**
+  `'"version":5'` in the same file, a whole stored-tally literal in
+  `strayDrillRecords.test.ts`, and every "a newer version" fixture, which is
+  written as the current version plus one and silently stops being newer
+  otherwise. Grep for the old number as a bare integer, as `version: N`, and
+  as `"version":N` before assuming you have them all — and do not
+  search-and-replace the integer, since `expect(…).toBe(5)` also appears as a
+  mean points loss two files away.
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.

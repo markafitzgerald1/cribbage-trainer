@@ -27,7 +27,12 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * would make every earlier tally invisible instead, which is the same as
  * discarding it.
  */
-const CURRENT_VERSION = 5;
+/*
+ * 6 adds DiscardDecisionRecord.oppositeRoleExpectedPointsLoss (#824). No
+ * rewrite of existing rows: the field is simply absent on them, and every
+ * reader treats absent as unknown rather than as zero.
+ */
+const CURRENT_VERSION = 6;
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
  * counters below. They cannot grow without limit either: this shares an origin

@@ -118,11 +118,11 @@ export const SortedByHandPoints: Story = {
 };
 
 /*
- * Discarding the 9 of diamonds and the 3 of spades here is exactly equal-best
- * as pone and gives up 3.11 points as dealer, so the caption shows the #824
- * cause beside the component decomposition it does not replace.
+ * Discarding the 9 of diamonds and the 3 of spades here costs 3.11 as
+ * dealer and exactly nothing as pone, so the caption shows the #824 pair of
+ * role costs beside the component decomposition it does not replace.
  */
-export const OppositeRoleOptimalDiscard: Story = {
+export const RoleLossPair: Story = {
   ...createStory(
     toDealtCards(parseHand("9D,9C,9H,4C,4H,3S"), [0, 5]),
     SortOrder.Descending,
@@ -130,7 +130,10 @@ export const OppositeRoleOptimalDiscard: Story = {
   play: async ({ canvasElement }) => {
     await waitForLoadingToDisappear(within(canvasElement));
 
-    await expectStoryTextVisible(canvasElement, "Optimal as pone");
+    await expectStoryTextVisible(
+      canvasElement,
+      "Sub-optimal: 3.11 as dealer, 0.00 as pone",
+    );
   },
 };
 

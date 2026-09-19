@@ -4,7 +4,7 @@ import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
 import {
   mockItemA,
-  mockOppositeRoleClassification,
+  mockItemWithRoleLossPair,
   mockTradeOffClassification,
 } from "../ui/mistakeQueue.test.common";
 import { CribRole } from "../game/expectedCribPoints";
@@ -13,6 +13,7 @@ import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
 
 interface RenderCardOptions {
+  readonly classification?: MistakeClassification | null;
   readonly item?: typeof mockItemA;
   readonly lossReason?: string | null;
   readonly onPractice?: ((item: typeof mockItemA) => void) | null;
@@ -20,24 +21,22 @@ interface RenderCardOptions {
 
 const noop = () => null;
 
-const renderClassifiedCard = (
-  classification: MistakeClassification | null,
-  cribRole: CribRole = mockItemA.cribRole,
-) =>
-  render(
-    <MistakeQueueItemCard
-      classification={classification}
-      item={{ ...mockItemA, cribRole }}
-      onPractice={null}
-      sortOrder={SortOrder.DealOrder}
-    />,
-  );
-
 const renderCard = (options: RenderCardOptions = {}) => {
-  const { item = mockItemA, lossReason, onPractice = noop } = options;
+  /*
+   * `classification` is deliberately left undefined rather than defaulted to
+   * null here: passing it explicitly would skip the component's own
+   * defaultProps branch, which is then covered by nothing.
+   */
+  const {
+    classification,
+    item = mockItemA,
+    lossReason,
+    onPractice = noop,
+  } = options;
 
   return render(
     <MistakeQueueItemCard
+      classification={classification}
       item={item}
       lossReason={lossReason}
       onPractice={onPractice}
@@ -62,9 +61,10 @@ describe("mistakeQueueItemCard", () => {
   });
 
   it("renders loss reason and recomputed loss when classification is provided", () => {
-    const { getByRole, getByText, getByTitle } = renderClassifiedCard(
-      mockTradeOffClassification,
-    );
+    const { getByRole, getByText, getByTitle } = renderCard({
+      classification: mockTradeOffClassification,
+      onPractice: null,
+    });
 
     expect(getByText("Prev: Crib gain < Hand loss")).toBeInTheDocument();
     expect(
@@ -81,26 +81,26 @@ describe("mistakeQueueItemCard", () => {
 
   it.each([
     {
-      classification: mockOppositeRoleClassification,
       cribRole: CribRole.Dealer,
-      expectedLabel: "Optimal as pone",
-      expectedName: "Previous discard optimal as pone, not as dealer",
-      name: "names the reversed role for a dealer",
+      expectedLabel: "1.00 as dealer, 0.00 as pone",
+      expectedName:
+        "Previous discard cost 1.00 points lost as dealer, 0.00 as pone",
+      name: "names both role costs for a dealer",
     },
     {
-      classification: mockOppositeRoleClassification,
       cribRole: CribRole.Pone,
-      expectedLabel: "Optimal as dealer",
-      expectedName: "Previous discard optimal as dealer, not as pone",
-      name: "names the reversed role for a pone",
+      expectedLabel: "1.00 as pone, 0.00 as dealer",
+      expectedName:
+        "Previous discard cost 1.00 points lost as pone, 0.00 as dealer",
+      name: "names both role costs for a pone",
     },
   ])(
     "$name, beside the component badge rather than instead of it",
-    ({ classification, cribRole, expectedLabel, expectedName }) => {
-      const { getByRole, getByText } = renderClassifiedCard(
-        classification,
-        cribRole,
-      );
+    ({ cribRole, expectedLabel, expectedName }) => {
+      const { getByRole, getByText } = renderCard({
+        classification: mockTradeOffClassification,
+        item: { ...mockItemWithRoleLossPair, cribRole },
+      });
 
       const badge = getByRole("note", { name: expectedName });
 
@@ -110,17 +110,11 @@ describe("mistakeQueueItemCard", () => {
     },
   );
 
-  it.each([
-    { classification: mockTradeOffClassification, name: "is false" },
-    { classification: null, name: "is absent" },
-  ])(
-    "renders no reversed-role badge when the opposite-role flag $name",
-    ({ classification }) => {
-      const { queryByRole } = renderClassifiedCard(classification);
+  it("shows no role-cost badge for a record written before the figure was stored", () => {
+    const { queryByRole } = renderCard({ item: mockItemA });
 
-      expect(queryByRole("note", { name: /optimal as/u })).toBeNull();
-    },
-  );
+    expect(queryByRole("note", { name: /Previous discard cost/u })).toBeNull();
+  });
 
   it("does not render loss reason badge when lossReason is null", () => {
     const { queryByTitle } = renderCard({ lossReason: null });

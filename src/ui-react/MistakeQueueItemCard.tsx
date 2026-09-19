@@ -13,7 +13,7 @@ import {
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
-import { oppositeRoleLabel } from "../analysis/oppositeRoleLabel";
+import { roleLossPairLabel } from "../analysis/oppositeRoleLoss";
 import { useMemo } from "react";
 
 const PERCENT_MULTIPLIER = 100;
@@ -67,19 +67,24 @@ const renderPreviousDiscard = (
 );
 
 /*
- * Sits beside the component badge rather than replacing it (#824): the
- * decomposition stays true and carries the magnitudes, while this names the
- * cause the decomposition cannot express.
+ * Both role costs for the previous discard, beside the component badge
+ * rather than instead of it (#824). Read from the record, so it needs no
+ * classification and is available for the whole queue; hidden entirely when
+ * the record predates store version 6, because the single figure it could
+ * show is already on the loss badge above.
  */
-const renderOppositeRoleBadge = (
-  classification: MistakeClassification | null,
-  cribRole: CribRole,
+const renderRoleLossPairBadge = (
+  item: MistakeQueueItem,
 ): React.JSX.Element | null => {
-  if (classification?.isOppositeRoleOptimal !== true) {
+  if (item.previousDiscardOppositeRoleLoss === null) {
     return null;
   }
-  const { accessibleLabel, label } = oppositeRoleLabel(cribRole);
-  const description = `Previous discard ${accessibleLabel}`;
+  const { accessibleLabel, label } = roleLossPairLabel(
+    item.cribRole,
+    item.previousDiscardLoss,
+    item.previousDiscardOppositeRoleLoss,
+  );
+  const description = `Previous discard cost ${accessibleLabel}`;
   return (
     <span
       aria-label={description}
@@ -146,7 +151,7 @@ export function MistakeQueueItemCard({
               Prev: {effectiveShortReason}
             </span>
           )}
-          {renderOppositeRoleBadge(classification, item.cribRole)}
+          {renderRoleLossPairBadge(item)}
         </div>
         <div>{renderStatusBadge(item)}</div>
       </div>

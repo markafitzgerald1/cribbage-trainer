@@ -66,8 +66,19 @@ export const mockItemA: MistakeQueueItem = {
   pWrong: 1,
   previousDiscard: "5H,6H",
   previousDiscardLoss: 1.0,
+  previousDiscardOppositeRoleLoss: null,
   priority: 0.8,
   wrong: 1,
+};
+
+/*
+ * The same hand as mockItemA with the version 6 figure present: its discard
+ * cost 1.00 as dealer and would have cost nothing as pone. Spread rather
+ * than spelled out so the two cannot drift and jscpd sees no second copy.
+ */
+export const mockItemWithRoleLossPair: MistakeQueueItem = {
+  ...mockItemA,
+  previousDiscardOppositeRoleLoss: 0,
 };
 
 export const mockItemB: MistakeQueueItem = {
@@ -84,6 +95,8 @@ export const mockItemB: MistakeQueueItem = {
   pWrong: 1,
   previousDiscard: null,
   previousDiscardLoss: 2.0,
+  // A record carrying the version 6 figure, so the queue card can show both role costs.
+  previousDiscardOppositeRoleLoss: 0,
   priority: 1.9,
   wrong: 1,
 };
@@ -102,6 +115,7 @@ export const mockItemMastered: MistakeQueueItem = {
   pWrong: 0.33,
   previousDiscard: "AH,2H",
   previousDiscardLoss: 3.0,
+  previousDiscardOppositeRoleLoss: null,
   priority: 1.0,
   wrong: 1,
 };
@@ -113,7 +127,6 @@ export const mockTradeOffClassification: MistakeClassification = {
   gainPart: "1.30 Crib gain",
   handLoss: 1.4,
   isFlushMiss: false,
-  isOppositeRoleOptimal: false,
   label: "1.30 Crib gain < 1.40 Hand loss",
   lossPart: "1.40 Hand loss",
   materialComponents: ["hand"],
@@ -121,10 +134,4 @@ export const mockTradeOffClassification: MistakeClassification = {
   netLoss: 0.1,
   playLoss: 0,
   shortLabel: "Crib gain < Hand loss",
-};
-
-// Spread rather than spelled out so the two mocks cannot drift, and so jscpd sees no second copy of the same object literal.
-export const mockOppositeRoleClassification: MistakeClassification = {
-  ...mockTradeOffClassification,
-  isOppositeRoleOptimal: true,
 };

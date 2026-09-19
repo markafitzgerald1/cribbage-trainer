@@ -43,6 +43,13 @@ export interface MistakeQueueItem {
   readonly previousDiscard: string | null;
   // The cost of `previousDiscard` itself, from the same record — not `lossIfWrong`, which averages every wrong attempt.
   readonly previousDiscardLoss: number;
+  /*
+   * What that same discard would have cost under the reversed crib role
+   * (#824), read straight from the record rather than re-derived, so the
+   * queue can show both figures without classifying anything. Null on every
+   * record written before store version 6, which is unknown and not zero.
+   */
+  readonly previousDiscardOppositeRoleLoss: number | null;
   readonly priority: number;
   readonly wrong: number;
 }
@@ -113,6 +120,7 @@ interface HandAggregate {
   discardKey: string | null;
   expectedPointsLoss: number;
   handKey: string;
+  oppositeRoleExpectedPointsLoss: number | null;
   originalAt: number;
   recencyAt: number;
 }
@@ -162,6 +170,8 @@ const aggregateMistakeRecords = (
               discardKey: record.discardKey,
               expectedPointsLoss: record.expectedPointsLoss,
               handKey: record.handKey,
+              oppositeRoleExpectedPointsLoss:
+                record.oppositeRoleExpectedPointsLoss ?? null,
               originalAt,
               recencyAt,
             }
@@ -213,6 +223,7 @@ const createCandidateQueueItem = ({
     pWrong,
     previousDiscard: aggregate.discardKey,
     previousDiscardLoss: aggregate.expectedPointsLoss,
+    previousDiscardOppositeRoleLoss: aggregate.oppositeRoleExpectedPointsLoss,
     priority,
     wrong,
   };

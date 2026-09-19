@@ -7,7 +7,7 @@ import {
 import { expect, fn, within } from "storybook/test";
 import {
   mockItemA,
-  mockOppositeRoleClassification,
+  mockItemWithRoleLossPair,
   mockTradeOffClassification,
 } from "../ui/mistakeQueue.test.common";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
@@ -71,19 +71,20 @@ export const WithLossReason: Story = {
   },
 };
 
-// Both badges are asserted together because the #824 cause sits beside the component decomposition rather than replacing it.
-export const WithOppositeRoleCause: Story = {
+// Both badges are asserted together because the #824 role-cost pair sits beside the component decomposition rather than replacing it.
+export const WithRoleLossPair: Story = {
   args: {
-    classification: mockOppositeRoleClassification,
+    classification: mockTradeOffClassification,
+    item: mockItemWithRoleLossPair,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const cause = canvas.getByRole("note", {
-      name: "Previous discard optimal as pone, not as dealer",
+    const pair = canvas.getByRole("note", {
+      name: "Previous discard cost 1.00 points lost as dealer, 0.00 as pone",
     });
 
-    await expect(cause).toBeVisible();
-    await expect(cause).toHaveTextContent("Optimal as pone");
+    await expect(pair).toBeVisible();
+    await expect(pair).toHaveTextContent("1.00 as dealer, 0.00 as pone");
     await expect(canvas.getByText("Prev: Crib gain < Hand loss")).toBeVisible();
   },
 };

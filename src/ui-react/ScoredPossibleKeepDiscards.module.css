@@ -58,21 +58,6 @@
   padding: 3px 8px;
 }
 
-/*
- * A separate chip from .diagnostic-reason on purpose: the decomposition
- * beside it stays true, and this names a cause rather than correcting one
- * (#824). Given its own hue so the two never read as one run-on phrase.
- */
-.opposite-role-note {
-  background-color: #123b40;
-  border: 1px solid #a9e4ef;
-  border-radius: 4px;
-  color: #eafbfd;
-  font-size: 0.82em;
-  font-weight: 700;
-  padding: 3px 8px;
-}
-
 .diagnostic-side {
   display: inline-block;
   max-width: 100%;
@@ -94,7 +79,6 @@
 
 .in-drill .optimal-badge,
 .in-drill .sub-optimal-badge,
-.in-drill .opposite-role-note,
 .in-drill .diagnostic-reason {
   font-size: 0.74em;
   padding: 2px 6px;

@@ -1,3 +1,5 @@
+import { type Card, isSamePhysicalCard } from "../game/Card";
+
 /*
  * Six decimals sits far below anything the vendored tables can distinguish
  * and far above the residue of summing fifty-odd terms, so rounding here
@@ -24,6 +26,22 @@ export const maxExpectedNetPoints = (
   Math.max(
     ...scoredKeepDiscards.map(
       (scoredKeepDiscard) => scoredKeepDiscard.expectedNetPoints,
+    ),
+  );
+
+/*
+ * Whether a scored option's discard is the two cards named, compared by
+ * rank and suit rather than by object identity so a discard parsed back out
+ * of storage or a URL matches a freshly enumerated option. Shared because
+ * two callers need it and jscpd counts the second spelling as a clone.
+ */
+export const isChosenDiscard = (
+  option: { readonly discard: readonly Card[] },
+  chosenDiscardCards: readonly Card[],
+): boolean =>
+  option.discard.every((card) =>
+    chosenDiscardCards.some((chosenCard) =>
+      isSamePhysicalCard(chosenCard, card),
     ),
   );
 

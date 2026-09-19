@@ -13,9 +13,6 @@ import {
 import {
   type MistakeClassification,
   classifyScoredMistake,
-  formatAccessibleNetLoss,
-  formatNetLoss,
-  isOptimalUnderOppositeRole,
 } from "../analysis/classifyMistake";
 import {
   type MouseEvent,
@@ -37,12 +34,15 @@ import {
   ScoredKeepDiscardSortKey,
   compareByExpectedScoreThenRankDescending,
 } from "../analysis/compareByExpectedScoreDescending";
+import {
+  oppositeRoleExpectedPointsLoss,
+  roleLossPairLabel,
+} from "../analysis/oppositeRoleLoss";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { SortOrder } from "../ui/SortOrder";
 import { getDiscardQuality } from "../analysis/discardQuality";
-import { oppositeRoleLabel } from "../analysis/oppositeRoleLabel";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
@@ -131,18 +131,12 @@ interface ExpectedTables {
   readonly play: ExpectedPlayPointsTable;
 }
 
-const renderOppositeRoleNote = (
-  classification: MistakeClassification,
-  label: string,
-): React.JSX.Element | null =>
-  classification.isOppositeRoleOptimal ? (
-    <span className={classes.oppositeRoleNote}>{label}</span>
-  ) : null;
-
 interface ChosenDiagnosticInfo {
   readonly chosenClassification: MistakeClassification | null;
   readonly hasChosenCandidate: boolean;
   readonly optimalMargin: OptimalDiscardMargin;
+  // Null until a discard is complete and the tables have loaded; never zero to stand in for unknown.
+  readonly oppositeRoleLoss: number | null;
 }
 
 interface ChosenDiagnosticInput {
@@ -164,30 +158,28 @@ const useChosenDiagnosticInfo = ({
         option.discard.every((card) => !card.kept),
       ) ?? null;
     const [best] = scoredOptions;
-    const baseClassification =
-      best && chosen ? classifyScoredMistake(best, chosen) : null;
 
     return {
-      /*
-       * The reversed-role enumeration runs only once the first pass has
-       * already called the choice a mistake, so an optimal discard never
-       * pays for it. The discarded cards come from `dealtCards` rather than
-       * from the matched option so that no second narrowing against null is
-       * needed here: the two cards not kept are the discard, by definition.
-       */
       chosenClassification:
-        tables === null || baseClassification === null
-          ? baseClassification
-          : {
-              ...baseClassification,
-              isOppositeRoleOptimal: isOptimalUnderOppositeRole({
-                cards: dealtCards,
-                chosenDiscardCards: dealtCards.filter((card) => !card.kept),
-                cribRole,
-                tables,
-              }),
-            },
+        best && chosen ? classifyScoredMistake(best, chosen) : null,
       hasChosenCandidate: chosen !== null,
+      /*
+       * The discarded cards come from `dealtCards` rather than from the
+       * matched option, so no second narrowing against null is needed: the
+       * two cards not kept are the discard, by definition. Computed for
+       * every completed decision rather than only for mistakes, because the
+       * figure is evidence either way — a discard that was best for the role
+       * held and costly for the other one says as much as the reverse.
+       */
+      oppositeRoleLoss:
+        tables === null || chosen === null
+          ? null
+          : oppositeRoleExpectedPointsLoss({
+              cards: dealtCards,
+              chosenDiscardCards: dealtCards.filter((card) => !card.kept),
+              cribRole,
+              tables,
+            }),
       optimalMargin: computeOptimalDiscardMargin(scoredOptions),
     };
   }, [cribRole, dealtCards, scoredOptions, tables]);
@@ -257,19 +249,24 @@ export function ScoredPossibleKeepDiscards({
         : [],
     [cribRole, dealtCards, tables],
   );
-  const { chosenClassification, hasChosenCandidate, optimalMargin } =
-    useChosenDiagnosticInfo({
-      cribRole,
-      dealtCards,
-      scoredOptions: scoredKeepDiscardsByNetScore,
-      tables,
-    });
+  const {
+    chosenClassification,
+    hasChosenCandidate,
+    oppositeRoleLoss,
+    optimalMargin,
+  } = useChosenDiagnosticInfo({
+    cribRole,
+    dealtCards,
+    scoredOptions: scoredKeepDiscardsByNetScore,
+    tables,
+  });
   const renderedAnalysis = useMemo(
     (): RenderedAnalysis => ({
       cribRole,
+      oppositeRoleExpectedPointsLoss: oppositeRoleLoss,
       quality: getDiscardQuality(scoredKeepDiscardsByNetScore),
     }),
-    [cribRole, scoredKeepDiscardsByNetScore],
+    [cribRole, oppositeRoleLoss, scoredKeepDiscardsByNetScore],
   );
   const resultsAreOnScreen = tables !== null;
   useEffect(() => {
@@ -386,16 +383,23 @@ export function ScoredPossibleKeepDiscards({
     if (!hasChosenCandidate) {
       return null;
     }
-    const oppositeRole = oppositeRoleLabel(cribRole);
-    // Placed to match the rendered order below, so what a screen reader hears is the order a sighted reader sees.
-    const oppositeRoleCause =
-      chosenClassification?.isOppositeRoleOptimal === true
-        ? `${oppositeRole.accessibleLabel}. `
-        : "";
+    /*
+     * Both role costs live in the one badge rather than in a chip of their
+     * own. A third chip on this row starts a third row on a portrait phone
+     * at a large device font, which the #802 caption-height guard in
+     * practiceDrill.spec.ts fails; folding the pair into the badge that
+     * already carried one of the two numbers keeps the row count and drops
+     * the duplication.
+     */
+    const rolePair = roleLossPairLabel(
+      cribRole,
+      chosenClassification?.netLoss ?? 0,
+      oppositeRoleLoss,
+    );
     const captionAriaLabel =
       chosenClassification === null
         ? optimalMargin.accessibleLabel
-        : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${oppositeRoleCause}${chosenClassification.accessibleLabel}`;
+        : `Sub-optimal: ${rolePair.accessibleLabel}. ${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
         aria-label={captionAriaLabel}
@@ -407,11 +411,8 @@ export function ScoredPossibleKeepDiscards({
         ) : (
           <>
             <span className={classes.subOptimalBadge}>
-              Sub-optimal: {formatNetLoss(chosenClassification.netLoss)} pts
-              lost
+              Sub-optimal: {rolePair.label}
             </span>
-            {/* Before the decomposition, not after it: the decomposition is the widest chip and always takes a row of its own on a portrait phone, so a cause placed after it starts a third row while the same chip placed here shares the first one (#824, measured against the #802 caption-height guard). */}
-            {renderOppositeRoleNote(chosenClassification, oppositeRole.label)}
             <span className={classes.diagnosticReason}>
               {chosenClassification.gainPart === null ? (
                 <span className={classes.diagnosticSide}>
