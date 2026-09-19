@@ -4,11 +4,16 @@ import {
   createTestMistakeRecord,
 } from "../ui/mistakeQueue.test.common";
 import { CribRole } from "../game/expectedCribPoints";
+import { DRILL_RELABELING_SHIPPED_AT } from "../ui/strayDrillRecords";
 import type { StoredTally } from "../ui/discardTally";
 /* jscpd:ignore-end */
 
 const BASE_TIME = 1_700_000_000_000;
 const ONE_DAY_MS = 86_400_000;
+
+// All clubs, and the same six ranks relabeled into spades — a permutation moving every suit the hand uses, which is what a drill produces and the sweep requires.
+export const DRILLED_HAND_KEY = "2C,3C,4C,5C,6C,7C|Dealer";
+export const STRAY_HAND_KEY = "2S,3S,4S,5S,6S,7S|Dealer";
 
 export const createSampleMistakeTally = (): StoredTally =>
   createMockTally({
@@ -162,10 +167,52 @@ export const createTwoLossTally = (): StoredTally =>
     ],
   });
 
+/*
+ * A tally as an affected build left it: the drilled mistake, its ledger
+ * entry, and a row #808 appended under a relabeling of that hand. Every
+ * timestamp is derived from the sweep's own cutoff rather than restated, so
+ * moving the cutoff cannot leave this fixture asserting against the wrong
+ * era, and the ledger entry is dated after the stray because that ordering
+ * is one of the conditions the sweep requires.
+ */
+export const createStraySweepTally = (): StoredTally =>
+  createMockTally({
+    practice: [
+      {
+        attempts: 1,
+        consecutiveSuccesses: 0,
+        handKey: DRILLED_HAND_KEY,
+        lastAttemptAt: DRILL_RELABELING_SHIPPED_AT + 2000,
+        totalWrongLoss: 2,
+        wrong: 1,
+      },
+    ],
+    records: [
+      createTestMistakeRecord({
+        at: DRILL_RELABELING_SHIPPED_AT + 1000,
+        cribRole: CribRole.Dealer,
+        discardKey: "2C,3C",
+        expectedPointsLoss: 2,
+        handKey: DRILLED_HAND_KEY,
+      }),
+      {
+        ...createTestMistakeRecord({
+          at: DRILL_RELABELING_SHIPPED_AT + 1500,
+          cribRole: CribRole.Dealer,
+          discardKey: "2S,3S",
+          expectedPointsLoss: 2,
+          handKey: STRAY_HAND_KEY,
+        }),
+        isPractice: true,
+      },
+    ],
+  });
+
 export default {
   createAgedOutTally,
   createAllMasteredTally,
   createEmptyMistakeTally,
   createSampleMistakeTally,
+  createStraySweepTally,
   createTwoLossTally,
 };

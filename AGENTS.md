@@ -195,11 +195,30 @@
 - Playwright e2e report viewer: `npx --no-install playwright show-report`.
 - Lint: `npm run lint` (if present) or rely on the Docker test-all command above.
 - Storybook coverage: run `npm run storybook:test:coverage`, then update the
-  Vite `test.coverage.thresholds` block to the exact reported totals — the
-  totals **Docker** reports, not the local run's. The two disagree by a
-  branch or so, and a threshold set from the local number fails the build
+  Vite `test.coverage.thresholds` block to sit a little **under** the totals
+  **Docker** reports — not at them, and not at the local run's.
+  **Under, because pinning the exact total fails**, and this bullet used to
+  say to pin it while its own closing line warned that a rerun will not
+  match exactly; the two halves contradicted each other and #814 hit the
+  contradiction. Two Docker runs there, on code differing only by a
+  documentation edit, reported branches at 81.81 and then 81.75, so a
+  threshold pinned to the first turned the second red on nothing at all.
+  Statements, functions and lines were identical across both runs, so the
+  jitter is branches specifically rather than coverage generally. A quarter
+  point of margin absorbs it, and the trade is explicit rather than free: a
+  regression smaller than the margin now passes, so roughly a quarter point
+  of branch coverage and a fifth of a point of function coverage can be lost
+  without the gate noticing. That is the price of not failing builds on
+  noise, and it is the reason to keep the margin at the measured variance
+  rather than rounding it up for comfort. The two disagree by a
+  branch or so, and a threshold set from the local number can fail the build
   during `storybook:test:coverage` — a _build_ step, before any test runs —
-  which reads as an unrelated breakage.
+  which reads as an unrelated breakage. **Which way they differ is not
+  fixed**, so do not reason from the gap's direction: on #814 Docker read
+  **higher** than local, 92.03 against 91.91 on functions, where this bullet
+  previously said Docker reads lower and implied a local-pinned threshold
+  always fails. Pin from Docker because the two differ at all, not because
+  one is reliably the smaller.
   **Not an arm64/amd64 split**, despite an earlier version of this bullet
   claiming one: `docker build --platform linux/amd64` (QEMU-emulated on an
   Apple Silicon host) reproduced the plain local number exactly, on the
@@ -419,6 +438,30 @@ they bind any PR that makes a claim about a phone or ships a guard.
   whose `ignorePaths` — not `.gitignore` — sets its sweep). A new word may
   trip one, both, or neither — run each checker and add the word only where
   it is actually flagged.
+  One axis on which they differ is **dialect**, and it is worth knowing
+  because nothing in either config hints at it: on #809's branch cspell's
+  `en` accepted the British `relabelled` and `relabelling` while eslint's
+  dictionary rejected both, so those spellings cleared one gate and failed
+  the other. Not every British spelling splits them — the British form of
+  `practiced` was rejected by both on that same branch, and cspell rejects
+  it here too, which is why this bullet describes it instead of quoting
+  it — so run each checker rather than reasoning from the dialect. Prefer
+  the American spelling this repository already uses over teaching either
+  dictionary a variant.
+- **`@typescript-eslint/no-unnecessary-type-assertion` and `tsc` can
+  disagree about the same cast**, and the rule is the one that is wrong.
+  Under `noUncheckedIndexedAccess`,
+  `renamed.get(card.suit) ?? (SUITS.at(n) as Suit)` fails `lint:tsc` without
+  the assertion and is reported as unnecessary with it, because the rule
+  reads the contextual type of a `??` right operand as one that already
+  admits `undefined`. Lift the asserted expression into a named function with
+  an explicit return type and both gates pass; a file-scoped disable is
+  prohibited here anyway.
+
+  ```ts
+  const suitAt = (index: number): Suit => SUITS.at(index) as Suit;
+  ```
+
 - `jest/no-hooks` forbids `beforeEach`/`afterEach`. Use setup helpers called
   at the top of each test, and `try`/`finally` with `spy.mockRestore()` for
   spies (see `index.test.tsx` for the established idiom).
@@ -646,6 +689,26 @@ they bind any PR that makes a claim about a phone or ships a guard.
   before a human spends attention. Where budget is tight, cut frequency
   rather than parallelism: run intermediate rounds with Codex alone and
   spend Copilot on the head that will actually be merged.
+- **Merging main into a branch retires its reviews by the letter of that
+  rule, but often not in substance.** Merging one pull request does not push
+  anybody else's branch; it leaves theirs behind, and each must take main in
+  before it can merge, which is the push that retires its rounds. With
+  several open at once that still costs two fresh rounds per branch per
+  merge, most reading nothing either reviewer has already passed. The test
+  is mechanical and runs **per reviewer**, since Codex-only intermediate
+  rounds leave the two tied to different heads: diff that reviewer's own
+  last-reviewed head against the new one, and if no changed file is one this
+  branch touches **and** the merge resolved no conflict, that reviewer's
+  round still applies. The conflict condition is not a detail — resolving
+  one means choosing what the merged file says, which no round has seen and
+  a green gate cannot vouch for. Nor is the test a proof: it keys on file
+  overlap, so it cannot see main changing a function this branch calls in a
+  file it never touched. That residue is a judgement to make, not a check to
+  run. Say in the pull request which head each reviewer last read and why
+  the delta needed no round. Worked both ways here on 2026-09-13: #798
+  merged on rounds one head old, its only delta being #806's documentation
+  arriving verbatim, while #810's merge forced a round on #795 alone, which
+  sets the same `jest.config.json` line it did.
 - **Spend Copilot where a change could leave two places disagreeing**, which
   is not the same as where the code is. The first draft of this bullet said
   documentation-only pull requests do not need Copilot, and the review of
@@ -764,6 +827,22 @@ they bind any PR that makes a claim about a phone or ships a guard.
   `while` loop fed by a pipe), failing with `gh: command not found`. Use the
   absolute path (`/opt/homebrew/bin/gh`) and drive loops from a file
   (`done < file`) rather than a pipe.
+- **A GraphQL rate limit reaches `gh project` as `unknown owner type`**, which
+  reads as a broken command rather than a quota to wait out. The rate-limit
+  endpoint reports a full 5000 remaining in both buckets while it is in force,
+  because the limit being hit is not the one that endpoint describes.
+  `gh project list`, `view`, and `item-list` all failed that way on #809 while
+  REST calls kept working, and all three worked again untouched once the
+  window cleared. Confirm the cause with `gh api graphql`, which returns the
+  real `RATE_LIMIT` error, before concluding anything about the project or the
+  owner. What provokes it is polling: a 30-second `gh pr checks` loop watching
+  a PR's CI is enough, since that command is GraphQL too. Watch CI through the
+  REST check-runs endpoint instead, which spends a different budget.
+
+  ```bash
+  gh api rate_limit
+  gh api repos/<owner>/<repo>/commits/<sha>/check-runs
+  ```
 
 ## Husky/hooks
 
@@ -975,6 +1054,28 @@ they bind any PR that makes a claim about a phone or ships a guard.
   derived-inputs rule was called the one immediately above when it sits 810
   lines earlier in a different section.
 
+  **Fixing a claim where a reviewer pointed at it is not fixing the claim.**
+  A sentence that was worth writing once usually got written three or four
+  times — in the module comment, in a test comment, in the skill, and in the
+  pull request body — and correcting only the cited copy leaves the others
+  standing and contradicting the fix. #814 lost a whole review round to this:
+  six of one round's ten findings were claims already reported as fixed,
+  surviving somewhere else. So repair by searching for the claim, not by
+  editing the line, and re-run the search before reporting it fixed:
+
+  ```bash
+  grep --recursive --ignore-case --line-number "row per attempt" src skills AGENTS.md
+  ```
+
+  Check the pull request body too, which no repository grep reaches — keep a
+  copy on disk and search that alongside. And read the hits rather than
+  counting them: after a correction the surviving matches should all be the
+  corrected wording or a findings table describing the repair, and an empty
+  result is more often a broken command than a clean file (a shell variable
+  that expanded to nothing sends `grep` to stdin and it reports success
+  having read no files at all, which happened here while checking exactly
+  this).
+
 - Capture each session's durable, non-obvious learnings — new invariants,
   debugging techniques, tooling or review-workflow gotchas — in `AGENTS.md`
   (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as
@@ -1025,6 +1126,30 @@ they bind any PR that makes a claim about a phone or ships a guard.
   prettier, and cspell all pass on the wreckage — the same
   lines-not-structure blind spot as the heading rule above. Two instances
   existed here at once, one of them live for months.
+
+  Knowing the rule is demonstrably not enough to follow it: #814 broke three
+  more spans in this very file, one of them inside the bullet being added
+  about a different lint trap, and each was caught by a reviewer rather than
+  by the author or a gate. So check mechanically instead of carefully. A
+  de-indented continuation is the visible symptom, and it starts a line at
+  column zero that is neither a heading nor a list marker:
+
+  ```bash
+  grep --line-number '^[^ #-]' AGENTS.md
+  ```
+
+  The character class matters and was got wrong the first time. A class of
+  only lowercase letters missed a continuation beginning with a capital —
+  which is what the motivating breakage was — so the check reported nothing
+  for the exact defect it existed to find. Verified by reintroducing all
+  three of the spans #814 broke into a copy of this file: the pattern above
+  finds all three, the lowercase one found two. Prose paragraphs at column
+  zero are legitimate and show up too, so read the hits rather than counting
+  them; a hit that is the tail of a shell command or a declaration is the
+  bug. It stays a heuristic rather than a gate, since a continuation starting
+  with a list marker still slips past. Prefer a fenced block over a long
+  span — a fence cannot be reflowed into this failure at all.
+
 - Triage test, CI, and infrastructure issues into the current/active milestone
   and fix them ASAP, keeping the tree green for maximum feature-work velocity.
 

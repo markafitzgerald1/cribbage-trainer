@@ -7,17 +7,17 @@
  * above it and never widens the column into the analysis table's share.
  */
 .panel {
-  border: 1.5px solid #2f7d3a;
+  border: 1.5px solid #43a047;
   border-radius: 10px;
   box-sizing: border-box;
   color: var(--text-color);
   display: flex;
   flex-direction: column;
   font-family: var(--text-font-family);
-  gap: 0.4rem;
-  margin-top: 0.5rem;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
   min-width: 0;
-  padding: 0.5rem 0.6rem;
+  padding: 0.35rem 0.5rem;
   width: 100%;
 }
 
@@ -26,10 +26,10 @@
   background-color: #2f7d3a;
   border-radius: 4px;
   color: #fff;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 0.1rem 0.4rem;
+  padding: 0.08rem 0.35rem;
   text-transform: uppercase;
 }
 
@@ -37,15 +37,29 @@
 .verdict {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.25rem;
   min-width: 0;
 }
 
 .prompt {
-  font-size: 1rem;
-  line-height: 1.3;
+  font-size: 0.95rem;
+  line-height: 1.25;
   margin: 0;
   opacity: 0.9;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * Full opacity, unlike `.not-recorded`'s dimmed treatment elsewhere: that
+ * text sits on a near-white pill, where dimming still clears WCAG AA, but
+ * this note sits directly on the panel's green background, where the same
+ * dimming on `--text-color` drops contrast to roughly 3.1:1. Italics carry
+ * the "secondary" styling here instead.
+ */
+.suit-note {
+  font-size: 0.75rem;
+  font-style: italic;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
@@ -53,42 +67,52 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.25rem;
   min-width: 0;
 }
 
 .verdict-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  min-width: 3.4rem;
+  min-width: 3.1rem;
   opacity: 0.85;
   text-transform: uppercase;
 }
 
 /*
- * The mini keep/discard labels are bare rank+suit glyphs (#222 / #c41e3a),
- * which all but vanish on the panel's green. A near-white pill puts them on
- * the same ground a real card gives them.
+ * The mini keep/discard labels are bare rank+suit glyphs, which all but
+ * vanish on the panel's green, so they need a card-like ground.
+ */
+
+/*
+ * A muted card tone rather than near-white: at #f4f8f4 this pill was the
+ * brightest thing left on a phone at night and washed out the glyphs sitting
+ * on it (reported in #793's hardware testing). The bold weight and the darker
+ * red matter as much as the tone -- the card font's rank+suit runs are thin
+ * at this size, which is what the brightness was drowning.
  */
 .discard-cards {
+  --card-red-suit-color: #8c1228;
+
   align-items: center;
-  background-color: #f4f8f4;
+  background-color: #dfe8e1;
   border-radius: 4px;
   color: #143b18;
   display: inline-flex;
-  gap: 0.25rem;
-  padding: 0.1rem 0.3rem;
+  font-weight: 700;
+  gap: 0.2rem;
+  padding: 0.08rem 0.25rem;
 }
 
 .not-recorded {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-style: italic;
   opacity: 0.7;
 }
 
 .verdict-loss {
   font-family: var(--card-font-family);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   margin-left: auto;
 }
@@ -96,9 +120,9 @@
 .outcome-good,
 .outcome-mastered,
 .outcome-miss {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
   margin: 0;
   overflow-wrap: anywhere;
 }
@@ -115,7 +139,7 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.3rem;
 }
 
 .primary,
@@ -123,9 +147,9 @@
   border-radius: 8px;
   cursor: pointer;
   font-family: var(--text-font-family);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  padding: 0.35em 0.7em;
+  padding: 0.25em 0.6em;
   transition:
     background-color var(--transition-duration) var(--transition-timing),
     border-color var(--transition-duration) var(--transition-timing);
@@ -134,7 +158,7 @@
 
 .primary {
   background-color: #197536;
-  border: 2px solid #0f5527;
+  border: 2px solid #72d572;
   color: #fff;
 }
 
@@ -145,21 +169,43 @@
 
 .primary:hover:not(:disabled),
 .primary:focus-visible:not(:disabled) {
-  background-color: #34c754;
-  border-color: #34c754;
-  outline: none;
+  background-color: #218838;
+  border-color: #8cee8c;
 }
 
+.primary:focus-visible:not(:disabled) {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Keeps the light border while pressed; the darker fill alone would hide it. */
+.primary:active:not(:disabled) {
+  background-color: #0f5527;
+  border-color: #8cee8c;
+}
+
+/*
+ * Lighter than the #6c8f74 the modals use for the same role. That border is
+ * fine where they use it -- 3.63:1 against the #10381b dialog surface -- but
+ * this panel sits on the #1f6536 felt, against which the same color reaches
+ * only 1.96:1. A transparent fill has no color of its own, so the border is
+ * the whole boundary and has to clear 3:1 against the felt itself.
+ */
 .secondary {
   background-color: transparent;
-  border: 2px solid #6c8f74;
+  border: 2px solid #a7c7ad;
   color: var(--text-color);
 }
 
 .secondary:hover,
 .secondary:focus-visible {
-  border-color: #a7c7ad;
-  outline: none;
+  background-color: color-mix(in srgb, #28a745 20%, transparent);
+  border-color: #def8e2;
+}
+
+.secondary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /*
@@ -207,6 +253,16 @@
   .primary,
   .secondary {
     font-size: min(1rem, 1.65vw);
+  }
+
+  /*
+   * A capped font here would shrink well below a readable size at a large
+   * device font on a narrow phone (see AGENTS.md's rem-floor traps), and
+   * unlike the score text around it this note carries no figure the player
+   * needs — so it drops entirely in landscape rather than shrinking.
+   */
+  .suit-note {
+    display: none;
   }
 
   .discard-cards {

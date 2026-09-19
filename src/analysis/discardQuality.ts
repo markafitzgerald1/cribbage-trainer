@@ -3,9 +3,9 @@
  * and far above the residue of summing fifty-odd terms, so rounding here
  * clears floating-point noise without inventing a tolerance of its own.
  */
-const LOSS_FRACTION_DIGITS = 6;
+export const LOSS_FRACTION_DIGITS = 6;
 
-const withoutFloatResidue = (points: number): number =>
+export const withoutFloatResidue = (points: number): number =>
   Number(points.toFixed(LOSS_FRACTION_DIGITS));
 
 interface KeptCard {
@@ -16,6 +16,16 @@ export interface ScoredKeepDiscardChoice {
   readonly discard: readonly KeptCard[];
   readonly expectedNetPoints: number;
 }
+
+// Taken as a maximum rather than as the first element, so a caller's ordering is its own business.
+export const maxExpectedNetPoints = (
+  scoredKeepDiscards: readonly { readonly expectedNetPoints: number }[],
+): number =>
+  Math.max(
+    ...scoredKeepDiscards.map(
+      (scoredKeepDiscard) => scoredKeepDiscard.expectedNetPoints,
+    ),
+  );
 
 export interface DiscardQuality {
   readonly expectedPointsLoss: number;
@@ -61,12 +71,7 @@ export const getDiscardQuality = (
   if (!chosen) {
     return null;
   }
-  // Taken as a maximum rather than as the first element, so a caller's ordering is its own business.
-  const bestExpectedNetPoints = Math.max(
-    ...scoredKeepDiscards.map(
-      (scoredKeepDiscard) => scoredKeepDiscard.expectedNetPoints,
-    ),
-  );
+  const bestExpectedNetPoints = maxExpectedNetPoints(scoredKeepDiscards);
   // Compared at full precision rather than at the two decimals the trainer displays: the loss is what the choice actually cost against this model, and the flag below has to mean the top choice rather than "within a hundredth of it".
   const expectedPointsLoss = withoutFloatResidue(
     bestExpectedNetPoints - chosen.expectedNetPoints,

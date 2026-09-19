@@ -11,6 +11,7 @@ declare const classes: {
   readonly primary: string;
   readonly prompt: string;
   readonly secondary: string;
+  readonly suitNote: string;
   readonly verdict: string;
   readonly verdictLabel: string;
   readonly verdictLoss: string;
