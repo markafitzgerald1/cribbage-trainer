@@ -169,6 +169,7 @@ export default [
             "cx",
             "deeplink",
             "derangements",
+            "describedby",
             "deterministically",
             "discardable",
             "ecma",

@@ -6,6 +6,11 @@ import {
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
 import {
+  type DiscardHighlightTier,
+  ScoredPossibleKeepDiscard,
+  getRowTitle,
+} from "./ScoredPossibleKeepDiscard";
+import {
   type MistakeClassification,
   classifyScoredMistake,
   formatAccessibleNetLoss,
@@ -19,6 +24,11 @@ import {
   useState,
 } from "react";
 import {
+  type OptimalDiscardMargin,
+  computeOptimalDiscardMargin,
+  isEqualBestCandidate,
+} from "../analysis/optimalDiscard";
+import {
   type ScoredKeepDiscard,
   allScoredKeepDiscardsByExpectedNetScoreDescending,
 } from "../analysis/analysis";
@@ -29,7 +39,6 @@ import {
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
-import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
 import { getDiscardQuality } from "../analysis/discardQuality";
 
@@ -58,6 +67,19 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly scoreSortKey: ScoredKeepDiscardSortKey;
   readonly sortOrder: SortOrder;
 }
+
+const getHighlightTier = (
+  isChosen: boolean,
+  isEqualBest: boolean,
+): DiscardHighlightTier => {
+  if (isChosen) {
+    return "chosen";
+  }
+  if (isEqualBest) {
+    return "equal-best";
+  }
+  return "none";
+};
 
 const getScoringHeaders = () =>
   [
@@ -105,6 +127,7 @@ const scoreColumns = [
 interface ChosenDiagnosticInfo {
   readonly chosenClassification: MistakeClassification | null;
   readonly hasChosenCandidate: boolean;
+  readonly optimalMargin: OptimalDiscardMargin;
 }
 
 const useChosenDiagnosticInfo = (
@@ -115,15 +138,14 @@ const useChosenDiagnosticInfo = (
       scoredOptions.find((option) =>
         option.discard.every((card) => !card.kept),
       ) ?? null;
-    const best = scoredOptions[0] ?? null;
+    const [best] = scoredOptions;
     const chosenClassification =
-      best !== null && chosen !== null
-        ? classifyScoredMistake(best, chosen)
-        : null;
+      best && chosen ? classifyScoredMistake(best, chosen) : null;
 
     return {
       chosenClassification,
       hasChosenCandidate: chosen !== null,
+      optimalMargin: computeOptimalDiscardMargin(scoredOptions),
     };
   }, [scoredOptions]);
 
@@ -198,9 +220,8 @@ export function ScoredPossibleKeepDiscards({
         : [],
     [cribRole, dealtCards, tables],
   );
-  const { chosenClassification, hasChosenCandidate } = useChosenDiagnosticInfo(
-    scoredKeepDiscardsByNetScore,
-  );
+  const { chosenClassification, hasChosenCandidate, optimalMargin } =
+    useChosenDiagnosticInfo(scoredKeepDiscardsByNetScore);
   const renderedAnalysis = useMemo(
     (): RenderedAnalysis => ({
       cribRole,
@@ -223,6 +244,32 @@ export function ScoredPossibleKeepDiscards({
       ),
     [scoredKeepDiscardsByNetScore, scoreSortKey],
   );
+  const scoredKeepDiscardsWithTiers = useMemo(() => {
+    const bestNet = scoredKeepDiscardsByNetScore[0]?.expectedNetPoints ?? 0;
+
+    return scoredKeepDiscards.map((scoredKeepDiscard, index) => {
+      const isChosen = scoredKeepDiscard.keep.every((card) => card.kept);
+      const isEqualBest =
+        !isChosen &&
+        isEqualBestCandidate(bestNet, scoredKeepDiscard.expectedNetPoints);
+      const highlightTier = getHighlightTier(isChosen, isEqualBest);
+      const rowTitle = getRowTitle(
+        highlightTier,
+        isChosen ? chosenClassification : null,
+      );
+      const descriptionId = rowTitle
+        ? `scored-discard-${index}-description`
+        : null;
+
+      return {
+        descriptionId,
+        highlightTier,
+        rowIndex: index,
+        rowTitle,
+        scoredKeepDiscard,
+      };
+    });
+  }, [chosenClassification, scoredKeepDiscards, scoredKeepDiscardsByNetScore]);
   const handleScoreSortClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       onScoreSortKeyChange(
@@ -299,7 +346,7 @@ export function ScoredPossibleKeepDiscards({
     }
     const captionAriaLabel =
       chosenClassification === null
-        ? "Optimal discard"
+        ? optimalMargin.accessibleLabel
         : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
@@ -308,7 +355,7 @@ export function ScoredPossibleKeepDiscards({
         role="status"
       >
         {chosenClassification === null ? (
-          <span className={classes.optimalBadge}>Optimal discard</span>
+          <span className={classes.optimalBadge}>{optimalMargin.label}</span>
         ) : (
           <>
             <span className={classes.subOptimalBadge}>
@@ -340,24 +387,40 @@ export function ScoredPossibleKeepDiscards({
 
   const renderScoringTableBody = () => (
     <tbody>
-      {scoredKeepDiscards.map((scoredKeepDiscard, index) => {
-        const isHighlighted = scoredKeepDiscard.keep.every((card) => card.kept);
-
-        return (
+      {scoredKeepDiscardsWithTiers.map(
+        ({ descriptionId, highlightTier, rowIndex, scoredKeepDiscard }) => (
           <ScoredPossibleKeepDiscard
-            classification={isHighlighted ? chosenClassification : null}
+            classification={
+              highlightTier === "chosen" ? chosenClassification : null
+            }
             cribRole={cribRole}
-            isHighlighted={isHighlighted}
+            descriptionId={descriptionId}
+            highlightTier={highlightTier}
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
               .map((dealtCard) => dealtCard.dealOrder)
               .join("")}
-            rowIndex={index}
+            rowIndex={rowIndex}
             scoredKeepDiscard={scoredKeepDiscard}
             sortOrder={sortOrder}
           />
-        );
-      })}
+        ),
+      )}
     </tbody>
+  );
+
+  const renderDescriptions = () => (
+    <div className={classes.visuallyHiddenDescriptions}>
+      {scoredKeepDiscardsWithTiers.map(({ descriptionId, rowTitle }) =>
+        descriptionId && rowTitle ? (
+          <span
+            id={descriptionId}
+            key={descriptionId}
+          >
+            {rowTitle}
+          </span>
+        ) : null,
+      )}
+    </div>
   );
 
   return (
@@ -381,6 +444,7 @@ export function ScoredPossibleKeepDiscards({
           {renderScoringTableHead()}
           {renderScoringTableBody()}
         </table>
+        {renderDescriptions()}
       </div>
     </figure>
   );
