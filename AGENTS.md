@@ -580,6 +580,73 @@ they bind any PR that makes a claim about a phone or ships a guard.
   `practiceLedger` 19%→80%. Retune the numbers only from a Docker
   `storybook:test:coverage` run, never the local one.
 
+## Pull request size gate
+
+- A separate workflow, `.github/workflows/pull-request-size.yml`, measures
+  how much **reviewable source** a pull request changes and fails above 400
+  lines, warning above 250. The measurement is `scripts/prSizeGate.mjs`,
+  unit-tested by `npm run test:pr-size-gate`. It exists because review cost
+  is superlinear in diff size — every round re-reads the whole diff — and
+  #814 spent 34 review threads across eight rounds where #826 spent six.
+- What counts: added plus deleted lines, three-dot against the merge base,
+  with lockfiles, Markdown, `tests-e2e/`, `*.test.*`/`*.spec.*`,
+  `*.stories.*`/`stories.*`, and binary rows each reported in their own
+  bucket and **excluded from the gated total**. Tests are excluded because
+  Jest's 100% threshold makes them run at roughly twice the source by
+  construction, and Markdown because the contribution rules below require
+  capturing learnings in the same pull request. So a large diff is not by
+  itself a failure — check which bucket it is in before splitting anything.
+- **The escape hatch is the `size-exception` label, never a threshold
+  edit.** The workflow listens for `labeled` and `unlabeled`, so applying or
+  removing it re-runs the check without a push. This is the `max-lines`
+  lesson applied: that cap ratcheted 343 → 517 → 520 with each bump riding
+  invisibly inside a feature commit, and the fix is an escape hatch a
+  reviewer can see was used. Raising `WARNING_THRESHOLD` or
+  `FAILURE_THRESHOLD` inside a feature branch is the same mistake wearing a
+  different name; the gate measures its own diff, so such an edit is at
+  least gated, but it still needs to be argued for on its own.
+- **The number is a property of a head, not of a pull request, and it moves
+  in both directions.** Validating the gate against #814 measured 373 at its
+  merge head and exactly the issue's 458 at `0aa6dea`, its eighth review
+  round's head — the final commit cut 96 lines of comment blocks after the
+  review loop had finished. A branch can therefore spend its whole review
+  budget over the cap and merge under it. When quoting a size figure, quote
+  the head it was measured at, the way a coverage number is quoted with the
+  run that produced it.
+- Parsing `git diff --numstat` has three traps and the script's tests pin
+  all three: a binary row carries `-` for both counts and turns a total into
+  `NaN` if parsed as a number; the default (non-`-z`) output quotes and
+  escapes paths containing spaces or non-ASCII bytes, which no splitting
+  recovers reliably; and with rename detection on, a record's path field is
+  empty and the old and new paths follow as separate records. Use
+  `--numstat -z` and attribute a rename to its new path.
+- **A workflow whose check is required must not cancel a run on the current
+  head.** This one sets `cancel-in-progress: false` for that reason: its
+  `labeled`/`unlabeled` triggers do not change the head SHA, so cancelling a
+  superseded run would leave a `CANCELLED` check-run for this job on the
+  head a merge is waiting on — the #786 failure, which needed a push to
+  clear. Here that would be perverse, because the label
+  escape hatch exists precisely so a size exception costs no push. The main
+  workflow keeps `cancel-in-progress: true` safely only because every
+  cancellation there lands on a superseded SHA. Before enabling
+  cancellation in any new workflow, ask which SHA a cancelled run's check
+  lands on, not whether cancelling saves runner time.
+- **Keep a reporting step from failing the gate.** The comment step is
+  `continue-on-error: true` and the verdict comes from the measure step's
+  `outcome`, so a transient GitHub API error cannot redden a check whose
+  measurement passed. A `gh api --slurp` bug did exactly that during
+  development, at a moment when red was independently expected, and only the
+  job log distinguished the two. `outcome` rather than `conclusion` is what
+  a `continue-on-error` step's real result is read from; `conclusion` is
+  always `success` there.
+- The gate blocks nothing until a human adds it to the repository's required
+  status checks, which is a repository setting no workflow can declare. The
+  context to add is the **job** name, `measure-pull-request-size`, not the
+  workflow name `pull-request-size` — GitHub's required-checks list is keyed
+  on job names, and picking the workflow name there silently requires a
+  check that never reports. Until someone does that the gate is advisory,
+  and a red run on it is still a run that has told you something.
+
 ## Code style and conventions
 
 - TypeScript/React with Vite; keep types sound.
@@ -910,6 +977,14 @@ they bind any PR that makes a claim about a phone or ships a guard.
 ## CI workflow notes
 
 - Workflow: .github/workflows/npm-build-test-upload-artifact-and-deploy.yml.
+- **A trigger type belongs in whichever workflow can afford it.** The size
+  gate needs `labeled` and `unlabeled` so its label escape hatch works
+  without a push, and it lives in
+  `.github/workflows/pull-request-size.yml` for exactly that reason: adding
+  those two types to the workflow below would rebuild the Docker image and
+  republish the Pages preview every time anyone touched a label. Before
+  extending the `types:` list here, price what the whole workflow costs on
+  that event.
 - `push` triggers the workflow **only for `main`** (`branches: [main]`) —
   that is the production deploy. Everything for a branch runs on
   `pull_request` — `opened`, `reopened`, `synchronize`: it builds the

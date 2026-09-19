@@ -52,6 +52,12 @@ jobs:
       - name: Run lint:audit wrapper tests
         run: npm run test:lint-audit
 
+      # The size gate's own measurement logic. Pure parsing and arithmetic
+      # over git output, so it runs here rather than in the Docker gate, whose
+      # COPY allowlist excludes scripts/ before the test layer.
+      - name: Run pull request size gate tests
+        run: npm run test:pr-size-gate
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 

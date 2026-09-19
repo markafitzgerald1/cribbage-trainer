@@ -1,10 +1,30 @@
-import { AT, EMPTY, decisionOf, summaryOf } from "./discardTally.test.common";
 import {
+  AT,
+  EMPTY,
+  decisionOf,
+  storedRecords,
+  summaryOf,
+} from "./discardTally.test.common";
+import {
+  type DiscardDecisionRecord,
   clearDiscardTally,
   readDiscardTally,
   recordDiscardDecision,
 } from "./discardTally";
 import { describe, expect, it } from "@jest/globals";
+
+const AUTHENTIC = { expectedPointsLoss: 2 };
+const PRACTICE = { expectedPointsLoss: 9, isPractice: true };
+
+const afterTwoDecisions = (
+  first: Partial<DiscardDecisionRecord>,
+  second: Partial<DiscardDecisionRecord>,
+) => {
+  clearDiscardTally();
+  recordDiscardDecision(decisionOf(first));
+  const summary = recordDiscardDecision(decisionOf(second));
+  return { records: storedRecords().length, summary };
+};
 
 describe("discard tally storage", () => {
   it("reads a browser with no history as empty", () => {
@@ -62,16 +82,65 @@ describe("discard tally storage", () => {
   });
 
   /*
-   * Back, Forward, a re-sort and a reload all re-render a completed discard.
-   * Each arrives as the same hand and must move the tally exactly once.
+   * All four directions of the idempotency match, because only three of them
+   * collapse. Back, Forward, a re-sort and a reload all re-render a completed
+   * discard, and each must move the tally exactly once — but a practice row
+   * must not own a hand's key against a later authentic deal of those six
+   * cards in that order and role (#830), while a practice decision must still
+   * fold into the record of the hand being practiced (#809). Asserted on the
+   * stored record count as well as the summary, since practice moves no
+   * headline figure and an absorbed practice decision is otherwise
+   * indistinguishable from a recorded one.
    */
-  it("counts a hand's decision once however often it is re-reported", () => {
-    clearDiscardTally();
-    recordDiscardDecision(decisionOf({ expectedPointsLoss: 3 }));
+  it.each([
+    {
+      first: PRACTICE,
+      name: "records an authentic decision whose key a practice row holds",
+      records: 2,
+      second: AUTHENTIC,
+      summary: summaryOf(1, 2, 0),
+    },
+    {
+      first: AUTHENTIC,
+      name: "absorbs a practice decision into that hand's authentic record",
+      records: 1,
+      second: PRACTICE,
+      summary: summaryOf(1, 2, 0),
+    },
+    {
+      first: PRACTICE,
+      name: "absorbs a practice decision into a practice record of that hand",
+      records: 1,
+      second: { expectedPointsLoss: 1, isPractice: true },
+      summary: EMPTY,
+    },
+    {
+      first: AUTHENTIC,
+      name: "absorbs a re-reported authentic decision into its own record",
+      records: 1,
+      second: { expectedPointsLoss: 0, isOptimal: true },
+      summary: summaryOf(1, 2, 0),
+    },
+  ])("$name", ({ first, records, second, summary }) => {
+    expect(afterTwoDecisions(first, second)).toStrictEqual({
+      records,
+      summary,
+    });
+  });
 
-    expect(
-      recordDiscardDecision(decisionOf({ expectedPointsLoss: 3 })),
-    ).toStrictEqual(summaryOf(1, 3, 0));
+  /*
+   * The practice row now sits ahead of the authentic one in the records, so
+   * the match has to keep looking past a row it cannot absorb into rather
+   * than stopping at the first row carrying the key.
+   */
+  it("counts a reloaded authentic decision once behind a practice row", () => {
+    clearDiscardTally();
+    recordDiscardDecision(decisionOf(PRACTICE));
+    recordDiscardDecision(decisionOf(AUTHENTIC));
+
+    expect(recordDiscardDecision(decisionOf(AUTHENTIC))).toStrictEqual(
+      summaryOf(1, 2, 0),
+    );
   });
 
   // A second discard from the same hand is chosen after reading the ranked table, so it is not a fresh instinct.
