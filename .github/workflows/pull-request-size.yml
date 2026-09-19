@@ -10,10 +10,16 @@ on:
 
 concurrency:
   # Keyed on the pull request rather than the branch, since this workflow only
-  # ever runs on pull_request. Toggling a label twice in quick succession
-  # cancels the first run, whose verdict the second would have replaced.
+  # ever runs on pull_request. cancel-in-progress is deliberately false: a
+  # label event does not change the head SHA, so cancelling would leave a
+  # CANCELLED check-run for this job on the *current* head, which #786
+  # records keeping merge BLOCKED until the next push. That would make the
+  # label escape hatch recoverable only by the push it exists to avoid. The
+  # main workflow can afford cancellation because its cancellations always
+  # land on a superseded SHA; this one cannot. Runs queue instead, which
+  # costs seconds because the gate installs nothing.
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   measure-pull-request-size:
@@ -50,7 +56,15 @@ jobs:
       # Skipped for fork pull requests, whose token cannot write comments, and
       # whenever the measurement produced no status - an empty marker would
       # match the first comment on the pull request and overwrite it.
+      # continue-on-error so a GitHub API hiccup cannot fail the gate for a
+      # reason that is not the size verdict. The report is a convenience; the
+      # verdict lives in the measure step's outcome and the job summary. An
+      # earlier `gh api --slurp` bug failed this step and reddened the check
+      # at a moment when red was independently expected, and only the job log
+      # separated the two - isolating the step removes that class, not just
+      # that instance.
       - name: Post or update the size report comment
+        continue-on-error: true
         if: steps.measure.outputs.status != '' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ github.token }}
