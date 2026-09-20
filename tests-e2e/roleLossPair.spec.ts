@@ -46,15 +46,22 @@ test.describe("both crib-role costs for the chosen discard", () => {
     await expect(caption).toContainText("Crib");
 
     /*
-     * The reversed-role figure is the one thing on this caption a reader can
-     * act on, so it is marked in two ways rather than one: dropping either
-     * fails here. Color alone would leave the pair reading as flatly as any
-     * other two numbers, which is what this treatment exists to fix.
+     * The underline is the whole mark, so its thickness is asserted as well
+     * as its presence: the browser default is thinner than this and would
+     * satisfy a bare "underline" while reading as an artifact of the font.
+     * The color assertion is the other half of the same rule — the figure
+     * has to inherit the badge's, because a color here made the secondary
+     * number the loudest thing on the screen.
      */
     const freeRoleCost = caption.getByText("0.00 as pone");
+    // ".." selects the parent, which is the badge: the element declaring the color this figure must still inherit.
+    const badgeColor = await freeRoleCost
+      .locator("..")
+      .evaluate((element) => window.getComputedStyle(element).color);
 
     await expect(freeRoleCost).toHaveCSS("text-decoration-line", "underline");
-    await expect(freeRoleCost).toHaveCSS("color", "rgb(126, 230, 138)");
+    await expect(freeRoleCost).toHaveCSS("text-decoration-thickness", "2px");
+    await expect(freeRoleCost).toHaveCSS("color", badgeColor);
   });
 
   test("states two positive costs when the reversed role would have cost less", async ({

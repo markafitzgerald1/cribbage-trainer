@@ -1,9 +1,9 @@
 /*
- * Marks a reversed-role figure that cost nothing. Both cues are
- * load-bearing; skills/ui-layout-and-interaction/SKILL.md has the numbers.
+ * Marks a reversed-role figure that cost nothing. Decoration only, and the
+ * underline is the cue that satisfies not-by-color-alone, so the green this
+ * carried was droppable; skills/ui-layout-and-interaction/SKILL.md has why.
  */
 .costs-nothing {
-  color: #7ee68a;
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;

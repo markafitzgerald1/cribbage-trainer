@@ -153,14 +153,19 @@ export const RoleLossPair: Story = {
 
     /*
      * Assert what the reader sees rather than the class that produced it.
-     * The underline is the half of the treatment that survives for anyone
-     * who cannot separate the green from the badge's own text, so a change
-     * that kept the color and dropped it should fail here.
+     * The underline is now the whole mark, so its thickness is pinned too:
+     * the browser default is thinner and would satisfy a bare "underline"
+     * while reading as a quirk of the font. The color is pinned to the
+     * badge's own, because a brighter one here outshouted the figure that
+     * matters — the cost under the role actually held.
      */
-    const rendered = window.getComputedStyle(canvas.getByText("0.00 as pone"));
+    const figure = canvas.getByText("0.00 as pone");
+    const rendered = window.getComputedStyle(figure);
+    const badge = figure.parentElement as HTMLElement;
 
     await expect(rendered.textDecorationLine).toBe("underline");
-    await expect(rendered.color).toBe("rgb(126, 230, 138)");
+    await expect(rendered.textDecorationThickness).toBe("2px");
+    await expect(rendered.color).toBe(window.getComputedStyle(badge).color);
   },
 };
 

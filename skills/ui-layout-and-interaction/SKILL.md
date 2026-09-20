@@ -512,20 +512,45 @@ once you are already editing layout or interaction code.
   padding, a leading glyph about as much again, and the string's own width
   varies across engines by more than either, so a marker measured as fitting
   in Chromium can still start a third row in WebKit. `color` and
-  `text-decoration` change neither dimension and are what to reach for.
+  `text-decoration` change neither dimension and are what to reach for —
+  though the two bullets below are why only the second of those shipped.
   Measure the badge rather than the caption: the guard asserts the caption's
   height, but it is the badge's width against its row that decides it.
-- **Reuse the zero-loss green rather than picking a hue, and never ship it
-  alone.** A loss of exactly zero already reads green here — the trend
-  dialog's `.loss-pill-optimal` fills at #1b732f — so a second marker for
-  the same fact in some other color would read as a different fact. The
-  color is only half of the signal, though: #824's marked figure carries a
-  2px underline as well, because it sits inside a badge whose other text is
-  near-white and nothing else tells them apart. Contrast is per ground and
-  these badges are opaque, so measure against the badge fill, not the felt
-  behind it: #7ee68a reaches 8.55:1 on the caption badge's #4a270f and
-  7.87:1 on the queue badge's #123b40, and clears 4.5:1 on the #1f6536 felt
-  as well, which is the ground it would inherit if either fill were dropped.
+- **A mark's contrast is measured against its own ground; its loudness is
+  not.** #824 first marked its zero-cost reversed-role figure in the
+  repository's existing zero-loss green — #7ee68a, reused rather than
+  invented because the trend dialog's `.loss-pill-optimal` already fills a
+  0.00 row green — with a 2px underline beside it as the non-color cue.
+  Contrast was measured per ground, against the badge fills rather than the
+  felt because both fills are opaque: 8.55:1 on the caption badge's #4a270f,
+  7.87:1 on the queue badge's #123b40, and 4.57:1 on the #1f6536 felt it
+  would inherit if either fill were ever dropped. Every one of those checks
+  passed and the treatment was still wrong. Read on a phone it was the
+  brightest element on the screen, and what it marked is the **secondary**
+  figure — what the discard would have cost under a role the reader did not
+  hold — while the cost under the role actually held rendered plain. That is
+  a hierarchy inversion, and no per-ground contrast figure can see one:
+  those figures ask how legible a mark is against what sits behind it, never
+  how much attention it takes from what sits beside it. Ask the second
+  question too, of the whole screen rather than of the element — what is now
+  the loudest thing here, and is it the thing worth reading first.
+- **Dropping a color is not weakening an accessibility rule.** What #824
+  ships is the underline alone. The not-by-color-alone rule (WCAG 2.1 SC
+  1.4.1) asks for a cue that survives without color, which is exactly the
+  job the underline was added to do; removing the color leaves that cue as
+  the only one and the rule satisfied rather than violated. Contrast rose
+  rather than fell, which is worth measuring instead of assuming: inheriting
+  the badge's own #fdf2e9 reaches 12.00:1 on the caption badge's #4a270f
+  where the green reached 8.55:1, and the queue badge's #cbeff5 reaches
+  9.97:1 on #123b40 where it reached 7.87:1. Say all of that wherever the
+  change is recorded, because a diff deleting a `color` declaration from a
+  rule whose comment cites accessibility reads as a regression to whoever
+  arrives later without the numbers. And pin the surviving cue harder once
+  it is the only one: a
+  bare `text-decoration-line: underline` assertion is satisfied by the
+  browser's default thickness, so assert the thickness too, and assert that
+  the marked figure's color **equals its badge's**, so a reintroduced hue
+  fails a test rather than passing unnoticed.
 - **A second figure beside the first has to be able to change the reader's
   mind, or it is noise wearing the costume of evidence.** #824 shipped both
   crib-role costs as a pair on every completed sub-optimal discard, and the
