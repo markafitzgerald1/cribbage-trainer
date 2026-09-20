@@ -107,9 +107,12 @@ export const roleLossPairLabel = (
       oppositeRoleCostsNothing: false,
     };
   }
-  const opposite = `${formatNetLoss(oppositeLoss)} as ${cribRoleName(oppositeCribRole(cribRole))}`;
+  const oppositeRoleName = cribRoleName(oppositeCribRole(cribRole));
+  const opposite = `${formatNetLoss(oppositeLoss)} as ${oppositeRoleName}`;
+  // Spelled from the accessible formatter rather than reusing the visible clause, because screen readers announce a bare "<" inconsistently or not at all.
+  const accessibleOpposite = `${formatAccessibleNetLoss(oppositeLoss)} as ${oppositeRoleName}`;
   return {
-    accessibleLabel: `${formatAccessibleNetLoss(actualLoss)} points lost as ${cribRoleName(cribRole)}, ${opposite}`,
+    accessibleLabel: `${formatAccessibleNetLoss(actualLoss)} points lost as ${cribRoleName(cribRole)}, ${accessibleOpposite}`,
     leadingText: `${formatNetLoss(actualLoss)} as ${cribRoleName(cribRole)}, `,
     oppositeRoleCost: opposite,
     oppositeRoleCostsNothing:

@@ -307,7 +307,7 @@
 Control naming, native form semantics, hiding a control that must stay
 focusable, chart SVG roles and hit testing, locking a control with
 `disabled`, and the practice drill's history and storage-staleness rules
-moved to `skills/ui-layout-and-interaction/SKILL.md`. These two stay because
+moved to `skills/ui-layout-and-interaction/SKILL.md`. These stay because
 an agent breaks them without knowing it has entered this domain.
 
 - Keep visible and aria labels mutually non-substring across controls, even
@@ -315,6 +315,17 @@ an agent breaks them without knowing it has entered this domain.
   case-insensitive substring, so a new label that contains another control's
   name breaks locators in specs that were never touched (see
   `skills/testing-e2e/SKILL.md` for the collisions this has already caused).
+- **Re-format a number for an accessible label; never interpolate the
+  visible string into it.** The paired formatters disagree on exactly one
+  input: `formatNetLoss` renders a positive sub-cent loss as `< 0.01` and
+  `formatAccessibleNetLoss` renders `less than 0.01`, because screen
+  readers announce a bare `<` inconsistently or not at all.
+  `roleLossPairLabel` built its spoken reversed-role clause out of the
+  visible one and announced "1.40 points lost as dealer, < 0.01 as pone" —
+  the glyph sitting beside a figure the same label had already spelled out.
+  Only a sub-cent value diverges, so every other fixture passes and the
+  leak reaches review unnoticed; pin a formatter pair with a sub-cent case
+  rather than trusting a green suite.
 - CSS modules scope only class selectors: a bare element selector in any
   `*.module.css` (e.g. `button + button`) compiles to a global rule that
   leaks into every other component. One such rule indented all but the

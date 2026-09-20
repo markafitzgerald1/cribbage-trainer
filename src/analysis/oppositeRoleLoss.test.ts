@@ -116,11 +116,15 @@ describe("wording for a pair of role costs", () => {
      * A sub-cent loss prints as "< 0.01" rather than rounding to "0.00", so
      * the mark cannot be claimed by a cost that exists. This is the case a
      * near-zero tolerance would have swallowed, and the reason none is used.
+     *
+     * It is also the only case where the two spellings of the reversed-role
+     * clause diverge, so it is what keeps the visible "<" out of the spoken
+     * label.
      */
     {
       actualLoss: 1.4,
       cribRole: CribRole.Dealer,
-      expectedAccessible: "1.40 points lost as dealer, < 0.01 as pone",
+      expectedAccessible: "1.40 points lost as dealer, less than 0.01 as pone",
       expectedCostsNothing: false,
       expectedLeading: "1.40 as dealer, ",
       expectedOpposite: "< 0.01 as pone",
