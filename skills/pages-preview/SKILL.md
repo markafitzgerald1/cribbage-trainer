@@ -81,3 +81,37 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   `/cribbage-trainer`); preview builds set it to `/cribbage-trainer/pr/<n>`
   and deliberately skip the `dist/`-caching step used on main, since that
   cache key hashes only source files, not the base path.
+- **A preview's `localStorage` is keyed by that preview's base path, so a
+  console snippet in a testing plan has to pin itself to the preview being
+  reviewed.** `discardTallyKey` is `DISCARD_TALLY_KEY_PREFIX` — the literal
+  `discardTally` — concatenated with Vite's `BASE_URL`, and because
+  `PAGES_BASE_PATH` carries no trailing slash, PR 840's preview key is
+  `discardTally/cribbage-trainer/pr/840` beside production's
+  `discardTally/cribbage-trainer/`. Two ways such a snippet fails, both
+  measured against the live #840 preview rather than reasoned about: a
+  guessed prefix matches nothing and returns `null` — that plan shipped
+  `cribbage-trainer-discard-tally`, a key this app has never written — and
+  `Object.keys(localStorage).find(...)` on even the correct prefix returns
+  whichever key enumeration happens to yield first, which with production's
+  tally also in storage was **production's**, at a different `version`,
+  reported as though it were the preview's. Key order is not insertion
+  order. Select the longest stored base that prefixes the current path:
+
+  ```js
+  JSON.parse(
+    localStorage.getItem(
+      Object.keys(localStorage)
+        .filter(
+          (key) =>
+            key.startsWith("discardTally") &&
+            location.pathname.startsWith(key.slice("discardTally".length)),
+        )
+        .sort((first, second) => second.length - first.length)[0],
+    ),
+  );
+  ```
+
+  Run any such snippet against a real preview before publishing it. Both
+  failures above return a plausible answer instead of an error, so a
+  reviewer following the plan cannot tell a broken feature from a broken
+  instruction.

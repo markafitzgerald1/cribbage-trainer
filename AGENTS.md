@@ -244,6 +244,17 @@
 - For focused Jest/debug runs, pass `--coverage=false` when you only need
   targeted test signal; global coverage thresholds can make otherwise passing
   `--runTestsByPath` suites exit nonzero.
+- **Bumping `discardTally.ts`'s `CURRENT_VERSION` breaks assertions in three
+  specs, and the number is spelled three different ways.** Going 5 to 6 for
+  #824 needed: the plain `expect(tally.version).toBe(…)` and the test title
+  naming the version in `discardTallyRecovery.test.ts`, a **JSON substring**
+  `'"version":5'` in the same file, a whole stored-tally literal in
+  `strayDrillRecords.test.ts`, and every "a newer version" fixture, which is
+  written as the current version plus one and silently stops being newer
+  otherwise. Grep for the old number as a bare integer, as `version: N`, and
+  as `"version":N` before assuming you have them all — and do not
+  search-and-replace the integer, since `expect(…).toBe(5)` also appears as a
+  mean points loss two files away.
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.
@@ -302,7 +313,7 @@
 Control naming, native form semantics, hiding a control that must stay
 focusable, chart SVG roles and hit testing, locking a control with
 `disabled`, and the practice drill's history and storage-staleness rules
-moved to `skills/ui-layout-and-interaction/SKILL.md`. These two stay because
+moved to `skills/ui-layout-and-interaction/SKILL.md`. These stay because
 an agent breaks them without knowing it has entered this domain.
 
 - Keep visible and aria labels mutually non-substring across controls, even
@@ -310,6 +321,17 @@ an agent breaks them without knowing it has entered this domain.
   case-insensitive substring, so a new label that contains another control's
   name breaks locators in specs that were never touched (see
   `skills/testing-e2e/SKILL.md` for the collisions this has already caused).
+- **Re-format a number for an accessible label; never interpolate the
+  visible string into it.** The paired formatters disagree on exactly one
+  input: `formatNetLoss` renders a positive sub-cent loss as `< 0.01` and
+  `formatAccessibleNetLoss` renders `less than 0.01`, because screen
+  readers announce a bare `<` inconsistently or not at all.
+  `roleLossPairLabel` built its spoken reversed-role clause out of the
+  visible one and announced "1.40 points lost as dealer, < 0.01 as pone" —
+  the glyph sitting beside a figure the same label had already spelled out.
+  Only a sub-cent value diverges, so every other fixture passes and the
+  leak reaches review unnoticed; pin a formatter pair with a sub-cent case
+  rather than trusting a green suite.
 - CSS modules scope only class selectors: a bare element selector in any
   `*.module.css` (e.g. `button + button`) compiles to a global rule that
   leaks into every other component. One such rule indented all but the
@@ -481,7 +503,13 @@ they bind any PR that makes a claim about a phone or ships a guard.
   near-identical test blocks are the most common trip-up: as soon as a
   setup or assertion pattern of two-plus statements appears twice, extract
   it into a named helper (e.g. a click-and-assert or render-with-props
-  function) rather than waiting for the jscpd failure.
+  function) rather than waiting for the jscpd failure. The vendored-table
+  preamble is the one most new analysis specs write by reflex: a local
+  `tables` object built by casting the two imported JSON artifacts is a
+  clone the moment a second file spells it out. Import
+  `expectedCribPointsTable` and `expectedPlayPointsTable` from
+  `src/analysis/analysis.test.common.ts`, which exists for this and is
+  already excluded from `collectCoverageFrom`.
 - jscpd normalizes identifiers and literal values, so two blocks whose only
   differences are variable names or string/number/boolean literals still
   count as clones — enumerated `<Trainer …={…}>` prop lists in two files, or
@@ -510,6 +538,23 @@ they bind any PR that makes a claim about a phone or ships a guard.
   Docker run to discover, since `npm test -- --coverage=false` hides it.
   Prefer formulations with no dead branch (compute `indexOf` and `substring`
   from the same string) over a nullish fallback that can never fire.
+  Two shapes recur and both have a branch-free spelling, found while adding
+  the #824 reversed-role comparison:
+  - **Locating a row and then guarding against its absence.** `find(...)`
+    types as `T | undefined`, so the `undefined` arm has to be written and
+    can be unreachable. Take a maximum over a filtered list instead —
+    `maxExpectedNetPoints(scored.filter(matches))`, which is
+    `Math.max(...[])` and therefore `-Infinity` when nothing matches — and
+    the absent case falls out of the arithmetic with no branch to cover.
+    `src/analysis/discardQuality.ts` already exports that helper.
+  - **Two guards where only one is reachable.** `a === null || b === null`
+    is fully covered only if each operand is decisive on its own somewhere.
+    In `ScoredPossibleKeepDiscards` the tables can be null while no
+    classification exists, but never the reverse, so
+    `tables === null || classification === null` covers all three outcomes
+    and the same pair written the other way round does not. Order the
+    operands so the one that fires alone comes first, rather than adding a
+    test for a state the code cannot reach.
 - The Dockerfile builds its lint surface and its test/build surface from
   different copies. `COPY . .` immediately before `RUN npm run lint` hands lint
   the entire build context, so no file can be missing from the gate; the

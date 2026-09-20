@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import * as playLoader from "../game/expectedPlayPointsTableLoader";
+import { CARDS, parseHand } from "../game/Card";
 import {
   type Meta,
   SORT_ORDER_NAMES,
@@ -13,7 +14,6 @@ import {
   waitForLoadingToDisappear,
 } from "./stories.common";
 import { expect, fireEvent, fn, within } from "storybook/test";
-import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
@@ -113,6 +113,84 @@ export const SortedByHandPoints: Story = {
     });
 
     await expect(handHeader).toHaveAttribute("aria-sort", "descending");
+  },
+};
+
+/*
+ * Waits out the table load and states what the caption then reads, which is
+ * where both role-cost stories start; jscpd counts the second spelling of
+ * that preamble as a clone. Asserting it here also keeps each story's own
+ * negative or computed-style check downstream of a caption known to be on
+ * screen.
+ */
+const captionAfterLoad = async (
+  canvasElement: HTMLElement,
+  expectedText: string,
+) => {
+  const canvas = within(canvasElement);
+  await waitForLoadingToDisappear(canvas);
+
+  await expect(canvas.getByRole("status")).toHaveTextContent(expectedText);
+
+  return canvas;
+};
+
+/*
+ * Discarding the 9 of diamonds and the 3 of spades here costs 3.11 as
+ * dealer and exactly nothing as pone, so the caption shows the #824 pair of
+ * role costs beside the component decomposition it does not replace.
+ */
+export const RoleLossPair: Story = {
+  ...createStory(
+    toDealtCards(parseHand("9D,9C,9H,4C,4H,3S"), [0, 5]),
+    SortOrder.Descending,
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = await captionAfterLoad(
+      canvasElement,
+      "Sub-optimal: 3.11 as dealer, 0.00 as pone",
+    );
+
+    /*
+     * Assert what the reader sees rather than the class that produced it.
+     * The underline is now the whole mark, so its thickness is pinned too:
+     * the browser default is thinner and would satisfy a bare "underline"
+     * while reading as a quirk of the font. The color is pinned to the
+     * badge's own, because a brighter one here outshouted the figure that
+     * matters — the cost under the role actually held.
+     */
+    const figure = canvas.getByText("0.00 as pone");
+    const rendered = window.getComputedStyle(figure);
+    const badge = figure.parentElement as HTMLElement;
+
+    await expect(rendered.textDecorationLine).toBe("underline");
+    await expect(rendered.textDecorationThickness).toBe("2px");
+    await expect(rendered.color).toBe(window.getComputedStyle(badge).color);
+  },
+};
+
+const roleLossWithheldStory = createStory(
+  toDealtCards(parseHand("KH,QS,10D,9C,6S,5H"), [0, 4]),
+  SortOrder.Descending,
+);
+
+/*
+ * The state most hands are in: this discard costs 0.82 as pone and 3.46 as
+ * dealer, so the reversed figure would say only that the role not held
+ * would have been worse. One figure, in the wording this caption carried
+ * before #824.
+ */
+export const RoleLossWithheld: Story = {
+  ...roleLossWithheldStory,
+  args: { ...roleLossWithheldStory.args, cribRole: CribRole.Pone },
+  play: async ({ canvasElement }) => {
+    const canvas = await captionAfterLoad(
+      canvasElement,
+      "Sub-optimal: 0.82 pts lost",
+    );
+
+    // The caption is on screen with its single figure, so the reversed-role clause is absent rather than simply not rendered.
+    await expect(canvas.queryByText(/as dealer/u)).toBeNull();
   },
 };
 

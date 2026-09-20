@@ -15,6 +15,14 @@ export interface DiscardDecisionRecord {
   readonly isOptimal: boolean;
   // Seeded, deep-linked, and manually entered hands are kept but excluded from headline averages.
   readonly isPractice: boolean;
+  /*
+   * What the same discard would have cost had the crib been the other
+   * player's (#824). Absent on every record written before version 6, and
+   * absent means unknown rather than zero: zero is a real and interesting
+   * value here — it says the discard was exactly best for the role the
+   * player did not hold — so a missing figure must never be read as one.
+   */
+  readonly oppositeRoleExpectedPointsLoss?: number;
   // Monotonic recording order for queue recency; `at` remains the calendar event time.
   readonly recencyAt?: number;
 }
@@ -34,18 +42,21 @@ interface MaybeDecisionRecord {
   readonly expectedPointsLoss?: unknown;
   readonly isOptimal?: unknown;
   readonly isPractice?: unknown;
+  readonly oppositeRoleExpectedPointsLoss?: unknown;
   readonly recencyAt?: unknown;
 }
 
-interface StoredDecisionRecord {
-  readonly at: number;
-  readonly cribRole: CribRole;
+/*
+ * The shape as storage holds it, which differs from the parsed record in
+ * one place only: discardKey may simply be absent on a record written
+ * before version 3. Derived rather than re-declared so a field added to one
+ * cannot be forgotten on the other.
+ */
+interface StoredDecisionRecord extends Omit<
+  DiscardDecisionRecord,
+  "discardKey"
+> {
   readonly discardKey?: string | null;
-  readonly expectedPointsLoss: number;
-  readonly handKey: string;
-  readonly isOptimal: boolean;
-  readonly isPractice: boolean;
-  readonly recencyAt?: number;
 }
 
 /*
@@ -72,7 +83,9 @@ const isStoredDecisionRecord = (
       candidate.cribRole === CribRole.Pone) &&
     (typeof candidate.discardKey === "undefined" ||
       candidate.discardKey === null ||
-      typeof candidate.discardKey === "string")
+      typeof candidate.discardKey === "string") &&
+    (typeof candidate.oppositeRoleExpectedPointsLoss === "undefined" ||
+      isFiniteNonNegative(candidate.oppositeRoleExpectedPointsLoss))
   );
 };
 

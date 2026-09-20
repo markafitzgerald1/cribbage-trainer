@@ -223,3 +223,26 @@ agreed, the pull request says what actually happened.
   that shows something, leaving a follow-up for the richer view. Watch for the
   inverse smell too: a display ticket that silently assumes a store nobody
   built.
+- **"How often does this happen?" is two questions, and only one of them is
+  answerable from inside this repository.** A structural question — how
+  often does the game put the player in a position where this can happen —
+  is answered by enumerating deals with the app's own scoring, needs no
+  user data, and gives a **ceiling**. A behavior question — how often
+  does this player actually do it — needs recorded decisions, and those
+  live in `localStorage` on the device that played them: there is no file
+  here to read, and #752 (export and import of decision history) is still
+  open, so there is nothing to ask for either. #824 asked the second and
+  had to be answered with the first. Say in the plan comment and the pull
+  request which of the two you measured and that it is a property of the
+  game rather than of anyone's play; the two numbers differ by an order of
+  magnitude there (a 58.10% structural ceiling against a 4.32%
+  indifference density), so conflating them would have argued for the
+  wrong change. Never hand-write a history sample to fill the gap, and
+  never quietly skip the measurement and build anyway.
+- A measured recommendation **not** to build is a complete deliverable, and
+  the artifact for it is the issue, not a pull request. Where the owner has
+  already voiced a suspicion that something is not worth building, the bar
+  for concluding the same drops rather than rises — but the evidence still
+  decides, and an owner leaning is a reason to look harder, not a reason to
+  stop measuring. Post the number either way, and say plainly which parts
+  of the case it does and does not support.

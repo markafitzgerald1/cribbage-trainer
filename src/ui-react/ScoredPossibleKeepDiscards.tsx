@@ -13,8 +13,6 @@ import {
 import {
   type MistakeClassification,
   classifyScoredMistake,
-  formatAccessibleNetLoss,
-  formatNetLoss,
 } from "../analysis/classifyMistake";
 import {
   type MouseEvent,
@@ -36,11 +34,16 @@ import {
   ScoredKeepDiscardSortKey,
   compareByExpectedScoreThenRankDescending,
 } from "../analysis/compareByExpectedScoreDescending";
+import {
+  oppositeRoleExpectedPointsLoss,
+  roleLossPairLabel,
+} from "../analysis/oppositeRoleLoss";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { SortOrder } from "../ui/SortOrder";
 import { getDiscardQuality } from "../analysis/discardQuality";
+import { renderRoleLossPairText } from "./RoleLossPairText";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
@@ -124,48 +127,75 @@ const scoreColumns = [
   },
 ] as const;
 
+interface ExpectedTables {
+  readonly crib: ExpectedCribPointsTable;
+  readonly play: ExpectedPlayPointsTable;
+}
+
 interface ChosenDiagnosticInfo {
   readonly chosenClassification: MistakeClassification | null;
   readonly hasChosenCandidate: boolean;
   readonly optimalMargin: OptimalDiscardMargin;
+  // Null until a discard is complete and the tables have loaded; never zero to stand in for unknown.
+  readonly oppositeRoleLoss: number | null;
 }
 
-const useChosenDiagnosticInfo = (
-  scoredOptions: readonly ScoredKeepDiscard<DealtCard>[],
-): ChosenDiagnosticInfo =>
+interface ChosenDiagnosticInput {
+  readonly cribRole: CribRole;
+  readonly dealtCards: readonly DealtCard[];
+  readonly scoredOptions: readonly ScoredKeepDiscard<DealtCard>[];
+  readonly tables: ExpectedTables | null;
+}
+
+const useChosenDiagnosticInfo = ({
+  cribRole,
+  dealtCards,
+  scoredOptions,
+  tables,
+}: ChosenDiagnosticInput): ChosenDiagnosticInfo =>
   useMemo(() => {
     const chosen =
       scoredOptions.find((option) =>
         option.discard.every((card) => !card.kept),
       ) ?? null;
     const [best] = scoredOptions;
-    const chosenClassification =
-      best && chosen ? classifyScoredMistake(best, chosen) : null;
 
     return {
-      chosenClassification,
+      chosenClassification:
+        best && chosen ? classifyScoredMistake(best, chosen) : null,
       hasChosenCandidate: chosen !== null,
+      /*
+       * The discarded cards come from `dealtCards` rather than from the
+       * matched option, so no second narrowing against null is needed: the
+       * two cards not kept are the discard, by definition. Computed for
+       * every completed decision rather than only for mistakes, because the
+       * figure is evidence either way — a discard that was best for the role
+       * held and costly for the other one says as much as the reverse.
+       */
+      oppositeRoleLoss:
+        tables === null || chosen === null
+          ? null
+          : oppositeRoleExpectedPointsLoss({
+              cards: dealtCards,
+              chosenDiscardCards: dealtCards.filter((card) => !card.kept),
+              cribRole,
+              tables,
+            }),
       optimalMargin: computeOptimalDiscardMargin(scoredOptions),
     };
-  }, [scoredOptions]);
+  }, [cribRole, dealtCards, scoredOptions, tables]);
 
 interface ExpectedTablesState {
   readonly handleRetry: () => void;
   readonly loadError: boolean;
-  readonly tables: {
-    readonly crib: ExpectedCribPointsTable;
-    readonly play: ExpectedPlayPointsTable;
-  } | null;
+  readonly tables: ExpectedTables | null;
 }
 
 const useExpectedTables = (
   loadCribTable: () => Promise<ExpectedCribPointsTable>,
   loadPlayTable: () => Promise<ExpectedPlayPointsTable>,
 ): ExpectedTablesState => {
-  const [tables, setTables] = useState<{
-    readonly crib: ExpectedCribPointsTable;
-    readonly play: ExpectedPlayPointsTable;
-  } | null>(() => {
+  const [tables, setTables] = useState<ExpectedTables | null>(() => {
     const crib = cribLoader.getTableSync();
     const play = playLoader.getTableSync();
     return crib && play ? { crib, play } : null;
@@ -220,14 +250,24 @@ export function ScoredPossibleKeepDiscards({
         : [],
     [cribRole, dealtCards, tables],
   );
-  const { chosenClassification, hasChosenCandidate, optimalMargin } =
-    useChosenDiagnosticInfo(scoredKeepDiscardsByNetScore);
+  const {
+    chosenClassification,
+    hasChosenCandidate,
+    oppositeRoleLoss,
+    optimalMargin,
+  } = useChosenDiagnosticInfo({
+    cribRole,
+    dealtCards,
+    scoredOptions: scoredKeepDiscardsByNetScore,
+    tables,
+  });
   const renderedAnalysis = useMemo(
     (): RenderedAnalysis => ({
       cribRole,
+      oppositeRoleExpectedPointsLoss: oppositeRoleLoss,
       quality: getDiscardQuality(scoredKeepDiscardsByNetScore),
     }),
-    [cribRole, scoredKeepDiscardsByNetScore],
+    [cribRole, oppositeRoleLoss, scoredKeepDiscardsByNetScore],
   );
   const resultsAreOnScreen = tables !== null;
   useEffect(() => {
@@ -344,10 +384,22 @@ export function ScoredPossibleKeepDiscards({
     if (!hasChosenCandidate) {
       return null;
     }
+    /*
+     * The role costs live in the badge that already carried one of them
+     * rather than in a chip of their own: a third chip on this row starts a
+     * third row on a portrait phone at a large device font, which the #802
+     * caption-height guard in practiceDrill.spec.ts fails. The measurements
+     * are in skills/ui-layout-and-interaction/SKILL.md.
+     */
+    const rolePair = roleLossPairLabel(
+      cribRole,
+      chosenClassification?.netLoss ?? 0,
+      oppositeRoleLoss,
+    );
     const captionAriaLabel =
       chosenClassification === null
         ? optimalMargin.accessibleLabel
-        : `Sub-optimal: ${formatAccessibleNetLoss(chosenClassification.netLoss)} pts lost. ${chosenClassification.accessibleLabel}`;
+        : `Sub-optimal: ${rolePair.accessibleLabel}. ${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
         aria-label={captionAriaLabel}
@@ -359,8 +411,7 @@ export function ScoredPossibleKeepDiscards({
         ) : (
           <>
             <span className={classes.subOptimalBadge}>
-              Sub-optimal: {formatNetLoss(chosenClassification.netLoss)} pts
-              lost
+              Sub-optimal: {renderRoleLossPairText(rolePair)}
             </span>
             <span className={classes.diagnosticReason}>
               {chosenClassification.gainPart === null ? (

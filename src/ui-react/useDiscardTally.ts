@@ -286,7 +286,11 @@ export const useDiscardTally = ({
 
   const reportAnalysisRendered = useCallback(
     (
-      { cribRole: scoredRole, quality }: RenderedAnalysis,
+      {
+        cribRole: scoredRole,
+        oppositeRoleExpectedPointsLoss,
+        quality,
+      }: RenderedAnalysis,
       displayedAs: DisplayedHandRelabeling | null,
     ) => {
       if (quality === null) {
@@ -339,6 +343,16 @@ export const useDiscardTally = ({
            * session never dealt.
            */
           isPractice: practiceByHand.current.get(boardKey) ?? true,
+          /*
+           * Spread rather than assigned, so an unknown figure leaves the
+           * key off the record entirely. Writing it as zero would be
+           * indistinguishable from the discard having been exactly best
+           * for the role the player did not hold, which is the single most
+           * interesting value this field can take (#824).
+           */
+          ...(typeof oppositeRoleExpectedPointsLoss === "number"
+            ? { oppositeRoleExpectedPointsLoss }
+            : {}),
         }),
       );
     },

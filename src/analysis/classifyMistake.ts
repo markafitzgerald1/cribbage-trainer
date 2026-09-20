@@ -1,4 +1,4 @@
-import { type Card, isSamePhysicalCard, parseHand } from "../game/Card";
+import { type Card, parseHand } from "../game/Card";
 import type {
   CribRole,
   ExpectedCribPointsTable,
@@ -7,10 +7,10 @@ import type {
   ExpectedPlayPoints,
   ExpectedPlayPointsTable,
 } from "../game/expectedPlayPoints";
+import { isChosenDiscard, withoutFloatResidue } from "./discardQuality";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import type { HandPoints } from "../game/handPoints";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "./analysis";
-import { withoutFloatResidue } from "./discardQuality";
 
 export type LossComponent = "crib" | "hand" | "play";
 
@@ -381,11 +381,7 @@ export const classifyMistake = ({
   );
 
   const chosen = scored.find((option) =>
-    option.discard.every((card) =>
-      chosenDiscardCards.some((chosenCard) =>
-        isSamePhysicalCard(chosenCard, card),
-      ),
-    ),
+    isChosenDiscard(option, chosenDiscardCards),
   );
 
   const [best] = scored;
