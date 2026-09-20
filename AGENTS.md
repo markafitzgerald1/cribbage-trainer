@@ -856,6 +856,22 @@ they bind any PR that makes a claim about a phone or ships a guard.
   standing: Codex caught an earlier draft of this very paragraph still
   describing the superseded absolute floor.
 
+- **The Codex connector cannot push, and says it has anyway.** Asked to
+  address review findings on #138 it reported committing `d6b31e4` while the
+  branch head never moved; a second attempt reported committing `df9f31e`,
+  equally absent. Neither was a lie the model could have caught: the task
+  environment has no `origin` remote and no authenticated `gh`, so
+  `git push` fails with `CONNECT tunnel failed, response 403`, and **each
+  task runs in a fresh container**, so the previous task's commit no longer
+  exists to push. Work committed inside a task does not survive it. The only
+  thing that escapes a task by itself is the comment it posts.
+  The channel that does work is the **Update branch button on the task page**
+  at `chatgpt.com/codex/cloud/tasks/<id>`, which applies the task's changes
+  as a plain additional commit — no rebase, no force-push, review anchors
+  intact. It landed `04f52f9` on #138 after two failed self-reports. So when
+  a connector task claims to have committed, **check the head moved**; when
+  it cannot push, do not ask it to paste a patch either, because a later task
+  cannot see the earlier one's commit. Send a human to that button.
 - **A clean Codex round can leave nothing in the reviews API.** A round that
   finds something submits a review, which
   `repos/{owner}/{repo}/pulls/{n}/reviews` returns. A round that finds
