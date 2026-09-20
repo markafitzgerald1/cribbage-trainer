@@ -334,7 +334,7 @@ describe("scored possible keep discards component", () => {
         discards: "5H,5D",
         expectedAriaLabel: "Optimal discard, 4.05 better than next",
         expectedMarkedTexts: [],
-        expectedText: "Optimal discard, 4.05 better than next",
+        expectedText: "Optimal, 4.05 better than next",
         name: "optimal discard caption when chosen discard is optimal",
       },
       {
@@ -343,7 +343,7 @@ describe("scored possible keep discards component", () => {
         discards: "3S,9C",
         expectedAriaLabel: "Optimal discard, 0.37 better than next distinct",
         expectedMarkedTexts: [],
-        expectedText: "Optimal discard, 0.37 better than next distinct",
+        expectedText: "Optimal, 0.37 better than next distinct",
         name: "optimal discard caption when top choices tie",
       },
       {

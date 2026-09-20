@@ -53,7 +53,7 @@ export const computeOptimalDiscardMargin = (
 
   return {
     accessibleLabel: `Optimal discard, ${accessibleMargin} better than ${comparisonTarget}`,
-    label: `Optimal discard, ${formattedMargin} better than ${comparisonTarget}`,
+    label: `Optimal, ${formattedMargin} better than ${comparisonTarget}`,
     margin,
   };
 };
