@@ -69,6 +69,12 @@ after the certificate is regenerated (it is cached under `node_modules` and
 lasts 30 days), if the browser forgets the exception, or if the router hands
 out a different address.
 
+`npm run start:production-preview:https` does the same for the **built** site
+rather than the dev server, and is the one to reach for when a bug may be a
+build artifact: the production bundle is minified, carries no HMR client, and
+resolves its modules differently, so it does not always behave like `npm
+start`. Same certificate warning, same one-time acceptance.
+
 Use a pull request preview instead when you need a real deployed origin — a
 trusted certificate, the production base path, or analytics behavior that
 depends on the origin. This path is for iterating on a visual change without

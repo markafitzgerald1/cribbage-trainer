@@ -97,11 +97,20 @@ guidance only one tool can use.
     build. Verified on #840, where the caption showed its pre-change form
     because the running vite belonged to a worktree on a branch without that
     work. The tell is the listening process's working directory, not the port
-    or the URL, both of which look correct:
+    or the URL, both of which look correct. Find the listener, then ask which
+    directory it is running in:
 
     ```bash
-    lsof -nP -iTCP:5173 -sTCP:LISTEN -Fn
+    lsof -i :5173
+    lsof -a -d cwd -p <pid>
     ```
+
+    `lsof` predates long-form options and has none, so these letters are the
+    only spelling available and the repository's long-flag rule cannot apply:
+    `-i` selects internet sockets, `-a` combines the following filters with
+    AND rather than OR, `-d cwd` limits output to the working-directory entry,
+    and `-p` names the process. The second command's `NAME` column is the
+    checkout being served.
 
     With several worktrees live here this is the normal case rather than the
     unlucky one. Same family as the 4173 trap above, and the same remedy:
