@@ -1,9 +1,21 @@
+import basicSsl from "@vitejs/plugin-basic-ssl";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/*
+ * Opt-in, via `npm run start:https`, rather than the default for `npm start`:
+ * `localhost` is already a secure context, so the only thing HTTPS buys there
+ * is a certificate warning. A phone on the LAN is the case that needs it, and
+ * needs both halves — `--host` to listen off loopback, and TLS to make the
+ * origin a secure context, without which `crypto.randomUUID` is absent and the
+ * telemetry layer throws on first render. See README, Reach the dev server
+ * from a phone.
+ */
+const devHttps = process.env.DEV_HTTPS === "1";
 
 // More info at: https://storybook.js.org/docs/writing-tests/integrations/vitest-addon
 export default {
@@ -19,6 +31,7 @@ export default {
       localsConvention: "camelCase",
     },
   },
+  plugins: devHttps ? [basicSsl()] : [],
   root: "./src",
   test: {
     // Keep vitest artifacts (cache, coverage) out of ./src to avoid polluting source tree
