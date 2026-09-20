@@ -1,0 +1,10 @@
+/*
+ * Marks a reversed-role figure that cost nothing. Decoration only, and the
+ * underline is the cue that satisfies not-by-color-alone, so the green this
+ * carried was droppable; skills/ui-layout-and-interaction/SKILL.md has why.
+ */
+.costs-nothing {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}

@@ -13,6 +13,8 @@ import {
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
+import { renderRoleLossPairText } from "./RoleLossPairText";
+import { roleLossPairLabel } from "../analysis/oppositeRoleLoss";
 import { useMemo } from "react";
 
 const PERCENT_MULTIPLIER = 100;
@@ -64,6 +66,39 @@ const renderPreviousDiscard = (
     )}
   </div>
 );
+
+/*
+ * Both role costs for the previous discard, beside the component badge
+ * rather than instead of it (#824). Read from the record, so it needs no
+ * classification and is available for the whole queue. The badge is dropped
+ * rather than shown as a single figure whenever the label carries no
+ * reversed-role clause — the record predates store version 6, or the other
+ * role would not have suited the discard better — because the single figure
+ * it would show is already on the loss badge above.
+ */
+const renderRoleLossPairBadge = (
+  item: MistakeQueueItem,
+): React.JSX.Element | null => {
+  const pair = roleLossPairLabel(
+    item.cribRole,
+    item.previousDiscardLoss,
+    item.previousDiscardOppositeRoleLoss,
+  );
+  if (pair.oppositeRoleCost === "") {
+    return null;
+  }
+  const description = `Previous discard cost ${pair.accessibleLabel}`;
+  return (
+    <span
+      aria-label={description}
+      className={classes.oppositeRoleBadge}
+      role="note"
+      title={description}
+    >
+      {renderRoleLossPairText(pair)}
+    </span>
+  );
+};
 
 const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
   item.isMastered ? (
@@ -119,6 +154,7 @@ export function MistakeQueueItemCard({
               Prev: {effectiveShortReason}
             </span>
           )}
+          {renderRoleLossPairBadge(item)}
         </div>
         <div>{renderStatusBadge(item)}</div>
       </div>

@@ -7,6 +7,7 @@ import {
 import { expect, fn, within } from "storybook/test";
 import {
   mockItemA,
+  mockItemWithRoleLossPair,
   mockTradeOffClassification,
 } from "../ui/mistakeQueue.test.common";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
@@ -67,6 +68,24 @@ export const WithLossReason: Story = {
   },
   play: async ({ canvasElement }) => {
     await expectStoryTextVisible(canvasElement, "Prev: Crib");
+  },
+};
+
+// Both badges are asserted together because the #824 role-cost pair sits beside the component decomposition rather than replacing it.
+export const WithRoleLossPair: Story = {
+  args: {
+    classification: mockTradeOffClassification,
+    item: mockItemWithRoleLossPair,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pair = canvas.getByRole("note", {
+      name: "Previous discard cost 1.00 points lost as dealer, 0.00 as pone",
+    });
+
+    await expect(pair).toBeVisible();
+    await expect(pair).toHaveTextContent("1.00 as dealer, 0.00 as pone");
+    await expect(canvas.getByText("Prev: Crib gain < Hand loss")).toBeVisible();
   },
 };
 

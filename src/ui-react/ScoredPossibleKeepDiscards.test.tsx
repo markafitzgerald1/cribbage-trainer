@@ -50,6 +50,7 @@ const REPORTED_ANALYSIS_CASES = [
     discards: parseHand("AH,2H"),
     expected: {
       cribRole: CribRole.Pone,
+      oppositeRoleExpectedPointsLoss: expect.any(Number),
       quality: {
         expectedPointsLoss: expect.any(Number),
         isOptimal: expect.any(Boolean),
@@ -61,7 +62,11 @@ const REPORTED_ANALYSIS_CASES = [
     cribRole: CribRole.Dealer,
     discards: null,
     // Every option's keep is entirely kept until two cards are discarded, so a quality here would be the top-ranked option's, not the user's.
-    expected: { cribRole: CribRole.Dealer, quality: null },
+    expected: {
+      cribRole: CribRole.Dealer,
+      oppositeRoleExpectedPointsLoss: null,
+      quality: null,
+    },
     name: "no decision quality until two cards are discarded",
   },
 ];
@@ -328,7 +333,8 @@ describe("scored possible keep discards component", () => {
         cards: "5H,5D,6H,7H,8H,9H",
         discards: "5H,5D",
         expectedAriaLabel: "Optimal discard, 4.05 better than next",
-        expectedText: "Optimal discard, 4.05 better than next",
+        expectedMarkedTexts: [],
+        expectedText: "Optimal, 4.05 better than next",
         name: "optimal discard caption when chosen discard is optimal",
       },
       {
@@ -336,7 +342,8 @@ describe("scored possible keep discards component", () => {
         cribRole: CribRole.Pone,
         discards: "3S,9C",
         expectedAriaLabel: "Optimal discard, 0.37 better than next distinct",
-        expectedText: "Optimal discard, 0.37 better than next distinct",
+        expectedMarkedTexts: [],
+        expectedText: "Optimal, 0.37 better than next distinct",
         name: "optimal discard caption when top choices tie",
       },
       {
@@ -344,10 +351,28 @@ describe("scored possible keep discards component", () => {
         cribRole: CribRole.Dealer,
         discards: "KH,KC",
         expectedAriaLabel:
-          "Sub-optimal: 0.09 pts lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+          "Sub-optimal: 0.09 points lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+        expectedMarkedTexts: [],
+        /*
+         * The reversed role would have cost 3.12 here against the 0.09 the
+         * role held cost, so naming it would tell the reader only that they
+         * were nearly right and would have been more wrong as pone. One
+         * figure, and the diagnostic reason beside it.
+         */
         expectedText:
           "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
-        name: "sub-optimal caption with diagnostic reason when chosen discard is sub-optimal",
+        name: "sub-optimal caption withholding a reversed role that cost more",
+      },
+      {
+        cards: "9D,9C,9H,4C,4H,3S",
+        cribRole: CribRole.Dealer,
+        discards: "9D,3S",
+        expectedAriaLabel:
+          "Sub-optimal: 3.11 points lost as dealer, 0.00 as pone. 0.64 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
+        expectedMarkedTexts: ["0.00 as pone"],
+        expectedText:
+          "Sub-optimal: 3.11 as dealer, 0.00 as pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
+        name: "a zero cost under the reversed role stated as a figure, not as a diagnosis",
       },
     ])(
       "renders $name",
@@ -356,6 +381,7 @@ describe("scored possible keep discards component", () => {
         cribRole = CribRole.Dealer,
         discards,
         expectedAriaLabel,
+        expectedMarkedTexts,
         expectedText,
       }) => {
         const dealtCards = toDealtCards(parseHand(cards), parseHand(discards));
@@ -367,6 +393,13 @@ describe("scored possible keep discards component", () => {
         expect(caption?.getAttribute("role")).toBe("status");
         expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
         expect(caption?.textContent).toBe(expectedText);
+        // Mocked CSS modules render the class as mock-<name>; only a reversed-role figure that cost nothing carries it.
+        expect(
+          Array.from(
+            container.querySelectorAll(".mock-costsNothing"),
+            (element) => element.textContent,
+          ),
+        ).toStrictEqual(expectedMarkedTexts);
       },
     );
   });

@@ -13,6 +13,16 @@ const ALL_TIED_MARGIN = {
 const toCandidates = (...scores: number[]) =>
   scores.map((expectedNetPoints) => ({ expectedNetPoints }));
 
+/*
+ * The two labels below diverge on purpose, so do not "simplify" them back
+ * together. Only `label` is rendered, inside a badge that has one portrait
+ * row to live on: at the 390px width the screenshot fixtures use, the noun
+ * pushed "distinct" onto a second row, measured at 367.6px of caption box
+ * against a 50px two-row badge. Dropping it renders 340.1px on one 29px row.
+ * `accessibleLabel` is the figcaption's aria-label, which no width bounds, so
+ * it keeps the noun and stays intelligible when spoken out of context. The
+ * all-tied and empty labels keep the noun too: neither is near wrapping.
+ */
 describe("optimalDiscard", () => {
   describe("computeOptimalDiscardMargin", () => {
     it.each([
@@ -20,7 +30,7 @@ describe("optimalDiscard", () => {
         candidates: toCandidates(12.39, 9.85, 8.5),
         expected: {
           accessibleLabel: "Optimal discard, 2.54 better than next",
-          label: "Optimal discard, 2.54 better than next",
+          label: "Optimal, 2.54 better than next",
           margin: 2.54,
         },
         name: "clear margin when runner-up has a distinct lower score",
@@ -29,7 +39,7 @@ describe("optimalDiscard", () => {
         candidates: toCandidates(10.0, 10.0, 8.0),
         expected: {
           accessibleLabel: "Optimal discard, 2.00 better than next distinct",
-          label: "Optimal discard, 2.00 better than next distinct",
+          label: "Optimal, 2.00 better than next distinct",
           margin: 2.0,
         },
         name: "margin against next distinct net score when top options tie (two-way tie)",
@@ -38,7 +48,7 @@ describe("optimalDiscard", () => {
         candidates: toCandidates(-0.11, -0.11, -0.11, -1.25),
         expected: {
           accessibleLabel: "Optimal discard, 1.14 better than next distinct",
-          label: "Optimal discard, 1.14 better than next distinct",
+          label: "Optimal, 1.14 better than next distinct",
           margin: 1.14,
         },
         name: "margin against next distinct score on multi-way top tie",
@@ -66,7 +76,7 @@ describe("optimalDiscard", () => {
         candidates: toCandidates(10.0, 9.996),
         expected: {
           accessibleLabel: "Optimal discard, less than 0.01 better than next",
-          label: "Optimal discard, < 0.01 better than next",
+          label: "Optimal, < 0.01 better than next",
           margin: 0.004,
         },
         name: "margin below display precision with less-than indicator",
@@ -76,7 +86,7 @@ describe("optimalDiscard", () => {
         expected: {
           accessibleLabel:
             "Optimal discard, less than 0.01 better than next distinct",
-          label: "Optimal discard, < 0.01 better than next distinct",
+          label: "Optimal, < 0.01 better than next distinct",
           margin: 0.004,
         },
         name: "margin below display precision with less-than indicator on top tie",

@@ -481,6 +481,92 @@ once you are already editing layout or interaction code.
   that assert each chip is **whole inside its group** rather than that the
   chips share a row, because the row assertion is what the cropping mechanism
   was invented to satisfy.
+- **In a wrapping chip row, source order decides the row count, and the
+  cheapest fix for a row too many is to move the new chip rather than
+  shrink it.** Flex wrapping is greedy and first-fit, never best-fit, so a
+  narrow chip appended after the widest one always starts a fresh row even
+  when it would have fitted beside the first. Adding the #824 cause chip to
+  the analysis caption took it from two rows to three at a 28px root font in
+  portrait — 86px against the 65px cap `practiceDrill.spec.ts` enforces for
+  drill review, which also dropped the table container to 83px against its
+  95px floor, so both halves of that guard failed in all five projects.
+  Moving the same chip to sit between the points-lost badge and the
+  decomposition returned the caption to 56px and the container to 111px with
+  no styling change at all: the decomposition is 342px of a 365px row and
+  therefore always takes a row of its own, while the badge and the cause are
+  212px and 141px and share one. Measure the children's boxes
+  (`element.children` with `getBoundingClientRect`) before reaching for a
+  smaller font or a shorter label. Note the slack, though, because
+  reordering only buys what is left on the row: 8px in that case, which a
+  couple of extra characters in any earlier chip would have eaten, and the
+  shipped #824 change went on to fold the new text into the badge that
+  already carried one of its two numbers rather than live on that margin.
+  The order: measure, reorder if it fits comfortably, merge into an existing
+  chip if it does not, and only then shrink anything.
+- **Once a chip is merged into, emphasis inside it has to cost no layout.**
+  With #824's pair folded into the sub-optimal badge, that badge measured
+  331px of a 365px row in exactly the case the #802 guard samples — drill
+  review at a 28px root font in portrait — so 34px was the entire budget for
+  marking one of its two figures. That is less than it sounds: an inline
+  pill like the trend dialog's zero-loss treatment costs roughly 11px of
+  padding, a leading glyph about as much again, and the string's own width
+  varies across engines by more than either, so a marker measured as fitting
+  in Chromium can still start a third row in WebKit. `color` and
+  `text-decoration` change neither dimension and are what to reach for —
+  though the two bullets below are why only the second of those shipped.
+  Measure the badge rather than the caption: the guard asserts the caption's
+  height, but it is the badge's width against its row that decides it.
+- **A mark's contrast is measured against its own ground; its loudness is
+  not.** #824 first marked its zero-cost reversed-role figure in the
+  repository's existing zero-loss green — #7ee68a, reused rather than
+  invented because the trend dialog's `.loss-pill-optimal` already fills a
+  0.00 row green — with a 2px underline beside it as the non-color cue.
+  Contrast was measured per ground, against the badge fills rather than the
+  felt because both fills are opaque: 8.55:1 on the caption badge's #4a270f,
+  7.87:1 on the queue badge's #123b40, and 4.57:1 on the #1f6536 felt it
+  would inherit if either fill were ever dropped. Every one of those checks
+  passed and the treatment was still wrong. Read on a phone it was the
+  brightest element on the screen, and what it marked is the **secondary**
+  figure — what the discard would have cost under a role the reader did not
+  hold — while the cost under the role actually held rendered plain. That is
+  a hierarchy inversion, and no per-ground contrast figure can see one:
+  those figures ask how legible a mark is against what sits behind it, never
+  how much attention it takes from what sits beside it. Ask the second
+  question too, of the whole screen rather than of the element — what is now
+  the loudest thing here, and is it the thing worth reading first.
+- **Dropping a color is not weakening an accessibility rule.** What #824
+  ships is the underline alone. The not-by-color-alone rule (WCAG 2.1 SC
+  1.4.1) asks for a cue that survives without color, which is exactly the
+  job the underline was added to do; removing the color leaves that cue as
+  the only one and the rule satisfied rather than violated. Contrast rose
+  rather than fell, which is worth measuring instead of assuming: inheriting
+  the badge's own #fdf2e9 reaches 12.00:1 on the caption badge's #4a270f
+  where the green reached 8.55:1, and the queue badge's #cbeff5 reaches
+  9.97:1 on #123b40 where it reached 7.87:1. Say all of that wherever the
+  change is recorded, because a diff deleting a `color` declaration from a
+  rule whose comment cites accessibility reads as a regression to whoever
+  arrives later without the numbers. And pin the surviving cue harder once
+  it is the only one: a
+  bare `text-decoration-line: underline` assertion is satisfied by the
+  browser's default thickness, so assert the thickness too, and assert that
+  the marked figure's color **equals its badge's**, so a reintroduced hue
+  fails a test rather than passing unnoticed.
+- **A second figure beside the first has to be able to change the reader's
+  mind, or it is noise wearing the costume of evidence.** #824 shipped both
+  crib-role costs as a pair on every completed sub-optimal discard, and the
+  first real hand played against its preview rendered
+  `Sub-optimal: 0.19 as dealer, 2.00 as pone` to a reader holding dealer. The
+  pair told him he was nearly right and would have been considerably more
+  wrong under a role he did not have — a second number with no signal in it,
+  and the case that renders on most hands. What replaced it: state the pair
+  only when the reversed role would have cost **less** than the one actually
+  held, and fall back to the single figure otherwise. The badge's **shape**
+  then carries information — two figures means the other role would have
+  suited the choice better, which is the thing worth noticing — and it nests
+  with the mark above, which fires only when the reversed cost is exactly
+  zero. Both comparisons are exact at the precision the figures are derived
+  at; neither gets a tolerance, because a "meaningfully lower" constant would
+  be the invented threshold #824 spent its measurement retiring.
 - **A palette shift is not a focus indicator.** Eleven controls on the dark
   grounds _used to_ suppress the native outline and lean on their hover
   treatment to double as focus — they no longer do, so read this as the
@@ -550,3 +636,26 @@ once you are already editing layout or interaction code.
   the trend dialog's `.table-wrapper` keeps its own `overflow: auto` under a
   220px `max-height` deliberately, because it cannot chain the whole panel
   the way a second full-height dialog scroll container does.
+- **A badge's visible label and its figcaption's `aria-label` are separate
+  elements and need not match, which is the cheapest fix for a caption that
+  wraps.** The optimal-discard badge read
+  `Optimal discard, 0.37 better than next distinct` and took two rows at the
+  390px width the portrait screenshot fixtures use: 367.6px of caption box
+  against a 50px badge over two 21.7px lines. Dropping the noun from the
+  visible `label` alone renders 340.1px on one 29px row, and the worst
+  realistic string, `Optimal, < 0.01 better than next distinct`, 355.7px.
+  `accessibleLabel` keeps the noun, because no width bounds speech and it
+  carries context out of it. Measure this by badge height against the
+  computed line-height, never by counting the element's client rectangles —
+  a block-level flex item reports exactly one whether its text wrapped or
+  not, so that count says one row for a caption that visibly has two.
+- **`AGENTS.md`'s mutually-non-substring rule is about whole names, not
+  leading words.** `Optimal, 0.37 better than next distinct` sits safely
+  beside `Sub-optimal: 1.05 as pone, 0.00 as dealer`, because neither whole
+  string contains the other, while a bare `Optimal` would be a substring of
+  the sibling and is the collision the rule exists to stop. Audit a
+  candidate against the names the page actually renders rather than the ones
+  you remember: collecting every `aria-label`, `title` and short text node
+  on the rendered analysis screen found 61 names, and showed that the **old**
+  caption contained the `Optimal discard` row title — an overlap the
+  shortened one drops.

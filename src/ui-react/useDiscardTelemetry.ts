@@ -55,6 +55,17 @@ interface ShownAnalysis {
 // What the analysis component saw on screen: the role it scored against, and what the discard gave up, which is absent until two cards are discarded.
 export interface RenderedAnalysis {
   readonly cribRole: CribRole;
+  /*
+   * What the same discard would have cost under the reversed crib role
+   * (#824). Null when no discard is complete, or before the expected-points
+   * tables have loaded; null means unknown and is never recorded as zero,
+   * because zero is a real value here. A points figure rather than card
+   * data, so it may travel inside the type telemetry consumes even though
+   * nothing emits it yet - see #789. Optional as well as null-valued: a caller
+   * that never computed it is as uninformative as one that could not, and
+   * both must stay distinguishable from a measured zero.
+   */
+  readonly oppositeRoleExpectedPointsLoss?: number | null;
   readonly quality: DiscardQuality | null;
 }
 
