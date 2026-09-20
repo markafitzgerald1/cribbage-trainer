@@ -33,6 +33,7 @@
     "start": "vite",
     "start:https": "DEV_HTTPS=1 vite --host",
     "start:production-preview": "vite build && vite preview",
+    "start:production-preview:https": "vite build && DEV_HTTPS=1 vite preview --host",
     "clean": "rimraf .VSCodeCounter/ coverage/ dist/ playwright-report/ storybook-static/ test-results/ tsconfig.tsbuildinfo",
     "node_modules:clean": "rimraf node_modules/",
     "deps:update:minor": "npx npm-check-updates --target minor -u && npm install",

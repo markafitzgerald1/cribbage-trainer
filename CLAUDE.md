@@ -78,8 +78,44 @@ guidance only one tool can use.
     upward to the parent repository's copy, but Vitest browser mode (Storybook
     tests and coverage) fails with "Failed to fetch dynamically imported
     module" until `npm install` is run inside the worktree.
+  - **A stale install now breaks more than Vitest, because `vite.config.js`
+    imports a dependency at config load.** Since #843 it imports
+    `@vitejs/plugin-basic-ssl`, so any task that loads that config dies with
+    "Cannot find module" on a worktree whose `node_modules` predates the
+    merge — including `verify:fast`, and therefore every commit. The symptom
+    names a package rather than the worktree, so it reads as a broken branch
+    rather than a stale checkout. Reinstall after taking main in, not only
+    when a browser-mode test fails. This bit three times on 2026-09-20, twice
+    within an hour of #843 merging, and both the type errors and the module
+    error it produced looked like real defects in unrelated work.
   - Playwright's non-CI `reuseExistingServer` will reuse a stale `vite preview`
     left on port 4173 by the main checkout, running e2e against an old bundle.
+  - **`preview_start` may serve another worktree's branch, and the page looks
+    like your own code failing.** A dev server already listening on 5173 is
+    reused whatever checkout it was launched from, so a change made here can
+    render as absent and read as a bug in the change rather than as the wrong
+    build. Verified on #840, where the caption showed its pre-change form
+    because the running vite belonged to a worktree on a branch without that
+    work. The tell is the listening process's working directory, not the port
+    or the URL, both of which look correct. Find the listener, then ask which
+    directory it is running in:
+
+    ```bash
+    lsof -i :5173
+    lsof -a -d cwd -p <pid>
+    ```
+
+    `lsof` predates long-form options and has none, so these letters are the
+    only spelling available and the repository's long-flag rule cannot apply:
+    `-i` selects internet sockets, `-a` combines the following filters with
+    AND rather than OR, `-d cwd` limits output to the working-directory entry,
+    and `-p` names the process. The second command's `NAME` column is the
+    checkout being served.
+
+    With several worktrees live here this is the normal case rather than the
+    unlucky one. Same family as the 4173 trap above, and the same remedy:
+    confirm which checkout is serving before believing what the page shows.
+
   - Docker and CI are unaffected by all of the above: they check out normally.
 
 ## Cloud sessions (Claude Code on the web)
