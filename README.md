@@ -41,6 +41,45 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - Serve up and navigate to the dev app server: `npm start` then `open http://localhost:5173`
 - Serve up and navigate to the production preview app server:
   `npm run build` then `npm run start:production-preview` and `open http://localhost:4173`
+- Serve the dev app server over HTTPS, reachable from other devices on your
+  network: `npm run start:https` (see below)
+
+### Reach the dev server from a phone
+
+`npm start` listens on `localhost` only, and serving it over plain `http` to a
+LAN address does not work: `crypto.randomUUID` is secure-context only, so the
+telemetry layer throws on first render and the page stays white. `npm start`
+is unaffected, because `localhost` is a secure context whatever the scheme.
+
+`npm run start:https` covers that case. It listens on every interface and
+serves over TLS with a self-signed certificate, which makes the LAN origin a
+secure context. Nothing to install on either machine:
+
+1. Run `npm run start:https` and read the `Network:` URL it prints, for
+   example `https://192.168.2.20:5173/cribbage-trainer`.
+2. Open that URL on the phone, on the same network.
+3. **Expect a certificate warning, and accept it.** On Android Chrome that is
+   "Advanced" then "Proceed to ... (unsafe)"; on iOS Safari it is "Show
+   Details" then "visit this website".
+
+The warning is the cost of the approach, not a sign anything is wrong. The
+certificate is generated locally and names only `localhost` and `127.0.0.1`,
+so a LAN address mismatches it by construction. Expect to accept it again
+after the certificate is regenerated (it is cached under `node_modules` and
+lasts 30 days), if the browser forgets the exception, or if the router hands
+out a different address.
+
+Use a pull request preview instead when you need a real deployed origin — a
+trusted certificate, the production base path, or analytics behavior that
+depends on the origin. This path is for iterating on a visual change without
+paying a deploy per look.
+
+If the warning ever becomes more annoying than it is worth, the upgrade is
+[mkcert](https://github.com/FiloSottile/mkcert): a locally trusted certificate
+authority, installed on the laptop and on the phone, with no warning
+afterwards. It is deliberately not the default here, because installing a
+private certificate authority on a phone is a ten-minute per-device setup with
+a real trust decision attached, to remove a single tap.
 
 ### Lint and Test
 
