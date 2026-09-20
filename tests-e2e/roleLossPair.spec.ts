@@ -18,10 +18,14 @@ const ROLE_SPLIT_DISCARD_INDICES: readonly [number, number] = [
 
 /*
  * Discarding the king of hearts and the 6 of spades here costs 3.46 as
- * dealer and 0.82 as pone: both figures positive, so the caption states two
- * costs without either of them reading as a verdict.
+ * dealer and 0.82 as pone. Held as dealer the reversed role is the cheaper
+ * one, so both figures are stated and neither reads as a verdict; held as
+ * pone the same discard is the one the reader already got more nearly
+ * right, and the reversed figure is withheld.
  */
-const BOTH_ROLES_COSTLY_QUERY = "?hand=KH,QS,10D,9C,6S,5H&role=dealer&seed=e2e";
+const BOTH_ROLES_COSTLY_HAND = "?hand=KH,QS,10D,9C,6S,5H";
+const BOTH_ROLES_COSTLY_QUERY = `${BOTH_ROLES_COSTLY_HAND}&role=dealer&seed=e2e`;
+const CHEAPER_ROLE_HELD_QUERY = `${BOTH_ROLES_COSTLY_HAND}&role=pone&seed=e2e`;
 const BOTH_ROLES_COSTLY_DISCARD_INDICES: readonly [number, number] = [
   FIRST_DEALT_INDEX,
   FIFTH_DEALT_INDEX,
@@ -53,7 +57,7 @@ test.describe("both crib-role costs for the chosen discard", () => {
     await expect(freeRoleCost).toHaveCSS("color", "rgb(126, 230, 138)");
   });
 
-  test("states two positive costs when the discard is wrong under both roles", async ({
+  test("states two positive costs when the reversed role would have cost less", async ({
     page,
   }) => {
     await renderThenSelectTwoDiscards(page, BOTH_ROLES_COSTLY_QUERY, {
@@ -68,5 +72,25 @@ test.describe("both crib-role costs for the chosen discard", () => {
       "text-decoration-line",
       "none",
     );
+  });
+
+  /*
+   * The same cards and the same discard as the test above, held as the role
+   * they suited better. A reversed cost that is higher says only that the
+   * other role would have been worse, so the caption drops to the single
+   * figure it carried before #824 — which is the state most hands are in.
+   */
+  test("states one cost when the reversed role would have cost more", async ({
+    page,
+  }) => {
+    await renderThenSelectTwoDiscards(page, CHEAPER_ROLE_HELD_QUERY, {
+      discardIndices: BOTH_ROLES_COSTLY_DISCARD_INDICES,
+    });
+
+    const caption = page.getByRole("status");
+
+    // The caption is on screen with its single figure before anything is asserted absent, so the pair is withheld rather than simply not yet on screen.
+    await expect(caption).toContainText("Sub-optimal: 0.82 pts lost");
+    await expect(caption).not.toContainText("as dealer");
   });
 });

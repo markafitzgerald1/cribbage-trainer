@@ -385,12 +385,11 @@ export function ScoredPossibleKeepDiscards({
       return null;
     }
     /*
-     * Both role costs live in the one badge rather than in a chip of their
-     * own. A third chip on this row starts a third row on a portrait phone
-     * at a large device font, which the #802 caption-height guard in
-     * practiceDrill.spec.ts fails; folding the pair into the badge that
-     * already carried one of the two numbers keeps the row count and drops
-     * the duplication.
+     * The role costs live in the badge that already carried one of them
+     * rather than in a chip of their own: a third chip on this row starts a
+     * third row on a portrait phone at a large device font, which the #802
+     * caption-height guard in practiceDrill.spec.ts fails. The measurements
+     * are in skills/ui-layout-and-interaction/SKILL.md.
      */
     const rolePair = roleLossPairLabel(
       cribRole,

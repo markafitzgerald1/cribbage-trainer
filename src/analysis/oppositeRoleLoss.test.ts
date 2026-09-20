@@ -90,7 +90,7 @@ describe("cost of a discard under the reversed crib role", () => {
   );
 });
 
-describe("wording for a pair of role costs", () => {
+describe("wording when the reversed role would have cost less", () => {
   it.each([
     {
       actualLoss: 3.05,
@@ -103,14 +103,14 @@ describe("wording for a pair of role costs", () => {
       oppositeLoss: 0,
     },
     {
-      actualLoss: 1.4,
+      actualLoss: 2.6,
       cribRole: CribRole.Pone,
-      expectedAccessible: "1.40 points lost as pone, 2.60 as dealer",
+      expectedAccessible: "2.60 points lost as pone, 1.40 as dealer",
       expectedCostsNothing: false,
-      expectedLeading: "1.40 as pone, ",
-      expectedOpposite: "2.60 as dealer",
+      expectedLeading: "2.60 as pone, ",
+      expectedOpposite: "1.40 as dealer",
       name: "states both costs and marks neither when both cost something",
-      oppositeLoss: 2.6,
+      oppositeLoss: 1.4,
     },
     /*
      * A sub-cent loss prints as "< 0.01" rather than rounding to "0.00", so
@@ -130,17 +130,6 @@ describe("wording for a pair of role costs", () => {
       expectedOpposite: "< 0.01 as pone",
       name: "withholds the mark from a reversed role that costs under a cent",
       oppositeLoss: 0.004,
-    },
-    // Two zeroes say nothing about the roles, so neither figure is marked.
-    {
-      actualLoss: 0,
-      cribRole: CribRole.Dealer,
-      expectedAccessible: "0.00 points lost as dealer, 0.00 as pone",
-      expectedCostsNothing: false,
-      expectedLeading: "0.00 as dealer, ",
-      expectedOpposite: "0.00 as pone",
-      name: "withholds the mark when the role actually held cost nothing too",
-      oppositeLoss: 0,
     },
   ])(
     "$name",
@@ -163,12 +152,32 @@ describe("wording for a pair of role costs", () => {
       });
     },
   );
+});
 
-  // Every decision recorded before store version 6 has no reversed-role figure, and a missing one must not read as a measured zero.
-  it("falls back to the single figure when the reversed-role cost is unknown", () => {
-    expect(roleLossPairLabel(CribRole.Dealer, 3.05, null)).toStrictEqual({
-      accessibleLabel: "3.05 points lost",
-      leadingText: "3.05 pts lost",
+/*
+ * The cost of the role actually held in the hand that prompted this rule: a
+ * deal Mark played as dealer for 0.19, where naming the 2.00 it would have
+ * cost as pone told him only that he was nearly right and would have been
+ * more wrong under a role he did not have.
+ */
+const NEARLY_RIGHT_DEALER_LOSS = 0.19;
+
+describe("wording when the reversed role offers nothing to compare against", () => {
+  it.each([
+    // Every decision recorded before store version 6 has no reversed-role figure, and a missing one must not read as a measured zero.
+    { name: "was never measured", oppositeLoss: null },
+    { name: "cost exactly the same", oppositeLoss: NEARLY_RIGHT_DEALER_LOSS },
+    { name: "would have cost more", oppositeLoss: 2 },
+  ])("states one figure when the reversed role $name", ({ oppositeLoss }) => {
+    expect(
+      roleLossPairLabel(
+        CribRole.Dealer,
+        NEARLY_RIGHT_DEALER_LOSS,
+        oppositeLoss,
+      ),
+    ).toStrictEqual({
+      accessibleLabel: "0.19 points lost",
+      leadingText: "0.19 pts lost",
       oppositeRoleCost: "",
       oppositeRoleCostsNothing: false,
     });

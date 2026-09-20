@@ -30,22 +30,19 @@ export interface OppositeRoleLossParams {
 
 /*
  * What the same discard would have cost had the crib belonged to the other
- * player: the app's own enumeration run a second time with the role
- * reversed, minus nothing else. Both this and the actual-role loss are
- * derived results over the same six dealt cards, so the pair consumes no
- * input the actual-role analysis did not already consume.
+ * player: this app's own enumeration run a second time with the role
+ * reversed, over the same six dealt cards, so it consumes no input the
+ * actual-role analysis did not already consume.
  *
- * The pair is kept and shown rather than collapsed into a flag saying the
- * player read the role backwards (#824, scope change of 2026-09-19). A flag
- * would assert a cause the reader cannot check, and would be coincidence
- * rather than diagnosis in about one recorded mistake in twenty-three; two
- * numbers state what was measured and leave the conclusion to the reader.
- * That also means there is no threshold here, and none is needed.
+ * Measured rather than collapsed into a flag saying the player read the
+ * role backwards (#824, scope change of 2026-09-19): a flag would assert a
+ * cause the reader cannot check, and would be coincidence rather than
+ * diagnosis in about one recorded mistake in twenty-three.
  *
  * Both quantities are taken as a maximum over the enumeration rather than
  * by locating a row, so neither can be missing and no unreachable defensive
- * branch is created. A chosen discard absent from the list would yield
- * -Infinity, and the subtraction then yields Infinity rather than a
+ * branch is created. A chosen discard absent from the list yields
+ * -Infinity, and the subtraction then Infinity rather than a
  * plausible-looking number.
  */
 export const oppositeRoleExpectedPointsLoss = ({
@@ -71,7 +68,7 @@ export interface RoleLossPairLabel {
   readonly accessibleLabel: string;
   // Everything up to the reversed-role figure, separator included, so a caller can mark that figure without re-deriving where its clause starts.
   readonly leadingText: string;
-  // Empty only when no reversed-role figure was ever measured.
+  // Empty whenever the label states one figure, which a caller reads as "no pair here" rather than repeating the comparison below.
   readonly oppositeRoleCost: string;
   readonly oppositeRoleCostsNothing: boolean;
 }
@@ -81,25 +78,25 @@ const costsNothing = (loss: number): boolean =>
   formatNetLoss(loss) === formatNetLoss(0);
 
 /*
- * States the two measured costs and stops there. Deliberately not "you
- * discarded as pone": what was measured is what each role would have cost,
- * and the reader is better placed than this code to say why.
+ * States what the discard cost, and states it twice only when the second
+ * figure carries something. Deliberately not "you discarded as pone": what
+ * was measured is what each role would have cost, and the reader is better
+ * placed than this code to say why.
  *
- * `oppositeLoss` is null when the figure is unknown — every decision
- * recorded before store version 6 has none — and the wording then falls
- * back to the single figure this caption carried before #824 rather than
- * printing a zero nobody measured.
- *
- * `oppositeRoleCostsNothing` marks the one pairing that says anything: the
- * same cards cost nothing under the reversed role and something under the
- * role held. Two costs, or two zeroes, are just numbers.
+ * Two strict tiers, both exact and neither with a tolerance to tune: the
+ * pair appears only when the reversed role would have cost **less** than
+ * the one actually held, and the mark only when it would have cost nothing,
+ * which is strictly inside that. `skills/ui-layout-and-interaction/SKILL.md`
+ * has why a higher reversed cost is withheld rather than shown, and a null
+ * `oppositeLoss` — every decision recorded before store version 6 — takes
+ * that same single-figure wording rather than printing an unmeasured zero.
  */
 export const roleLossPairLabel = (
   cribRole: CribRole,
   actualLoss: number,
   oppositeLoss: number | null,
 ): RoleLossPairLabel => {
-  if (oppositeLoss === null) {
+  if (oppositeLoss === null || oppositeLoss >= actualLoss) {
     return {
       accessibleLabel: `${formatAccessibleNetLoss(actualLoss)} points lost`,
       leadingText: `${formatNetLoss(actualLoss)} pts lost`,
@@ -108,14 +105,12 @@ export const roleLossPairLabel = (
     };
   }
   const oppositeRoleName = cribRoleName(oppositeCribRole(cribRole));
-  const opposite = `${formatNetLoss(oppositeLoss)} as ${oppositeRoleName}`;
   // Spelled from the accessible formatter rather than reusing the visible clause, because screen readers announce a bare "<" inconsistently or not at all.
   const accessibleOpposite = `${formatAccessibleNetLoss(oppositeLoss)} as ${oppositeRoleName}`;
   return {
     accessibleLabel: `${formatAccessibleNetLoss(actualLoss)} points lost as ${cribRoleName(cribRole)}, ${accessibleOpposite}`,
     leadingText: `${formatNetLoss(actualLoss)} as ${cribRoleName(cribRole)}, `,
-    oppositeRoleCost: opposite,
-    oppositeRoleCostsNothing:
-      costsNothing(oppositeLoss) && !costsNothing(actualLoss),
+    oppositeRoleCost: `${formatNetLoss(oppositeLoss)} as ${oppositeRoleName}`,
+    oppositeRoleCostsNothing: costsNothing(oppositeLoss),
   };
 };

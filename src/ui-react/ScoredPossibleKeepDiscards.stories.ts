@@ -117,6 +117,25 @@ export const SortedByHandPoints: Story = {
 };
 
 /*
+ * Waits out the table load and states what the caption then reads, which is
+ * where both role-cost stories start; jscpd counts the second spelling of
+ * that preamble as a clone. Asserting it here also keeps each story's own
+ * negative or computed-style check downstream of a caption known to be on
+ * screen.
+ */
+const captionAfterLoad = async (
+  canvasElement: HTMLElement,
+  expectedText: string,
+) => {
+  const canvas = within(canvasElement);
+  await waitForLoadingToDisappear(canvas);
+
+  await expect(canvas.getByRole("status")).toHaveTextContent(expectedText);
+
+  return canvas;
+};
+
+/*
  * Discarding the 9 of diamonds and the 3 of spades here costs 3.11 as
  * dealer and exactly nothing as pone, so the caption shows the #824 pair of
  * role costs beside the component decomposition it does not replace.
@@ -127,10 +146,8 @@ export const RoleLossPair: Story = {
     SortOrder.Descending,
   ),
   play: async ({ canvasElement }) => {
-    await waitForLoadingToDisappear(within(canvasElement));
-    const canvas = within(canvasElement);
-
-    await expect(canvas.getByRole("status")).toHaveTextContent(
+    const canvas = await captionAfterLoad(
+      canvasElement,
       "Sub-optimal: 3.11 as dealer, 0.00 as pone",
     );
 
@@ -144,6 +161,31 @@ export const RoleLossPair: Story = {
 
     await expect(rendered.textDecorationLine).toBe("underline");
     await expect(rendered.color).toBe("rgb(126, 230, 138)");
+  },
+};
+
+const roleLossWithheldStory = createStory(
+  toDealtCards(parseHand("KH,QS,10D,9C,6S,5H"), [0, 4]),
+  SortOrder.Descending,
+);
+
+/*
+ * The state most hands are in: this discard costs 0.82 as pone and 3.46 as
+ * dealer, so the reversed figure would say only that the role not held
+ * would have been worse. One figure, in the wording this caption carried
+ * before #824.
+ */
+export const RoleLossWithheld: Story = {
+  ...roleLossWithheldStory,
+  args: { ...roleLossWithheldStory.args, cribRole: CribRole.Pone },
+  play: async ({ canvasElement }) => {
+    const canvas = await captionAfterLoad(
+      canvasElement,
+      "Sub-optimal: 0.82 pts lost",
+    );
+
+    // The caption is on screen with its single figure, so the reversed-role clause is absent rather than simply not rendered.
+    await expect(canvas.queryByText(/as dealer/u)).toBeNull();
   },
 };
 

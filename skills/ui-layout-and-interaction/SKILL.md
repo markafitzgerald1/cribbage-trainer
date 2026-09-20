@@ -526,6 +526,22 @@ once you are already editing layout or interaction code.
   behind it: #7ee68a reaches 8.55:1 on the caption badge's #4a270f and
   7.87:1 on the queue badge's #123b40, and clears 4.5:1 on the #1f6536 felt
   as well, which is the ground it would inherit if either fill were dropped.
+- **A second figure beside the first has to be able to change the reader's
+  mind, or it is noise wearing the costume of evidence.** #824 shipped both
+  crib-role costs as a pair on every completed sub-optimal discard, and the
+  first real hand played against its preview rendered
+  `Sub-optimal: 0.19 as dealer, 2.00 as pone` to a reader holding dealer. The
+  pair told him he was nearly right and would have been considerably more
+  wrong under a role he did not have — a second number with no signal in it,
+  and the case that renders on most hands. What replaced it: state the pair
+  only when the reversed role would have cost **less** than the one actually
+  held, and fall back to the single figure otherwise. The badge's **shape**
+  then carries information — two figures means the other role would have
+  suited the choice better, which is the thing worth noticing — and it nests
+  with the mark above, which fires only when the reversed cost is exactly
+  zero. Both comparisons are exact at the precision the figures are derived
+  at; neither gets a tolerance, because a "meaningfully lower" constant would
+  be the invented threshold #824 spent its measurement retiring.
 - **A palette shift is not a focus indicator.** Eleven controls on the dark
   grounds _used to_ suppress the native outline and lean on their hover
   treatment to double as focus — they no longer do, so read this as the

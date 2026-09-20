@@ -351,11 +351,17 @@ describe("scored possible keep discards component", () => {
         cribRole: CribRole.Dealer,
         discards: "KH,KC",
         expectedAriaLabel:
-          "Sub-optimal: 0.09 points lost as dealer, 3.12 as pone. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+          "Sub-optimal: 0.09 points lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
         expectedMarkedTexts: [],
+        /*
+         * The reversed role would have cost 3.12 here against the 0.09 the
+         * role held cost, so naming it would tell the reader only that they
+         * were nearly right and would have been more wrong as pone. One
+         * figure, and the diagnostic reason beside it.
+         */
         expectedText:
-          "Sub-optimal: 0.09 as dealer, 3.12 as pone1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
-        name: "sub-optimal caption pairing both role costs with the diagnostic reason",
+          "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
+        name: "sub-optimal caption withholding a reversed role that cost more",
       },
       {
         cards: "9D,9C,9H,4C,4H,3S",

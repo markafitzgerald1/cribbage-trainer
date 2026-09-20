@@ -143,9 +143,21 @@ describe("mistakeQueueItemCard", () => {
     },
   );
 
-  it("shows no role-cost badge for a record written before the figure was stored", () => {
-    const { queryByRole } = renderCard({ item: mockItemA });
+  it.each([
+    { loss: null, name: "a record written before the figure was stored" },
+    // The pair is withheld rather than stated as two figures: that the choice suited the role held better is what the loss badge above already says.
+    { loss: 1.5, name: "a reversed role that would have cost more" },
+    { loss: 1.0, name: "a reversed role that would have cost the same" },
+  ])("shows no role-cost badge for $name", ({ loss }) => {
+    const { getByText, queryByRole } = renderCard({
+      item: {
+        ...mockItemWithRoleLossPair,
+        previousDiscardOppositeRoleLoss: loss,
+      },
+    });
 
+    // The card itself rendered, so the badge below is absent rather than simply not reached.
+    expect(getByText("1.00 pts lost")).toBeInTheDocument();
     expect(queryByRole("note", { name: /Previous discard cost/u })).toBeNull();
   });
 
