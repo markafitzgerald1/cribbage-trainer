@@ -636,3 +636,26 @@ once you are already editing layout or interaction code.
   the trend dialog's `.table-wrapper` keeps its own `overflow: auto` under a
   220px `max-height` deliberately, because it cannot chain the whole panel
   the way a second full-height dialog scroll container does.
+- **A badge's visible label and its figcaption's `aria-label` are separate
+  elements and need not match, which is the cheapest fix for a caption that
+  wraps.** The optimal-discard badge read
+  `Optimal discard, 0.37 better than next distinct` and took two rows at the
+  390px width the portrait screenshot fixtures use: 367.6px of caption box
+  against a 50px badge over two 21.7px lines. Dropping the noun from the
+  visible `label` alone renders 340.1px on one 29px row, and the worst
+  realistic string, `Optimal, < 0.01 better than next distinct`, 355.7px.
+  `accessibleLabel` keeps the noun, because no width bounds speech and it
+  carries context out of it. Measure this by badge height against the
+  computed line-height, never by counting the element's client rectangles —
+  a block-level flex item reports exactly one whether its text wrapped or
+  not, so that count says one row for a caption that visibly has two.
+- **`AGENTS.md`'s mutually-non-substring rule is about whole names, not
+  leading words.** `Optimal, 0.37 better than next distinct` sits safely
+  beside `Sub-optimal: 1.05 as pone, 0.00 as dealer`, because neither whole
+  string contains the other, while a bare `Optimal` would be a substring of
+  the sibling and is the collision the rule exists to stop. Audit a
+  candidate against the names the page actually renders rather than the ones
+  you remember: collecting every `aria-label`, `title` and short text node
+  on the rendered analysis screen found 61 names, and showed that the **old**
+  caption contained the `Optimal discard` row title — an overlap the
+  shortened one drops.
