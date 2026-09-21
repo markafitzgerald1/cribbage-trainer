@@ -18,6 +18,18 @@ const N_SEMANTICS = "sum_weights";
 const QUALIFICATION_KEYS = ["crib", "play", "scope"] as const;
 
 /*
+ * The digest naming the means this sidecar was exported against. Checked for
+ * shape only, which is the most a browser can do: Vite hands this module a
+ * parsed table, not the published bytes, so there is nothing here to hash
+ * against. What establishes the pairing is `npm run test:vendored-tables`,
+ * which hashes the vendored file itself and runs on every commit, in CI, and
+ * on the production deploy path. Refusing a document that omits the field is
+ * still worth doing - a sidecar without it is not one this contract
+ * describes, whatever its records look like.
+ */
+const MEANS_DIGEST = /^[0-9a-f]{64}$/u;
+
+/*
  * Present on every crib record, and both are validated even though only the
  * standard error is read: a document whose weights are missing or absurd is
  * not one whose standard errors should be trusted either.
@@ -100,7 +112,8 @@ const hasExpectedHeader = (document: object): boolean =>
   readString(document, "schema") === SCHEMA &&
   readString(document, "table") === TABLE &&
   readString(document, "statistic") === STATISTIC &&
-  readString(document, "n_semantics") === N_SEMANTICS;
+  readString(document, "n_semantics") === N_SEMANTICS &&
+  MEANS_DIGEST.test(readString(document, "means_sha256") ?? "");
 
 /*
  * Only the presence of each key is part of the wire contract; the wording is

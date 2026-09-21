@@ -61,6 +61,7 @@ const QUALIFICATION_KEYS = ["crib", "play", "scope"];
 // `keys`, `roles`, `ranks`, `slots` - in the order a record identity spells them.
 const IDENTITY_FIELDS = ["keys", "roles", "ranks", "slots"];
 const MINIMUM_OBSERVATIONS = 2;
+const MEANS_DIGEST = /^[0-9a-f]{64}$/u;
 
 const assertHeaderValue = (sidecar, field, expected) => {
   if (sidecar[field] !== expected) {
@@ -151,6 +152,11 @@ export const validateCribUncertainty = (sidecar) => {
   assertHeaderValue(sidecar, "table", "crib");
   assertHeaderValue(sidecar, "statistic", UNCERTAINTY_STATISTIC);
   assertHeaderValue(sidecar, "n_semantics", UNCERTAINTY_N_SEMANTICS);
+  if (!MEANS_DIGEST.test(sidecar.means_sha256 ?? "")) {
+    throw new Error(
+      "Downloaded crib uncertainty sidecar names no means digest to check",
+    );
+  }
   assertQualifications(sidecar);
   const vocabulary = readVocabulary(sidecar);
 

@@ -76,6 +76,8 @@ const REJECTED = [
   ["the play table", (doc) => (doc.table = "play")],
   ["another statistic", (doc) => (doc.statistic = "calibrated_se")],
   ["another weight semantics", (doc) => (doc.n_semantics = "simulation_count")],
+  ["a means digest that is not one", (doc) => (doc.means_sha256 = "no")],
+  ["no means digest at all", (doc) => delete doc.means_sha256],
   ["an emptied qualification", (doc) => (doc.qualifications.scope = "")],
   ["no starter rank list", (doc) => (doc.ranks = [])],
   [

@@ -16,8 +16,16 @@ export const VALID_IDENTITY = cribRecordIdentity({
   starterRank: "K",
 });
 
+/*
+ * Obviously synthetic, so nobody reads it as the digest of anything. The
+ * reader checks the field's shape rather than hashing against it - a browser
+ * is handed a parsed table, not the published bytes it was named for.
+ */
+const FAKE_MEANS_DIGEST = "0".repeat(64);
+
 export const validDocument = () => ({
   keys: ["A_2_Suited"],
+  means_sha256: FAKE_MEANS_DIGEST,
   n_semantics: "sum_weights",
   qualifications: { crib: "crib text", play: "play text", scope: "scope text" },
   ranks: ["K"],

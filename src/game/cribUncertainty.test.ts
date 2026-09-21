@@ -81,6 +81,16 @@ const HEADER_REJECTIONS: readonly RejectionCase[] = [
     name: "another weight semantics",
   },
   {
+    mutate: setHeader("means_sha256", "not-a-digest"),
+    name: "a means digest that is not one",
+  },
+  {
+    mutate: (document) => {
+      Reflect.deleteProperty(document, "means_sha256");
+    },
+    name: "no means digest at all",
+  },
+  {
     mutate: setHeader("qualifications", { crib: "c", play: "p" }),
     name: "a missing qualification",
   },
