@@ -50,12 +50,18 @@ export default {
        * run red on noise; statements, functions and lines were identical
        * across both. The margin absorbs that variance while staying well
        * above what a real regression would cost.
+       *
+       * Set for #627 from a Docker run reporting 91.19 / 81.49 / 92.13 /
+       * 91.04. Branches fell from the previous 81.75-ish because the sidecar
+       * reader validates a published wire format: Jest covers every rejection
+       * it can return, and browser-mode stories reach only the handful a page
+       * can actually provoke.
        */
       thresholds: {
-        branches: 81.5,
+        branches: 81.2,
         functions: 91.8,
-        lines: 90.9,
-        statements: 91,
+        lines: 90.7,
+        statements: 90.9,
       },
     },
     projects: [

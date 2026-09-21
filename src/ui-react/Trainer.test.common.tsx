@@ -18,14 +18,22 @@ import type { UserEvent } from "@testing-library/user-event";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
 import { setTableSync as setCribTableSync } from "../game/expectedCribPointsTableLoader";
+import { setCribUncertaintySync } from "../game/cribUncertaintyLoader";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
+import { validDocument } from "../game/cribUncertainty.test.common";
 
 export const mathRandom = Math.random;
 const CARD_DRAW_RANDOM_VALUE = 0;
 export const DEALER_RANDOM_VALUE = 0.49;
 export const PONE_RANDOM_VALUE = 0.5;
 
-// Analysis renders only with both tables loaded, and only a rendered analysis ends first-instinct status.
+/*
+ * Analysis renders only with both tables loaded, and only a rendered analysis
+ * ends first-instinct status. The uncertainty sidecar is seeded too, with the
+ * reader's own minimal fixture rather than the shipped 9,076-record document:
+ * no Trainer case asserts a bound, and a synchronous seed keeps the deferred
+ * load from updating state after each test body has finished.
+ */
 export const setAnalysisTables = () => {
   setCribTableSync(
     expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
@@ -33,6 +41,7 @@ export const setAnalysisTables = () => {
   setPlayTableSync(
     expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
   );
+  setCribUncertaintySync(validDocument());
 };
 
 export const renderTrainerWithGenerator = (

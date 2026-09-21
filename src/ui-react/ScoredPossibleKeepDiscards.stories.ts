@@ -18,6 +18,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
+import { setCribUncertaintySync } from "../game/cribUncertaintyLoader";
 /* jscpd:ignore-end */
 
 /*
@@ -228,6 +229,18 @@ export const CribUncertaintyUnavailable: Story = {
     ...Expanded.args,
     loadCribUncertainty: () => Promise.resolve(null),
   },
+  /*
+   * The story above it in this file leaves the shipped sidecar in the shared
+   * loader, and the component seeds synchronously from that cache the way it
+   * seeds the means from `getTableSync`. Clearing it is what makes the
+   * injected loader the only source here - the same reset `LoadError` does
+   * for the crib table.
+   */
+  loaders: [
+    () => {
+      setCribUncertaintySync(null);
+    },
+  ],
   play: async (context) => {
     const canvas = await expandedCanvas(context);
 

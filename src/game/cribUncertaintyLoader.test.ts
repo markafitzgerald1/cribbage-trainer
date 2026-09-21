@@ -28,6 +28,9 @@ const UNAVAILABLE_CASES = [
   },
 ];
 
+const validLoader = () =>
+  createCribUncertaintyLoader(countingImport(validDocument()).importDocument);
+
 const standardErrorOf = (uncertainty: CribUncertainty | null): number | null =>
   uncertainty === null ? null : cribStandardError(uncertainty, VALID_IDENTITY);
 
@@ -54,13 +57,35 @@ describe("crib uncertainty loader", () => {
   );
 
   it("re-validates after a synchronous injection", async () => {
-    const { importDocument } = countingImport(validDocument());
-    const loader = createCribUncertaintyLoader(importDocument);
+    const loader = validLoader();
 
     await loader.loadCribUncertainty();
     loader.setCribUncertaintySync({ schema: "not a sidecar" });
 
     await expect(loader.loadCribUncertainty()).resolves.toBeNull();
+  });
+
+  it("seeds synchronously from an injected document and clears on null", async () => {
+    const loader = validLoader();
+
+    loader.setCribUncertaintySync(validDocument());
+
+    expect(standardErrorOf(loader.getCribUncertaintySync())).toBe(0.125);
+
+    loader.setCribUncertaintySync(null);
+
+    expect(loader.getCribUncertaintySync()).toBeNull();
+    await expect(loader.loadCribUncertainty()).resolves.not.toBeNull();
+  });
+
+  it("remembers what the deferred load read", async () => {
+    const loader = validLoader();
+
+    expect(loader.getCribUncertaintySync()).toBeNull();
+
+    await loader.loadCribUncertainty();
+
+    expect(standardErrorOf(loader.getCribUncertaintySync())).toBe(0.125);
   });
 
   it("reads the shipped sidecar", async () => {
