@@ -9,7 +9,11 @@ import {
   requireDealButtonBounds,
   rightEdge,
 } from "./layoutMeasurements";
-import { cribAverageRow, waitForCribUncertainty } from "./cribUncertainty";
+import {
+  cribAverageRow,
+  spokenCribUncertainty,
+  waitForCribUncertainty,
+} from "./cribUncertainty";
 import {
   renderThenSelectTwoDiscards,
   waitForAnalysis,
@@ -323,9 +327,9 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
 /*
  * The bound is the only figure on screen that arrives after the analysis, so
  * this is also the guard that the deferred sidecar reaches the page at all.
- * It reads the crib row's whole text rather than the glyph alone, because the
- * spoken form is the only source of the figure for a screen reader and has
- * been wrong on its own before.
+ * It asserts the spoken form by accessible name rather than the glyph alone,
+ * because that phrase is the only source of the figure for a screen reader
+ * and is the half that can disappear while the visible one stays.
  */
 test("crib average carries its simulation error once the sidecar loads", async ({
   page,
@@ -336,9 +340,7 @@ test("crib average carries its simulation error once the sidecar loads", async (
   await waitForCribUncertainty(page);
 
   await expect(cribAverageRow(page)).toContainText(/\u00b10\.\d\d/u);
-  await expect(cribAverageRow(page)).toContainText(
-    /plus or minus 0\.\d\d simulation error/u,
-  );
+  await expect(spokenCribUncertainty(page)).toBeVisible();
 });
 
 test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
