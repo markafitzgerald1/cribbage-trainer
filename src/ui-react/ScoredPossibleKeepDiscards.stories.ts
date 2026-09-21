@@ -194,6 +194,48 @@ export const RoleLossWithheld: Story = {
   },
 };
 
+/*
+ * The uncertainty sidecar loads after the ranked results, so these two cover
+ * both halves of the contract that keeps a recommendation complete without
+ * it: the bound on screen when the sidecar arrives, and the same analysis
+ * unchanged when it never does.
+ */
+const expandedCanvas = async (context: {
+  readonly canvasElement: HTMLElement;
+}) => {
+  await playToggle(context);
+
+  return within(context.canvasElement);
+};
+
+export const CribUncertainty: Story = {
+  ...Expanded,
+  play: async (context) => {
+    const canvas = await expandedCanvas(context);
+    const bound = await canvas.findByText(
+      /^\u00b1\d+\.\d\d$/u,
+      {},
+      { timeout: 10000 },
+    );
+
+    await expect(bound).toBeVisible();
+  },
+};
+
+export const CribUncertaintyUnavailable: Story = {
+  ...Expanded,
+  args: {
+    ...Expanded.args,
+    loadCribUncertainty: () => Promise.resolve(null),
+  },
+  play: async (context) => {
+    const canvas = await expandedCanvas(context);
+
+    await expect(await canvas.findByText(/Crib avg/u)).toBeVisible();
+    await expect(canvas.queryByText(/\u00b1/u)).toBeNull();
+  },
+};
+
 export const LoadError: Story = {
   ...JackSixFiveFourKingQueenSortedDescending,
   args: {

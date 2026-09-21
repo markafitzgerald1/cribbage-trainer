@@ -9,6 +9,7 @@ import {
   requireDealButtonBounds,
   rightEdge,
 } from "./layoutMeasurements";
+import { cribAverageRow, waitForCribUncertainty } from "./cribUncertainty";
 import {
   renderThenSelectTwoDiscards,
   waitForAnalysis,
@@ -317,6 +318,27 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
 
   await expect(page.getByText("7♠")).toBeVisible();
   await expect(page.getByText("7 (♣♦♥)")).toBeVisible();
+});
+
+/*
+ * The bound is the only figure on screen that arrives after the analysis, so
+ * this is also the guard that the deferred sidecar reaches the page at all.
+ * It reads the crib row's whole text rather than the glyph alone, because the
+ * spoken form is the only source of the figure for a screen reader and has
+ * been wrong on its own before.
+ */
+test("crib average carries its simulation error once the sidecar loads", async ({
+  page,
+}) => {
+  await renderThenSelectTwoDiscards(page, constantHandQuery);
+
+  await page.locator("tbody tr").first().click();
+  await waitForCribUncertainty(page);
+
+  await expect(cribAverageRow(page)).toContainText(/\u00b10\.\d\d/u);
+  await expect(cribAverageRow(page)).toContainText(
+    /plus or minus 0\.\d\d simulation error/u,
+  );
 });
 
 test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
