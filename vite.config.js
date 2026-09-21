@@ -55,23 +55,26 @@ export default {
       /*
        * Set a little under what Docker reports, not at it. Two Docker runs
        * on #814 differing only by a documentation edit reported branches at
-       * 81.81 and then 81.75, so pinning the exact total turned the next
-       * run red on noise; statements, functions and lines were identical
-       * across both. The margin absorbs that variance while staying well
+       * 81.81 and then 81.75, so pinning the exact total turned the next run
+       * red on noise. The margin absorbs that variance while staying well
        * above what a real regression would cost.
        *
-       * Set for #627 from a Docker run reporting 91.26 / 81.36 / 92.96 /
-       * 91.08. Branches fell from the previous 81.75-ish because the sidecar
-       * reader validates a published wire format: Jest covers every rejection
-       * it can return, and browser-mode stories reach only the handful a page
-       * can actually provoke. Functions rose, and the threshold with them,
-       * because the exclusion above stopped counting shared spec helpers.
+       * Set for #627 from the lower of two Docker runs whose `src/` trees
+       * were byte-identical: 91.26 / 81.36 / 92.96 / 91.08, then 91.19 /
+       * 81.36 / 92.84 / 91.02. Every metric except branches moved, functions
+       * by 0.12, so do not read #814's note as meaning only branches jitter -
+       * it was describing one pair of runs, not a property of the metric.
+       * Branches sit below the previous 81.75-ish because the sidecar reader
+       * validates a published wire format: Jest covers every rejection it can
+       * return, and browser-mode stories reach only the handful a page can
+       * provoke. Functions rose because the exclusion above stopped counting
+       * shared spec helpers.
        */
       thresholds: {
         branches: 81.1,
-        functions: 92.7,
-        lines: 90.8,
-        statements: 91,
+        functions: 92.5,
+        lines: 90.7,
+        statements: 90.9,
       },
     },
     projects: [

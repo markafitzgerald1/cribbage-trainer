@@ -209,8 +209,14 @@
   contradiction. Two Docker runs there, on code differing only by a
   documentation edit, reported branches at 81.81 and then 81.75, so a
   threshold pinned to the first turned the second red on nothing at all.
-  Statements, functions and lines were identical across both runs, so the
-  jitter is branches specifically rather than coverage generally. A quarter
+  **Statements, functions and lines were identical across those two runs,
+  which is not the same as the jitter being a property of branches** — an
+  earlier revision of this bullet drew that conclusion and #849 falsified it.
+  Two runs there whose `src/` trees were byte-identical (only a workflow file
+  and a Node script differed, neither instrumented) reported 91.26 / 81.36 /
+  92.96 / 91.08 and then 91.19 / 81.36 / 92.84 / 91.02, functions moving 0.12
+  and branches alone holding still. Give every metric the margin, and take it
+  from the lowest of the runs you have rather than the latest. A quarter
   point of margin absorbs it, and the trade is explicit rather than free: a
   regression smaller than the margin now passes, so roughly a quarter point
   of branch coverage and a fifth of a point of function coverage can be lost

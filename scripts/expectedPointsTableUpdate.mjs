@@ -233,9 +233,18 @@ export const downloadCribAssets = async (
     downloadTable(meansUrl, validateCribTable),
     downloadTable(uncertaintyUrl, validateCribUncertainty),
   ]);
-  assertCribMeansDigest(uncertainty.parsed, means.raw);
+  /*
+   * The exact published bytes, not the newline-normalized `body` the play
+   * table gets: the sidecar's `means_sha256` names these bytes, so anything
+   * written here that is not byte-identical to what was hashed would leave a
+   * pair that `npm run test:vendored-tables` rejects on its next run. Hashing
+   * and writing the same constant is what makes that impossible rather than
+   * merely unlikely.
+   */
+  const cribMeansBody = means.raw;
+  assertCribMeansDigest(uncertainty.parsed, cribMeansBody);
   return [
-    { body: means.body, outputPath: CRIB_OUTPUT_PATH },
+    { body: cribMeansBody, outputPath: CRIB_OUTPUT_PATH },
     {
       body: toMinifiedBody(uncertainty.parsed),
       outputPath: CRIB_UNCERTAINTY_OUTPUT_PATH,
