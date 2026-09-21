@@ -6,11 +6,9 @@ import {
 import {
   cribRecordIdentity,
   cribStandardError,
-  isCribDiscardKey,
   parseCribUncertainty,
 } from "./cribUncertainty";
 import { describe, expect, it } from "@jest/globals";
-import { STARTER_RANKS } from "./expectedCribPoints";
 import shippedSidecar from "./expectedCribPointsUncertainty.json";
 
 type SidecarDocument = Record<string, unknown>;
@@ -125,7 +123,15 @@ const HEADER_REJECTIONS: readonly RejectionCase[] = [
         ...(Reflect.get(document, "keys") as string[]).slice(1),
       ]);
     },
-    name: "a discard key of the wrong shape",
+    name: "a discard key the contract does not list",
+  },
+  {
+    mutate: (document) => {
+      const keys = [...(Reflect.get(document, "keys") as string[])];
+
+      Reflect.set(document, "keys", [keys[1], keys[0], ...keys.slice(2)]);
+    },
+    name: "the discard keys in another order",
   },
   { mutate: setHeader("roles", ["Dealer", "Banker"]), name: "an unknown role" },
   {
@@ -198,15 +204,6 @@ const RECORD_REJECTIONS: readonly RejectionCase[] = [
 ];
 
 describe("parseCribUncertainty", () => {
-  /*
-   * The discard-key pattern spells its rank alphabet as a literal, because a
-   * constructed RegExp trips a lint rule. This is what keeps that literal and
-   * `STARTER_RANKS` from drifting apart.
-   */
-  it.each([...STARTER_RANKS])("accepts %s in a discard key", (rank) => {
-    expect(isCribDiscardKey(`${rank}_${rank}_Unsuited`)).toBe(true);
-  });
-
   it("reads the shipped sidecar", () => {
     const parsed = parsedOrThrow(shippedSidecar);
 

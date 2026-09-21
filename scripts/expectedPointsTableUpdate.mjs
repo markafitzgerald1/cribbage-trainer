@@ -66,6 +66,19 @@ const QUALIFICATION_KEYS = ["crib", "play", "scope"];
  */
 const CANONICAL_ROLES = ["Dealer", "Pone"];
 const CANONICAL_RANKS = "A23456789TJQK".split("");
+/*
+ * Both ranks in rank order, `Suited` before `Unsuited`, and no suited pair -
+ * two cards of one rank cannot share a suit. Comparing the whole sequence
+ * rather than a shape rejects a duplicate, a reordering, or an omitted key,
+ * each of which would quietly cost one discard its bound.
+ */
+const CANONICAL_DISCARD_KEYS = CANONICAL_RANKS.flatMap((first, index) =>
+  CANONICAL_RANKS.slice(index).flatMap((second) =>
+    first === second
+      ? [`${first}_${second}_Unsuited`]
+      : [`${first}_${second}_Suited`, `${first}_${second}_Unsuited`],
+  ),
+);
 const CANONICAL_SLOTS = [
   "total",
   "matching_discard_suit",
@@ -73,12 +86,10 @@ const CANONICAL_SLOTS = [
   "matching_rank_1_suit",
   "matching_rank_2_suit",
 ];
-const CRIB_DISCARD_KEY_COUNT = 169;
-const DISCARD_KEY = /^[A23456789TJQK]_[A23456789TJQK]_(?:Suited|Unsuited)$/u;
 // `keys`, `roles`, `ranks`, `slots` - in the order a record identity spells them.
 const IDENTITY_FIELDS = ["keys", "roles", "ranks", "slots"];
 const CANONICAL_VOCABULARY = {
-  keys: null,
+  keys: CANONICAL_DISCARD_KEYS,
   ranks: CANONICAL_RANKS,
   roles: CANONICAL_ROLES,
   slots: CANONICAL_SLOTS,
@@ -98,11 +109,8 @@ const assertHeaderValue = (sidecar, field, expected) => {
 const assertCanonicalList = (field, value) => {
   const expected = CANONICAL_VOCABULARY[field];
   const matches =
-    expected === null
-      ? value.length === CRIB_DISCARD_KEY_COUNT &&
-        value.every((item) => DISCARD_KEY.test(item))
-      : value.length === expected.length &&
-        value.every((item, index) => item === expected[index]);
+    value.length === expected.length &&
+    value.every((item, index) => item === expected[index]);
   if (!matches) {
     throw new Error(
       `Downloaded crib uncertainty sidecar declares a ${field} list that ` +

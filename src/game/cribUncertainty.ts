@@ -53,9 +53,15 @@ const MINIMUM_OBSERVATIONS = 2;
  * Version 1 pins these, so a sidecar does not get to declare its own. A
  * document that did would still parse and its identities would still check
  * out against its own lists - and then every real lookup would miss, leaving
- * the bound unavailable for reasons no error names. The rank list is the
- * app's own `STARTER_RANKS`, in the order the contract requires, rather than
- * a second copy that could drift from it.
+ * the bound unavailable for reasons no error names.
+ *
+ * The rank list is the app's own `STARTER_RANKS`, in the order the contract
+ * requires, rather than a second copy that could drift from it, and the key
+ * sequence is derived from it the way the contract describes: both ranks in
+ * rank order, `Suited` before `Unsuited`, and no suited pair, since two cards
+ * of one rank cannot share a suit. Comparing against that whole sequence
+ * rather than against a shape is what rejects a duplicate, a reordering, or
+ * an omitted key - each of which would quietly cost one row its bound.
  */
 const CANONICAL_ROLES = ["Dealer", "Pone"];
 const CANONICAL_SLOTS = [
@@ -65,10 +71,15 @@ const CANONICAL_SLOTS = [
   "matching_rank_1_suit",
   "matching_rank_2_suit",
 ];
-const CRIB_DISCARD_KEY_COUNT = 169;
-const DISCARD_KEY = /^[A23456789TJQK]_[A23456789TJQK]_(?:Suited|Unsuited)$/u;
 
-export const isCribDiscardKey = (key: string): boolean => DISCARD_KEY.test(key);
+export const CANONICAL_DISCARD_KEYS: readonly string[] = STARTER_RANKS.flatMap(
+  (first, index) =>
+    STARTER_RANKS.slice(index).flatMap((second) =>
+      first === second
+        ? [`${first}_${second}_Unsuited`]
+        : [`${first}_${second}_Suited`, `${first}_${second}_Unsuited`],
+    ),
+);
 
 type IdentityVocabulary = readonly ReadonlySet<string>[];
 
@@ -153,9 +164,6 @@ const isCanonical = (
   list.length === expected.length &&
   list.every((item, index) => item === expected.at(index));
 
-const areDiscardKeys = (keys: readonly string[]): boolean =>
-  keys.length === CRIB_DISCARD_KEY_COUNT && keys.every(isCribDiscardKey);
-
 // Returned in the order a record identity spells them: key, role, rank, slot.
 const readVocabulary = (document: object): IdentityVocabulary | null => {
   const keys = readStringList(document, "keys");
@@ -166,7 +174,7 @@ const readVocabulary = (document: object): IdentityVocabulary | null => {
     return null;
   }
   if (
-    !areDiscardKeys(keys) ||
+    !isCanonical(keys, CANONICAL_DISCARD_KEYS) ||
     !isCanonical(roles, CANONICAL_ROLES) ||
     !isCanonical(ranks, STARTER_RANKS) ||
     !isCanonical(slots, CANONICAL_SLOTS)
