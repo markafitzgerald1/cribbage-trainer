@@ -42,6 +42,21 @@ test("the vendored sidecar was exported against the vendored means", () => {
 });
 
 /*
+ * The case the guard exists for, which the passing case above cannot show:
+ * a rolling release replaced between the two downloads leaves means that no
+ * longer hash to what the sidecar names. One byte is enough, and has to be,
+ * because a digest that tolerated a byte would not be doing anything.
+ */
+test("a means file of different bytes fails the matched-pair guard", () => {
+  throws(() =>
+    assertCribMeansDigest(
+      JSON.parse(readVendored(CRIB_UNCERTAINTY_OUTPUT_PATH)),
+      `${readVendored(CRIB_OUTPUT_PATH)} `,
+    ),
+  );
+});
+
+/*
  * The browser's reader (`src/game/cribUncertainty.ts`) and this updater check
  * the same version-1 contract in two languages, so they can drift. These
  * cases are the shapes `src/game/cribUncertainty.test.ts` asserts the reader
