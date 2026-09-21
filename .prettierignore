@@ -6,6 +6,8 @@
 /test-results/
 # Vendored lean crib EV table from simulate-cribbage-games; refresh with scripts/updateExpectedCribPointsTable.mjs.
 /src/game/expectedCribPointsTable.json
+# Vendored crib uncertainty sidecar from simulate-cribbage-games; refresh with scripts/updateExpectedCribPointsTable.mjs.
+/src/game/expectedCribPointsUncertainty.json
 # Vendored lean play EV table from simulate-cribbage-games; refresh with scripts/updateExpectedPlayPointsTable.mjs.
 /src/game/expectedPlayPointsTable.json
 /.claude/

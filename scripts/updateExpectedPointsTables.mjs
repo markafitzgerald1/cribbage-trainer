@@ -1,22 +1,20 @@
 import {
-  CRIB_ASSET_URL,
-  CRIB_OUTPUT_PATH,
   PLAY_ASSET_URL,
   PLAY_OUTPUT_PATH,
+  downloadCribAssets,
   downloadTable,
-  validateCribTable,
   validatePlayTable,
-  writeTableAtomically,
+  writeTablesAtomically,
 } from "./expectedPointsTableUpdate.mjs";
 
 Promise.all([
-  downloadTable(CRIB_ASSET_URL, validateCribTable),
+  downloadCribAssets(),
   downloadTable(PLAY_ASSET_URL, validatePlayTable),
 ])
-  .then(([cribBody, playBody]) =>
-    Promise.all([
-      writeTableAtomically(CRIB_OUTPUT_PATH, cribBody),
-      writeTableAtomically(PLAY_OUTPUT_PATH, playBody),
+  .then(([cribFiles, play]) =>
+    writeTablesAtomically([
+      ...cribFiles,
+      { body: play.body, outputPath: PLAY_OUTPUT_PATH },
     ]),
   )
   .catch((error) => {

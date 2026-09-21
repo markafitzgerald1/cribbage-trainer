@@ -1,24 +1,16 @@
 import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import * as playLoader from "../game/expectedPlayPointsTableLoader";
 import {
+  type ExpectedTables,
+  loadExpectedTables,
+  readSynchronousExpectedTables,
+} from "./expectedTables";
+import {
   type MistakeClassification,
   classifyMistake,
 } from "../analysis/classifyMistake";
 import { useCallback, useEffect, useState } from "react";
-import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
-import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
-
-interface ScoringTables {
-  readonly crib: ExpectedCribPointsTable;
-  readonly play: ExpectedPlayPointsTable;
-}
-
-const readSynchronousTables = (): ScoringTables | null => {
-  const crib = cribLoader.getTableSync();
-  const play = playLoader.getTableSync();
-  return crib !== null && play !== null ? { crib, play } : null;
-};
 
 const classificationCache = new Map<string, MistakeClassification | null>();
 
@@ -32,7 +24,7 @@ interface UnclassifiedItem extends MistakeQueueItem {
 
 const classifyAndCacheItem = (
   item: UnclassifiedItem,
-  tables: ScoringTables,
+  tables: ExpectedTables,
 ): void => {
   const classification = classifyMistake({
     cards: item.cards,
@@ -57,9 +49,7 @@ export const useMistakeQueueClassifications = (
   sortedItems: readonly MistakeQueueItem[] | null,
   visibleCount: number,
 ): ((item: MistakeQueueItem) => MistakeClassification | null) => {
-  const [tables, setTables] = useState<ScoringTables | null>(
-    readSynchronousTables,
-  );
+  const [tables, setTables] = useState(readSynchronousExpectedTables);
   const [classifications, setClassifications] = useState(classificationCache);
 
   useEffect(() => {
@@ -69,10 +59,8 @@ export const useMistakeQueueClassifications = (
       sortedItems !== null &&
       sortedItems.some(hasPreviousDiscard)
     ) {
-      Promise.all([cribLoader.loadTable(), playLoader.loadTable()])
-        .then(([crib, play]) => {
-          setTables({ crib, play });
-        })
+      loadExpectedTables(cribLoader.loadTable, playLoader.loadTable)
+        .then(setTables)
         .catch(() => {
           setTables(null);
         });

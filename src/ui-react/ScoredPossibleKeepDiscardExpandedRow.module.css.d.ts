@@ -21,3 +21,5 @@ export const summaryLabelContent: string;
 export const summaryTotal: string;
 export const summaryValue: string;
 export const totalHeader: string;
+export const uncertainty: string;
+export const visuallyHidden: string;

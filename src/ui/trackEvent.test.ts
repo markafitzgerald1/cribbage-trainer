@@ -142,13 +142,9 @@ describe("trackEvent", () => {
       "event",
       "analysis_shown",
       {
-        // eslint-disable-next-line camelcase
         analysis_index: 1,
-        // eslint-disable-next-line camelcase
         deal_nonce: "nonce",
-        // eslint-disable-next-line camelcase
         generated_from_seed: false,
-        // eslint-disable-next-line camelcase
         is_first_analysis: true,
         source: "interactive",
       },

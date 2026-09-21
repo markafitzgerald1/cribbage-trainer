@@ -39,6 +39,7 @@ export default {
     coverage: {
       exclude: [
         "src/game/expectedCribPointsTable.json",
+        "src/game/expectedCribPointsUncertainty.json",
         "src/game/expectedPlayPointsTable.json",
       ],
       reportsDirectory: path.join(dirname, "coverage"),

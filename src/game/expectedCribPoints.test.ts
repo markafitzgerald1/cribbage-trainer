@@ -49,7 +49,6 @@ const poneValues = createIndexedStarterBuckets(PONE_MULTIPLIER);
 
 const createStatistic = (mu: number) => ({
   mu,
-  // eslint-disable-next-line id-length
   n: 0,
   points: {
     fifteens: { mu: mu + 0.1, se: 0 },
