@@ -6,9 +6,11 @@ import {
 import {
   cribRecordIdentity,
   cribStandardError,
+  isCribDiscardKey,
   parseCribUncertainty,
 } from "./cribUncertainty";
 import { describe, expect, it } from "@jest/globals";
+import { STARTER_RANKS } from "./expectedCribPoints";
 import shippedSidecar from "./expectedCribPointsUncertainty.json";
 
 type SidecarDocument = Record<string, unknown>;
@@ -107,6 +109,39 @@ const HEADER_REJECTIONS: readonly RejectionCase[] = [
   { mutate: setHeader("ranks", []), name: "an empty starter rank list" },
   { mutate: setHeader("slots", []), name: "an empty slot list" },
   { mutate: setHeader("roles", [1]), name: "a role list of non-strings" },
+  {
+    mutate: (document) => {
+      Reflect.set(document, "keys", [
+        ...(Reflect.get(document, "keys") as string[]),
+        "A_2_Suited",
+      ]);
+    },
+    name: "more discard keys than the contract has",
+  },
+  {
+    mutate: (document) => {
+      Reflect.set(document, "keys", [
+        "not a discard key",
+        ...(Reflect.get(document, "keys") as string[]).slice(1),
+      ]);
+    },
+    name: "a discard key of the wrong shape",
+  },
+  { mutate: setHeader("roles", ["Dealer", "Banker"]), name: "an unknown role" },
+  {
+    mutate: setHeader("ranks", ["A", "2", "3"]),
+    name: "a starter rank list the contract does not pin",
+  },
+  {
+    mutate: setHeader("slots", [
+      "total",
+      "matching_discard_suit",
+      "non_matching_discard_suit",
+      "matching_rank_1_suit",
+      "made_up_slot",
+    ]),
+    name: "an unknown slot",
+  },
   { mutate: setHeader("record_groups", "none"), name: "no record groups" },
   {
     mutate: setHeader("record_groups", { totals: 3 }),
@@ -146,7 +181,7 @@ const RECORD_REJECTIONS: readonly RejectionCase[] = [
     name: "too few identity parts",
   },
   {
-    mutate: renameRecord("A_2_Suited/Dealer/Q/total"),
+    mutate: renameRecord("A_2_Suited/Dealer/X/total"),
     name: "a rank the header does not declare",
   },
   {
@@ -163,6 +198,15 @@ const RECORD_REJECTIONS: readonly RejectionCase[] = [
 ];
 
 describe("parseCribUncertainty", () => {
+  /*
+   * The discard-key pattern spells its rank alphabet as a literal, because a
+   * constructed RegExp trips a lint rule. This is what keeps that literal and
+   * `STARTER_RANKS` from drifting apart.
+   */
+  it.each([...STARTER_RANKS])("accepts %s in a discard key", (rank) => {
+    expect(isCribDiscardKey(`${rank}_${rank}_Unsuited`)).toBe(true);
+  });
+
   it("reads the shipped sidecar", () => {
     const parsed = parsedOrThrow(shippedSidecar);
 

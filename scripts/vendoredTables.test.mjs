@@ -80,6 +80,11 @@ const REJECTED = [
   ["no means digest at all", (doc) => delete doc.means_sha256],
   ["an emptied qualification", (doc) => (doc.qualifications.scope = "")],
   ["no starter rank list", (doc) => (doc.ranks = [])],
+  ["one discard key too many", (doc) => doc.keys.push("A_2_Suited")],
+  ["a discard key of the wrong shape", (doc) => (doc.keys[0] = "nope")],
+  ["an unknown role", (doc) => (doc.roles[1] = "Banker")],
+  ["a starter rank list version 1 does not pin", (doc) => doc.ranks.pop()],
+  ["an unknown slot", (doc) => (doc.slots[4] = "made_up_slot")],
   [
     "a truncated record set",
     (doc, id) => delete doc.record_groups.totals.records[id],

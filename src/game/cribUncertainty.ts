@@ -1,3 +1,4 @@
+import { STARTER_RANKS } from "./expectedCribPoints";
 import { isFiniteNonNegative } from "../ui/isFiniteNonNegative";
 import { isObject } from "../ui/isObject";
 
@@ -48,8 +49,26 @@ const WEIGHT_FIELDS = ["n", "sum_w2"] as const;
  */
 const MINIMUM_OBSERVATIONS = 2;
 
-// `keys`, `roles`, `ranks`, `slots` - in the order a record identity spells them.
-const IDENTITY_FIELDS = ["keys", "roles", "ranks", "slots"] as const;
+/*
+ * Version 1 pins these, so a sidecar does not get to declare its own. A
+ * document that did would still parse and its identities would still check
+ * out against its own lists - and then every real lookup would miss, leaving
+ * the bound unavailable for reasons no error names. The rank list is the
+ * app's own `STARTER_RANKS`, in the order the contract requires, rather than
+ * a second copy that could drift from it.
+ */
+const CANONICAL_ROLES = ["Dealer", "Pone"];
+const CANONICAL_SLOTS = [
+  "total",
+  "matching_discard_suit",
+  "non_matching_discard_suit",
+  "matching_rank_1_suit",
+  "matching_rank_2_suit",
+];
+const CRIB_DISCARD_KEY_COUNT = 169;
+const DISCARD_KEY = /^[A23456789TJQK]_[A23456789TJQK]_(?:Suited|Unsuited)$/u;
+
+export const isCribDiscardKey = (key: string): boolean => DISCARD_KEY.test(key);
 
 type IdentityVocabulary = readonly ReadonlySet<string>[];
 
@@ -127,11 +146,34 @@ const hasQualifications = (document: object): boolean => {
   );
 };
 
+const isCanonical = (
+  list: readonly string[],
+  expected: readonly string[],
+): boolean =>
+  list.length === expected.length &&
+  list.every((item, index) => item === expected.at(index));
+
+const areDiscardKeys = (keys: readonly string[]): boolean =>
+  keys.length === CRIB_DISCARD_KEY_COUNT && keys.every(isCribDiscardKey);
+
+// Returned in the order a record identity spells them: key, role, rank, slot.
 const readVocabulary = (document: object): IdentityVocabulary | null => {
-  const lists = IDENTITY_FIELDS.map((field) => readStringList(document, field));
-  return lists.some((list) => list === null)
-    ? null
-    : lists.map((list) => new Set(list));
+  const keys = readStringList(document, "keys");
+  const roles = readStringList(document, "roles");
+  const ranks = readStringList(document, "ranks");
+  const slots = readStringList(document, "slots");
+  if (keys === null || roles === null || ranks === null || slots === null) {
+    return null;
+  }
+  if (
+    !areDiscardKeys(keys) ||
+    !isCanonical(roles, CANONICAL_ROLES) ||
+    !isCanonical(ranks, STARTER_RANKS) ||
+    !isCanonical(slots, CANONICAL_SLOTS)
+  ) {
+    return null;
+  }
+  return [new Set(keys), new Set(roles), new Set(ranks), new Set(slots)];
 };
 
 // Named so the index is asserted once, under the length check that makes it sound; a file-scoped disable is prohibited here.

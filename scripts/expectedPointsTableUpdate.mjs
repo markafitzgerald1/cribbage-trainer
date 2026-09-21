@@ -58,8 +58,31 @@ export const validateCribTable = (table) => {
 const UNCERTAINTY_STATISTIC = "reported_marginal_se";
 const UNCERTAINTY_N_SEMANTICS = "sum_weights";
 const QUALIFICATION_KEYS = ["crib", "play", "scope"];
+/*
+ * Version 1 pins the vocabulary, so a sidecar does not get to declare its own
+ * and then check its identities against that. These mirror the browser
+ * reader's copies in src/game/cribUncertainty.ts; vendoredTables.test.mjs
+ * runs both against the same malformations so the two cannot drift.
+ */
+const CANONICAL_ROLES = ["Dealer", "Pone"];
+const CANONICAL_RANKS = "A23456789TJQK".split("");
+const CANONICAL_SLOTS = [
+  "total",
+  "matching_discard_suit",
+  "non_matching_discard_suit",
+  "matching_rank_1_suit",
+  "matching_rank_2_suit",
+];
+const CRIB_DISCARD_KEY_COUNT = 169;
+const DISCARD_KEY = /^[A23456789TJQK]_[A23456789TJQK]_(?:Suited|Unsuited)$/u;
 // `keys`, `roles`, `ranks`, `slots` - in the order a record identity spells them.
 const IDENTITY_FIELDS = ["keys", "roles", "ranks", "slots"];
+const CANONICAL_VOCABULARY = {
+  keys: null,
+  ranks: CANONICAL_RANKS,
+  roles: CANONICAL_ROLES,
+  slots: CANONICAL_SLOTS,
+};
 const MINIMUM_OBSERVATIONS = 2;
 const MEANS_DIGEST = /^[0-9a-f]{64}$/u;
 
@@ -68,6 +91,22 @@ const assertHeaderValue = (sidecar, field, expected) => {
     throw new Error(
       `Downloaded crib uncertainty sidecar declares ${field} ` +
         `${JSON.stringify(sidecar[field])}; expected ${JSON.stringify(expected)}`,
+    );
+  }
+};
+
+const assertCanonicalList = (field, value) => {
+  const expected = CANONICAL_VOCABULARY[field];
+  const matches =
+    expected === null
+      ? value.length === CRIB_DISCARD_KEY_COUNT &&
+        value.every((item) => DISCARD_KEY.test(item))
+      : value.length === expected.length &&
+        value.every((item, index) => item === expected[index]);
+  if (!matches) {
+    throw new Error(
+      `Downloaded crib uncertainty sidecar declares a ${field} list that ` +
+        "version 1 does not",
     );
   }
 };
@@ -84,6 +123,7 @@ const readVocabulary = (sidecar) =>
         `Downloaded crib uncertainty sidecar has no usable ${field} list`,
       );
     }
+    assertCanonicalList(field, value);
     return new Set(value);
   });
 
@@ -258,18 +298,43 @@ export const downloadCribAssets = async (
   ];
 };
 
-export const writeTableAtomically = async (outputPath, body) => {
-  const temporaryPath = `${outputPath}.tmp-${process.pid}`;
-  await writeFile(temporaryPath, body);
-  await rename(temporaryPath, outputPath);
+const temporaryPathFor = (outputPath) => `${outputPath}.tmp-${process.pid}`;
+
+const announce = (outputPath, body) => {
   process.stdout.write(
     `Updated ${outputPath} (${Buffer.byteLength(body, "utf8").toLocaleString()} bytes).\n`,
   );
 };
 
+export const writeTableAtomically = async (outputPath, body) => {
+  const temporaryPath = temporaryPathFor(outputPath);
+  await writeFile(temporaryPath, body);
+  await rename(temporaryPath, outputPath);
+  announce(outputPath, body);
+};
+
+/*
+ * Every temporary file is written before any of them replaces its target, so
+ * a failure that belongs to writing - a full disk above all - happens while
+ * both vendored files are still the pair they were. The renames that follow
+ * are same-directory and cannot be made one atomic step on POSIX, so a
+ * failure among them would still leave a mismatched pair. That residue is
+ * what `npm run test:vendored-tables` exists to catch, and it now runs on
+ * every commit, every pull request, and the production deploy.
+ */
 export const writeTablesAtomically = async (files) => {
+  const staged = await Promise.all(
+    files.map(async ({ body, outputPath }) => {
+      const temporaryPath = temporaryPathFor(outputPath);
+      await writeFile(temporaryPath, body);
+      return { body, outputPath, temporaryPath };
+    }),
+  );
   await Promise.all(
-    files.map(({ body, outputPath }) => writeTableAtomically(outputPath, body)),
+    staged.map(async ({ body, outputPath, temporaryPath }) => {
+      await rename(temporaryPath, outputPath);
+      announce(outputPath, body);
+    }),
   );
 };
 

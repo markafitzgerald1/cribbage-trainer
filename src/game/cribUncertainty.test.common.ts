@@ -4,6 +4,7 @@ import {
   parseCribUncertainty,
 } from "./cribUncertainty";
 import { type CribUncertaintySource } from "./cribUncertaintyLoader";
+import { STARTER_RANKS } from "./expectedCribPoints";
 
 /*
  * The smallest document the reader accepts, shared so the reader's own specs
@@ -23,12 +24,26 @@ export const VALID_IDENTITY = cribRecordIdentity({
  */
 const FAKE_MEANS_DIGEST = "0".repeat(64);
 
+/*
+ * Version 1 pins the vocabulary, so the smallest document the reader accepts
+ * still has to carry all of it. The keys are generated rather than typed out:
+ * 169 literals would be a second copy of something the contract already
+ * determines, and one typo in them would read as a reader bug.
+ */
+const CRIB_DISCARD_KEYS = STARTER_RANKS.flatMap((first, index) =>
+  STARTER_RANKS.slice(index).flatMap((second) =>
+    first === second
+      ? [`${first}_${second}_Unsuited`]
+      : [`${first}_${second}_Suited`, `${first}_${second}_Unsuited`],
+  ),
+);
+
 export const validDocument = () => ({
-  keys: ["A_2_Suited"],
+  keys: CRIB_DISCARD_KEYS,
   means_sha256: FAKE_MEANS_DIGEST,
   n_semantics: "sum_weights",
   qualifications: { crib: "crib text", play: "play text", scope: "scope text" },
-  ranks: ["K"],
+  ranks: [...STARTER_RANKS],
   record_groups: {
     totals: {
       record_count: 1,
@@ -41,9 +56,15 @@ export const validDocument = () => ({
       },
     },
   },
-  roles: ["Dealer"],
+  roles: ["Dealer", "Pone"],
   schema: "expected-points-uncertainty.v1",
-  slots: ["total"],
+  slots: [
+    "total",
+    "matching_discard_suit",
+    "non_matching_discard_suit",
+    "matching_rank_1_suit",
+    "matching_rank_2_suit",
+  ],
   statistic: "reported_marginal_se",
   table: "crib",
 });

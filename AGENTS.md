@@ -1305,6 +1305,19 @@ they bind any PR that makes a claim about a phone or ships a guard.
   having read no files at all, which happened here while checking exactly
   this).
 
+  **The same trap swallows edits, not just searches, and there it is
+  worse — the claim that the edit landed goes into a review reply.** A
+  string replacement that matches nothing changes nothing and reports
+  success, so "fixed in `<sha>`" can be false with every gate still green.
+  #849 did this twice on one file: both edits escaped a non-ASCII character
+  as `\u00b1` while the Prettier-formatted file holds the literal `±`, so
+  each matched nothing, and two review threads were answered with fixes that
+  were never applied — caught by the next round rather than by the author.
+  **Non-ASCII is the specific hazard**, because Prettier normalizes escapes
+  in source while agents reach for them by reflex. Read the changed lines
+  back before saying an edit landed, and prefer rewriting a short file whole
+  over matching a string you cannot see.
+
 - Capture each session's durable, non-obvious learnings — new invariants,
   debugging techniques, tooling or review-workflow gotchas — in `AGENTS.md`
   (or the matching `skills/*/SKILL.md` when the learning is task-shaped) as
