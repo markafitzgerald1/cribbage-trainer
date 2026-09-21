@@ -91,6 +91,16 @@ const HEADER_REJECTIONS: readonly RejectionCase[] = [
     name: "no means digest at all",
   },
   {
+    mutate: setHeader("source_full_sha256", "not-a-digest"),
+    name: "a source digest that is not one",
+  },
+  {
+    mutate: (document) => {
+      Reflect.deleteProperty(document, "provenance");
+    },
+    name: "no provenance at all",
+  },
+  {
     mutate: setHeader("qualifications", { crib: "c", play: "p" }),
     name: "a missing qualification",
   },

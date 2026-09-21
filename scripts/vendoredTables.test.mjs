@@ -78,6 +78,8 @@ const REJECTED = [
   ["another weight semantics", (doc) => (doc.n_semantics = "simulation_count")],
   ["a means digest that is not one", (doc) => (doc.means_sha256 = "no")],
   ["no means digest at all", (doc) => delete doc.means_sha256],
+  ["a source digest that is not one", (doc) => (doc.source_full_sha256 = "no")],
+  ["no provenance at all", (doc) => delete doc.provenance],
   ["an emptied qualification", (doc) => (doc.qualifications.scope = "")],
   ["no starter rank list", (doc) => (doc.ranks = [])],
   ["one discard key too many", (doc) => doc.keys.push("A_2_Suited")],

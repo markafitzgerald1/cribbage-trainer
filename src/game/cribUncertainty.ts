@@ -19,16 +19,18 @@ const N_SEMANTICS = "sum_weights";
 const QUALIFICATION_KEYS = ["crib", "play", "scope"] as const;
 
 /*
- * The digest naming the means this sidecar was exported against. Checked for
- * shape only, which is the most a browser can do: Vite hands this module a
- * parsed table, not the published bytes, so there is nothing here to hash
- * against. What establishes the pairing is `npm run test:vendored-tables`,
- * which hashes the vendored file itself and runs on every commit, in CI, and
- * on the production deploy path. Refusing a document that omits the field is
- * still worth doing - a sidecar without it is not one this contract
- * describes, whatever its records look like.
+ * The digests naming the means this sidecar was exported against and the full
+ * artifact it came from. Checked for shape only, which is the most a browser
+ * can do: Vite hands this module a parsed table, not the published bytes, so
+ * there is nothing here to hash against. What establishes the pairing is
+ * `npm run test:vendored-tables`, which hashes the vendored file itself and
+ * runs on every commit, in CI, and on the production deploy path. Refusing a
+ * document that omits either is still worth doing - a sidecar without them is
+ * not one this contract describes, whatever its records look like, and the
+ * same goes for one carrying no provenance.
  */
-const MEANS_DIGEST = /^[0-9a-f]{64}$/u;
+const SHA256_DIGEST = /^[0-9a-f]{64}$/u;
+const DIGEST_FIELDS = ["means_sha256", "source_full_sha256"];
 
 /*
  * Present on every crib record, and both are validated even though only the
@@ -143,7 +145,10 @@ const hasExpectedHeader = (document: object): boolean =>
   readString(document, "table") === TABLE &&
   readString(document, "statistic") === STATISTIC &&
   readString(document, "n_semantics") === N_SEMANTICS &&
-  MEANS_DIGEST.test(readString(document, "means_sha256") ?? "");
+  DIGEST_FIELDS.every((field) =>
+    SHA256_DIGEST.test(readString(document, field) ?? ""),
+  ) &&
+  isObject(Reflect.get(document, "provenance") as unknown);
 
 /*
  * Only the presence of each key is part of the wire contract; the wording is

@@ -95,7 +95,8 @@ const CANONICAL_VOCABULARY = {
   slots: CANONICAL_SLOTS,
 };
 const MINIMUM_OBSERVATIONS = 2;
-const MEANS_DIGEST = /^[0-9a-f]{64}$/u;
+const SHA256_DIGEST = /^[0-9a-f]{64}$/u;
+const DIGEST_FIELDS = ["means_sha256", "source_full_sha256"];
 
 const assertHeaderValue = (sidecar, field, expected) => {
   if (sidecar[field] !== expected) {
@@ -134,6 +135,20 @@ const readVocabulary = (sidecar) =>
     assertCanonicalList(field, value);
     return new Set(value);
   });
+
+const assertProvenance = (sidecar) => {
+  for (const field of DIGEST_FIELDS) {
+    if (!SHA256_DIGEST.test(sidecar[field] ?? "")) {
+      throw new Error(
+        `Downloaded crib uncertainty sidecar names no usable ${field}`,
+      );
+    }
+  }
+  assertObject(
+    sidecar.provenance,
+    "Downloaded crib uncertainty sidecar carries no provenance",
+  );
+};
 
 const assertQualifications = (sidecar) => {
   assertObject(
@@ -200,11 +215,7 @@ export const validateCribUncertainty = (sidecar) => {
   assertHeaderValue(sidecar, "table", "crib");
   assertHeaderValue(sidecar, "statistic", UNCERTAINTY_STATISTIC);
   assertHeaderValue(sidecar, "n_semantics", UNCERTAINTY_N_SEMANTICS);
-  if (!MEANS_DIGEST.test(sidecar.means_sha256 ?? "")) {
-    throw new Error(
-      "Downloaded crib uncertainty sidecar names no means digest to check",
-    );
-  }
+  assertProvenance(sidecar);
   assertQualifications(sidecar);
   const vocabulary = readVocabulary(sidecar);
 

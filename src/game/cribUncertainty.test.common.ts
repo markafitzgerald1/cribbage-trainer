@@ -20,15 +20,16 @@ export const VALID_IDENTITY = cribRecordIdentity({
 
 /*
  * Obviously synthetic, so nobody reads it as the digest of anything. The
- * reader checks the field's shape rather than hashing against it - a browser
- * is handed a parsed table, not the published bytes it was named for.
+ * reader checks each digest field's shape rather than hashing against it - a
+ * browser is handed a parsed table, not the published bytes it was named for.
  */
-const FAKE_MEANS_DIGEST = "0".repeat(64);
+const FAKE_DIGEST = "0".repeat(64);
 
 export const validDocument = () => ({
   keys: [...CANONICAL_DISCARD_KEYS],
-  means_sha256: FAKE_MEANS_DIGEST,
+  means_sha256: FAKE_DIGEST,
   n_semantics: "sum_weights",
+  provenance: { generation_method: "artifact_pipeline.generate_table.v3" },
   qualifications: { crib: "crib text", play: "play text", scope: "scope text" },
   ranks: [...STARTER_RANKS],
   record_groups: {
@@ -52,6 +53,7 @@ export const validDocument = () => ({
     "matching_rank_1_suit",
     "matching_rank_2_suit",
   ],
+  source_full_sha256: FAKE_DIGEST,
   statistic: "reported_marginal_se",
   table: "crib",
 });
