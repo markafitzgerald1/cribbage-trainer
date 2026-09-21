@@ -5,9 +5,18 @@ interface ImportedDocument {
   readonly default: unknown;
 }
 
-export interface CribUncertaintyLoader {
+/*
+ * What a consumer reads. Both halves come from one object on purpose: a
+ * component seeded from one source and loaded from another would keep showing
+ * whatever the first had cached, which is precisely the stale-injection
+ * hazard this pairing removes.
+ */
+export interface CribUncertaintySource {
   readonly getCribUncertaintySync: () => CribUncertainty | null;
   readonly loadCribUncertainty: () => Promise<CribUncertainty | null>;
+}
+
+export interface CribUncertaintyLoader extends CribUncertaintySource {
   readonly setCribUncertaintySync: (document: unknown) => void;
 }
 
@@ -72,10 +81,10 @@ export const createCribUncertaintyLoader = (
   };
 };
 
-export const {
-  getCribUncertaintySync,
-  loadCribUncertainty,
-  setCribUncertaintySync,
-} = createCribUncertaintyLoader(
-  () => import("./expectedCribPointsUncertainty.json"),
-);
+export const shippedCribUncertainty: CribUncertaintyLoader =
+  createCribUncertaintyLoader(
+    () => import("./expectedCribPointsUncertainty.json"),
+  );
+
+export const { loadCribUncertainty, setCribUncertaintySync } =
+  shippedCribUncertainty;

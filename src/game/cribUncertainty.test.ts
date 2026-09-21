@@ -124,6 +124,14 @@ const RECORD_REJECTIONS: readonly RejectionCase[] = [
     name: "a negative standard error",
   },
   {
+    mutate: setRecord({ n: 1, reported_marginal_se: 0.1, sum_w2: 1 }),
+    name: "fewer observations than the exporter would keep",
+  },
+  {
+    mutate: setRecord({ n: 2, reported_marginal_se: 0.1, sum_w2: 4 }),
+    name: "a weighted-variance denominator that is not positive",
+  },
+  {
     mutate: renameRecord("A_2_Suited/Dealer/K"),
     name: "too few identity parts",
   },

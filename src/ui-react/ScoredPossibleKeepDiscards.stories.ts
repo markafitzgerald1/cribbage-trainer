@@ -18,7 +18,8 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
-import { setCribUncertaintySync } from "../game/cribUncertaintyLoader";
+import { deferredUncertainty } from "../game/cribUncertainty.test.common";
+
 /* jscpd:ignore-end */
 
 /*
@@ -196,6 +197,12 @@ export const RoleLossWithheld: Story = {
 };
 
 /*
+ * Held rather than built per render: the component takes the source as an
+ * effect dependency, so a fresh object each time would restart the load.
+ */
+const NO_UNCERTAINTY = deferredUncertainty(null);
+
+/*
  * The uncertainty sidecar loads after the ranked results, so these two cover
  * both halves of the contract that keeps a recommendation complete without
  * it: the bound on screen when the sidecar arrives, and the same analysis
@@ -227,20 +234,8 @@ export const CribUncertaintyUnavailable: Story = {
   ...Expanded,
   args: {
     ...Expanded.args,
-    loadCribUncertainty: () => Promise.resolve(null),
+    cribUncertaintySource: NO_UNCERTAINTY,
   },
-  /*
-   * The story above it in this file leaves the shipped sidecar in the shared
-   * loader, and the component seeds synchronously from that cache the way it
-   * seeds the means from `getTableSync`. Clearing it is what makes the
-   * injected loader the only source here - the same reset `LoadError` does
-   * for the crib table.
-   */
-  loaders: [
-    () => {
-      setCribUncertaintySync(null);
-    },
-  ],
   play: async (context) => {
     const canvas = await expandedCanvas(context);
 

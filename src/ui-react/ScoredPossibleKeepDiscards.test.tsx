@@ -15,6 +15,7 @@ import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDesc
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
+import { deferredUncertainty } from "../game/cribUncertainty.test.common";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 import { toDealtCards } from "../game/toDealtCards";
@@ -70,7 +71,7 @@ const REPORTED_ANALYSIS_CASES = [
 ];
 
 // Ranking, sorting and reporting: no bound involved, so state it is absent rather than parse 1.2 MB per case.
-const loadNoUncertainty = () => Promise.resolve(null);
+const noUncertainty = deferredUncertainty(null);
 
 const mathRandom = Math.random;
 
@@ -102,8 +103,8 @@ const renderScoredPossibleKeepDiscards = (
   return render(
     <ScoredPossibleKeepDiscards
       cribRole={cribRole}
+      cribUncertaintySource={noUncertainty}
       dealtCards={dealtCards}
-      loadCribUncertainty={loadNoUncertainty}
       onAnalysisRendered={onAnalysisRendered}
       onScoreSortKeyChange={onScoreSortKeyChange}
       scoreSortKey={scoreSortKey}

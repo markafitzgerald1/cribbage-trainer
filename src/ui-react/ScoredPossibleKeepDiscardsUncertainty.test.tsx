@@ -3,9 +3,14 @@ import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
+import {
+  deferredUncertainty,
+  rejectingUncertainty,
+  uniformUncertainty,
+} from "../game/cribUncertainty.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { CribUncertainty } from "../game/cribUncertainty";
+import type { CribUncertaintySource } from "../game/cribUncertaintyLoader";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
@@ -21,21 +26,17 @@ const CHOSEN_DISCARD = "AC,2D";
 const CRIB_TABLE = cribTableData as unknown as ExpectedCribPointsTable;
 const PLAY_TABLE = playTableData as unknown as ExpectedPlayPointsTable;
 
-const everyRecord = (standardError: number): CribUncertainty => ({
-  totals: { get: () => standardError },
-});
-
 const renderAnalysis = (
-  loadCribUncertainty: () => Promise<CribUncertainty | null>,
+  cribUncertaintySource: CribUncertaintySource,
   loadCribTable: () => Promise<ExpectedCribPointsTable> = () =>
     Promise.resolve(CRIB_TABLE),
 ) =>
   render(
     <ScoredPossibleKeepDiscards
       cribRole={CribRole.Dealer}
+      cribUncertaintySource={cribUncertaintySource}
       dealtCards={toDealtCards(parseHand(HAND), parseHand(CHOSEN_DISCARD))}
       loadCribTable={loadCribTable}
-      loadCribUncertainty={loadCribUncertainty}
       loadPlayTable={() => Promise.resolve(PLAY_TABLE)}
       onAnalysisRendered={jest.fn()}
       onScoreSortKeyChange={jest.fn()}
@@ -63,7 +64,7 @@ describe("crib uncertainty in the analysis table", () => {
   ])(
     "shows $name under the crib average once the sidecar arrives",
     async ({ displayed, standardError }) => {
-      renderAnalysis(() => Promise.resolve(everyRecord(standardError)));
+      renderAnalysis(deferredUncertainty(uniformUncertainty(standardError)));
       await expandFirstDiscard();
 
       await waitFor(() => {
@@ -80,13 +81,10 @@ describe("crib uncertainty in the analysis table", () => {
   );
 
   it.each([
-    { load: () => Promise.resolve(null), name: "the sidecar is unavailable" },
-    {
-      load: () => Promise.reject(new Error("offline")),
-      name: "the sidecar loader rejects",
-    },
-  ])("ranks the discards with no bound when $name", async ({ load }) => {
-    renderAnalysis(load);
+    { name: "the sidecar is unavailable", source: deferredUncertainty(null) },
+    { name: "the sidecar loader rejects", source: rejectingUncertainty() },
+  ])("ranks the discards with no bound when $name", async ({ source }) => {
+    renderAnalysis(source);
     await expandFirstDiscard();
 
     // The crib average itself is on screen, so the absent bound is a decision rather than a component that failed to render.
@@ -104,10 +102,14 @@ describe("crib uncertainty in the analysis table", () => {
       tableHandles.resolve = resolve;
     });
     const loadCribUncertainty = jest.fn(() =>
-      Promise.resolve(everyRecord(0.25)),
+      Promise.resolve(uniformUncertainty(0.25)),
     );
+    const source = {
+      getCribUncertaintySync: () => null,
+      loadCribUncertainty,
+    };
 
-    renderAnalysis(loadCribUncertainty, () => pendingCribTable);
+    renderAnalysis(source, () => pendingCribTable);
 
     expect(screen.getByText("Loading analysis...")).toBeTruthy();
     expect(loadCribUncertainty).not.toHaveBeenCalled();

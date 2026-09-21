@@ -377,6 +377,8 @@ export default [
       "@typescript-eslint/no-magic-numbers": ["off"],
       camelcase: ["off"],
       "capitalized-comments": ["off"],
+      // Property names only, for the same reason camelcase is off here: these keys belong to a generated document, not to us.
+      "id-length": ["error", { exceptions: ["_"], properties: "never" }],
       "no-continue": ["off"],
       "security/detect-non-literal-fs-filename": ["off"],
       "security/detect-object-injection": ["off"],

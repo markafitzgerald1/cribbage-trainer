@@ -38,6 +38,15 @@ export default {
     cacheDir: path.join(dirname, "node_modules/.vitest"),
     coverage: {
       exclude: [
+        /*
+         * Vitest's defaults exclude `*.test.ts` but not `*.test.common.ts`,
+         * so shared spec helpers were counting toward the app's totals - and
+         * a helper only one of its callers uses reads as an uncovered
+         * function. `jest.config.json` already excludes every one of these
+         * from `collectCoverageFrom` for exactly that reason.
+         */
+        "src/**/*.test.common.ts",
+        "src/**/*.test.common.tsx",
         "src/game/expectedCribPointsTable.json",
         "src/game/expectedCribPointsUncertainty.json",
         "src/game/expectedPlayPointsTable.json",
@@ -51,17 +60,18 @@ export default {
        * across both. The margin absorbs that variance while staying well
        * above what a real regression would cost.
        *
-       * Set for #627 from a Docker run reporting 91.19 / 81.49 / 92.13 /
-       * 91.04. Branches fell from the previous 81.75-ish because the sidecar
+       * Set for #627 from a Docker run reporting 91.26 / 81.36 / 92.96 /
+       * 91.08. Branches fell from the previous 81.75-ish because the sidecar
        * reader validates a published wire format: Jest covers every rejection
        * it can return, and browser-mode stories reach only the handful a page
-       * can actually provoke.
+       * can actually provoke. Functions rose, and the threshold with them,
+       * because the exclusion above stopped counting shared spec helpers.
        */
       thresholds: {
-        branches: 81.2,
-        functions: 91.8,
-        lines: 90.7,
-        statements: 90.9,
+        branches: 81.1,
+        functions: 92.7,
+        lines: 90.8,
+        statements: 91,
       },
     },
     projects: [

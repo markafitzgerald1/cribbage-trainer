@@ -3,6 +3,7 @@ import {
   cribRecordIdentity,
   parseCribUncertainty,
 } from "./cribUncertainty";
+import { type CribUncertaintySource } from "./cribUncertaintyLoader";
 
 /*
  * The smallest document the reader accepts, shared so the reader's own specs
@@ -50,3 +51,26 @@ export const parsedOrThrow = (value: unknown): CribUncertainty => {
   }
   return parsed;
 };
+
+/*
+ * A source that has nothing yet and resolves the given value, which is what
+ * the shipped one looks like on a first mount. Callers hold one instance: the
+ * source is an effect dependency, so a fresh object per render would restart
+ * the load every render.
+ */
+export const deferredUncertainty = (
+  value: CribUncertainty | null,
+): CribUncertaintySource => ({
+  getCribUncertaintySync: () => null,
+  loadCribUncertainty: () => Promise.resolve(value),
+});
+
+export const rejectingUncertainty = (): CribUncertaintySource => ({
+  getCribUncertaintySync: () => null,
+  loadCribUncertainty: () => Promise.reject(new Error("offline")),
+});
+
+// Every bucket reports the same standard error, so a correct bound returns it unchanged.
+export const uniformUncertainty = (standardError: number): CribUncertainty => ({
+  totals: { get: () => standardError },
+});

@@ -4,11 +4,14 @@ import {
   expectedCribPointsByStarterRank,
 } from "../game/expectedCribPoints";
 import { describe, expect, it } from "@jest/globals";
+import {
+  parsedOrThrow,
+  uniformUncertainty,
+} from "../game/cribUncertainty.test.common";
 import type { CribUncertainty } from "../game/cribUncertainty";
 import { cribUncertaintyBound } from "./cribUncertaintyBound";
 import { expectedCribPointsTable } from "./analysis.test.common";
 import { parseHand } from "../game/Card";
-import { parsedOrThrow } from "../game/cribUncertainty.test.common";
 import shippedSidecar from "../game/expectedCribPointsUncertainty.json";
 
 /*
@@ -49,10 +52,6 @@ const boundOf = (hand: string, uncertainty: CribUncertainty): number | null => {
 const SHIPPED = parsedOrThrow(shippedSidecar);
 const NO_RECORDS: CribUncertainty = { totals: new Map<string, number>() };
 
-const everyRecord = (standardError: number): CribUncertainty => ({
-  totals: { get: () => standardError },
-});
-
 const bySlot = (
   slotStandardErrors: Readonly<Record<string, number | undefined>>,
 ): CribUncertainty => ({
@@ -76,10 +75,9 @@ describe("cribUncertaintyBound", () => {
   ])(
     "weights $name so that a uniform standard error survives unchanged",
     ({ hand }) => {
-      expect(boundOf(hand, everyRecord(UNIFORM_STANDARD_ERROR))).toBeCloseTo(
-        UNIFORM_STANDARD_ERROR,
-        10,
-      );
+      expect(
+        boundOf(hand, uniformUncertainty(UNIFORM_STANDARD_ERROR)),
+      ).toBeCloseTo(UNIFORM_STANDARD_ERROR, 10);
     },
   );
 
@@ -112,7 +110,7 @@ describe("cribUncertaintyBound", () => {
   });
 
   it("is unavailable rather than zero when a consumed record is absent", () => {
-    expect(boundOf(ROOT_HAND, everyRecord(0))).toBe(0);
+    expect(boundOf(ROOT_HAND, uniformUncertainty(0))).toBe(0);
     expect(boundOf(ROOT_HAND, NO_RECORDS)).toBeNull();
   });
 

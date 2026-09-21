@@ -18,11 +18,23 @@ const N_SEMANTICS = "sum_weights";
 const QUALIFICATION_KEYS = ["crib", "play", "scope"] as const;
 
 /*
- * Present on every crib record, and all three are validated even though only
- * the standard error is read: a document whose weights are missing or absurd
- * is not one whose standard errors should be trusted either.
+ * Present on every crib record, and both are validated even though only the
+ * standard error is read: a document whose weights are missing or absurd is
+ * not one whose standard errors should be trusted either.
  */
 const WEIGHT_FIELDS = ["n", "sum_w2"] as const;
+
+/*
+ * The exporter omits a record whose weights cannot support the statistic it
+ * would carry: fewer than two effective observations, or a non-positive
+ * weighted-variance denominator `n - sum_w2 / n`. A record that carries one
+ * anyway is malformed rather than informative, so it is refused here too -
+ * exposing a standard error the exporter would have discarded is exactly the
+ * kind of number this file exists to keep off the screen. Every published
+ * record clears both by a wide margin (the smallest `n` is 5,663 and the
+ * smallest denominator 5,662.98), so this rejects nothing that ships today.
+ */
+const MINIMUM_OBSERVATIONS = 2;
 
 // `keys`, `roles`, `ranks`, `slots` - in the order a record identity spells them.
 const IDENTITY_FIELDS = ["keys", "roles", "ranks", "slots"] as const;
@@ -124,15 +136,21 @@ const isKnownIdentity = (
   );
 };
 
+const supportsTheStatistic = (weight: number, squaredWeight: number): boolean =>
+  weight >= MINIMUM_OBSERVATIONS && weight - squaredWeight / weight > 0;
+
 const readRecordStandardError = (record: unknown): number | null => {
   if (!isObject(record)) {
     return null;
   }
   const standardError = Reflect.get(record, STATISTIC) as unknown;
-  const hasWeights = WEIGHT_FIELDS.every((field) =>
-    isFiniteNonNegative(Reflect.get(record, field) as unknown),
+  const [weight, squaredWeight] = WEIGHT_FIELDS.map(
+    (field) => Reflect.get(record, field) as unknown,
   );
-  if (!hasWeights) {
+  if (!isFiniteNonNegative(weight) || !isFiniteNonNegative(squaredWeight)) {
+    return null;
+  }
+  if (!supportsTheStatistic(weight, squaredWeight)) {
     return null;
   }
   return isFiniteNonNegative(standardError) ? standardError : null;

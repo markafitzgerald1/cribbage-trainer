@@ -6,6 +6,10 @@ import {
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
 import {
+  type CribUncertaintySource,
+  shippedCribUncertainty,
+} from "../game/cribUncertaintyLoader";
+import {
   type DiscardHighlightTier,
   ScoredPossibleKeepDiscard,
   getRowTitle,
@@ -32,7 +36,6 @@ import {
   oppositeRoleExpectedPointsLoss,
   roleLossPairLabel,
 } from "../analysis/oppositeRoleLoss";
-import type { CribUncertainty } from "../game/cribUncertainty";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { type ExpectedTables } from "./expectedTables";
@@ -40,7 +43,6 @@ import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { SortOrder } from "../ui/SortOrder";
 import { cribUncertaintyBound } from "../analysis/cribUncertaintyBound";
 import { getDiscardQuality } from "../analysis/discardQuality";
-import { loadCribUncertainty as loadShippedCribUncertainty } from "../game/cribUncertaintyLoader";
 import { renderRoleLossPairText } from "./RoleLossPairText";
 import { useCribUncertainty } from "./useCribUncertainty";
 import { useExpectedTables } from "./useExpectedTables";
@@ -57,11 +59,13 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly loadCribTable?: () => Promise<ExpectedCribPointsTable>;
 
   /**
-   * Loads the published uncertainty sidecar, deferred until the means are on
-   * screen. Resolves to null for an absent or rejected sidecar, which leaves
-   * the means-only recommendation exactly as it is.
+   * Where the published uncertainty sidecar is read from, deferred until the
+   * means are on screen. An absent or rejected sidecar leaves the means-only
+   * recommendation exactly as it is. Injectable as one object so a caller's
+   * source is the only thing the table can show; pass a stable one, since it
+   * is an effect dependency.
    */
-  readonly loadCribUncertainty?: () => Promise<CribUncertainty | null>;
+  readonly cribUncertaintySource?: CribUncertaintySource;
   readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
 
   /**
@@ -191,8 +195,8 @@ export function ScoredPossibleKeepDiscards({
   cribRole,
   dealtCards,
   isPracticeDrill = false,
+  cribUncertaintySource = shippedCribUncertainty,
   loadCribTable = cribLoader.loadTable,
-  loadCribUncertainty = loadShippedCribUncertainty,
   loadPlayTable = playLoader.loadTable,
   onAnalysisRendered,
   onScoreSortKeyChange,
@@ -203,7 +207,10 @@ export function ScoredPossibleKeepDiscards({
     loadCribTable,
     loadPlayTable,
   );
-  const uncertainty = useCribUncertainty(tables !== null, loadCribUncertainty);
+  const uncertainty = useCribUncertainty(
+    tables !== null,
+    cribUncertaintySource,
+  );
 
   const scoredKeepDiscardsByNetScore = useMemo(
     () =>
@@ -491,8 +498,8 @@ export function ScoredPossibleKeepDiscards({
 }
 
 ScoredPossibleKeepDiscards.defaultProps = {
+  cribUncertaintySource: shippedCribUncertainty,
   isPracticeDrill: false,
   loadCribTable: cribLoader.loadTable,
-  loadCribUncertainty: loadShippedCribUncertainty,
   loadPlayTable: playLoader.loadTable,
 };

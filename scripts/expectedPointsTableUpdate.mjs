@@ -55,26 +55,105 @@ export const validateCribTable = (table) => {
   }
 };
 
+const UNCERTAINTY_STATISTIC = "reported_marginal_se";
+const UNCERTAINTY_N_SEMANTICS = "sum_weights";
+const QUALIFICATION_KEYS = ["crib", "play", "scope"];
+// `keys`, `roles`, `ranks`, `slots` - in the order a record identity spells them.
+const IDENTITY_FIELDS = ["keys", "roles", "ranks", "slots"];
+const MINIMUM_OBSERVATIONS = 2;
+
+const assertHeaderValue = (sidecar, field, expected) => {
+  if (sidecar[field] !== expected) {
+    throw new Error(
+      `Downloaded crib uncertainty sidecar declares ${field} ` +
+        `${JSON.stringify(sidecar[field])}; expected ${JSON.stringify(expected)}`,
+    );
+  }
+};
+
+const readVocabulary = (sidecar) =>
+  IDENTITY_FIELDS.map((field) => {
+    const value = sidecar[field];
+    if (
+      !Array.isArray(value) ||
+      value.length === 0 ||
+      value.some((item) => typeof item !== "string")
+    ) {
+      throw new Error(
+        `Downloaded crib uncertainty sidecar has no usable ${field} list`,
+      );
+    }
+    return new Set(value);
+  });
+
+const assertQualifications = (sidecar) => {
+  assertObject(
+    sidecar.qualifications,
+    "Downloaded crib uncertainty sidecar is missing qualifications",
+  );
+  for (const key of QUALIFICATION_KEYS) {
+    const text = sidecar.qualifications[key];
+    if (typeof text !== "string" || text.length === 0) {
+      throw new Error(
+        `Downloaded crib uncertainty sidecar has no ${key} qualification`,
+      );
+    }
+  }
+};
+
+const assertRecord = (identity, record, vocabulary) => {
+  const parts = identity.split("/");
+  if (
+    parts.length !== vocabulary.length ||
+    vocabulary.some((allowed, index) => !allowed.has(parts[index]))
+  ) {
+    throw new Error(
+      `Downloaded crib uncertainty sidecar has an unrecognized identity ${identity}`,
+    );
+  }
+  assertObject(record, `Missing crib uncertainty record for ${identity}`);
+  const { n: weight, sum_w2: squaredWeight } = record;
+  const standardError = record[UNCERTAINTY_STATISTIC];
+  const finite = (value) => typeof value === "number" && Number.isFinite(value);
+  if (
+    !finite(standardError) ||
+    standardError < 0 ||
+    !finite(weight) ||
+    !finite(squaredWeight) ||
+    squaredWeight < 0 ||
+    weight < MINIMUM_OBSERVATIONS ||
+    weight - squaredWeight / weight <= 0
+  ) {
+    throw new Error(
+      `Downloaded crib uncertainty sidecar has unusable statistics for ${identity}`,
+    );
+  }
+};
+
 /*
+ * Checks the whole version-1 contract, not just the header, because this runs
+ * before either file is written and a sidecar the browser's reader would
+ * reject is one that silently removes every bound from the next build. The
+ * browser's reader is TypeScript and this is a plain Node script, so the two
+ * cannot share an implementation; `scripts/vendoredTables.test.mjs` runs this
+ * one against the vendored file and `src/game/cribUncertainty.test.ts` runs
+ * the other against the same bytes, so a document only one of them accepts
+ * fails a gate rather than shipping.
+ *
  * Deliberately no pinned record count. The sidecar contract lets the exported
- * record set grow — future category records arrive as their own group — so a
+ * record set grow - future category records arrive as their own group - so a
  * frozen number here would reject a legitimate refresh. The header's own
  * `record_count` is what a truncated download contradicts.
  */
 export const validateCribUncertainty = (sidecar) => {
   assertObject(sidecar, "Downloaded crib uncertainty sidecar is not an object");
-  if (sidecar.schema !== UNCERTAINTY_SCHEMA) {
-    throw new Error(
-      `Downloaded crib uncertainty sidecar declares schema ` +
-        `${JSON.stringify(sidecar.schema)}; expected "${UNCERTAINTY_SCHEMA}"`,
-    );
-  }
-  if (sidecar.table !== "crib") {
-    throw new Error(
-      `Downloaded crib uncertainty sidecar is for table ` +
-        `${JSON.stringify(sidecar.table)}, not "crib"`,
-    );
-  }
+  assertHeaderValue(sidecar, "schema", UNCERTAINTY_SCHEMA);
+  assertHeaderValue(sidecar, "table", "crib");
+  assertHeaderValue(sidecar, "statistic", UNCERTAINTY_STATISTIC);
+  assertHeaderValue(sidecar, "n_semantics", UNCERTAINTY_N_SEMANTICS);
+  assertQualifications(sidecar);
+  const vocabulary = readVocabulary(sidecar);
+
   const totals = sidecar.record_groups?.totals;
   assertObject(
     totals,
@@ -84,15 +163,18 @@ export const validateCribUncertainty = (sidecar) => {
     totals.records,
     "Downloaded crib uncertainty sidecar totals group has no records",
   );
-  const recordCount = Object.keys(totals.records).length;
-  if (totals.record_count !== recordCount) {
+  const entries = Object.entries(totals.records);
+  if (totals.record_count !== entries.length) {
     throw new Error(
       `Downloaded crib uncertainty sidecar declares ${totals.record_count} ` +
-        `total records but carries ${recordCount}`,
+        `total records but carries ${entries.length}`,
     );
   }
-  if (recordCount === 0) {
+  if (entries.length === 0) {
     throw new Error("Downloaded crib uncertainty sidecar carries no records");
+  }
+  for (const [identity, record] of entries) {
+    assertRecord(identity, record, vocabulary);
   }
 };
 

@@ -5,7 +5,7 @@ import {
   validateCribTable,
   validateCribUncertainty,
 } from "./expectedPointsTableUpdate.mjs";
-import { ok, strictEqual } from "node:assert/strict";
+import { ok, strictEqual, throws } from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
@@ -40,3 +40,60 @@ test("the vendored sidecar was exported against the vendored means", () => {
     readVendored(CRIB_OUTPUT_PATH),
   );
 });
+
+/*
+ * The browser's reader (`src/game/cribUncertainty.ts`) and this updater check
+ * the same version-1 contract in two languages, so they can drift. These
+ * cases are the shapes `src/game/cribUncertainty.test.ts` asserts the reader
+ * rejects; asserting the updater rejects them too is what keeps a refresh
+ * from writing a document the app would then silently read as no sidecar at
+ * all. Each starts from the real vendored file, so a case that stops being a
+ * malformation fails here rather than passing vacuously.
+ */
+const mutatedSidecar = (mutate) => {
+  const sidecar = JSON.parse(readVendored(CRIB_UNCERTAINTY_OUTPUT_PATH));
+  mutate(sidecar, Object.keys(sidecar.record_groups.totals.records)[0]);
+  return sidecar;
+};
+
+const REJECTED = [
+  ["an unsupported schema", (doc) => (doc.schema = "unsupported.v2")],
+  ["the play table", (doc) => (doc.table = "play")],
+  ["another statistic", (doc) => (doc.statistic = "calibrated_se")],
+  ["another weight semantics", (doc) => (doc.n_semantics = "simulation_count")],
+  ["an emptied qualification", (doc) => (doc.qualifications.scope = "")],
+  ["no starter rank list", (doc) => (doc.ranks = [])],
+  [
+    "a truncated record set",
+    (doc, id) => delete doc.record_groups.totals.records[id],
+  ],
+  [
+    "an identity the header does not declare",
+    (doc, id) => {
+      const { records } = doc.record_groups.totals;
+      records[`${id}/extra`] = records[id];
+      delete records[id];
+    },
+  ],
+  [
+    "a negative standard error",
+    (doc, id) =>
+      (doc.record_groups.totals.records[id].reported_marginal_se = -1),
+  ],
+  [
+    "fewer observations than the exporter would keep",
+    (doc, id) =>
+      Object.assign(doc.record_groups.totals.records[id], { n: 1, sum_w2: 1 }),
+  ],
+  [
+    "a weighted-variance denominator that is not positive",
+    (doc, id) =>
+      Object.assign(doc.record_groups.totals.records[id], { n: 2, sum_w2: 4 }),
+  ],
+];
+
+for (const [name, mutate] of REJECTED) {
+  test(`the updater refuses a sidecar with ${name}`, () => {
+    throws(() => validateCribUncertainty(mutatedSidecar(mutate)));
+  });
+}
