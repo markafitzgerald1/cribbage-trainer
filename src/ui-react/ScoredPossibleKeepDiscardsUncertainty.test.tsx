@@ -64,6 +64,13 @@ interface SidecarCase {
     source: UncertaintySource,
     loadCribTable?: PendingCribTable,
   ) => ReturnType<typeof render>;
+  /*
+   * The spoken text is per sidecar on purpose: the crib figure is a bound
+   * over combined buckets and the play figure is one record's own standard
+   * error omitting a policy term, so a shared phrase would announce them as
+   * the same quantity. Pinning each here is what keeps them distinct.
+   */
+  readonly spokenSuffix: string;
   readonly totalRowName: RegExp;
 }
 
@@ -79,12 +86,15 @@ const SIDECARS: readonly SidecarCase[] = [
     name: "crib",
     renderWith: (source, loadCribTable) =>
       renderAnalysis(source, NO_UNCERTAINTY, loadCribTable),
+    spokenSuffix: ", a bound on the combined simulation error",
     totalRowName: /Crib avg/u,
   },
   {
     name: "play",
     renderWith: (source, loadCribTable) =>
       renderAnalysis(NO_UNCERTAINTY, source, loadCribTable),
+    spokenSuffix:
+      " simulation standard error, which excludes policy uncertainty",
     totalRowName: /You - Opp/u,
   },
 ];
@@ -99,7 +109,7 @@ const expandFirstDiscard = async () => {
 
 describe.each(SIDECARS)(
   "$name uncertainty in the analysis table",
-  ({ renderWith, totalRowName }) => {
+  ({ renderWith, spokenSuffix, totalRowName }) => {
     it.each([
       {
         displayed: "0.25",
@@ -120,7 +130,7 @@ describe.each(SIDECARS)(
         });
 
         expect(
-          screen.getAllByText(`plus or minus ${displayed} simulation error`)
+          screen.getAllByText(`plus or minus ${displayed}${spokenSuffix}`)
             .length,
         ).toBeGreaterThan(0);
       },

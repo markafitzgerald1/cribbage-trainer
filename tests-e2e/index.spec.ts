@@ -334,12 +334,12 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
  * reader and is the half that can disappear while the visible one stays.
  */
 const SIDECAR_ROWS = [
-  { name: "crib average", row: CRIB_AVERAGE_ROW },
-  { name: "pegging delta", row: PEG_DELTA_ROW },
+  { label: "crib average", row: CRIB_AVERAGE_ROW },
+  { label: "pegging delta", row: PEG_DELTA_ROW },
 ];
 
-for (const { name, row } of SIDECAR_ROWS) {
-  test(`${name} carries its simulation error once the sidecar loads`, async ({
+for (const { label, row } of SIDECAR_ROWS) {
+  test(`${label} carries its simulation error once the sidecar loads`, async ({
     page,
   }) => {
     await renderThenSelectTwoDiscards(page, constantHandQuery);

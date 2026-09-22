@@ -2,6 +2,7 @@ import {
   type ExpectedPlayBreakdownCategory,
   getExpectedPlayBreakdownRows,
 } from "./getExpectedPlayBreakdownRows";
+import { type UncertaintyFigure, UncertaintyKind } from "./uncertaintyFigure";
 import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
 
@@ -34,7 +35,12 @@ const points = {
 const DELTA_STANDARD_ERROR = 0.02;
 const toUncertainty = ({
   uncertainty = null,
-}: ExpectedPlayBreakdownCategory): number | null => uncertainty;
+}: ExpectedPlayBreakdownCategory): UncertaintyFigure | null => uncertainty;
+
+const PLAY_FIGURE: UncertaintyFigure = {
+  kind: UncertaintyKind.PlayStandardError,
+  standardError: DELTA_STANDARD_ERROR,
+};
 const NO_UNCERTAINTIES = [null, null, null, null, null, null, null];
 
 describe("getExpectedPlayBreakdownRows", () => {
@@ -86,7 +92,7 @@ describe("getExpectedPlayBreakdownRows", () => {
     expect(rows.map((row) => row.categories.map(toUncertainty))).toStrictEqual([
       NO_UNCERTAINTIES,
       NO_UNCERTAINTIES,
-      [null, null, null, null, null, null, DELTA_STANDARD_ERROR],
+      [null, null, null, null, null, null, PLAY_FIGURE],
     ]);
   });
 

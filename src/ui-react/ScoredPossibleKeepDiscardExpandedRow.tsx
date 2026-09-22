@@ -20,14 +20,10 @@ import type {
 import { CardLabel } from "./CardLabel";
 import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
+import { renderUncertaintyFigure } from "./UncertaintyFigureText";
 
 const DECIMAL_PLACES = 2;
 const ZERO_AVERAGE = "0.00";
-/*
- * U+00B1. Spelled out for screen readers beside it, because the glyph is
- * announced inconsistently or not at all.
- */
-const PLUS_MINUS_SIGN = "\u00b1";
 
 interface RenderBreakdownRowOptions {
   readonly ariaExpanded?: boolean;
@@ -136,21 +132,6 @@ const renderCategoryValue = (cat: Category, decimalPlaces: number) =>
     renderNumericValue(cat.value, decimalPlaces)
   );
 
-const renderUncertainty = (
-  uncertainty: number | null | undefined,
-  decimalPlaces: number,
-) =>
-  typeof uncertainty === "number" ? (
-    <span className={classes.uncertainty}>
-      <span aria-hidden="true">
-        {`${PLUS_MINUS_SIGN}${uncertainty.toFixed(decimalPlaces)}`}
-      </span>
-      <span className={classes.visuallyHidden}>
-        {`plus or minus ${uncertainty.toFixed(decimalPlaces)} simulation error`}
-      </span>
-    </span>
-  ) : null;
-
 const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
   <div
     className={
@@ -159,7 +140,7 @@ const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
     key={cat.label}
   >
     {renderCategoryValue(cat, decimalPlaces)}
-    {renderUncertainty(cat.uncertainty, decimalPlaces)}
+    {renderUncertaintyFigure(cat.uncertainty, decimalPlaces)}
   </div>
 );
 

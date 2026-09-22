@@ -2,18 +2,23 @@ import {
   type ExpectedPlayPlayerBreakdown,
   type ExpectedPlayPoints,
 } from "../game/expectedPlayPoints";
+import {
+  type UncertaintyFigure,
+  UncertaintyKind,
+  toUncertaintyFigure,
+} from "./uncertaintyFigure";
 import { CribRole } from "../game/expectedCribPoints";
 
 export interface ExpectedPlayBreakdownCategory {
   readonly label: string;
   /*
-   * A simulation standard error on `value`, carried only by the You - Opp
+   * The published standard error of `value`, carried only by the You - Opp
    * total: the sidecar publishes one per kept hand and role, against the
    * table's own role-relative delta, and has no per-seat or per-category
    * records to give any other cell one. Null means unavailable, which is not
    * the same as an error of zero.
    */
-  readonly uncertainty?: number | null;
+  readonly uncertainty?: UncertaintyFigure | null;
   readonly value: number;
 }
 
@@ -54,7 +59,16 @@ const toCategories = (
       ["Total", total],
     ] as const
   ).map(([label, value]) =>
-    label === "Total" ? { label, uncertainty, value } : { label, value },
+    label === "Total"
+      ? {
+          label,
+          uncertainty: toUncertaintyFigure(
+            UncertaintyKind.PlayStandardError,
+            uncertainty,
+          ),
+          value,
+        }
+      : { label, value },
   );
 
 /*

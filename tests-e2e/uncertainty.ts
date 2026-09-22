@@ -19,19 +19,31 @@ const DEFERRED_CHUNK_TIMEOUT_MS = 20_000;
 // Anchored end to end: a prefix match on the sign alone would quietly take in any later element that starts the same way.
 const RENDERED_FIGURE = /^±\d+\.\d\d$/u;
 
-const SPOKEN_FIGURE = /plus or minus \d+\.\d\d simulation error/u;
-
 /*
- * The two totals that carry a published figure. Crib's is a dependence bound
- * over the buckets its weighted average consumed; play's is the standard
- * error of the single record its delta is. Both render the same way, so the
- * guards are shared and only the row differs.
+ * The two totals that carry a published figure, each with the phrase a screen
+ * reader should hear for it. They render the same glyph because the Total
+ * column has room for nothing else, so the spoken text is the only place the
+ * distinction lives: crib's figure is a dependence bound over the buckets its
+ * weighted average consumed, play's is one published record's own standard
+ * error and omits a policy term of unpublished size. A shared phrase would
+ * announce them as the same quantity, so these are pinned separately and
+ * asserted against the row they belong to.
  */
-export const CRIB_AVERAGE_ROW = /Crib avg/u;
-export const PEG_DELTA_ROW = /You - Opp/u;
+export const CRIB_AVERAGE_ROW = {
+  name: /Crib avg/u,
+  spoken: /plus or minus \d+\.\d\d, a bound on the combined simulation error/u,
+};
 
-export const uncertaintyRow = (page: Page, rowName: RegExp): Locator =>
-  page.getByRole("button", { name: rowName });
+export const PEG_DELTA_ROW = {
+  name: /You - Opp/u,
+  spoken:
+    /plus or minus \d+\.\d\d simulation standard error, which excludes policy uncertainty/u,
+};
+
+export type UncertaintyRow = typeof CRIB_AVERAGE_ROW;
+
+export const uncertaintyRow = (page: Page, row: UncertaintyRow): Locator =>
+  page.getByRole("button", { name: row.name });
 
 /*
  * Matched by accessible name on both halves, so the guard covers the
@@ -40,14 +52,12 @@ export const uncertaintyRow = (page: Page, rowName: RegExp): Locator =>
  * tree, which is the one failure that would leave a screen reader with no
  * figure at all.
  */
-export const spokenUncertainty = (page: Page, rowName: RegExp): Locator =>
-  uncertaintyRow(page, rowName).and(
-    page.getByRole("button", { name: SPOKEN_FIGURE }),
-  );
+export const spokenUncertainty = (page: Page, row: UncertaintyRow): Locator =>
+  uncertaintyRow(page, row).and(page.getByRole("button", { name: row.spoken }));
 
-export const waitForUncertainty = async (page: Page, rowName: RegExp) => {
+export const waitForUncertainty = async (page: Page, row: UncertaintyRow) => {
   await expect(
-    uncertaintyRow(page, rowName).getByText(RENDERED_FIGURE),
+    uncertaintyRow(page, row).getByText(RENDERED_FIGURE),
   ).toBeVisible({
     timeout: DEFERRED_CHUNK_TIMEOUT_MS,
   });
