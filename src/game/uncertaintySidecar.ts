@@ -77,6 +77,12 @@ export interface UncertaintyContract {
    * read them back as plain numbers.
    */
   readonly supportsTheStatistic: (record: object) => boolean;
+  /**
+   * Provenance items this table's caveats rest on. Checked for presence
+   * rather than value, since one of play's is the boolean `false` that a
+   * truthiness test would read as absent.
+   */
+  readonly requiredProvenance: readonly string[];
   readonly table: string;
   /** Every list version 1 pins for this table, empty ones included. */
   readonly vocabulary: Readonly<Record<VocabularyField, readonly string[]>>;
@@ -125,6 +131,26 @@ const readString = (source: object, field: string): string | null => {
   return typeof value === "string" && value.length > 0 ? value : null;
 };
 
+/*
+ * Presence, not value: play's `joint_policy_converged` is `false` on every
+ * published document, so a truthiness test would reject exactly the sidecars
+ * this reader exists to read. Required because the display quotes these -
+ * the pegging figure announces that it excludes policy uncertainty, and a
+ * document carrying no policy provenance does not substantiate that caveat.
+ */
+const hasRequiredProvenance = (
+  document: object,
+  contract: UncertaintyContract,
+): boolean => {
+  const provenance = Reflect.get(document, "provenance") as unknown;
+  return (
+    isObject(provenance) &&
+    contract.requiredProvenance.every((field) =>
+      Object.hasOwn(provenance, field),
+    )
+  );
+};
+
 const hasExpectedHeader = (
   document: object,
   contract: UncertaintyContract,
@@ -136,7 +162,7 @@ const hasExpectedHeader = (
   DIGEST_FIELDS.every((field) =>
     SHA256_DIGEST.test(readString(document, field) ?? ""),
   ) &&
-  isObject(Reflect.get(document, "provenance") as unknown);
+  hasRequiredProvenance(document, contract);
 
 /*
  * Only the presence of each key is part of the wire contract; the wording is

@@ -43,13 +43,29 @@ export const CANONICAL_PLAY_HAND_KEYS: readonly string[] =
  * the exporter publishes no `sum_w2`, so the weighted-variance denominator
  * crib checks has nothing to read here and no rule to stand in for it. Every
  * published record carries the same `n` of 13,000.
+ *
+ * The whole-number check is this repository's reading of `simulation_count`
+ * rather than a rule the contract states: a count of simulations that is not
+ * a whole number is not a count. It can only fire on a document claiming
+ * `simulation_count` while carrying a fraction, since a table that switched
+ * to an effective sample size would have to declare different semantics, and
+ * the header check rejects that first.
  */
-const supportsTheSampledStatistic = (record: object): boolean =>
-  recordWeight(record, "n") >= MINIMUM_OBSERVATIONS;
+const supportsTheSampledStatistic = (record: object): boolean => {
+  const simulations = recordWeight(record, "n");
+  return Number.isInteger(simulations) && simulations >= MINIMUM_OBSERVATIONS;
+};
 
 export const PLAY_UNCERTAINTY_CONTRACT: UncertaintyContract = {
   identityFields: ["keys", "roles", "slots"],
   nSemantics: "simulation_count",
+  /*
+   * The contract states that play provenance retains its policy fingerprint
+   * and `joint_policy_converged`, and the pegging figure's copy rests on the
+   * second of them. Crib requires neither; its own published provenance
+   * carries neither, and its qualification is about the weighted estimator.
+   */
+  requiredProvenance: ["joint_policy_converged", "policy_fingerprint"],
   supportsTheStatistic: supportsTheSampledStatistic,
   table: "play",
   vocabulary: {

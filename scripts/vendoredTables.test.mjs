@@ -159,7 +159,32 @@ const CRIB_REJECTIONS = [
 
 const PLAY_REJECTIONS = [
   ["a rank list where version 1 publishes none", (doc) => (doc.ranks = ["A"])],
+  [
+    "provenance that does not say whether the policy converged",
+    (doc) => delete doc.provenance.joint_policy_converged,
+  ],
+  [
+    "provenance naming no policy fingerprint",
+    (doc) => delete doc.provenance.policy_fingerprint,
+  ],
+  [
+    "a simulation count that is not a whole number",
+    (doc, id) => (doc.record_groups.totals.records[id].n += 0.5),
+  ],
 ];
+
+/*
+ * The convergence flag is `false` on every published document, so the check
+ * on it has to be a presence check: a truthiness test would reject the real
+ * sidecar. Asserting the vendored one still validates is what would catch
+ * that, since every case above proves only that something is rejected.
+ */
+test("the vendored play sidecar keeps its false convergence flag", () => {
+  const { provenance } = sidecarOf(PLAY_ASSETS);
+
+  strictEqual(provenance.joint_policy_converged, false);
+  validateUncertainty(sidecarOf(PLAY_ASSETS), PLAY_ASSETS.contract);
+});
 
 const REJECTION_CASES = [
   { assets: CRIB_ASSETS, cases: [...SHARED_REJECTIONS, ...CRIB_REJECTIONS] },

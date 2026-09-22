@@ -70,6 +70,8 @@ const CANONICAL_CRIB_SLOTS = [
 export const CRIB_UNCERTAINTY_CONTRACT = {
   identityFields: ["keys", "roles", "ranks", "slots"],
   nSemantics: "sum_weights",
+  // Version 1 pins no crib provenance item, and the published document carries none of play's.
+  requiredProvenance: [],
   /*
    * Crib weights are a sum of weights, so the exporter omits a record with
    * fewer than two effective observations or a non-positive
@@ -90,8 +92,19 @@ export const CRIB_UNCERTAINTY_CONTRACT = {
 export const PLAY_UNCERTAINTY_CONTRACT = {
   identityFields: ["keys", "roles", "slots"],
   nSemantics: "simulation_count",
-  // Play weights are a count of simulations and carry no `sum_w2` to bound.
-  supportsTheStatistic: (record) => record.n >= MINIMUM_OBSERVATIONS,
+  /*
+   * The contract states that play provenance retains its policy fingerprint
+   * and `joint_policy_converged`, and the trainer's pegging copy rests on the
+   * second of them.
+   */
+  requiredProvenance: ["joint_policy_converged", "policy_fingerprint"],
+  /*
+   * Play weights are a count of simulations and carry no `sum_w2` to bound.
+   * The whole-number check mirrors the browser reader's: a count of
+   * simulations that is not a whole number is not a count.
+   */
+  supportsTheStatistic: (record) =>
+    Number.isInteger(record.n) && record.n >= MINIMUM_OBSERVATIONS,
   table: "play",
   vocabulary: {
     keys: CANONICAL_PLAY_HAND_KEYS,
@@ -157,6 +170,16 @@ const assertProvenance = (sidecar, contract) => {
     sidecar.provenance,
     `${describe(contract)} carries no provenance`,
   );
+  /*
+   * Presence, not value: play's `joint_policy_converged` is `false` on every
+   * published document, so a truthiness test would reject exactly the
+   * sidecars this checks.
+   */
+  for (const field of contract.requiredProvenance) {
+    if (!Object.hasOwn(sidecar.provenance, field)) {
+      throw new Error(`${describe(contract)} provenance is missing ${field}`);
+    }
+  }
 };
 
 const assertQualifications = (sidecar, contract) => {

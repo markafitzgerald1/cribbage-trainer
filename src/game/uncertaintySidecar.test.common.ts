@@ -60,7 +60,20 @@ const validDocumentFor = (
   keys: [...contract.vocabulary.keys],
   means_sha256: FAKE_DIGEST,
   n_semantics: contract.nSemantics,
-  provenance: { generation_method: "artifact_pipeline.generate_table.v3" },
+  /*
+   * Built from the contract's own requirements so one fixture stays valid for
+   * both tables: play must carry its policy items and crib requires none. The
+   * convergence flag is `false`, the value every published play document
+   * carries, so a fixture that satisfied only a truthiness check would not be
+   * exercising the presence check that reads it correctly.
+   */
+  provenance: Object.fromEntries([
+    ["generation_method", "artifact_pipeline.generate_table.v3"],
+    ...contract.requiredProvenance.map((field) => [
+      field,
+      field === "joint_policy_converged" ? false : "fingerprint",
+    ]),
+  ]),
   qualifications: { crib: "crib text", play: "play text", scope: "scope text" },
   ranks: [...contract.vocabulary.ranks],
   record_groups: {
