@@ -19,9 +19,9 @@ import type { DealtCard } from "../game/DealtCard";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import type { UncertaintySource } from "../game/uncertaintyLoader";
-import { deferredUncertainty } from "../game/uncertaintySidecar.test.common";
 import { shippedCribUncertainty } from "../game/cribUncertaintyLoader";
 import { shippedPlayUncertainty } from "../game/playUncertaintyLoader";
+import { trackedUnavailableUncertainty } from "../game/uncertaintySidecar.test.common";
 
 /* jscpd:ignore-end */
 
@@ -203,9 +203,13 @@ export const RoleLossWithheld: Story = {
  * Held rather than built per render: the component takes each source as an
  * effect dependency, so a fresh object each time would restart the load. It
  * also stands in for the sidecar a story is not exercising, which is what
- * lets each one count the figures on screen.
+ * lets each one count the figures on screen - and it is tracked, because a
+ * count taken before its load settles is satisfied by the race rather than by
+ * the code. Its loads resolve on a timer, so a story that did not wait would
+ * be counting an empty screen.
  */
-const NO_UNCERTAINTY = deferredUncertainty(null);
+const UNAVAILABLE = trackedUnavailableUncertainty("resolve");
+const NO_UNCERTAINTY = UNAVAILABLE.source;
 
 /*
  * Both sidecars load after the ranked results, so these three cover both
@@ -229,6 +233,13 @@ const expandedWithFigures = async (
   expectedFigures: number,
 ) => {
   const canvas = await expandedCanvas(context);
+
+  /*
+   * Every unavailable load has to have finished before a count means
+   * anything: a build that rendered a figure once its promise settled would
+   * otherwise satisfy a zero count on the initial, still-empty render.
+   */
+  await UNAVAILABLE.settled();
 
   await waitFor(
     async () => {

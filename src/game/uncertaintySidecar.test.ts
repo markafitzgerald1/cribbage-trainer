@@ -24,6 +24,7 @@ import {
 } from "./uncertaintySidecar.test.common";
 import { describe, expect, it } from "@jest/globals";
 import { CRIB_UNCERTAINTY_CONTRACT } from "./cribUncertainty";
+import { CribRole } from "./expectedCribPoints";
 import { PLAY_UNCERTAINTY_CONTRACT } from "./playUncertainty";
 /* jscpd:ignore-end */
 
@@ -57,10 +58,11 @@ const TABLES: readonly TableCase[] = [
 ];
 
 /*
- * The wire contract's own literal, not a re-derivation of it. `CANONICAL_ROLES`
- * reads the app's `CribRole` object, so its order is that object's declaration
- * order; pinning it here makes an unrelated reorder fail with a message about
- * roles rather than about every sidecar suddenly being unreadable.
+ * The published list is a literal in the reader, so an app-side reorder can no
+ * longer change it. What is worth asserting instead is that the app's own
+ * seats still match what the sidecars are keyed by: if `CribRole` ever gains,
+ * loses or renames a seat, every lookup would miss and this says so directly
+ * rather than leaving the figures to vanish.
  */
 const PUBLISHED_ROLES = ["Dealer", "Pone"];
 
@@ -204,6 +206,10 @@ const recordRejections = (identity: string): readonly RejectionCase[] => [
 describe("the vocabulary version 1 pins for both tables", () => {
   it("lists the published roles in the published order", () => {
     expect(CANONICAL_ROLES).toStrictEqual(PUBLISHED_ROLES);
+  });
+
+  it("keys the sidecars by the app's own seats", () => {
+    expect(Object.values(CribRole)).toStrictEqual([...CANONICAL_ROLES]);
   });
 });
 

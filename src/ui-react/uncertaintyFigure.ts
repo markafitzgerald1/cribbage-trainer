@@ -21,15 +21,21 @@ export type UncertaintyKind =
 
 export interface UncertaintyFigure {
   readonly kind: UncertaintyKind;
-  readonly standardError: number;
+  /*
+   * Deliberately not named `standardError`: only the play figure is one. The
+   * crib figure is a dependence bound over combined buckets, and a field
+   * name that called it a standard error would reintroduce the conflation
+   * `kind` exists to prevent, in the one place no copy review would look.
+   */
+  readonly magnitude: number;
 }
 
 /*
- * Absence stays absence: a measured standard error of exactly 0 is a real
- * value and becomes a figure like any other.
+ * Absence stays absence: a measured 0 is a real value and becomes a figure
+ * like any other.
  */
 export const toUncertaintyFigure = (
   kind: UncertaintyKind,
-  standardError: number | null,
+  magnitude: number | null,
 ): UncertaintyFigure | null =>
-  standardError === null ? null : { kind, standardError };
+  magnitude === null ? null : { kind, magnitude };

@@ -182,6 +182,65 @@ export const rejectingUncertainty = (): UncertaintySource => ({
   loadUncertainty: () => Promise.reject(new Error("offline")),
 });
 
+export interface TrackedUncertaintySource {
+  readonly loadCount: () => number;
+  readonly settled: () => Promise<void>;
+  readonly source: UncertaintySource;
+}
+
+// After every queued promise callback, so a state update the load provoked has been applied rather than merely scheduled.
+const nextTimerTick = (): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+
+/*
+ * Resolved on a timer rather than immediately, because an immediate stub is
+ * the least realistic model of the thing being stubbed: these sidecars are
+ * 0.3 MB and 1.2 MB chunks fetched over a network. A same-tick stub settles
+ * inside whatever `await` a spec already had, which quietly makes a later
+ * absence assertion look load-bearing when it is only winning a race that
+ * production would lose.
+ */
+
+/*
+ * An unavailable source whose loads a caller can wait out. A negative
+ * assertion made while the deferred load is still in flight is satisfied by
+ * the race rather than by the code under test - a build that rendered the
+ * figure only once the promise settled would pass it - so any spec asserting
+ * that no figure is on screen has to settle this first. The two outcomes take
+ * different paths through the hook, so both are offered rather than only the
+ * resolved one.
+ */
+export const trackedUnavailableUncertainty = (
+  outcome: "reject" | "resolve",
+): TrackedUncertaintySource => {
+  const loads: Promise<unknown>[] = [];
+  const source: UncertaintySource = {
+    getUncertaintySync: () => null,
+    loadUncertainty: () => {
+      const load = nextTimerTick().then(() => {
+        if (outcome === "reject") {
+          throw new Error("offline");
+        }
+        return null;
+      });
+
+      loads.push(load.catch(() => null));
+      return load;
+    },
+  };
+
+  return {
+    loadCount: () => loads.length,
+    settled: async () => {
+      await Promise.all(loads);
+      await nextTimerTick();
+    },
+    source,
+  };
+};
+
 // Every bucket reports the same standard error, so a correct bound returns it unchanged.
 export const uniformUncertainty = (standardError: number): Uncertainty => ({
   totals: { get: () => standardError },

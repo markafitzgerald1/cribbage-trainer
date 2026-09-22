@@ -1,4 +1,3 @@
-import { CribRole } from "./expectedCribPoints";
 import { isFiniteNonNegative } from "../ui/isFiniteNonNegative";
 import { isObject } from "../ui/isObject";
 
@@ -55,16 +54,16 @@ export const MINIMUM_OBSERVATIONS = 2;
 export const VOCABULARY_FIELDS = ["keys", "roles", "ranks", "slots"] as const;
 
 /*
- * The one list version 1 pins identically for both tables, and the app's own
- * seats rather than a second spelling of them that could drift.
- *
- * `Object.values` makes the published order depend on this object's
- * declaration order, and a reorder made for unrelated reasons would leave
- * both readers rejecting every shipped sidecar with no error naming the
- * cause. `uncertaintySidecar.test.ts` pins the sequence against the
- * contract's own literal so that edit fails where it is made.
+ * The one list version 1 pins identically for both tables, written as the
+ * literal the contract publishes rather than derived from the app's own
+ * `CribRole`. Deriving it was tried and is wrong in one direction that
+ * matters: reordering that object for an unrelated reason would silently
+ * change a published wire vocabulary, and both readers would then reject
+ * every shipped sidecar with no error naming the cause. The dependency runs
+ * the other way instead - `uncertaintySidecar.test.ts` asserts the app's
+ * seats still match this list, so a divergence reads as what it is.
  */
-export const CANONICAL_ROLES: readonly string[] = Object.values(CribRole);
+export const CANONICAL_ROLES: readonly string[] = ["Dealer", "Pone"];
 
 export type VocabularyField = (typeof VOCABULARY_FIELDS)[number];
 
@@ -257,7 +256,13 @@ export const parseUncertaintySidecar = (
   value: unknown,
   contract: UncertaintyContract,
 ): Uncertainty | null => {
-  if (!isObject(value)) {
+  /*
+   * An array is an object to `isObject`, and the updater's own `assertObject`
+   * excludes one. Two checks of the same contract that disagree about what a
+   * document even is are a divergence waiting to matter, so this one excludes
+   * arrays too.
+   */
+  if (!isObject(value) || Array.isArray(value)) {
     return null;
   }
   if (!hasExpectedHeader(value, contract)) {

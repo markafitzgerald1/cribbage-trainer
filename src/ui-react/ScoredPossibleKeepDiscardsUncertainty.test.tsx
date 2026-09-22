@@ -5,7 +5,7 @@ import {
 } from "../game/expectedCribPoints";
 import {
   deferredUncertainty,
-  rejectingUncertainty,
+  trackedUnavailableUncertainty,
   uniformUncertainty,
 } from "../game/uncertaintySidecar.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
@@ -30,9 +30,11 @@ const PLAY_TABLE = playTableData as unknown as ExpectedPlayPointsTable;
  * Held rather than rebuilt per render: the component takes each source as an
  * effect dependency, so a fresh object would restart the load every render.
  * It also stands in for the sidecar not under test, which is what keeps a
- * "no figure anywhere" assertion from tripping over the other one.
+ * "no figure anywhere" assertion from tripping over the other one - and it is
+ * tracked, so that assertion can wait out its load rather than beating it.
  */
-const NO_UNCERTAINTY = deferredUncertainty(null);
+const STAND_IN = trackedUnavailableUncertainty("resolve");
+const NO_UNCERTAINTY = STAND_IN.source;
 
 type PendingCribTable = () => Promise<ExpectedCribPointsTable>;
 
@@ -71,6 +73,11 @@ interface SidecarCase {
    * the same quantity. Pinning each here is what keeps them distinct.
    */
   readonly spokenSuffix: string;
+  /*
+   * Visual-only, on the `aria-hidden` half: a sighted reader gets the
+   * qualification on hover where the Total column has no room to print it.
+   */
+  readonly tooltip: string;
   readonly totalRowName: RegExp;
 }
 
@@ -87,6 +94,8 @@ const SIDECARS: readonly SidecarCase[] = [
     renderWith: (source, loadCribTable) =>
       renderAnalysis(source, NO_UNCERTAINTY, loadCribTable),
     spokenSuffix: ", a bound on the combined simulation error",
+    tooltip:
+      "Bound on the combined simulation error of the buckets this average used",
     totalRowName: /Crib avg/u,
   },
   {
@@ -95,6 +104,8 @@ const SIDECARS: readonly SidecarCase[] = [
       renderAnalysis(NO_UNCERTAINTY, source, loadCribTable),
     spokenSuffix:
       " simulation standard error, which excludes policy uncertainty",
+    tooltip:
+      "Simulation standard error of this figure; excludes policy uncertainty",
     totalRowName: /You - Opp/u,
   },
 ];
@@ -107,9 +118,27 @@ const expandFirstDiscard = async () => {
   fireEvent.click(toggles[0] as HTMLElement);
 };
 
+/*
+ * Render an available sidecar, open a row, and wait for its figure. Shared by
+ * the two cases that need a figure on screen before they assert anything
+ * about it; jscpd counts the second spelling of this preamble as a clone.
+ */
+const expandWithFigure = async (
+  renderWith: SidecarCase["renderWith"],
+  standardError: number,
+  displayed: string,
+) => {
+  renderWith(deferredUncertainty(uniformUncertainty(standardError)));
+  await expandFirstDiscard();
+
+  await waitFor(() => {
+    expect(screen.getAllByText(`\u00b1${displayed}`).length).toBeGreaterThan(0);
+  });
+};
+
 describe.each(SIDECARS)(
   "$name uncertainty in the analysis table",
-  ({ renderWith, spokenSuffix, totalRowName }) => {
+  ({ renderWith, spokenSuffix, tooltip, totalRowName }) => {
     it.each([
       {
         displayed: "0.25",
@@ -120,14 +149,7 @@ describe.each(SIDECARS)(
     ])(
       "shows $name under the total once the sidecar arrives",
       async ({ displayed, standardError }) => {
-        renderWith(deferredUncertainty(uniformUncertainty(standardError)));
-        await expandFirstDiscard();
-
-        await waitFor(() => {
-          expect(screen.getAllByText(`±${displayed}`).length).toBeGreaterThan(
-            0,
-          );
-        });
+        await expandWithFigure(renderWith, standardError, displayed);
 
         expect(
           screen.getAllByText(`plus or minus ${displayed}${spokenSuffix}`)
@@ -137,17 +159,40 @@ describe.each(SIDECARS)(
     );
 
     it.each([
-      { name: "the sidecar is unavailable", source: deferredUncertainty(null) },
-      { name: "the sidecar loader rejects", source: rejectingUncertainty() },
-    ])("ranks the discards with no figure when $name", async ({ source }) => {
-      renderWith(source);
-      await expandFirstDiscard();
+      { name: "the sidecar is unavailable", outcome: "resolve" },
+      { name: "the sidecar loader rejects", outcome: "reject" },
+    ] as const)(
+      "ranks the discards with no figure when $name",
+      async ({ outcome }) => {
+        const unavailable = trackedUnavailableUncertainty(outcome);
 
-      // The total itself is on screen, so the absent figure is a decision rather than a component that failed to render.
-      await expect(
-        screen.findByRole("button", { name: totalRowName }),
-      ).resolves.toBeTruthy();
-      expect(screen.queryByText(/±/u)).toBeNull();
+        renderWith(unavailable.source);
+        await expandFirstDiscard();
+
+        // The total itself is on screen, so the absent figure is a decision rather than a component that failed to render.
+        await expect(
+          screen.findByRole("button", { name: totalRowName }),
+        ).resolves.toBeTruthy();
+
+        /*
+         * Both loads have to have finished before absence means anything: a
+         * build that rendered the figure only once the promise settled would
+         * satisfy this assertion on the race instead. The load count is
+         * asserted for the same reason - a source that was never asked is
+         * absent for a reason this test is not about.
+         */
+        await Promise.all([unavailable.settled(), STAND_IN.settled()]);
+
+        expect(unavailable.loadCount()).toBeGreaterThan(0);
+        expect(screen.queryByText(/±/u)).toBeNull();
+      },
+    );
+
+    // Visual only, on the aria-hidden half, so a sighted reader can learn which figure this is.
+    it("names which kind of figure it is", async () => {
+      await expandWithFigure(renderWith, 0.25, "0.25");
+
+      expect(screen.getByTitle(tooltip)).toBeTruthy();
     });
 
     it("defers the sidecar until the ranked results are on screen", async () => {

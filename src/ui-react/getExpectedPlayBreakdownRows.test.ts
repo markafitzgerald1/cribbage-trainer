@@ -39,7 +39,7 @@ const toUncertainty = ({
 
 const PLAY_FIGURE: UncertaintyFigure = {
   kind: UncertaintyKind.PlayStandardError,
-  standardError: DELTA_STANDARD_ERROR,
+  magnitude: DELTA_STANDARD_ERROR,
 };
 const NO_UNCERTAINTIES = [null, null, null, null, null, null, null];
 

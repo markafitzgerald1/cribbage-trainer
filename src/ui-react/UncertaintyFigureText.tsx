@@ -47,7 +47,7 @@ export const renderUncertaintyFigure = (
   if (typeof figure !== "object" || figure === null) {
     return null;
   }
-  const formatted = figure.standardError.toFixed(decimalPlaces);
+  const formatted = figure.magnitude.toFixed(decimalPlaces);
   const copy = copyFor(figure.kind);
 
   return (
