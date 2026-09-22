@@ -1,5 +1,11 @@
 /* jscpd:ignore-start */
 import {
+  CANONICAL_ROLES,
+  type UncertaintyContract,
+  parseUncertaintySidecar,
+  uncertaintyStandardError,
+} from "./uncertaintySidecar";
+import {
   CRIB_IDENTITY,
   FIXTURE_STANDARD_ERROR,
   PLAY_IDENTITY,
@@ -16,11 +22,6 @@ import {
   validCribDocument,
   validPlayDocument,
 } from "./uncertaintySidecar.test.common";
-import {
-  type UncertaintyContract,
-  parseUncertaintySidecar,
-  uncertaintyStandardError,
-} from "./uncertaintySidecar";
 import { describe, expect, it } from "@jest/globals";
 import { CRIB_UNCERTAINTY_CONTRACT } from "./cribUncertainty";
 import { PLAY_UNCERTAINTY_CONTRACT } from "./playUncertainty";
@@ -54,6 +55,14 @@ const TABLES: readonly TableCase[] = [
     validDocument: validPlayDocument,
   },
 ];
+
+/*
+ * The wire contract's own literal, not a re-derivation of it. `CANONICAL_ROLES`
+ * reads the app's `CribRole` object, so its order is that object's declaration
+ * order; pinning it here makes an unrelated reorder fail with a message about
+ * roles rather than about every sidecar suddenly being unreadable.
+ */
+const PUBLISHED_ROLES = ["Dealer", "Pone"];
 
 const HEADER_REJECTIONS: readonly RejectionCase[] = [
   {
@@ -191,6 +200,12 @@ const recordRejections = (identity: string): readonly RejectionCase[] => [
     name: "an empty record set",
   },
 ];
+
+describe("the vocabulary version 1 pins for both tables", () => {
+  it("lists the published roles in the published order", () => {
+    expect(CANONICAL_ROLES).toStrictEqual(PUBLISHED_ROLES);
+  });
+});
 
 describe.each(TABLES)(
   "parseUncertaintySidecar for the $name sidecar",

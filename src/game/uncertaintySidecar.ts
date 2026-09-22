@@ -57,6 +57,12 @@ export const VOCABULARY_FIELDS = ["keys", "roles", "ranks", "slots"] as const;
 /*
  * The one list version 1 pins identically for both tables, and the app's own
  * seats rather than a second spelling of them that could drift.
+ *
+ * `Object.values` makes the published order depend on this object's
+ * declaration order, and a reorder made for unrelated reasons would leave
+ * both readers rejecting every shipped sidecar with no error naming the
+ * cause. `uncertaintySidecar.test.ts` pins the sequence against the
+ * contract's own literal so that edit fails where it is made.
  */
 export const CANONICAL_ROLES: readonly string[] = Object.values(CribRole);
 

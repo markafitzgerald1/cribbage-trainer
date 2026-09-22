@@ -58,6 +58,14 @@ export const waitForUncertainty = async (page: Page, rowName: RegExp) => {
  * whichever side of that race the capture landed on.
  */
 export const waitForUncertainties = async (page: Page) => {
-  await waitForUncertainty(page, CRIB_AVERAGE_ROW);
-  await waitForUncertainty(page, PEG_DELTA_ROW);
+  /*
+   * Concurrently, because the two loads are: awaiting them in turn would put
+   * two 20-second budgets in series against a 60-second test timeout, and a
+   * cold CI worker parsing multi-megabyte chunks is exactly the case those
+   * timeouts exist for.
+   */
+  await Promise.all([
+    waitForUncertainty(page, CRIB_AVERAGE_ROW),
+    waitForUncertainty(page, PEG_DELTA_ROW),
+  ]);
 };
