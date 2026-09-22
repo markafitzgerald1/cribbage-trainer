@@ -54,7 +54,12 @@ const supportsTheWeightedStatistic = (record: object): boolean => {
 export const CRIB_UNCERTAINTY_CONTRACT: UncertaintyContract = {
   identityFields: ["keys", "roles", "ranks", "slots"],
   nSemantics: "sum_weights",
-  // Version 1 pins no crib provenance item, and the published document carries none of play's.
+  /*
+   * Crib's qualification is about the weighted estimator rather than a
+   * policy, so it quotes no provenance item and no top-level null. Its own
+   * published provenance carries none of play's.
+   */
+  requiredNullFields: [],
   requiredProvenance: [],
   supportsTheStatistic: supportsTheWeightedStatistic,
   table: "crib",

@@ -78,11 +78,21 @@ export interface UncertaintyContract {
    */
   readonly supportsTheStatistic: (record: object) => boolean;
   /**
-   * Provenance items this table's caveats rest on. Checked for presence
-   * rather than value, since one of play's is the boolean `false` that a
-   * truthiness test would read as absent.
+   * Top-level fields this table's displayed qualification needs published as
+   * `null`, meaning unavailable. A value arriving there would mean the
+   * display is hiding a quantity the document now carries.
    */
-  readonly requiredProvenance: readonly string[];
+  readonly requiredNullFields: readonly string[];
+  /**
+   * Provenance items this table's caveats rest on, and the type each must
+   * be. Type rather than value: one of play's is a boolean whose `true` is a
+   * legitimate future publication, and refusing it would deny the figure
+   * entirely over an upstream improvement.
+   */
+  readonly requiredProvenance: readonly (readonly [
+    string,
+    "boolean" | "string",
+  ])[];
   readonly table: string;
   /** Every list version 1 pins for this table, empty ones included. */
   readonly vocabulary: Readonly<Record<VocabularyField, readonly string[]>>;
@@ -145,11 +155,31 @@ const hasRequiredProvenance = (
   const provenance = Reflect.get(document, "provenance") as unknown;
   return (
     isObject(provenance) &&
-    contract.requiredProvenance.every((field) =>
-      Object.hasOwn(provenance, field),
+    contract.requiredProvenance.every(
+      ([field, expected]) =>
+        Object.hasOwn(provenance, field) &&
+        typeof Reflect.get(provenance, field) === expected,
     )
   );
 };
+
+/*
+ * The contract publishes these as `null` and says an incompatible change to
+ * an existing field needs a new schema, so a value here is a document this
+ * reader should not be reading. It is checked because the play copy now
+ * rests on it: announcing that the figure excludes policy uncertainty while
+ * the document carries a measured one would hide an available quantity.
+ * #849 declined to validate these when nothing consumed them, which is no
+ * longer the case.
+ */
+const hasRequiredNulls = (
+  document: object,
+  contract: UncertaintyContract,
+): boolean =>
+  contract.requiredNullFields.every(
+    (field) =>
+      Object.hasOwn(document, field) && Reflect.get(document, field) === null,
+  );
 
 const hasExpectedHeader = (
   document: object,
@@ -162,7 +192,8 @@ const hasExpectedHeader = (
   DIGEST_FIELDS.every((field) =>
     SHA256_DIGEST.test(readString(document, field) ?? ""),
   ) &&
-  hasRequiredProvenance(document, contract);
+  hasRequiredProvenance(document, contract) &&
+  hasRequiredNulls(document, contract);
 
 /*
  * Only the presence of each key is part of the wire contract; the wording is

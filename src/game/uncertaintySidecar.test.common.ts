@@ -69,11 +69,14 @@ const validDocumentFor = (
    */
   provenance: Object.fromEntries([
     ["generation_method", "artifact_pipeline.generate_table.v3"],
-    ...contract.requiredProvenance.map((field) => [
+    ...contract.requiredProvenance.map(([field, type]) => [
       field,
-      field === "joint_policy_converged" ? false : "fingerprint",
+      type === "boolean" ? false : "fingerprint",
     ]),
   ]),
+  ...Object.fromEntries(
+    contract.requiredNullFields.map((field) => [field, null]),
+  ),
   qualifications: { crib: "crib text", play: "play text", scope: "scope text" },
   ranks: [...contract.vocabulary.ranks],
   record_groups: {

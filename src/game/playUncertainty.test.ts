@@ -59,19 +59,24 @@ const PLAY_REJECTIONS: readonly RejectionCase[] = [
     }),
     name: "a simulation count that is not a whole number",
   },
+  {
+    mutate: setHeader("provenance", {
+      joint_policy_converged: "false",
+      policy_fingerprint: "fingerprint",
+    }),
+    name: "a convergence flag that is not a boolean",
+  },
+  {
+    mutate: setHeader("policy_uncertainty", 0.01),
+    name: "a measured policy uncertainty where the contract publishes none",
+  },
+  {
+    mutate: (document) => {
+      Reflect.deleteProperty(document, "policy_uncertainty");
+    },
+    name: "no policy uncertainty field at all",
+  },
 ];
-
-/*
- * `joint_policy_converged` is `false` on every published document, so a
- * presence check is the only one that reads it correctly - a truthiness test
- * would reject exactly the sidecars the reader exists to read. Asserted
- * separately from the rejections above because it is the case that passing
- * proves, not the case that failing does.
- */
-const CONVERGENCE_FLAG_PROVENANCE = {
-  joint_policy_converged: false,
-  policy_fingerprint: "fingerprint",
-};
 
 const shippedPlayUncertainty = () =>
   parsedOrThrow(shippedSidecar, PLAY_UNCERTAINTY_CONTRACT);
@@ -151,17 +156,34 @@ describe("the play uncertainty contract", () => {
     expect(Object.hasOwn(sidecar, "joint_policy_converged")).toBe(false);
   });
 
-  it("accepts the false convergence flag rather than reading it as absent", () => {
-    const parsed = parsedOrThrow(
-      mutatedDocument(
-        validPlayDocument,
-        setHeader("provenance", CONVERGENCE_FLAG_PROVENANCE),
-      ),
-      PLAY_UNCERTAINTY_CONTRACT,
-    );
+  /*
+   * The flag's type is checked and its value deliberately is not. `false` is
+   * what every document published so far carries, so a truthiness test would
+   * reject exactly the sidecars this reader exists to read; `true` is what a
+   * converged joint policy would publish inside version 1, an upstream
+   * improvement rather than a malformation, and refusing it would deny every
+   * pegging figure over a better simulation. The displayed copy makes no
+   * convergence claim either way.
+   */
+  it.each([false, true])(
+    "accepts a convergence flag of %p",
+    (jointPolicyConverged) => {
+      const parsed = parsedOrThrow(
+        mutatedDocument(
+          validPlayDocument,
+          setHeader("provenance", {
+            joint_policy_converged: jointPolicyConverged,
+            policy_fingerprint: "fingerprint",
+          }),
+        ),
+        PLAY_UNCERTAINTY_CONTRACT,
+      );
 
-    expect(uncertaintyStandardError(parsed, PLAY_IDENTITY)).toBeGreaterThan(0);
-  });
+      expect(uncertaintyStandardError(parsed, PLAY_IDENTITY)).toBeGreaterThan(
+        0,
+      );
+    },
+  );
 
   it.each(PLAY_REJECTIONS)("rejects $name", ({ mutate }) => {
     expect(

@@ -171,7 +171,36 @@ const PLAY_REJECTIONS = [
     "a simulation count that is not a whole number",
     (doc, id) => (doc.record_groups.totals.records[id].n += 0.5),
   ],
+  [
+    "a convergence flag that is not a boolean",
+    (doc) => (doc.provenance.joint_policy_converged = "false"),
+  ],
+  [
+    "a measured policy uncertainty where the contract publishes none",
+    (doc) => (doc.policy_uncertainty = 0.01),
+  ],
+  [
+    "no policy uncertainty field at all",
+    (doc) => delete doc.policy_uncertainty,
+  ],
 ];
+
+/*
+ * A converged joint policy would publish `true` here inside version 1, which
+ * is an upstream improvement rather than a malformation: refusing it would
+ * deny every pegging figure over a better simulation. The displayed copy
+ * makes no convergence claim, so only the type is checked - but prose in
+ * AGENTS.md and playDeltaStandardError.ts does describe the policy as
+ * non-converged, and that is what would need revisiting if `true` ships.
+ */
+test("the updater accepts a play sidecar whose policy has converged", () => {
+  const converged = mutatedSidecar(
+    PLAY_ASSETS,
+    (doc) => (doc.provenance.joint_policy_converged = true),
+  );
+
+  validateUncertainty(converged, PLAY_ASSETS.contract);
+});
 
 /*
  * The convergence flag is `false` on every published document, so the check

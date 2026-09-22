@@ -387,6 +387,28 @@
   nothing is combined, so nothing is bounded. Do not let a display of either
   grow into a threshold; the calibrated per-comparison threshold #774 needs
   is gated on `simulate-cribbage-games#135`.
+- **Validate exactly what your display claims, and no more.** #849 declined
+  to check `cross_bucket_covariance`, `policy_uncertainty` and
+  `calibrated_comparison_uncertainty` on the reasoning that validating fields
+  nothing consumes buys no safety and costs coverage. That reasoning held
+  while the display quoted none of them. The pegging figure's copy says it
+  excludes policy uncertainty, so play now requires the two provenance items
+  that make that a statement about the document — `joint_policy_converged`
+  and `policy_fingerprint` — and requires `policy_uncertainty` to be
+  published as the `null` the contract names. Crib quotes neither and checks
+  neither. The rule that generalizes is the pairing: a caveat the UI asserts
+  has to be a caveat the document substantiates, or it is the app's word
+  dressed as data.
+- **Check the type of such a field, never its value.** `joint_policy_converged`
+  is `false` on every document published so far, so a truthiness test rejects
+  exactly the sidecars the reader exists to read — and a converged joint
+  policy would publish `true` inside version 1, which is an upstream
+  improvement rather than a malformation. Refusing it would deny every
+  pegging figure over a better simulation. The displayed copy makes no
+  convergence claim, which is what makes type-only checking sufficient; the
+  prose in this file and in `playDeltaStandardError.ts` does describe the
+  policy as non-converged, and that is what needs revisiting if `true` ever
+  ships.
 - **Play's figure omits the policy, and nothing published says by how much.**
   The play sidecar's `provenance` carries `joint_policy_converged: false`,
   while `policy_uncertainty: null` is a **top-level** field beside

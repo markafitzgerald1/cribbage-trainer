@@ -70,7 +70,8 @@ const CANONICAL_CRIB_SLOTS = [
 export const CRIB_UNCERTAINTY_CONTRACT = {
   identityFields: ["keys", "roles", "ranks", "slots"],
   nSemantics: "sum_weights",
-  // Version 1 pins no crib provenance item, and the published document carries none of play's.
+  // Crib quotes no policy item: its qualification is about the weighted estimator.
+  requiredNullFields: [],
   requiredProvenance: [],
   /*
    * Crib weights are a sum of weights, so the exporter omits a record with
@@ -97,7 +98,11 @@ export const PLAY_UNCERTAINTY_CONTRACT = {
    * and `joint_policy_converged`, and the trainer's pegging copy rests on the
    * second of them.
    */
-  requiredProvenance: ["joint_policy_converged", "policy_fingerprint"],
+  requiredNullFields: ["policy_uncertainty"],
+  requiredProvenance: [
+    ["joint_policy_converged", "boolean"],
+    ["policy_fingerprint", "string"],
+  ],
   /*
    * Play weights are a count of simulations and carry no `sum_w2` to bound.
    * The whole-number check mirrors the browser reader's: a count of
@@ -171,13 +176,32 @@ const assertProvenance = (sidecar, contract) => {
     `${describe(contract)} carries no provenance`,
   );
   /*
-   * Presence, not value: play's `joint_policy_converged` is `false` on every
+   * Type, not value: play's `joint_policy_converged` is `false` on every
    * published document, so a truthiness test would reject exactly the
-   * sidecars this checks.
+   * sidecars this checks - and a converged policy would legitimately publish
+   * `true` inside version 1, which is an upstream improvement rather than a
+   * malformation.
    */
-  for (const field of contract.requiredProvenance) {
-    if (!Object.hasOwn(sidecar.provenance, field)) {
-      throw new Error(`${describe(contract)} provenance is missing ${field}`);
+  for (const [field, type] of contract.requiredProvenance) {
+    if (
+      !Object.hasOwn(sidecar.provenance, field) ||
+      typeof sidecar.provenance[field] !== type
+    ) {
+      throw new Error(
+        `${describe(contract)} provenance has no usable ${field}`,
+      );
+    }
+  }
+  /*
+   * The contract publishes these as `null` and needs a new schema to change
+   * them. A value would mean the trainer's copy is hiding a quantity the
+   * document carries.
+   */
+  for (const field of contract.requiredNullFields) {
+    if (!Object.hasOwn(sidecar, field) || sidecar[field] !== null) {
+      throw new Error(
+        `${describe(contract)} does not publish ${field} as unavailable`,
+      );
     }
   }
 };
