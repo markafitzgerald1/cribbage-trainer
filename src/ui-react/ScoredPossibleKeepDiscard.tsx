@@ -22,6 +22,8 @@ export interface ScoredPossibleKeepDiscardProps {
   readonly cribUncertainty?: number | null;
   readonly descriptionId?: string | null;
   readonly highlightTier: DiscardHighlightTier;
+  /** Forwarded to the expanded breakdown; null while unavailable. */
+  readonly playUncertainty?: number | null;
   readonly rowIndex: number;
   readonly scoredKeepDiscard: ScoredKeepDiscard<
     Card & { readonly dealOrder: number }
@@ -100,6 +102,7 @@ export function ScoredPossibleKeepDiscard({
   cribUncertainty,
   descriptionId,
   highlightTier,
+  playUncertainty,
   sortOrder,
   rowIndex,
 }: ScoredPossibleKeepDiscardProps) {
@@ -204,6 +207,7 @@ export function ScoredPossibleKeepDiscard({
         <ScoredPossibleKeepDiscardExpandedRow
           cribRole={cribRole}
           cribUncertainty={cribUncertainty ?? null}
+          playUncertainty={playUncertainty ?? null}
           scoredKeepDiscard={scoredKeepDiscard}
           sortOrder={sortOrder}
         />
@@ -216,4 +220,5 @@ ScoredPossibleKeepDiscard.defaultProps = {
   classification: null,
   cribUncertainty: null,
   descriptionId: null,
+  playUncertainty: null,
 };

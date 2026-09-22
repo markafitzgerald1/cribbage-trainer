@@ -8,9 +8,9 @@ import {
 import {
   type CribUncertainty,
   cribRecordIdentity,
-  cribStandardError,
 } from "../game/cribUncertainty";
 import { INDICES_PER_SUIT, SUITS_PER_DECK } from "../game/Card";
+import { uncertaintyStandardError } from "../game/uncertaintySidecar";
 
 const DECK_SIZE = INDICES_PER_SUIT * SUITS_PER_DECK;
 const TOTAL_SLOT = "total";
@@ -91,7 +91,7 @@ export const cribUncertaintyBound = ({
 
   let total = 0;
   for (const { identity, weight } of weighted) {
-    const standardError = cribStandardError(uncertainty, identity);
+    const standardError = uncertaintyStandardError(uncertainty, identity);
     if (standardError === null) {
       return null;
     }

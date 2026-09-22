@@ -15,7 +15,7 @@ import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDesc
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-import { deferredUncertainty } from "../game/cribUncertainty.test.common";
+import { deferredUncertainty } from "../game/uncertaintySidecar.test.common";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 import { toDealtCards } from "../game/toDealtCards";
@@ -107,6 +107,7 @@ const renderScoredPossibleKeepDiscards = (
       dealtCards={dealtCards}
       onAnalysisRendered={onAnalysisRendered}
       onScoreSortKeyChange={onScoreSortKeyChange}
+      playUncertaintySource={noUncertainty}
       scoreSortKey={scoreSortKey}
       sortOrder={SortOrder.Ascending}
     />,

@@ -10,6 +10,10 @@ import {
   storeAnalyticsChoice,
 } from "../ui/analyticsConsent";
 import { expect, jest } from "@jest/globals";
+import {
+  validCribDocument,
+  validPlayDocument,
+} from "../game/uncertaintySidecar.test.common";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
@@ -20,7 +24,7 @@ import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
 import { setTableSync as setCribTableSync } from "../game/expectedCribPointsTableLoader";
 import { setCribUncertaintySync } from "../game/cribUncertaintyLoader";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
-import { validDocument } from "../game/cribUncertainty.test.common";
+import { setPlayUncertaintySync } from "../game/playUncertaintyLoader";
 
 export const mathRandom = Math.random;
 const CARD_DRAW_RANDOM_VALUE = 0;
@@ -29,10 +33,10 @@ export const PONE_RANDOM_VALUE = 0.5;
 
 /*
  * Analysis renders only with both tables loaded, and only a rendered analysis
- * ends first-instinct status. The uncertainty sidecar is seeded too, with the
- * reader's own minimal fixture rather than the shipped 9,076-record document:
- * no Trainer case asserts a bound, and a synchronous seed keeps the deferred
- * load from updating state after each test body has finished.
+ * ends first-instinct status. Both uncertainty sidecars are seeded too, with
+ * the reader's own minimal fixtures rather than the shipped documents: no
+ * Trainer case asserts a figure, and a synchronous seed keeps the deferred
+ * loads from updating state after each test body has finished.
  */
 export const setAnalysisTables = () => {
   setCribTableSync(
@@ -41,7 +45,8 @@ export const setAnalysisTables = () => {
   setPlayTableSync(
     expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
   );
-  setCribUncertaintySync(validDocument());
+  setCribUncertaintySync(validCribDocument());
+  setPlayUncertaintySync(validPlayDocument());
 };
 
 export const renderTrainerWithGenerator = (

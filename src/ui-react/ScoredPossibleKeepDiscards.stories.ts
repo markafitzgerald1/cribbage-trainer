@@ -13,12 +13,15 @@ import {
   toDealtCards,
   waitForLoadingToDisappear,
 } from "./stories.common";
-import { expect, fireEvent, fn, within } from "storybook/test";
+import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
-import { deferredUncertainty } from "../game/cribUncertainty.test.common";
+import type { UncertaintySource } from "../game/uncertaintyLoader";
+import { deferredUncertainty } from "../game/uncertaintySidecar.test.common";
+import { shippedCribUncertainty } from "../game/cribUncertaintyLoader";
+import { shippedPlayUncertainty } from "../game/playUncertaintyLoader";
 
 /* jscpd:ignore-end */
 
@@ -197,16 +200,18 @@ export const RoleLossWithheld: Story = {
 };
 
 /*
- * Held rather than built per render: the component takes the source as an
- * effect dependency, so a fresh object each time would restart the load.
+ * Held rather than built per render: the component takes each source as an
+ * effect dependency, so a fresh object each time would restart the load. It
+ * also stands in for the sidecar a story is not exercising, which is what
+ * lets each one count the figures on screen.
  */
 const NO_UNCERTAINTY = deferredUncertainty(null);
 
 /*
- * The uncertainty sidecar loads after the ranked results, so these two cover
- * both halves of the contract that keeps a recommendation complete without
- * it: the bound on screen when the sidecar arrives, and the same analysis
- * unchanged when it never does.
+ * Both sidecars load after the ranked results, so these three cover both
+ * halves of the contract that keeps a recommendation complete without them:
+ * each figure on screen when its document arrives, and the same analysis
+ * unchanged when neither does.
  */
 const expandedCanvas = async (context: {
   readonly canvasElement: HTMLElement;
@@ -216,31 +221,76 @@ const expandedCanvas = async (context: {
   return within(context.canvasElement);
 };
 
-export const CribUncertainty: Story = {
-  ...Expanded,
-  play: async (context) => {
-    const canvas = await expandedCanvas(context);
-    const bound = await canvas.findByText(
-      /^\u00b1\d+\.\d\d$/u,
-      {},
-      { timeout: 10000 },
-    );
+const FIGURE_PATTERN = /^\u00b1\d+\.\d\d$/u;
+const ROW_FIGURE_PATTERN = /\u00b1\d+\.\d\d/u;
 
-    await expect(bound).toBeVisible();
-  },
+const expandedWithFigures = async (
+  context: { readonly canvasElement: HTMLElement },
+  expectedFigures: number,
+) => {
+  const canvas = await expandedCanvas(context);
+
+  await waitFor(
+    async () => {
+      await expect(canvas.queryAllByText(FIGURE_PATTERN)).toHaveLength(
+        expectedFigures,
+      );
+    },
+    { timeout: 10000 },
+  );
+
+  return canvas;
 };
 
-export const CribUncertaintyUnavailable: Story = {
+/*
+ * A story per sidecar, silencing the other one so the count on screen is
+ * unambiguous about which document produced the figure. Built by a factory
+ * rather than written out twice: the two differ only in which source is
+ * silenced and which row is then expected to carry the figure.
+ */
+const figureStory = (
+  cribUncertaintySource: UncertaintySource,
+  playUncertaintySource: UncertaintySource,
+  rowName: RegExp,
+): Story => ({
+  ...Expanded,
+  args: {
+    ...Expanded.args,
+    cribUncertaintySource,
+    playUncertaintySource,
+  },
+  play: async (context) => {
+    const canvas = await expandedWithFigures(context, 1);
+
+    await expect(
+      canvas.getByRole("button", { name: rowName }),
+    ).toHaveTextContent(ROW_FIGURE_PATTERN);
+  },
+});
+
+export const CribUncertainty: Story = figureStory(
+  shippedCribUncertainty,
+  NO_UNCERTAINTY,
+  /Crib avg/u,
+);
+
+export const PlayUncertainty: Story = figureStory(
+  NO_UNCERTAINTY,
+  shippedPlayUncertainty,
+  /You - Opp/u,
+);
+
+export const UncertaintyUnavailable: Story = {
   ...Expanded,
   args: {
     ...Expanded.args,
     cribUncertaintySource: NO_UNCERTAINTY,
+    playUncertaintySource: NO_UNCERTAINTY,
   },
   play: async (context) => {
-    const canvas = await expandedCanvas(context);
+    const canvas = await expandedWithFigures(context, 0);
 
     await expect(await canvas.findByText(/Crib avg/u)).toBeVisible();
-    await expect(canvas.queryByText(/\u00b1/u)).toBeNull();
   },
 };
 
