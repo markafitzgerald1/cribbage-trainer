@@ -388,9 +388,14 @@
   grow into a threshold; the calibrated per-comparison threshold #774 needs
   is gated on `simulate-cribbage-games#135`.
 - **Play's figure omits the policy, and nothing published says by how much.**
-  The play sidecar's provenance carries `joint_policy_converged: false` and
-  `policy_uncertainty: null`, so it is sampling error around a frozen,
-  non-converged policy rather than the total uncertainty of E(ΔP). Crib has
+  The play sidecar's `provenance` carries `joint_policy_converged: false`,
+  while `policy_uncertainty: null` is a **top-level** field beside
+  `cross_bucket_covariance` and `calibrated_comparison_uncertainty`. The two
+  sit at different levels, so a reader reaching for
+  `sidecar.provenance.policy_uncertainty` finds `undefined` and loses the
+  qualification silently. Together they say the figure is sampling error
+  around a frozen, non-converged policy rather than the total uncertainty of
+  E(ΔP). Crib has
   no equivalent problem — its policy is trained by iterative best response
   and its own qualification is about the weighted estimator instead. Any copy
   that presents the two figures side by side must not imply they qualify the

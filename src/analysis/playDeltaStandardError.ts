@@ -22,10 +22,11 @@ export interface PlayDeltaStandardErrorOptions {
  * already preserves the own-minus-opponent pairing within each simulation,
  * which is why it is read rather than reconstructed from the two seat totals.
  *
- * What it does not cover is the policy. The play sidecar's provenance carries
- * `joint_policy_converged: false` and `policy_uncertainty: null`, so this is
- * sampling error around a frozen, non-converged policy and the part it omits
- * has no published magnitude. Nothing displaying it may imply it is the total
+ * What it does not cover is the policy. The play sidecar's `provenance`
+ * carries `joint_policy_converged: false`, and `policy_uncertainty: null` is
+ * a top-level field rather than a provenance one, so this is sampling error
+ * around a frozen, non-converged policy and the part it omits has no
+ * published magnitude. Nothing displaying it may imply it is the total
  * uncertainty of the expected pegging difference.
  *
  * Null when the sidecar publishes no record for the hand and role, which is an

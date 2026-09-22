@@ -104,6 +104,24 @@ describe("the play uncertainty contract", () => {
     );
   });
 
+  /*
+   * The two halves of play's policy qualification sit at different levels,
+   * and the reader consumes neither, so nothing else in the build would
+   * notice a document that moved one. Pinning the paths makes the claim in
+   * playDeltaStandardError.ts and AGENTS.md falsifiable rather than
+   * remembered - a reader reaching for provenance.policy_uncertainty gets
+   * undefined and loses the qualification silently.
+   */
+  it("keeps the policy qualification at the levels the contract publishes", () => {
+    const sidecar: object = shippedSidecar;
+    const provenance = Reflect.get(sidecar, "provenance") as object;
+
+    expect(Reflect.get(sidecar, "policy_uncertainty")).toBeNull();
+    expect(Object.hasOwn(provenance, "policy_uncertainty")).toBe(false);
+    expect(Reflect.get(provenance, "joint_policy_converged")).toBe(false);
+    expect(Object.hasOwn(sidecar, "joint_policy_converged")).toBe(false);
+  });
+
   it.each(PLAY_REJECTIONS)("rejects $name", ({ mutate }) => {
     expect(
       parseUncertaintySidecar(
