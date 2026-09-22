@@ -1,15 +1,12 @@
 import {
-  CRIB_ASSET_URL,
-  CRIB_OUTPUT_PATH,
-  downloadTable,
-  validateCribTable,
-  writeTableAtomically,
+  downloadCribAssets,
+  writeTablesAtomically,
 } from "./expectedPointsTableUpdate.mjs";
 
-const [, , assetUrl = CRIB_ASSET_URL] = process.argv;
+const [, , meansUrl, uncertaintyUrl] = process.argv;
 
-downloadTable(assetUrl, validateCribTable)
-  .then((body) => writeTableAtomically(CRIB_OUTPUT_PATH, body))
+downloadCribAssets(meansUrl, uncertaintyUrl)
+  .then(writeTablesAtomically)
   .catch((error) => {
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 1;

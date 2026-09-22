@@ -18,6 +18,8 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
+import { deferredUncertainty } from "../game/cribUncertainty.test.common";
+
 /* jscpd:ignore-end */
 
 /*
@@ -191,6 +193,54 @@ export const RoleLossWithheld: Story = {
 
     // The caption is on screen with its single figure, so the reversed-role clause is absent rather than simply not rendered.
     await expect(canvas.queryByText(/as dealer/u)).toBeNull();
+  },
+};
+
+/*
+ * Held rather than built per render: the component takes the source as an
+ * effect dependency, so a fresh object each time would restart the load.
+ */
+const NO_UNCERTAINTY = deferredUncertainty(null);
+
+/*
+ * The uncertainty sidecar loads after the ranked results, so these two cover
+ * both halves of the contract that keeps a recommendation complete without
+ * it: the bound on screen when the sidecar arrives, and the same analysis
+ * unchanged when it never does.
+ */
+const expandedCanvas = async (context: {
+  readonly canvasElement: HTMLElement;
+}) => {
+  await playToggle(context);
+
+  return within(context.canvasElement);
+};
+
+export const CribUncertainty: Story = {
+  ...Expanded,
+  play: async (context) => {
+    const canvas = await expandedCanvas(context);
+    const bound = await canvas.findByText(
+      /^\u00b1\d+\.\d\d$/u,
+      {},
+      { timeout: 10000 },
+    );
+
+    await expect(bound).toBeVisible();
+  },
+};
+
+export const CribUncertaintyUnavailable: Story = {
+  ...Expanded,
+  args: {
+    ...Expanded.args,
+    cribUncertaintySource: NO_UNCERTAINTY,
+  },
+  play: async (context) => {
+    const canvas = await expandedCanvas(context);
+
+    await expect(await canvas.findByText(/Crib avg/u)).toBeVisible();
+    await expect(canvas.queryByText(/\u00b1/u)).toBeNull();
   },
 };
 

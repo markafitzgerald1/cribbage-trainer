@@ -18,6 +18,8 @@ export type DiscardHighlightTier = "chosen" | "equal-best" | "none";
 export interface ScoredPossibleKeepDiscardProps {
   readonly classification?: MistakeClassification | null;
   readonly cribRole: CribRole;
+  /** Forwarded to the expanded breakdown; null while unavailable. */
+  readonly cribUncertainty?: number | null;
   readonly descriptionId?: string | null;
   readonly highlightTier: DiscardHighlightTier;
   readonly rowIndex: number;
@@ -95,6 +97,7 @@ export function ScoredPossibleKeepDiscard({
   classification,
   scoredKeepDiscard,
   cribRole,
+  cribUncertainty,
   descriptionId,
   highlightTier,
   sortOrder,
@@ -200,6 +203,7 @@ export function ScoredPossibleKeepDiscard({
       {isExpanded ? (
         <ScoredPossibleKeepDiscardExpandedRow
           cribRole={cribRole}
+          cribUncertainty={cribUncertainty ?? null}
           scoredKeepDiscard={scoredKeepDiscard}
           sortOrder={sortOrder}
         />
@@ -210,5 +214,6 @@ export function ScoredPossibleKeepDiscard({
 
 ScoredPossibleKeepDiscard.defaultProps = {
   classification: null,
+  cribUncertainty: null,
   descriptionId: null,
 };

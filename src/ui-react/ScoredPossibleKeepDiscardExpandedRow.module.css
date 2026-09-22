@@ -172,6 +172,29 @@
   opacity: 0.5;
 }
 
+/*
+ * Its own line under the figure it qualifies rather than beside it: the
+ * portrait Total column bottoms out at 2.9em, which one signed two-decimal
+ * number already fills. Coloured rather than dimmed with opacity so the
+ * contrast against the row (5.7:1 on #0f5132) stays measurable.
+ */
+.uncertainty {
+  display: block;
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+  color: rgb(255 255 255 / 72%);
+}
+
+.visually-hidden {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
 .not-applicable {
   color: rgb(255 255 255 / 56%);
   font-size: 0.85em;

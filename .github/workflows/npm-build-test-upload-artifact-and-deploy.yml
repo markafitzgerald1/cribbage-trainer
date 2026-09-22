@@ -58,6 +58,14 @@ jobs:
       - name: Run pull request size gate tests
         run: npm run test:pr-size-gate
 
+      # The vendored crib means and uncertainty sidecar are a matched pair:
+      # the sidecar names the means bytes it was exported against. Nothing
+      # else notices a mismatch, because both files still parse. Runs here
+      # rather than in the Docker gate, whose COPY allowlist excludes
+      # scripts/ before the test layer.
+      - name: Run vendored expected-points table tests
+        run: npm run test:vendored-tables
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -129,6 +137,14 @@ jobs:
 
       - name: Install dependencies
         run: npm clean-install
+
+      # build-and-test is gated to pull_request, so this is the only place a
+      # push to main is checked. A vendored means table and uncertainty
+      # sidecar that do not belong together still parse and still render, so
+      # without this the production deploy is the one path that ships a
+      # mismatched pair without noticing.
+      - name: Run vendored expected-points table tests
+        run: npm run test:vendored-tables
 
       - name: Cache build outputs (dist directory)
         id: cache-dist

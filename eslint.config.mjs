@@ -166,6 +166,7 @@ export default [
             "columnheader",
             "compat",
             "cookieless",
+            "covariance",
             "cpus",
             "cx",
             "deeplink",
@@ -376,6 +377,8 @@ export default [
       "@typescript-eslint/no-magic-numbers": ["off"],
       camelcase: ["off"],
       "capitalized-comments": ["off"],
+      // Property names only, for the same reason camelcase is off here: these keys belong to a generated document, not to us.
+      "id-length": ["error", { exceptions: ["_"], properties: "never" }],
       "no-continue": ["off"],
       "security/detect-non-literal-fs-filename": ["off"],
       "security/detect-object-injection": ["off"],
@@ -395,6 +398,14 @@ export default [
       "@typescript-eslint/no-magic-numbers": ["off"],
       "@typescript-eslint/no-non-null-assertion": ["off"],
       "@typescript-eslint/unbound-method": "off",
+      /*
+       * Property names only. Fixtures for a published wire format have to
+       * spell that format's keys - `reported_marginal_se`, `sum_w2`, `n` -
+       * and renaming them would test a document nobody publishes. Variables
+       * and functions in tests stay camelCase and long enough to read.
+       */
+      camelcase: ["error", { properties: "never" }],
+      "id-length": ["error", { exceptions: ["_"], properties: "never" }],
       "jest/expect-expect": [
         "error",
         {

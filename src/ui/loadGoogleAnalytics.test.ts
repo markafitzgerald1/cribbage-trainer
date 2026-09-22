@@ -37,30 +37,20 @@ describe("loadGoogleAnalytics", () => {
   const googleAnalyticsScriptSelector =
     'script[src*="googletagmanager.com/gtag/js"]';
   const queryFreePageSettings = {
-    // eslint-disable-next-line camelcase
     allow_google_signals: false,
-    // eslint-disable-next-line camelcase
     cookie_expires: 33_696_000,
-    // eslint-disable-next-line camelcase
     cookie_update: false,
-    // eslint-disable-next-line camelcase
     page_location: "http://localhost/",
-    // eslint-disable-next-line camelcase
     page_referrer: "",
   };
   const deniedConsentSettings = {
-    // eslint-disable-next-line camelcase
     ad_personalization: "denied",
-    // eslint-disable-next-line camelcase
     ad_storage: "denied",
-    // eslint-disable-next-line camelcase
     ad_user_data: "denied",
-    // eslint-disable-next-line camelcase
     analytics_storage: "denied",
   };
   const grantedAnalyticsConsentSettings = {
     ...deniedConsentSettings,
-    // eslint-disable-next-line camelcase
     analytics_storage: "granted",
   };
 
@@ -145,15 +135,10 @@ describe("loadGoogleAnalytics", () => {
       "config",
       measurementId,
       {
-        // eslint-disable-next-line camelcase
         allow_google_signals: false,
-        // eslint-disable-next-line camelcase
         cookie_expires: 33_696_000,
-        // eslint-disable-next-line camelcase
         cookie_update: false,
-        // eslint-disable-next-line camelcase
         page_location: "http://localhost/cribbage-trainer/pr/679/",
-        // eslint-disable-next-line camelcase
         page_referrer: "https://example.com/",
       },
     ]);

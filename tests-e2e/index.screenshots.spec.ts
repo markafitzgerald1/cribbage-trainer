@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { constantHandQuery } from "./layoutMeasurements";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
+import { waitForCribUncertainty } from "./cribUncertainty";
 
 /*
  * A history deep enough to render every part of the tally, including today's
@@ -111,6 +112,7 @@ const testExpandedRowScreenshot = () =>
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
+    await waitForCribUncertainty(page);
 
     await expect(page).toHaveScreenshot();
   });
@@ -122,6 +124,7 @@ const testDoubleExpandedScreenshot = () =>
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
+    await waitForCribUncertainty(page);
     await page.getByRole("button", { name: "+Cut avg" }).click();
 
     await expect(page).toHaveScreenshot();
@@ -134,6 +137,7 @@ const testCribExpandedScreenshot = () =>
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
+    await waitForCribUncertainty(page);
     await page.getByRole("button", { name: "Crib avg" }).click();
 
     await expect(page).toHaveScreenshot();

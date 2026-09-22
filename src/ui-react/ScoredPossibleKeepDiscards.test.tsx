@@ -1,22 +1,21 @@
 /* jscpd:ignore-start */
-import {
-  CribRole,
-  type ExpectedCribPointsTable,
-} from "../game/expectedCribPoints";
 import { Rank, createCard, parseHand } from "../game/Card";
 import { describe, expect, it, jest } from "@jest/globals";
+import {
+  expectedCribPointsTable,
+  expectedPlayPointsTable,
+} from "../analysis/analysis.test.common";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
+import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
-import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
-import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
+import { deferredUncertainty } from "../game/cribUncertainty.test.common";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 import { toDealtCards } from "../game/toDealtCards";
@@ -71,6 +70,9 @@ const REPORTED_ANALYSIS_CASES = [
   },
 ];
 
+// Ranking, sorting and reporting: no bound involved, so state it is absent rather than parse 1.2 MB per case.
+const noUncertainty = deferredUncertainty(null);
+
 const mathRandom = Math.random;
 
 interface RenderOptions {
@@ -94,17 +96,14 @@ const renderScoredPossibleKeepDiscards = (
   }: RenderOptions = {},
 ) => {
   if (preload) {
-    setTableSync(
-      expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
-    );
-    setPlayTableSync(
-      expectedPlayPointsTableData as unknown as ExpectedPlayPointsTable,
-    );
+    setTableSync(expectedCribPointsTable);
+    setPlayTableSync(expectedPlayPointsTable);
   }
 
   return render(
     <ScoredPossibleKeepDiscards
       cribRole={cribRole}
+      cribUncertaintySource={noUncertainty}
       dealtCards={dealtCards}
       onAnalysisRendered={onAnalysisRendered}
       onScoreSortKeyChange={onScoreSortKeyChange}
@@ -315,9 +314,7 @@ describe("scored possible keep discards component", () => {
     const retryButton = screen.getByRole("button", { name: "Retry" });
 
     // Now mock a successful load for retry
-    mockLoadCribTable.mockResolvedValueOnce(
-      expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
-    );
+    mockLoadCribTable.mockResolvedValueOnce(expectedCribPointsTable);
 
     // Click retry
     fireEvent.click(retryButton);

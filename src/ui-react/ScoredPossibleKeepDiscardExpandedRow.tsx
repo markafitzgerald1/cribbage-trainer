@@ -1,8 +1,8 @@
 import * as classes from "./ScoredPossibleKeepDiscardExpandedRow.module.css";
 import { type Card, Rank } from "../game/Card";
+import { type Category, createCribCategories } from "./expandedRowCategories";
 import {
   CribRole,
-  type ExpectedCribPointBreakdown,
   type ExpectedCribStarterSuitRelationPoints,
   STARTER_RANKS,
   type StarterRank,
@@ -23,16 +23,11 @@ import { SortOrder } from "../ui/SortOrder";
 
 const DECIMAL_PLACES = 2;
 const ZERO_AVERAGE = "0.00";
-const DEALER_MULTIPLIER = 1;
-const PONE_MULTIPLIER = -1;
-const missingCategoryValue = new Map<string, number>().get("missing");
-
-interface Category {
-  readonly isMutedHeader?: boolean;
-  readonly label: string;
-  readonly notApplicable?: boolean;
-  readonly value: number | undefined;
-}
+/*
+ * U+00B1. Spelled out for screen readers beside it, because the glyph is
+ * announced inconsistently or not at all.
+ */
+const PLUS_MINUS_SIGN = "\u00b1";
 
 interface RenderBreakdownRowOptions {
   readonly ariaExpanded?: boolean;
@@ -48,53 +43,6 @@ interface SummaryLabelOptions {
   readonly content: ReactNode;
   readonly isExpanded: boolean;
 }
-
-const createCribCategories = (
-  expectedCribPoints: number,
-  pointBreakdown: ExpectedCribPointBreakdown | undefined,
-  cribRole: CribRole,
-) => {
-  const multiplier =
-    cribRole === CribRole.Dealer ? DEALER_MULTIPLIER : PONE_MULTIPLIER;
-  return [
-    {
-      label: "15s",
-      value:
-        typeof pointBreakdown?.fifteens === "undefined"
-          ? missingCategoryValue
-          : pointBreakdown.fifteens * multiplier,
-    },
-    {
-      label: "Pairs",
-      value:
-        typeof pointBreakdown?.pairs === "undefined"
-          ? missingCategoryValue
-          : pointBreakdown.pairs * multiplier,
-    },
-    {
-      label: "Runs",
-      value:
-        typeof pointBreakdown?.runs === "undefined"
-          ? missingCategoryValue
-          : pointBreakdown.runs * multiplier,
-    },
-    {
-      label: "Flushes",
-      value:
-        typeof pointBreakdown?.flushes === "undefined"
-          ? missingCategoryValue
-          : pointBreakdown.flushes * multiplier,
-    },
-    {
-      label: "Nobs",
-      value:
-        typeof pointBreakdown?.nobs === "undefined"
-          ? missingCategoryValue
-          : pointBreakdown.nobs * multiplier,
-    },
-    { label: "Total", value: expectedCribPoints * multiplier },
-  ] as const satisfies readonly Category[];
-};
 
 const starterRankToRank = (starterRank: StarterRank): Rank =>
   STARTER_RANKS.indexOf(starterRank) as Rank;
@@ -138,6 +86,12 @@ function getCutResultKey(result: CutResult): string {
 }
 
 export interface ScoredPossibleKeepDiscardExpandedRowProps {
+  /*
+   * Null while the deferred sidecar is still in flight, and after one that
+   * never arrived or was rejected. Means-only analysis is complete without
+   * it, so nothing here waits on or degrades without the bound.
+   */
+  readonly cribUncertainty?: number | null;
   readonly scoredKeepDiscard: ScoredKeepDiscard<Card>;
   readonly sortOrder: SortOrder;
   readonly cribRole: CribRole;
@@ -175,6 +129,21 @@ const renderCategoryValue = (cat: Category, decimalPlaces: number) =>
     renderNumericValue(cat.value, decimalPlaces)
   );
 
+const renderUncertainty = (
+  uncertainty: number | null | undefined,
+  decimalPlaces: number,
+) =>
+  typeof uncertainty === "number" ? (
+    <span className={classes.uncertainty}>
+      <span aria-hidden="true">
+        {`${PLUS_MINUS_SIGN}${uncertainty.toFixed(decimalPlaces)}`}
+      </span>
+      <span className={classes.visuallyHidden}>
+        {`plus or minus ${uncertainty.toFixed(decimalPlaces)} simulation error`}
+      </span>
+    </span>
+  ) : null;
+
 const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
   <div
     className={
@@ -183,10 +152,12 @@ const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
     key={cat.label}
   >
     {renderCategoryValue(cat, decimalPlaces)}
+    {renderUncertainty(cat.uncertainty, decimalPlaces)}
   </div>
 );
 
 export function ScoredPossibleKeepDiscardExpandedRow({
+  cribUncertainty = null,
   scoredKeepDiscard,
   sortOrder,
   cribRole,
@@ -360,11 +331,12 @@ export function ScoredPossibleKeepDiscardExpandedRow({
       decimalPlaces: DECIMAL_PLACES,
       key: starterRank,
       label: <CardLabel rank={starterRankToRank(starterRank)} />,
-      rowCategories: createCribCategories(
-        starterCribPoints,
-        pointBreakdown,
+      rowCategories: createCribCategories({
         cribRole,
-      ),
+        expectedCribPoints: starterCribPoints,
+        pointBreakdown,
+        uncertainty: null,
+      }),
     });
   const renderCribStarterRelationRow = ({
     expectedCribPoints: relationCribPoints,
@@ -383,11 +355,12 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           suits={suits}
         />
       ),
-      rowCategories: createCribCategories(
-        relationCribPoints,
-        pointBreakdown,
+      rowCategories: createCribCategories({
         cribRole,
-      ),
+        expectedCribPoints: relationCribPoints,
+        pointBreakdown,
+        uncertainty: null,
+      }),
     });
   const renderCribStarterRows = (
     starterPoints: SignedExpectedCribStarterPoints,
@@ -486,11 +459,12 @@ export function ScoredPossibleKeepDiscardExpandedRow({
             decimalPlaces: DECIMAL_PLACES,
             label: "Crib avg",
             onClick: handleCribExpandedRowClick,
-            rowCategories: createCribCategories(
-              expectedCribPoints,
-              expectedCribPointBreakdown,
+            rowCategories: createCribCategories({
               cribRole,
-            ),
+              expectedCribPoints,
+              pointBreakdown: expectedCribPointBreakdown,
+              uncertainty: cribUncertainty,
+            }),
           })}
           {areCribDetailsExpanded ? (
             <div className={classes.cribStarterList}>
@@ -505,3 +479,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
     </tr>
   );
 }
+
+ScoredPossibleKeepDiscardExpandedRow.defaultProps = {
+  cribUncertainty: null,
+};

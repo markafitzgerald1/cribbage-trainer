@@ -64,10 +64,17 @@ export type ExpectedCribPointsTable = Record<
   RoleBuckets
 >;
 
-interface ExpectedCribPointsOptions {
+/*
+ * The cards and seat a crib figure is about. Shared with the uncertainty
+ * bound, which annotates the same lookup and must describe the same deal.
+ */
+export interface ExpectedCribDeal {
   readonly discard: readonly Card[];
   readonly knownCards: readonly Card[];
   readonly role: CribRole;
+}
+
+interface ExpectedCribPointsOptions extends ExpectedCribDeal {
   readonly starterRank?: Rank | StarterRank;
   readonly table: ExpectedCribPointsTable;
 }
@@ -309,10 +316,20 @@ const getStarterSuitRelationPoints = ({
   return relationPoints;
 };
 
-const getRelationWeight = (
-  remainingStarterCount: number,
-  starterSuitRelationPoints: readonly ExpectedCribStarterSuitRelationPoints[],
-): number => {
+/*
+ * Exported so the uncertainty bound consumes this decision rather than
+ * re-deriving it: a starter rank whose mean comes from relation buckets must
+ * take its standard errors from those same buckets, and the contract forbids
+ * a relation-based mean falling back to the root record. Two derivations of
+ * "root or relations?" would be two chances to disagree silently.
+ */
+export const cribStarterRelationWeight = ({
+  remainingStarterCount,
+  starterSuitRelationPoints,
+}: Pick<
+  ExpectedCribStarterPoints,
+  "remainingStarterCount" | "starterSuitRelationPoints"
+>): number => {
   const weight = starterSuitRelationPoints.reduce(
     (sum, rel) => sum + rel.remainingStarterCount,
     0,
@@ -328,10 +345,10 @@ const getRelationWeightedExpectedCribPoints = ({
   remainingStarterCount,
   starterSuitRelationPoints,
 }: ExpectedCribStarterPoints): number => {
-  const weight = getRelationWeight(
+  const weight = cribStarterRelationWeight({
     remainingStarterCount,
     starterSuitRelationPoints,
-  );
+  });
   if (weight === 0) {
     return expectedCribPoints;
   }
@@ -348,10 +365,10 @@ const getRelationWeightedPointBreakdown = ({
   remainingStarterCount,
   starterSuitRelationPoints,
 }: ExpectedCribStarterPoints): ExpectedCribPointBreakdown | undefined => {
-  const weight = getRelationWeight(
+  const weight = cribStarterRelationWeight({
     remainingStarterCount,
     starterSuitRelationPoints,
-  );
+  });
   if (weight === 0) return pointBreakdown;
 
   if (starterSuitRelationPoints.some((rel) => !rel.pointBreakdown)) {
