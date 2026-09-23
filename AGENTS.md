@@ -392,8 +392,9 @@
   `calibrated_comparison_uncertainty` on the reasoning that validating fields
   nothing consumes buys no safety and costs coverage. That reasoning held
   while the display quoted none of them. The pegging figure's copy says it
-  excludes policy uncertainty, so play now requires the two provenance items
-  that make that a statement about the document — `joint_policy_converged`
+  leaves out uncertainty in the pegging strategy (the policy), so play now
+  requires the two provenance items that make that a statement about the
+  document — `joint_policy_converged`
   and `policy_fingerprint` — and requires `policy_uncertainty` to be
   published as the `null` the contract names. Crib quotes neither and checks
   neither. The rule that generalizes is the pairing: a caveat the UI asserts

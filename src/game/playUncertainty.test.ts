@@ -53,6 +53,13 @@ const PLAY_REJECTIONS: readonly RejectionCase[] = [
     name: "provenance naming no policy fingerprint",
   },
   {
+    mutate: setHeader("provenance", {
+      joint_policy_converged: false,
+      policy_fingerprint: "",
+    }),
+    name: "an empty policy fingerprint, which upstream's exporter refuses",
+  },
+  {
     mutate: setRecordAt(PLAY_IDENTITY, {
       n: 8.5,
       reported_marginal_se: 0.125,

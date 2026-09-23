@@ -103,9 +103,9 @@ const SIDECARS: readonly SidecarCase[] = [
     renderWith: (source, loadCribTable) =>
       renderAnalysis(NO_UNCERTAINTY, source, loadCribTable),
     spokenSuffix:
-      " simulation standard error, which excludes policy uncertainty",
+      " from simulation randomness, not counting uncertainty in the simulated pegging strategy",
     tooltip:
-      "Simulation standard error of this figure; excludes policy uncertainty",
+      "Simulation randomness in this estimate; does not count uncertainty in the simulated pegging strategy",
     totalRowName: /You - Opp/u,
   },
 ];

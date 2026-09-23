@@ -145,7 +145,7 @@ const readString = (source: object, field: string): string | null => {
  * Presence, not value: play's `joint_policy_converged` is `false` on every
  * published document, so a truthiness test would reject exactly the sidecars
  * this reader exists to read. Required because the display quotes these -
- * the pegging figure announces that it excludes policy uncertainty, and a
+ * the pegging figure announces that it leaves out uncertainty in the pegging strategy (the policy), and a
  * document carrying no policy provenance does not substantiate that caveat.
  */
 const hasRequiredProvenance = (
@@ -155,11 +155,15 @@ const hasRequiredProvenance = (
   const provenance = Reflect.get(document, "provenance") as unknown;
   return (
     isObject(provenance) &&
-    contract.requiredProvenance.every(
-      ([field, expected]) =>
+    contract.requiredProvenance.every(([field, expected]) => {
+      const value = Reflect.get(provenance, field) as unknown;
+      // Upstream's exporter refuses an empty policy fingerprint, so an empty string is not one either.
+      return (
         Object.hasOwn(provenance, field) &&
-        typeof Reflect.get(provenance, field) === expected,
-    )
+        typeof value === expected &&
+        value !== ""
+      );
+    })
   );
 };
 
@@ -167,7 +171,7 @@ const hasRequiredProvenance = (
  * The contract publishes these as `null` and says an incompatible change to
  * an existing field needs a new schema, so a value here is a document this
  * reader should not be reading. It is checked because the play copy now
- * rests on it: announcing that the figure excludes policy uncertainty while
+ * rests on it: announcing that the figure leaves out uncertainty in the pegging strategy (the policy) while
  * the document carries a measured one would hide an available quantity.
  * #849 declined to validate these when nothing consumed them, which is no
  * longer the case.

@@ -16,7 +16,10 @@ interface FigureCopy {
  * The crib figure is a bound over combined buckets; the play figure is one
  * record's own standard error and omits a policy term of unpublished size.
  * The two must not read as the same quantity, which is the whole reason this
- * copy is per kind rather than shared.
+ * copy is per kind rather than shared. The play copy says "the simulated
+ * pegging strategy" where the contract says "policy": the listener is a
+ * cribbage player, and "policy" is the reinforcement-learning word for the
+ * same thing.
  */
 const CRIB_BOUND_COPY: FigureCopy = {
   spokenSuffix: ", a bound on the combined simulation error",
@@ -25,9 +28,10 @@ const CRIB_BOUND_COPY: FigureCopy = {
 };
 
 const PLAY_STANDARD_ERROR_COPY: FigureCopy = {
-  spokenSuffix: " simulation standard error, which excludes policy uncertainty",
+  spokenSuffix:
+    " from simulation randomness, not counting uncertainty in the simulated pegging strategy",
   title:
-    "Simulation standard error of this figure; excludes policy uncertainty",
+    "Simulation randomness in this estimate; does not count uncertainty in the simulated pegging strategy",
 };
 
 const copyFor = (kind: UncertaintyKind): FigureCopy =>

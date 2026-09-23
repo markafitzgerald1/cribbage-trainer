@@ -168,6 +168,10 @@ const PLAY_REJECTIONS = [
     (doc) => delete doc.provenance.policy_fingerprint,
   ],
   [
+    "an empty policy fingerprint, which upstream's exporter refuses",
+    (doc) => (doc.provenance.policy_fingerprint = ""),
+  ],
+  [
     "a simulation count that is not a whole number",
     (doc, id) => (doc.record_groups.totals.records[id].n += 0.5),
   ],

@@ -37,7 +37,7 @@ export const CRIB_AVERAGE_ROW = {
 export const PEG_DELTA_ROW = {
   name: /You - Opp/u,
   spoken:
-    /plus or minus \d+\.\d\d simulation standard error, which excludes policy uncertainty/u,
+    /plus or minus \d+\.\d\d from simulation randomness, not counting uncertainty in the simulated pegging strategy/u,
 };
 
 export type UncertaintyRow = typeof CRIB_AVERAGE_ROW;

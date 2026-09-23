@@ -60,7 +60,7 @@ export const PLAY_UNCERTAINTY_CONTRACT: UncertaintyContract = {
   identityFields: ["keys", "roles", "slots"],
   nSemantics: "simulation_count",
   /*
-   * The figure's copy says it excludes policy uncertainty, and this is the
+   * The figure's copy says it leaves out uncertainty in the pegging strategy (the policy), and this is the
    * field that makes that a statement about the document rather than about
    * the app. The contract publishes it as `null` and requires a new schema
    * for an incompatible change, so a measured value here is a document this
@@ -76,7 +76,7 @@ export const PLAY_UNCERTAINTY_CONTRACT: UncertaintyContract = {
    * The type is checked and the value deliberately is not. A converged joint
    * policy would publish `true` here inside version 1, which is an upstream
    * improvement rather than a malformation, and the displayed copy makes no
-   * convergence claim - it says the figure excludes policy uncertainty,
+   * convergence claim - it says the figure leaves out uncertainty in the pegging strategy (the policy),
    * which holds either way. Prose elsewhere does describe the policy as
    * non-converged, and that is what would need revisiting if `true` ever
    * ships; refusing the document instead would deny the figure entirely.

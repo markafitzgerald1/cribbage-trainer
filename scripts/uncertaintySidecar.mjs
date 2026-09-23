@@ -185,7 +185,8 @@ const assertProvenance = (sidecar, contract) => {
   for (const [field, type] of contract.requiredProvenance) {
     if (
       !Object.hasOwn(sidecar.provenance, field) ||
-      typeof sidecar.provenance[field] !== type
+      typeof sidecar.provenance[field] !== type ||
+      sidecar.provenance[field] === ""
     ) {
       throw new Error(
         `${describe(contract)} provenance has no usable ${field}`,
