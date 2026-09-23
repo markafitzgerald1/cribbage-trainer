@@ -242,6 +242,7 @@ export default [
             "tagline",
             "tbody",
             "thead",
+            "tooltip",
             "tsconfig",
             "tsx",
             "ul",

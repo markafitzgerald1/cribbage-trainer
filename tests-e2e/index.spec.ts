@@ -1,3 +1,10 @@
+import {
+  CRIB_AVERAGE_ROW,
+  PEG_DELTA_ROW,
+  spokenUncertainty,
+  uncertaintyRow,
+  waitForUncertainty,
+} from "./uncertainty";
 import { type Locator, type Page, expect, test } from "@playwright/test";
 import {
   constantHandQuery,
@@ -9,11 +16,6 @@ import {
   requireDealButtonBounds,
   rightEdge,
 } from "./layoutMeasurements";
-import {
-  cribAverageRow,
-  spokenCribUncertainty,
-  waitForCribUncertainty,
-} from "./cribUncertainty";
 import {
   renderThenSelectTwoDiscards,
   waitForAnalysis,
@@ -325,23 +327,30 @@ test("semantic e2e suited analysis flow", async ({ page }) => {
 });
 
 /*
- * The bound is the only figure on screen that arrives after the analysis, so
- * this is also the guard that the deferred sidecar reaches the page at all.
- * It asserts the spoken form by accessible name rather than the glyph alone,
- * because that phrase is the only source of the figure for a screen reader
- * and is the half that can disappear while the visible one stays.
+ * The two figures are the only ones on screen that arrive after the analysis,
+ * so these are also the guards that each deferred sidecar reaches the page at
+ * all. They assert the spoken form by accessible name rather than the glyph
+ * alone, because that phrase is the only source of the figure for a screen
+ * reader and is the half that can disappear while the visible one stays.
  */
-test("crib average carries its simulation error once the sidecar loads", async ({
-  page,
-}) => {
-  await renderThenSelectTwoDiscards(page, constantHandQuery);
+const SIDECAR_ROWS = [
+  { label: "crib average", row: CRIB_AVERAGE_ROW },
+  { label: "pegging delta", row: PEG_DELTA_ROW },
+];
 
-  await page.locator("tbody tr").first().click();
-  await waitForCribUncertainty(page);
+for (const { label, row } of SIDECAR_ROWS) {
+  test(`${label} carries its simulation error once the sidecar loads`, async ({
+    page,
+  }) => {
+    await renderThenSelectTwoDiscards(page, constantHandQuery);
 
-  await expect(cribAverageRow(page)).toContainText(/\u00b10\.\d\d/u);
-  await expect(spokenCribUncertainty(page)).toBeVisible();
-});
+    await page.locator("tbody tr").first().click();
+    await waitForUncertainty(page, row);
+
+    await expect(uncertaintyRow(page, row)).toContainText(/\u00b10\.\d\d/u);
+    await expect(spokenUncertainty(page, row)).toBeVisible();
+  });
+}
 
 test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
   page,

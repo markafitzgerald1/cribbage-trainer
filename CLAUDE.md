@@ -40,6 +40,26 @@ guidance only one tool can use.
   it in the background and judge it by exit status plus `git log`, never by
   the task merely finishing (a failed run finishes too, with a nonzero
   exit).
+- **A `git commit` running in the background reads the working tree as it
+  goes, so do not edit files until it returns.** The hook is
+  `npm run verify:fast`, which builds, lints and tests the tree as it finds
+  it, not a staged snapshot. A
+  `git mv` issued while one was running made that run die with
+  `ESLint: ENOENT: no such file or directory, open '.../cribUncertainty.ts'`
+  — a file the branch had just renamed. The commit then fails on an error
+  that names a path nobody is asking about, which reads as a broken branch
+  rather than as a race with your own edit. This is the cost of the rule
+  directly above; the two go together. Poll for the commit rather than
+  working through it:
+
+  ```bash
+  until git log --oneline -1 | grep -q "<subject>"; do sleep 5; done
+  ```
+
+  Judge it by `git log`, never by the background task merely finishing: a
+  failed hook still exits the shell cleanly, so the task reports success
+  while `HEAD` has not moved.
+
 - Working inside a `.claude/worktrees/<name>` checkout changes what several
   tools see, and each difference has already been mistaken for a real failure:
   - `npm test` and `npm run lint:cspell` work here as of #763; both used to
