@@ -25,6 +25,11 @@ import {
   isEqualBestCandidate,
 } from "../analysis/optimalDiscard";
 import {
+  type RoleLossPairLabel,
+  oppositeRoleExpectedPointsLoss,
+  roleLossPairLabel,
+} from "../analysis/oppositeRoleLoss";
+import {
   type ScoredKeepDiscard,
   allScoredKeepDiscardsByExpectedNetScoreDescending,
 } from "../analysis/analysis";
@@ -32,10 +37,6 @@ import {
   ScoredKeepDiscardSortKey,
   compareByExpectedScoreThenRankDescending,
 } from "../analysis/compareByExpectedScoreDescending";
-import {
-  oppositeRoleExpectedPointsLoss,
-  roleLossPairLabel,
-} from "../analysis/oppositeRoleLoss";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { type ExpectedTables } from "./expectedTables";
@@ -78,6 +79,9 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
+
+  /** Discard verdict and narrative notification; null clears the status. */
+  readonly onStatusChange?: ((statusText: string) => void) | null;
   readonly scoreSortKey: ScoredKeepDiscardSortKey;
   readonly sortOrder: SortOrder;
 }
@@ -119,31 +123,23 @@ const getScoringHeaders = () =>
     },
   ] as const;
 
-const scoreColumns = [
-  {
-    className: classes.scoreColumn,
-    key: ScoredKeepDiscardSortKey.ExpectedHandPoints,
-  },
-  {
-    className: classes.scoreColumn,
-    key: ScoredKeepDiscardSortKey.ExpectedCribPoints,
-  },
-  {
-    className: classes.playScoreColumn,
-    key: ScoredKeepDiscardSortKey.ExpectedPlayPoints,
-  },
-  {
-    className: classes.netScoreColumn,
-    key: ScoredKeepDiscardSortKey.ExpectedNetPoints,
-  },
-] as const;
+const scoreColumnClass = (key: ScoredKeepDiscardSortKey): string => {
+  if (key === ScoredKeepDiscardSortKey.ExpectedPlayPoints) {
+    return classes.playScoreColumn;
+  }
+  if (key === ScoredKeepDiscardSortKey.ExpectedNetPoints) {
+    return classes.netScoreColumn;
+  }
+  return classes.scoreColumn;
+};
 
 interface ChosenDiagnosticInfo {
+  readonly captionAriaLabel: string | null;
   readonly chosenClassification: MistakeClassification | null;
-  readonly hasChosenCandidate: boolean;
   readonly optimalMargin: OptimalDiscardMargin;
   // Null until a discard is complete and the tables have loaded; never zero to stand in for unknown.
   readonly oppositeRoleLoss: number | null;
+  readonly rolePair: RoleLossPairLabel;
 }
 
 interface ChosenDiagnosticInput {
@@ -165,29 +161,45 @@ const useChosenDiagnosticInfo = ({
         option.discard.every((card) => !card.kept),
       ) ?? null;
     const [best] = scoredOptions;
+    const chosenClassification =
+      best && chosen ? classifyScoredMistake(best, chosen) : null;
+    /*
+     * The discarded cards come from `dealtCards` rather than from the
+     * matched option, so no second narrowing against null is needed: the
+     * two cards not kept are the discard, by definition. Computed for
+     * every completed decision rather than only for mistakes, because the
+     * figure is evidence either way — a discard that was best for the role
+     * held and costly for the other one says as much as the reverse.
+     */
+    const oppositeRoleLoss =
+      tables === null || chosen === null
+        ? null
+        : oppositeRoleExpectedPointsLoss({
+            cards: dealtCards,
+            chosenDiscardCards: dealtCards.filter((card) => !card.kept),
+            cribRole,
+            tables,
+          });
+    const optimalMargin = computeOptimalDiscardMargin(scoredOptions);
+    const rolePair = roleLossPairLabel(
+      cribRole,
+      chosenClassification?.netLoss ?? 0,
+      oppositeRoleLoss,
+    );
+    let captionAriaLabel: string | null = null;
+    if (chosen !== null) {
+      captionAriaLabel =
+        chosenClassification === null
+          ? optimalMargin.accessibleLabel
+          : `Sub-optimal: ${rolePair.accessibleLabel}. ${chosenClassification.accessibleLabel}`;
+    }
 
     return {
-      chosenClassification:
-        best && chosen ? classifyScoredMistake(best, chosen) : null,
-      hasChosenCandidate: chosen !== null,
-      /*
-       * The discarded cards come from `dealtCards` rather than from the
-       * matched option, so no second narrowing against null is needed: the
-       * two cards not kept are the discard, by definition. Computed for
-       * every completed decision rather than only for mistakes, because the
-       * figure is evidence either way — a discard that was best for the role
-       * held and costly for the other one says as much as the reverse.
-       */
-      oppositeRoleLoss:
-        tables === null || chosen === null
-          ? null
-          : oppositeRoleExpectedPointsLoss({
-              cards: dealtCards,
-              chosenDiscardCards: dealtCards.filter((card) => !card.kept),
-              cribRole,
-              tables,
-            }),
-      optimalMargin: computeOptimalDiscardMargin(scoredOptions),
+      captionAriaLabel,
+      chosenClassification,
+      oppositeRoleLoss,
+      optimalMargin,
+      rolePair,
     };
   }, [cribRole, dealtCards, scoredOptions, tables]);
 
@@ -200,6 +212,7 @@ export function ScoredPossibleKeepDiscards({
   loadPlayTable = playLoader.loadTable,
   onAnalysisRendered,
   onScoreSortKeyChange,
+  onStatusChange,
   scoreSortKey,
   sortOrder,
 }: ScoredPossibleKeepDiscardsProps) {
@@ -224,10 +237,11 @@ export function ScoredPossibleKeepDiscards({
     [cribRole, dealtCards, tables],
   );
   const {
+    captionAriaLabel,
     chosenClassification,
-    hasChosenCandidate,
     oppositeRoleLoss,
     optimalMargin,
+    rolePair,
   } = useChosenDiagnosticInfo({
     cribRole,
     dealtCards,
@@ -246,8 +260,20 @@ export function ScoredPossibleKeepDiscards({
     // The scored options are a dependency because Back and Forward swap the hand while this component stays mounted.
     if (tables !== null) {
       onAnalysisRendered(renderedAnalysis);
+      if (captionAriaLabel !== null) {
+        onStatusChange?.(captionAriaLabel);
+      }
     }
-  }, [onAnalysisRendered, renderedAnalysis, tables]);
+    return () => {
+      onStatusChange?.("");
+    };
+  }, [
+    captionAriaLabel,
+    onAnalysisRendered,
+    onStatusChange,
+    renderedAnalysis,
+    tables,
+  ]);
 
   const scoredKeepDiscards = useMemo(
     () =>
@@ -370,30 +396,13 @@ export function ScoredPossibleKeepDiscards({
   );
 
   const renderCaption = () => {
-    if (!hasChosenCandidate) {
+    if (captionAriaLabel === null) {
       return null;
     }
-    /*
-     * The role costs live in the badge that already carried one of them
-     * rather than in a chip of their own: a third chip on this row starts a
-     * third row on a portrait phone at a large device font, which the #802
-     * caption-height guard in practiceDrill.spec.ts fails. The measurements
-     * are in skills/ui-layout-and-interaction/SKILL.md.
-     */
-    const rolePair = roleLossPairLabel(
-      cribRole,
-      chosenClassification?.netLoss ?? 0,
-      oppositeRoleLoss,
-    );
-    const captionAriaLabel =
-      chosenClassification === null
-        ? optimalMargin.accessibleLabel
-        : `Sub-optimal: ${rolePair.accessibleLabel}. ${chosenClassification.accessibleLabel}`;
     return (
       <figcaption
         aria-label={captionAriaLabel}
         className={classes.diagnosticCaption}
-        role="status"
       >
         {chosenClassification === null ? (
           <span className={classes.optimalBadge}>{optimalMargin.label}</span>
@@ -481,10 +490,10 @@ export function ScoredPossibleKeepDiscards({
         <table>
           <colgroup>
             <col className={classes.handColumn} />
-            {scoreColumns.map((column) => (
+            {getScoringHeaders().map((header) => (
               <col
-                className={column.className}
-                key={column.key}
+                className={scoreColumnClass(header.key)}
+                key={header.key}
               />
             ))}
           </colgroup>
@@ -502,4 +511,5 @@ ScoredPossibleKeepDiscards.defaultProps = {
   isPracticeDrill: false,
   loadCribTable: cribLoader.loadTable,
   loadPlayTable: playLoader.loadTable,
+  onStatusChange: null,
 };

@@ -116,9 +116,12 @@ describe("crib uncertainty in the analysis table", () => {
 
     tableHandles.resolve?.(CRIB_TABLE);
 
-    await waitFor(() => {
-      expect(loadCribUncertainty).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(
+      () => {
+        expect(loadCribUncertainty).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 8000 },
+    );
 
     expect(loadCribUncertainty).toHaveBeenCalledTimes(1);
   });

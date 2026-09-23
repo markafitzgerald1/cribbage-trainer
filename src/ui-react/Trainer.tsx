@@ -33,6 +33,7 @@ import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
 import { useAnalysisReporting } from "./useAnalysisReporting";
 import { useDealHand } from "./useDealHand";
+import { useDiscardLiveRegion } from "./useDiscardLiveRegion";
 import { usePracticeDrill } from "./usePracticeDrill";
 
 export interface TrainerProps {
@@ -195,13 +196,12 @@ export function Trainer({
     trackEvent,
     wasDeepLinked: initialCards !== null,
   });
-  const isMergingHistoryEntry = useRef(false);
-  const shouldPushHistory = useRef(false);
+  const historyFlags = useRef({ isMerging: false, shouldPush: false });
 
   // Preserve the current history entry only when its state is stable.
   // Transient single-card selections get replaced, so Back skips them.
   const markHistoryUpdate = useCallback(() => {
-    shouldPushHistory.current = isStableDiscardState(dealtCards);
+    historyFlags.current.shouldPush = isStableDiscardState(dealtCards);
   }, [dealtCards]);
   const applyManualHand = useCallback(
     (state: DealState) => {
@@ -231,8 +231,9 @@ export function Trainer({
     loadHand: applyManualHand,
     onAnalysisRendered: reportAnalysisRendered,
   });
-  // The pure clear, for the history-restore path below — a Back brings its own hand, so it must not deal a new one.
   const exitDrill = drill.clearDrill;
+  const { handleStatusChange, isAnalysisVisible, liveRegionStatus } =
+    useDiscardLiveRegion(dealtCards, drill.isActive, drill.phase);
 
   useEffect(() => {
     const url = serializeUrlAnalysisState(window.location.search, {
@@ -242,7 +243,7 @@ export function Trainer({
       sortOrder,
     });
     const handScope = currentHandScope();
-    if (shouldPushHistory.current) {
+    if (historyFlags.current.shouldPush) {
       window.history.pushState(
         { handScope, previousUrl: window.location.search },
         "",
@@ -251,7 +252,7 @@ export function Trainer({
     } else if (url === getPreviousUrl()) {
       // Merging avoids an adjacent duplicate that would make Back a no-op.
       // The abandoned transient entry survives only as a Forward entry.
-      isMergingHistoryEntry.current = true;
+      historyFlags.current.isMerging = true;
       window.history.back();
     } else {
       // Keep previousUrl so later settles can still detect convergence.
@@ -261,15 +262,15 @@ export function Trainer({
         url,
       );
     }
-    shouldPushHistory.current = false;
+    historyFlags.current.shouldPush = false;
   }, [cribRole, currentHandScope, dealtCards, scoreSortKey, sortOrder]);
 
   useEffect(() => {
     const handlePopState = () => {
       // Navigation must never push, even if a click just set the push flag.
-      shouldPushHistory.current = false;
-      const isInternalMerge = isMergingHistoryEntry.current;
-      isMergingHistoryEntry.current = false;
+      historyFlags.current.shouldPush = false;
+      const isInternalMerge = historyFlags.current.isMerging;
+      historyFlags.current.isMerging = false;
       const urlState = parseUrlAnalysisState(window.location.search);
       if (urlState.cards) {
         const { cards, discards } = urlState;
@@ -357,6 +358,14 @@ export function Trainer({
         </p>
       </header>
       <div
+        aria-atomic="true"
+        aria-live="polite"
+        className={classes.visuallyHidden}
+        role="status"
+      >
+        {liveRegionStatus}
+      </div>
+      <div
         className={`${classes.dynamicUi} ${hasTallyToShow(tallySummary) ? classes.withTally : ""}`}
       >
         <InteractiveHand
@@ -392,18 +401,18 @@ export function Trainer({
           show={enterCardsDialog.show}
           sortOrder={sortOrder}
         />
-        {discardIsComplete(dealtCards) &&
-          (!drill.isActive || drill.phase === "revealed") && (
-            <ScoredPossibleKeepDiscards
-              cribRole={cribRole}
-              dealtCards={dealtCards}
-              isPracticeDrill={drill.isActive}
-              onAnalysisRendered={drill.handleAnalysisRendered}
-              onScoreSortKeyChange={changeScoreSortKey}
-              scoreSortKey={scoreSortKey}
-              sortOrder={sortOrder}
-            />
-          )}
+        {isAnalysisVisible ? (
+          <ScoredPossibleKeepDiscards
+            cribRole={cribRole}
+            dealtCards={dealtCards}
+            isPracticeDrill={drill.isActive}
+            onAnalysisRendered={drill.handleAnalysisRendered}
+            onScoreSortKeyChange={changeScoreSortKey}
+            onStatusChange={handleStatusChange}
+            scoreSortKey={scoreSortKey}
+            sortOrder={sortOrder}
+          />
+        ) : null}
         <DiscardTallyView
           // While a drill is running its own "Draw another" advances it; the queue's auto "Start drill" would just be a second, stranger route to the same thing.
           onStartAutoDrill={drill.isActive ? null : drill.handleStartAutoDrill}

@@ -132,7 +132,10 @@ const captionAfterLoad = async (
   const canvas = within(canvasElement);
   await waitForLoadingToDisappear(canvas);
 
-  await expect(canvas.getByRole("status")).toHaveTextContent(expectedText);
+  const caption = canvasElement.querySelector("figcaption");
+
+  await expect(caption).not.toBeNull();
+  await expect(caption).toHaveTextContent(expectedText);
 
   return canvas;
 };
