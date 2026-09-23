@@ -75,7 +75,10 @@ export interface ScoredPossibleKeepDiscardsProps {
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
 
-  /** Discard verdict and narrative notification; null clears the status. */
+  /**
+   * Receives the discard verdict for the page's live region; an empty string
+   * clears it.
+   */
   readonly onStatusChange?: ((statusText: string) => void) | null;
   readonly scoreSortKey: ScoredKeepDiscardSortKey;
   readonly sortOrder: SortOrder;
@@ -163,6 +166,13 @@ const useChosenDiagnosticInfo = ({
             tables,
           });
     const optimalMargin = computeOptimalDiscardMargin(scoredOptions);
+    /*
+     * The role costs live in the badge that already carried one of them
+     * rather than in a chip of their own: a third chip on this row starts a
+     * third row on a portrait phone at a large device font, which the #802
+     * caption-height guard in practiceDrill.spec.ts fails. The measurements
+     * are in skills/ui-layout-and-interaction/SKILL.md.
+     */
     const rolePair = roleLossPairLabel(
       cribRole,
       chosenClassification?.netLoss ?? 0,
@@ -354,6 +364,7 @@ export function ScoredPossibleKeepDiscards({
       <figcaption
         aria-label={captionAriaLabel}
         className={classes.diagnosticCaption}
+        role="group"
       >
         {chosenClassification === null ? (
           <span className={classes.optimalBadge}>{optimalMargin.label}</span>

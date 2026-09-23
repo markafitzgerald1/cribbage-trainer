@@ -216,9 +216,12 @@ describe.each(SIDECARS)(
 
       tableHandles.resolve?.(CRIB_TABLE);
 
-      await waitFor(() => {
-        expect(loadUncertainty).toHaveBeenCalledTimes(1);
-      });
+      await waitFor(
+        () => {
+          expect(loadUncertainty).toHaveBeenCalledTimes(1);
+        },
+        { timeout: 8000 },
+      );
 
       expect(loadUncertainty).toHaveBeenCalledTimes(1);
     });

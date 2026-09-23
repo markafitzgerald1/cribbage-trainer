@@ -388,7 +388,7 @@ describe("scored possible keep discards component", () => {
         });
         const caption = container.querySelector("figcaption");
 
-        expect(caption?.getAttribute("role")).toBeNull();
+        expect(caption?.getAttribute("role")).toBe("group");
         expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
         expect(caption?.textContent).toBe(expectedText);
         // Mocked CSS modules render the class as mock-<name>; only a reversed-role figure that cost nothing carries it.

@@ -231,6 +231,7 @@ export function Trainer({
     loadHand: applyManualHand,
     onAnalysisRendered: reportAnalysisRendered,
   });
+  // The pure clear, for the history-restore path below — a Back brings its own hand, so it must not deal a new one.
   const exitDrill = drill.clearDrill;
   const { handleStatusChange, isAnalysisVisible, liveRegionStatus } =
     useDiscardLiveRegion(dealtCards, drill.isActive, drill.phase);
