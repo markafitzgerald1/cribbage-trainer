@@ -24,7 +24,7 @@ guidance only one tool can use.
   step lists, which degrade Fable-class model performance.
 - Before non-trivial work, do a quick blind-spot pass: read the touched
   modules and their tests, and list what the issue/prompt leaves unstated
-  (hidden constraints usually live in `eslint.config.mjs`, `vite.config.js`
+  (hidden constraints usually live in `eslint.config.mjs`, `vite.config.mjs`
   thresholds, and `AGENTS.md`).
 - The shell may start on an old Node. Activate the repo version per command:
   `export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use; hash -r`
@@ -98,7 +98,7 @@ guidance only one tool can use.
     upward to the parent repository's copy, but Vitest browser mode (Storybook
     tests and coverage) fails with "Failed to fetch dynamically imported
     module" until `npm install` is run inside the worktree.
-  - **A stale install now breaks more than Vitest, because `vite.config.js`
+  - **A stale install now breaks more than Vitest, because `vite.config.mjs`
     imports a dependency at config load.** Since #843 it imports
     `@vitejs/plugin-basic-ssl`, so any task that loads that config dies with
     "Cannot find module" on a worktree whose `node_modules` predates the

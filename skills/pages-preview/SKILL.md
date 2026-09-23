@@ -77,7 +77,7 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   previews would silently hang every preview job before any step runs.
   Preview jobs target the separate, unprotected `github-pages-preview`
   environment instead, which Actions auto-creates on first use.
-- `vite.config.js`'s `base` reads `PAGES_BASE_PATH` (falling back to
+- `vite.config.mjs`'s `base` reads `PAGES_BASE_PATH` (falling back to
   `/cribbage-trainer`); preview builds set it to `/cribbage-trainer/pr/<n>`
   and deliberately skip the `dist/`-caching step used on main, since that
   cache key hashes only source files, not the base path.

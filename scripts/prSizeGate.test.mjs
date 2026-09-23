@@ -50,7 +50,7 @@ test("classifyPath sorts each path into the bucket the gate reports", () => {
     "src/ui-react/stories.common.ts",
     "src/ui/strayDrillRecords.ts",
     "src/ui-react/Trainer.module.css",
-    "vite.config.js",
+    "vite.config.mjs",
   ].map(classifyPath);
 
   deepStrictEqual(classified, [
