@@ -20,14 +20,10 @@ import type {
 import { CardLabel } from "./CardLabel";
 import { CutResultRow } from "./CutResultRow";
 import { SortOrder } from "../ui/SortOrder";
+import { renderUncertaintyFigure } from "./UncertaintyFigureText";
 
 const DECIMAL_PLACES = 2;
 const ZERO_AVERAGE = "0.00";
-/*
- * U+00B1. Spelled out for screen readers beside it, because the glyph is
- * announced inconsistently or not at all.
- */
-const PLUS_MINUS_SIGN = "\u00b1";
 
 interface RenderBreakdownRowOptions {
   readonly ariaExpanded?: boolean;
@@ -92,6 +88,13 @@ export interface ScoredPossibleKeepDiscardExpandedRowProps {
    * it, so nothing here waits on or degrades without the bound.
    */
   readonly cribUncertainty?: number | null;
+  /*
+   * The published standard error of this hand's expected pegging difference,
+   * or null while unavailable. It is a direct lookup rather than a
+   * combination, so it carries none of the crib bound's dependence
+   * reasoning - see src/analysis/playDeltaStandardError.ts.
+   */
+  readonly playUncertainty?: number | null;
   readonly scoredKeepDiscard: ScoredKeepDiscard<Card>;
   readonly sortOrder: SortOrder;
   readonly cribRole: CribRole;
@@ -129,21 +132,6 @@ const renderCategoryValue = (cat: Category, decimalPlaces: number) =>
     renderNumericValue(cat.value, decimalPlaces)
   );
 
-const renderUncertainty = (
-  uncertainty: number | null | undefined,
-  decimalPlaces: number,
-) =>
-  typeof uncertainty === "number" ? (
-    <span className={classes.uncertainty}>
-      <span aria-hidden="true">
-        {`${PLUS_MINUS_SIGN}${uncertainty.toFixed(decimalPlaces)}`}
-      </span>
-      <span className={classes.visuallyHidden}>
-        {`plus or minus ${uncertainty.toFixed(decimalPlaces)} simulation error`}
-      </span>
-    </span>
-  ) : null;
-
 const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
   <div
     className={
@@ -152,12 +140,13 @@ const renderBreakdownValue = (cat: Category, decimalPlaces: number) => (
     key={cat.label}
   >
     {renderCategoryValue(cat, decimalPlaces)}
-    {renderUncertainty(cat.uncertainty, decimalPlaces)}
+    {renderUncertaintyFigure(cat.uncertainty, decimalPlaces)}
   </div>
 );
 
 export function ScoredPossibleKeepDiscardExpandedRow({
   cribUncertainty = null,
+  playUncertainty = null,
   scoredKeepDiscard,
   sortOrder,
   cribRole,
@@ -391,7 +380,11 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   );
   const renderPlayBreakdown = () => {
     const [ponePlayRow, dealerPlayRow, youOppPlayRow] =
-      getExpectedPlayBreakdownRows(expectedPlayPoints, cribRole);
+      getExpectedPlayBreakdownRows(
+        expectedPlayPoints,
+        cribRole,
+        playUncertainty,
+      );
     const perSeatPlayRows = [ponePlayRow, dealerPlayRow];
     return (
       <div className={classes.playBreakdown}>
@@ -482,4 +475,5 @@ export function ScoredPossibleKeepDiscardExpandedRow({
 
 ScoredPossibleKeepDiscardExpandedRow.defaultProps = {
   cribUncertainty: null,
+  playUncertainty: null,
 };

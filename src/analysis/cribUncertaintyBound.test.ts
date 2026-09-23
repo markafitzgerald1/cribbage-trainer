@@ -1,4 +1,8 @@
 import {
+  CRIB_UNCERTAINTY_CONTRACT,
+  type CribUncertainty,
+} from "../game/cribUncertainty";
+import {
   CribRole,
   type ExpectedCribDeal,
   expectedCribPointsByStarterRank,
@@ -7,8 +11,7 @@ import { describe, expect, it } from "@jest/globals";
 import {
   parsedOrThrow,
   uniformUncertainty,
-} from "../game/cribUncertainty.test.common";
-import type { CribUncertainty } from "../game/cribUncertainty";
+} from "../game/uncertaintySidecar.test.common";
 import { cribUncertaintyBound } from "./cribUncertaintyBound";
 import { expectedCribPointsTable } from "./analysis.test.common";
 import { parseHand } from "../game/Card";
@@ -49,7 +52,7 @@ const boundOf = (hand: string, uncertainty: CribUncertainty): number | null => {
   });
 };
 
-const SHIPPED = parsedOrThrow(shippedSidecar);
+const SHIPPED = parsedOrThrow(shippedSidecar, CRIB_UNCERTAINTY_CONTRACT);
 const NO_RECORDS: CribUncertainty = { totals: new Map<string, number>() };
 
 const bySlot = (

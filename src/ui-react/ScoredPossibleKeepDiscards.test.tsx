@@ -14,7 +14,7 @@ import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDesc
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-import { deferredUncertainty } from "../game/cribUncertainty.test.common";
+import { deferredUncertainty } from "../game/uncertaintySidecar.test.common";
 import { parseHand } from "../game/Card";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
@@ -30,15 +30,12 @@ const mockLoadCribTable = jest.fn(() => {
 
 jest.mock<typeof import("../game/expectedCribPointsTableLoader")>(
   "../game/expectedCribPointsTableLoader",
-  () => {
-    const actual = jest.requireActual<
+  () => ({
+    ...jest.requireActual<
       typeof import("../game/expectedCribPointsTableLoader")
-    >("../game/expectedCribPointsTableLoader");
-    return {
-      ...actual,
-      loadTable: () => mockLoadCribTable(),
-    };
-  },
+    >("../game/expectedCribPointsTableLoader"),
+    loadTable: () => mockLoadCribTable(),
+  }),
 );
 
 const REPORTED_HAND = "AH,2H,3H,4H,5H,6H";
@@ -111,6 +108,7 @@ const renderScoredPossibleKeepDiscards = (
       onAnalysisRendered={onAnalysisRendered}
       onScoreSortKeyChange={onScoreSortKeyChange}
       onStatusChange={onStatusChange}
+      playUncertaintySource={noUncertainty}
       scoreSortKey={scoreSortKey}
       sortOrder={SortOrder.Ascending}
     />,

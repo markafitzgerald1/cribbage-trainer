@@ -50,6 +50,7 @@ export default {
         "src/game/expectedCribPointsTable.json",
         "src/game/expectedCribPointsUncertainty.json",
         "src/game/expectedPlayPointsTable.json",
+        "src/game/expectedPlayPointsUncertainty.json",
       ],
       reportsDirectory: path.join(dirname, "coverage"),
       /*

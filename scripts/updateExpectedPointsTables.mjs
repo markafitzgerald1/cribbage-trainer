@@ -1,23 +1,19 @@
 import {
-  PLAY_ASSET_URL,
-  PLAY_OUTPUT_PATH,
-  downloadCribAssets,
-  downloadTable,
-  validatePlayTable,
+  CRIB_ASSETS,
+  PLAY_ASSETS,
+  downloadMeansAndUncertainty,
+  reportFailure,
   writeTablesAtomically,
 } from "./expectedPointsTableUpdate.mjs";
 
+/*
+ * Both pairs are downloaded before anything is written, so a rolling release
+ * that moves under one of them fails the whole refresh rather than leaving
+ * one table newer than the other.
+ */
 Promise.all([
-  downloadCribAssets(),
-  downloadTable(PLAY_ASSET_URL, validatePlayTable),
+  downloadMeansAndUncertainty(CRIB_ASSETS),
+  downloadMeansAndUncertainty(PLAY_ASSETS),
 ])
-  .then(([cribFiles, play]) =>
-    writeTablesAtomically([
-      ...cribFiles,
-      { body: play.body, outputPath: PLAY_OUTPUT_PATH },
-    ]),
-  )
-  .catch((error) => {
-    process.stderr.write(`${error.message}\n`);
-    process.exitCode = 1;
-  });
+  .then((pairs) => writeTablesAtomically(pairs.flat()))
+  .catch(reportFailure);
