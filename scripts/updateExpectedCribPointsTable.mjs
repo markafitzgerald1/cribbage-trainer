@@ -1,13 +1,12 @@
 import {
-  downloadCribAssets,
+  CRIB_ASSETS,
+  downloadMeansAndUncertainty,
+  reportFailure,
   writeTablesAtomically,
 } from "./expectedPointsTableUpdate.mjs";
 
 const [, , meansUrl, uncertaintyUrl] = process.argv;
 
-downloadCribAssets(meansUrl, uncertaintyUrl)
+downloadMeansAndUncertainty(CRIB_ASSETS, meansUrl, uncertaintyUrl)
   .then(writeTablesAtomically)
-  .catch((error) => {
-    process.stderr.write(`${error.message}\n`);
-    process.exitCode = 1;
-  });
+  .catch(reportFailure);

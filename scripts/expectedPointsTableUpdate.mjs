@@ -1,5 +1,10 @@
+import {
+  CRIB_UNCERTAINTY_CONTRACT,
+  PLAY_UNCERTAINTY_CONTRACT,
+  assertMeansDigest,
+  validateUncertainty,
+} from "./uncertaintySidecar.mjs";
 import { rename, writeFile } from "node:fs/promises";
-import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -14,14 +19,13 @@ const PLAY_POINT_TYPES = [
   "last_card",
 ];
 
-const UNCERTAINTY_SCHEMA = "expected-points-uncertainty.v1";
+const RELEASE_DOWNLOAD =
+  "https://github.com/markafitzgerald1/simulate-cribbage-games/releases/download";
 
-export const CRIB_ASSET_URL =
-  "https://github.com/markafitzgerald1/simulate-cribbage-games/releases/download/expected-crib-points/expected_crib_points.client.json";
-export const CRIB_UNCERTAINTY_ASSET_URL =
-  "https://github.com/markafitzgerald1/simulate-cribbage-games/releases/download/expected-crib-points/expected_crib_points.uncertainty.json";
-export const PLAY_ASSET_URL =
-  "https://github.com/markafitzgerald1/simulate-cribbage-games/releases/download/expected-play-points/expected_play_points.client.json";
+export const CRIB_ASSET_URL = `${RELEASE_DOWNLOAD}/expected-crib-points/expected_crib_points.client.json`;
+export const CRIB_UNCERTAINTY_ASSET_URL = `${RELEASE_DOWNLOAD}/expected-crib-points/expected_crib_points.uncertainty.json`;
+export const PLAY_ASSET_URL = `${RELEASE_DOWNLOAD}/expected-play-points/expected_play_points.client.json`;
+export const PLAY_UNCERTAINTY_ASSET_URL = `${RELEASE_DOWNLOAD}/expected-play-points/expected_play_points.uncertainty.json`;
 
 export const CRIB_OUTPUT_PATH = path.join(
   GAME_DIRECTORY,
@@ -34,6 +38,10 @@ export const CRIB_UNCERTAINTY_OUTPUT_PATH = path.join(
 export const PLAY_OUTPUT_PATH = path.join(
   GAME_DIRECTORY,
   "expectedPlayPointsTable.json",
+);
+export const PLAY_UNCERTAINTY_OUTPUT_PATH = path.join(
+  GAME_DIRECTORY,
+  "expectedPlayPointsUncertainty.json",
 );
 
 const assertObject = (value, message) => {
@@ -53,308 +61,6 @@ export const validateCribTable = (table) => {
         "expected 170 (169 discard keys plus __metadata__)",
     );
   }
-};
-
-const UNCERTAINTY_STATISTIC = "reported_marginal_se";
-const UNCERTAINTY_N_SEMANTICS = "sum_weights";
-const QUALIFICATION_KEYS = ["crib", "play", "scope"];
-/*
- * Version 1 pins the vocabulary, so a sidecar does not get to declare its own
- * and then check its identities against that. These mirror the browser
- * reader's copies in src/game/cribUncertainty.ts; vendoredTables.test.mjs
- * runs both against the same malformations so the two cannot drift.
- */
-const CANONICAL_ROLES = ["Dealer", "Pone"];
-const CANONICAL_RANKS = "A23456789TJQK".split("");
-/*
- * Both ranks in rank order, `Suited` before `Unsuited`, and no suited pair -
- * two cards of one rank cannot share a suit. Comparing the whole sequence
- * rather than a shape rejects a duplicate, a reordering, or an omitted key,
- * each of which would quietly cost one discard its bound.
- */
-const CANONICAL_DISCARD_KEYS = CANONICAL_RANKS.flatMap((first, index) =>
-  CANONICAL_RANKS.slice(index).flatMap((second) =>
-    first === second
-      ? [`${first}_${second}_Unsuited`]
-      : [`${first}_${second}_Suited`, `${first}_${second}_Unsuited`],
-  ),
-);
-const CANONICAL_SLOTS = [
-  "total",
-  "matching_discard_suit",
-  "non_matching_discard_suit",
-  "matching_rank_1_suit",
-  "matching_rank_2_suit",
-];
-// `keys`, `roles`, `ranks`, `slots` - in the order a record identity spells them.
-const IDENTITY_FIELDS = ["keys", "roles", "ranks", "slots"];
-const CANONICAL_VOCABULARY = {
-  keys: CANONICAL_DISCARD_KEYS,
-  ranks: CANONICAL_RANKS,
-  roles: CANONICAL_ROLES,
-  slots: CANONICAL_SLOTS,
-};
-const MINIMUM_OBSERVATIONS = 2;
-const SHA256_DIGEST = /^[0-9a-f]{64}$/u;
-const DIGEST_FIELDS = ["means_sha256", "source_full_sha256"];
-
-const assertHeaderValue = (sidecar, field, expected) => {
-  if (sidecar[field] !== expected) {
-    throw new Error(
-      `Downloaded crib uncertainty sidecar declares ${field} ` +
-        `${JSON.stringify(sidecar[field])}; expected ${JSON.stringify(expected)}`,
-    );
-  }
-};
-
-const assertCanonicalList = (field, value) => {
-  const expected = CANONICAL_VOCABULARY[field];
-  const matches =
-    value.length === expected.length &&
-    value.every((item, index) => item === expected[index]);
-  if (!matches) {
-    throw new Error(
-      `Downloaded crib uncertainty sidecar declares a ${field} list that ` +
-        "version 1 does not",
-    );
-  }
-};
-
-const readVocabulary = (sidecar) =>
-  IDENTITY_FIELDS.map((field) => {
-    const value = sidecar[field];
-    if (
-      !Array.isArray(value) ||
-      value.length === 0 ||
-      value.some((item) => typeof item !== "string")
-    ) {
-      throw new Error(
-        `Downloaded crib uncertainty sidecar has no usable ${field} list`,
-      );
-    }
-    assertCanonicalList(field, value);
-    return new Set(value);
-  });
-
-const assertProvenance = (sidecar) => {
-  for (const field of DIGEST_FIELDS) {
-    if (!SHA256_DIGEST.test(sidecar[field] ?? "")) {
-      throw new Error(
-        `Downloaded crib uncertainty sidecar names no usable ${field}`,
-      );
-    }
-  }
-  assertObject(
-    sidecar.provenance,
-    "Downloaded crib uncertainty sidecar carries no provenance",
-  );
-};
-
-const assertQualifications = (sidecar) => {
-  assertObject(
-    sidecar.qualifications,
-    "Downloaded crib uncertainty sidecar is missing qualifications",
-  );
-  for (const key of QUALIFICATION_KEYS) {
-    const text = sidecar.qualifications[key];
-    if (typeof text !== "string" || text.length === 0) {
-      throw new Error(
-        `Downloaded crib uncertainty sidecar has no ${key} qualification`,
-      );
-    }
-  }
-};
-
-const assertRecord = (identity, record, vocabulary) => {
-  const parts = identity.split("/");
-  if (
-    parts.length !== vocabulary.length ||
-    vocabulary.some((allowed, index) => !allowed.has(parts[index]))
-  ) {
-    throw new Error(
-      `Downloaded crib uncertainty sidecar has an unrecognized identity ${identity}`,
-    );
-  }
-  assertObject(record, `Missing crib uncertainty record for ${identity}`);
-  const { n: weight, sum_w2: squaredWeight } = record;
-  const standardError = record[UNCERTAINTY_STATISTIC];
-  const finite = (value) => typeof value === "number" && Number.isFinite(value);
-  if (
-    !finite(standardError) ||
-    standardError < 0 ||
-    !finite(weight) ||
-    !finite(squaredWeight) ||
-    squaredWeight < 0 ||
-    weight < MINIMUM_OBSERVATIONS ||
-    weight - squaredWeight / weight <= 0
-  ) {
-    throw new Error(
-      `Downloaded crib uncertainty sidecar has unusable statistics for ${identity}`,
-    );
-  }
-};
-
-/*
- * Checks the whole version-1 contract, not just the header, because this runs
- * before either file is written and a sidecar the browser's reader would
- * reject is one that silently removes every bound from the next build. The
- * browser's reader is TypeScript and this is a plain Node script, so the two
- * cannot share an implementation; `scripts/vendoredTables.test.mjs` runs this
- * one against the vendored file and `src/game/cribUncertainty.test.ts` runs
- * the other against the same bytes, so a document only one of them accepts
- * fails a gate rather than shipping.
- *
- * Deliberately no pinned record count. The sidecar contract lets the exported
- * record set grow - future category records arrive as their own group - so a
- * frozen number here would reject a legitimate refresh. The header's own
- * `record_count` is what a truncated download contradicts.
- */
-export const validateCribUncertainty = (sidecar) => {
-  assertObject(sidecar, "Downloaded crib uncertainty sidecar is not an object");
-  assertHeaderValue(sidecar, "schema", UNCERTAINTY_SCHEMA);
-  assertHeaderValue(sidecar, "table", "crib");
-  assertHeaderValue(sidecar, "statistic", UNCERTAINTY_STATISTIC);
-  assertHeaderValue(sidecar, "n_semantics", UNCERTAINTY_N_SEMANTICS);
-  assertProvenance(sidecar);
-  assertQualifications(sidecar);
-  const vocabulary = readVocabulary(sidecar);
-
-  const totals = sidecar.record_groups?.totals;
-  assertObject(
-    totals,
-    "Downloaded crib uncertainty sidecar is missing record_groups.totals",
-  );
-  assertObject(
-    totals.records,
-    "Downloaded crib uncertainty sidecar totals group has no records",
-  );
-  const entries = Object.entries(totals.records);
-  if (totals.record_count !== entries.length) {
-    throw new Error(
-      `Downloaded crib uncertainty sidecar declares ${totals.record_count} ` +
-        `total records but carries ${entries.length}`,
-    );
-  }
-  if (entries.length === 0) {
-    throw new Error("Downloaded crib uncertainty sidecar carries no records");
-  }
-  for (const [identity, record] of entries) {
-    assertRecord(identity, record, vocabulary);
-  }
-};
-
-const sha256 = (body) =>
-  createHash("sha256").update(body, "utf8").digest("hex");
-
-/*
- * The publication is atomic per release, but two downloads are not: a rolling
- * release replaced between them would pair a new means file with an old
- * sidecar, which is exactly the combination the contract forbids. The sidecar
- * names the means it was exported against, so hashing the bytes that arrived
- * settles it before anything is written.
- */
-export const assertCribMeansDigest = (sidecar, meansBody) => {
-  const digest = sha256(meansBody);
-  if (sidecar.means_sha256 !== digest) {
-    throw new Error(
-      `Crib uncertainty sidecar was exported against means ` +
-        `${sidecar.means_sha256} but the downloaded means hash to ${digest}. ` +
-        "The rolling release changed between the two downloads; rerun the update.",
-    );
-  }
-};
-
-const downloadAsset = async (assetUrl) => {
-  const response = await fetch(assetUrl);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download EV table from ${assetUrl}: ${response.status} ${response.statusText}`,
-    );
-  }
-  return response.text();
-};
-
-export const downloadTable = async (assetUrl, validate) => {
-  const raw = await downloadAsset(assetUrl);
-  const parsed = JSON.parse(raw);
-  validate(parsed);
-  return { body: raw.endsWith("\n") ? raw : `${raw}\n`, parsed, raw };
-};
-
-/*
- * Stored minified, the way both means tables already are: the published
- * sidecar is pretty-printed across 45,607 lines, which no reviewer reads and
- * which the pull request size gate counts in full. Re-serializing changes no
- * value - IEEE 754 doubles round-trip exactly through JSON - and the digests
- * that matter are fields inside the document rather than of it.
- */
-const toMinifiedBody = (value) => `${JSON.stringify(value)}\n`;
-
-export const downloadCribAssets = async (
-  meansUrl = CRIB_ASSET_URL,
-  uncertaintyUrl = CRIB_UNCERTAINTY_ASSET_URL,
-) => {
-  const [means, uncertainty] = await Promise.all([
-    downloadTable(meansUrl, validateCribTable),
-    downloadTable(uncertaintyUrl, validateCribUncertainty),
-  ]);
-  /*
-   * The exact published bytes, not the newline-normalized `body` the play
-   * table gets: the sidecar's `means_sha256` names these bytes, so anything
-   * written here that is not byte-identical to what was hashed would leave a
-   * pair that `npm run test:vendored-tables` rejects on its next run. Hashing
-   * and writing the same constant is what makes that impossible rather than
-   * merely unlikely.
-   */
-  const cribMeansBody = means.raw;
-  assertCribMeansDigest(uncertainty.parsed, cribMeansBody);
-  return [
-    { body: cribMeansBody, outputPath: CRIB_OUTPUT_PATH },
-    {
-      body: toMinifiedBody(uncertainty.parsed),
-      outputPath: CRIB_UNCERTAINTY_OUTPUT_PATH,
-    },
-  ];
-};
-
-const temporaryPathFor = (outputPath) => `${outputPath}.tmp-${process.pid}`;
-
-const announce = (outputPath, body) => {
-  process.stdout.write(
-    `Updated ${outputPath} (${Buffer.byteLength(body, "utf8").toLocaleString()} bytes).\n`,
-  );
-};
-
-export const writeTableAtomically = async (outputPath, body) => {
-  const temporaryPath = temporaryPathFor(outputPath);
-  await writeFile(temporaryPath, body);
-  await rename(temporaryPath, outputPath);
-  announce(outputPath, body);
-};
-
-/*
- * Every temporary file is written before any of them replaces its target, so
- * a failure that belongs to writing - a full disk above all - happens while
- * both vendored files are still the pair they were. The renames that follow
- * are same-directory and cannot be made one atomic step on POSIX, so a
- * failure among them would still leave a mismatched pair. That residue is
- * what `npm run test:vendored-tables` exists to catch, and it now runs on
- * every commit, every pull request, and the production deploy.
- */
-export const writeTablesAtomically = async (files) => {
-  const staged = await Promise.all(
-    files.map(async ({ body, outputPath }) => {
-      const temporaryPath = temporaryPathFor(outputPath);
-      await writeFile(temporaryPath, body);
-      return { body, outputPath, temporaryPath };
-    }),
-  );
-  await Promise.all(
-    staged.map(async ({ body, outputPath, temporaryPath }) => {
-      await rename(temporaryPath, outputPath);
-      announce(outputPath, body);
-    }),
-  );
 };
 
 const validatePlayPlayer = (player, context) => {
@@ -402,4 +108,123 @@ export const validatePlayTable = (table) => {
       }
     }
   }
+};
+
+/*
+ * Everything one rolling release publishes and this repository vendors: the
+ * client means, its uncertainty sidecar, and where each is written. The two
+ * tables differ only in these values, so the download, digest check and
+ * write path below are one code path rather than two.
+ */
+export const CRIB_ASSETS = {
+  contract: CRIB_UNCERTAINTY_CONTRACT,
+  meansOutputPath: CRIB_OUTPUT_PATH,
+  meansUrl: CRIB_ASSET_URL,
+  uncertaintyOutputPath: CRIB_UNCERTAINTY_OUTPUT_PATH,
+  uncertaintyUrl: CRIB_UNCERTAINTY_ASSET_URL,
+  validateMeans: validateCribTable,
+};
+
+export const PLAY_ASSETS = {
+  contract: PLAY_UNCERTAINTY_CONTRACT,
+  meansOutputPath: PLAY_OUTPUT_PATH,
+  meansUrl: PLAY_ASSET_URL,
+  uncertaintyOutputPath: PLAY_UNCERTAINTY_OUTPUT_PATH,
+  uncertaintyUrl: PLAY_UNCERTAINTY_ASSET_URL,
+  validateMeans: validatePlayTable,
+};
+
+const downloadAsset = async (assetUrl) => {
+  const response = await fetch(assetUrl);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to download EV table from ${assetUrl}: ${response.status} ${response.statusText}`,
+    );
+  }
+  return response.text();
+};
+
+export const downloadTable = async (assetUrl, validate) => {
+  const raw = await downloadAsset(assetUrl);
+  const parsed = JSON.parse(raw);
+  validate(parsed);
+  return { body: raw.endsWith("\n") ? raw : `${raw}\n`, parsed, raw };
+};
+
+/*
+ * Stored minified, the way both means tables already are: the published
+ * sidecars are pretty-printed across tens of thousands of lines, which no
+ * reviewer reads and which the pull request size gate counts in full.
+ * Re-serializing changes no value - IEEE 754 doubles round-trip exactly
+ * through JSON - and the digests that matter are fields inside the document
+ * rather than of it.
+ */
+const toMinifiedBody = (value) => `${JSON.stringify(value)}\n`;
+
+export const downloadMeansAndUncertainty = async (
+  assets,
+  meansUrl = assets.meansUrl,
+  uncertaintyUrl = assets.uncertaintyUrl,
+) => {
+  const [means, uncertainty] = await Promise.all([
+    downloadTable(meansUrl, assets.validateMeans),
+    downloadTable(uncertaintyUrl, (sidecar) =>
+      validateUncertainty(sidecar, assets.contract),
+    ),
+  ]);
+  /*
+   * The exact published bytes rather than the newline-normalized `body`: the
+   * sidecar's `means_sha256` names these bytes, so anything written here that
+   * is not byte-identical to what was hashed would leave a pair that
+   * `npm run test:vendored-tables` rejects on its next run. Hashing and
+   * writing the same constant is what makes that impossible rather than
+   * merely unlikely.
+   */
+  const meansBody = means.raw;
+  assertMeansDigest(uncertainty.parsed, meansBody, assets.contract);
+  return [
+    { body: meansBody, outputPath: assets.meansOutputPath },
+    {
+      body: toMinifiedBody(uncertainty.parsed),
+      outputPath: assets.uncertaintyOutputPath,
+    },
+  ];
+};
+
+const temporaryPathFor = (outputPath) => `${outputPath}.tmp-${process.pid}`;
+
+const announce = (outputPath, body) => {
+  process.stdout.write(
+    `Updated ${outputPath} (${Buffer.byteLength(body, "utf8").toLocaleString()} bytes).\n`,
+  );
+};
+
+/*
+ * Every temporary file is written before any of them replaces its target, so
+ * a failure that belongs to writing - a full disk above all - happens while
+ * the vendored files are still the pairs they were. The renames that follow
+ * are same-directory and cannot be made one atomic step on POSIX, so a
+ * failure among them would still leave a mismatched pair. That residue is
+ * what `npm run test:vendored-tables` exists to catch, and it now runs on
+ * every commit, every pull request, and the production deploy.
+ */
+export const writeTablesAtomically = async (files) => {
+  const staged = await Promise.all(
+    files.map(async ({ body, outputPath }) => {
+      const temporaryPath = temporaryPathFor(outputPath);
+      await writeFile(temporaryPath, body);
+      return { body, outputPath, temporaryPath };
+    }),
+  );
+  await Promise.all(
+    staged.map(async ({ body, outputPath, temporaryPath }) => {
+      await rename(temporaryPath, outputPath);
+      announce(outputPath, body);
+    }),
+  );
+};
+
+export const reportFailure = (error) => {
+  process.stderr.write(`${error.message}\n`);
+  process.exitCode = 1;
 };

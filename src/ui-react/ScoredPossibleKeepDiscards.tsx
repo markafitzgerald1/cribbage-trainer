@@ -6,15 +6,6 @@ import {
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
 import {
-  type CribUncertaintySource,
-  shippedCribUncertainty,
-} from "../game/cribUncertaintyLoader";
-import {
-  type DiscardHighlightTier,
-  ScoredPossibleKeepDiscard,
-  getRowTitle,
-} from "./ScoredPossibleKeepDiscard";
-import {
   type MistakeClassification,
   classifyScoredMistake,
 } from "../analysis/classifyMistake";
@@ -22,7 +13,6 @@ import { type MouseEvent, useCallback, useEffect, useMemo } from "react";
 import {
   type OptimalDiscardMargin,
   computeOptimalDiscardMargin,
-  isEqualBestCandidate,
 } from "../analysis/optimalDiscard";
 import {
   type ScoredKeepDiscard,
@@ -40,12 +30,16 @@ import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { type ExpectedTables } from "./expectedTables";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
+import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
-import { cribUncertaintyBound } from "../analysis/cribUncertaintyBound";
+import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { getDiscardQuality } from "../analysis/discardQuality";
 import { renderRoleLossPairText } from "./RoleLossPairText";
-import { useCribUncertainty } from "./useCribUncertainty";
+import { shippedCribUncertainty } from "../game/cribUncertaintyLoader";
+import { shippedPlayUncertainty } from "../game/playUncertaintyLoader";
 import { useExpectedTables } from "./useExpectedTables";
+import { useScoredKeepDiscardRows } from "./useScoredKeepDiscardRows";
+import { useSidecarUncertainties } from "./useUncertainty";
 
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
@@ -59,14 +53,15 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly loadCribTable?: () => Promise<ExpectedCribPointsTable>;
 
   /**
-   * Where the published uncertainty sidecar is read from, deferred until the
+   * Where each published uncertainty sidecar is read from, deferred until the
    * means are on screen. An absent or rejected sidecar leaves the means-only
-   * recommendation exactly as it is. Injectable as one object so a caller's
-   * source is the only thing the table can show; pass a stable one, since it
-   * is an effect dependency.
+   * recommendation exactly as it is. Injectable as one object apiece so a
+   * caller's source is the only thing the table can show; pass stable ones,
+   * since they are effect dependencies.
    */
-  readonly cribUncertaintySource?: CribUncertaintySource;
+  readonly cribUncertaintySource?: UncertaintySource;
   readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
+  readonly playUncertaintySource?: UncertaintySource;
 
   /**
    * Called once the ranked results are actually on screen, which telemetry
@@ -81,19 +76,6 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly scoreSortKey: ScoredKeepDiscardSortKey;
   readonly sortOrder: SortOrder;
 }
-
-const getHighlightTier = (
-  isChosen: boolean,
-  isEqualBest: boolean,
-): DiscardHighlightTier => {
-  if (isChosen) {
-    return "chosen";
-  }
-  if (isEqualBest) {
-    return "equal-best";
-  }
-  return "none";
-};
 
 const getScoringHeaders = () =>
   [
@@ -198,6 +180,7 @@ export function ScoredPossibleKeepDiscards({
   cribUncertaintySource = shippedCribUncertainty,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
+  playUncertaintySource = shippedPlayUncertainty,
   onAnalysisRendered,
   onScoreSortKeyChange,
   scoreSortKey,
@@ -207,10 +190,12 @@ export function ScoredPossibleKeepDiscards({
     loadCribTable,
     loadPlayTable,
   );
-  const uncertainty = useCribUncertainty(
-    tables !== null,
-    cribUncertaintySource,
-  );
+  const { crib: cribUncertainty, play: playUncertainty } =
+    useSidecarUncertainties(
+      tables !== null,
+      cribUncertaintySource,
+      playUncertaintySource,
+    );
 
   const scoredKeepDiscardsByNetScore = useMemo(
     () =>
@@ -256,49 +241,15 @@ export function ScoredPossibleKeepDiscards({
       ),
     [scoredKeepDiscardsByNetScore, scoreSortKey],
   );
-  const scoredKeepDiscardsWithTiers = useMemo(() => {
-    const bestNet = scoredKeepDiscardsByNetScore[0]?.expectedNetPoints ?? 0;
-
-    return scoredKeepDiscards.map((scoredKeepDiscard, index) => {
-      const isChosen = scoredKeepDiscard.keep.every((card) => card.kept);
-      const isEqualBest =
-        !isChosen &&
-        isEqualBestCandidate(bestNet, scoredKeepDiscard.expectedNetPoints);
-      const highlightTier = getHighlightTier(isChosen, isEqualBest);
-      const rowTitle = getRowTitle(
-        highlightTier,
-        isChosen ? chosenClassification : null,
-      );
-      const descriptionId = rowTitle
-        ? `scored-discard-${index}-description`
-        : null;
-
-      return {
-        cribUncertainty:
-          uncertainty === null
-            ? null
-            : cribUncertaintyBound({
-                cribStarterPoints: scoredKeepDiscard.cribStarterPoints,
-                discard: scoredKeepDiscard.discard,
-                knownCards: dealtCards,
-                role: cribRole,
-                uncertainty,
-              }),
-        descriptionId,
-        highlightTier,
-        rowIndex: index,
-        rowTitle,
-        scoredKeepDiscard,
-      };
-    });
-  }, [
+  const scoredKeepDiscardsWithTiers = useScoredKeepDiscardRows({
     chosenClassification,
     cribRole,
+    cribUncertainty,
     dealtCards,
+    playUncertainty,
     scoredKeepDiscards,
     scoredKeepDiscardsByNetScore,
-    uncertainty,
-  ]);
+  });
   const handleScoreSortClick = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       onScoreSortKeyChange(
@@ -429,9 +380,10 @@ export function ScoredPossibleKeepDiscards({
     <tbody>
       {scoredKeepDiscardsWithTiers.map(
         ({
-          cribUncertainty,
+          cribUncertainty: cribBound,
           descriptionId,
           highlightTier,
+          playUncertainty: playStandardError,
           rowIndex,
           scoredKeepDiscard,
         }) => (
@@ -440,12 +392,13 @@ export function ScoredPossibleKeepDiscards({
               highlightTier === "chosen" ? chosenClassification : null
             }
             cribRole={cribRole}
-            cribUncertainty={cribUncertainty}
+            cribUncertainty={cribBound}
             descriptionId={descriptionId}
             highlightTier={highlightTier}
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
               .map((dealtCard) => dealtCard.dealOrder)
               .join("")}
+            playUncertainty={playStandardError}
             rowIndex={rowIndex}
             scoredKeepDiscard={scoredKeepDiscard}
             sortOrder={sortOrder}
@@ -502,4 +455,5 @@ ScoredPossibleKeepDiscards.defaultProps = {
   isPracticeDrill: false,
   loadCribTable: cribLoader.loadTable,
   loadPlayTable: playLoader.loadTable,
+  playUncertaintySource: shippedPlayUncertainty,
 };

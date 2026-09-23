@@ -95,6 +95,7 @@ export const spellcheckSkipWords = [
   "tagline",
   "tbody",
   "thead",
+  "tooltip",
   "tsconfig",
   "tsx",
   "ul",

@@ -2,6 +2,11 @@ import {
   CribRole,
   type ExpectedCribPointBreakdown,
 } from "../game/expectedCribPoints";
+import {
+  type UncertaintyFigure,
+  UncertaintyKind,
+  toUncertaintyFigure,
+} from "./uncertaintyFigure";
 
 const DEALER_MULTIPLIER = 1;
 const PONE_MULTIPLIER = -1;
@@ -12,12 +17,12 @@ export interface Category {
   readonly label: string;
   readonly notApplicable?: boolean;
   /*
-   * A simulation-error bound on `value`, when the published sidecar covers
-   * every bucket that value was built from. Absent or null means the bound is
-   * unavailable, which is not the same as a bound of zero - a measured zero
-   * is a real value and renders as one.
+   * What the published sidecar says about `value`, and which kind of figure
+   * that is - the two sidecars do not qualify the same quantity. Absent or
+   * null means unavailable, which is not the same as a figure of zero: a
+   * measured zero is a real value and renders as one.
    */
-  readonly uncertainty?: number | null;
+  readonly uncertainty?: UncertaintyFigure | null;
   readonly value: number | undefined;
 }
 
@@ -77,6 +82,10 @@ export const createCribCategories = ({
      * publishes one standard error per bucket, covering the bucket's total,
      * and has no category records to give 15s or pairs one of their own.
      */
-    { label: "Total", uncertainty, value: expectedCribPoints * multiplier },
+    {
+      label: "Total",
+      uncertainty: toUncertaintyFigure(UncertaintyKind.CribBound, uncertainty),
+      value: expectedCribPoints * multiplier,
+    },
   ];
 };

@@ -2,10 +2,23 @@ import {
   type ExpectedPlayPlayerBreakdown,
   type ExpectedPlayPoints,
 } from "../game/expectedPlayPoints";
+import {
+  type UncertaintyFigure,
+  UncertaintyKind,
+  toUncertaintyFigure,
+} from "./uncertaintyFigure";
 import { CribRole } from "../game/expectedCribPoints";
 
 export interface ExpectedPlayBreakdownCategory {
   readonly label: string;
+  /*
+   * The published standard error of `value`, carried only by the You - Opp
+   * total: the sidecar publishes one per kept hand and role, against the
+   * table's own role-relative delta, and has no per-seat or per-category
+   * records to give any other cell one. Null means unavailable, which is not
+   * the same as an error of zero.
+   */
+  readonly uncertainty?: UncertaintyFigure | null;
   readonly value: number;
 }
 
@@ -31,10 +44,10 @@ export const EXPECTED_PLAY_CATEGORY_LABELS = [
 ] as const;
 
 // Zip each label with its value so labels stay type-safe (no at(index) cast).
-const toCategories = ({
-  pointBreakdown,
-  total,
-}: ExpectedPlayPlayerBreakdown): readonly ExpectedPlayBreakdownCategory[] =>
+const toCategories = (
+  { pointBreakdown, total }: ExpectedPlayPlayerBreakdown,
+  uncertainty: number | null,
+): readonly ExpectedPlayBreakdownCategory[] =>
   (
     [
       ["15s", pointBreakdown.fifteens],
@@ -45,7 +58,18 @@ const toCategories = ({
       ["Last", pointBreakdown.lastCard],
       ["Total", total],
     ] as const
-  ).map(([label, value]) => ({ label, value }));
+  ).map(([label, value]) =>
+    label === "Total"
+      ? {
+          label,
+          uncertainty: toUncertaintyFigure(
+            UncertaintyKind.PlayStandardError,
+            uncertainty,
+          ),
+          value,
+        }
+      : { label, value },
+  );
 
 /*
  * The collapsed Play column, net score, and sort all use the table's
@@ -73,15 +97,19 @@ const subtractPlayers = (
 export const getExpectedPlayBreakdownRows = (
   points: ExpectedPlayPoints,
   role: CribRole,
+  deltaUncertainty: number | null,
 ): ExpectedPlayBreakdownRows => {
   const player = role === CribRole.Dealer ? points.dealer : points.pone;
   const opponent = role === CribRole.Dealer ? points.pone : points.dealer;
 
   return [
-    { categories: toCategories(points.pone), label: "Pone" },
-    { categories: toCategories(points.dealer), label: "Dealer" },
+    { categories: toCategories(points.pone, null), label: "Pone" },
+    { categories: toCategories(points.dealer, null), label: "Dealer" },
     {
-      categories: toCategories(subtractPlayers(player, opponent, points.delta)),
+      categories: toCategories(
+        subtractPlayers(player, opponent, points.delta),
+        deltaUncertainty,
+      ),
       label: "You - Opp",
     },
   ];

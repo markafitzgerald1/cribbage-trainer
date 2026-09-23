@@ -10,4 +10,6 @@
 /src/game/expectedCribPointsUncertainty.json
 # Vendored lean play EV table from simulate-cribbage-games; refresh with scripts/updateExpectedPlayPointsTable.mjs.
 /src/game/expectedPlayPointsTable.json
+# Vendored play uncertainty sidecar from simulate-cribbage-games; refresh with scripts/updateExpectedPlayPointsTable.mjs.
+/src/game/expectedPlayPointsUncertainty.json
 /.claude/
