@@ -60,11 +60,15 @@ test("src/index.html includes matching theme-color and points to public webmanif
   const indexHtml = readFileSync(indexPath, "utf8");
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
-  ok(
-    indexHtml.includes(
-      `<meta\n      name="theme-color"\n      content="${manifest.theme_color}"\n    />`,
-    ),
-    'index.html must include <meta name="theme-color"> matching the manifest',
+  const themeColorMatch =
+    /<meta\s+name="theme-color"\s+content="(?<themeColor>[^"]+)"/u.exec(
+      indexHtml,
+    );
+  ok(themeColorMatch, 'index.html must include <meta name="theme-color">');
+  strictEqual(
+    themeColorMatch.groups?.themeColor,
+    manifest.theme_color,
+    "theme-color in index.html must match manifest theme_color",
   );
 
   const referencedPublicFiles = [
