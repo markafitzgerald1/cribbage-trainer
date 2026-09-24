@@ -38,7 +38,7 @@ omits and why, `npm run verify:gap`, the one-gate-per-head rule).
 ## Review focus (enforced — see AGENTS.md/CONTRIBUTING.md for rationale)
 
 - Jest requires 100% global coverage; Storybook (Vitest) thresholds live in
-  `vite.config.js`. New code needs matching tests.
+  `vite.config.mjs`. New code needs matching tests.
 - `jscpd` runs at 0% duplication — resolve by extracting helpers/components,
   not by suppressing it (`jscpd:ignore` is for import boilerplate only).
 - File-scoped `eslint-disable` is banned; fix the code or scope a disable to one

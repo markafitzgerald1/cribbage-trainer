@@ -127,6 +127,22 @@ describe("trainer practice drill", () => {
     expect(screen.getByLabelText("Practice drill")).toBeInTheDocument();
   });
 
+  it("withholds live region status until the drill choice is committed", async () => {
+    const { user, view } = await openDrillFromQueue();
+    const liveRegion = view.getByRole("status");
+
+    expect(liveRegion).toHaveTextContent("");
+
+    await chooseDrillDiscard(view, user);
+
+    expect(liveRegion).toHaveTextContent("");
+
+    await clickDrillButton(view, user, "Check discard");
+    await findAnalysisTable(view);
+
+    expect(liveRegion).not.toHaveTextContent("");
+  });
+
   it("records the re-attempt as practice without moving the lifetime tally", async () => {
     const { user, view } = await openDrillFromQueue();
 

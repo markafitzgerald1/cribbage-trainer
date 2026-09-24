@@ -66,6 +66,12 @@ jobs:
       - name: Run vendored expected-points table tests
         run: npm run test:vendored-tables
 
+      # Guards the PWA manifest JSON schema, icon presence, and HTML linkage.
+      # Runs here rather than in the Docker gate, whose COPY allowlist
+      # excludes scripts/ before the test layer.
+      - name: Run PWA manifest tests
+        run: npm run test:pwa-manifest
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -158,9 +164,9 @@ jobs:
             'styles.d.ts',
             '.storybook/main.ts',
             '.storybook/preview.ts',
-            'vite.config.js',
+            'vite.config.mjs',
             'tsconfig.json',
-            'babel.config.js'
+            'babel.config.json'
             ) }}
           restore-keys: |
             ${{ runner.os }}-dist-

@@ -46,6 +46,74 @@ test("standard mobile viewport is specified", async ({ page }) => {
   );
 });
 
+test("meta theme-color is specified with #1f6536", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+    "content",
+    "#1f6536",
+  );
+});
+
+test("web app manifest and all its declared icons resolve", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/");
+  const manifestHref = await page
+    .locator('link[rel="manifest"]')
+    .getAttribute("href");
+  expect(manifestHref).not.toBeNull();
+  if (manifestHref === null) {
+    return;
+  }
+
+  const manifestUrl = new URL(manifestHref, page.url()).href;
+  const manifestResponse = await request.get(manifestUrl);
+  expect(manifestResponse.ok()).toBe(true);
+
+  const manifest = (await manifestResponse.json()) as {
+    icons: Array<{ sizes: string; src: string; type: string }>;
+    start_url: string;
+    theme_color: string;
+  };
+  expect(manifest.start_url).toBe("./");
+  expect(manifest.theme_color).toBe("#1f6536");
+  expect(Array.isArray(manifest.icons)).toBe(true);
+  expect(manifest.icons.length).toBeGreaterThan(0);
+
+  await Promise.all(
+    manifest.icons.map(async (icon) => {
+      const iconUrl = new URL(icon.src, manifestUrl).href;
+      const iconResponse = await request.get(iconUrl);
+      expect(iconResponse.ok()).toBe(true);
+      expect(iconResponse.headers()["content-type"]).toContain("image/png");
+    }),
+  );
+});
+
+test("all favicon and touch icons declared in HTML resolve", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/");
+  const iconLinks = await page
+    .locator('link[rel="icon"], link[rel="apple-touch-icon"]')
+    .evaluateAll((elements) =>
+      elements
+        .map((element) => element.getAttribute("href"))
+        .filter((href): href is string => href !== null),
+    );
+  expect(iconLinks.length).toBeGreaterThan(0);
+
+  await Promise.all(
+    iconLinks.map(async (href) => {
+      const iconUrl = new URL(href, page.url()).href;
+      const response = await request.get(iconUrl);
+      expect(response.ok()).toBe(true);
+    }),
+  );
+});
+
 const expectDealButtonWithinPortraitViewport = async (
   page: Page,
   rootFontSize?: string,
