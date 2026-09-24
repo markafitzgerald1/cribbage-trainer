@@ -39,8 +39,12 @@ test.describe("both crib-role costs for the chosen discard", () => {
       discardIndices: ROLE_SPLIT_DISCARD_INDICES,
     });
 
-    const caption = page.getByRole("status");
+    const caption = page.locator("figcaption[aria-label]");
+    const liveRegion = page.getByRole("status");
 
+    await expect(liveRegion).toContainText(
+      "3.11 points lost as dealer, 0.00 as pone",
+    );
     await expect(caption).toContainText("3.11 as dealer, 0.00 as pone");
     // The component decomposition is still there: the pair is evidence beside it, not a replacement for it.
     await expect(caption).toContainText("Crib");
@@ -71,8 +75,12 @@ test.describe("both crib-role costs for the chosen discard", () => {
       discardIndices: BOTH_ROLES_COSTLY_DISCARD_INDICES,
     });
 
-    const caption = page.getByRole("status");
+    const caption = page.locator("figcaption[aria-label]");
+    const liveRegion = page.getByRole("status");
 
+    await expect(liveRegion).toContainText(
+      "3.46 points lost as dealer, 0.82 as pone",
+    );
     await expect(caption).toContainText("3.46 as dealer, 0.82 as pone");
     // Nothing here is free, so nothing is marked; the mark has to mean this hand rather than this badge.
     await expect(caption.getByText("0.82 as pone")).toHaveCSS(
@@ -94,10 +102,12 @@ test.describe("both crib-role costs for the chosen discard", () => {
       discardIndices: BOTH_ROLES_COSTLY_DISCARD_INDICES,
     });
 
-    const caption = page.getByRole("status");
+    const caption = page.locator("figcaption[aria-label]");
+    const liveRegion = page.getByRole("status");
 
     // The caption is on screen with its single figure before anything is asserted absent, so the pair is withheld rather than simply not yet on screen.
     await expect(caption).toContainText("Sub-optimal: 0.82 pts lost");
     await expect(caption).not.toContainText("as dealer");
+    await expect(liveRegion).toContainText("Sub-optimal: 0.82 points lost");
   });
 });
