@@ -334,7 +334,8 @@ describe("scored possible keep discards component", () => {
       {
         cards: "5H,5D,6H,7H,8H,9H",
         discards: "5H,5D",
-        expectedAriaLabel: "Optimal discard, 4.05 better than next",
+        expectedAriaLabel:
+          "Optimal discard, 4.05 better than the next best discard",
         expectedMarkedTexts: [],
         expectedText: "Optimal, 4.05 better than next",
         name: "optimal discard caption when chosen discard is optimal",
@@ -343,7 +344,8 @@ describe("scored possible keep discards component", () => {
         cards: "9D,9C,9H,4C,4H,3S",
         cribRole: CribRole.Pone,
         discards: "3S,9C",
-        expectedAriaLabel: "Optimal discard, 0.37 better than next distinct",
+        expectedAriaLabel:
+          "Optimal discard, 0.37 better than the next best distinct discard",
         expectedMarkedTexts: [],
         expectedText: "Optimal, 0.37 better than next distinct",
         name: "optimal discard caption when top choices tie",
