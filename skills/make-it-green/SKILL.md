@@ -118,7 +118,7 @@ green build status.
 
 - After adding or changing Storybook stories, run
   `npm run storybook:test:coverage` and set the `test.coverage.thresholds`
-  block in `vite.config.js` to the exact reported totals. Thresholds are
+  block in `vite.config.mjs` to the exact reported totals. Thresholds are
   minimums (only a drop fails the build); re-locking them to the current
   totals is a ratchet convention so any future regression fails
   immediately.

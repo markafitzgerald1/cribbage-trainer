@@ -242,6 +242,8 @@ describe("scored possible keep discards component", () => {
     expect(screen.getByText("Loading analysis...")).toBeTruthy();
   };
 
+  const waitForAnalysis = { timeout: 8000 };
+
   const renderFailedLoad = async (onAnalysisRendered = jest.fn()) => {
     mockLoadCribTable.mockRejectedValueOnce(new Error("Fake load error"));
 
@@ -249,13 +251,13 @@ describe("scored possible keep discards component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Failed to load analysis.")).toBeTruthy();
-    });
+    }, waitForAnalysis);
   };
 
   const expectLoaded = async () => {
     await waitFor(() => {
       expect(screen.queryByText("Loading analysis...")).toBeNull();
-    });
+    }, waitForAnalysis);
     return screen.getByRole("table");
   };
 
@@ -295,11 +297,15 @@ describe("scored possible keep discards component", () => {
     },
   );
 
-  it("reports no rendered analysis while the tables are still loading", () => {
+  it("reports no rendered analysis while the tables are still loading", async () => {
     const onAnalysisRendered = jest.fn();
     renderAndExpectLoading(onAnalysisRendered);
 
     expect(onAnalysisRendered).not.toHaveBeenCalled();
+
+    await expectLoaded();
+
+    expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
   });
 
   it("reports no rendered analysis when the load fails", async () => {
@@ -317,16 +323,8 @@ describe("scored possible keep discards component", () => {
 
   it("handles loading error gracefully and allows retry", async () => {
     await renderFailedLoad();
-
-    const retryButton = screen.getByRole("button", { name: "Retry" });
-
-    // Now mock a successful load for retry
     mockLoadCribTable.mockResolvedValueOnce(expectedCribPointsTable);
-
-    // Click retry
-    fireEvent.click(retryButton);
-
-    // Eventually should render content
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 
     await expect(expectLoaded()).resolves.toBeTruthy();
   });

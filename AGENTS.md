@@ -790,10 +790,10 @@ they bind any PR that makes a claim about a phone or ships a guard.
   even in a render helper — build the element with explicit attributes.
 - Every new `*.module.css` needs a hand-written `*.module.css.d.ts` sidecar
   listing the camelCased class names. There is no generator in
-  `vite.config.js`; the `declare module "*.css"` fallback in `styles.d.ts`
+  `vite.config.mjs`; the `declare module "*.css"` fallback in `styles.d.ts`
   types the import as `any`, which `@typescript-eslint/no-unsafe-member-access`
   then rejects on every `classes.x`.
-- Storybook coverage (`vite.config.js` `test.coverage.thresholds`, ~88%) is a
+- Storybook coverage (`vite.config.mjs` `test.coverage.thresholds`, ~88%) is a
   gate separate from Jest's 100%. A hook or helper covered only by Jest drags
   the browser-mode aggregate below threshold; the fix is a story that drives
   the feature end to end — a `Trainer` story whose `play` seeds `localStorage`

@@ -164,9 +164,9 @@ jobs:
             'styles.d.ts',
             '.storybook/main.ts',
             '.storybook/preview.ts',
-            'vite.config.js',
+            'vite.config.mjs',
             'tsconfig.json',
-            'babel.config.js'
+            'babel.config.json'
             ) }}
           restore-keys: |
             ${{ runner.os }}-dist-
