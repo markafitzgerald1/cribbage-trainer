@@ -23,7 +23,7 @@ export const storeSortOrder = (sortOrder: SortOrder): void => {
   try {
     localStorage.setItem(sortOrderKey, sortUrlValue(sortOrder));
   } catch {
-    // Gracefully ignore storage exceptions (e.g. quota or security errors).
+    // Storage can throw in private modes or when blocked; a lost preference is harmless.
   }
 };
 
@@ -31,6 +31,6 @@ export const clearStoredSortOrder = (): void => {
   try {
     localStorage.removeItem(sortOrderKey);
   } catch {
-    // Gracefully ignore storage exceptions.
+    // Storage can throw in private modes or when blocked; an uncleared preference is harmless.
   }
 };
