@@ -237,7 +237,7 @@ export default [
     },
   },
   {
-    files: ["**/vite.config.js", "**/*.mjs"],
+    files: ["**/*.mjs"],
 
     languageOptions: {
       ecmaVersion: 2022,
