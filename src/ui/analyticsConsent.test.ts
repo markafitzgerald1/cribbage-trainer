@@ -1,3 +1,4 @@
+/* eslint-disable max-params */
 import {
   DECISION_QUALITY_MEASUREMENT,
   acceptedMeasurementsKey,
@@ -14,6 +15,7 @@ import { describe, expect, it } from "@jest/globals";
 
 const UNANSWERED = {
   consented: null,
+  decisionContextConsented: false,
   decisionQualityConsented: false,
   needsPolicyUpdateChoice: false,
 };
@@ -21,8 +23,14 @@ const UNANSWERED = {
 const choiceOf = (
   consented: boolean,
   decisionQualityConsented: boolean,
+  decisionContextConsented = false,
   needsPolicyUpdateChoice = false,
-) => ({ consented, decisionQualityConsented, needsPolicyUpdateChoice });
+) => ({
+  consented,
+  decisionContextConsented,
+  decisionQualityConsented,
+  needsPolicyUpdateChoice,
+});
 
 // A browser that answered the policy in force before decision-quality collection existed.
 const startWithEarlierChoice = (consent: boolean) => {
@@ -40,7 +48,9 @@ describe("analytics choice storage", () => {
   it("grants what this policy describes when analytics is accepted", () => {
     clearAnalyticsChoice();
 
-    expect(storeAnalyticsChoice(true)).toStrictEqual(choiceOf(true, true));
+    expect(storeAnalyticsChoice(true)).toStrictEqual(
+      choiceOf(true, true, true),
+    );
     expect(localStorage.getItem(answeredPolicyVersionKey)).not.toBeNull();
   });
 
@@ -61,7 +71,7 @@ describe("analytics choice storage", () => {
       startWithEarlierChoice(consent);
 
       expect(readAnalyticsChoice()).toStrictEqual(
-        choiceOf(consent, false, expected),
+        choiceOf(consent, false, false, expected),
       );
     },
   );
@@ -74,7 +84,7 @@ describe("analytics choice storage", () => {
     startWithEarlierChoice(true);
 
     expect(storePolicyUpdateChoice(accepted)).toStrictEqual(
-      choiceOf(true, accepted),
+      choiceOf(true, accepted, accepted),
     );
     expect(localStorage.getItem(analyticsConsentKey)).toBe("true");
   });
@@ -112,7 +122,7 @@ describe("analytics choice storage", () => {
     storePolicyUpdateChoice(false);
 
     expect(localStorage.getItem(declinedMeasurementsKey)).toBe(
-      DECISION_QUALITY_MEASUREMENT,
+      `${DECISION_QUALITY_MEASUREMENT},decisionContext`,
     );
   });
 
@@ -132,7 +142,9 @@ describe("analytics choice storage", () => {
       storeMeasurementAccepted(DECISION_QUALITY_MEASUREMENT)
         .decisionQualityConsented,
     ).toBe(true);
-    expect(localStorage.getItem(declinedMeasurementsKey)).toBe("");
+    expect(localStorage.getItem(declinedMeasurementsKey)).toBe(
+      "decisionContext",
+    );
   });
 
   it("withholds a granted measurement once analytics itself is withdrawn", () => {

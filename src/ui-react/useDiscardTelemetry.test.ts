@@ -59,7 +59,7 @@ const expectCardEvent = (
 ) => {
   // Compares the recorded call rather than using toHaveBeenLastCalledWith, whose typed arguments cannot accept an event name held in a variable now that name and payload are correlated.
   expect(scene.trackEvent.mock.calls.at(-1)).toStrictEqual([
-    true,
+    expect.objectContaining({ consented: true }),
     eventName,
     cardParams(discardCount),
   ]);
@@ -158,7 +158,7 @@ const ANALYSIS_ON_SCREEN_CASES: readonly {
 
 const consentedEventNames = (scene: Scene) =>
   scene.trackEvent.mock.calls
-    .filter(([consented]) => consented === true)
+    .filter(([choice]) => choice.consented === true)
     .map(([, eventName]) => eventName);
 
 describe("useDiscardTelemetry", () => {
@@ -393,7 +393,7 @@ describe("useDiscardTelemetry", () => {
       toggleTo(scene, "2H");
 
       expect(scene.trackEvent).toHaveBeenLastCalledWith(
-        null,
+        expect.objectContaining({ consented: null }),
         "card_selected",
         expect.any(Object),
       );

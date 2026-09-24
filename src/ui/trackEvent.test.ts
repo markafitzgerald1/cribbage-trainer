@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   type TrainerEvent,
   toGoogleAnalyticsKey,
@@ -5,6 +6,13 @@ import {
   trainerEventNames,
 } from "./trackEvent";
 import { describe, expect, it } from "@jest/globals";
+
+const mockChoice = {
+  consented: true,
+  decisionQualityConsented: false,
+  decisionContextConsented: false,
+  needsPolicyUpdateChoice: false,
+};
 
 describe("trackEvent", () => {
   const setupDataLayer = () => {
@@ -17,10 +25,19 @@ describe("trackEvent", () => {
     (consented) => {
       const dataLayer = setupDataLayer();
 
-      trackEvent(consented, "card_selected", {
-        dealNonce: "nonce",
-        discardCount: 1,
-      });
+      trackEvent(
+        {
+          consented,
+          decisionQualityConsented: false,
+          decisionContextConsented: false,
+          needsPolicyUpdateChoice: false,
+        },
+        "card_selected",
+        {
+          dealNonce: "nonce",
+          discardCount: 1,
+        },
+      );
 
       expect(dataLayer).toHaveLength(0);
     },
@@ -30,7 +47,7 @@ describe("trackEvent", () => {
     delete window.dataLayer;
 
     expect(() => {
-      trackEvent(true, "deal_clicked", { dealNonce: "nonce" });
+      trackEvent(mockChoice, "deal_clicked", { dealNonce: "nonce" });
     }).not.toThrow();
   });
 
@@ -75,7 +92,7 @@ describe("trackEvent", () => {
 
   const sendAndCapture = (event: TrainerEvent) => {
     const dataLayer = setupDataLayer();
-    trackEvent(true, ...event);
+    trackEvent(mockChoice, ...event);
     return sentParams(dataLayer);
   };
 
@@ -97,6 +114,23 @@ describe("trackEvent", () => {
   });
 
   // A payload built from a widened source defeats the declared types, so the runtime keeps its own list — and it has to be exact rather than a superset, since anything it lets through reaches Google Analytics under an event that never declared it.
+  it("withholds sortOrder from discard_scored when decisionContext is unaccepted", () => {
+    const dataLayer = setupDataLayer();
+    const eventParams = {
+      ...(FULL_PAYLOADS.find(([name]) => name === "discard_scored")![1] as any),
+      sortOrder: "ascending",
+    } as const;
+
+    trackEvent(
+      { ...mockChoice, decisionQualityConsented: true },
+      "discard_scored",
+      eventParams,
+    );
+
+    const sent = sentParams(dataLayer);
+    expect(sent["sort_order"]).toBeUndefined();
+  });
+
   it("sends an event only the parameters it declares", () => {
     const everyParam = {
       analysisIndex: 9,
@@ -130,7 +164,7 @@ describe("trackEvent", () => {
   it("pushes a gtag event with snake_case parameter keys when consented", () => {
     const dataLayer = setupDataLayer();
 
-    trackEvent(true, "analysis_shown", {
+    trackEvent(mockChoice, "analysis_shown", {
       analysisIndex: 1,
       dealNonce: "nonce",
       generatedFromSeed: false,

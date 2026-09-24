@@ -18,7 +18,7 @@ import { describe, expect, it } from "@jest/globals";
 const scoredConsents = (scene: Scene) =>
   scene.trackEvent.mock.calls
     .filter(([, eventName]) => eventName === "discard_scored")
-    .map(([consented]) => consented);
+    .map(([choice]) => choice.consented);
 
 const scoreFirstDiscard = (scene: Scene) => {
   completeDiscard(scene, "AH,2H");
@@ -91,7 +91,7 @@ describe("useDiscardTelemetry decision quality", () => {
 
         expect(scoredConsents(scene)).toStrictEqual([false]);
         expect(
-          scene.trackEvent.mock.calls.map(([consented]) => consented),
+          scene.trackEvent.mock.calls.map(([choice]) => choice.consented),
         ).toContain(true);
       },
     );
