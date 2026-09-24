@@ -66,7 +66,7 @@ const parseDiscardParam = (
   return isValid ? discards : null;
 };
 
-const parseSortParam = (value: string | null): SortOrder | null => {
+export const parseSortParam = (value: string | null): SortOrder | null => {
   switch (value?.toLowerCase()) {
     case "deal-order":
       return SortOrder.DealOrder;
@@ -79,7 +79,7 @@ const parseSortParam = (value: string | null): SortOrder | null => {
   }
 };
 
-const sortUrlValue = (sortOrder: SortOrder): string => {
+export const sortUrlValue = (sortOrder: SortOrder): string => {
   switch (sortOrder) {
     case SortOrder.DealOrder:
       return "deal-order";

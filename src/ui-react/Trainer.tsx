@@ -35,6 +35,7 @@ import { useAnalysisReporting } from "./useAnalysisReporting";
 import { useDealHand } from "./useDealHand";
 import { useDiscardLiveRegion } from "./useDiscardLiveRegion";
 import { usePracticeDrill } from "./usePracticeDrill";
+import { useSortOrder } from "./useSortOrder";
 
 export interface TrainerProps {
   readonly generateRandomNumber: () => number;
@@ -167,9 +168,6 @@ export function Trainer({
     };
   });
   const { cribRole, dealtCards } = dealState;
-  const [sortOrder, setSortOrder] = useState<SortOrder>(
-    initialSortOrder ?? SortOrder.Descending,
-  );
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
@@ -203,6 +201,10 @@ export function Trainer({
   const markHistoryUpdate = useCallback(() => {
     historyFlags.current.shouldPush = isStableDiscardState(dealtCards);
   }, [dealtCards]);
+  const { changeSortOrder, setSortOrder, sortOrder } = useSortOrder(
+    initialSortOrder,
+    markHistoryUpdate,
+  );
   const applyManualHand = useCallback(
     (state: DealState) => {
       // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
@@ -308,7 +310,7 @@ export function Trainer({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [exitDrill, reportHistoryNavigation]);
+  }, [exitDrill, reportHistoryNavigation, setSortOrder]);
 
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
@@ -332,14 +334,6 @@ export function Trainer({
       });
     },
     [cribRole, dealtCards, markHistoryUpdate, reportCardToggled],
-  );
-
-  const changeSortOrder = useCallback(
-    (newSortOrder: SortOrder) => {
-      markHistoryUpdate();
-      setSortOrder(newSortOrder);
-    },
-    [markHistoryUpdate],
   );
 
   const changeScoreSortKey = useCallback(
