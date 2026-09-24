@@ -4,6 +4,7 @@ declare const classes: {
   readonly appTitle: string;
   readonly dynamicUi: string;
   readonly tagline: string;
+  readonly visuallyHidden: string;
   readonly withTally: string;
 };
 export = classes;

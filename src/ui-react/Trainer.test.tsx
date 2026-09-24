@@ -24,11 +24,11 @@ import {
   storeAnalyticsChoice,
 } from "../ui/analyticsConsent";
 import { describe, expect, it, jest } from "@jest/globals";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { getSortOrderName } from "../ui/SortOrderName";
-import { screen } from "@testing-library/react";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -76,6 +76,12 @@ const setupTrainerUser = () => ({
   ...renderTrainer(),
   user: userEvent.setup(),
 });
+
+const completeTwoDiscards = async () => {
+  const setup = setupTrainerUser();
+  await clickIndices(setup.getAllByRole, [0, 1], setup.user);
+  return setup;
+};
 
 const openCardEntry = (user: UserEvent) =>
   user.click(screen.getByRole("button", { name: "Enter cards" }));
@@ -126,17 +132,74 @@ describe("trainer component", () => {
     expectPoneRoleVisible();
   });
 
-  it("contains hand points once two cards have been selected", async () => {
-    await expectCalculationsAfterClicks([0, 1], true);
+  describe("hand points display", () => {
+    it("contains hand points once two cards have been selected", async () => {
+      await expectCalculationsAfterClicks([0, 1], true);
+    });
+
+    it("hides hand points once two cards have been selected and then one of them is unselected", async () => {
+      await expectCalculationsAfterClicks([0, 1, 1], false);
+    });
+
+    it("hides hand points if more than two cards are selected", async () => {
+      const moreThanTwo = 3;
+      await expectCalculationsAfterClicks(
+        [...Array(moreThanTwo).keys()],
+        false,
+      );
+    });
   });
 
-  it("hides hand points once two cards have been selected and then one of them is unselected", async () => {
-    await expectCalculationsAfterClicks([0, 1, 1], false);
-  });
+  describe("status live region", () => {
+    it("mounts an empty live region before discard selection begins", () => {
+      renderTrainer();
 
-  it("hides hand points if more than two cards are selected", async () => {
-    const moreThanTwo = 3;
-    await expectCalculationsAfterClicks([...Array(moreThanTwo).keys()], false);
+      const liveRegion = screen.getByRole("status");
+
+      expect(liveRegion).toBeInTheDocument();
+      expect(liveRegion).toHaveAttribute("aria-live", "polite");
+      expect(liveRegion).toHaveTextContent("");
+    });
+
+    it("updates the persistent live region with the verdict when discards are complete and clears on reset", async () => {
+      const { getAllByRole, user } = setupTrainerUser();
+      const liveRegion = screen.getByRole("status");
+
+      expect(liveRegion).toHaveTextContent("");
+
+      await clickIndices(getAllByRole, [0, 1], user);
+      await waitFor(() => {
+        expect(liveRegion).not.toHaveTextContent("");
+      });
+
+      expect(liveRegion.textContent).toMatch(/Optimal discard|Sub-optimal/u);
+
+      // Deselect a card so discards are no longer complete
+      const firstCheckbox = getAllByRole("checkbox")[0]!;
+      await toggleCard(firstCheckbox, user);
+
+      await waitFor(() => {
+        expect(liveRegion).toHaveTextContent("");
+      });
+
+      expect(liveRegion).toHaveTextContent("");
+    });
+
+    it("clears the live region when dealing a new hand after a completed discard", async () => {
+      const { user } = await completeTwoDiscards();
+
+      await waitFor(() => {
+        expect(screen.getByRole("status")).not.toHaveTextContent("");
+      });
+
+      await clickDeal(user);
+
+      await waitFor(() => {
+        expect(screen.getByRole("status")).toHaveTextContent("");
+      });
+
+      expect(screen.getByRole("status")).toHaveTextContent("");
+    });
   });
 
   it.each([SortOrder.Ascending, SortOrder.Descending])(

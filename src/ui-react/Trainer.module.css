@@ -28,6 +28,15 @@
   opacity: 0.82;
 }
 
+.visually-hidden {
+  block-size: 1px;
+  clip-path: inset(50%);
+  inline-size: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
 /*
  * The dynamic-ui grid is the container for all interactive and analysis
  * content under the fixed-height app chain. Letting it scroll its own

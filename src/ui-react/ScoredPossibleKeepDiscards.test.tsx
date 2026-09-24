@@ -1,5 +1,4 @@
 /* jscpd:ignore-start */
-import { Rank, createCard, parseHand } from "../game/Card";
 import { describe, expect, it, jest } from "@jest/globals";
 import {
   expectedCribPointsTable,
@@ -16,6 +15,7 @@ import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
 import { deferredUncertainty } from "../game/uncertaintySidecar.test.common";
+import { parseHand } from "../game/Card";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 import { toDealtCards } from "../game/toDealtCards";
@@ -30,15 +30,12 @@ const mockLoadCribTable = jest.fn(() => {
 
 jest.mock<typeof import("../game/expectedCribPointsTableLoader")>(
   "../game/expectedCribPointsTableLoader",
-  () => {
-    const actual = jest.requireActual<
+  () => ({
+    ...jest.requireActual<
       typeof import("../game/expectedCribPointsTableLoader")
-    >("../game/expectedCribPointsTableLoader");
-    return {
-      ...actual,
-      loadTable: () => mockLoadCribTable(),
-    };
-  },
+    >("../game/expectedCribPointsTableLoader"),
+    loadTable: () => mockLoadCribTable(),
+  }),
 );
 
 const REPORTED_HAND = "AH,2H,3H,4H,5H,6H";
@@ -60,7 +57,6 @@ const REPORTED_ANALYSIS_CASES = [
   {
     cribRole: CribRole.Dealer,
     discards: null,
-    // Every option's keep is entirely kept until two cards are discarded, so a quality here would be the top-ranked option's, not the user's.
     expected: {
       cribRole: CribRole.Dealer,
       oppositeRoleExpectedPointsLoss: null,
@@ -75,15 +71,18 @@ const noUncertainty = deferredUncertainty(null);
 
 const mathRandom = Math.random;
 
+/* jscpd:ignore-start */
 interface RenderOptions {
   readonly cribRole?: CribRole;
   readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
   readonly onScoreSortKeyChange?: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
+  readonly onStatusChange?: (statusText: string) => void;
   readonly preload?: boolean;
   readonly scoreSortKey?: ScoredKeepDiscardSortKey;
 }
+/* jscpd:ignore-end */
 
 const renderScoredPossibleKeepDiscards = (
   dealtCards: DealtCard[],
@@ -91,6 +90,7 @@ const renderScoredPossibleKeepDiscards = (
     cribRole = CribRole.Dealer,
     onAnalysisRendered = jest.fn(),
     onScoreSortKeyChange = jest.fn(),
+    onStatusChange = jest.fn(),
     preload = true,
     scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
   }: RenderOptions = {},
@@ -107,6 +107,7 @@ const renderScoredPossibleKeepDiscards = (
       dealtCards={dealtCards}
       onAnalysisRendered={onAnalysisRendered}
       onScoreSortKeyChange={onScoreSortKeyChange}
+      onStatusChange={onStatusChange}
       playUncertaintySource={noUncertainty}
       scoreSortKey={scoreSortKey}
       sortOrder={SortOrder.Ascending}
@@ -148,18 +149,10 @@ describe("scored possible keep discards component", () => {
   });
 
   it("should highlight exactly one row when hand contains duplicate ranks", () => {
-    const handWithDuplicateFives = [
-      { dealOrder: 0, kept: true, rank: Rank.FIVE },
-      { dealOrder: 1, kept: false, rank: Rank.FIVE },
-      { dealOrder: 2, kept: true, rank: Rank.SIX },
-      { dealOrder: 3, kept: true, rank: Rank.SEVEN },
-      { dealOrder: 4, kept: true, rank: Rank.EIGHT },
-      { dealOrder: 5, kept: false, rank: Rank.NINE },
-    ].map((card) => ({
-      ...createCard(card.rank, "♠"),
-      dealOrder: card.dealOrder,
-      kept: card.kept,
-    }));
+    const handWithDuplicateFives = toDealtCards(
+      parseHand("5S,5H,6S,7S,8S,9S"),
+      parseHand("5H,9S"),
+    );
 
     const { container } = renderScoredPossibleKeepDiscards(
       handWithDuplicateFives,
@@ -266,13 +259,26 @@ describe("scored possible keep discards component", () => {
     return screen.getByRole("table");
   };
 
-  it("reports a rendered analysis once the ranked results are on screen", () => {
+  it("reports a rendered analysis and notifies status once results are on screen", () => {
     const onAnalysisRendered = jest.fn();
-    renderScoredPossibleKeepDiscards(dealHand(mathRandom), {
+    const onStatusChange = jest.fn();
+    const dealtCards = toDealtCards(
+      parseHand("AH,2H,3H,4H,5H,6H"),
+      parseHand("AH,2H"),
+    );
+    const { unmount } = renderScoredPossibleKeepDiscards(dealtCards, {
       onAnalysisRendered,
+      onStatusChange,
     });
 
     expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+    expect(onStatusChange).toHaveBeenCalledWith(
+      expect.stringMatching(/Optimal discard|Sub-optimal/u),
+    );
+
+    unmount();
+
+    expect(onStatusChange).toHaveBeenLastCalledWith("");
   });
 
   it.each(REPORTED_ANALYSIS_CASES)(
@@ -351,12 +357,6 @@ describe("scored possible keep discards component", () => {
         expectedAriaLabel:
           "Sub-optimal: 0.09 points lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
         expectedMarkedTexts: [],
-        /*
-         * The reversed role would have cost 3.12 here against the 0.09 the
-         * role held cost, so naming it would tell the reader only that they
-         * were nearly right and would have been more wrong as pone. One
-         * figure, and the diagnostic reason beside it.
-         */
         expectedText:
           "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
         name: "sub-optimal caption withholding a reversed role that cost more",
@@ -388,7 +388,7 @@ describe("scored possible keep discards component", () => {
         });
         const caption = container.querySelector("figcaption");
 
-        expect(caption?.getAttribute("role")).toBe("status");
+        expect(caption?.getAttribute("role")).toBe("group");
         expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
         expect(caption?.textContent).toBe(expectedText);
         // Mocked CSS modules render the class as mock-<name>; only a reversed-role figure that cost nothing carries it.
