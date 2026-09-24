@@ -24,6 +24,7 @@ import mistakeFixtures, {
 import { CribRole } from "../game/expectedCribPoints";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { Trainer } from "./Trainer";
+import { clearStoredSortOrder } from "../ui/sortOrderPreference";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { discardTallyKey } from "../ui/discardTally";
 import { getSortOrderName } from "../ui/SortOrderName";
@@ -39,6 +40,7 @@ const meta = {
   },
   beforeEach: () => () => {
     clearAnalyticsChoice();
+    clearStoredSortOrder();
   },
   component: Trainer,
   parameters: {
@@ -262,6 +264,8 @@ const createPlay =
     await expect(canvasElement.textContent).not.toEqual(
       initialCanvasElementTextContent,
     );
+
+    clearStoredSortOrder();
   };
 
 export const SortHandInDealOrder = {

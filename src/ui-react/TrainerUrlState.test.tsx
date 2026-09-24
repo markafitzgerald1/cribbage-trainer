@@ -12,6 +12,11 @@ import {
   renderTrainerWithInitialProps,
   setAnalysisTables,
 } from "./Trainer.test.common";
+import {
+  clearStoredSortOrder,
+  readStoredSortOrder,
+  storeSortOrder,
+} from "../ui/sortOrderPreference";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
@@ -28,6 +33,7 @@ const getSearchParam = (name: string) =>
 
 const resetUrl = () => {
   window.history.replaceState(null, "", "/");
+  clearStoredSortOrder();
 };
 
 const renderHydratedTrainer = () => {
@@ -210,13 +216,14 @@ describe("trainer URL state synchronization", () => {
     }));
 
   // eslint-disable-next-line jest/prefer-ending-with-an-expect
-  it("pushes history when the sort order changes", async () => {
+  it("pushes history and persists preference when the sort order changes", async () => {
     const { pushStateSpy, user } = renderTrainerSpyingOnPush();
     try {
       await user.click(screen.getByLabelText("Ascending"));
 
       expect(pushStateSpy).toHaveBeenCalledTimes(1);
       expect(getSearchParam("sort")).toBe("ascending");
+      expect(readStoredSortOrder()).toBe(SortOrder.Ascending);
     } finally {
       pushStateSpy.mockRestore();
     }
@@ -339,5 +346,26 @@ describe("trainer URL state synchronization", () => {
     popStateTo("?hand=XX,YY");
 
     expect(getHandText(container)).toBe(initialHandText);
+  });
+});
+
+describe("trainer sort order preference", () => {
+  it("uses stored sort order preference when URL lacks a sort parameter", () => {
+    resetUrl();
+    storeSortOrder(SortOrder.Ascending);
+    renderTrainer();
+
+    expect(screen.getByLabelText("Ascending")).toBeChecked();
+  });
+
+  it("prioritizes explicit initialSortOrder over stored preference", () => {
+    resetUrl();
+    storeSortOrder(SortOrder.Ascending);
+    renderTrainerWithInitialProps({
+      initialSortOrder: SortOrder.DealOrder,
+    });
+
+    expect(screen.getByLabelText("DealOrder")).toBeChecked();
+    expect(readStoredSortOrder()).toBe(SortOrder.Ascending);
   });
 });
