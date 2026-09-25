@@ -11,7 +11,7 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
 
 **Learnings:**
 
-- Dependabot intentionally ignores ESLint 10.0.0 through 10.7.0 because the
+- Dependabot intentionally ignores ESLint 10.0.0 through 10.11.0 because the
   latest `eslint-plugin-jsx-a11y` release (6.10.2) declares peer support only
   through ESLint 9. Before changing that range, verify both packages' current
   registry metadata; do not bypass the peer conflict with
