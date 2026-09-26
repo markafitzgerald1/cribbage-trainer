@@ -278,7 +278,7 @@ export function ScoredPossibleKeepDiscards({
               </span>
             ) : (
               <span className={classes.noiseBadge}>
-                Within noise: {renderRoleLossPairText(rolePair)}
+                Within noise, approximate: {renderRoleLossPairText(rolePair)}
               </span>
             )}
             <span className={classes.diagnosticReason}>

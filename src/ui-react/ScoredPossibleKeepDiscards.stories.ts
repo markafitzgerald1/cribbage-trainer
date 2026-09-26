@@ -338,7 +338,7 @@ export const WithinSimulationNoise: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Within noise: 0.09 pts lost",
+      "Within noise, approximate: 0.09 pts lost",
     );
 
     await expect(canvas.queryByText(/Sub-optimal/u)).toBeNull();

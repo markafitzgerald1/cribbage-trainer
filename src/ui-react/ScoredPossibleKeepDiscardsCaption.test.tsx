@@ -188,7 +188,9 @@ describe("scored possible keep discards caption", () => {
       const { container } = renderNearMiss(settledWith(1), settledWith(1));
       const caption = await findCaption(container);
 
-      expect(caption.textContent).toMatch(/^Within noise: 0\.09 pts lost/u);
+      expect(caption.textContent).toMatch(
+        /^Within noise, approximate: 0\.09 pts lost/u,
+      );
       expect(caption.getAttribute("aria-label")).toMatch(
         /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, at or below the .+ point threshold\. /u,
       );
@@ -197,7 +199,7 @@ describe("scored possible keep discards caption", () => {
         container
           .querySelector("tr[data-highlight-tier='chosen']")
           ?.getAttribute("title"),
-      ).toMatch(/within simulation noise/u);
+      ).toMatch(/within simulation noise, approximate/u);
     });
 
     it.each([

@@ -66,7 +66,9 @@ export const getRowTitle = (
   if (tier === "chosen") {
     if (classification) {
       const loss = formatAccessibleNetLoss(classification.netLoss);
-      const verdict = isWithinNoise ? ", within simulation noise" : "";
+      const verdict = isWithinNoise
+        ? ", within simulation noise, approximate"
+        : "";
       return `Chosen discard (${loss} pts lost${verdict}): ${classification.accessibleLabel}`;
     }
     return "Optimal discard";
