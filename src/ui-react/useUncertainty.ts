@@ -102,8 +102,13 @@ export interface SidecarSources {
   readonly cribSource: UncertaintySource;
   readonly playSource: UncertaintySource;
   readonly shouldTrackSettled: boolean;
-  // Identifies the analysis a verdict belongs to; Back and Forward swap it while the component stays mounted.
-  readonly verdictKey: object;
+  /*
+   * Identifies the analysis a verdict belongs to by its content, not by
+   * object identity: Back and Forward rebuild the same hand as fresh objects
+   * while the component stays mounted, and a timed-out verdict has to stay
+   * frozen when that hand comes back.
+   */
+  readonly verdictKey: string;
 }
 
 export const useSidecarUncertainties = ({
@@ -123,11 +128,19 @@ export const useSidecarUncertainties = ({
     playSource,
     shouldTrackSettled,
   );
-  const [timedOutKey, setTimedOutKey] = useState<object | null>(null);
+  const [timedOutKeys, setTimedOutKeys] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const haveBothSettled = crib.isSettled && play.isSettled;
+  const isVerdictTimedOut = timedOutKeys.has(verdictKey);
 
   useEffect(() => {
-    if (!areResultsOnScreen || !shouldTrackSettled || haveBothSettled) {
+    if (
+      !areResultsOnScreen ||
+      !shouldTrackSettled ||
+      haveBothSettled ||
+      isVerdictTimedOut
+    ) {
       return () => {
         // Nothing is waiting, so there is no timer to clear.
       };
@@ -140,14 +153,19 @@ export const useSidecarUncertainties = ({
      * network request, not a statistical input.
      */
     const timer = setTimeout(() => {
-      setTimedOutKey(verdictKey);
+      setTimedOutKeys((keys) => new Set(keys).add(verdictKey));
     }, SIDECAR_SETTLE_TIMEOUT_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [areResultsOnScreen, haveBothSettled, shouldTrackSettled, verdictKey]);
+  }, [
+    areResultsOnScreen,
+    haveBothSettled,
+    isVerdictTimedOut,
+    shouldTrackSettled,
+    verdictKey,
+  ]);
 
-  const isVerdictTimedOut = timedOutKey === verdictKey;
   const isSettled = haveBothSettled || isVerdictTimedOut;
   // Memoized because the verdict that consumes it recomputes on identity.
   return useMemo(

@@ -162,7 +162,14 @@ export function ScoredPossibleKeepDiscards({
       onAnalysisRendered(renderedAnalysis);
     }
   }, [onAnalysisRendered, renderedAnalysis, tables]);
-  // Separate from the report above: a sub-optimal verdict now arrives after the sidecars settle (#774), and sharing one effect re-sent the analysis each time the caption changed.
+  /*
+   * Separate from the report above: a sub-optimal verdict now arrives after
+   * the sidecars settle (#774), and sharing one effect re-sent the analysis
+   * each time the caption changed. The rendered analysis stays a dependency
+   * even though the body never reads it: Back and Forward can swap in a hand
+   * whose verdict reads identically, and only clearing and re-setting the
+   * live region makes a screen reader announce the new hand's verdict.
+   */
   useEffect(() => {
     if (captionAriaLabel !== null) {
       onStatusChange?.(captionAriaLabel);
@@ -170,7 +177,7 @@ export function ScoredPossibleKeepDiscards({
     return () => {
       onStatusChange?.("");
     };
-  }, [captionAriaLabel, onStatusChange]);
+  }, [captionAriaLabel, onStatusChange, renderedAnalysis]);
 
   const scoredKeepDiscards = useMemo(
     () =>

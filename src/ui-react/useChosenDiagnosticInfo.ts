@@ -30,6 +30,8 @@ import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedTables } from "./expectedTables";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
+import { serializeHand } from "../game/Card";
+import { toHandKey } from "../ui/handKey";
 import { useMemo } from "react";
 
 export interface ChosenDiagnosticInfo {
@@ -120,7 +122,9 @@ export const useChosenDiagnosticInfo = ({
     cribSource: cribUncertaintySource,
     playSource: playUncertaintySource,
     shouldTrackSettled: quality !== null && !quality.isOptimal,
-    verdictKey: scoredOptions,
+    verdictKey: `${toHandKey(dealtCards, cribRole)}|${serializeHand(
+      dealtCards.filter((dealtCard) => !dealtCard.kept),
+    )}`,
   });
   const info = useMemo(() => {
     const chosen =

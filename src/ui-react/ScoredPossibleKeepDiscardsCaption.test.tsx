@@ -274,7 +274,7 @@ describe("scored possible keep discards caption", () => {
       },
     );
 
-    it("gives a fresh verdict to the next hand after one timed out, using the late document", async () => {
+    it("gives a fresh verdict to the next hand after one timed out, and keeps the timed-out one frozen when Back returns to it", async () => {
       jest.useFakeTimers();
       const cribReleases: Release[] = [];
       const sources = {
@@ -296,11 +296,46 @@ describe("scored possible keep discards caption", () => {
         ),
       );
       jest.useRealTimers();
+      const nextHandVerdict = (await findCaption(container)).textContent;
+      rerender(
+        scoredElement(
+          toDealtCards(parseHand(NEAR_MISS_HAND), parseHand(NEAR_MISS_DISCARD)),
+          sources,
+        ),
+      );
 
       expect(timedOutVerdict).toMatch(/^Sub-optimal/u);
-      expect((await findCaption(container)).textContent).toMatch(
-        /^Within noise/u,
+      expect(nextHandVerdict).toMatch(/^Within noise/u);
+      expect(container.querySelector("figcaption")?.textContent).toBe(
+        timedOutVerdict,
       );
+    });
+
+    it("re-announces the verdict when Back swaps in a hand whose verdict reads the same", async () => {
+      const onStatusChange = jest.fn();
+      const { container, rerender } = renderNearMiss(
+        settledWith(1),
+        settledWith(1),
+        onStatusChange,
+      );
+      const verdict = (await findCaption(container)).getAttribute("aria-label");
+      onStatusChange.mockClear();
+      rerender(
+        scoredElement(
+          toDealtCards(parseHand(NEAR_MISS_HAND), parseHand(NEAR_MISS_DISCARD)),
+          {
+            cribUncertaintySource: settledWith(1),
+            onStatusChange,
+            playUncertaintySource: settledWith(1),
+          },
+        ),
+      );
+
+      await waitFor(() => {
+        expect(onStatusChange).toHaveBeenLastCalledWith(verdict);
+      });
+
+      expect(onStatusChange.mock.calls).toStrictEqual([[""], [verdict]]);
     });
 
     it("announces an optimal verdict without waiting for the sidecars", () => {

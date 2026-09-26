@@ -16,6 +16,7 @@ import {
 import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import type { UncertaintySource } from "../game/uncertaintyLoader";
@@ -136,9 +137,13 @@ const captionAfterLoad = async (
   await waitForLoadingToDisappear(canvas);
 
   // Waited for, not read at once: a sub-optimal verdict appears only after both sidecars settle (#774).
-  await waitFor(async () => {
-    await expect(canvasElement.querySelector("figcaption")).not.toBeNull();
-  });
+  await waitFor(
+    async () => {
+      await expect(canvasElement.querySelector("figcaption")).not.toBeNull();
+    },
+    // Longer than the sidecar wait, so a slow but valid load is never cut off before its verdict can appear.
+    { timeout: SIDECAR_SETTLE_TIMEOUT_MS * 2 },
+  );
 
   await expect(canvasElement.querySelector("figcaption")).toHaveTextContent(
     expectedText,
