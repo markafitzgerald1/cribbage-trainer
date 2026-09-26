@@ -59,11 +59,13 @@ const getTierClass = (tier: DiscardHighlightTier): string => {
 export const getRowTitle = (
   tier: DiscardHighlightTier,
   classification?: MistakeClassification | null,
+  isWithinNoise = false,
 ): string | undefined => {
   if (tier === "chosen") {
     if (classification) {
       const loss = formatAccessibleNetLoss(classification.netLoss);
-      return `Chosen discard (${loss} pts lost): ${classification.accessibleLabel}`;
+      const verdict = isWithinNoise ? ", within simulation noise" : "";
+      return `Chosen discard (${loss} pts lost${verdict}): ${classification.accessibleLabel}`;
     }
     return "Optimal discard";
   }

@@ -1,20 +1,19 @@
 /* jscpd:ignore-start */
 import { describe, expect, it, jest } from "@jest/globals";
 import {
-  expectedCribPointsTable,
-  expectedPlayPointsTable,
-} from "../analysis/analysis.test.common";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+  findCaption,
+  renderHand,
+  renderScoredPossibleKeepDiscards,
+  waitForAnalysis,
+} from "./ScoredPossibleKeepDiscards.test.common";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
 import { CribRole } from "../game/expectedCribPoints";
-import type { DealtCard } from "../game/DealtCard";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
-import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
-import { SortOrder } from "../ui/SortOrder";
 import { dealHand } from "../game/dealHand";
-import { deferredUncertainty } from "../game/uncertaintySidecar.test.common";
+import { expectedCribPointsTable } from "../analysis/analysis.test.common";
 import { parseHand } from "../game/Card";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
@@ -66,54 +65,7 @@ const REPORTED_ANALYSIS_CASES = [
   },
 ];
 
-// Ranking, sorting and reporting: no bound involved, so state it is absent rather than parse 1.2 MB per case.
-const noUncertainty = deferredUncertainty(null);
-
 const mathRandom = Math.random;
-
-/* jscpd:ignore-start */
-interface RenderOptions {
-  readonly cribRole?: CribRole;
-  readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
-  readonly onScoreSortKeyChange?: (
-    scoreSortKey: ScoredKeepDiscardSortKey,
-  ) => void;
-  readonly onStatusChange?: (statusText: string) => void;
-  readonly preload?: boolean;
-  readonly scoreSortKey?: ScoredKeepDiscardSortKey;
-}
-/* jscpd:ignore-end */
-
-const renderScoredPossibleKeepDiscards = (
-  dealtCards: DealtCard[],
-  {
-    cribRole = CribRole.Dealer,
-    onAnalysisRendered = jest.fn(),
-    onScoreSortKeyChange = jest.fn(),
-    onStatusChange = jest.fn(),
-    preload = true,
-    scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
-  }: RenderOptions = {},
-) => {
-  if (preload) {
-    setTableSync(expectedCribPointsTable);
-    setPlayTableSync(expectedPlayPointsTable);
-  }
-
-  return render(
-    <ScoredPossibleKeepDiscards
-      cribRole={cribRole}
-      cribUncertaintySource={noUncertainty}
-      dealtCards={dealtCards}
-      onAnalysisRendered={onAnalysisRendered}
-      onScoreSortKeyChange={onScoreSortKeyChange}
-      onStatusChange={onStatusChange}
-      playUncertaintySource={noUncertainty}
-      scoreSortKey={scoreSortKey}
-      sortOrder={SortOrder.Ascending}
-    />,
-  );
-};
 
 const dealAndRender = () => {
   const dealtHand = dealHand(mathRandom);
@@ -132,10 +84,7 @@ const getColumnValues = (container: HTMLElement, cellIndex: number) =>
   );
 
 const renderPoneAnalysis = (cards: string, discards: string) =>
-  renderScoredPossibleKeepDiscards(
-    toDealtCards(parseHand(cards), parseHand(discards)),
-    { cribRole: CribRole.Pone },
-  );
+  renderHand(cards, discards, { cribRole: CribRole.Pone });
 
 describe("scored possible keep discards component", () => {
   it("should render each possible keep and discard pair exactly once", () => {
@@ -148,7 +97,7 @@ describe("scored possible keep discards component", () => {
     expect(container.querySelectorAll("tbody tr")).toHaveLength(nCombs);
   });
 
-  it("should highlight exactly one row when hand contains duplicate ranks", () => {
+  it("should highlight exactly one row when hand contains duplicate ranks", async () => {
     const handWithDuplicateFives = toDealtCards(
       parseHand("5S,5H,6S,7S,8S,9S"),
       parseHand("5H,9S"),
@@ -157,6 +106,7 @@ describe("scored possible keep discards component", () => {
     const { container } = renderScoredPossibleKeepDiscards(
       handWithDuplicateFives,
     );
+    await findCaption(container);
 
     // Use mock-highlighted because CSS modules are mocked
     const highlightedRows = container.querySelectorAll(".mock-highlighted");
@@ -242,8 +192,6 @@ describe("scored possible keep discards component", () => {
     expect(screen.getByText("Loading analysis...")).toBeTruthy();
   };
 
-  const waitForAnalysis = { timeout: 8000 };
-
   const renderFailedLoad = async (onAnalysisRendered = jest.fn()) => {
     mockLoadCribTable.mockRejectedValueOnce(new Error("Fake load error"));
 
@@ -261,7 +209,7 @@ describe("scored possible keep discards component", () => {
     return screen.getByRole("table");
   };
 
-  it("reports a rendered analysis and notifies status once results are on screen", () => {
+  it("reports a rendered analysis and notifies status once results are on screen", async () => {
     const onAnalysisRendered = jest.fn();
     const onStatusChange = jest.fn();
     const dealtCards = toDealtCards(
@@ -273,10 +221,13 @@ describe("scored possible keep discards component", () => {
       onStatusChange,
     });
 
+    await waitFor(() => {
+      expect(onStatusChange).toHaveBeenCalledWith(
+        expect.stringMatching(/Optimal discard|Sub-optimal/u),
+      );
+    }, waitForAnalysis);
+
     expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
-    expect(onStatusChange).toHaveBeenCalledWith(
-      expect.stringMatching(/Optimal discard|Sub-optimal/u),
-    );
 
     unmount();
 
@@ -285,13 +236,18 @@ describe("scored possible keep discards component", () => {
 
   it.each(REPORTED_ANALYSIS_CASES)(
     "reports $name",
-    ({ cribRole, discards, expected }) => {
+    async ({ cribRole, discards, expected }) => {
       const onAnalysisRendered =
         jest.fn<(analysis: RenderedAnalysis) => void>();
       renderScoredPossibleKeepDiscards(
         toDealtCards(parseHand(REPORTED_HAND), discards),
         { cribRole, onAnalysisRendered },
       );
+
+      // Awaited so a sub-optimal verdict's deferred settle lands inside act rather than after the test.
+      await waitFor(() => {
+        expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+      }, waitForAnalysis);
 
       expect(onAnalysisRendered).toHaveBeenCalledWith(expected);
     },
@@ -327,79 +283,6 @@ describe("scored possible keep discards component", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 
     await expect(expectLoaded()).resolves.toBeTruthy();
-  });
-
-  describe("caption diagnostics and optimal margin", () => {
-    it.each([
-      {
-        cards: "5H,5D,6H,7H,8H,9H",
-        discards: "5H,5D",
-        expectedAriaLabel:
-          "Optimal discard, 4.05 better than the next best discard",
-        expectedMarkedTexts: [],
-        expectedText: "Optimal, 4.05 better than next",
-        name: "optimal discard caption when chosen discard is optimal",
-      },
-      {
-        cards: "9D,9C,9H,4C,4H,3S",
-        cribRole: CribRole.Pone,
-        discards: "3S,9C",
-        expectedAriaLabel:
-          "Optimal discard, 0.37 better than the next best distinct discard",
-        expectedMarkedTexts: [],
-        expectedText: "Optimal, 0.37 better than next distinct",
-        name: "optimal discard caption when top choices tie",
-      },
-      {
-        cards: "4H,5D,KH,6H,8C,KC",
-        cribRole: CribRole.Dealer,
-        discards: "KH,KC",
-        expectedAriaLabel:
-          "Sub-optimal: 0.09 points lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
-        expectedMarkedTexts: [],
-        expectedText:
-          "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
-        name: "sub-optimal caption withholding a reversed role that cost more",
-      },
-      {
-        cards: "9D,9C,9H,4C,4H,3S",
-        cribRole: CribRole.Dealer,
-        discards: "9D,3S",
-        expectedAriaLabel:
-          "Sub-optimal: 3.11 points lost as dealer, 0.00 as pone. 0.64 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
-        expectedMarkedTexts: ["0.00 as pone"],
-        expectedText:
-          "Sub-optimal: 3.11 as dealer, 0.00 as pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
-        name: "a zero cost under the reversed role stated as a figure, not as a diagnosis",
-      },
-    ])(
-      "renders $name",
-      ({
-        cards,
-        cribRole = CribRole.Dealer,
-        discards,
-        expectedAriaLabel,
-        expectedMarkedTexts,
-        expectedText,
-      }) => {
-        const dealtCards = toDealtCards(parseHand(cards), parseHand(discards));
-        const { container } = renderScoredPossibleKeepDiscards(dealtCards, {
-          cribRole,
-        });
-        const caption = container.querySelector("figcaption");
-
-        expect(caption?.getAttribute("role")).toBe("group");
-        expect(caption?.getAttribute("aria-label")).toBe(expectedAriaLabel);
-        expect(caption?.textContent).toBe(expectedText);
-        // Mocked CSS modules render the class as mock-<name>; only a reversed-role figure that cost nothing carries it.
-        expect(
-          Array.from(
-            container.querySelectorAll(".mock-costsNothing"),
-            (element) => element.textContent,
-          ),
-        ).toStrictEqual(expectedMarkedTexts);
-      },
-    );
   });
 
   describe("highlight tiers", () => {
@@ -458,8 +341,9 @@ describe("scored possible keep discards component", () => {
       ]);
     });
 
-    it("marks chosen sub-optimal row as chosen and all tied top rows as equal-best", () => {
-      renderPoneAnalysis("9D,9C,9H,4C,4H,3S", "9D,9C");
+    it("marks chosen sub-optimal row as chosen and all tied top rows as equal-best", async () => {
+      const { container } = renderPoneAnalysis("9D,9C,9H,4C,4H,3S", "9D,9C");
+      await findCaption(container);
       const rows = screen.getAllByRole("row").slice(1);
       const chosenRow = rows.find(
         (row) => row.getAttribute("data-highlight-tier") === "chosen",
@@ -480,33 +364,6 @@ describe("scored possible keep discards component", () => {
         { hasEqualBestClass: true, title: "Equal-best discard" },
       ]);
     });
-  });
-
-  it("renders gain and loss sides in separate diagnosticSide inline elements", () => {
-    const dealtCards = toDealtCards(
-      parseHand("4H,5D,KH,6H,8C,KC"),
-      parseHand("KH,KC"),
-    );
-    const { container } = renderScoredPossibleKeepDiscards(dealtCards);
-    const sides = container.querySelectorAll("span[class*='diagnosticSide']");
-
-    expect(sides).toHaveLength(2);
-    expect(sides[0]?.textContent).toBe("1.31 Crib + 0.08 Play gain");
-    expect(sides[1]?.textContent).toBe("< 1.48 Hand loss");
-  });
-
-  it("renders a single diagnosticSide element when there are no offsetting gains", () => {
-    const cards = parseHand("5H,5D,JC,QH,KS,9D");
-    const dealtCards = toDealtCards(cards, parseHand("5H,5D"));
-    const { container } = renderScoredPossibleKeepDiscards(dealtCards, {
-      cribRole: CribRole.Pone,
-    });
-    const sides = container.querySelectorAll("span[class*='diagnosticSide']");
-
-    expect(sides).toHaveLength(1);
-    expect(sides[0]?.textContent).toBe(
-      "7.57 Hand + 5.18 Crib + 0.53 Play loss",
-    );
   });
 
   it("renders empty table body when no candidates exist", () => {

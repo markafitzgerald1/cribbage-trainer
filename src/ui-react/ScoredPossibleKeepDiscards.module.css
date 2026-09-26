@@ -48,6 +48,21 @@
   padding: 3px 8px;
 }
 
+/*
+ * Neutral rather than warning-coloured: a loss within simulation noise (#774)
+ * is not a mistake, and must not read as one. Same box as the other two badges
+ * so swapping between them never changes the caption's row count.
+ */
+.noise-badge {
+  background-color: #26323d;
+  border: 1px solid #aab7c4;
+  border-radius: 4px;
+  color: #eef2f6;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
 .diagnostic-reason {
   background-color: #2b1d42;
   border: 1px solid #dcd3f2;

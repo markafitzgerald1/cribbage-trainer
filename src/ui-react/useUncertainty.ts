@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type Uncertainty } from "../game/uncertaintySidecar";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 
 /*
  * Started only once the recommendation is already on screen. The two sidecars
  * are roughly 1.2 MB and 0.3 MB against the 2.7 MB of means the first
- * recommendation needs up front, and nothing either carries changes what that
- * recommendation says - they only annotate how much of a figure's last digit
- * is simulation noise. Fetching them alongside the means would delay every
- * answer to decorate one.
+ * recommendation needs up front, and nothing either carries changes which
+ * discard is recommended. Since #774 they do decide whether a chosen discard's
+ * loss is flagged or treated as noise, so that verdict waits for them rather
+ * than the recommendation: fetching them alongside the means would delay every
+ * answer for the sake of one clause.
  *
  * The seed and the load come from one source, so an injected source is the
  * only thing this hook can show. The seed matters because the analysis is
@@ -18,13 +19,40 @@ import { type UncertaintySource } from "../game/uncertaintyLoader";
  * `source` is an effect dependency, so callers pass a stable object - the
  * same contract the table loader props already carry.
  */
+export interface LoadedUncertainty {
+  /*
+   * True once the load has finished either way, or at once when the source
+   * already held a document. Null uncertainty alone cannot say this: it means
+   * both "still loading" and "unavailable", and a verdict that waits for the
+   * sidecars (#774) has to tell the two apart.
+   */
+  readonly isSettled: boolean;
+  readonly uncertainty: Uncertainty | null;
+}
+
+/*
+ * `shouldTrackSettled` is true only while a verdict is waiting on the
+ * sidecars (a chosen discard with a positive loss). Recording settlement costs
+ * a re-render, so it is skipped when nothing reads it; when the flag turns on
+ * later, the effect runs again and the loader's cached promise settles it.
+ */
 export const useUncertainty = (
   areResultsOnScreen: boolean,
   source: UncertaintySource,
-): Uncertainty | null => {
+  shouldTrackSettled: boolean,
+): LoadedUncertainty => {
   const [uncertainty, setUncertainty] = useState(source.getUncertaintySync);
+  const [isSettled, setIsSettled] = useState(() => uncertainty !== null);
+  const isSettledRef = useRef(isSettled);
 
   useEffect(() => {
+    const settle = (): void => {
+      // Setting a flag already set would be a re-render that says nothing, and an update outside `act` in any test that does not await it.
+      if (shouldTrackSettled && !isSettledRef.current) {
+        isSettledRef.current = true;
+        setIsSettled(true);
+      }
+    };
     const applyLoaded = (loaded: Uncertainty | null): void => {
       /*
        * Null cannot mean "clear what the seed gave you" now that both come
@@ -35,6 +63,7 @@ export const useUncertainty = (
       if (loaded !== null) {
         setUncertainty(loaded);
       }
+      settle();
     };
 
     if (areResultsOnScreen) {
@@ -43,13 +72,14 @@ export const useUncertainty = (
         applyLoaded(null);
       });
     }
-  }, [areResultsOnScreen, source]);
+  }, [areResultsOnScreen, shouldTrackSettled, source]);
 
-  return uncertainty;
+  return { isSettled, uncertainty };
 };
 
 export interface SidecarUncertainties {
   readonly crib: Uncertainty | null;
+  readonly isSettled: boolean;
   readonly play: Uncertainty | null;
 }
 
@@ -58,11 +88,33 @@ export interface SidecarUncertainties {
  * separate build chunks, so each loads on its own; pairing them here is only
  * so the analysis table reads one value rather than tracking two.
  */
-export const useSidecarUncertainties = (
-  areResultsOnScreen: boolean,
-  cribSource: UncertaintySource,
-  playSource: UncertaintySource,
-): SidecarUncertainties => ({
-  crib: useUncertainty(areResultsOnScreen, cribSource),
-  play: useUncertainty(areResultsOnScreen, playSource),
-});
+export interface SidecarSources {
+  readonly areResultsOnScreen: boolean;
+  readonly cribSource: UncertaintySource;
+  readonly playSource: UncertaintySource;
+  readonly shouldTrackSettled: boolean;
+}
+
+export const useSidecarUncertainties = ({
+  areResultsOnScreen,
+  cribSource,
+  playSource,
+  shouldTrackSettled,
+}: SidecarSources): SidecarUncertainties => {
+  const crib = useUncertainty(
+    areResultsOnScreen,
+    cribSource,
+    shouldTrackSettled,
+  );
+  const play = useUncertainty(
+    areResultsOnScreen,
+    playSource,
+    shouldTrackSettled,
+  );
+  const isSettled = crib.isSettled && play.isSettled;
+  // Memoized because the verdict that consumes it recomputes on identity.
+  return useMemo(
+    () => ({ crib: crib.uncertainty, isSettled, play: play.uncertainty }),
+    [crib.uncertainty, isSettled, play.uncertainty],
+  );
+};

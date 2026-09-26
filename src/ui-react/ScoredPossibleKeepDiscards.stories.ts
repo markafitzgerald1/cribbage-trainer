@@ -135,10 +135,14 @@ const captionAfterLoad = async (
   const canvas = within(canvasElement);
   await waitForLoadingToDisappear(canvas);
 
-  const caption = canvasElement.querySelector("figcaption");
+  // Waited for, not read at once: a sub-optimal verdict appears only after both sidecars settle (#774).
+  await waitFor(async () => {
+    await expect(canvasElement.querySelector("figcaption")).not.toBeNull();
+  });
 
-  await expect(caption).not.toBeNull();
-  await expect(caption).toHaveTextContent(expectedText);
+  await expect(canvasElement.querySelector("figcaption")).toHaveTextContent(
+    expectedText,
+  );
 
   return canvas;
 };
@@ -305,6 +309,39 @@ export const UncertaintyUnavailable: Story = {
     const canvas = await expandedWithFigures(context, 0);
 
     await expect(await canvas.findByText(/Crib avg/u)).toBeVisible();
+  },
+};
+
+/*
+ * A wide, fixed standard error so the 0.09-point loss of discarding both kings
+ * lands inside the #774 noise threshold whatever the shipped sidecars say.
+ * Held rather than built per render, for the effect-dependency reason above.
+ */
+const WIDE_NOISE: UncertaintySource = {
+  getUncertaintySync: () => null,
+  loadUncertainty: () => Promise.resolve({ totals: { get: () => 0.25 } }),
+};
+
+const withinNoiseStory = createStory(
+  toDealtCards(parseHand("4H,5D,KH,6H,8C,KC"), [2, 5]),
+  SortOrder.Descending,
+);
+
+export const WithinSimulationNoise: Story = {
+  ...withinNoiseStory,
+  args: {
+    ...withinNoiseStory.args,
+    cribRole: CribRole.Dealer,
+    cribUncertaintySource: WIDE_NOISE,
+    playUncertaintySource: WIDE_NOISE,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = await captionAfterLoad(
+      canvasElement,
+      "Within noise: 0.09 pts lost",
+    );
+
+    await expect(canvas.queryByText(/Sub-optimal/u)).toBeNull();
   },
 };
 

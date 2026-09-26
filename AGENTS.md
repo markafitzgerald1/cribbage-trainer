@@ -347,7 +347,10 @@
 - Each loads only after the first recommendation is on screen, as its own
   build chunk — 1.2 MB raw for crib and 0.3 MB for play, against the 2.5 MB
   of means the first recommendation already needs — and nothing either
-  carries changes what that recommendation says.
+  carries changes which discard is recommended. Since #774 they do decide
+  whether a chosen discard's positive loss is flagged or treated as
+  simulation noise, so a sub-optimal verdict waits until both have loaded
+  or failed; an optimal verdict cannot change and shows at once.
 - **One schema describes both documents, so one reader reads both.**
   `src/game/uncertaintySidecar.ts` holds the parser and
   `src/game/uncertaintyLoader.ts` the deferred loader; `cribUncertainty.ts`
