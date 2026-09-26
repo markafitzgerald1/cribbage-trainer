@@ -8,7 +8,9 @@ import {
   constantHandQuery,
   exactTextMatch,
   phoneLandscapeViewport,
+  phonePortraitViewport,
   requireBoundingBox,
+  rightEdge,
 } from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 
@@ -278,6 +280,101 @@ test("side-by-side privacy policy text scales with the viewport, not the compact
   expect(narrowSideBySide).toBeGreaterThanOrEqual(minPrivacyPolicyFontSizePx);
   // A wider viewport yields larger text, tracking the vw-scaled app chrome.
   expect(wideSideBySide).toBeGreaterThan(narrowSideBySide);
+});
+
+/*
+ * Guards the close button visibility, collision-freedom, and dismissal across
+ * the Privacy Policy modal's full scroll range. `Modal` anchors `.close` to the
+ * non-scrolling `.content` panel so that reading long documents does not scroll
+ * the dismiss control out of view or occlude the heading.
+ */
+test("the close button stays visible and clickable throughout the privacy policy scroll range", async ({
+  page,
+}) => {
+  await page.setViewportSize(phonePortraitViewport);
+  await page.goto(`/${constantHandQuery}`);
+  const panel = await openPrivacyPolicyModalPanel(page);
+
+  const closeButton = page.getByRole("button", { name: "Close modal" });
+  await expect(closeButton).toBeVisible();
+  const initialCloseBox = await requireBoundingBox(closeButton);
+
+  const heading = page.getByRole("heading", {
+    name: "Privacy Policy for Cribbage Trainer",
+  });
+  await expect(heading).toBeVisible();
+  const headingBox = await requireBoundingBox(heading);
+
+  // The heading must not collide with or occlude the close button
+  expect(rightEdge(headingBox)).toBeLessThanOrEqual(initialCloseBox.x);
+
+  // Scroll the panel and its scrolling body container to the bottom
+  await panel.evaluate((element) => {
+    [element, ...element.querySelectorAll("div")].forEach((child) => {
+      child.scrollTop = child.scrollHeight;
+    });
+  });
+
+  // Verify close button position is unchanged after scrolling
+  await expect(closeButton).toBeVisible();
+  const scrolledCloseBox = await requireBoundingBox(closeButton);
+  expect(scrolledCloseBox.y).toBeCloseTo(initialCloseBox.y, 0);
+  expect(scrolledCloseBox.x).toBeCloseTo(initialCloseBox.x, 0);
+
+  // Verify the close button remains clickable and dismisses the modal
+  await closeButton.click();
+  await expect(closeButton).toBeHidden();
+  await expect(heading).toBeHidden();
+});
+
+test("the close button stays visible and clickable throughout the privacy policy scroll range at an enlarged root font", async ({
+  page,
+}) => {
+  await page.setViewportSize(phonePortraitViewport);
+  await page.goto(`/${constantHandQuery}`);
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+  const panel = await openPrivacyPolicyModalPanel(page);
+
+  const closeButton = page.getByRole("button", { name: "Close modal" });
+  await expect(closeButton).toBeVisible();
+  const initialCloseBox = await requireBoundingBox(closeButton);
+
+  const heading = page.getByRole("heading", {
+    name: "Privacy Policy for Cribbage Trainer",
+  });
+  await expect(heading).toBeVisible();
+  const headingBox = await requireBoundingBox(heading);
+
+  // At enlarged font the heading wraps cleanly without occluding the close button
+  expect(rightEdge(headingBox)).toBeLessThanOrEqual(initialCloseBox.x);
+
+  await panel.evaluate((element) => {
+    [element, ...element.querySelectorAll("div")].forEach((child) => {
+      child.scrollTop = child.scrollHeight;
+    });
+  });
+
+  await expect(closeButton).toBeVisible();
+  const scrolledCloseBox = await requireBoundingBox(closeButton);
+  expect(scrolledCloseBox.y).toBeCloseTo(initialCloseBox.y, 0);
+  expect(scrolledCloseBox.x).toBeCloseTo(initialCloseBox.x, 0);
+
+  await closeButton.click();
+  await expect(closeButton).toBeHidden();
+  await expect(heading).toBeHidden();
+});
+
+test("the privacy policy modal can be closed via the Escape key", async ({
+  page,
+}) => {
+  await page.goto(`/${constantHandQuery}`);
+  await openPrivacyPolicyModalPanel(page);
+
+  const closeButton = page.getByRole("button", { name: "Close modal" });
+  await expect(closeButton).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(closeButton).toBeHidden();
 });
 
 /*
