@@ -238,6 +238,30 @@ export const useDiscardTally = ({
   }
 
   /*
+   * The key above names a discard, not an occurrence of it: the same cards,
+   * role and discard can happen twice in one session — a discard completes
+   * while the tables are still loading, the player replaces the hand (Enter
+   * Cards, a drill start, a fresh deal) with the identical six cards, and
+   * completes the identical pair again under a different sort order. Without
+   * this, the second completion's key is the first's, already taken, and the
+   * abandoned occurrence's sort order survives to describe the one that
+   * actually scores. Called from reportHandOrigin below with the hand being
+   * left, since that is where an occurrence ends; entries for every discard
+   * of that hand are dropped together; a hand that never captured one is a
+   * no-op, matching recordDiscardDecision's own return-the-same-tally
+   * shortcut for a write with nothing to do.
+   */
+  const clearCompletionsForHand = useCallback((abandonedHandKey: string) => {
+    setSortOrderAtCompletion((current) => {
+      const prefix = `${abandonedHandKey}|`;
+      const next = new Map(
+        [...current].filter(([key]) => !key.startsWith(prefix)),
+      );
+      return next.size === current.size ? current : next;
+    });
+  }, []);
+
+  /*
    * Today is computed when a hand is recorded, so a tab left open across
    * local midnight goes on showing yesterday's play under "today" — a label
    * asserting something false, which is worse than a figure simply missing.
@@ -291,6 +315,9 @@ export const useDiscardTally = ({
        * counting them as having ducked the hand they actually played.
        */
       const abandoned = openHand.current;
+      if (abandoned !== null) {
+        clearCompletionsForHand(abandoned.key);
+      }
       if (
         abandoned !== null &&
         /*
@@ -311,7 +338,7 @@ export const useDiscardTally = ({
       notePractice(key, isPractice);
       openHand.current = { handId, key };
     },
-    [isSeededSession, notePractice],
+    [clearCompletionsForHand, isSeededSession, notePractice],
   );
 
   /*

@@ -6,7 +6,9 @@ import {
   reportScore,
 } from "./useDiscardTally.test.common";
 import { describe, expect, it } from "@jest/globals";
+import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
+import { act } from "@testing-library/react";
 import { parseHand } from "../game/Card";
 import { readTallyForDisplay } from "../ui/discardTally";
 import { toDealtCards } from "../game/toDealtCards";
@@ -16,6 +18,35 @@ const otherDiscardOfHand = () =>
   toDealtCards(parseHand(HAND), parseHand("3H,4H"));
 
 const recordedSortOrder = () => readTallyForDisplay().records[0]?.sortOrder;
+
+type TallyHarness = ReturnType<typeof renderTallyWithMutableCards>;
+
+const showBoard = (
+  harness: TallyHarness,
+  dealtCards: ReturnType<typeof handOf>,
+  sortOrder: SortOrder,
+) => {
+  harness.rerender({ dealtCards, sortOrder });
+};
+
+// The shared opening of the abandonment tests: HAND's AH,2H discard completes under Descending and never scores.
+const completeWithoutScoringUnderDescending = (): TallyHarness => {
+  const harness = renderTallyWithMutableCards(
+    handOf(HAND, false),
+    SortOrder.Descending,
+  );
+  showBoard(harness, handOf(HAND, true), SortOrder.Descending);
+  return harness;
+};
+
+const scoreBoard = (
+  harness: TallyHarness,
+  dealtCards: ReturnType<typeof handOf>,
+  sortOrder: SortOrder,
+) => {
+  showBoard(harness, dealtCards, sortOrder);
+  reportScore(harness.result.current);
+};
 
 // Re-sorts without touching the cards, the shape both a mind-changed sort and a re-render for an unrelated reason share.
 const resortTo = (
@@ -112,26 +143,48 @@ describe("recording the sort order a decision was scored under", () => {
    * completion map was keyed by hand alone.
    */
   it("keeps the sort order for the discard that actually scores, not an earlier abandoned one", () => {
-    const harness = renderTallyWithMutableCards(
-      handOf(HAND, false),
-      SortOrder.Descending,
-    );
     // Discard A (AH,2H) completes under Descending, then is abandoned before it scores.
-    harness.rerender({
-      dealtCards: handOf(HAND, true),
-      sortOrder: SortOrder.Descending,
-    });
-    harness.rerender({
-      dealtCards: handOf(HAND, false),
-      sortOrder: SortOrder.Descending,
-    });
+    const harness = completeWithoutScoringUnderDescending();
+    showBoard(harness, handOf(HAND, false), SortOrder.Descending);
     // Discard B (3H,4H) completes under a different sort order, and it is the one that scores.
-    harness.rerender({
-      dealtCards: otherDiscardOfHand(),
-      sortOrder: SortOrder.DealOrder,
-    });
-    reportScore(harness.result.current);
+    scoreBoard(harness, otherDiscardOfHand(), SortOrder.DealOrder);
 
     expect(recordedSortOrder()).toBe("deal-order");
+  });
+
+  /*
+   * A discard's key names the hand and the discard, but not which occurrence
+   * of the hand this is — and the same six cards, role and discard can occur
+   * twice in one session: a discard completes while the tables are still
+   * loading, the player replaces the board through Enter Cards with the
+   * identical six cards, and completes the identical pair again under a
+   * different sort order. Without clearing the first occurrence's capture
+   * when it is left, the second occurrence's completion would find the
+   * first's key already taken and inherit its sort order.
+   */
+  it("keeps the sort order for the occurrence that actually scores, not an earlier abandoned occurrence of the identical hand and discard", () => {
+    // First occurrence: the discard completes under Descending, but is abandoned before its score arrives.
+    const harness = completeWithoutScoringUnderDescending();
+    /*
+     * The replacement and the resulting incomplete board are one React
+     * update in the real app — Trainer.tsx's applyManualHand calls
+     * reportHandReplaced and setDealState from the same event handler, so
+     * they land in the same batch — and this act() reproduces that. Doing
+     * them as two separate updates would let a render land in between where
+     * reportHandOrigin has cleared the map but dealtCards still reads as the
+     * first occurrence's completed discard, which would simply re-capture it
+     * under the sort order still showing at that moment.
+     */
+    act(() => {
+      harness.result.current.reportHandOrigin(handOf(HAND, false), "manual", {
+        cribRole: CribRole.Dealer,
+        handId: "second-occurrence",
+      });
+      showBoard(harness, handOf(HAND, false), SortOrder.Descending);
+    });
+    // The player changes the sort order, then completes the identical discard again — this is the occurrence that scores.
+    scoreBoard(harness, handOf(HAND, true), SortOrder.Ascending);
+
+    expect(recordedSortOrder()).toBe("ascending");
   });
 });
