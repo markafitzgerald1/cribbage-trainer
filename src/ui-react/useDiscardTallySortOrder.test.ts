@@ -7,7 +7,13 @@ import {
 } from "./useDiscardTally.test.common";
 import { describe, expect, it } from "@jest/globals";
 import { SortOrder } from "../ui/SortOrder";
+import { parseHand } from "../game/Card";
 import { readTallyForDisplay } from "../ui/discardTally";
+import { toDealtCards } from "../game/toDealtCards";
+
+// The same six cards as HAND, discarding a different pair (3H,4H rather than AH,2H) — a distinct discard of one hand, not a distinct hand.
+const otherDiscardOfHand = () =>
+  toDealtCards(parseHand(HAND), parseHand("3H,4H"));
 
 const recordedSortOrder = () => readTallyForDisplay().records[0]?.sortOrder;
 
@@ -95,5 +101,37 @@ describe("recording the sort order a decision was scored under", () => {
     resortThenReport(harness, SortOrder.Ascending);
 
     expect(recordedSortOrder()).toBe("descending");
+  });
+
+  /*
+   * A hand alone is not a discard: completing one discard, abandoning it
+   * before it ever scores, then completing a different discard of the same
+   * six cards under a different sort order are two completions, and the
+   * second one's capture must not find the first one's key already taken.
+   * Reproduces the gap an earlier version of this hook had, where the
+   * completion map was keyed by hand alone.
+   */
+  it("keeps the sort order for the discard that actually scores, not an earlier abandoned one", () => {
+    const harness = renderTallyWithMutableCards(
+      handOf(HAND, false),
+      SortOrder.Descending,
+    );
+    // Discard A (AH,2H) completes under Descending, then is abandoned before it scores.
+    harness.rerender({
+      dealtCards: handOf(HAND, true),
+      sortOrder: SortOrder.Descending,
+    });
+    harness.rerender({
+      dealtCards: handOf(HAND, false),
+      sortOrder: SortOrder.Descending,
+    });
+    // Discard B (3H,4H) completes under a different sort order, and it is the one that scores.
+    harness.rerender({
+      dealtCards: otherDiscardOfHand(),
+      sortOrder: SortOrder.DealOrder,
+    });
+    reportScore(harness.result.current);
+
+    expect(recordedSortOrder()).toBe("deal-order");
   });
 });

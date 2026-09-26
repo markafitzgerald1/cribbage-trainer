@@ -104,6 +104,19 @@ interface OpenHand {
   readonly key: string;
 }
 
+/*
+ * A discard's identity: the hand and role it belongs to, plus which cards
+ * were not kept. Module-level and pure — it closes over nothing from the
+ * hook — so both the capture below and reportAnalysisRendered's later
+ * lookup can share it without either reading the other's local variable,
+ * and so a hand alone is never mistaken for one particular discard of it.
+ */
+const completionKeyFor = (
+  cards: readonly DealtCard[],
+  role: CribRole,
+): string =>
+  `${toHandKey(cards, role)}|${serializeHand(cards.filter((card) => !card.kept))}`;
+
 export const useDiscardTally = ({
   cribRole,
   dealtCards,
@@ -202,12 +215,21 @@ export const useDiscardTally = ({
    * effect fires. The guard keeps this idempotent: a repeated call for an
    * already-captured hand returns the same Map reference, so it does not
    * loop.
+   *
+   * The key names the discard as well as the hand, not the hand alone:
+   * completing discard A, abandoning it before it ever scores, and then
+   * completing a different discard B for the same six cards are two
+   * completions this map has to tell apart, or B's capture would find A's
+   * key already taken and silently keep A's sort order. `serializeHand` of
+   * the cards not kept is the same discard identity reportAnalysisRendered
+   * itself computes below, applied here to the board's own cards so the two
+   * sides agree without either reading the other's local variable.
    */
   const [sortOrderAtCompletion, setSortOrderAtCompletion] = useState(
     () => new Map<string, SortOrder>(),
   );
   if (discardIsComplete(dealtCards)) {
-    const completionKey = toHandKey(dealtCards, cribRole);
+    const completionKey = completionKeyFor(dealtCards, cribRole);
     if (!sortOrderAtCompletion.has(completionKey)) {
       setSortOrderAtCompletion(
         new Map(sortOrderAtCompletion).set(completionKey, sortOrder),
@@ -359,8 +381,16 @@ export const useDiscardTally = ({
       const discardKey = serializeHand(
         decidedCards.filter((card) => !card.kept),
       );
-      // Looked up by boardKey to match how it was filed above: the sort order captured the instant this hand's discard first completed, never a live read of the current one.
-      const capturedSortOrder = sortOrderAtCompletion.get(boardKey);
+      /*
+       * Looked up by the board's own hand-and-discard pair, matching how it
+       * was filed above (dealtCards, not decidedCards, since that is what
+       * the capture above saw): the sort order captured the instant this
+       * exact discard first completed, never a live read of the current one
+       * and never another discard's capture for the same six cards.
+       */
+      const capturedSortOrder = sortOrderAtCompletion.get(
+        completionKeyFor(dealtCards, scoredRole),
+      );
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
