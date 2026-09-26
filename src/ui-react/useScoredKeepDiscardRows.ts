@@ -33,6 +33,7 @@ export interface ScoredKeepDiscardRowsOptions {
   readonly cribRole: CribRole;
   readonly cribUncertainty: Uncertainty | null;
   readonly dealtCards: readonly DealtCard[];
+  readonly isChosenWithinNoise: boolean;
   readonly playUncertainty: PlayUncertainty | null;
   readonly scoredKeepDiscards: readonly ScoredKeepDiscard<DealtCard>[];
   readonly scoredKeepDiscardsByNetScore: readonly ScoredKeepDiscard<DealtCard>[];
@@ -56,6 +57,7 @@ export const useScoredKeepDiscardRows = ({
   cribRole,
   cribUncertainty,
   dealtCards,
+  isChosenWithinNoise,
   playUncertainty,
   scoredKeepDiscards,
   scoredKeepDiscardsByNetScore,
@@ -72,6 +74,7 @@ export const useScoredKeepDiscardRows = ({
       const rowTitle = getRowTitle(
         highlightTier,
         isChosen ? chosenClassification : null,
+        isChosen && isChosenWithinNoise,
       );
       const descriptionId = rowTitle
         ? `scored-discard-${index}-description`
@@ -108,6 +111,7 @@ export const useScoredKeepDiscardRows = ({
     cribRole,
     cribUncertainty,
     dealtCards,
+    isChosenWithinNoise,
     playUncertainty,
     scoredKeepDiscards,
     scoredKeepDiscardsByNetScore,
