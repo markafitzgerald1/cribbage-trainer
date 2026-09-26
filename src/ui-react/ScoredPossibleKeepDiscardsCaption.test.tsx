@@ -192,9 +192,13 @@ describe("scored possible keep discards caption", () => {
         /^Within noise, approximate: 0\.09 pts lost/u,
       );
       expect(caption.getAttribute("aria-label")).toMatch(
-        /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, at or below the .+ point threshold\. /u,
+        /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\. /u,
       );
-      expect(container.querySelector("[class*='noiseBadge']")).not.toBeNull();
+      expect(
+        container.querySelector("[class*='noiseBadge']")?.getAttribute("title"),
+      ).toMatch(
+        /^Within noise: at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u,
+      );
       expect(
         container
           .querySelector("tr[data-highlight-tier='chosen']")

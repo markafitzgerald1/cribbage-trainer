@@ -35,6 +35,8 @@ import { useMemo } from "react";
 export interface ChosenDiagnosticInfo {
   readonly captionAriaLabel: string | null;
   readonly chosenClassification: MistakeClassification | null;
+  // Hover text for the within-noise badge, saying what "approximate" means; empty whenever the badge is not shown.
+  readonly noiseBadgeTitle: string;
   readonly optimalMargin: OptimalDiscardMargin;
   // Null until a discard is complete and the tables have loaded; never zero to stand in for unknown.
   readonly oppositeRoleLoss: number | null;
@@ -46,6 +48,15 @@ export interface ChosenDiagnosticInfo {
    */
   readonly withinNoiseThreshold: number | null;
 }
+
+// #774's acceptance criteria require every surface quoting the threshold to say what it is and is not.
+const NOISE_THRESHOLD_QUALIFIER =
+  "a conservative bound on the simulation's reported sampling error, not a calibrated interval";
+
+const noiseBadgeTitleFor = (threshold: number | null): string =>
+  threshold === null
+    ? ""
+    : `Within noise: at or below the ${formatAccessibleNetLoss(threshold)} point threshold, ${NOISE_THRESHOLD_QUALIFIER}.`;
 
 interface ChosenDiagnosticInput {
   readonly cribRole: CribRole;
@@ -173,12 +184,13 @@ export const useChosenDiagnosticInfo = ({
       captionAriaLabel =
         withinNoiseThreshold === null
           ? `Sub-optimal: ${rolePair.accessibleLabel}. ${chosenClassification.accessibleLabel}`
-          : `Within simulation noise, 95% one-sided, approximate: ${rolePair.accessibleLabel}, at or below the ${formatAccessibleNetLoss(withinNoiseThreshold)} point threshold. ${chosenClassification.accessibleLabel}`;
+          : `Within simulation noise, 95% one-sided, approximate: ${rolePair.accessibleLabel}, at or below the ${formatAccessibleNetLoss(withinNoiseThreshold)} point threshold, ${NOISE_THRESHOLD_QUALIFIER}. ${chosenClassification.accessibleLabel}`;
     }
 
     return {
       captionAriaLabel,
       chosenClassification,
+      noiseBadgeTitle: noiseBadgeTitleFor(withinNoiseThreshold),
       oppositeRoleLoss,
       optimalMargin,
       rolePair,

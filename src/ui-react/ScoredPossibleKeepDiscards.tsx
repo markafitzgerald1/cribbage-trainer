@@ -133,6 +133,7 @@ export function ScoredPossibleKeepDiscards({
   const {
     captionAriaLabel,
     chosenClassification,
+    noiseBadgeTitle,
     oppositeRoleLoss,
     optimalMargin,
     quality,
@@ -277,7 +278,10 @@ export function ScoredPossibleKeepDiscards({
                 Sub-optimal: {renderRoleLossPairText(rolePair)}
               </span>
             ) : (
-              <span className={classes.noiseBadge}>
+              <span
+                className={classes.noiseBadge}
+                title={noiseBadgeTitle}
+              >
                 Within noise, approximate: {renderRoleLossPairText(rolePair)}
               </span>
             )}
