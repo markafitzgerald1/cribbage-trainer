@@ -13,6 +13,7 @@ import {
   toggleTo,
 } from "./useDiscardTelemetry.test.common";
 import { describe, expect, it } from "@jest/globals";
+import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
 
 const scoredConsents = (scene: Scene) =>
@@ -167,5 +168,33 @@ describe("useDiscardTelemetry decision quality", () => {
         generatedFromSeed: true,
       });
     });
+  });
+
+  it("reports the sort order in effect when the discard was made, even if changed before answers load", () => {
+    expectTelemetryScene(
+      { decisionContextConsented: true, sortOrder: SortOrder.Descending },
+      (scene) => {
+        completeDiscard(scene, "AH,2H");
+        scene.rerenderSortOrder(SortOrder.DealOrder);
+        renderAnalysisOnScreen(scene);
+
+        expect(lastScore(scene)).toMatchObject({
+          sortOrder: "descending",
+        });
+      },
+    );
+  });
+
+  it("sends sort order as 'deal-order' when deal order is selected", () => {
+    expectTelemetryScene(
+      { decisionContextConsented: true, sortOrder: SortOrder.DealOrder },
+      (scene) => {
+        scoreFirstDiscard(scene);
+
+        expect(lastScore(scene)).toMatchObject({
+          sortOrder: "deal-order",
+        });
+      },
+    );
   });
 });

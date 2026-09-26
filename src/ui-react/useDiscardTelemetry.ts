@@ -54,6 +54,7 @@ interface ShownAnalysis {
   // An exposure that consent kept off the wire must also close silently.
   // Otherwise Google Analytics receives an unshown whose shown it never saw.
   readonly reported: boolean;
+  readonly sortOrder: SortOrder | undefined;
 }
 
 // What the analysis component saw on screen: the role it scored against, and what the discard gave up, which is absent until two cards are discarded.
@@ -285,10 +286,10 @@ export const useDiscardTelemetry = ({
           isFirstAnalysis: shown.isFirstAnalysis,
           schemaVersion: DISCARD_SCORED_SCHEMA_VERSION,
           source: shown.source,
-          ...(sortOrderRef.current &&
+          ...(typeof shown.sortOrder !== "undefined" &&
             shown.decisionContextConsented &&
             hasDecisionContextConsent() && {
-              sortOrder: sortUrlValue(sortOrderRef.current) as
+              sortOrder: sortUrlValue(shown.sortOrder) as
                 "deal-order" | "ascending" | "descending",
             }),
           // Spread from the derivation's own type rather than a widened record, so every quality field still type-checks against the event's payload.
@@ -330,6 +331,7 @@ export const useDiscardTelemetry = ({
         qualityConsented: hasDecisionQualityConsent(),
         qualityReported: false,
         reported,
+        sortOrder: sortOrderRef.current,
         source: state.source,
       };
       state.shown = shown;

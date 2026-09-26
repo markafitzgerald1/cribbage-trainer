@@ -15,6 +15,7 @@ import type { DiscardQuality } from "../analysis/discardQuality";
 import { parseHand } from "../game/Card";
 import { renderHook } from "@testing-library/react";
 import { toDealtCards } from "../game/toDealtCards";
+import { SortOrder } from "../ui/SortOrder";
 /* jscpd:ignore-end */
 
 export const HAND = "AH,2H,3H,4H,5H,6H";
@@ -24,6 +25,8 @@ export const handWithDiscards = (hand: string, discards: string | null) =>
   toDealtCards(parseHand(hand), discards ? parseHand(discards) : null);
 
 export interface SetupOptions {
+  readonly decisionContextConsented?: boolean;
+  readonly sortOrder?: SortOrder;
   readonly consented?: boolean | null;
   readonly dealtCards?: readonly DealtCard[];
   readonly decisionQualityConsented?: boolean;
@@ -35,35 +38,44 @@ const setupTelemetry = ({
   consented = true,
   dealtCards = handWithDiscards(HAND, null),
   // Mirrors what the trainer can actually hold: decision-quality collection is a narrowing of analytics consent, never a widening of it.
+  decisionContextConsented = false,
   decisionQualityConsented = consented === true,
   isSeededSession = false,
+  sortOrder,
   wasDeepLinked = false,
 }: SetupOptions = {}) => {
   const trackEvent = jest.fn<TrackEvent>();
   const hook = renderHook(
     ({
       currentConsent,
+      currentDecisionContext,
       currentDecisionQuality,
+      currentSortOrder,
     }: {
       readonly currentConsent: boolean | null;
+      readonly currentDecisionContext: boolean;
       readonly currentDecisionQuality: boolean;
+      readonly currentSortOrder?: SortOrder | undefined;
     }) =>
       useDiscardTelemetry({
         choice: {
           consented: currentConsent,
-          decisionContextConsented: false,
+          decisionContextConsented: currentDecisionContext,
           decisionQualityConsented: currentDecisionQuality,
           needsPolicyUpdateChoice: false,
         },
         dealtCards,
         isSeededSession,
+        ...(currentSortOrder !== undefined && { sortOrder: currentSortOrder }),
         trackEvent,
         wasDeepLinked,
       }),
     {
       initialProps: {
         currentConsent: consented,
+        currentDecisionContext: decisionContextConsented,
         currentDecisionQuality: decisionQualityConsented,
+        ...(sortOrder !== undefined && { currentSortOrder: sortOrder }),
       },
     },
   );
@@ -72,7 +84,17 @@ const setupTelemetry = ({
     rerenderConsent: (currentConsent: boolean | null) => {
       hook.rerender({
         currentConsent,
+        currentDecisionContext: false,
         currentDecisionQuality: currentConsent === true,
+        ...(sortOrder !== undefined && { currentSortOrder: sortOrder }),
+      });
+    },
+    rerenderSortOrder: (currentSortOrder: SortOrder) => {
+      hook.rerender({
+        currentConsent: consented,
+        currentDecisionContext: decisionContextConsented,
+        currentDecisionQuality: decisionQualityConsented,
+        ...(currentSortOrder !== undefined && { currentSortOrder }),
       });
     },
     telemetry: hook.result.current,
