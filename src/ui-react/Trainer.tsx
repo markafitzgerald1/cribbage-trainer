@@ -178,22 +178,6 @@ export function Trainer({
     setConsented,
     wasAnsweredOnFirstRender,
   } = useAnalyticsConsent(loadGoogleAnalytics);
-  const {
-    currentHandScope,
-    reportAnalysisRendered,
-    reportCardToggled,
-    reportHandReplaced,
-    reportHistoryNavigation,
-    tallySummary,
-  } = useAnalysisReporting({
-    consented: choice.consented,
-    cribRole,
-    dealtCards,
-    decisionQualityConsented: choice.decisionQualityConsented,
-    isSeededSession,
-    trackEvent,
-    wasDeepLinked: initialCards !== null,
-  });
   const historyFlags = useRef({ isMerging: false, shouldPush: false });
 
   // Preserve the current history entry only when its state is stable.
@@ -205,6 +189,22 @@ export function Trainer({
     initialSortOrder,
     markHistoryUpdate,
   );
+  const {
+    currentHandScope,
+    reportAnalysisRendered,
+    reportCardToggled,
+    reportHandReplaced,
+    reportHistoryNavigation,
+    tallySummary,
+  } = useAnalysisReporting({
+    choice,
+    cribRole,
+    dealtCards,
+    isSeededSession,
+    sortOrder,
+    trackEvent,
+    wasDeepLinked: initialCards !== null,
+  });
   const applyManualHand = useCallback(
     (state: DealState) => {
       // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.

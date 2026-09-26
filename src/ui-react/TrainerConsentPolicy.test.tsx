@@ -40,7 +40,7 @@ const clickButton = (name: string) => {
 };
 
 const scoredConsents = (trackEvent: ReturnType<typeof startTelemetryCapture>) =>
-  eventCalls(trackEvent, "discard_scored").map(([consented]) => consented);
+  eventCalls(trackEvent, "discard_scored").map(([choice]) => choice.consented);
 
 const scoredConsentsAfterDiscard = ({
   completeDiscard,
@@ -51,7 +51,7 @@ const scoredConsentsAfterDiscard = ({
 };
 
 const cardConsents = (trackEvent: ReturnType<typeof startTelemetryCapture>) =>
-  eventCalls(trackEvent, "card_selected").map(([consented]) => consented);
+  eventCalls(trackEvent, "card_selected").map(([choice]) => choice.consented);
 
 describe("analytics policy update", () => {
   it("asks again when the stored choice predates the current policy", () => {

@@ -1,10 +1,18 @@
 import {
   type TrainerEvent,
+  type TrainerEventParams,
   toGoogleAnalyticsKey,
   trackEvent,
   trainerEventNames,
 } from "./trackEvent";
 import { describe, expect, it } from "@jest/globals";
+
+const mockChoice = {
+  consented: true,
+  decisionContextConsented: false,
+  decisionQualityConsented: false,
+  needsPolicyUpdateChoice: false,
+};
 
 describe("trackEvent", () => {
   const setupDataLayer = () => {
@@ -17,10 +25,19 @@ describe("trackEvent", () => {
     (consented) => {
       const dataLayer = setupDataLayer();
 
-      trackEvent(consented, "card_selected", {
-        dealNonce: "nonce",
-        discardCount: 1,
-      });
+      trackEvent(
+        {
+          consented,
+          decisionContextConsented: false,
+          decisionQualityConsented: false,
+          needsPolicyUpdateChoice: false,
+        },
+        "card_selected",
+        {
+          dealNonce: "nonce",
+          discardCount: 1,
+        },
+      );
 
       expect(dataLayer).toHaveLength(0);
     },
@@ -30,7 +47,7 @@ describe("trackEvent", () => {
     delete window.dataLayer;
 
     expect(() => {
-      trackEvent(true, "deal_clicked", { dealNonce: "nonce" });
+      trackEvent(mockChoice, "deal_clicked", { dealNonce: "nonce" });
     }).not.toThrow();
   });
 
@@ -60,7 +77,7 @@ describe("trackEvent", () => {
         handStartSource: "deal",
         isFirstAnalysis: true,
         isOptimal: false,
-        schemaVersion: 1,
+        schemaVersion: 2,
         source: "interactive",
       },
     ],
@@ -70,12 +87,21 @@ describe("trackEvent", () => {
     ],
   ] as const satisfies readonly TrainerEvent[];
 
+  const discardScoredPayload = (
+    sortOrder?: "ascending" | "descending" | "deal-order",
+  ): TrainerEventParams<"discard_scored"> => {
+    const basePayload = FULL_PAYLOADS.find(
+      ([name]) => name === "discard_scored",
+    )![1] as TrainerEventParams<"discard_scored">;
+    return { ...basePayload, ...(sortOrder && { sortOrder }) };
+  };
+
   const sentParams = (dataLayer: readonly unknown[]) =>
     Array.from(dataLayer[0] as IArguments)[2] as Record<string, unknown>;
 
   const sendAndCapture = (event: TrainerEvent) => {
     const dataLayer = setupDataLayer();
-    trackEvent(true, ...event);
+    trackEvent(mockChoice, ...event);
     return sentParams(dataLayer);
   };
 
@@ -97,6 +123,21 @@ describe("trackEvent", () => {
   });
 
   // A payload built from a widened source defeats the declared types, so the runtime keeps its own list — and it has to be exact rather than a superset, since anything it lets through reaches Google Analytics under an event that never declared it.
+  it("withholds sortOrder from discard_scored when decisionContext is unaccepted", () => {
+    const dataLayer = setupDataLayer();
+    const eventParams = discardScoredPayload("ascending");
+
+    trackEvent(
+      { ...mockChoice, decisionQualityConsented: true },
+      "discard_scored",
+      eventParams,
+    );
+
+    const sent = sentParams(dataLayer);
+
+    expect(sent).not.toHaveProperty("sort_order");
+  });
+
   it("sends an event only the parameters it declares", () => {
     const everyParam = {
       analysisIndex: 9,
@@ -108,7 +149,7 @@ describe("trackEvent", () => {
       handStartSource: "manual",
       isFirstAnalysis: true,
       isOptimal: true,
-      schemaVersion: 1,
+      schemaVersion: 2,
       source: "deal",
     };
     const sent = FULL_PAYLOADS.map((event) =>
@@ -130,7 +171,7 @@ describe("trackEvent", () => {
   it("pushes a gtag event with snake_case parameter keys when consented", () => {
     const dataLayer = setupDataLayer();
 
-    trackEvent(true, "analysis_shown", {
+    trackEvent(mockChoice, "analysis_shown", {
       analysisIndex: 1,
       dealNonce: "nonce",
       generatedFromSeed: false,
@@ -149,5 +190,22 @@ describe("trackEvent", () => {
         source: "interactive",
       },
     ]);
+  });
+
+  it("sends sort_order when decisionContext is accepted", () => {
+    const dataLayer = setupDataLayer();
+    const eventParams = discardScoredPayload("descending");
+
+    trackEvent(
+      {
+        ...mockChoice,
+        decisionContextConsented: true,
+        decisionQualityConsented: true,
+      },
+      "discard_scored",
+      eventParams,
+    );
+
+    expect(sentParams(dataLayer)).toHaveProperty("sort_order", "descending");
   });
 });

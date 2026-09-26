@@ -29,9 +29,13 @@ function WithdrawalHarness({
   const [consented, setConsented] = useState(true);
   const [renderCount, setRenderCount] = useState(0);
   const telemetry = useDiscardTelemetry({
-    consented,
+    choice: {
+      consented,
+      decisionContextConsented: consented,
+      decisionQualityConsented: consented,
+      needsPolicyUpdateChoice: false,
+    },
     dealtCards: toDealtCards(parseHand(HAND), null),
-    decisionQualityConsented: consented,
     isSeededSession: false,
     trackEvent,
     wasDeepLinked: false,
@@ -79,7 +83,7 @@ describe("useDiscardTelemetry consent timing", () => {
     expect(
       trackEvent.mock.calls
         .filter(([, eventName]) => eventName === "discard_scored")
-        .map(([consented]) => consented),
+        .map(([choice]) => choice.consented),
     ).toStrictEqual([false]);
   });
 });

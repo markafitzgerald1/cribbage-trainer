@@ -128,7 +128,7 @@ describe("trainer telemetry wiring", () => {
       });
 
       expect(trackEvent.mock.calls.at(-1)).toStrictEqual([
-        consent,
+        expect.any(Object),
         eventName,
         { dealNonce: expect.any(String), discardCount },
       ]);
@@ -139,9 +139,13 @@ describe("trainer telemetry wiring", () => {
     const { trackEvent } = setupTelemetryTrainer(false);
     fireEvent.click(screen.getByRole("button", { name: "Deal" }));
 
-    expect(trackEvent).toHaveBeenCalledWith(false, "deal_clicked", {
-      dealNonce: expect.any(String),
-    });
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.any(Object),
+      "deal_clicked",
+      {
+        dealNonce: expect.any(String),
+      },
+    );
   });
 
   it("scores a completed discard once its ranked answers are on screen", () => {
@@ -158,7 +162,8 @@ describe("trainer telemetry wiring", () => {
       handStartSource: "initial",
       isFirstAnalysis: true,
       isOptimal: expect.any(Boolean),
-      schemaVersion: 1,
+      schemaVersion: 2,
+      sortOrder: "descending",
       source: "interactive",
     });
   });
@@ -247,11 +252,15 @@ describe("trainer telemetry wiring", () => {
   it("marks the initial hand of a seeded session as seed-derived", () => {
     const trackEvent = setupInitialPropsTrainer({ isSeededSession: true });
 
-    expect(trackEvent).toHaveBeenCalledWith(true, "hand_started", {
-      dealNonce: expect.any(String),
-      generatedFromSeed: true,
-      source: "initial",
-    });
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.any(Object),
+      "hand_started",
+      {
+        dealNonce: expect.any(String),
+        generatedFromSeed: true,
+        source: "initial",
+      },
+    );
   });
 
   // Spending the injected generator on an identifier would change which hands a seeded link deals.

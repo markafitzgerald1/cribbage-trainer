@@ -49,9 +49,13 @@ const setupTelemetry = ({
       readonly currentDecisionQuality: boolean;
     }) =>
       useDiscardTelemetry({
-        consented: currentConsent,
+        choice: {
+          consented: currentConsent,
+          decisionContextConsented: false,
+          decisionQualityConsented: currentDecisionQuality,
+          needsPolicyUpdateChoice: false,
+        },
         dealtCards,
-        decisionQualityConsented: currentDecisionQuality,
         isSeededSession,
         trackEvent,
         wasDeepLinked,
@@ -152,7 +156,7 @@ export const scoredParams = (
   generatedFromSeed: false,
   handStartSource: "initial",
   isFirstAnalysis,
-  schemaVersion: 1,
+  schemaVersion: 2,
   source,
 });
 
