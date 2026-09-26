@@ -12,10 +12,11 @@ import { expect, jest } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardQuality } from "../analysis/discardQuality";
+import { SortOrder } from "../ui/SortOrder";
 import { parseHand } from "../game/Card";
 import { renderHook } from "@testing-library/react";
 import { toDealtCards } from "../game/toDealtCards";
-import { SortOrder } from "../ui/SortOrder";
+
 /* jscpd:ignore-end */
 
 export const HAND = "AH,2H,3H,4H,5H,6H";
@@ -66,7 +67,9 @@ const setupTelemetry = ({
         },
         dealtCards,
         isSeededSession,
-        ...(currentSortOrder !== undefined && { sortOrder: currentSortOrder }),
+        ...(typeof currentSortOrder !== "undefined" && {
+          sortOrder: currentSortOrder,
+        }),
         trackEvent,
         wasDeepLinked,
       }),
@@ -75,7 +78,9 @@ const setupTelemetry = ({
         currentConsent: consented,
         currentDecisionContext: decisionContextConsented,
         currentDecisionQuality: decisionQualityConsented,
-        ...(sortOrder !== undefined && { currentSortOrder: sortOrder }),
+        ...(typeof sortOrder !== "undefined" && {
+          currentSortOrder: sortOrder,
+        }),
       },
     },
   );
@@ -86,7 +91,9 @@ const setupTelemetry = ({
         currentConsent,
         currentDecisionContext: false,
         currentDecisionQuality: currentConsent === true,
-        ...(sortOrder !== undefined && { currentSortOrder: sortOrder }),
+        ...(typeof sortOrder !== "undefined" && {
+          currentSortOrder: sortOrder,
+        }),
       });
     },
     rerenderSortOrder: (currentSortOrder: SortOrder) => {
@@ -94,7 +101,7 @@ const setupTelemetry = ({
         currentConsent: consented,
         currentDecisionContext: decisionContextConsented,
         currentDecisionQuality: decisionQualityConsented,
-        ...(currentSortOrder !== undefined && { currentSortOrder }),
+        ...(typeof currentSortOrder !== "undefined" && { currentSortOrder }),
       });
     },
     telemetry: hook.result.current,
