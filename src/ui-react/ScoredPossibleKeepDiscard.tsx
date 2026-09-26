@@ -22,6 +22,8 @@ export interface ScoredPossibleKeepDiscardProps {
   readonly cribUncertainty?: number | null;
   readonly descriptionId?: string | null;
   readonly highlightTier: DiscardHighlightTier;
+  /** True when the chosen row's loss is within simulation noise (#774). */
+  readonly isWithinNoise?: boolean | null;
   /** Forwarded to the expanded breakdown; null while unavailable. */
   readonly playUncertainty?: number | null;
   readonly rowIndex: number;
@@ -104,6 +106,7 @@ export function ScoredPossibleKeepDiscard({
   cribUncertainty,
   descriptionId,
   highlightTier,
+  isWithinNoise,
   playUncertainty,
   sortOrder,
   rowIndex,
@@ -144,7 +147,11 @@ export function ScoredPossibleKeepDiscard({
       ? parentClasses.oddRow
       : parentClasses.evenRow;
   const tierClass = getTierClass(highlightTier);
-  const rowTitle = getRowTitle(highlightTier, classification);
+  const rowTitle = getRowTitle(
+    highlightTier,
+    classification,
+    isWithinNoise === true,
+  );
   const rowClassName =
     `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${classes.clickable}`.trim();
 
@@ -222,5 +229,6 @@ ScoredPossibleKeepDiscard.defaultProps = {
   classification: null,
   cribUncertainty: null,
   descriptionId: null,
+  isWithinNoise: null,
   playUncertainty: null,
 };

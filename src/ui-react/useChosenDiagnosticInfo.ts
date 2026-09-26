@@ -61,6 +61,37 @@ export interface ChosenDiagnostics extends ChosenDiagnosticInfo {
   readonly sidecars: SidecarUncertainties;
 }
 
+interface VerdictThresholdInput {
+  readonly best: ScoredKeepDiscard<DealtCard> | undefined;
+  readonly chosen: ScoredKeepDiscard<DealtCard> | null;
+  readonly cribRole: CribRole;
+  readonly dealtCards: readonly DealtCard[];
+  readonly sidecars: SidecarUncertainties;
+}
+
+// Null whenever the verdict must be given without the sidecars: none chosen yet, either sidecar unavailable, or the wait for them timed out.
+const verdictThreshold = ({
+  best,
+  chosen,
+  cribRole,
+  dealtCards,
+  sidecars,
+}: VerdictThresholdInput): number | null =>
+  best &&
+  chosen &&
+  !sidecars.isVerdictTimedOut &&
+  sidecars.crib !== null &&
+  sidecars.play !== null
+    ? discardNoiseThreshold({
+        best,
+        chosen,
+        cribUncertainty: sidecars.crib,
+        knownCards: dealtCards,
+        playUncertainty: sidecars.play,
+        role: cribRole,
+      })
+    : null;
+
 export const useChosenDiagnosticInfo = ({
   cribRole,
   cribUncertaintySource,
@@ -78,6 +109,7 @@ export const useChosenDiagnosticInfo = ({
     cribSource: cribUncertaintySource,
     playSource: playUncertaintySource,
     shouldTrackSettled: quality !== null && !quality.isOptimal,
+    verdictKey: scoredOptions,
   });
   const info = useMemo(() => {
     const chosen =
@@ -117,17 +149,13 @@ export const useChosenDiagnosticInfo = ({
       chosenClassification?.netLoss ?? 0,
       oppositeRoleLoss,
     );
-    const threshold =
-      best && chosen && sidecars.crib !== null && sidecars.play !== null
-        ? discardNoiseThreshold({
-            best,
-            chosen,
-            cribUncertainty: sidecars.crib,
-            knownCards: dealtCards,
-            playUncertainty: sidecars.play,
-            role: cribRole,
-          })
-        : null;
+    const threshold = verdictThreshold({
+      best,
+      chosen,
+      cribRole,
+      dealtCards,
+      sidecars,
+    });
     const withinNoiseThreshold =
       best && chosen && isWithinNoise(discardLoss({ best, chosen }), threshold)
         ? threshold
@@ -145,7 +173,7 @@ export const useChosenDiagnosticInfo = ({
       captionAriaLabel =
         withinNoiseThreshold === null
           ? `Sub-optimal: ${rolePair.accessibleLabel}. ${chosenClassification.accessibleLabel}`
-          : `Within simulation noise, 95% one-sided, approximate: ${rolePair.accessibleLabel}, under the ${formatAccessibleNetLoss(withinNoiseThreshold)} point threshold. ${chosenClassification.accessibleLabel}`;
+          : `Within simulation noise, 95% one-sided, approximate: ${rolePair.accessibleLabel}, at or below the ${formatAccessibleNetLoss(withinNoiseThreshold)} point threshold. ${chosenClassification.accessibleLabel}`;
     }
 
     return {

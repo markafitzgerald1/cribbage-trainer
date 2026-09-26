@@ -6,6 +6,7 @@ import {
   noUncertainty,
   renderHand,
   renderScoredPossibleKeepDiscards,
+  scoredElement,
   waitForAnalysis,
 } from "./ScoredPossibleKeepDiscards.test.common";
 import { CribRole } from "../game/expectedCribPoints";
@@ -20,6 +21,9 @@ import { uniformUncertainty } from "../game/uncertaintySidecar.test.common";
 // The KH,KC dealer fixture gives up about 0.09 points against the best discard.
 const NEAR_MISS_HAND = "4H,5D,KH,6H,8C,KC";
 const NEAR_MISS_DISCARD = "KH,KC";
+
+// Wide enough that any loss this hand can give up lands inside the threshold.
+const WIDE_ERROR = 5;
 
 const settledWith = (standardError: number): UncertaintySource => ({
   getUncertaintySync: () => null,
@@ -48,13 +52,11 @@ const renderNearMiss = (
     playUncertaintySource: play,
   });
 
-// Renders with a crib load that stays pending past the settle wait, then optionally delivers a document late.
-const renderPastTheWait = async (
+// Runs out the settle wait on fake timers, then delivers a document to the held crib load.
+const waitOutThenRelease = async (
+  cribReleases: Release[],
   lateDocument: Uncertainty | null,
-): Promise<HTMLElement> => {
-  jest.useFakeTimers();
-  const cribReleases: Release[] = [];
-  const { container } = renderNearMiss(heldSource(cribReleases), noUncertainty);
+): Promise<void> => {
   await act(async () => {
     await jest.advanceTimersByTimeAsync(SIDECAR_SETTLE_TIMEOUT_MS);
   });
@@ -64,6 +66,16 @@ const renderPastTheWait = async (
     });
     await Promise.resolve();
   });
+};
+
+// Renders with a crib load that stays pending past the settle wait, then optionally delivers a document late.
+const renderPastTheWait = async (
+  lateDocument: Uncertainty | null,
+): Promise<HTMLElement> => {
+  jest.useFakeTimers();
+  const cribReleases: Release[] = [];
+  const { container } = renderNearMiss(heldSource(cribReleases), noUncertainty);
+  await waitOutThenRelease(cribReleases, lateDocument);
   jest.useRealTimers();
   return container;
 };
@@ -178,9 +190,14 @@ describe("scored possible keep discards caption", () => {
 
       expect(caption.textContent).toMatch(/^Within noise: 0\.09 pts lost/u);
       expect(caption.getAttribute("aria-label")).toMatch(
-        /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, under the .+ point threshold\. /u,
+        /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, at or below the .+ point threshold\. /u,
       );
       expect(container.querySelector("[class*='noiseBadge']")).not.toBeNull();
+      expect(
+        container
+          .querySelector("tr[data-highlight-tier='chosen']")
+          ?.getAttribute("title"),
+      ).toMatch(/within simulation noise/u);
     });
 
     it.each([
@@ -250,6 +267,35 @@ describe("scored possible keep discards caption", () => {
         );
       },
     );
+
+    it("gives a fresh verdict to the next hand after one timed out, using the late document", async () => {
+      jest.useFakeTimers();
+      const cribReleases: Release[] = [];
+      const sources = {
+        cribUncertaintySource: heldSource(cribReleases),
+        playUncertaintySource: settledWith(WIDE_ERROR),
+      };
+      const { container, rerender } = renderHand(
+        NEAR_MISS_HAND,
+        NEAR_MISS_DISCARD,
+        sources,
+      );
+      await waitOutThenRelease(cribReleases, uniformUncertainty(WIDE_ERROR));
+      const timedOutVerdict =
+        container.querySelector("figcaption")?.textContent;
+      rerender(
+        scoredElement(
+          toDealtCards(parseHand(NEAR_MISS_HAND), parseHand("4H,KC")),
+          sources,
+        ),
+      );
+      jest.useRealTimers();
+
+      expect(timedOutVerdict).toMatch(/^Sub-optimal/u);
+      expect((await findCaption(container)).textContent).toMatch(
+        /^Within noise/u,
+      );
+    });
 
     it("announces an optimal verdict without waiting for the sidecars", () => {
       const neverSettles = heldSource([]);

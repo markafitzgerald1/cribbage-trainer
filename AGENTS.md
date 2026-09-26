@@ -387,9 +387,15 @@
   marginal-error model — not a calibrated interval, and not a mistake
   threshold. E(ΔP) for a kept hand is a **single** published
   `key/role/delta` record, so its standard error is that record's outright:
-  nothing is combined, so nothing is bounded. Do not let a display of either
-  grow into a threshold; the calibrated per-comparison threshold #774 needs
-  is gated on `simulate-cribbage-games#135`.
+  nothing is combined, so nothing is bounded. The one threshold built on
+  them is #774's, and it exists because Mark decided on 2026-09-20 and again
+  on 2026-09-25 to ship a conservative first version (per-identity crib
+  bound and play standard error, combined, times the one-sided 95% normal
+  quantile) rather than wait. It must stay labelled approximate, with no
+  coverage claim, because the best of fifteen noisy estimates is selected;
+  the calibrated per-comparison threshold replacing it is #853, gated on
+  `simulate-cribbage-games#135`. Do not grow any other display into a
+  threshold.
 - **Validate exactly what your display claims, and no more.** #849 declined
   to check `cross_bucket_covariance`, `policy_uncertainty` and
   `calibrated_comparison_uncertainty` on the reasoning that validating fields

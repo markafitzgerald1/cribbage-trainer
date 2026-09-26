@@ -94,6 +94,7 @@
 
 .in-drill .optimal-badge,
 .in-drill .sub-optimal-badge,
+.in-drill .noise-badge,
 .in-drill .diagnostic-reason {
   font-size: 0.74em;
   padding: 2px 6px;

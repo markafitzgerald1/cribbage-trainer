@@ -46,7 +46,6 @@ export const useUncertainty = (
   const [uncertainty, setUncertainty] = useState(source.getUncertaintySync);
   const [isSettled, setIsSettled] = useState(() => uncertainty !== null);
   const isSettledRef = useRef(isSettled);
-  const hasTimedOutRef = useRef(false);
 
   useEffect(() => {
     const settle = (): void => {
@@ -62,44 +61,19 @@ export const useUncertainty = (
        * from one source: it means the source still has nothing. Setting the
        * null already held would be a re-render that says nothing - and, in a
        * test that does not await this load, an update outside `act`.
-       *
-       * A document arriving after the wait timed out is dropped for this
-       * mount: the verdict has already been given as unavailable, and
-       * applying it now would flip that verdict on screen, the one thing the
-       * wait exists to prevent. The next analysis seeds from the loader's
-       * cache and gets it.
        */
-      if (loaded !== null && !hasTimedOutRef.current) {
+      if (loaded !== null) {
         setUncertainty(loaded);
       }
       settle();
     };
 
-    let timer: ReturnType<typeof setTimeout> | null = null;
     if (areResultsOnScreen) {
       // An injected source may reject where the shipped one resolves null; both mean unavailable.
       source.loadUncertainty().then(applyLoaded, () => {
         applyLoaded(null);
       });
-      /*
-       * A stalled load - neither resolved nor rejected, as a hung chunk fetch
-       * on a poor phone connection can be - must not withhold a verdict
-       * forever. After this long the sidecar counts as unavailable, so the
-       * ordinary mistake flag shows. The figure is a patience limit for a
-       * network request, not a statistical input.
-       */
-      if (shouldTrackSettled && !isSettledRef.current) {
-        timer = setTimeout(() => {
-          hasTimedOutRef.current = true;
-          settle();
-        }, SIDECAR_SETTLE_TIMEOUT_MS);
-      }
     }
-    return () => {
-      if (timer !== null) {
-        clearTimeout(timer);
-      }
-    };
   }, [areResultsOnScreen, shouldTrackSettled, source]);
 
   return { isSettled, uncertainty };
@@ -108,6 +82,13 @@ export const useUncertainty = (
 export interface SidecarUncertainties {
   readonly crib: Uncertainty | null;
   readonly isSettled: boolean;
+  /*
+   * True when this analysis's verdict stopped waiting at the timeout. Its
+   * verdict is then given without the sidecars and stays that way even if a
+   * document arrives later, so it never flips on screen; the documents
+   * themselves are still applied, so the per-row figures fill in.
+   */
+  readonly isVerdictTimedOut: boolean;
   readonly play: Uncertainty | null;
 }
 
@@ -121,6 +102,8 @@ export interface SidecarSources {
   readonly cribSource: UncertaintySource;
   readonly playSource: UncertaintySource;
   readonly shouldTrackSettled: boolean;
+  // Identifies the analysis a verdict belongs to; Back and Forward swap it while the component stays mounted.
+  readonly verdictKey: object;
 }
 
 export const useSidecarUncertainties = ({
@@ -128,6 +111,7 @@ export const useSidecarUncertainties = ({
   cribSource,
   playSource,
   shouldTrackSettled,
+  verdictKey,
 }: SidecarSources): SidecarUncertainties => {
   const crib = useUncertainty(
     areResultsOnScreen,
@@ -139,10 +123,40 @@ export const useSidecarUncertainties = ({
     playSource,
     shouldTrackSettled,
   );
-  const isSettled = crib.isSettled && play.isSettled;
+  const [timedOutKey, setTimedOutKey] = useState<object | null>(null);
+  const haveBothSettled = crib.isSettled && play.isSettled;
+
+  useEffect(() => {
+    if (!areResultsOnScreen || !shouldTrackSettled || haveBothSettled) {
+      return () => {
+        // Nothing is waiting, so there is no timer to clear.
+      };
+    }
+    /*
+     * A stalled load - neither resolved nor rejected, as a hung chunk fetch
+     * on a poor phone connection can be - must not withhold a verdict
+     * forever. After this long the verdict for this analysis is given as if
+     * the sidecars were unavailable. The figure is a patience limit for a
+     * network request, not a statistical input.
+     */
+    const timer = setTimeout(() => {
+      setTimedOutKey(verdictKey);
+    }, SIDECAR_SETTLE_TIMEOUT_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [areResultsOnScreen, haveBothSettled, shouldTrackSettled, verdictKey]);
+
+  const isVerdictTimedOut = timedOutKey === verdictKey;
+  const isSettled = haveBothSettled || isVerdictTimedOut;
   // Memoized because the verdict that consumes it recomputes on identity.
   return useMemo(
-    () => ({ crib: crib.uncertainty, isSettled, play: play.uncertainty }),
-    [crib.uncertainty, isSettled, play.uncertainty],
+    () => ({
+      crib: crib.uncertainty,
+      isSettled,
+      isVerdictTimedOut,
+      play: play.uncertainty,
+    }),
+    [crib.uncertainty, isSettled, isVerdictTimedOut, play.uncertainty],
   );
 };

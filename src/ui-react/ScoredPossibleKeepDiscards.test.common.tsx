@@ -40,7 +40,7 @@ export interface RenderOptions {
 }
 /* jscpd:ignore-end */
 
-export const renderScoredPossibleKeepDiscards = (
+export const scoredElement = (
   dealtCards: DealtCard[],
   {
     cribRole = CribRole.Dealer,
@@ -49,28 +49,32 @@ export const renderScoredPossibleKeepDiscards = (
     onScoreSortKeyChange = jest.fn(),
     onStatusChange = jest.fn(),
     playUncertaintySource = noUncertainty,
-    preload = true,
     scoreSortKey = ScoredKeepDiscardSortKey.ExpectedNetPoints,
   }: RenderOptions = {},
+) => (
+  <ScoredPossibleKeepDiscards
+    cribRole={cribRole}
+    cribUncertaintySource={cribUncertaintySource}
+    dealtCards={dealtCards}
+    onAnalysisRendered={onAnalysisRendered}
+    onScoreSortKeyChange={onScoreSortKeyChange}
+    onStatusChange={onStatusChange}
+    playUncertaintySource={playUncertaintySource}
+    scoreSortKey={scoreSortKey}
+    sortOrder={SortOrder.Ascending}
+  />
+);
+
+export const renderScoredPossibleKeepDiscards = (
+  dealtCards: DealtCard[],
+  { preload = true, ...options }: RenderOptions = {},
 ) => {
   if (preload) {
     setTableSync(expectedCribPointsTable);
     setPlayTableSync(expectedPlayPointsTable);
   }
 
-  return render(
-    <ScoredPossibleKeepDiscards
-      cribRole={cribRole}
-      cribUncertaintySource={cribUncertaintySource}
-      dealtCards={dealtCards}
-      onAnalysisRendered={onAnalysisRendered}
-      onScoreSortKeyChange={onScoreSortKeyChange}
-      onStatusChange={onStatusChange}
-      playUncertaintySource={playUncertaintySource}
-      scoreSortKey={scoreSortKey}
-      sortOrder={SortOrder.Ascending}
-    />,
-  );
+  return render(scoredElement(dealtCards, options));
 };
 
 export const renderHand = (

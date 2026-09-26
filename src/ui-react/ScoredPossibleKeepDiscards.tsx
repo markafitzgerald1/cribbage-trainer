@@ -323,6 +323,9 @@ export function ScoredPossibleKeepDiscards({
             cribUncertainty={cribBound}
             descriptionId={descriptionId}
             highlightTier={highlightTier}
+            isWithinNoise={
+              highlightTier === "chosen" && withinNoiseThreshold !== null
+            }
             key={[...scoredKeepDiscard.keep, ...scoredKeepDiscard.discard]
               .map((dealtCard) => dealtCard.dealOrder)
               .join("")}
