@@ -1,4 +1,5 @@
 /* jscpd:ignore-start */
+import { act, waitFor } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import {
   findCaption,
@@ -8,11 +9,12 @@ import {
   waitForAnalysis,
 } from "./ScoredPossibleKeepDiscards.test.common";
 import { CribRole } from "../game/expectedCribPoints";
+import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
+import { type Uncertainty } from "../game/uncertaintySidecar";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 import { uniformUncertainty } from "../game/uncertaintySidecar.test.common";
-import { waitFor } from "@testing-library/react";
 /* jscpd:ignore-end */
 
 // The KH,KC dealer fixture gives up about 0.09 points against the best discard.
@@ -25,9 +27,9 @@ const settledWith = (standardError: number): UncertaintySource => ({
 });
 
 // A load that settles only when the test calls one of the collected release functions.
-const heldSource = (
-  releases: ((value: null) => void)[],
-): UncertaintySource => ({
+type Release = (value: Uncertainty | null) => void;
+
+const heldSource = (releases: Release[]): UncertaintySource => ({
   getUncertaintySync: () => null,
   loadUncertainty: () =>
     new Promise((resolve) => {
@@ -45,6 +47,26 @@ const renderNearMiss = (
     onStatusChange,
     playUncertaintySource: play,
   });
+
+// Renders with a crib load that stays pending past the settle wait, then optionally delivers a document late.
+const renderPastTheWait = async (
+  lateDocument: Uncertainty | null,
+): Promise<HTMLElement> => {
+  jest.useFakeTimers();
+  const cribReleases: Release[] = [];
+  const { container } = renderNearMiss(heldSource(cribReleases), noUncertainty);
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(SIDECAR_SETTLE_TIMEOUT_MS);
+  });
+  await act(async () => {
+    cribReleases.forEach((release) => {
+      release(lateDocument);
+    });
+    await Promise.resolve();
+  });
+  jest.useRealTimers();
+  return container;
+};
 
 describe("scored possible keep discards caption", () => {
   describe("caption diagnostics and optimal margin", () => {
@@ -185,7 +207,7 @@ describe("scored possible keep discards caption", () => {
     });
 
     it("withholds a sub-optimal verdict from the live region until both sidecars settle", async () => {
-      const cribReleases: ((value: null) => void)[] = [];
+      const cribReleases: Release[] = [];
       const pendingCrib = heldSource(cribReleases);
       const onStatusChange = jest.fn();
       const { container } = renderNearMiss(
@@ -211,6 +233,23 @@ describe("scored possible keep discards caption", () => {
         /^Sub-optimal/u,
       );
     });
+
+    it.each([
+      { lateDocument: null, name: "a load that never settles" },
+      {
+        lateDocument: uniformUncertainty(1),
+        name: "a document arriving after the wait",
+      },
+    ])(
+      "gives the sub-optimal verdict once the wait times out, for $name",
+      async ({ lateDocument }) => {
+        const container = await renderPastTheWait(lateDocument);
+
+        expect(container.querySelector("figcaption")?.textContent).toMatch(
+          /^Sub-optimal: 0\.09 pts lost/u,
+        );
+      },
+    );
 
     it("announces an optimal verdict without waiting for the sidecars", () => {
       const neverSettles = heldSource([]);

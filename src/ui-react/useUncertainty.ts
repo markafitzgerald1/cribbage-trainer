@@ -19,6 +19,8 @@ import { type UncertaintySource } from "../game/uncertaintyLoader";
  * `source` is an effect dependency, so callers pass a stable object - the
  * same contract the table loader props already carry.
  */
+export const SIDECAR_SETTLE_TIMEOUT_MS = 5000;
+
 export interface LoadedUncertainty {
   /*
    * True once the load has finished either way, or at once when the source
@@ -44,6 +46,7 @@ export const useUncertainty = (
   const [uncertainty, setUncertainty] = useState(source.getUncertaintySync);
   const [isSettled, setIsSettled] = useState(() => uncertainty !== null);
   const isSettledRef = useRef(isSettled);
+  const hasTimedOutRef = useRef(false);
 
   useEffect(() => {
     const settle = (): void => {
@@ -59,19 +62,44 @@ export const useUncertainty = (
        * from one source: it means the source still has nothing. Setting the
        * null already held would be a re-render that says nothing - and, in a
        * test that does not await this load, an update outside `act`.
+       *
+       * A document arriving after the wait timed out is dropped for this
+       * mount: the verdict has already been given as unavailable, and
+       * applying it now would flip that verdict on screen, the one thing the
+       * wait exists to prevent. The next analysis seeds from the loader's
+       * cache and gets it.
        */
-      if (loaded !== null) {
+      if (loaded !== null && !hasTimedOutRef.current) {
         setUncertainty(loaded);
       }
       settle();
     };
 
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (areResultsOnScreen) {
       // An injected source may reject where the shipped one resolves null; both mean unavailable.
       source.loadUncertainty().then(applyLoaded, () => {
         applyLoaded(null);
       });
+      /*
+       * A stalled load - neither resolved nor rejected, as a hung chunk fetch
+       * on a poor phone connection can be - must not withhold a verdict
+       * forever. After this long the sidecar counts as unavailable, so the
+       * ordinary mistake flag shows. The figure is a patience limit for a
+       * network request, not a statistical input.
+       */
+      if (shouldTrackSettled && !isSettledRef.current) {
+        timer = setTimeout(() => {
+          hasTimedOutRef.current = true;
+          settle();
+        }, SIDECAR_SETTLE_TIMEOUT_MS);
+      }
     }
+    return () => {
+      if (timer !== null) {
+        clearTimeout(timer);
+      }
+    };
   }, [areResultsOnScreen, shouldTrackSettled, source]);
 
   return { isSettled, uncertainty };
