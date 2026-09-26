@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import {
   type DiscardTallySummary,
   readDiscardTally,
@@ -16,8 +17,11 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import type { SortOrder } from "../ui/SortOrder";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
+/* jscpd:ignore-end */
 
 /*
  * What the board is showing, when it is not showing its own cards: the
@@ -40,6 +44,8 @@ interface UseDiscardTallyProps {
   // Telemetry's own identifier for the hand this page load starts with, needed only to give that hand a true identity for later restores to compare against.
   readonly initialHandId: string;
   readonly isSeededSession: boolean;
+  // The sort order on screen right now, captured as a snapshot the instant a discard first completes (see sortOrderAtCompletion below).
+  readonly sortOrder: SortOrder;
   readonly wasDeepLinked: boolean;
 }
 
@@ -103,6 +109,7 @@ export const useDiscardTally = ({
   dealtCards,
   initialHandId,
   isSeededSession,
+  sortOrder,
   wasDeepLinked,
 }: UseDiscardTallyProps): DiscardTally => {
   const [summary, setSummary] = useState<DiscardTallySummary>(() =>
@@ -172,6 +179,41 @@ export const useDiscardTally = ({
       [toHandKey(dealtCards, cribRole), isSeededSession || wasDeepLinked],
     ]),
   );
+
+  /*
+   * The sort order in effect the first time a hand's discard is observed
+   * complete, keyed the same way reportAnalysisRendered's own boardKey is
+   * built (cards plus role) so the two agree without coordinating through a
+   * third identity. Frozen on first capture per hand: recordDiscardDecision
+   * is itself idempotent by handKey (repeatOf), keeping only the first
+   * successful score for a hand, so this must describe that first score —
+   * never whatever sort order happens to be showing when a re-sort or a
+   * Back/Forward re-report repeats the call for an already-scored hand.
+   *
+   * Set here, during render, via React's sanctioned "adjust state while
+   * rendering" path (same idiom usePracticeDrill.ts uses for resetting a
+   * finished drill), rather than in a useEffect: the analysis that scores a
+   * completed discard is rendered by a child component
+   * (ScoredPossibleKeepDiscards), whose own effects run before a parent's in
+   * the same commit, so an effect here could lose that race and find no
+   * snapshot yet when reportAnalysisRendered below needs one. Adjusting
+   * state during render instead makes React redo this render — and every
+   * child render under it — with the snapshot already in place before any
+   * effect fires. The guard keeps this idempotent: a repeated call for an
+   * already-captured hand returns the same Map reference, so it does not
+   * loop.
+   */
+  const [sortOrderAtCompletion, setSortOrderAtCompletion] = useState(
+    () => new Map<string, SortOrder>(),
+  );
+  if (discardIsComplete(dealtCards)) {
+    const completionKey = toHandKey(dealtCards, cribRole);
+    if (!sortOrderAtCompletion.has(completionKey)) {
+      setSortOrderAtCompletion(
+        new Map(sortOrderAtCompletion).set(completionKey, sortOrder),
+      );
+    }
+  }
 
   /*
    * Today is computed when a hand is recorded, so a tab left open across
@@ -317,6 +359,8 @@ export const useDiscardTally = ({
       const discardKey = serializeHand(
         decidedCards.filter((card) => !card.kept),
       );
+      // Looked up by boardKey to match how it was filed above: the sort order captured the instant this hand's discard first completed, never a live read of the current one.
+      const capturedSortOrder = sortOrderAtCompletion.get(boardKey);
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
@@ -353,10 +397,19 @@ export const useDiscardTally = ({
           ...(typeof oppositeRoleExpectedPointsLoss === "number"
             ? { oppositeRoleExpectedPointsLoss }
             : {}),
+          /*
+           * Explicit numeric-type check rather than a truthiness one:
+           * SortOrder.DealOrder is 0, and `capturedSortOrder ? … : …` would
+           * silently treat a deal-order decision the same as one this hook
+           * never saw complete (#872).
+           */
+          ...(typeof capturedSortOrder === "number"
+            ? { sortOrder: sortUrlValue(capturedSortOrder) }
+            : {}),
         }),
       );
     },
-    [dealtCards],
+    [dealtCards, sortOrderAtCompletion],
   );
 
   return {

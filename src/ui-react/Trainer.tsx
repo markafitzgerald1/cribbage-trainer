@@ -178,6 +178,17 @@ export function Trainer({
     setConsented,
     wasAnsweredOnFirstRender,
   } = useAnalyticsConsent(loadGoogleAnalytics);
+  const historyFlags = useRef({ isMerging: false, shouldPush: false });
+
+  // Preserve the current history entry only when its state is stable.
+  // Transient single-card selections get replaced, so Back skips them.
+  const markHistoryUpdate = useCallback(() => {
+    historyFlags.current.shouldPush = isStableDiscardState(dealtCards);
+  }, [dealtCards]);
+  const { changeSortOrder, setSortOrder, sortOrder } = useSortOrder(
+    initialSortOrder,
+    markHistoryUpdate,
+  );
   const {
     currentHandScope,
     reportAnalysisRendered,
@@ -191,20 +202,10 @@ export function Trainer({
     dealtCards,
     decisionQualityConsented: choice.decisionQualityConsented,
     isSeededSession,
+    sortOrder,
     trackEvent,
     wasDeepLinked: initialCards !== null,
   });
-  const historyFlags = useRef({ isMerging: false, shouldPush: false });
-
-  // Preserve the current history entry only when its state is stable.
-  // Transient single-card selections get replaced, so Back skips them.
-  const markHistoryUpdate = useCallback(() => {
-    historyFlags.current.shouldPush = isStableDiscardState(dealtCards);
-  }, [dealtCards]);
-  const { changeSortOrder, setSortOrder, sortOrder } = useSortOrder(
-    initialSortOrder,
-    markHistoryUpdate,
-  );
   const applyManualHand = useCallback(
     (state: DealState) => {
       // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.

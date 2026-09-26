@@ -13,6 +13,7 @@ import {
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
+import type { SortOrder } from "../ui/SortOrder";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*
@@ -23,6 +24,8 @@ import { useCallback } from "react";
 // Extends rather than restates, so a change to the telemetry props cannot leave this describing a shape that no longer exists.
 export interface AnalysisReportingProps extends DiscardTelemetryProps {
   readonly cribRole: CribRole;
+  // The sort order on screen right now; see useDiscardTally's own prop for why the tally needs it.
+  readonly sortOrder: SortOrder;
 }
 
 /*
@@ -81,13 +84,15 @@ export const useAnalysisReporting = (
   props: AnalysisReportingProps,
 ): AnalysisReporting => {
   const telemetry = useDiscardTelemetry(props);
-  const { cribRole, dealtCards, isSeededSession, wasDeepLinked } = props;
+  const { cribRole, dealtCards, isSeededSession, sortOrder, wasDeepLinked } =
+    props;
   const { currentHandScope } = telemetry;
   const tally = useDiscardTally({
     cribRole,
     dealtCards,
     initialHandId: currentHandScope().handId,
     isSeededSession,
+    sortOrder,
     wasDeepLinked,
   });
   const {

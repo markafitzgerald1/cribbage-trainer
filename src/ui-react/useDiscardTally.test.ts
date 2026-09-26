@@ -1,7 +1,5 @@
-import { type DiscardTally, useDiscardTally } from "./useDiscardTally";
 import {
   HAND,
-  INITIAL_HAND_ID,
   OTHER_HAND,
   decisionsAndSkips,
   handOf,
@@ -15,14 +13,11 @@ import {
   scopeFor,
   startWithUnknownOrigin,
 } from "./useDiscardTally.test.common";
-import { act, renderHook } from "@testing-library/react";
-import {
-  clearDiscardTally,
-  readDiscardTally,
-  recordDiscardDecision,
-} from "../ui/discardTally";
 import { describe, expect, it } from "@jest/globals";
+import { readDiscardTally, recordDiscardDecision } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
+import type { DiscardTally } from "./useDiscardTally";
+import { act } from "@testing-library/react";
 
 type MutableCardsHarness = ReturnType<typeof renderTallyWithMutableCards>;
 
@@ -295,20 +290,11 @@ describe("discard tally hook", () => {
    * denominator the two figures share.
    */
   it("counts no skip for a hand whose discard was later undone", () => {
-    clearDiscardTally();
-    const { rerender, result } = renderHook(
-      ({ discarded }: { discarded: boolean }) =>
-        useDiscardTally({
-          cribRole: CribRole.Dealer,
-          dealtCards: handOf(HAND, discarded),
-          initialHandId: INITIAL_HAND_ID,
-          isSeededSession: false,
-          wasDeepLinked: false,
-        }),
-      { initialProps: { discarded: true } },
+    const { rerender, result } = renderTallyWithMutableCards(
+      handOf(HAND, true),
     );
     reportScore(result.current);
-    rerender({ discarded: false });
+    rerender({ dealtCards: handOf(HAND, false) });
     noteOrigin(result.current, OTHER_HAND, "deal");
 
     expect(decisionsAndSkips()).toStrictEqual([1, 0]);

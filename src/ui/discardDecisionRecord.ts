@@ -3,6 +3,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHand } from "../game/Card";
+import { parseSortParam } from "./urlAnalysisState";
 
 export interface DiscardDecisionRecord {
   readonly at: number;
@@ -25,6 +26,15 @@ export interface DiscardDecisionRecord {
   readonly oppositeRoleExpectedPointsLoss?: number;
   // Monotonic recording order for queue recency; `at` remains the calendar event time.
   readonly recencyAt?: number;
+  /*
+   * The sort order on screen when this decision was scored, serialized the
+   * way urlAnalysisState.ts's sortUrlValue does ("deal-order", "ascending",
+   * or "descending"). Absent on every record written before version 7, and
+   * absent means unknown rather than any particular order: nothing observed
+   * which order an earlier record's hand was shown in, so it must never be
+   * inferred or defaulted (#872).
+   */
+  readonly sortOrder?: string;
 }
 
 /*
@@ -44,6 +54,7 @@ interface MaybeDecisionRecord {
   readonly isPractice?: unknown;
   readonly oppositeRoleExpectedPointsLoss?: unknown;
   readonly recencyAt?: unknown;
+  readonly sortOrder?: unknown;
 }
 
 /*
@@ -85,7 +96,10 @@ const isStoredDecisionRecord = (
       candidate.discardKey === null ||
       typeof candidate.discardKey === "string") &&
     (typeof candidate.oppositeRoleExpectedPointsLoss === "undefined" ||
-      isFiniteNonNegative(candidate.oppositeRoleExpectedPointsLoss))
+      isFiniteNonNegative(candidate.oppositeRoleExpectedPointsLoss)) &&
+    (typeof candidate.sortOrder === "undefined" ||
+      (typeof candidate.sortOrder === "string" &&
+        parseSortParam(candidate.sortOrder) !== null))
   );
 };
 
