@@ -1,11 +1,3 @@
-/* eslint-disable sort-imports */
-import {
-  type AnalysisSource,
-  DISCARD_SCORED_SCHEMA_VERSION,
-  type HandStartSource,
-  type TrackEvent,
-  type TrainerEvent,
-} from "../ui/trackEvent";
 import {
   useCallback,
   useEffect,
@@ -13,11 +5,30 @@ import {
   useMemo,
   useRef,
 } from "react";
-import type { CribRole } from "../game/expectedCribPoints";
-import type { DealtCard } from "../game/DealtCard";
+// eslint-disable-next-line sort-imports
+import {
+  type AnalysisSource,
+  DISCARD_SCORED_SCHEMA_VERSION,
+  type HandStartSource,
+  type TrackEvent,
+  type TrainerEvent,
+} from "../ui/trackEvent";
+
 import type { DiscardQuality } from "../analysis/discardQuality";
-import { discardIsComplete } from "../game/discardIsComplete";
+
 import { serializeHand } from "../game/Card";
+// eslint-disable-next-line sort-imports
+import type { DealtCard } from "../game/DealtCard";
+
+import { discardIsComplete } from "../game/discardIsComplete";
+// eslint-disable-next-line sort-imports
+import type { CribRole } from "../game/expectedCribPoints";
+
+import type { SortOrder } from "../ui/SortOrder";
+// eslint-disable-next-line sort-imports
+import type { AnalyticsChoice } from "../ui/analyticsConsent";
+
+import { sortUrlValue } from "../ui/urlAnalysisState";
 
 export type HandReplacementCause = "deal" | "manual";
 
@@ -44,6 +55,7 @@ interface ShownAnalysis {
    * took to load, and could ship a score for an exposure Google Analytics
    * never saw begin — the same pairing analysis_unshown keeps.
    */
+  readonly decisionContextConsented: boolean;
   readonly qualityConsented: boolean;
   qualityReported: boolean;
   // Stamped like the flag above, because the hand's source can change after this exposure opens: a history move onto the same discard keeps the exposure while making the state history-sourced, and the score must not disagree with the analysis_shown it belongs to.
@@ -109,10 +121,6 @@ const createDealTelemetryState = (
 
 const discardedCards = (dealtCards: readonly DealtCard[]) =>
   dealtCards.filter((dealtCard) => !dealtCard.kept);
-
-import type { AnalyticsChoice } from "../ui/analyticsConsent";
-import type { SortOrder } from "../ui/SortOrder";
-import { sortUrlValue } from "../ui/urlAnalysisState";
 
 export interface DiscardTelemetryProps {
   readonly choice: AnalyticsChoice;
@@ -184,7 +192,17 @@ const useEventEmitter = (
     () => latestRef.current.choice.decisionQualityConsented,
     [],
   );
-  return { emit, emitAs: send, hasConsent, hasDecisionQualityConsent };
+  const hasDecisionContextConsent = useCallback(
+    () => latestRef.current.choice.decisionContextConsented,
+    [],
+  );
+  return {
+    emit,
+    emitAs: send,
+    hasConsent,
+    hasDecisionContextConsent,
+    hasDecisionQualityConsent,
+  };
 };
 
 export const useDiscardTelemetry = ({
@@ -207,8 +225,13 @@ export const useDiscardTelemetry = ({
       source: wasDeepLinked ? "deeplink" : "interactive",
     }),
   );
-  const { emit, emitAs, hasConsent, hasDecisionQualityConsent } =
-    useEventEmitter(choice, trackEvent, sortOrder);
+  const {
+    emit,
+    emitAs,
+    hasConsent,
+    hasDecisionContextConsent,
+    hasDecisionQualityConsent,
+  } = useEventEmitter(choice, trackEvent, sortOrder);
   const reportHandStarted = useCallback(
     (state: DealTelemetryState) => {
       if (state.handStarted || !hasConsent()) {
@@ -271,16 +294,18 @@ export const useDiscardTelemetry = ({
           isFirstAnalysis: shown.isFirstAnalysis,
           schemaVersion: DISCARD_SCORED_SCHEMA_VERSION,
           source: shown.source,
-          ...(sortOrderRef.current && {
-            sortOrder: sortUrlValue(sortOrderRef.current) as
-              "deal-order" | "ascending" | "descending",
-          }),
+          ...(sortOrderRef.current &&
+            shown.decisionContextConsented &&
+            hasDecisionContextConsent() && {
+              sortOrder: sortUrlValue(sortOrderRef.current) as
+                "deal-order" | "ascending" | "descending",
+            }),
           // Spread from the derivation's own type rather than a widened record, so every quality field still type-checks against the event's payload.
           ...quality,
         },
       );
     },
-    [emitAs, hasDecisionQualityConsent],
+    [emitAs, hasDecisionContextConsent, hasDecisionQualityConsent],
   );
   const reportAnalysisState = useCallback(
     (state: DealTelemetryState) => {
@@ -308,6 +333,7 @@ export const useDiscardTelemetry = ({
       });
       const shown = {
         analysisIndex: state.analysisCount,
+        decisionContextConsented: hasDecisionContextConsent(),
         discardKey,
         isFirstAnalysis,
         qualityConsented: hasDecisionQualityConsent(),
@@ -322,7 +348,13 @@ export const useDiscardTelemetry = ({
         reportDiscardScored(state, shown, pendingAnalysis);
       }
     },
-    [closeShownAnalysis, emit, hasDecisionQualityConsent, reportDiscardScored],
+    [
+      closeShownAnalysis,
+      emit,
+      hasDecisionContextConsent,
+      hasDecisionQualityConsent,
+      reportDiscardScored,
+    ],
   );
   const replaceHand = useCallback(
     (newDealtCards: readonly DealtCard[], scope: HandScope) => {

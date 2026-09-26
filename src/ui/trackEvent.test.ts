@@ -1,6 +1,6 @@
-/* eslint-disable */
 import {
   type TrainerEvent,
+  type TrainerEventParams,
   toGoogleAnalyticsKey,
   trackEvent,
   trainerEventNames,
@@ -9,8 +9,8 @@ import { describe, expect, it } from "@jest/globals";
 
 const mockChoice = {
   consented: true,
-  decisionQualityConsented: false,
   decisionContextConsented: false,
+  decisionQualityConsented: false,
   needsPolicyUpdateChoice: false,
 };
 
@@ -28,8 +28,8 @@ describe("trackEvent", () => {
       trackEvent(
         {
           consented,
-          decisionQualityConsented: false,
           decisionContextConsented: false,
+          decisionQualityConsented: false,
           needsPolicyUpdateChoice: false,
         },
         "card_selected",
@@ -77,7 +77,7 @@ describe("trackEvent", () => {
         handStartSource: "deal",
         isFirstAnalysis: true,
         isOptimal: false,
-        schemaVersion: 1,
+        schemaVersion: 2,
         source: "interactive",
       },
     ],
@@ -86,6 +86,15 @@ describe("trackEvent", () => {
       { dealNonce: "n", generatedFromSeed: true, source: "deal" },
     ],
   ] as const satisfies readonly TrainerEvent[];
+
+  const discardScoredPayload = (
+    sortOrder?: "ascending" | "descending" | "deal-order",
+  ): TrainerEventParams<"discard_scored"> => {
+    const basePayload = FULL_PAYLOADS.find(
+      ([name]) => name === "discard_scored",
+    )![1] as TrainerEventParams<"discard_scored">;
+    return { ...basePayload, ...(sortOrder && { sortOrder }) };
+  };
 
   const sentParams = (dataLayer: readonly unknown[]) =>
     Array.from(dataLayer[0] as IArguments)[2] as Record<string, unknown>;
@@ -116,10 +125,7 @@ describe("trackEvent", () => {
   // A payload built from a widened source defeats the declared types, so the runtime keeps its own list — and it has to be exact rather than a superset, since anything it lets through reaches Google Analytics under an event that never declared it.
   it("withholds sortOrder from discard_scored when decisionContext is unaccepted", () => {
     const dataLayer = setupDataLayer();
-    const eventParams = {
-      ...(FULL_PAYLOADS.find(([name]) => name === "discard_scored")![1] as any),
-      sortOrder: "ascending",
-    } as const;
+    const eventParams = discardScoredPayload("ascending");
 
     trackEvent(
       { ...mockChoice, decisionQualityConsented: true },
@@ -128,7 +134,8 @@ describe("trackEvent", () => {
     );
 
     const sent = sentParams(dataLayer);
-    expect(sent["sort_order"]).toBeUndefined();
+
+    expect(sent).not.toHaveProperty("sort_order");
   });
 
   it("sends an event only the parameters it declares", () => {
@@ -142,7 +149,7 @@ describe("trackEvent", () => {
       handStartSource: "manual",
       isFirstAnalysis: true,
       isOptimal: true,
-      schemaVersion: 1,
+      schemaVersion: 2,
       source: "deal",
     };
     const sent = FULL_PAYLOADS.map((event) =>
@@ -183,5 +190,22 @@ describe("trackEvent", () => {
         source: "interactive",
       },
     ]);
+  });
+
+  it("sends sort_order when decisionContext is accepted", () => {
+    const dataLayer = setupDataLayer();
+    const eventParams = discardScoredPayload("descending");
+
+    trackEvent(
+      {
+        ...mockChoice,
+        decisionContextConsented: true,
+        decisionQualityConsented: true,
+      },
+      "discard_scored",
+      eventParams,
+    );
+
+    expect(sentParams(dataLayer)).toHaveProperty("sort_order", "descending");
   });
 });

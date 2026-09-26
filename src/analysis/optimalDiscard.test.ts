@@ -20,10 +20,8 @@ const toCandidates = (...scores: number[]) =>
  * pushed "distinct" onto a second row, measured at 367.6px of caption box
  * against a 50px two-row badge. Dropping it renders 340.1px on one 29px row.
  * `accessibleLabel` is the figcaption's aria-label, which no width bounds, so
- * it uses the long, descriptive comparison phrase ("better than the next best
- * discard" or "better than the next best distinct discard") and stays
- * intelligible when spoken out of context. The all-tied and empty labels keep
- * the noun too: neither is near wrapping.
+ * it keeps the noun and stays intelligible when spoken out of context. The
+ * all-tied and empty labels keep the noun too: neither is near wrapping.
  */
 describe("optimalDiscard", () => {
   describe("computeOptimalDiscardMargin", () => {
@@ -31,8 +29,7 @@ describe("optimalDiscard", () => {
       {
         candidates: toCandidates(12.39, 9.85, 8.5),
         expected: {
-          accessibleLabel:
-            "Optimal discard, 2.54 better than the next best discard",
+          accessibleLabel: "Optimal discard, 2.54 better than next",
           label: "Optimal, 2.54 better than next",
           margin: 2.54,
         },
@@ -41,8 +38,7 @@ describe("optimalDiscard", () => {
       {
         candidates: toCandidates(10.0, 10.0, 8.0),
         expected: {
-          accessibleLabel:
-            "Optimal discard, 2.00 better than the next best distinct discard",
+          accessibleLabel: "Optimal discard, 2.00 better than next distinct",
           label: "Optimal, 2.00 better than next distinct",
           margin: 2.0,
         },
@@ -51,8 +47,7 @@ describe("optimalDiscard", () => {
       {
         candidates: toCandidates(-0.11, -0.11, -0.11, -1.25),
         expected: {
-          accessibleLabel:
-            "Optimal discard, 1.14 better than the next best distinct discard",
+          accessibleLabel: "Optimal discard, 1.14 better than next distinct",
           label: "Optimal, 1.14 better than next distinct",
           margin: 1.14,
         },
@@ -80,8 +75,7 @@ describe("optimalDiscard", () => {
       {
         candidates: toCandidates(10.0, 9.996),
         expected: {
-          accessibleLabel:
-            "Optimal discard, less than 0.01 better than the next best discard",
+          accessibleLabel: "Optimal discard, less than 0.01 better than next",
           label: "Optimal, < 0.01 better than next",
           margin: 0.004,
         },
@@ -91,7 +85,7 @@ describe("optimalDiscard", () => {
         candidates: toCandidates(6.0, 6.0, 5.996),
         expected: {
           accessibleLabel:
-            "Optimal discard, less than 0.01 better than the next best distinct discard",
+            "Optimal discard, less than 0.01 better than next distinct",
           label: "Optimal, < 0.01 better than next distinct",
           margin: 0.004,
         },

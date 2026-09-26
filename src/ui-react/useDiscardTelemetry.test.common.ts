@@ -156,7 +156,7 @@ export const scoredParams = (
   generatedFromSeed: false,
   handStartSource: "initial",
   isFirstAnalysis,
-  schemaVersion: 1,
+  schemaVersion: 2,
   source,
 });
 

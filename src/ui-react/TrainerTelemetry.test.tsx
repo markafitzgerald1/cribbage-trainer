@@ -162,7 +162,7 @@ describe("trainer telemetry wiring", () => {
       handStartSource: "initial",
       isFirstAnalysis: true,
       isOptimal: expect.any(Boolean),
-      schemaVersion: 1,
+      schemaVersion: 2,
       sortOrder: "descending",
       source: "interactive",
     });

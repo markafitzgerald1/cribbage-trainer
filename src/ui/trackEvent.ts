@@ -57,7 +57,7 @@ export type TrainerEventName = keyof TrainerEventParamsByName;
 export type CardToggleEventName = "card_selected" | "card_unselected";
 
 // Raised whenever the decision-quality payload's meaning changes, never for an unrelated event.
-export const DISCARD_SCORED_SCHEMA_VERSION = 1;
+export const DISCARD_SCORED_SCHEMA_VERSION = 2;
 
 type TrainerEventParamKey = {
   [Name in TrainerEventName]: keyof TrainerEventParamsByName[Name];

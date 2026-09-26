@@ -1,4 +1,3 @@
-/* eslint-disable sort-keys */
 import { type ReactNode, useState } from "react";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -32,8 +31,8 @@ function WithdrawalHarness({
   const telemetry = useDiscardTelemetry({
     choice: {
       consented,
-      decisionQualityConsented: consented,
       decisionContextConsented: consented,
+      decisionQualityConsented: consented,
       needsPolicyUpdateChoice: false,
     },
     dealtCards: toDealtCards(parseHand(HAND), null),

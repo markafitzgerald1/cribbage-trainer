@@ -117,6 +117,7 @@ export const storeAnalyticsChoice = (consented: boolean): AnalyticsChoice => {
     const declined = readMeasurements(declinedMeasurementsKey);
     recordMeasurementChoices(
       gatedMeasurements
+        .filter(({ introducedIn }) => introducedIn <= PRIVACY_POLICY_VERSION)
         .map(({ name }) => name)
         .filter((name) => !declined.includes(name)),
       [],
@@ -143,7 +144,11 @@ export const storePolicyUpdateChoice = (accepted: boolean): AnalyticsChoice => {
     localStorage.getItem(answeredPolicyVersionKey) ?? "";
   localStorage.setItem(answeredPolicyVersionKey, PRIVACY_POLICY_VERSION);
   const added = gatedMeasurements
-    .filter(({ introducedIn }) => introducedIn > previouslyAnswered)
+    .filter(
+      ({ introducedIn }) =>
+        introducedIn <= PRIVACY_POLICY_VERSION &&
+        introducedIn > previouslyAnswered,
+    )
     .map(({ name }) => name);
   recordMeasurementChoices(accepted ? added : [], accepted ? [] : added);
   return readAnalyticsChoice();

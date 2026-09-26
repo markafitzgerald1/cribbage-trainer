@@ -46,16 +46,13 @@ export const computeOptimalDiscardMargin = (
     typeof secondCandidate !== "undefined" &&
     withoutFloatResidue(bestNet - secondCandidate.expectedNetPoints) === 0;
   const comparisonTarget = hasTopTie ? "next distinct" : "next";
-  const accessibleComparisonTarget = hasTopTie
-    ? "the next best distinct discard"
-    : "the next best discard";
 
   const margin = withoutFloatResidue(bestNet - runnerUp.expectedNetPoints);
   const formattedMargin = formatNetLoss(margin);
   const accessibleMargin = formatAccessibleNetLoss(margin);
 
   return {
-    accessibleLabel: `Optimal discard, ${accessibleMargin} better than ${accessibleComparisonTarget}`,
+    accessibleLabel: `Optimal discard, ${accessibleMargin} better than ${comparisonTarget}`,
     label: `Optimal, ${formattedMargin} better than ${comparisonTarget}`,
     margin,
   };
