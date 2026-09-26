@@ -1,33 +1,24 @@
 import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
-// eslint-disable-next-line sort-imports
-import {
   type AnalysisSource,
   DISCARD_SCORED_SCHEMA_VERSION,
   type HandStartSource,
   type TrackEvent,
   type TrainerEvent,
 } from "../ui/trackEvent";
-
-import type { DiscardQuality } from "../analysis/discardQuality";
-
-import { serializeHand } from "../game/Card";
-// eslint-disable-next-line sort-imports
-import type { DealtCard } from "../game/DealtCard";
-
-import { discardIsComplete } from "../game/discardIsComplete";
-// eslint-disable-next-line sort-imports
-import type { CribRole } from "../game/expectedCribPoints";
-
-import type { SortOrder } from "../ui/SortOrder";
-// eslint-disable-next-line sort-imports
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import type { AnalyticsChoice } from "../ui/analyticsConsent";
-
+import type { CribRole } from "../game/expectedCribPoints";
+import type { DealtCard } from "../game/DealtCard";
+import type { DiscardQuality } from "../analysis/discardQuality";
+import type { SortOrder } from "../ui/SortOrder";
+import { discardIsComplete } from "../game/discardIsComplete";
+import { serializeHand } from "../game/Card";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 
 export type HandReplacementCause = "deal" | "manual";
