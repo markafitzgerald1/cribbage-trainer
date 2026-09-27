@@ -227,6 +227,20 @@ describe("trainer telemetry wiring", () => {
     expectSecondAnalysisInformed(trackEvent);
   });
 
+  it("reports a popstate hydration with the URL's sort order", () => {
+    const { trackEvent } = setupTelemetryTrainer(true);
+    window.history.replaceState(
+      null,
+      "",
+      `?hand=${SIX_HEARTS_HAND}&discard=AH,2H&sort=descending`,
+    );
+    fireEvent.popState(window);
+
+    expect(lastEventParams(trackEvent, "discard_scored")).toMatchObject({
+      sortOrder: "descending",
+    });
+  });
+
   it("reports a popstate hydration with a history source", () => {
     const { trackEvent } = setupTelemetryTrainer(true);
     hydrateFromHistory(null);

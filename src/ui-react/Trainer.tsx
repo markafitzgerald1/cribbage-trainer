@@ -284,6 +284,7 @@ export function Trainer({
             newDealtCards,
             getHistoryEntryState()?.handScope ?? null,
             urlState.cribRole,
+            urlState.sortOrder,
           );
           /*
            * A user Back onto the drilled hand's own six cards — same cards

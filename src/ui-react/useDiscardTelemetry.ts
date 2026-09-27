@@ -137,6 +137,7 @@ export interface DiscardTelemetry {
   readonly reportHistoryNavigation: (
     dealtCards: readonly DealtCard[],
     entry: HistoryHandScope | null,
+    sortOrder?: SortOrder,
   ) => void;
   // Callers stamp this onto the history entry they write and hand it back on a restore, so an entry states which hand it holds and where those cards came from.
   readonly currentHandScope: () => HistoryHandScope;
@@ -300,7 +301,7 @@ export const useDiscardTelemetry = ({
     [emitAs, hasDecisionContextConsent, hasDecisionQualityConsent],
   );
   const reportAnalysisState = useCallback(
-    (state: DealTelemetryState) => {
+    (state: DealTelemetryState, explicitSortOrder?: SortOrder) => {
       if (!discardIsComplete(state.pendingCards)) {
         // An analysis of a discard that is no longer complete must not attach itself to the next exposure.
         state.pendingAnalysis = null;
@@ -331,7 +332,7 @@ export const useDiscardTelemetry = ({
         qualityConsented: hasDecisionQualityConsent(),
         qualityReported: false,
         reported,
-        sortOrder: sortOrderRef.current,
+        sortOrder: explicitSortOrder ?? sortOrderRef.current,
         source: state.source,
       };
       state.shown = shown;
@@ -415,12 +416,16 @@ export const useDiscardTelemetry = ({
     [],
   );
   const reportHistoryNavigation = useCallback(
-    (newDealtCards: readonly DealtCard[], entry: HistoryHandScope | null) => {
+    (
+      newDealtCards: readonly DealtCard[],
+      entry: HistoryHandScope | null,
+      sortOrder?: SortOrder,
+    ) => {
       const state = stateRef.current;
       if (entry?.handId === state.dealNonce) {
         state.source = "history";
         state.pendingCards = newDealtCards;
-        reportAnalysisState(state);
+        reportAnalysisState(state, sortOrder);
       } else {
         const newState = replaceHand(newDealtCards, {
           // An entry written before this document loaded states nothing, and a seeded session assumes its own seed there, which can only over-exclude.
@@ -429,7 +434,7 @@ export const useDiscardTelemetry = ({
           source: "history",
         });
         reportHandStarted(newState);
-        reportAnalysisState(newState);
+        reportAnalysisState(newState, sortOrder);
       }
     },
     [isSeededSession, replaceHand, reportAnalysisState, reportHandStarted],
