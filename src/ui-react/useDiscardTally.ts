@@ -251,9 +251,12 @@ export const useDiscardTally = ({
    * no-op, matching recordDiscardDecision's own return-the-same-tally
    * shortcut for a write with nothing to do.
    */
-  const clearCompletionsForHand = useCallback((abandonedHandKey: string) => {
+  const clearCompletionsForHand = useCallback((leaving: OpenHand | null) => {
+    if (leaving === null) {
+      return;
+    }
     setSortOrderAtCompletion((current) => {
-      const prefix = `${abandonedHandKey}|`;
+      const prefix = `${leaving.key}|`;
       const next = new Map(
         [...current].filter(([key]) => !key.startsWith(prefix)),
       );
@@ -315,9 +318,7 @@ export const useDiscardTally = ({
        * counting them as having ducked the hand they actually played.
        */
       const abandoned = openHand.current;
-      if (abandoned !== null) {
-        clearCompletionsForHand(abandoned.key);
-      }
+      clearCompletionsForHand(abandoned);
       if (
         abandoned !== null &&
         /*
@@ -367,12 +368,14 @@ export const useDiscardTally = ({
         return;
       }
       if (handId === null || handId !== openHand.current?.handId) {
+        // Moving between occurrences by history ends the outgoing one just as a replacement does, so its captures go with it.
+        clearCompletionsForHand(openHand.current);
         const key = toHandKey(cards, role);
         practiceByHand.current.set(key, true);
         openHand.current = { handId, key };
       }
     },
-    [],
+    [clearCompletionsForHand],
   );
 
   const reportAnalysisRendered = useCallback(

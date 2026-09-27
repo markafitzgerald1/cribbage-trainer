@@ -1,5 +1,6 @@
 import {
   HAND,
+  INITIAL_HAND_ID,
   handOf,
   renderTally,
   renderTallyWithMutableCards,
@@ -37,6 +38,23 @@ const completeWithoutScoringUnderDescending = (): TallyHarness => {
   );
   showBoard(harness, handOf(HAND, true), SortOrder.Descending);
   return harness;
+};
+
+/*
+ * Replaces the board with the identical six cards through Enter Cards. The
+ * replacement and the resulting incomplete board are one React update in the
+ * real app (Trainer.tsx's applyManualHand calls reportHandReplaced and
+ * setDealState from one handler), so one act() reproduces that; two separate
+ * updates would let a render re-capture the old completed discard between them.
+ */
+const replaceWithSameCards = (harness: TallyHarness) => {
+  act(() => {
+    harness.result.current.reportHandOrigin(handOf(HAND, false), "manual", {
+      cribRole: CribRole.Dealer,
+      handId: "second-occurrence",
+    });
+    showBoard(harness, handOf(HAND, false), SortOrder.Descending);
+  });
 };
 
 const scoreBoard = (
@@ -165,26 +183,34 @@ describe("recording the sort order a decision was scored under", () => {
   it("keeps the sort order for the occurrence that actually scores, not an earlier abandoned occurrence of the identical hand and discard", () => {
     // First occurrence: the discard completes under Descending, but is abandoned before its score arrives.
     const harness = completeWithoutScoringUnderDescending();
-    /*
-     * The replacement and the resulting incomplete board are one React
-     * update in the real app — Trainer.tsx's applyManualHand calls
-     * reportHandReplaced and setDealState from the same event handler, so
-     * they land in the same batch — and this act() reproduces that. Doing
-     * them as two separate updates would let a render land in between where
-     * reportHandOrigin has cleared the map but dealtCards still reads as the
-     * first occurrence's completed discard, which would simply re-capture it
-     * under the sort order still showing at that moment.
-     */
-    act(() => {
-      harness.result.current.reportHandOrigin(handOf(HAND, false), "manual", {
-        cribRole: CribRole.Dealer,
-        handId: "second-occurrence",
-      });
-      showBoard(harness, handOf(HAND, false), SortOrder.Descending);
-    });
+    replaceWithSameCards(harness);
     // The player changes the sort order, then completes the identical discard again — this is the occurrence that scores.
     scoreBoard(harness, handOf(HAND, true), SortOrder.Ascending);
 
     expect(recordedSortOrder()).toBe("ascending");
+  });
+
+  /*
+   * History can also move between occurrences of the identical hand: after
+   * the second occurrence completes (not yet scored), Back restores the
+   * first, whose URL carries the sort order it was decided under. The
+   * outgoing occurrence's capture must not survive into the restored one.
+   */
+  it("keeps the restored occurrence's own sort order when Back returns to an identical earlier hand", () => {
+    const harness = completeWithoutScoringUnderDescending();
+    replaceWithSameCards(harness);
+    showBoard(harness, handOf(HAND, true), SortOrder.Ascending);
+    const firstOccurrence = {
+      cribRole: CribRole.Dealer,
+      handId: INITIAL_HAND_ID,
+    };
+    // Restored in one update with its board, as Trainer's popstate handler batches them.
+    act(() => {
+      harness.result.current.reportHandRestored(handOf(HAND), firstOccurrence);
+      showBoard(harness, handOf(HAND, true), SortOrder.Descending);
+    });
+    reportScore(harness.result.current);
+
+    expect(recordedSortOrder()).toBe("descending");
   });
 });
