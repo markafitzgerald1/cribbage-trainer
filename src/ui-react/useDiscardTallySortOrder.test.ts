@@ -31,10 +31,13 @@ const showBoard = (
 };
 
 // The shared opening of the abandonment tests: HAND's AH,2H discard completes under Descending and never scores.
-const completeWithoutScoringUnderDescending = (): TallyHarness => {
+const completeWithoutScoringUnderDescending = (
+  wasDeepLinked = false,
+): TallyHarness => {
   const harness = renderTallyWithMutableCards(
     handOf(HAND, false),
     SortOrder.Descending,
+    wasDeepLinked,
   );
   showBoard(harness, handOf(HAND, true), SortOrder.Descending);
   return harness;
@@ -180,15 +183,24 @@ describe("recording the sort order a decision was scored under", () => {
    * when it is left, the second occurrence's completion would find the
    * first's key already taken and inherit its sort order.
    */
-  it("keeps the sort order for the occurrence that actually scores, not an earlier abandoned occurrence of the identical hand and discard", () => {
-    // First occurrence: the discard completes under Descending, but is abandoned before its score arrives.
-    const harness = completeWithoutScoringUnderDescending();
-    replaceWithSameCards(harness);
-    // The player changes the sort order, then completes the identical discard again — this is the occurrence that scores.
-    scoreBoard(harness, handOf(HAND, true), SortOrder.Ascending);
+  it.each([
+    { name: "an interactively dealt first hand", wasDeepLinked: false },
+    {
+      name: "a deep-linked first hand, which is never opened",
+      wasDeepLinked: true,
+    },
+  ])(
+    "keeps the sort order for the occurrence that actually scores, not an earlier abandoned occurrence of the identical hand and discard, for $name",
+    ({ wasDeepLinked }) => {
+      // First occurrence: the discard completes under Descending, but is abandoned before its score arrives.
+      const harness = completeWithoutScoringUnderDescending(wasDeepLinked);
+      replaceWithSameCards(harness);
+      // The player changes the sort order, then completes the identical discard again — this is the occurrence that scores.
+      scoreBoard(harness, handOf(HAND, true), SortOrder.Ascending);
 
-    expect(recordedSortOrder()).toBe("ascending");
-  });
+      expect(recordedSortOrder()).toBe("ascending");
+    },
+  );
 
   /*
    * History can also move between occurrences of the identical hand: after

@@ -125,6 +125,7 @@ interface MutableTallyProps {
 export const renderTallyWithMutableCards = (
   initialDealtCards: ReturnType<typeof handOf>,
   initialSortOrder: SortOrder = DEFAULT_SORT_ORDER,
+  wasDeepLinked = false,
 ) => {
   clearDiscardTally();
   const initialProps: MutableTallyProps = {
@@ -139,7 +140,7 @@ export const renderTallyWithMutableCards = (
         initialHandId: INITIAL_HAND_ID,
         isSeededSession: false,
         sortOrder,
-        wasDeepLinked: false,
+        wasDeepLinked,
       }),
     { initialProps },
   );

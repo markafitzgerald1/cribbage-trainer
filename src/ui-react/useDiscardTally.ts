@@ -44,7 +44,7 @@ interface UseDiscardTallyProps {
   // Telemetry's own identifier for the hand this page load starts with, needed only to give that hand a true identity for later restores to compare against.
   readonly initialHandId: string;
   readonly isSeededSession: boolean;
-  // The sort order on screen right now, captured as a snapshot the instant a discard first completes (see sortOrderAtCompletion below).
+  // The sort order on screen right now, captured the instant a discard becomes complete (see `capture` below).
   readonly sortOrder: SortOrder;
   readonly wasDeepLinked: boolean;
 }
@@ -111,6 +111,11 @@ interface OpenHand {
  * lookup can share it without either reading the other's local variable,
  * and so a hand alone is never mistaken for one particular discard of it.
  */
+interface SortOrderCapture {
+  readonly key: string;
+  readonly sortOrder: SortOrder;
+}
+
 const completionKeyFor = (
   cards: readonly DealtCard[],
   role: CribRole,
@@ -194,75 +199,31 @@ export const useDiscardTally = ({
   );
 
   /*
-   * The sort order in effect the first time a hand's discard is observed
-   * complete, keyed the same way reportAnalysisRendered's own boardKey is
-   * built (cards plus role) so the two agree without coordinating through a
-   * third identity. Frozen on first capture per hand: recordDiscardDecision
-   * is itself idempotent by handKey (repeatOf), keeping only the first
-   * successful score for a hand, so this must describe that first score —
-   * never whatever sort order happens to be showing when a re-sort or a
-   * Back/Forward re-report repeats the call for an already-scored hand.
+   * The sort order in effect when the discard now on the board became
+   * complete (#872). Only the board on screen can be scored, so one capture
+   * is enough: it is dropped whenever the board shows no complete discard,
+   * and it is keyed by the hand occurrence as well as the discard, because
+   * the identical cards, role and discard can come round again (Enter Cards,
+   * a seeded or deep-linked first hand, Back to an earlier deal) and must
+   * never inherit an earlier occurrence's order. `occurrence` advances
+   * whenever reportHandOrigin or reportHandRestored moves the board to a
+   * different hand, which the Trainer batches with the board update itself.
    *
-   * Set here, during render, via React's sanctioned "adjust state while
-   * rendering" path (same idiom usePracticeDrill.ts uses for resetting a
-   * finished drill), rather than in a useEffect: the analysis that scores a
-   * completed discard is rendered by a child component
-   * (ScoredPossibleKeepDiscards), whose own effects run before a parent's in
-   * the same commit, so an effect here could lose that race and find no
-   * snapshot yet when reportAnalysisRendered below needs one. Adjusting
-   * state during render instead makes React redo this render — and every
-   * child render under it — with the snapshot already in place before any
-   * effect fires. The guard keeps this idempotent: a repeated call for an
-   * already-captured hand returns the same Map reference, so it does not
-   * loop.
-   *
-   * The key names the discard as well as the hand, not the hand alone:
-   * completing discard A, abandoning it before it ever scores, and then
-   * completing a different discard B for the same six cards are two
-   * completions this map has to tell apart, or B's capture would find A's
-   * key already taken and silently keep A's sort order. `serializeHand` of
-   * the cards not kept is the same discard identity reportAnalysisRendered
-   * itself computes below, applied here to the board's own cards so the two
-   * sides agree without either reading the other's local variable.
+   * Set during render (React's "adjust state while rendering" idiom, as
+   * usePracticeDrill.ts uses) rather than in an effect: the child analysis
+   * component's effects run before this parent's in the same commit, so an
+   * effect could lose the race and leave the first score with no capture.
    */
-  const [sortOrderAtCompletion, setSortOrderAtCompletion] = useState(
-    () => new Map<string, SortOrder>(),
-  );
-  if (discardIsComplete(dealtCards)) {
-    const completionKey = completionKeyFor(dealtCards, cribRole);
-    if (!sortOrderAtCompletion.has(completionKey)) {
-      setSortOrderAtCompletion(
-        new Map(sortOrderAtCompletion).set(completionKey, sortOrder),
-      );
-    }
+  const [occurrence, setOccurrence] = useState(0);
+  const [capture, setCapture] = useState<SortOrderCapture | null>(null);
+  const boardCaptureKey = discardIsComplete(dealtCards)
+    ? `${occurrence}|${completionKeyFor(dealtCards, cribRole)}`
+    : null;
+  if ((capture?.key ?? null) !== boardCaptureKey) {
+    setCapture(
+      boardCaptureKey === null ? null : { key: boardCaptureKey, sortOrder },
+    );
   }
-
-  /*
-   * The key above names a discard, not an occurrence of it: the same cards,
-   * role and discard can happen twice in one session — a discard completes
-   * while the tables are still loading, the player replaces the hand (Enter
-   * Cards, a drill start, a fresh deal) with the identical six cards, and
-   * completes the identical pair again under a different sort order. Without
-   * this, the second completion's key is the first's, already taken, and the
-   * abandoned occurrence's sort order survives to describe the one that
-   * actually scores. Called from reportHandOrigin below with the hand being
-   * left, since that is where an occurrence ends; entries for every discard
-   * of that hand are dropped together; a hand that never captured one is a
-   * no-op, matching recordDiscardDecision's own return-the-same-tally
-   * shortcut for a write with nothing to do.
-   */
-  const clearCompletionsForHand = useCallback((leaving: OpenHand | null) => {
-    if (leaving === null) {
-      return;
-    }
-    setSortOrderAtCompletion((current) => {
-      const prefix = `${leaving.key}|`;
-      const next = new Map(
-        [...current].filter(([key]) => !key.startsWith(prefix)),
-      );
-      return next.size === current.size ? current : next;
-    });
-  }, []);
 
   /*
    * Today is computed when a hand is recorded, so a tab left open across
@@ -318,7 +279,7 @@ export const useDiscardTally = ({
        * counting them as having ducked the hand they actually played.
        */
       const abandoned = openHand.current;
-      clearCompletionsForHand(abandoned);
+      setOccurrence((current) => current + 1);
       if (
         abandoned !== null &&
         /*
@@ -339,7 +300,7 @@ export const useDiscardTally = ({
       notePractice(key, isPractice);
       openHand.current = { handId, key };
     },
-    [clearCompletionsForHand, isSeededSession, notePractice],
+    [isSeededSession, notePractice],
   );
 
   /*
@@ -368,14 +329,13 @@ export const useDiscardTally = ({
         return;
       }
       if (handId === null || handId !== openHand.current?.handId) {
-        // Moving between occurrences by history ends the outgoing one just as a replacement does, so its captures go with it.
-        clearCompletionsForHand(openHand.current);
+        setOccurrence((current) => current + 1);
         const key = toHandKey(cards, role);
         practiceByHand.current.set(key, true);
         openHand.current = { handId, key };
       }
     },
-    [clearCompletionsForHand],
+    [],
   );
 
   const reportAnalysisRendered = useCallback(
@@ -411,16 +371,12 @@ export const useDiscardTally = ({
       const discardKey = serializeHand(
         decidedCards.filter((card) => !card.kept),
       );
-      /*
-       * Looked up by the board's own hand-and-discard pair, matching how it
-       * was filed above (dealtCards, not decidedCards, since that is what
-       * the capture above saw): the sort order captured the instant this
-       * exact discard first completed, never a live read of the current one
-       * and never another discard's capture for the same six cards.
-       */
-      const capturedSortOrder = sortOrderAtCompletion.get(
-        completionKeyFor(dealtCards, scoredRole),
-      );
+      // Only a capture of this exact occurrence and discard describes the decision being scored.
+      const capturedSortOrder =
+        capture?.key ===
+        `${occurrence}|${completionKeyFor(dealtCards, scoredRole)}`
+          ? capture.sortOrder
+          : null;
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
@@ -469,7 +425,7 @@ export const useDiscardTally = ({
         }),
       );
     },
-    [dealtCards, sortOrderAtCompletion],
+    [capture, dealtCards, occurrence],
   );
 
   return {
