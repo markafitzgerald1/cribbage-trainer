@@ -12,8 +12,8 @@ import {
 } from "./useDiscardTally";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
-import { SortOrder } from "../ui/SortOrder";
 import type { DiscardTallySummary } from "../ui/discardTally";
+import { SortOrder } from "../ui/SortOrder";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*
@@ -42,8 +42,7 @@ export type ReportHandReplaced = (
 export type ReportHistoryNavigation = (
   dealtCards: readonly DealtCard[],
   entry: HistoryHandScope | null,
-  cribRole: CribRole | null,
-  sortOrder?: SortOrder | null,
+  options: { cribRole: CribRole | null; sortOrder?: SortOrder | null },
 ) => void;
 
 /*
@@ -125,10 +124,17 @@ export const useAnalysisReporting = (
   );
 
   const reportHistoryNavigation: ReportHistoryNavigation = useCallback(
-    (cards, entry, role, sortOrder) => {
-      reportHistoryNavigationToTelemetry(cards, entry, sortOrder ?? undefined);
+    (cards, entry, options) => {
+      reportHistoryNavigationToTelemetry(
+        cards,
+        entry,
+        ...(typeof options.sortOrder !== "undefined" &&
+        options.sortOrder !== null
+          ? [options.sortOrder]
+          : []),
+      );
       reportHandRestored(cards, {
-        cribRole: role,
+        cribRole: options.cribRole,
         handId: entry?.handId ?? null,
       });
     },

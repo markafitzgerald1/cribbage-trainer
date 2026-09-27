@@ -283,8 +283,7 @@ export function Trainer({
           reportHistoryNavigation(
             newDealtCards,
             getHistoryEntryState()?.handScope ?? null,
-            urlState.cribRole,
-            urlState.sortOrder,
+            { cribRole: urlState.cribRole, sortOrder: urlState.sortOrder },
           );
           /*
            * A user Back onto the drilled hand's own six cards — same cards

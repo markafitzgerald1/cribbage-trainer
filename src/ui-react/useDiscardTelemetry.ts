@@ -419,13 +419,13 @@ export const useDiscardTelemetry = ({
     (
       newDealtCards: readonly DealtCard[],
       entry: HistoryHandScope | null,
-      sortOrder?: SortOrder,
+      explicitSortOrder?: SortOrder,
     ) => {
       const state = stateRef.current;
       if (entry?.handId === state.dealNonce) {
         state.source = "history";
         state.pendingCards = newDealtCards;
-        reportAnalysisState(state, sortOrder);
+        reportAnalysisState(state, explicitSortOrder);
       } else {
         const newState = replaceHand(newDealtCards, {
           // An entry written before this document loaded states nothing, and a seeded session assumes its own seed there, which can only over-exclude.
@@ -434,7 +434,7 @@ export const useDiscardTelemetry = ({
           source: "history",
         });
         reportHandStarted(newState);
-        reportAnalysisState(newState, sortOrder);
+        reportAnalysisState(newState, explicitSortOrder);
       }
     },
     [isSeededSession, replaceHand, reportAnalysisState, reportHandStarted],
