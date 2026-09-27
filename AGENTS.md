@@ -742,6 +742,15 @@ they bind any PR that makes a claim about a phone or ships a guard.
   initialize-once mutable hook state, seed an eager
   `useRef(create(...))` instead (re-render results are discarded), and keep
   latest-prop reads for timer callbacks in a ref updated by an effect.
+- `react-hooks/refs` rejects any read of a ref's `.current` during render,
+  even a read-only `.has()`, so the eager-`useRef` idiom above cannot hold a
+  value a render must consult. That bites when a child component's effect
+  needs something the parent captures: child effects run before a parent's
+  in the same commit, so capturing in the parent's effect loses the race.
+  #874 captured the sort order in effect when a discard completes, and used
+  `useState` with React's "adjust state while rendering" pattern (the same
+  idiom `usePracticeDrill.ts` uses), guarded so a render sets it at most once
+  per change.
 - `no-undefined` is on everywhere, so an optional prop cannot default to the
   `undefined` literal. With `plugin:react/all` also demanding a `defaultProps`
   entry, the working idiom is `prop?: T | null` with `= null` in the
