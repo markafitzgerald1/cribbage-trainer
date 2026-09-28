@@ -72,10 +72,10 @@ export default {
        * shared spec helpers.
        */
       thresholds: {
-        branches: 81.1,
-        functions: 92.5,
-        lines: 90.7,
-        statements: 90.9,
+        branches: 81.5,
+        functions: 93.0,
+        lines: 91.1,
+        statements: 91.3,
       },
     },
     projects: [
