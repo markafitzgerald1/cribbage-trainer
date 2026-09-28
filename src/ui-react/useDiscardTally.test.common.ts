@@ -112,6 +112,8 @@ export const noteRestore = (
 // A named type rather than a literal written at each call site, so renderHook infers one Props type shared by the callback below and every later rerender call, rather than a narrower one from whichever call happens to supply every field.
 interface MutableTallyProps {
   readonly dealtCards: ReturnType<typeof handOf>;
+  // What telemetry would be reporting for the board: a test that moves to another occurrence passes that occurrence's identifier here as well as to the report.
+  readonly handId?: string;
   readonly sortOrder?: SortOrder;
 }
 
@@ -133,11 +135,15 @@ export const renderTallyWithMutableCards = (
     sortOrder: initialSortOrder,
   };
   return renderHook(
-    ({ dealtCards, sortOrder = DEFAULT_SORT_ORDER }: MutableTallyProps) =>
+    ({
+      dealtCards,
+      handId = INITIAL_HAND_ID,
+      sortOrder = DEFAULT_SORT_ORDER,
+    }: MutableTallyProps) =>
       useDiscardTally({
         cribRole: CribRole.Dealer,
         dealtCards,
-        initialHandId: INITIAL_HAND_ID,
+        handId,
         isSeededSession: false,
         sortOrder,
         wasDeepLinked,
@@ -167,7 +173,7 @@ export const renderTally = (
     useDiscardTally({
       cribRole: CribRole.Dealer,
       dealtCards: handOf(hand, discarded),
-      initialHandId: INITIAL_HAND_ID,
+      handId: INITIAL_HAND_ID,
       isSeededSession,
       sortOrder,
       wasDeepLinked,
@@ -191,7 +197,7 @@ export const startWithUnknownOrigin = () => {
       useDiscardTally({
         cribRole: CribRole.Dealer,
         dealtCards: handOf(hand),
-        initialHandId: INITIAL_HAND_ID,
+        handId: INITIAL_HAND_ID,
         isSeededSession: false,
         sortOrder: DEFAULT_SORT_ORDER,
         wasDeepLinked: false,

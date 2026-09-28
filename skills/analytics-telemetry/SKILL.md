@@ -245,6 +245,17 @@ be inferred from repository changes.
   played is what the Enter cards dialog is for, and
   `isUnchangedEnteredHand` only no-ops that when the role matches and nothing
   is discarded. Do not reintroduce a cards comparison in either place.
+- The local tally has no hand identity of its own: it reads telemetry's
+  `currentHandScope().handId`, and only **after** telemetry has handled the
+  transition. A cross-hand restore makes telemetry mint a fresh scope, which
+  `Trainer` then stamps over the restored entry, so the entry's own `handId`
+  names nothing a later Back can return. #874 took five review rounds on
+  one family of bug — a per-hand counter or copy of the identity kept inside
+  `useDiscardTally` that drifted from telemetry's, each drift re-capturing a
+  later sort order as the one a discard was decided under. The fix that ended
+  it keyed the capture on telemetry's `handId` prop directly. Before adding
+  any per-occurrence state to the tally, key it on that prop rather than
+  tracking occurrences in the tally.
 - An entry written before this document loaded records nothing, and a seeded
   session then assumes its own seed rather than guessing unseeded, which can
   only over-exclude from population statistics. Never invert that default.

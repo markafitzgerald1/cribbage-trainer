@@ -90,7 +90,7 @@ export const useAnalysisReporting = (
   const tally = useDiscardTally({
     cribRole,
     dealtCards,
-    initialHandId: currentHandScope().handId,
+    handId: currentHandScope().handId,
     isSeededSession,
     sortOrder,
     wasDeepLinked,
@@ -115,10 +115,17 @@ export const useAnalysisReporting = (
     [addAnalysisToTally, reportAnalysisToTelemetry],
   );
 
+  /*
+   * Both reports below hand the tally telemetry's scope as it stands after
+   * telemetry has handled the transition, never any other identifier: a
+   * replacement or a cross-hand restore gets a freshly assigned scope, which
+   * Trainer then stamps onto the history entry. Anything else — the outgoing
+   * hand's scope, or the restored entry's old one — is an identifier no later
+   * Back can name, so a same-hand Back would read as a new occurrence (#874).
+   */
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {
       reportHandToTelemetry(cards, cause);
-      // Read after telemetry's own replacement, whose scope is the freshly assigned one rather than the outgoing hand's.
       reportHandOrigin(cards, cause, {
         cribRole: role,
         handId: currentHandScope().handId,
@@ -130,12 +137,10 @@ export const useAnalysisReporting = (
   const reportHistoryNavigation: ReportHistoryNavigation = useCallback(
     (cards, entry, role) => {
       reportHistoryNavigationToTelemetry(cards, entry);
-      reportHandRestored(cards, {
-        cribRole: role,
-        handId: entry?.handId ?? null,
-      });
+      const { handId } = currentHandScope();
+      reportHandRestored(cards, { cribRole: role, handId });
     },
-    [reportHandRestored, reportHistoryNavigationToTelemetry],
+    [currentHandScope, reportHandRestored, reportHistoryNavigationToTelemetry],
   );
 
   return {

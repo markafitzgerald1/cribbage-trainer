@@ -22,13 +22,22 @@ const recordedSortOrder = () => readTallyForDisplay().records[0]?.sortOrder;
 
 type TallyHarness = ReturnType<typeof renderTallyWithMutableCards>;
 
-const showBoard = (
-  harness: TallyHarness,
-  dealtCards: ReturnType<typeof handOf>,
-  sortOrder: SortOrder,
-) => {
-  harness.rerender({ dealtCards, sortOrder });
-};
+// Telemetry's identifier for a replacement of the first hand, which the board is then rendered under exactly as Trainer renders it.
+const SECOND_OCCURRENCE = "second-occurrence";
+
+// Renders the board as a given hand occurrence, the handId being what telemetry would report for it.
+const showBoardOf =
+  (handId: string) =>
+  (
+    harness: TallyHarness,
+    dealtCards: ReturnType<typeof handOf>,
+    sortOrder: SortOrder,
+  ) => {
+    harness.rerender({ dealtCards, handId, sortOrder });
+  };
+
+const showBoard = showBoardOf(INITIAL_HAND_ID);
+const showSecondOccurrence = showBoardOf(SECOND_OCCURRENCE);
 
 // The shared opening of the abandonment tests: HAND's AH,2H discard completes under Descending and never scores.
 const completeWithoutScoringUnderDescending = (
@@ -54,10 +63,16 @@ const replaceWithSameCards = (harness: TallyHarness) => {
   act(() => {
     harness.result.current.reportHandOrigin(handOf(HAND, false), "manual", {
       cribRole: CribRole.Dealer,
-      handId: "second-occurrence",
+      handId: SECOND_OCCURRENCE,
     });
-    showBoard(harness, handOf(HAND, false), SortOrder.Descending);
+    showSecondOccurrence(harness, handOf(HAND, false), SortOrder.Descending);
   });
+};
+
+// The player then changes the sort order and completes the identical discard again, in the second occurrence.
+const replaceAndCompleteUnderAscending = (harness: TallyHarness) => {
+  replaceWithSameCards(harness);
+  showSecondOccurrence(harness, handOf(HAND, true), SortOrder.Ascending);
 };
 
 const scoreBoard = (
@@ -194,9 +209,9 @@ describe("recording the sort order a decision was scored under", () => {
     ({ wasDeepLinked }) => {
       // First occurrence: the discard completes under Descending, but is abandoned before its score arrives.
       const harness = completeWithoutScoringUnderDescending(wasDeepLinked);
-      replaceWithSameCards(harness);
-      // The player changes the sort order, then completes the identical discard again — this is the occurrence that scores.
-      scoreBoard(harness, handOf(HAND, true), SortOrder.Ascending);
+      // The second occurrence is the one that scores.
+      replaceAndCompleteUnderAscending(harness);
+      reportScore(harness.result.current);
 
       expect(recordedSortOrder()).toBe("ascending");
     },
@@ -210,8 +225,7 @@ describe("recording the sort order a decision was scored under", () => {
    */
   it("keeps the restored occurrence's own sort order when Back returns to an identical earlier hand", () => {
     const harness = completeWithoutScoringUnderDescending();
-    replaceWithSameCards(harness);
-    showBoard(harness, handOf(HAND, true), SortOrder.Ascending);
+    replaceAndCompleteUnderAscending(harness);
     const firstOccurrence = {
       cribRole: CribRole.Dealer,
       handId: INITIAL_HAND_ID,

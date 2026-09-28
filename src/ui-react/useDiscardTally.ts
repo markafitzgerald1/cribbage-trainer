@@ -41,8 +41,13 @@ export type DisplayedHandRelabeling = readonly Suit[];
 interface UseDiscardTallyProps {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
-  // Telemetry's own identifier for the hand this page load starts with, needed only to give that hand a true identity for later restores to compare against.
-  readonly initialHandId: string;
+  /*
+   * Telemetry's identifier for the hand on screen now, read on every render.
+   * It is the only hand identity there is: Trainer stamps it onto every
+   * history entry it writes, so anything here that tracked an identity of its
+   * own would drift from the one a later restore hands back (#874).
+   */
+  readonly handId: string;
   readonly isSeededSession: boolean;
   // The sort order on screen right now, captured the instant a discard becomes complete (see `capture` below).
   readonly sortOrder: SortOrder;
@@ -125,7 +130,7 @@ const completionKeyFor = (
 export const useDiscardTally = ({
   cribRole,
   dealtCards,
-  initialHandId,
+  handId: boardHandId,
   isSeededSession,
   sortOrder,
   wasDeepLinked,
@@ -163,7 +168,7 @@ export const useDiscardTally = ({
      */
     isSeededSession || wasDeepLinked
       ? null
-      : { handId: initialHandId, key: toHandKey(dealtCards, cribRole) },
+      : { handId: boardHandId, key: toHandKey(dealtCards, cribRole) },
   );
 
   /*
@@ -205,19 +210,24 @@ export const useDiscardTally = ({
    * and it is keyed by the hand occurrence as well as the discard, because
    * the identical cards, role and discard can come round again (Enter Cards,
    * a seeded or deep-linked first hand, Back to an earlier deal) and must
-   * never inherit an earlier occurrence's order. `occurrence` advances
-   * whenever reportHandOrigin or reportHandRestored moves the board to a
-   * different hand, which the Trainer batches with the board update itself.
+   * never inherit an earlier occurrence's order.
+   *
+   * The occurrence is telemetry's handId itself, not a counter of this
+   * hook's own. A counter advanced by this hook's reports was a second copy
+   * of telemetry's decision about which hand is showing, and every way the
+   * two could disagree re-captured a later sort order: a cross-hand restore
+   * that telemetry answered with a fresh scope while this hook kept the
+   * entry's old one, and a same-hand Back onto a seeded or deep-linked first
+   * hand, which this hook never opened and so read as a different hand.
    *
    * Set during render (React's "adjust state while rendering" idiom, as
    * usePracticeDrill.ts uses) rather than in an effect: the child analysis
    * component's effects run before this parent's in the same commit, so an
    * effect could lose the race and leave the first score with no capture.
    */
-  const [occurrence, setOccurrence] = useState(0);
   const [capture, setCapture] = useState<SortOrderCapture | null>(null);
   const boardCaptureKey = discardIsComplete(dealtCards)
-    ? `${occurrence}|${completionKeyFor(dealtCards, cribRole)}`
+    ? `${boardHandId}|${completionKeyFor(dealtCards, cribRole)}`
     : null;
   if ((capture?.key ?? null) !== boardCaptureKey) {
     setCapture(
@@ -279,7 +289,6 @@ export const useDiscardTally = ({
        * counting them as having ducked the hand they actually played.
        */
       const abandoned = openHand.current;
-      setOccurrence((current) => current + 1);
       if (
         abandoned !== null &&
         /*
@@ -329,7 +338,6 @@ export const useDiscardTally = ({
         return;
       }
       if (handId === null || handId !== openHand.current?.handId) {
-        setOccurrence((current) => current + 1);
         const key = toHandKey(cards, role);
         practiceByHand.current.set(key, true);
         openHand.current = { handId, key };
@@ -374,7 +382,7 @@ export const useDiscardTally = ({
       // Only a capture of this exact occurrence and discard describes the decision being scored.
       const capturedSortOrder =
         capture?.key ===
-        `${occurrence}|${completionKeyFor(dealtCards, scoredRole)}`
+        `${boardHandId}|${completionKeyFor(dealtCards, scoredRole)}`
           ? capture.sortOrder
           : null;
       setSummary(
@@ -425,7 +433,7 @@ export const useDiscardTally = ({
         }),
       );
     },
-    [capture, dealtCards, occurrence],
+    [boardHandId, capture, dealtCards],
   );
 
   return {
