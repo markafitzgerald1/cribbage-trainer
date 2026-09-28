@@ -232,12 +232,12 @@ describe("trainer telemetry wiring", () => {
     window.history.replaceState(
       null,
       "",
-      `?hand=${SIX_HEARTS_HAND}&discard=AH,2H&sort=descending`,
+      `?hand=${SIX_HEARTS_HAND}&discard=AH,2H&sort=deal-order`,
     );
     fireEvent.popState(window);
 
     expect(lastEventParams(trackEvent, "discard_scored")).toMatchObject({
-      sortOrder: "descending",
+      sortOrder: "deal-order",
     });
   });
 
