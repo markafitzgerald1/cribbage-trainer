@@ -60,22 +60,17 @@ export default {
        * red on noise. The margin absorbs that variance while staying well
        * above what a real regression would cost.
        *
-       * Set for #627 from the lower of two Docker runs whose `src/` trees
-       * were byte-identical: 91.26 / 81.36 / 92.96 / 91.08, then 91.19 /
-       * 81.36 / 92.84 / 91.02. Every metric except branches moved, functions
-       * by 0.12, so do not read #814's note as meaning only branches jitter -
-       * it was describing one pair of runs, not a property of the metric.
-       * Branches sit below the previous 81.75-ish because the sidecar reader
-       * validates a published wire format: Jest covers every rejection it can
-       * return, and browser-mode stories reach only the handful a page can
-       * provoke. Functions rose because the exclusion above stopped counting
-       * shared spec helpers.
+       * Set for #880 from the lowest of observed Docker runs (local runs
+       * 91.56 / 81.80 / 93.32 / 91.40 and 91.56 / 81.74 / 93.32 / 91.40, and
+       * CI Docker run 91.49 / 81.74 / 93.21 / 91.33). Pinned with a quarter-point
+       * margin under the lowest totals (statements 91.24 -> 91.2, branches
+       * 81.49 -> 81.4, functions 92.96 -> 92.9, lines 91.08 -> 91.0).
        */
       thresholds: {
-        branches: 81.5,
-        functions: 93.0,
-        lines: 91.1,
-        statements: 91.3,
+        branches: 81.4,
+        functions: 92.9,
+        lines: 91.0,
+        statements: 91.2,
       },
     },
     projects: [
