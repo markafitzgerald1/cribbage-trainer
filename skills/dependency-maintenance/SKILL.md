@@ -128,4 +128,9 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   caret bumps in `overrides` plus `npm audit fix`, with no `.nsprc` entry.
   markdown-it already had an override, so its floor was raised rather than
   a second one added. Reproduce on main before fixing so a PR-specific
-  failure is not mistaken for a repo-wide one.
+  failure is not mistaken for a repo-wide one. The next day twelve axios
+  advisories (all `<1.20.0`) did the same through `wait-on`, because an
+  exact `"axios": "1.18.1"` override had survived an earlier fix: an exact
+  pin freezes a package at whatever was patched when it was written, so a
+  later advisory wave on the same package cannot be cleared by
+  `npm audit fix` until the pin becomes a caret (`^1.20.0`).

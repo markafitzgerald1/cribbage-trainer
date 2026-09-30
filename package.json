@@ -137,7 +137,7 @@
   },
   "overrides": {
     "@vitest/browser": "^4.1.11",
-    "axios": "1.18.1",
+    "axios": "^1.20.0",
     "brace-expansion@1": "^1.1.21",
     "brace-expansion@2": "^2.1.4",
     "brace-expansion@>=3": "^5.0.12",
