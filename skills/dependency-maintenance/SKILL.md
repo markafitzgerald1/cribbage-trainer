@@ -119,3 +119,13 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   exception goes, so the Dockerfile's allowlisted `COPY`s stay valid (see
   "Lint gauntlet interplay" in `AGENTS.md`, which owns that rule because it
   also fires for changes that touch no dependency at all).
+- **A same-day advisory wave is fixed the same way, and the tell is the date.**
+  On 2026-09-29 eight advisories (brace-expansion 1.x and 4-5, fast-uri,
+  markdown-it) turned every open PR's Docker `lint` step red at once, with
+  no dependency change on any of them; a clean `origin/main` reproduced it.
+  Each range's upper bound named a patched release that already existed
+  (`<1.1.21`, `>=4.0.0 <5.0.12`, `<3.1.8`, `<14.3.1`), so the fix was four
+  caret bumps in `overrides` plus `npm audit fix`, with no `.nsprc` entry.
+  markdown-it already had an override, so its floor was raised rather than
+  a second one added. Reproduce on main before fixing so a PR-specific
+  failure is not mistaken for a repo-wide one.
