@@ -33,7 +33,7 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * reader treats absent as unknown rather than as zero.
  *
  * 7 adds DiscardDecisionRecord.sortOrder (#872): the sort order on screen
- * when the discard was scored. Again no rewrite of existing rows; the field
+ * when the discard was completed. Again no rewrite of existing rows; the field
  * is simply absent on them, and absent must be read as unknown rather than
  * inferred or defaulted to any particular order.
  */

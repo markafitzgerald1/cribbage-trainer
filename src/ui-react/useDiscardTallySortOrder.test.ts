@@ -109,7 +109,7 @@ const resortThenReport = (
  * assertion below is a strict equality against a string, not a truthiness
  * check, and would fail loudly if the field were ever missing for it.
  */
-describe("recording the sort order a decision was scored under", () => {
+describe("recording the sort order a discard was completed under", () => {
   it.each([
     { sortOrder: SortOrder.DealOrder, url: "deal-order" },
     { sortOrder: SortOrder.Ascending, url: "ascending" },
@@ -141,7 +141,7 @@ describe("recording the sort order a decision was scored under", () => {
     expect(recordedSortOrder()).toBe("deal-order");
   });
 
-  // A hand that arrives already discarded — a reload of its own URL — completes on its very first render, before any effect has run, and still has to be captured.
+  // A hand that arrives already discarded — a reload of its own URL — is complete from mount and still has to be captured. renderHook flushes effects before the score is reported, so this cannot tell a render-time capture from an effect; TrainerSortOrderRecord.test.tsx is what pins the timing.
   it("captures the sort order for a hand that is already complete on mount", () => {
     const { result } = renderTally(HAND, {
       discarded: true,
@@ -157,9 +157,9 @@ describe("recording the sort order a decision was scored under", () => {
    * discardTally hook's own suite). recordDiscardDecision absorbs every
    * later report as a repeat of the first by handKey, but that only leaves
    * the tally correct if the sort order offered on those later reports is
-   * never mistaken for the one the decision was actually scored under.
+   * never mistaken for the one shown when the discard was completed.
    */
-  it("keeps the first-scored sort order across a later re-sort and re-report", () => {
+  it("keeps the completion sort order across a later re-sort and re-report", () => {
     const harness = renderTallyWithMutableCards(
       handOf(HAND, true),
       SortOrder.Descending,
@@ -177,16 +177,38 @@ describe("recording the sort order a decision was scored under", () => {
    * second one's capture must not find the first one's key already taken.
    * Reproduces the gap an earlier version of this hook had, where the
    * completion map was keyed by hand alone.
+   *
+   * The second case is the same rule applied to the identical discard:
+   * deselecting a card withdraws the completion, so picking it again is a
+   * fresh completion and records the order shown then, even though the
+   * earlier one was never scored (the tables were still loading). The
+   * decision that scores is the one made last, under what was on screen.
    */
-  it("keeps the sort order for the discard that actually scores, not an earlier abandoned one", () => {
-    // Discard A (AH,2H) completes under Descending, then is abandoned before it scores.
-    const harness = completeWithoutScoringUnderDescending();
-    showBoard(harness, handOf(HAND, false), SortOrder.Descending);
-    // Discard B (3H,4H) completes under a different sort order, and it is the one that scores.
-    scoreBoard(harness, otherDiscardOfHand(), SortOrder.DealOrder);
+  it.each([
+    {
+      completedAgain: otherDiscardOfHand,
+      name: "a different discard of the same hand",
+      sortOrder: SortOrder.DealOrder,
+      wanted: "deal-order",
+    },
+    {
+      completedAgain: () => handOf(HAND, true),
+      name: "the same discard, redone after a re-sort",
+      sortOrder: SortOrder.Ascending,
+      wanted: "ascending",
+    },
+  ])(
+    "records the order of the completion that scores, not an earlier withdrawn one, for $name",
+    ({ completedAgain, sortOrder, wanted }) => {
+      // AH,2H completes under Descending, then the player re-sorts and withdraws it before it scores.
+      const harness = completeWithoutScoringUnderDescending();
+      resortTo(harness, sortOrder);
+      showBoard(harness, handOf(HAND, false), sortOrder);
+      scoreBoard(harness, completedAgain(), sortOrder);
 
-    expect(recordedSortOrder()).toBe("deal-order");
-  });
+      expect(recordedSortOrder()).toBe(wanted);
+    },
+  );
 
   /*
    * A discard's key names the hand and the discard, but not which occurrence

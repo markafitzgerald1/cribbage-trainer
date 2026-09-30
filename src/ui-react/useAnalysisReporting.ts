@@ -117,11 +117,13 @@ export const useAnalysisReporting = (
 
   /*
    * Both reports below hand the tally telemetry's scope as it stands after
-   * telemetry has handled the transition, never any other identifier: a
-   * replacement or a cross-hand restore gets a freshly assigned scope, which
-   * Trainer then stamps onto the history entry. Anything else — the outgoing
-   * hand's scope, or the restored entry's old one — is an identifier no later
-   * Back can name, so a same-hand Back would read as a new occurrence (#874).
+   * telemetry has handled the transition: a replacement or a cross-hand
+   * restore gets a freshly assigned scope, which Trainer then stamps onto the
+   * history entry, so that is the identifier a later Back names. The sort
+   * capture reads the same scope as its handId prop; the restore's copy only
+   * keeps the tally's open hand naming it too, which changes no count today:
+   * a restore that reads the identifier at all has a role, and so marks its
+   * hand practice by card-role key, which is what exempts it from skips.
    */
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {

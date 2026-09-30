@@ -394,6 +394,10 @@ describe("discard tally recovery", () => {
       name: "holding an unrecognized sortOrder string",
       records: [{ ...validRecord, sortOrder: "shuffled" }],
     },
+    {
+      name: "holding a sortOrder in a spelling this build never writes",
+      records: [{ ...validRecord, sortOrder: "Ascending" }],
+    },
   ])(
     "drops records that are $name while keeping the counters",
     ({ records }) => {

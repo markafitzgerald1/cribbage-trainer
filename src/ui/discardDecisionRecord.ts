@@ -1,9 +1,10 @@
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
+import { SortOrder } from "./SortOrder";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHand } from "../game/Card";
-import { parseSortParam } from "./urlAnalysisState";
+import { sortUrlValue } from "./urlAnalysisState";
 
 export interface DiscardDecisionRecord {
   readonly at: number;
@@ -27,12 +28,13 @@ export interface DiscardDecisionRecord {
   // Monotonic recording order for queue recency; `at` remains the calendar event time.
   readonly recencyAt?: number;
   /*
-   * The sort order on screen when this decision was scored, serialized the
+   * The sort order on screen when this discard was completed, serialized the
    * way urlAnalysisState.ts's sortUrlValue does ("deal-order", "ascending",
    * or "descending"). Absent on every record written before version 7, and
    * absent means unknown rather than any particular order: nothing observed
    * which order an earlier record's hand was shown in, so it must never be
-   * inferred or defaulted (#872).
+   * inferred or defaulted (#872). Taken at completion, not when the score
+   * arrives: a re-sort while the tables load does not change it.
    */
   readonly sortOrder?: string;
 }
@@ -44,6 +46,14 @@ export interface DiscardDecisionRecord {
  * dot-notation rule rewrites exactly that back to dots on --fix, so the two
  * gates disagree forever. Declaring the fields settles it in the type.
  */
+/*
+ * Exactly the spellings this build writes. parseSortParam is not the test,
+ * because it ignores case: "Ascending" would pass it and be kept as stored, so a
+ * reader grouping records by the string would split one order in two.
+ */
+const STORED_SORT_ORDERS: readonly string[] =
+  Object.values(SortOrder).map(sortUrlValue);
+
 interface MaybeDecisionRecord {
   readonly at?: unknown;
   readonly cribRole?: unknown;
@@ -99,7 +109,7 @@ const isStoredDecisionRecord = (
       isFiniteNonNegative(candidate.oppositeRoleExpectedPointsLoss)) &&
     (typeof candidate.sortOrder === "undefined" ||
       (typeof candidate.sortOrder === "string" &&
-        parseSortParam(candidate.sortOrder) !== null))
+        STORED_SORT_ORDERS.includes(candidate.sortOrder)))
   );
 };
 

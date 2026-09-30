@@ -105,9 +105,9 @@ const resortTwiceThenBackAndScore = (reporting: Reporting) => {
 describe("the hand identity telemetry and the tally share", () => {
   /*
    * Back to a different hand makes telemetry open a fresh scope, which
-   * Trainer then stamps over the restored entry. A tally still holding the
-   * entry's old identifier reads the next same-hand Back as yet another
-   * occurrence and captures the sort order afresh — the intermediate one.
+   * Trainer then stamps over the restored entry. A capture keyed on anything
+   * but that fresh scope — such as the entry's old identifier — changes key
+   * on the next same-hand Back and is retaken under the intermediate sort.
    */
   it("keeps the completion sort order across same-hand Backs after a cross-hand restore", () => {
     const reporting = startReporting({

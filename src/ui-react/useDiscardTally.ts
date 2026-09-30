@@ -210,7 +210,10 @@ export const useDiscardTally = ({
    * and it is keyed by the hand occurrence as well as the discard, because
    * the identical cards, role and discard can come round again (Enter Cards,
    * a seeded or deep-linked first hand, Back to an earlier deal) and must
-   * never inherit an earlier occurrence's order.
+   * never inherit an earlier occurrence's order. Dropping it is deliberate
+   * even before a score arrives: a board that stops showing the discard has
+   * withdrawn that completion, so the next one — a click or a history move
+   * back onto it — is a fresh completion and takes the order then on screen.
    *
    * The occurrence is telemetry's handId itself, not a counter of this
    * hook's own. A counter advanced by this hook's reports was a second copy
