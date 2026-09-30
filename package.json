@@ -59,7 +59,7 @@
     "@playwright/test": "^1.63.0",
     "@storybook/addon-docs": "^10.6.0",
     "@storybook/addon-links": "^10.6.0",
-    "@storybook/addon-vitest": "^10.6.0",
+    "@storybook/addon-vitest": "^10.6.1",
     "@storybook/react-vite": "^10.6.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@testing-library/jest-dom": "^7.0.1",
@@ -136,11 +136,6 @@
     }
   },
   "overrides": {
-    "@storybook/addon-vitest": {
-      "vitest": "$vitest",
-      "@vitest/browser-playwright": "$@vitest/browser-playwright"
-    },
-    "@vitest/browser": "^5.0.2",
     "axios": "1.18.1",
     "brace-expansion@1": "^1.1.18",
     "brace-expansion@2": "^2.1.4",
