@@ -16,6 +16,7 @@ import {
 import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import type { UncertaintySource } from "../game/uncertaintyLoader";
@@ -135,10 +136,18 @@ const captionAfterLoad = async (
   const canvas = within(canvasElement);
   await waitForLoadingToDisappear(canvas);
 
-  const caption = canvasElement.querySelector("figcaption");
+  // Waited for, not read at once: a sub-optimal verdict appears only after both sidecars settle (#774).
+  await waitFor(
+    async () => {
+      await expect(canvasElement.querySelector("figcaption")).not.toBeNull();
+    },
+    // Longer than the sidecar wait, so a slow but valid load is never cut off before its verdict can appear.
+    { timeout: SIDECAR_SETTLE_TIMEOUT_MS * 2 },
+  );
 
-  await expect(caption).not.toBeNull();
-  await expect(caption).toHaveTextContent(expectedText);
+  await expect(canvasElement.querySelector("figcaption")).toHaveTextContent(
+    expectedText,
+  );
 
   return canvas;
 };
@@ -156,7 +165,7 @@ export const RoleLossPair: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Sub-optimal: 3.11 as dealer, 0.00 as pone",
+      "Sub-optimal: 3.11 dealer, 0.00 pone",
     );
 
     /*
@@ -167,7 +176,7 @@ export const RoleLossPair: Story = {
      * badge's own, because a brighter one here outshouted the figure that
      * matters — the cost under the role actually held.
      */
-    const figure = canvas.getByText("0.00 as pone");
+    const figure = canvas.getByText("0.00 pone");
     const rendered = window.getComputedStyle(figure);
     const badge = figure.parentElement as HTMLElement;
 
@@ -198,7 +207,7 @@ export const RoleLossWithheld: Story = {
     );
 
     // The caption is on screen with its single figure, so the reversed-role clause is absent rather than simply not rendered.
-    await expect(canvas.queryByText(/as dealer/u)).toBeNull();
+    await expect(canvas.queryByText(/dealer/u)).toBeNull();
   },
 };
 
@@ -305,6 +314,39 @@ export const UncertaintyUnavailable: Story = {
     const canvas = await expandedWithFigures(context, 0);
 
     await expect(await canvas.findByText(/Crib avg/u)).toBeVisible();
+  },
+};
+
+/*
+ * A wide, fixed standard error so the 0.09-point loss of discarding both kings
+ * lands inside the #774 noise threshold whatever the shipped sidecars say.
+ * Held rather than built per render, for the effect-dependency reason above.
+ */
+const WIDE_NOISE: UncertaintySource = {
+  getUncertaintySync: () => null,
+  loadUncertainty: () => Promise.resolve({ totals: { get: () => 0.25 } }),
+};
+
+const withinNoiseStory = createStory(
+  toDealtCards(parseHand("4H,5D,KH,6H,8C,KC"), [2, 5]),
+  SortOrder.Descending,
+);
+
+export const WithinSimulationNoise: Story = {
+  ...withinNoiseStory,
+  args: {
+    ...withinNoiseStory.args,
+    cribRole: CribRole.Dealer,
+    cribUncertaintySource: WIDE_NOISE,
+    playUncertaintySource: WIDE_NOISE,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = await captionAfterLoad(
+      canvasElement,
+      "Within noise: 0.09 pts lost",
+    );
+
+    await expect(canvas.queryByText(/Sub-optimal/u)).toBeNull();
   },
 };
 

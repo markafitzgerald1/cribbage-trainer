@@ -20,11 +20,17 @@
   font-weight: bold;
 }
 
+/*
+ * A column rather than a wrapping row, so the reason badge always takes its
+ * own row below the verdict: verdict plus reason fits one line on a desktop
+ * and not on a phone, and a row that wrapped only where it had to made the
+ * caption's height change with the viewport width.
+ */
 .diagnostic-caption {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
+  flex-direction: column;
   flex-shrink: 0;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -43,6 +49,21 @@
   border: 1px solid #f5cba7;
   border-radius: 4px;
   color: #fdf2e9;
+  font-size: 0.82em;
+  font-weight: 700;
+  padding: 3px 8px;
+}
+
+/*
+ * Neutral rather than warning-coloured: a loss within simulation noise (#774)
+ * is not a mistake, and must not read as one. Same box as the other two badges
+ * so swapping between them never changes the caption's row count.
+ */
+.noise-badge {
+  background-color: #26323d;
+  border: 1px solid #aab7c4;
+  border-radius: 4px;
+  color: #eef2f6;
   font-size: 0.82em;
   font-weight: 700;
   padding: 3px 8px;
@@ -79,6 +100,7 @@
 
 .in-drill .optimal-badge,
 .in-drill .sub-optimal-badge,
+.in-drill .noise-badge,
 .in-drill .diagnostic-reason {
   font-size: 0.74em;
   padding: 2px 6px;

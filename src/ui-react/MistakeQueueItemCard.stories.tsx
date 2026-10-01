@@ -84,7 +84,7 @@ export const WithRoleLossPair: Story = {
     });
 
     await expect(pair).toBeVisible();
-    await expect(pair).toHaveTextContent("1.00 as dealer, 0.00 as pone");
+    await expect(pair).toHaveTextContent("1.00 dealer, 0.00 pone");
     await expect(canvas.getByText("Prev: Crib gain < Hand loss")).toBeVisible();
   },
 };

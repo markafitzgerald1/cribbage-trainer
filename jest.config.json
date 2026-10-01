@@ -14,6 +14,7 @@
     "!src/ui-react/PracticeDrillPanel.test.common.ts",
     "!src/ui-react/handToSortedString.test.common.ts",
     "!src/ui-react/discardTally.test.common.ts",
+    "!src/ui-react/ScoredPossibleKeepDiscards.test.common.tsx",
     "!src/ui-react/Trainer.test.common.tsx",
     "!src/ui-react/useDiscardTally.test.common.ts",
     "!src/ui-react/useDiscardTelemetry.test.common.ts",
