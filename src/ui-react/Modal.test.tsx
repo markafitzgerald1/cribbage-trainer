@@ -5,10 +5,10 @@ import Modal from "./Modal";
 import { render } from "@testing-library/react";
 
 describe("modal component", () => {
-  const renderModal = (show: boolean) =>
+  const renderModal = (show: boolean, onClose: () => void = jest.fn()) =>
     render(
       <Modal
-        onClose={jest.fn()}
+        onClose={onClose}
         show={show}
       >
         <div>Lorem, ipsum...</div>
@@ -25,5 +25,25 @@ describe("modal component", () => {
     const { getByRole } = renderModal(true);
 
     expect(getByRole("button")).toBeTruthy();
+  });
+
+  it("renders the close button with aria-label outside the scrolling body", () => {
+    const { getByRole, getByText } = renderModal(true);
+
+    const closeButton = getByRole("button", { name: "Close modal" });
+    const content = getByText("Lorem, ipsum...");
+
+    expect(closeButton).toBeInTheDocument();
+    expect(content.parentElement).not.toContainElement(closeButton);
+    expect(closeButton.parentElement).toContainElement(content.parentElement);
+  });
+
+  it("calls onClose when the close button is clicked", () => {
+    const onClose = jest.fn();
+    const { getByLabelText } = renderModal(true, onClose);
+
+    getByLabelText("Close modal").click();
+
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

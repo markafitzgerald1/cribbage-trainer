@@ -167,10 +167,13 @@ export const renderAnalysisOnScreen = (
   scene: Scene,
   quality: DiscardQuality | null = RENDERED_QUALITY,
 ) => {
-  scene.telemetry.reportAnalysisRendered({
-    cribRole: CribRole.Dealer,
-    quality,
-  });
+  scene.telemetry.reportAnalysisRendered(
+    {
+      cribRole: CribRole.Dealer,
+      quality,
+    },
+    null,
+  );
 };
 
 export const scoredParams = (

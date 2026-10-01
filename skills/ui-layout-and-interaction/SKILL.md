@@ -651,7 +651,7 @@ once you are already editing layout or interaction code.
   not, so that count says one row for a caption that visibly has two.
 - **`AGENTS.md`'s mutually-non-substring rule is about whole names, not
   leading words.** `Optimal, 0.37 better than next distinct` sits safely
-  beside `Sub-optimal: 1.05 as pone, 0.00 as dealer`, because neither whole
+  beside `Sub-optimal: 1.05 pone, 0.00 dealer`, because neither whole
   string contains the other, while a bare `Optimal` would be a substring of
   the sibling and is the collision the rule exists to stop. Audit a
   candidate against the names the page actually renders rather than the ones
@@ -659,3 +659,16 @@ once you are already editing layout or interaction code.
   on the rendered analysis screen found 61 names, and showed that the **old**
   caption contained the `Optimal discard` row title — an overlap the
   shortened one drops.
+- **A verdict badge has a width budget of about 41 characters.** The caption's
+  first line held about 42 on a Pixel in portrait, so
+  `Within noise, approximate: 0.04 as dealer, < 0.01 as pone` (56) wrapped
+  onto two lines. The visible wording dropped "approximate" and "as"; the
+  accessible label keeps both, and `ScoredPossibleKeepDiscardsCaption.test.tsx`
+  pins the length. Emulation cannot settle wrapping, so recheck on a phone.
+- **A caption whose chips wrap only where they must has a row count that
+  depends on the viewport.** Verdict plus reason fits one line on a desktop
+  and not on a phone, so the wrapping row showed one row at some widths and two
+  at others. `.diagnostic-caption` is now a column: the reason badge always
+  takes its own row, and `roleLossPair.spec.ts` asserts the verdict is one line
+  and the reason sits below it at a desktop and a phone-portrait width. The
+  `practiceDrill.spec.ts` caption-height budget (65px) held unchanged.

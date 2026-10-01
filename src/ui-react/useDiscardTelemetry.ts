@@ -54,7 +54,6 @@ interface ShownAnalysis {
   // An exposure that consent kept off the wire must also close silently.
   // Otherwise Google Analytics receives an unshown whose shown it never saw.
   readonly reported: boolean;
-  readonly sortOrder: SortOrder | undefined;
 }
 
 // What the analysis component saw on screen: the role it scored against, and what the discard gave up, which is absent until two cards are discarded.
@@ -89,7 +88,10 @@ interface DealTelemetryState {
   hasRenderedAnalysis: boolean;
   readonly handStartSource: HandStartSource;
   // Held when answers reach the screen before the exposure that reports them exists, which is the order effects run in on a deep-linked first render.
-  pendingAnalysis: RenderedAnalysis | null;
+  pendingAnalysis: {
+    analysis: RenderedAnalysis;
+    completionSortOrder: SortOrder | null;
+  } | null;
   pendingCards: readonly DealtCard[];
   shown: ShownAnalysis | null;
   source: AnalysisSource;
@@ -120,7 +122,6 @@ export interface DiscardTelemetryProps {
   // Only whether a seed exists crosses into telemetry; the seed value itself never does.
   readonly isSeededSession: boolean;
   readonly trackEvent: TrackEvent;
-  readonly sortOrder?: SortOrder;
   readonly wasDeepLinked: boolean;
 }
 
@@ -133,11 +134,13 @@ export interface DiscardTelemetry {
     dealtCards: readonly DealtCard[],
     cause: HandReplacementCause,
   ) => void;
-  readonly reportAnalysisRendered: (analysis: RenderedAnalysis) => void;
+  readonly reportAnalysisRendered: (
+    analysis: RenderedAnalysis,
+    completionSortOrder: SortOrder | null,
+  ) => void;
   readonly reportHistoryNavigation: (
     dealtCards: readonly DealtCard[],
     entry: HistoryHandScope | null,
-    sortOrder?: SortOrder,
   ) => void;
   // Callers stamp this onto the history entry they write and hand it back on a restore, so an entry states which hand it holds and where those cards came from.
   readonly currentHandScope: () => HistoryHandScope;
@@ -146,12 +149,8 @@ export interface DiscardTelemetry {
 // GA4 cannot reconstruct "first analysis exposure per deal" after the fact, so the per-deal nonce, 1-based analysis index, and first-interactive flag are stamped at emit time.
 // Only the first render's `dealtCards` is read here; later states arrive through the report methods.
 // Timer and interaction callbacks read consent when they fire, not when they were created, so the latest values live in a ref rather than in each callback's closure.
-const useEventEmitter = (
-  choice: AnalyticsChoice,
-  trackEvent: TrackEvent,
-  sortOrder?: SortOrder,
-) => {
-  const latestRef = useRef({ choice, sortOrder, trackEvent });
+const useEventEmitter = (choice: AnalyticsChoice, trackEvent: TrackEvent) => {
+  const latestRef = useRef({ choice, trackEvent });
   /*
    * A layout effect, because the reader that matters is a child's passive
    * effect: the analysis reports itself rendered from one, and those run
@@ -160,7 +159,7 @@ const useEventEmitter = (
    * withdrawal committed alongside the analysis it was still loading.
    */
   useLayoutEffect(() => {
-    latestRef.current = { choice, sortOrder, trackEvent };
+    latestRef.current = { choice, trackEvent };
   });
   const send = useCallback((condition: boolean, ...event: TrainerEvent) => {
     const currentChoice = latestRef.current.choice;
@@ -203,13 +202,8 @@ export const useDiscardTelemetry = ({
   dealtCards,
   isSeededSession,
   trackEvent,
-  sortOrder,
   wasDeepLinked,
 }: DiscardTelemetryProps): DiscardTelemetry => {
-  const sortOrderRef = useRef(sortOrder);
-  useLayoutEffect(() => {
-    sortOrderRef.current = sortOrder;
-  });
   const stateRef = useRef(
     createDealTelemetryState(dealtCards, {
       // A deep link supplies its own cards, so the seed did not generate them.
@@ -224,7 +218,7 @@ export const useDiscardTelemetry = ({
     hasConsent,
     hasDecisionContextConsent,
     hasDecisionQualityConsent,
-  } = useEventEmitter(choice, trackEvent, sortOrder);
+  } = useEventEmitter(choice, trackEvent);
   const reportHandStarted = useCallback(
     (state: DealTelemetryState) => {
       if (state.handStarted || !hasConsent()) {
@@ -260,8 +254,15 @@ export const useDiscardTelemetry = ({
   const reportDiscardScored = useCallback(
     (
       state: DealTelemetryState,
-      shown: ShownAnalysis,
-      { cribRole, quality }: RenderedAnalysis,
+      {
+        analysis: { cribRole, quality },
+        completionSortOrder,
+        shown,
+      }: {
+        analysis: RenderedAnalysis;
+        completionSortOrder: SortOrder | null;
+        shown: ShownAnalysis;
+      },
     ) => {
       if (shown.qualityReported || !quality) {
         return;
@@ -287,10 +288,11 @@ export const useDiscardTelemetry = ({
           isFirstAnalysis: shown.isFirstAnalysis,
           schemaVersion: DISCARD_SCORED_SCHEMA_VERSION,
           source: shown.source,
-          ...(typeof shown.sortOrder !== "undefined" &&
+          ...(typeof completionSortOrder !== "undefined" &&
+            completionSortOrder !== null &&
             shown.decisionContextConsented &&
             hasDecisionContextConsent() && {
-              sortOrder: sortUrlValue(shown.sortOrder) as
+              sortOrder: sortUrlValue(completionSortOrder) as
                 "deal-order" | "ascending" | "descending",
             }),
           // Spread from the derivation's own type rather than a widened record, so every quality field still type-checks against the event's payload.
@@ -301,7 +303,7 @@ export const useDiscardTelemetry = ({
     [emitAs, hasDecisionContextConsent, hasDecisionQualityConsent],
   );
   const reportAnalysisState = useCallback(
-    (state: DealTelemetryState, explicitSortOrder?: SortOrder) => {
+    (state: DealTelemetryState) => {
       if (!discardIsComplete(state.pendingCards)) {
         // An analysis of a discard that is no longer complete must not attach itself to the next exposure.
         state.pendingAnalysis = null;
@@ -332,14 +334,17 @@ export const useDiscardTelemetry = ({
         qualityConsented: hasDecisionQualityConsent(),
         qualityReported: false,
         reported,
-        sortOrder: explicitSortOrder ?? sortOrderRef.current,
         source: state.source,
       };
       state.shown = shown;
       const { pendingAnalysis } = state;
       state.pendingAnalysis = null;
       if (pendingAnalysis) {
-        reportDiscardScored(state, shown, pendingAnalysis);
+        reportDiscardScored(state, {
+          analysis: pendingAnalysis.analysis,
+          completionSortOrder: pendingAnalysis.completionSortOrder,
+          shown,
+        });
       }
     },
     [
@@ -397,13 +402,17 @@ export const useDiscardTelemetry = ({
     ],
   );
   const reportAnalysisRendered = useCallback(
-    (analysis: RenderedAnalysis) => {
+    (analysis: RenderedAnalysis, completionSortOrder: SortOrder | null) => {
       const state = stateRef.current;
       state.hasRenderedAnalysis = true;
       if (state.shown) {
-        reportDiscardScored(state, state.shown, analysis);
+        reportDiscardScored(state, {
+          analysis,
+          completionSortOrder,
+          shown: state.shown,
+        });
       } else {
-        state.pendingAnalysis = analysis;
+        state.pendingAnalysis = { analysis, completionSortOrder };
       }
     },
     [reportDiscardScored],
@@ -416,16 +425,12 @@ export const useDiscardTelemetry = ({
     [],
   );
   const reportHistoryNavigation = useCallback(
-    (
-      newDealtCards: readonly DealtCard[],
-      entry: HistoryHandScope | null,
-      explicitSortOrder?: SortOrder,
-    ) => {
+    (newDealtCards: readonly DealtCard[], entry: HistoryHandScope | null) => {
       const state = stateRef.current;
       if (entry?.handId === state.dealNonce) {
         state.source = "history";
         state.pendingCards = newDealtCards;
-        reportAnalysisState(state, explicitSortOrder);
+        reportAnalysisState(state);
       } else {
         const newState = replaceHand(newDealtCards, {
           // An entry written before this document loaded states nothing, and a seeded session assumes its own seed there, which can only over-exclude.
@@ -434,7 +439,7 @@ export const useDiscardTelemetry = ({
           source: "history",
         });
         reportHandStarted(newState);
-        reportAnalysisState(newState, explicitSortOrder);
+        reportAnalysisState(newState);
       }
     },
     [isSeededSession, replaceHand, reportAnalysisState, reportHandStarted],

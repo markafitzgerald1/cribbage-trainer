@@ -11,7 +11,7 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
 
 **Learnings:**
 
-- Dependabot intentionally ignores ESLint 10.0.0 through 10.7.0 because the
+- Dependabot intentionally ignores ESLint 10.0.0 through 10.11.0 because the
   latest `eslint-plugin-jsx-a11y` release (6.10.2) declares peer support only
   through ESLint 9. Before changing that range, verify both packages' current
   registry metadata; do not bypass the peer conflict with
@@ -119,3 +119,18 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   exception goes, so the Dockerfile's allowlisted `COPY`s stay valid (see
   "Lint gauntlet interplay" in `AGENTS.md`, which owns that rule because it
   also fires for changes that touch no dependency at all).
+- **A same-day advisory wave is fixed the same way, and the tell is the date.**
+  On 2026-09-29 eight advisories (brace-expansion 1.x and 4-5, fast-uri,
+  markdown-it) turned every open PR's Docker `lint` step red at once, with
+  no dependency change on any of them; a clean `origin/main` reproduced it.
+  Each range's upper bound named a patched release that already existed
+  (`<1.1.21`, `>=4.0.0 <5.0.12`, `<3.1.8`, `<14.3.1`), so the fix was four
+  caret bumps in `overrides` plus `npm audit fix`, with no `.nsprc` entry.
+  markdown-it already had an override, so its floor was raised rather than
+  a second one added. Reproduce on main before fixing so a PR-specific
+  failure is not mistaken for a repo-wide one. The next day twelve axios
+  advisories (all `<1.20.0`) did the same through `wait-on`, because an
+  exact `"axios": "1.18.1"` override had survived an earlier fix: an exact
+  pin freezes a package at whatever was patched when it was written, so a
+  later advisory wave on the same package cannot be cleared by
+  `npm audit fix` until the pin becomes a caret (`^1.20.0`).

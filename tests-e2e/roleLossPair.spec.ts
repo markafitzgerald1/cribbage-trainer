@@ -1,7 +1,12 @@
 import { expect, test } from "@playwright/test";
+import {
+  phonePortraitViewport,
+  requireBoundingBox,
+} from "./layoutMeasurements";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
 const FIRST_DEALT_INDEX = 0;
+const THIRD_DEALT_INDEX = 2;
 const FIFTH_DEALT_INDEX = 4;
 const SIXTH_DEALT_INDEX = 5;
 
@@ -45,7 +50,7 @@ test.describe("both crib-role costs for the chosen discard", () => {
     await expect(liveRegion).toContainText(
       "3.11 points lost as dealer, 0.00 as pone",
     );
-    await expect(caption).toContainText("3.11 as dealer, 0.00 as pone");
+    await expect(caption).toContainText("3.11 dealer, 0.00 pone");
     // The component decomposition is still there: the pair is evidence beside it, not a replacement for it.
     await expect(caption).toContainText("Crib");
 
@@ -57,7 +62,7 @@ test.describe("both crib-role costs for the chosen discard", () => {
      * has to inherit the badge's, because a color here made the secondary
      * number the loudest thing on the screen.
      */
-    const freeRoleCost = caption.getByText("0.00 as pone");
+    const freeRoleCost = caption.getByText("0.00 pone");
     // ".." selects the parent, which is the badge: the element declaring the color this figure must still inherit.
     const badgeColor = await freeRoleCost
       .locator("..")
@@ -81,9 +86,9 @@ test.describe("both crib-role costs for the chosen discard", () => {
     await expect(liveRegion).toContainText(
       "3.46 points lost as dealer, 0.82 as pone",
     );
-    await expect(caption).toContainText("3.46 as dealer, 0.82 as pone");
+    await expect(caption).toContainText("3.46 dealer, 0.82 pone");
     // Nothing here is free, so nothing is marked; the mark has to mean this hand rather than this badge.
-    await expect(caption.getByText("0.82 as pone")).toHaveCSS(
+    await expect(caption.getByText("0.82 pone")).toHaveCSS(
       "text-decoration-line",
       "none",
     );
@@ -107,7 +112,72 @@ test.describe("both crib-role costs for the chosen discard", () => {
 
     // The caption is on screen with its single figure before anything is asserted absent, so the pair is withheld rather than simply not yet on screen.
     await expect(caption).toContainText("Sub-optimal: 0.82 pts lost");
-    await expect(caption).not.toContainText("as dealer");
+    await expect(caption).not.toContainText("dealer");
     await expect(liveRegion).toContainText("Sub-optimal: 0.82 points lost");
   });
+});
+
+/*
+ * Discarding the 4 of hearts and the king of hearts from this hand as dealer
+ * costs 0.04, which is within simulation noise, so the caption carries a
+ * verdict badge and a reason badge: the pair whose row count must not depend
+ * on the viewport width.
+ */
+const CAPTION_ROW_HAND_QUERY = "?hand=4H,5D,KH,6H,8C,KC&role=dealer&seed=e2e";
+const CAPTION_ROW_DISCARD_INDICES: readonly [number, number] = [
+  FIRST_DEALT_INDEX,
+  THIRD_DEALT_INDEX,
+];
+const DEFERRED_SIDECAR_TIMEOUT_MS = 20_000;
+const desktopViewport = { height: 800, width: 1280 };
+
+const captionRowSizes = [
+  { name: "desktop width", viewport: desktopViewport },
+  { name: "phone portrait", viewport: phonePortraitViewport },
+] as const;
+
+test.describe("diagnostic caption rows", () => {
+  for (const { name, viewport } of captionRowSizes) {
+    // Desktop engines model neither the phone's toolbar nor its real font scaling, so this guards layout logic only.
+    test(`keeps the verdict on one line with the reason on its own row at ${name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await renderThenSelectTwoDiscards(page, CAPTION_ROW_HAND_QUERY, {
+        discardIndices: CAPTION_ROW_DISCARD_INDICES,
+      });
+
+      const badges = page
+        .locator("figcaption[aria-label]")
+        .locator(":scope > span");
+      const verdict = badges.nth(0);
+      const reason = badges.nth(1);
+      // The verdict waits on two deferred sidecar chunks, so it gets the explicit timeout those loads need on a cold worker.
+      await expect(verdict).toContainText("Within noise", {
+        timeout: DEFERRED_SIDECAR_TIMEOUT_MS,
+      });
+      await expect(reason).toContainText("Crib");
+
+      /*
+       * A one-character twin of the verdict badge, styled identically, is one
+       * text line tall whatever `line-height: normal` resolves to, so the
+       * expectation comes from the badge itself rather than a pixel count.
+       */
+      const singleLineHeight = await verdict.evaluate((element) => {
+        const probe = element.cloneNode(false) as HTMLElement;
+        probe.textContent = "X";
+        element.after(probe);
+        const { height } = probe.getBoundingClientRect();
+        probe.remove();
+        return height;
+      });
+      const verdictBox = await requireBoundingBox(verdict);
+      const reasonBox = await requireBoundingBox(reason);
+
+      expect(verdictBox.height).toBeCloseTo(singleLineHeight, 0);
+      expect(reasonBox.y).toBeGreaterThanOrEqual(
+        verdictBox.y + verdictBox.height,
+      );
+    });
+  }
 });

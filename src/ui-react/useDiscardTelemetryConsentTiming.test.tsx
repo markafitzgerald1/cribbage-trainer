@@ -64,7 +64,7 @@ function WithdrawalHarness({
       </button>
       <AnalysisReporter
         onRendered={() => {
-          telemetry.reportAnalysisRendered(RENDERED_ANALYSIS);
+          telemetry.reportAnalysisRendered(RENDERED_ANALYSIS, null);
         }}
         renderCount={renderCount}
       />

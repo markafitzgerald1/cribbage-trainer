@@ -10,8 +10,10 @@ import {
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
+  parseSortParam,
   parseUrlAnalysisState,
   serializeUrlAnalysisState,
+  sortUrlValue,
 } from "../ui/urlAnalysisState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -57,12 +59,29 @@ interface DealState {
 // Invariant: previousUrl is the URL of the entry directly beneath this one.
 // The hand scope rides on the entry because its cards cannot identify the hand: a seeded deal and a later hand-entry of the same six cards are different hands that share a key.
 interface HistoryEntryState {
+  /*
+   * The tally's sort-order capture for the board when the entry was last
+   * written, spelled as the sort URL parameter is, or null when there was
+   * none. It is what lets a restore tell a re-sort's entry from a
+   * completion's (see useDiscardTally's `capture`, #874). Unknown on read,
+   * since an entry from an earlier build lacks it; such an entry falls back
+   * to the order the restore puts on screen.
+   */
+  readonly completionSortOrder?: unknown;
   readonly handScope?: HistoryHandScope;
   readonly previousUrl?: string;
 }
 
 const getHistoryEntryState = (): HistoryEntryState | null =>
   window.history.state as HistoryEntryState | null;
+
+const toCompletionSortOrderTag = (sortOrder: SortOrder | null) =>
+  sortOrder === null ? null : sortUrlValue(sortOrder);
+
+const getRestoredCompletionSortOrder = (): SortOrder | null => {
+  const tag = getHistoryEntryState()?.completionSortOrder;
+  return typeof tag === "string" ? parseSortParam(tag) : null;
+};
 
 const getPreviousUrl = (): string | undefined =>
   getHistoryEntryState()?.previousUrl;
@@ -190,6 +209,7 @@ export function Trainer({
     markHistoryUpdate,
   );
   const {
+    completionSortOrder,
     currentHandScope,
     reportAnalysisRendered,
     reportCardToggled,
@@ -246,9 +266,15 @@ export function Trainer({
       sortOrder,
     });
     const handScope = currentHandScope();
+    const completionSortOrderTag =
+      toCompletionSortOrderTag(completionSortOrder);
     if (historyFlags.current.shouldPush) {
       window.history.pushState(
-        { handScope, previousUrl: window.location.search },
+        {
+          completionSortOrder: completionSortOrderTag,
+          handScope,
+          previousUrl: window.location.search,
+        },
         "",
         url,
       );
@@ -260,13 +286,24 @@ export function Trainer({
     } else {
       // Keep previousUrl so later settles can still detect convergence.
       window.history.replaceState(
-        { ...getHistoryEntryState(), handScope },
+        {
+          ...getHistoryEntryState(),
+          completionSortOrder: completionSortOrderTag,
+          handScope,
+        },
         "",
         url,
       );
     }
     historyFlags.current.shouldPush = false;
-  }, [cribRole, currentHandScope, dealtCards, scoreSortKey, sortOrder]);
+  }, [
+    completionSortOrder,
+    cribRole,
+    currentHandScope,
+    dealtCards,
+    scoreSortKey,
+    sortOrder,
+  ]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -282,8 +319,11 @@ export function Trainer({
         if (!isInternalMerge) {
           reportHistoryNavigation(
             newDealtCards,
-            getHistoryEntryState()?.handScope ?? null,
-            { cribRole: urlState.cribRole, sortOrder: urlState.sortOrder },
+            {
+              completionSortOrder: getRestoredCompletionSortOrder(),
+              handScope: getHistoryEntryState()?.handScope ?? null,
+            },
+            urlState.cribRole,
           );
           /*
            * A user Back onto the drilled hand's own six cards — same cards
