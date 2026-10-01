@@ -165,7 +165,7 @@ export const RoleLossPair: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Sub-optimal: 3.11 as dealer, 0.00 as pone",
+      "Sub-optimal: 3.11 dealer, 0.00 pone",
     );
 
     /*
@@ -176,7 +176,7 @@ export const RoleLossPair: Story = {
      * badge's own, because a brighter one here outshouted the figure that
      * matters — the cost under the role actually held.
      */
-    const figure = canvas.getByText("0.00 as pone");
+    const figure = canvas.getByText("0.00 pone");
     const rendered = window.getComputedStyle(figure);
     const badge = figure.parentElement as HTMLElement;
 
@@ -207,7 +207,7 @@ export const RoleLossWithheld: Story = {
     );
 
     // The caption is on screen with its single figure, so the reversed-role clause is absent rather than simply not rendered.
-    await expect(canvas.queryByText(/as dealer/u)).toBeNull();
+    await expect(canvas.queryByText(/dealer/u)).toBeNull();
   },
 };
 
@@ -343,7 +343,7 @@ export const WithinSimulationNoise: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Within noise, approximate: 0.09 pts lost",
+      "Within noise: 0.09 pts lost",
     );
 
     await expect(canvas.queryByText(/Sub-optimal/u)).toBeNull();

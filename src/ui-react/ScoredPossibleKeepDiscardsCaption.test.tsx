@@ -119,9 +119,9 @@ describe("scored possible keep discards caption", () => {
         discards: "9D,3S",
         expectedAriaLabel:
           "Sub-optimal: 3.11 points lost as dealer, 0.00 as pone. 0.64 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
-        expectedMarkedTexts: ["0.00 as pone"],
+        expectedMarkedTexts: ["0.00 pone"],
         expectedText:
-          "Sub-optimal: 3.11 as dealer, 0.00 as pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
+          "Sub-optimal: 3.11 dealer, 0.00 pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
         name: "a zero cost under the reversed role stated as a figure, not as a diagnosis",
       },
     ])(
@@ -183,14 +183,44 @@ describe("scored possible keep discards caption", () => {
     },
   );
 
+  describe("verdict badge width", () => {
+    // The first line of the caption fits about 42 characters on a Pixel in portrait at the owner's font setting; a longer badge wraps onto two lines.
+    const BADGE_CHARACTER_BUDGET = 41;
+
+    it.each([
+      {
+        badgeSelector: "[class*='subOptimalBadge']",
+        name: "sub-optimal",
+        source: noUncertainty,
+      },
+      {
+        badgeSelector: "[class*='noiseBadge']",
+        name: "within-noise",
+        source: settledWith(WIDE_ERROR * 100),
+      },
+    ])(
+      "keeps the $name badge with the widest role pair within the budget",
+      async ({ badgeSelector, source }) => {
+        const { container } = renderHand("9D,9C,9H,4C,4H,3S", "9D,3S", {
+          cribRole: CribRole.Dealer,
+          cribUncertaintySource: source,
+          playUncertaintySource: source,
+        });
+        await findCaption(container);
+        const badgeText = container.querySelector(badgeSelector)?.textContent;
+
+        expect(badgeText).toMatch(/ dealer, 0\.00 pone$/u);
+        expect(badgeText?.length).toBeLessThanOrEqual(BADGE_CHARACTER_BUDGET);
+      },
+    );
+  });
+
   describe("simulation-noise verdict (#774)", () => {
     it("calls a loss inside the noise threshold within noise, never sub-optimal or optimal", async () => {
       const { container } = renderNearMiss(settledWith(1), settledWith(1));
       const caption = await findCaption(container);
 
-      expect(caption.textContent).toMatch(
-        /^Within noise, approximate: 0\.09 pts lost/u,
-      );
+      expect(caption.textContent).toMatch(/^Within noise: 0\.09 pts lost/u);
       expect(caption.getAttribute("aria-label")).toMatch(
         /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\. /u,
       );

@@ -37,7 +37,7 @@ import { useMemo } from "react";
 export interface ChosenDiagnosticInfo {
   readonly captionAriaLabel: string | null;
   readonly chosenClassification: MistakeClassification | null;
-  // Hover text for the within-noise badge, saying what "approximate" means; empty whenever the badge is not shown.
+  // Hover text for the within-noise badge, saying what the badge's "within noise" means, including that the threshold is approximate; empty whenever the badge is not shown.
   readonly noiseBadgeTitle: string;
   readonly optimalMargin: OptimalDiscardMargin;
   // Null until a discard is complete and the tables have loaded; never zero to stand in for unknown.

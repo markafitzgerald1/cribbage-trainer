@@ -109,8 +109,8 @@ export const roleLossPairLabel = (
   const accessibleOpposite = `${formatAccessibleNetLoss(oppositeLoss)} as ${oppositeRoleName}`;
   return {
     accessibleLabel: `${formatAccessibleNetLoss(actualLoss)} points lost as ${cribRoleName(cribRole)}, ${accessibleOpposite}`,
-    leadingText: `${formatNetLoss(actualLoss)} as ${cribRoleName(cribRole)}, `,
-    oppositeRoleCost: `${formatNetLoss(oppositeLoss)} as ${oppositeRoleName}`,
+    leadingText: `${formatNetLoss(actualLoss)} ${cribRoleName(cribRole)}, `,
+    oppositeRoleCost: `${formatNetLoss(oppositeLoss)} ${oppositeRoleName}`,
     oppositeRoleCostsNothing: costsNothing(oppositeLoss),
   };
 };
