@@ -361,6 +361,7 @@ describe("discard tally hook", () => {
       expected: [0, 0],
       firstAction: (harness: MutableCardsHarness) => {
         harness.result.current.reportHandRestored(handOf(HAND), {
+          completionSortOrder: null,
           cribRole: CribRole.Dealer,
           handId: null,
         });

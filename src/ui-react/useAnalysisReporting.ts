@@ -40,10 +40,21 @@ export type ReportHandReplaced = (
   cribRole: CribRole,
 ) => void;
 
+/*
+ * What a restored history entry recorded, each half null when it recorded
+ * none. Telemetry reads only the scope; the tally also reads the sort order
+ * its capture held when the entry was written (see useDiscardTally's
+ * `capture`).
+ */
+export interface RestoredHistoryEntry {
+  readonly completionSortOrder: SortOrder | null;
+  readonly handScope: HistoryHandScope | null;
+}
+
 // The tally also needs to know which hand a history restore names, which telemetry's own dealNonce-keyed signature has no reason to carry.
 export type ReportHistoryNavigation = (
   dealtCards: readonly DealtCard[],
-  entry: HistoryHandScope | null,
+  entry: RestoredHistoryEntry,
   cribRole: CribRole | null,
 ) => void;
 
@@ -67,6 +78,7 @@ export interface AnalysisReporting extends Omit<
   DiscardTelemetry,
   "reportAnalysisRendered" | "reportHandReplaced" | "reportHistoryNavigation"
 > {
+  readonly completionSortOrder: SortOrder | null;
   readonly reportAnalysisRendered: ReportAnalysisRendered;
   readonly reportHandReplaced: ReportHandReplaced;
   readonly reportHistoryNavigation: ReportHistoryNavigation;
@@ -101,6 +113,7 @@ export const useAnalysisReporting = (
     reportHistoryNavigation: reportHistoryNavigationToTelemetry,
   } = telemetry;
   const {
+    completionSortOrder,
     reportAnalysisRendered: addAnalysisToTally,
     reportHandOrigin,
     reportHandRestored,
@@ -138,15 +151,20 @@ export const useAnalysisReporting = (
 
   const reportHistoryNavigation: ReportHistoryNavigation = useCallback(
     (cards, entry, role) => {
-      reportHistoryNavigationToTelemetry(cards, entry);
+      reportHistoryNavigationToTelemetry(cards, entry.handScope);
       const { handId } = currentHandScope();
-      reportHandRestored(cards, { cribRole: role, handId });
+      reportHandRestored(cards, {
+        completionSortOrder: entry.completionSortOrder,
+        cribRole: role,
+        handId,
+      });
     },
     [currentHandScope, reportHandRestored, reportHistoryNavigationToTelemetry],
   );
 
   return {
     ...telemetry,
+    completionSortOrder,
     reportAnalysisRendered,
     reportHandReplaced,
     reportHistoryNavigation,

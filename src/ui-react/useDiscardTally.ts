@@ -73,6 +73,13 @@ interface HandIdentity {
  */
 interface RestoredHandIdentity {
   readonly cribRole: CribRole | null;
+  /*
+   * The capture's order as the restored entry recorded it when it was
+   * written (see `capture` below), or null when the entry recorded none:
+   * one written before entries carried it, or one whose board showed no
+   * complete discard.
+   */
+  readonly completionSortOrder: SortOrder | null;
   readonly handId: string | null;
 }
 
@@ -89,6 +96,8 @@ export type ReportHandRestored = (
 ) => void;
 
 export interface DiscardTally {
+  // The captured order for the discard on the board, or null when it shows none, for Trainer to write onto each history entry.
+  readonly completionSortOrder: SortOrder | null;
   readonly reportAnalysisRendered: (
     analysis: RenderedAnalysis,
     displayedAs: DisplayedHandRelabeling | null,
@@ -120,6 +129,9 @@ interface SortOrderCapture {
   readonly key: string;
   readonly sortOrder: SortOrder;
 }
+
+// Holds a restored entry's order until the render that shows its board; no board key can equal it, since every board key contains a "|".
+const RESTORED_ENTRY = "restored-entry";
 
 const completionKeyFor = (
   cards: readonly DealtCard[],
@@ -217,13 +229,20 @@ export const useDiscardTally = ({
    * completion, so the next one is fresh and takes the order then on screen.
    *
    * A restore is always such an arrival, even when it changes nothing the
-   * key holds: reportHandRestored drops the capture, so the render that
-   * shows the restored board retakes it from the restored sort. Back between
-   * two completions of the identical discard — withdrawn and redone under
-   * another sort — is indistinguishable here from Back between two sorts of
-   * one completion, and without an identity for history entries, which the
-   * tally deliberately does not keep, the order the restore shows is the
-   * only observed value that fits both.
+   * key holds, and it takes the order the restored entry recorded: Trainer
+   * writes this capture onto every history entry (`completionSortOrder`).
+   * Back between two completions of the identical discard — withdrawn and
+   * redone under another sort — and Back between two sorts of one
+   * completion look the same here, the key unchanged and the board complete
+   * on both sides, and only the entry knows which it is: a re-sort's entry was written while the capture
+   * still held the order of the completion it re-sorted, and a completion's
+   * entry holds that completion's own order (#874). Storage is transport,
+   * so the value keeps the provenance it was captured with. An entry that
+   * recorded none — written before entries carried it, or tampered with —
+   * falls back to the order the restore puts on screen, which is the only
+   * observed value left; short of tampering, it can mislabel only a restore
+   * onto a re-sort's entry that an earlier build wrote, before the score
+   * lands.
    *
    * The occurrence is telemetry's handId itself, not a counter of this
    * hook's own. A counter advanced by this hook's reports was a second copy
@@ -244,7 +263,13 @@ export const useDiscardTally = ({
     : null;
   if ((capture?.key ?? null) !== boardCaptureKey) {
     setCapture(
-      boardCaptureKey === null ? null : { key: boardCaptureKey, sortOrder },
+      boardCaptureKey === null
+        ? null
+        : {
+            key: boardCaptureKey,
+            sortOrder:
+              capture?.key === RESTORED_ENTRY ? capture.sortOrder : sortOrder,
+          },
     );
   }
 
@@ -346,9 +371,13 @@ export const useDiscardTally = ({
    * hand mid-decision.
    */
   const reportHandRestored: ReportHandRestored = useCallback(
-    (cards, { cribRole: role, handId }) => {
-      // Batched with the restored board and sort, so the next render retakes the capture from the order the restore shows (see `capture`).
-      setCapture(null);
+    (cards, { cribRole: role, completionSortOrder, handId }) => {
+      // Batched with the restored board and sort, so the next render retakes the capture from the entry's order, or else the screen's (see `capture`).
+      setCapture(
+        completionSortOrder === null
+          ? null
+          : { key: RESTORED_ENTRY, sortOrder: completionSortOrder },
+      );
       if (role === null) {
         return;
       }
@@ -452,6 +481,7 @@ export const useDiscardTally = ({
   );
 
   return {
+    completionSortOrder: capture?.sortOrder ?? null,
     reportAnalysisRendered,
     reportHandOrigin,
     reportHandRestored,

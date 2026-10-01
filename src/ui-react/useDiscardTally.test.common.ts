@@ -87,19 +87,28 @@ export const noteOriginOfCards = (
 
 /*
  * Defaults to restoring the scope the page load opened, which is what a
- * same-hand navigation looks like. Passing another identifier is what
+ * same-hand navigation looks like, from an entry recording no sort order. Passing another identifier is what
  * separates a genuine restore of a different occurrence of the same cards.
  */
 export const noteRestore = (
   tally: DiscardTally,
   hand: string,
   {
+    completionSortOrder = null,
     cribRole = CribRole.Dealer,
     handId = INITIAL_HAND_ID,
-  }: { cribRole?: CribRole | null; handId?: string | null } = {},
+  }: {
+    completionSortOrder?: SortOrder | null;
+    cribRole?: CribRole | null;
+    handId?: string | null;
+  } = {},
 ) => {
   act(() => {
-    tally.reportHandRestored(handOf(hand), { cribRole, handId });
+    tally.reportHandRestored(handOf(hand), {
+      completionSortOrder,
+      cribRole,
+      handId,
+    });
   });
 };
 

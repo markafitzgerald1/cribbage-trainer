@@ -261,11 +261,20 @@ be inferred from repository changes.
   press Back: history jumps straight from one completed board to the other,
   same hand id, role, cards and discard, with no incomplete render between.
   A capture guarded only by "has the key changed" kept the redo's sort while
-  the screen showed the restored one. `useDiscardTally` therefore drops the
-  capture in `reportHandRestored`, batched with the restored board, so every
-  restore is a capture moment — which also means Back across two re-sorts of
-  one completion records the order Back shows, since nothing observed can
-  tell those two apart without an identity for history entries.
+  the screen showed the restored one. Back across two re-sorts of one
+  completion looks identical to the tally — same key, complete before and
+  after — yet must record the completion's order rather than the one the
+  restore shows, so no rule inside the tally fits both. Only the
+  history entry knows which shape it is: `Trainer` writes the tally's
+  capture onto every entry as `completionSortOrder` (the sort URL spelling,
+  or null), a re-sort's entry is written while the capture still holds its
+  completion's order, and `reportHandRestored` re-seeds the capture from
+  the restored entry's value. An entry without one — written by an earlier
+  build — falls back to the order the restore shows. The merge path needs
+  nothing extra: its `history.back()` popstate reports no restore, and the
+  replace that follows rewrites the covered entry with the redo's capture.
+  A tag naming only the entry's kind would not have been enough: Back onto
+  a re-sort's entry after a later redo would then keep the redo's order.
 - An entry written before this document loaded records nothing, and a seeded
   session then assumes its own seed rather than guessing unseeded, which can
   only over-exclude from population statistics. Never invert that default.

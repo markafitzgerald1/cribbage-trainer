@@ -50,40 +50,47 @@ const startReporting = (
 
 type Reporting = ReturnType<typeof startReporting>;
 
+// What Trainer's history effect writes onto an entry after every change: telemetry's scope and the tally's capture.
+interface StampedEntry {
+  readonly completionSortOrder: SortOrder | null;
+  readonly handId: string;
+}
+
 /*
- * A popstate as Trainer handles it: the entry's scope and the board it
- * restores arrive in one update. The scope is whatever Trainer stamped onto
- * that entry, which is always telemetry's scope at the time it was written.
+ * A popstate as Trainer handles it: the entry's scope and capture and the
+ * board it restores arrive in one update. Both are whatever Trainer stamped
+ * onto that entry, which is always their value at the time it was written.
  */
 const navigateHistory = (
   reporting: Reporting,
-  entryHandId: string,
+  { completionSortOrder, handId }: StampedEntry,
   board: BoardProps,
 ) => {
   act(() => {
     reporting.result.current.reportHistoryNavigation(
       board.dealtCards,
-      { generatedFromSeed: false, handId: entryHandId },
+      { completionSortOrder, handScope: { generatedFromSeed: false, handId } },
       CribRole.Dealer,
     );
     reporting.rerender(board);
   });
 };
 
-// The scope Trainer's history effect stamps onto the entry it writes after every change.
-const stampedHandId = (reporting: Reporting) =>
-  reporting.result.current.currentHandScope().handId;
+const stampedEntry = (reporting: Reporting): StampedEntry => ({
+  completionSortOrder: reporting.result.current.completionSortOrder,
+  handId: reporting.result.current.currentHandScope().handId,
+});
 
 // The entries the two re-sorts below push, each still showing the completed discard.
 interface ResortEntries {
-  readonly ascending: string;
-  readonly dealOrder: string;
+  readonly ascending: StampedEntry;
+  readonly dealOrder: StampedEntry;
 }
 
 type HistoryMove = (reporting: Reporting, entries: ResortEntries) => void;
 
 const restoreCompleted =
-  (sortOrder: SortOrder, entryOf: (entries: ResortEntries) => string) =>
+  (sortOrder: SortOrder, entryOf: (entries: ResortEntries) => StampedEntry) =>
   (reporting: Reporting, entries: ResortEntries) => {
     navigateHistory(reporting, entryOf(entries), {
       dealtCards: handOf(HAND, true),
@@ -99,6 +106,11 @@ const forward = restoreCompleted(
   SortOrder.DealOrder,
   (entries) => entries.dealOrder,
 );
+// The same Back onto an entry an earlier build wrote, which carries a scope but no capture.
+const backOntoEntryWithoutCapture = restoreCompleted(
+  SortOrder.Ascending,
+  (entries) => ({ ...entries.ascending, completionSortOrder: null }),
+);
 
 const moves: readonly {
   readonly move: readonly HistoryMove[];
@@ -106,11 +118,17 @@ const moves: readonly {
   readonly wanted: string;
 }[] = [
   { move: [], name: "no history move", wanted: "descending" },
-  { move: [back], name: "a Back", wanted: "ascending" },
+  { move: [back], name: "a Back", wanted: "descending" },
   {
     move: [back, forward],
     name: "a Back then a Forward",
-    wanted: "deal-order",
+    wanted: "descending",
+  },
+  // Falls back to the order the restore shows, the only observed value left.
+  {
+    move: [backOntoEntryWithoutCapture],
+    name: "a Back onto an entry recording no capture",
+    wanted: "ascending",
   },
 ];
 
@@ -118,9 +136,8 @@ const moves: readonly {
  * Two sort changes after the discard completed under descending, each
  * pushing an entry, then the given history move, and only then the score, as
  * it arrives when the expected-points tables are still loading. A re-sort
- * leaves the capture alone; a restore retakes it from the order it puts on
- * screen, because Back between two sorts of one completion looks exactly
- * like Back between two completions of the identical discard (#874).
+ * leaves the capture alone, and each re-sort's entry is written holding it,
+ * so a restore onto one takes back the completion's order (#874).
  */
 const resortTwiceMoveAndScore = (
   reporting: Reporting,
@@ -128,9 +145,9 @@ const resortTwiceMoveAndScore = (
 ) => {
   const completed = handOf(HAND, true);
   reporting.rerender({ dealtCards: completed, sortOrder: SortOrder.Ascending });
-  const ascending = stampedHandId(reporting);
+  const ascending = stampedEntry(reporting);
   reporting.rerender({ dealtCards: completed, sortOrder: SortOrder.DealOrder });
-  const entries = { ascending, dealOrder: stampedHandId(reporting) };
+  const entries = { ascending, dealOrder: stampedEntry(reporting) };
   move.forEach((step) => {
     step(reporting, entries);
   });
@@ -152,7 +169,7 @@ const restoredFromAnotherHand = () => {
     dealtCards: handOf(HAND, false),
     sortOrder: SortOrder.Descending,
   });
-  const firstHandEntry = stampedHandId(reporting);
+  const firstHandEntry = stampedEntry(reporting);
   act(() => {
     reporting.result.current.reportHandReplaced(
       handOf(OTHER_HAND, false),
@@ -198,9 +215,10 @@ describe("the hand identity telemetry and the tally share", () => {
   /*
    * A capture keyed on anything but telemetry's current scope changes key
    * on a re-sort or a same-hand move and is retaken under whatever order is
-   * then showing. Each case pins both halves of the rule for every way the
-   * hand can have been opened: re-sorts never move the capture, and a
-   * same-hand restore lands exactly on the order it restores.
+   * then showing. Each case pins the rule for every way the hand can have
+   * been opened: re-sorts never move the capture, a same-hand restore lands
+   * on the order its entry recorded, and one onto an entry recording none
+   * lands on the order it shows.
    */
   it.each(
     origins.flatMap((origin) => moves.map((move) => ({ ...origin, ...move }))),

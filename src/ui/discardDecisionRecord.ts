@@ -28,15 +28,16 @@ export interface DiscardDecisionRecord {
   // Monotonic recording order for queue recency; `at` remains the calendar event time.
   readonly recencyAt?: number;
   /*
-   * The sort order on screen when this discard last arrived on the board
-   * before it scored — completed by a click, or restored by Back or Forward
-   * — serialized the way urlAnalysisState.ts's sortUrlValue does
+   * The sort order on screen when this discard was completed by a click,
+   * serialized the way urlAnalysisState.ts's sortUrlValue does
    * ("deal-order", "ascending", or "descending"). Absent on every record
    * written before version 7, and absent means unknown rather than any
    * particular order: nothing observed which order an earlier record's hand
    * was shown in, so it must never be inferred or defaulted (#872). Not
    * taken when the score arrives: a re-sort while the tables load does not
-   * change it, though a history move onto the discard does (#874).
+   * change it, and Back or Forward onto the discard before it scores takes
+   * the order the restored history entry recorded for its completion, or,
+   * from an entry an earlier build wrote, the order the restore shows (#874).
    */
   readonly sortOrder?: string;
 }

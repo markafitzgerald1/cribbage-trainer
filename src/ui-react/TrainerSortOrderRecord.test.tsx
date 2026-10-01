@@ -62,6 +62,45 @@ const recordedWithTablesLoadingDuring = async (
   }
 };
 
+// A history move, awaited until its popstate has put the given sort order on screen.
+const travel = async (move: () => void, shownSortOrder: string) => {
+  move();
+  await waitFor(() => {
+    expect(
+      screen.queryByRole("radio", { checked: true, name: shownSortOrder }),
+    ).not.toBeNull();
+  }, waitUnderLoad);
+};
+
+const travelBy = (move: () => void) => (shownSortOrder: string) => async () => {
+  await travel(move, shownSortOrder);
+};
+
+const back = travelBy(() => {
+  window.history.back();
+});
+
+const forward = travelBy(() => {
+  window.history.forward();
+});
+
+type StartedTrainer = ReturnType<typeof startTrainer>;
+
+const chooseSort = async ({ user }: StartedTrainer, name: string) => {
+  await user.click(screen.getByRole("radio", { name }));
+};
+
+// Completes a discard under descending with the tables held back, then the rest of the interaction, and returns the order recorded once they load.
+const recordedAfterCompletingUnderDescending = async (
+  rest: (started: StartedTrainer) => Promise<void>,
+) => {
+  const started = startTrainer(SortOrder.Descending);
+  return recordedWithTablesLoadingDuring(async () => {
+    await clickIndices(started.view.getAllByRole, [0, 1], started.user);
+    await rest(started);
+  });
+};
+
 describe("the sort order a Trainer decision is recorded with", () => {
   /*
    * With the tables already loaded, the analysis renders in the same commit
@@ -89,23 +128,49 @@ describe("the sort order a Trainer decision is recorded with", () => {
    * across the restore.
    */
   it("records the order a Back restores onto an identical completed discard while the tables load", async () => {
-    const { user, view } = startTrainer(SortOrder.Descending);
-
-    const recorded = await recordedWithTablesLoadingDuring(async () => {
-      await clickIndices(view.getAllByRole, [0, 1], user);
-      // Held by element rather than position, because the re-sort moves it.
-      const withdrawnCard = view.getAllByRole("checkbox")[1]!;
-      await user.click(withdrawnCard);
-      await user.click(screen.getByRole("radio", { name: "Ascending" }));
-      await user.click(withdrawnCard);
-      window.history.back();
-      await waitFor(() => {
-        expect(
-          screen.queryByRole("radio", { checked: true, name: "Descending" }),
-        ).not.toBeNull();
-      }, waitUnderLoad);
-    });
+    const recorded = await recordedAfterCompletingUnderDescending(
+      async (started) => {
+        // Held by element rather than position, because the re-sort moves it.
+        const withdrawnCard = started.view.getAllByRole("checkbox")[1]!;
+        await started.user.click(withdrawnCard);
+        await chooseSort(started, "Ascending");
+        await started.user.click(withdrawnCard);
+        await back("Descending")();
+      },
+    );
 
     expect(recorded).toBe("descending");
   });
+
+  /*
+   * The other shape that reaches a completed board by Back with an unchanged
+   * key: each re-sort of a completed discard pushes an entry, and those
+   * entries were written while the capture still held the order the discard
+   * was completed under. Only the entry can say which shape a restore is,
+   * because the tally keeps no identity for history entries (#874).
+   */
+  it.each([
+    { name: "a Back", travels: [back("Ascending")] },
+    {
+      name: "a Back then a Forward",
+      travels: [back("Ascending"), forward("DealOrder")],
+    },
+  ])(
+    "records the completion order after two re-sorts and $name while the tables load",
+    async ({ travels }) => {
+      const recorded = await recordedAfterCompletingUnderDescending(
+        async (started) => {
+          await chooseSort(started, "Ascending");
+          await chooseSort(started, "DealOrder");
+          // Chained so each move lands before the next is taken.
+          await travels.reduce(
+            async (landed, step) => landed.then(step),
+            Promise.resolve(),
+          );
+        },
+      );
+
+      expect(recorded).toBe("descending");
+    },
+  );
 });
