@@ -24,16 +24,11 @@ const startTrainer = (initialSortOrder: SortOrder) => {
   setAnalysisTables();
   clearDiscardTally();
   const user = userEvent.setup();
-  // Whichever hand and role are dealt, the order they are shown in is the one under test.
   const view = renderTrainerWithInitialProps({ initialSortOrder });
   return { user, view };
 };
 
-/*
- * Holds the crib table back while the given interaction runs, the way a
- * slow first load does, then releases it and waits for the decision to be
- * recorded. Returns the sort order that record carries.
- */
+// Holds the crib table back while the interaction runs, then releases it and returns the sort order the recorded decision carries.
 const recordedWithTablesLoadingDuring = async (
   interact: () => Promise<void>,
 ) => {
@@ -62,7 +57,6 @@ const recordedWithTablesLoadingDuring = async (
   }
 };
 
-// A history move, awaited until its popstate has put the given sort order on screen.
 const travel = async (move: () => void, shownSortOrder: string) => {
   move();
   await waitFor(() => {
@@ -90,7 +84,6 @@ const chooseSort = async ({ user }: StartedTrainer, name: string) => {
   await user.click(screen.getByRole("radio", { name }));
 };
 
-// Completes a discard under descending with the tables held back, then the rest of the interaction, and returns the order recorded once they load.
 const recordedAfterCompletingUnderDescending = async (
   rest: (started: StartedTrainer) => Promise<void>,
 ) => {
@@ -102,14 +95,7 @@ const recordedAfterCompletingUnderDescending = async (
 };
 
 describe("the sort order a Trainer decision is recorded with", () => {
-  /*
-   * With the tables already loaded, the analysis renders in the same commit
-   * that completes the discard, and its effect reports the score before any
-   * effect of the tally's own runs. A capture taken in an effect would still
-   * be empty then, and the record's idempotency would absorb every later
-   * report, so the field would be lost for good. The hook-level suites
-   * cannot see this: renderHook flushes effects before they report a score.
-   */
+  // With the tables loaded, the score is reported before any effect of the tally's own runs, so only a render-time capture survives; renderHook flushes effects first and cannot see this.
   it("records the sort order shown when the discard completed with the tables already loaded", async () => {
     const { user, view } = startTrainer(SortOrder.Ascending);
 
@@ -118,15 +104,7 @@ describe("the sort order a Trainer decision is recorded with", () => {
     expect(recordedSortOrder()).toBe("ascending");
   });
 
-  /*
-   * Real history rather than a simulated popstate, because the defect lives
-   * in which entries Trainer writes: deselecting a card pushes, while the
-   * re-sort and selecting it again only replace that transient entry, so
-   * Back goes straight from the completed ascending board to the completed
-   * descending one with no incomplete render between them. Hand, role and
-   * discard are identical on both, so nothing in the capture's key changes
-   * across the restore.
-   */
+  // Real history, not a simulated popstate: Back goes straight from the completed ascending board to the completed descending one, and nothing in the capture's key changes.
   it("records the order a Back restores onto an identical completed discard while the tables load", async () => {
     const recorded = await recordedAfterCompletingUnderDescending(
       async (started) => {
@@ -142,13 +120,7 @@ describe("the sort order a Trainer decision is recorded with", () => {
     expect(recorded).toBe("descending");
   });
 
-  /*
-   * The other shape that reaches a completed board by Back with an unchanged
-   * key: each re-sort of a completed discard pushes an entry, and those
-   * entries were written while the capture still held the order the discard
-   * was completed under. Only the entry can say which shape a restore is,
-   * because the tally keeps no identity for history entries (#874).
-   */
+  // Each re-sort pushes an entry written while the capture still held the completion's order; only the entry can say which shape a restore is.
   it.each([
     { name: "a Back", travels: [back("Ascending")] },
     {
@@ -162,7 +134,6 @@ describe("the sort order a Trainer decision is recorded with", () => {
         async (started) => {
           await chooseSort(started, "Ascending");
           await chooseSort(started, "DealOrder");
-          // Chained so each move lands before the next is taken.
           await travels.reduce(
             async (landed, step) => landed.then(step),
             Promise.resolve(),
