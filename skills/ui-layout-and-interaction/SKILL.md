@@ -665,3 +665,10 @@ once you are already editing layout or interaction code.
   onto two lines. The visible wording dropped "approximate" and "as"; the
   accessible label keeps both, and `ScoredPossibleKeepDiscardsCaption.test.tsx`
   pins the length. Emulation cannot settle wrapping, so recheck on a phone.
+- **A caption whose chips wrap only where they must has a row count that
+  depends on the viewport.** Verdict plus reason fits one line on a desktop
+  and not on a phone, so the wrapping row showed one row at some widths and two
+  at others. `.diagnostic-caption` is now a column: the reason badge always
+  takes its own row, and `roleLossPair.spec.ts` asserts the verdict is one line
+  and the reason sits below it at a desktop and a phone-portrait width. The
+  `practiceDrill.spec.ts` caption-height budget (65px) held unchanged.
