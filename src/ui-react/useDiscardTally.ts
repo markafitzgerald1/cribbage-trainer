@@ -49,7 +49,7 @@ interface UseDiscardTallyProps {
    */
   readonly handId: string;
   readonly isSeededSession: boolean;
-  // The sort order on screen right now, captured the instant a discard becomes complete (see `capture` below).
+  // The sort order on screen right now, captured the instant a discard is completed or restored (see `capture` below).
   readonly sortOrder: SortOrder;
   readonly wasDeepLinked: boolean;
 }
@@ -204,16 +204,26 @@ export const useDiscardTally = ({
   );
 
   /*
-   * The sort order in effect when the discard now on the board became
-   * complete (#872). Only the board on screen can be scored, so one capture
-   * is enough: it is dropped whenever the board shows no complete discard,
-   * and it is keyed by the hand occurrence as well as the discard, because
-   * the identical cards, role and discard can come round again (Enter Cards,
-   * a seeded or deep-linked first hand, Back to an earlier deal) and must
-   * never inherit an earlier occurrence's order. Dropping it is deliberate
-   * even before a score arrives: a board that stops showing the discard has
-   * withdrawn that completion, so the next one — a click or a history move
-   * back onto it — is a fresh completion and takes the order then on screen.
+   * The sort order on screen when the discard now on the board arrived
+   * there (#872): by the click that completed it, or by the history move
+   * that restored it. A re-sort while it stays on screen never changes it.
+   * Only the board on screen can be scored, so one capture is enough: it is
+   * dropped whenever the board shows no complete discard, and it is keyed by
+   * the hand occurrence as well as the discard, because the identical cards,
+   * role and discard can come round again (Enter Cards, a seeded or
+   * deep-linked first hand, Back to an earlier deal) and must never inherit
+   * an earlier occurrence's order. Dropping it is deliberate even before a
+   * score arrives: a board that stops showing the discard has withdrawn that
+   * completion, so the next one is fresh and takes the order then on screen.
+   *
+   * A restore is always such an arrival, even when it changes nothing the
+   * key holds: reportHandRestored drops the capture, so the render that
+   * shows the restored board retakes it from the restored sort. Back between
+   * two completions of the identical discard — withdrawn and redone under
+   * another sort — is indistinguishable here from Back between two sorts of
+   * one completion, and without an identity for history entries, which the
+   * tally deliberately does not keep, the order the restore shows is the
+   * only observed value that fits both.
    *
    * The occurrence is telemetry's handId itself, not a counter of this
    * hook's own. A counter advanced by this hook's reports was a second copy
@@ -337,6 +347,8 @@ export const useDiscardTally = ({
    */
   const reportHandRestored: ReportHandRestored = useCallback(
     (cards, { cribRole: role, handId }) => {
+      // Batched with the restored board and sort, so the next render retakes the capture from the order the restore shows (see `capture`).
+      setCapture(null);
       if (role === null) {
         return;
       }

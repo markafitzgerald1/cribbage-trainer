@@ -74,21 +74,65 @@ const navigateHistory = (
 const stampedHandId = (reporting: Reporting) =>
   reporting.result.current.currentHandScope().handId;
 
+// The entries the two re-sorts below push, each still showing the completed discard.
+interface ResortEntries {
+  readonly ascending: string;
+  readonly dealOrder: string;
+}
+
+type HistoryMove = (reporting: Reporting, entries: ResortEntries) => void;
+
+const restoreCompleted =
+  (sortOrder: SortOrder, entryOf: (entries: ResortEntries) => string) =>
+  (reporting: Reporting, entries: ResortEntries) => {
+    navigateHistory(reporting, entryOf(entries), {
+      dealtCards: handOf(HAND, true),
+      sortOrder,
+    });
+  };
+
+const back = restoreCompleted(
+  SortOrder.Ascending,
+  (entries) => entries.ascending,
+);
+const forward = restoreCompleted(
+  SortOrder.DealOrder,
+  (entries) => entries.dealOrder,
+);
+
+const moves: readonly {
+  readonly move: readonly HistoryMove[];
+  readonly name: string;
+  readonly wanted: string;
+}[] = [
+  { move: [], name: "no history move", wanted: "descending" },
+  { move: [back], name: "a Back", wanted: "ascending" },
+  {
+    move: [back, forward],
+    name: "a Back then a Forward",
+    wanted: "deal-order",
+  },
+];
+
 /*
- * Two sort changes after the discard completed, each pushing an entry, then
- * Back onto the first of them: the same hand and discard, restored with the
- * intermediate sort order. Only the order shown at completion describes the
- * decision, and the score arrives only now, as it does when the
- * expected-points tables are still loading.
+ * Two sort changes after the discard completed under descending, each
+ * pushing an entry, then the given history move, and only then the score, as
+ * it arrives when the expected-points tables are still loading. A re-sort
+ * leaves the capture alone; a restore retakes it from the order it puts on
+ * screen, because Back between two sorts of one completion looks exactly
+ * like Back between two completions of the identical discard (#874).
  */
-const resortTwiceThenBackAndScore = (reporting: Reporting) => {
+const resortTwiceMoveAndScore = (
+  reporting: Reporting,
+  move: readonly HistoryMove[],
+) => {
   const completed = handOf(HAND, true);
   reporting.rerender({ dealtCards: completed, sortOrder: SortOrder.Ascending });
-  const intermediateEntry = stampedHandId(reporting);
+  const ascending = stampedHandId(reporting);
   reporting.rerender({ dealtCards: completed, sortOrder: SortOrder.DealOrder });
-  navigateHistory(reporting, intermediateEntry, {
-    dealtCards: handOf(HAND, true),
-    sortOrder: SortOrder.Ascending,
+  const entries = { ascending, dealOrder: stampedHandId(reporting) };
+  move.forEach((step) => {
+    step(reporting, entries);
   });
   act(() => {
     reporting.result.current.reportAnalysisRendered(
@@ -102,57 +146,68 @@ const resortTwiceThenBackAndScore = (reporting: Reporting) => {
   return readTallyForDisplay().records[0]?.sortOrder;
 };
 
+// Back from another hand to this one's completed discard, which makes telemetry open a fresh scope that Trainer stamps over the restored entry.
+const restoredFromAnotherHand = () => {
+  const reporting = startReporting({
+    dealtCards: handOf(HAND, false),
+    sortOrder: SortOrder.Descending,
+  });
+  const firstHandEntry = stampedHandId(reporting);
+  act(() => {
+    reporting.result.current.reportHandReplaced(
+      handOf(OTHER_HAND, false),
+      "deal",
+      CribRole.Dealer,
+    );
+    reporting.rerender({
+      dealtCards: handOf(OTHER_HAND, false),
+      sortOrder: SortOrder.Descending,
+    });
+  });
+  navigateHistory(reporting, firstHandEntry, {
+    dealtCards: handOf(HAND, true),
+    sortOrder: SortOrder.Descending,
+  });
+  return reporting;
+};
+
+const completedFirstHand = (options: StartOptions) => () =>
+  startReporting(
+    { dealtCards: handOf(HAND, true), sortOrder: SortOrder.Descending },
+    options,
+  );
+
+const origins = [
+  { origin: "a cross-hand restore", start: restoredFromAnotherHand },
+  {
+    origin: "an interactively dealt first hand",
+    start: completedFirstHand({}),
+  },
+  {
+    origin: "a seeded session",
+    start: completedFirstHand({ isSeededSession: true }),
+  },
+  // Never opened for skip counting, which must not read as a different hand when Back names the page load's own scope.
+  {
+    origin: "a deep-linked first hand",
+    start: completedFirstHand({ wasDeepLinked: true }),
+  },
+];
+
 describe("the hand identity telemetry and the tally share", () => {
   /*
-   * Back to a different hand makes telemetry open a fresh scope, which
-   * Trainer then stamps over the restored entry. A capture keyed on anything
-   * but that fresh scope — such as the entry's old identifier — changes key
-   * on the next same-hand Back and is retaken under the intermediate sort.
+   * A capture keyed on anything but telemetry's current scope changes key
+   * on a re-sort or a same-hand move and is retaken under whatever order is
+   * then showing. Each case pins both halves of the rule for every way the
+   * hand can have been opened: re-sorts never move the capture, and a
+   * same-hand restore lands exactly on the order it restores.
    */
-  it("keeps the completion sort order across same-hand Backs after a cross-hand restore", () => {
-    const reporting = startReporting({
-      dealtCards: handOf(HAND, false),
-      sortOrder: SortOrder.Descending,
-    });
-    const firstHandEntry = stampedHandId(reporting);
-    act(() => {
-      reporting.result.current.reportHandReplaced(
-        handOf(OTHER_HAND, false),
-        "deal",
-        CribRole.Dealer,
-      );
-      reporting.rerender({
-        dealtCards: handOf(OTHER_HAND, false),
-        sortOrder: SortOrder.Descending,
-      });
-    });
-    navigateHistory(reporting, firstHandEntry, {
-      dealtCards: handOf(HAND, true),
-      sortOrder: SortOrder.Descending,
-    });
-
-    expect(resortTwiceThenBackAndScore(reporting)).toBe("descending");
-  });
-
-  /*
-   * The same shape without any replacement at all: a seeded or deep-linked
-   * first hand is never opened for skip counting, and that absence must not
-   * read as a different hand when Back names the page load's own scope.
-   */
-  it.each([
-    // The control: no restore and nothing unopened, so it passes whether or not the two identities can drift apart.
-    { name: "an interactively dealt first hand", options: {} },
-    { name: "a seeded session", options: { isSeededSession: true } },
-    { name: "a deep-linked first hand", options: { wasDeepLinked: true } },
-  ])(
-    "keeps the completion sort order across same-hand Backs for $name",
-    ({ options }) => {
-      const reporting = startReporting(
-        { dealtCards: handOf(HAND, true), sortOrder: SortOrder.Descending },
-        options,
-      );
-
-      expect(resortTwiceThenBackAndScore(reporting)).toBe("descending");
+  it.each(
+    origins.flatMap((origin) => moves.map((move) => ({ ...origin, ...move }))),
+  )(
+    "records $wanted after two re-sorts and $name, for $origin",
+    ({ move, start, wanted }) => {
+      expect(resortTwiceMoveAndScore(start(), move)).toBe(wanted);
     },
   );
 });

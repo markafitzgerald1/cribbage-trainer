@@ -256,6 +256,16 @@ be inferred from repository changes.
   it keyed the capture on telemetry's `handId` prop directly. Before adding
   any per-occurrence state to the tally, key it on that prop rather than
   tracking occurrences in the tally.
+- **A key comparison cannot see a restore that changes nothing the key
+  holds.** Withdraw a completed discard, redo it under another sort, then
+  press Back: history jumps straight from one completed board to the other,
+  same hand id, role, cards and discard, with no incomplete render between.
+  A capture guarded only by "has the key changed" kept the redo's sort while
+  the screen showed the restored one. `useDiscardTally` therefore drops the
+  capture in `reportHandRestored`, batched with the restored board, so every
+  restore is a capture moment — which also means Back across two re-sorts of
+  one completion records the order Back shows, since nothing observed can
+  tell those two apart without an identity for history entries.
 - An entry written before this document loaded records nothing, and a seeded
   session then assumes its own seed rather than guessing unseeded, which can
   only over-exclude from population statistics. Never invert that default.

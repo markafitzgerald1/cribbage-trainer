@@ -2,6 +2,7 @@ import {
   HAND,
   INITIAL_HAND_ID,
   handOf,
+  noteRestore,
   renderTally,
   renderTallyWithMutableCards,
   reportScore,
@@ -240,25 +241,41 @@ describe("recording the sort order a discard was completed under", () => {
   );
 
   /*
-   * History can also move between occurrences of the identical hand: after
-   * the second occurrence completes (not yet scored), Back restores the
-   * first, whose URL carries the sort order it was decided under. The
-   * outgoing occurrence's capture must not survive into the restored one.
+   * History can also move back onto the first completion once the identical
+   * discard has been completed again under ascending, not yet scored. Across
+   * occurrences, the outgoing occurrence's capture must not survive into the
+   * restored one. Within one occurrence — the completion withdrawn and
+   * redone — Back returns straight to the entry the first completion left:
+   * nothing renders incomplete in between and nothing in the capture's key
+   * differs, so only treating the restore itself as an arrival records the
+   * order it put on screen (#874).
    */
-  it("keeps the restored occurrence's own sort order when Back returns to an identical earlier hand", () => {
-    const harness = completeWithoutScoringUnderDescending();
-    replaceAndCompleteUnderAscending(harness);
-    const firstOccurrence = {
-      cribRole: CribRole.Dealer,
-      handId: INITIAL_HAND_ID,
-    };
-    // Restored in one update with its board, as Trainer's popstate handler batches them.
-    act(() => {
-      harness.result.current.reportHandRestored(handOf(HAND), firstOccurrence);
-      showBoard(harness, handOf(HAND, true), SortOrder.Descending);
-    });
-    reportScore(harness.result.current);
+  it.each([
+    {
+      completeAgainUnderAscending: replaceAndCompleteUnderAscending,
+      name: "an identical earlier occurrence",
+    },
+    {
+      completeAgainUnderAscending: (harness: TallyHarness) => {
+        showBoard(harness, handOf(HAND, false), SortOrder.Descending);
+        showBoard(harness, handOf(HAND, false), SortOrder.Ascending);
+        showBoard(harness, handOf(HAND, true), SortOrder.Ascending);
+      },
+      name: "an identical, withdrawn completion of the same occurrence",
+    },
+  ])(
+    "records the order Back restores when it returns to $name",
+    ({ completeAgainUnderAscending }) => {
+      const harness = completeWithoutScoringUnderDescending();
+      completeAgainUnderAscending(harness);
+      // Restored in one update with its board, as Trainer's popstate handler batches them.
+      act(() => {
+        noteRestore(harness.result.current, HAND);
+        showBoard(harness, handOf(HAND, true), SortOrder.Descending);
+      });
+      reportScore(harness.result.current);
 
-    expect(recordedSortOrder()).toBe("descending");
-  });
+      expect(recordedSortOrder()).toBe("descending");
+    },
+  );
 });
