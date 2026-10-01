@@ -278,6 +278,14 @@
   explicit timeout: Testing Library's `findBy*` defaults to one second and
   `testTimeout` does not govern it, so a wait added to survive contention
   fails at one second under exactly the contention it was added for.
+- **A test must be able to fail for the bug it names.** For a bug fix, write the
+  failing test first and show it failing against the unfixed code. For logic
+  where a wrong answer ships silently (statistics, history, telemetry, consent,
+  CI gates), the PR also names the mutation each new test catches, and the
+  author shows the test failing against that mutation. A test never
+  re-implements the logic it tests: it would then agree with a wrong
+  implementation. Coverage cannot tell these apart, because a vacuous test
+  executes the same lines as a good one.
 - Never judge a validation run by piping through `| tail` or `| grep`: the
   pipe masks the command's exit code and a "61 passed" line can sit directly
   below a failed-tests list. Redirect to a log file, echo `$?`, and read the
