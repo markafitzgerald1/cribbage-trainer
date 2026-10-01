@@ -6,7 +6,6 @@ import {
 import {
   type DiscardHighlightTier,
   ScoredPossibleKeepDiscard,
-  getRowTitle,
 } from "./ScoredPossibleKeepDiscard";
 import {
   EXPECTED_POINTS_FRACTION_DIGITS,
@@ -60,6 +59,7 @@ interface RenderComponentOptions {
   readonly descriptionId?: string | null;
   readonly expectedPlayPoints?: number;
   readonly highlightTier?: DiscardHighlightTier;
+  readonly isEarlierChoice?: boolean;
   readonly rowIndex?: number;
   readonly signedExpectedCribPoints?: number;
 }
@@ -99,6 +99,7 @@ function renderComponentWithScenario(
     descriptionId = null,
     expectedPlayPoints = EXPECTED_PLAY_POINTS,
     highlightTier = "none",
+    isEarlierChoice = false,
     rowIndex = 0,
     signedExpectedCribPoints = EXPECTED_CRIB_POINTS,
   }: RenderComponentOptions = {},
@@ -163,6 +164,7 @@ function renderComponentWithScenario(
     ...(typeof descriptionId === "undefined" ? {} : { descriptionId }),
     cribRole: CribRole.Dealer,
     highlightTier,
+    ...(isEarlierChoice ? { isEarlierChoice } : {}),
     rowIndex,
     scoredKeepDiscard,
     sortOrder: scenario.sortOrder,
@@ -303,35 +305,62 @@ describe("calculation component", () => {
 
   it.each([
     {
-      classification: null,
-      expected: "Optimal discard",
-      highlightTier: "chosen" as const,
-      name: "chosen tier without classification",
-    },
-    {
-      classification: mockTradeOffClassification,
-      expected:
-        "Chosen discard (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
-      highlightTier: "chosen" as const,
-      name: "chosen tier with classification",
-    },
-    {
-      classification: null,
-      expected: "Equal-best discard",
-      highlightTier: "equal-best" as const,
-      name: "equal-best tier",
-    },
-    {
-      classification: null,
-      // eslint-disable-next-line no-undefined
-      expected: undefined,
+      expectedAriaLabel: "Earlier drill discard",
+      expectedClasses: ["earlierChoice"],
+      expectedDataEarlier: "true",
+      expectedId: "drill-earlier-choice-row",
+      expectedTabIndex: "-1",
+      expectedTitle: "Earlier drill discard",
       highlightTier: "none" as const,
-      name: "none tier",
+      isEarlierChoice: true,
+      name: "earlier choice row alone",
+    },
+    {
+      expectedAriaLabel: "Chosen discard matching earlier drill mistake",
+      expectedClasses: ["highlighted", "earlierAndChosen"],
+      expectedDataEarlier: "true",
+      expectedId: "drill-earlier-choice-row",
+      expectedTabIndex: "-1",
+      expectedTitle: "Optimal discard (also earlier drill discard)",
+      highlightTier: "chosen" as const,
+      isEarlierChoice: true,
+      name: "earlier choice and chosen row (repeated mistake)",
     },
   ])(
-    "computes row title for $name",
-    ({ classification, expected, highlightTier }) => {
-      expect(getRowTitle(highlightTier, classification)).toBe(expected);
+    "renders row with earlier choice attributes for $name",
+    ({
+      expectedAriaLabel,
+      expectedClasses,
+      expectedDataEarlier,
+      expectedId,
+      expectedTabIndex,
+      expectedTitle,
+      highlightTier,
+      isEarlierChoice,
+    }) => {
+      const { container } = renderComponentWithScenario(
+        setupScenario("Ascending"),
+        { highlightTier, isEarlierChoice },
+      );
+      const tr = container.querySelector("tr");
+
+      expect({
+        ariaLabel: tr?.getAttribute("aria-label"),
+        dataIsEarlierChoice: tr?.getAttribute("data-is-earlier-choice"),
+        id: tr?.getAttribute("id"),
+        tabIndex: tr?.getAttribute("tabIndex"),
+        title: tr?.getAttribute("title"),
+      }).toStrictEqual({
+        ariaLabel: expectedAriaLabel,
+        dataIsEarlierChoice: expectedDataEarlier,
+        id: expectedId,
+        tabIndex: expectedTabIndex,
+        title: expectedTitle,
+      });
+
+      expect(
+        expectedClasses.every((className) => tr?.className.includes(className)),
+      ).toBe(true);
     },
   );
 

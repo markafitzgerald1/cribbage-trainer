@@ -364,6 +364,55 @@ describe("scored possible keep discards component", () => {
         { hasEqualBestClass: true, title: "Equal-best discard" },
       ]);
     });
+
+    const renderDrillAndFindEarlierChoiceRow = async (
+      drillPreviousDiscard: string,
+    ) => {
+      const { container } = renderHand("AH,2H,3H,4H,5H,6H", "AH,2H", {
+        drillPreviousDiscard,
+        isPracticeDrill: true,
+      });
+      await findCaption(container);
+
+      return container.querySelector<HTMLTableRowElement>(
+        'tr[data-is-earlier-choice="true"]',
+      );
+    };
+
+    it.each([
+      {
+        drillPreviousDiscard: "5H,6H",
+        expectedAriaLabel: "Earlier drill discard",
+        expectedClassName: "earlierChoice",
+        name: "marks earlier choice row when drillPreviousDiscard is provided",
+      },
+      {
+        drillPreviousDiscard: "AH,2H",
+        expectedAriaLabel: "Chosen discard matching earlier drill mistake",
+        expectedClassName: "earlierAndChosen",
+        name: "marks row as both chosen and earlier choice when matching chosen discard",
+      },
+    ])(
+      "$name",
+      async ({
+        drillPreviousDiscard,
+        expectedAriaLabel,
+        expectedClassName,
+      }) => {
+        const match =
+          await renderDrillAndFindEarlierChoiceRow(drillPreviousDiscard);
+
+        expect(match).not.toBeNull();
+        expect(match?.getAttribute("aria-label")).toBe(expectedAriaLabel);
+        expect(match?.className).toContain(expectedClassName);
+      },
+    );
+
+    it("handles invalid drillPreviousDiscard gracefully without marking any row", async () => {
+      const match = await renderDrillAndFindEarlierChoiceRow("invalid");
+
+      expect(match).toBeNull();
+    });
   });
 
   it("renders empty table body when no candidates exist", () => {

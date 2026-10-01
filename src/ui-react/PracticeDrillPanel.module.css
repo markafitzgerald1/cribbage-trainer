@@ -104,6 +104,41 @@
   padding: 0.08rem 0.25rem;
 }
 
+.locate-earlier-button {
+  --card-red-suit-color: #8c1228;
+
+  align-items: center;
+  background-color: #dfe8e1;
+  border: 1px solid #a7c7ad;
+  border-radius: 4px;
+  color: #143b18;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 700;
+  gap: 0.2rem;
+  padding: 0.08rem 0.25rem;
+  transition:
+    background-color var(--transition-duration) var(--transition-timing),
+    border-color var(--transition-duration) var(--transition-timing);
+}
+
+.locate-earlier-button:hover {
+  background-color: #eaf1eb;
+  border-color: #72d572;
+}
+
+.locate-earlier-button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.locate-icon {
+  font-size: 0.85em;
+  opacity: 0.85;
+}
+
 .not-recorded {
   font-size: 0.85rem;
   font-style: italic;
@@ -265,7 +300,8 @@
     display: none;
   }
 
-  .discard-cards {
+  .discard-cards,
+  .locate-earlier-button {
     padding: min(0.1rem, 0.2vw) min(0.3rem, 0.6vw);
   }
 

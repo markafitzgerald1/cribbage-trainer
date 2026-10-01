@@ -374,3 +374,22 @@ export const LoadError: Story = {
     await waitForLoadingToDisappear(canvas);
   },
 };
+
+export const InDrillReviewWithEarlierChoiceHighlighted: Story = {
+  ...JackSixFiveFourKingQueenSortedDescending,
+  args: {
+    ...JackSixFiveFourKingQueenSortedDescending.args,
+    drillPreviousDiscard: "KC,QS",
+    isPracticeDrill: true,
+  },
+  play: async ({ canvasElement }) => {
+    const tableScope = within(canvasElement);
+    await waitForLoadingToDisappear(tableScope);
+    const row = await tableScope.findByRole("row", {
+      name: "Earlier drill discard",
+    });
+
+    await expect(row).toHaveAttribute("data-is-earlier-choice", "true");
+    await expect(row).toHaveAttribute("id", "drill-earlier-choice-row");
+  },
+};

@@ -64,6 +64,38 @@
   font-weight: 500;
 }
 
+.earlier-choice {
+  /* !important is needed to override the specificity of the nth-child row striping in the parent component */
+  background-color: rgb(245 203 167 / 18%) !important;
+  box-shadow:
+    inset 4px 0 0 0 #f5cba7,
+    inset 0 0 0 1px rgb(245 203 167 / 50%);
+  font-weight: 500;
+  outline: 1.5px dashed #f5cba7;
+  outline-offset: -2px;
+}
+
+.earlier-choice:hover {
+  background-color: rgb(245 203 167 / 28%) !important;
+}
+
+.earlier-and-chosen {
+  /* Combines the solid white left bar of chosen with the dashed amber border of the earlier mistake */
+  background-color: rgb(255 255 255 / 35%) !important;
+  box-shadow:
+    inset 4px 0 0 0 #fff,
+    inset 0 0 0 1px rgb(255 255 255 / 40%);
+  font-weight: 600;
+  outline: 2px dashed #f5cba7;
+  outline-offset: -2px;
+}
+
+.earlier-choice:focus-visible,
+.earlier-and-chosen:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
 .clickable {
   cursor: pointer;
 }

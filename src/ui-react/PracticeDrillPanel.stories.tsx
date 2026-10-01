@@ -5,8 +5,8 @@ import {
   clickStoryButtonExpectingCall,
   expectStoryTextVisible,
 } from "./stories.common";
+import { expect, fn, within } from "storybook/test";
 import { PracticeDrillPanel } from "./PracticeDrillPanel";
-import { fn } from "storybook/test";
 /* jscpd:ignore-end */
 
 const meta = {
@@ -56,5 +56,55 @@ export const MissVerdict: Story = {
   },
   play: async ({ canvasElement }) => {
     await expectStoryTextVisible(canvasElement, /behind the best discard/u);
+  },
+};
+
+export const ReviewWithEarlierDiscardLocate: Story = {
+  args: {
+    onLocateEarlierChoice: fn(),
+    phase: "revealed",
+    verdict: sampleVerdict({
+      chosenDiscard: "5H,6H",
+      chosenLoss: 0,
+      consecutiveSuccesses: 1,
+      isOptimal: true,
+      previousDiscard: "7C,8C",
+      previousLoss: 1.42,
+    }),
+  },
+  play: async ({ args, canvasElement }) => {
+    await clickStoryButtonExpectingCall(
+      canvasElement,
+      "Scroll to previous mistake in table",
+      args.onLocateEarlierChoice,
+    );
+  },
+};
+
+export const ReviewWithRepeatedMistake: Story = {
+  args: {
+    phase: "revealed",
+    verdict: sampleVerdict({
+      chosenDiscard: "7C,8C",
+      chosenLoss: 1.42,
+      consecutiveSuccesses: 0,
+      isOptimal: false,
+      previousDiscard: "7C,8C",
+      previousLoss: 1.42,
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      canvas.getByRole("button", {
+        name: "Scroll to previous mistake in table",
+      }),
+    ).toBeInTheDocument();
+
+    await expectStoryTextVisible(
+      canvasElement,
+      /1\.42 behind the best discard/u,
+    );
   },
 };
