@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import {
   type DiscardTallySummary,
   readDiscardTally,
@@ -16,8 +17,11 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import type { SortOrder } from "../ui/SortOrder";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
+/* jscpd:ignore-end */
 
 /*
  * What the board is showing, when it is not showing its own cards: the
@@ -37,9 +41,16 @@ export type DisplayedHandRelabeling = readonly Suit[];
 interface UseDiscardTallyProps {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
-  // Telemetry's own identifier for the hand this page load starts with, needed only to give that hand a true identity for later restores to compare against.
-  readonly initialHandId: string;
+  /*
+   * Telemetry's identifier for the hand on screen now, read on every render.
+   * It is the only hand identity there is: Trainer stamps it onto every
+   * history entry it writes, so anything here that tracked an identity of its
+   * own would drift from the one a later restore hands back (#874).
+   */
+  readonly handId: string;
   readonly isSeededSession: boolean;
+  // The sort order on screen right now, captured the instant a discard is completed or restored (see `capture` below).
+  readonly sortOrder: SortOrder;
   readonly wasDeepLinked: boolean;
 }
 
@@ -62,6 +73,13 @@ interface HandIdentity {
  */
 interface RestoredHandIdentity {
   readonly cribRole: CribRole | null;
+  /*
+   * The capture's order as the restored entry recorded it when it was
+   * written (see `capture` below), or null when the entry recorded none:
+   * one written before entries carried it, or one whose board showed no
+   * complete discard.
+   */
+  readonly completionSortOrder: SortOrder | null;
   readonly handId: string | null;
 }
 
@@ -78,6 +96,8 @@ export type ReportHandRestored = (
 ) => void;
 
 export interface DiscardTally {
+  // The captured order for the discard on the board, or null when it shows none, for Trainer to write onto each history entry.
+  readonly completionSortOrder: SortOrder | null;
   readonly reportAnalysisRendered: (
     analysis: RenderedAnalysis,
     displayedAs: DisplayedHandRelabeling | null,
@@ -98,11 +118,33 @@ interface OpenHand {
   readonly key: string;
 }
 
+/*
+ * A discard's identity: the hand and role it belongs to, plus which cards
+ * were not kept. Module-level and pure — it closes over nothing from the
+ * hook — so both the capture below and reportAnalysisRendered's later
+ * lookup can share it without either reading the other's local variable,
+ * and so a hand alone is never mistaken for one particular discard of it.
+ */
+interface SortOrderCapture {
+  readonly key: string;
+  readonly sortOrder: SortOrder;
+}
+
+// Holds a restored entry's order until the render that shows its board; no board key can equal it, since every board key contains a "|".
+const RESTORED_ENTRY = "restored-entry";
+
+const completionKeyFor = (
+  cards: readonly DealtCard[],
+  role: CribRole,
+): string =>
+  `${toHandKey(cards, role)}|${serializeHand(cards.filter((card) => !card.kept))}`;
+
 export const useDiscardTally = ({
   cribRole,
   dealtCards,
-  initialHandId,
+  handId: boardHandId,
   isSeededSession,
+  sortOrder,
   wasDeepLinked,
 }: UseDiscardTallyProps): DiscardTally => {
   const [summary, setSummary] = useState<DiscardTallySummary>(() =>
@@ -138,7 +180,7 @@ export const useDiscardTally = ({
      */
     isSeededSession || wasDeepLinked
       ? null
-      : { handId: initialHandId, key: toHandKey(dealtCards, cribRole) },
+      : { handId: boardHandId, key: toHandKey(dealtCards, cribRole) },
   );
 
   /*
@@ -172,6 +214,64 @@ export const useDiscardTally = ({
       [toHandKey(dealtCards, cribRole), isSeededSession || wasDeepLinked],
     ]),
   );
+
+  /*
+   * The sort order on screen when the discard now on the board arrived
+   * there (#872): by the click that completed it, or by the history move
+   * that restored it. A re-sort while it stays on screen never changes it.
+   * Only the board on screen can be scored, so one capture is enough: it is
+   * dropped whenever the board shows no complete discard, and it is keyed by
+   * the hand occurrence as well as the discard, because the identical cards,
+   * role and discard can come round again (Enter Cards, a seeded or
+   * deep-linked first hand, Back to an earlier deal) and must never inherit
+   * an earlier occurrence's order. Dropping it is deliberate even before a
+   * score arrives: a board that stops showing the discard has withdrawn that
+   * completion, so the next one is fresh and takes the order then on screen.
+   *
+   * A restore is always such an arrival, even when it changes nothing the
+   * key holds, and it takes the order the restored entry recorded: Trainer
+   * writes this capture onto every history entry (`completionSortOrder`).
+   * Back between two completions of the identical discard — withdrawn and
+   * redone under another sort — and Back between two sorts of one
+   * completion look the same here, the key unchanged and the board complete
+   * on both sides, and only the entry knows which it is: a re-sort's entry was written while the capture
+   * still held the order of the completion it re-sorted, and a completion's
+   * entry holds that completion's own order (#874). Storage is transport,
+   * so the value keeps the provenance it was captured with. An entry that
+   * recorded none — written before entries carried it, or tampered with —
+   * falls back to the order the restore puts on screen, which is the only
+   * observed value left; short of tampering, it can mislabel only a restore
+   * onto a re-sort's entry that an earlier build wrote, before the score
+   * lands.
+   *
+   * The occurrence is telemetry's handId itself, not a counter of this
+   * hook's own. A counter advanced by this hook's reports was a second copy
+   * of telemetry's decision about which hand is showing, and every way the
+   * two could disagree re-captured a later sort order: a cross-hand restore
+   * that telemetry answered with a fresh scope while this hook kept the
+   * entry's old one, and a same-hand Back onto a seeded or deep-linked first
+   * hand, which this hook never opened and so read as a different hand.
+   *
+   * Set during render (React's "adjust state while rendering" idiom, as
+   * usePracticeDrill.ts uses) rather than in an effect: the child analysis
+   * component's effects run before this parent's in the same commit, so an
+   * effect could lose the race and leave the first score with no capture.
+   */
+  const [capture, setCapture] = useState<SortOrderCapture | null>(null);
+  const boardCaptureKey = discardIsComplete(dealtCards)
+    ? `${boardHandId}|${completionKeyFor(dealtCards, cribRole)}`
+    : null;
+  if ((capture?.key ?? null) !== boardCaptureKey) {
+    setCapture(
+      boardCaptureKey === null
+        ? null
+        : {
+            key: boardCaptureKey,
+            sortOrder:
+              capture?.key === RESTORED_ENTRY ? capture.sortOrder : sortOrder,
+          },
+    );
+  }
 
   /*
    * Today is computed when a hand is recorded, so a tab left open across
@@ -271,7 +371,13 @@ export const useDiscardTally = ({
    * hand mid-decision.
    */
   const reportHandRestored: ReportHandRestored = useCallback(
-    (cards, { cribRole: role, handId }) => {
+    (cards, { cribRole: role, completionSortOrder, handId }) => {
+      // Batched with the restored board and sort, so the next render retakes the capture from the entry's order, or else the screen's (see `capture`).
+      setCapture(
+        completionSortOrder === null
+          ? null
+          : { key: RESTORED_ENTRY, sortOrder: completionSortOrder },
+      );
       if (role === null) {
         return;
       }
@@ -317,6 +423,12 @@ export const useDiscardTally = ({
       const discardKey = serializeHand(
         decidedCards.filter((card) => !card.kept),
       );
+      // Only a capture of this exact occurrence and discard describes the decision being scored.
+      const capturedSortOrder =
+        capture?.key ===
+        `${boardHandId}|${completionKeyFor(dealtCards, scoredRole)}`
+          ? capture.sortOrder
+          : null;
       setSummary(
         recordDiscardDecision({
           at: Date.now(),
@@ -353,13 +465,23 @@ export const useDiscardTally = ({
           ...(typeof oppositeRoleExpectedPointsLoss === "number"
             ? { oppositeRoleExpectedPointsLoss }
             : {}),
+          /*
+           * Explicit numeric-type check rather than a truthiness one:
+           * SortOrder.DealOrder is 0, and `capturedSortOrder ? … : …` would
+           * silently treat a deal-order decision the same as one this hook
+           * never saw complete (#872).
+           */
+          ...(typeof capturedSortOrder === "number"
+            ? { sortOrder: sortUrlValue(capturedSortOrder) }
+            : {}),
         }),
       );
     },
-    [dealtCards],
+    [boardHandId, capture, dealtCards],
   );
 
   return {
+    completionSortOrder: capture?.sortOrder ?? null,
     reportAnalysisRendered,
     reportHandOrigin,
     reportHandRestored,

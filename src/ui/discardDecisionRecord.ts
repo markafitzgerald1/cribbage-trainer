@@ -1,8 +1,10 @@
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
+import { SortOrder } from "./SortOrder";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHand } from "../game/Card";
+import { sortUrlValue } from "./urlAnalysisState";
 
 export interface DiscardDecisionRecord {
   readonly at: number;
@@ -25,6 +27,19 @@ export interface DiscardDecisionRecord {
   readonly oppositeRoleExpectedPointsLoss?: number;
   // Monotonic recording order for queue recency; `at` remains the calendar event time.
   readonly recencyAt?: number;
+  /*
+   * The sort order on screen when this discard was completed by a click,
+   * serialized the way urlAnalysisState.ts's sortUrlValue does
+   * ("deal-order", "ascending", or "descending"). Absent on every record
+   * written before version 7, and absent means unknown rather than any
+   * particular order: nothing observed which order an earlier record's hand
+   * was shown in, so it must never be inferred or defaulted (#872). Not
+   * taken when the score arrives: a re-sort while the tables load does not
+   * change it, and Back or Forward onto the discard before it scores takes
+   * the order the restored history entry recorded for its completion, or,
+   * from an entry an earlier build wrote, the order the restore shows (#874).
+   */
+  readonly sortOrder?: string;
 }
 
 /*
@@ -34,6 +49,14 @@ export interface DiscardDecisionRecord {
  * dot-notation rule rewrites exactly that back to dots on --fix, so the two
  * gates disagree forever. Declaring the fields settles it in the type.
  */
+/*
+ * Exactly the spellings this build writes. parseSortParam is not the test,
+ * because it ignores case: "Ascending" would pass it and be kept as stored, so a
+ * reader grouping records by the string would split one order in two.
+ */
+const STORED_SORT_ORDERS: readonly string[] =
+  Object.values(SortOrder).map(sortUrlValue);
+
 interface MaybeDecisionRecord {
   readonly at?: unknown;
   readonly cribRole?: unknown;
@@ -44,6 +67,7 @@ interface MaybeDecisionRecord {
   readonly isPractice?: unknown;
   readonly oppositeRoleExpectedPointsLoss?: unknown;
   readonly recencyAt?: unknown;
+  readonly sortOrder?: unknown;
 }
 
 /*
@@ -85,7 +109,10 @@ const isStoredDecisionRecord = (
       candidate.discardKey === null ||
       typeof candidate.discardKey === "string") &&
     (typeof candidate.oppositeRoleExpectedPointsLoss === "undefined" ||
-      isFiniteNonNegative(candidate.oppositeRoleExpectedPointsLoss))
+      isFiniteNonNegative(candidate.oppositeRoleExpectedPointsLoss)) &&
+    (typeof candidate.sortOrder === "undefined" ||
+      (typeof candidate.sortOrder === "string" &&
+        STORED_SORT_ORDERS.includes(candidate.sortOrder)))
   );
 };
 

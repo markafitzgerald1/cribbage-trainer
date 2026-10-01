@@ -259,7 +259,7 @@ const storedTallyOf = (
   records,
   revision: 3,
   skipped: [] as readonly SkippedHand[],
-  version: 6,
+  version: 7,
 });
 
 describe("sweeping a tally already in storage", () => {

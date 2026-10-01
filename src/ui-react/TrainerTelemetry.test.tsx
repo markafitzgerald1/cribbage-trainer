@@ -188,6 +188,7 @@ describe("trainer telemetry wiring", () => {
     setupInitialPropsTrainer({ isSeededSession: true });
 
     expect(window.history.state).toStrictEqual({
+      completionSortOrder: null,
       handScope: { generatedFromSeed: true, handId: expect.any(String) },
     });
   });

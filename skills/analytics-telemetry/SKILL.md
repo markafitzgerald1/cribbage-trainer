@@ -245,6 +245,36 @@ be inferred from repository changes.
   played is what the Enter cards dialog is for, and
   `isUnchangedEnteredHand` only no-ops that when the role matches and nothing
   is discarded. Do not reintroduce a cards comparison in either place.
+- The local tally has no hand identity of its own: it reads telemetry's
+  `currentHandScope().handId`, and only **after** telemetry has handled the
+  transition. A cross-hand restore makes telemetry mint a fresh scope, which
+  `Trainer` then stamps over the restored entry, so the entry's own `handId`
+  names nothing a later Back can return. #874 took five review rounds on
+  one family of bug — a per-hand counter or copy of the identity kept inside
+  `useDiscardTally` that drifted from telemetry's, each drift re-capturing a
+  later sort order as the one a discard was decided under. The fix that ended
+  it keyed the capture on telemetry's `handId` prop directly. Before adding
+  any per-occurrence state to the tally, key it on that prop rather than
+  tracking occurrences in the tally.
+- **A key comparison cannot see a restore that changes nothing the key
+  holds.** Withdraw a completed discard, redo it under another sort, then
+  press Back: history jumps straight from one completed board to the other,
+  same hand id, role, cards and discard, with no incomplete render between.
+  A capture guarded only by "has the key changed" kept the redo's sort while
+  the screen showed the restored one. Back across two re-sorts of one
+  completion looks identical to the tally — same key, complete before and
+  after — yet must record the completion's order rather than the one the
+  restore shows, so no rule inside the tally fits both. Only the
+  history entry knows which shape it is: `Trainer` writes the tally's
+  capture onto every entry as `completionSortOrder` (the sort URL spelling,
+  or null), a re-sort's entry is written while the capture still holds its
+  completion's order, and `reportHandRestored` re-seeds the capture from
+  the restored entry's value. An entry without one — written by an earlier
+  build — falls back to the order the restore shows. The merge path needs
+  nothing extra: its `history.back()` popstate reports no restore, and the
+  replace that follows rewrites the covered entry with the redo's capture.
+  A tag naming only the entry's kind would not have been enough: Back onto
+  a re-sort's entry after a later redo would then keep the redo's order.
 - An entry written before this document loaded records nothing, and a seeded
   session then assumes its own seed rather than guessing unseeded, which can
   only over-exclude from population statistics. Never invert that default.

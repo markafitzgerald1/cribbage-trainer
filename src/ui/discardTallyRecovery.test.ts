@@ -48,7 +48,7 @@ describe("discard tally recovery", () => {
   it.each([
     ...junkValues(),
     // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
-    { name: "a newer version", stored: asJson(storedWith({ version: 7 })) },
+    { name: "a newer version", stored: asJson(storedWith({ version: 8 })) },
     { name: "no counters", stored: asJson(storedOmitting("lifetime")) },
     {
       name: "counters that are not an object",
@@ -89,7 +89,7 @@ describe("discard tally recovery", () => {
     { name: "a decision", record: () => recordDiscardDecision(decisionOf()) },
     { name: "a skipped hand", record: () => recordSkippedHand(AT) },
   ])("refuses to record $name over a newer version", ({ record }) => {
-    const newer = asJson(storedWith({ version: 7 }));
+    const newer = asJson(storedWith({ version: 8 }));
     storeRaw(newer);
     record();
 
@@ -97,7 +97,7 @@ describe("discard tally recovery", () => {
   });
 
   it("reports nothing while a newer version is present", () => {
-    storeRaw(asJson(storedWith({ version: 7 })));
+    storeRaw(asJson(storedWith({ version: 8 })));
 
     expect(recordDiscardDecision(decisionOf())).toStrictEqual(EMPTY);
   });
@@ -106,7 +106,7 @@ describe("discard tally recovery", () => {
     storeRaw(asJson(storedWith({ version: 1 })));
     recordDiscardDecision(decisionOf({ handKey: "v1-migrated" }));
 
-    expect(localStorage.getItem(discardTallyKey)).toContain('"version":6');
+    expect(localStorage.getItem(discardTallyKey)).toContain('"version":7');
   });
 
   /*
@@ -318,7 +318,7 @@ describe("discard tally recovery", () => {
     expectNoRecordsStored();
   });
 
-  it("accepts a v3 tally without practice field and migrates with empty practice list and version 6", () => {
+  it("accepts a v3 tally without practice field and migrates with empty practice list and version 7", () => {
     storeRaw(
       asJson({
         lifetime: {
@@ -346,7 +346,7 @@ describe("discard tally recovery", () => {
 
     const tally = readTallyForDisplay();
 
-    expect(tally.version).toBe(6);
+    expect(tally.version).toBe(7);
     expect(tally.practice).toStrictEqual([]);
   });
 
@@ -385,6 +385,18 @@ describe("discard tally recovery", () => {
     {
       name: "holding an invalid discardKey type",
       records: [{ ...validRecord, discardKey: 123 }],
+    },
+    {
+      name: "holding a sortOrder of the wrong type",
+      records: [{ ...validRecord, sortOrder: 0 }],
+    },
+    {
+      name: "holding an unrecognized sortOrder string",
+      records: [{ ...validRecord, sortOrder: "shuffled" }],
+    },
+    {
+      name: "holding a sortOrder in a spelling this build never writes",
+      records: [{ ...validRecord, sortOrder: "Ascending" }],
     },
   ])(
     "drops records that are $name while keeping the counters",
@@ -445,5 +457,41 @@ describe("discard tally recovery", () => {
     expect(
       withFailingWrite(() => recordDiscardDecision(decisionOf())).decisions,
     ).toBe(1);
+  });
+});
+
+/*
+ * A sibling describe rather than more cases in the one above, which is
+ * already at this file's per-function statement cap. What #872 adds is
+ * validated at the storage layer here (a value this build recognizes
+ * survives the round trip; one it does not is dropped along with the
+ * record, exercised above), and at the hook layer in
+ * useDiscardTallySortOrder.test.ts, which owns when a decision's sort order
+ * is captured rather than merely whether a stored one parses.
+ */
+describe("a record's stored sort order", () => {
+  it.each([
+    {
+      name: "one this build recognizes, untouched",
+      stored: { sortOrder: "ascending" },
+      wanted: { sortOrder: "ascending" },
+    },
+    /*
+     * Absent on every record written before #872, which must read as
+     * unknown rather than any particular order. `wanted` stays empty rather
+     * than naming a sortOrder key at all, since the assertion below has to
+     * tell "absent" apart from a value that merely round-trips as undefined.
+     */
+    {
+      name: "none at all, from before it was recorded",
+      stored: {},
+      wanted: {},
+    },
+  ])("keeps $name", ({ stored, wanted }) => {
+    storeRaw(asJson(storedWith({ records: [{ ...validRecord, ...stored }] })));
+
+    expect(readTallyForDisplay().records).toStrictEqual([
+      { ...validRecord, recencyAt: validRecord.at, ...wanted },
+    ]);
   });
 });

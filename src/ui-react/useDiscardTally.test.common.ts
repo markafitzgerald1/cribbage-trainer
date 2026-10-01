@@ -11,8 +11,12 @@ import { act, renderHook } from "@testing-library/react";
 import { clearDiscardTally, readDiscardTally } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import { SortOrder } from "../ui/SortOrder";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
+
+// Matches useSortOrder's own default, since these tests are not about sort order unless they say so.
+export const DEFAULT_SORT_ORDER = SortOrder.Descending;
 
 export const HAND = "AH,2H,3H,4H,5H,6H";
 export const OTHER_HAND = "7S,8S,9S,10S,JS,QS";
@@ -83,19 +87,28 @@ export const noteOriginOfCards = (
 
 /*
  * Defaults to restoring the scope the page load opened, which is what a
- * same-hand navigation looks like. Passing another identifier is what
+ * same-hand navigation looks like, from an entry recording no sort order. Passing another identifier is what
  * separates a genuine restore of a different occurrence of the same cards.
  */
 export const noteRestore = (
   tally: DiscardTally,
   hand: string,
   {
+    completionSortOrder = null,
     cribRole = CribRole.Dealer,
     handId = INITIAL_HAND_ID,
-  }: { cribRole?: CribRole | null; handId?: string | null } = {},
+  }: {
+    completionSortOrder?: SortOrder | null;
+    cribRole?: CribRole | null;
+    handId?: string | null;
+  } = {},
 ) => {
   act(() => {
-    tally.reportHandRestored(handOf(hand), { cribRole, handId });
+    tally.reportHandRestored(handOf(hand), {
+      completionSortOrder,
+      cribRole,
+      handId,
+    });
   });
 };
 
@@ -105,34 +118,73 @@ export const noteRestore = (
  * distinct
  * from renderTally, whose hand never moves once rendered.
  */
+// A named type rather than a literal written at each call site, so renderHook infers one Props type shared by the callback below and every later rerender call, rather than a narrower one from whichever call happens to supply every field.
+interface MutableTallyProps {
+  readonly dealtCards: ReturnType<typeof handOf>;
+  // What telemetry would be reporting for the board: a test that moves to another occurrence passes that occurrence's identifier here as well as to the report.
+  readonly handId?: string;
+  readonly sortOrder?: SortOrder;
+}
+
+/*
+ * The sort order can be changed on a later render alongside dealtCards, and
+ * defaults so a caller that is not testing sort order at all can leave it
+ * off every render. That is what lets a test change the sort order between
+ * a discard's completion and its score arriving, without dealtCards moving
+ * at the same time (#872).
+ */
 export const renderTallyWithMutableCards = (
   initialDealtCards: ReturnType<typeof handOf>,
+  initialSortOrder: SortOrder = DEFAULT_SORT_ORDER,
+  wasDeepLinked = false,
 ) => {
   clearDiscardTally();
+  const initialProps: MutableTallyProps = {
+    dealtCards: initialDealtCards,
+    sortOrder: initialSortOrder,
+  };
   return renderHook(
-    ({ dealtCards }: { dealtCards: ReturnType<typeof handOf> }) =>
+    ({
+      dealtCards,
+      handId = INITIAL_HAND_ID,
+      sortOrder = DEFAULT_SORT_ORDER,
+    }: MutableTallyProps) =>
       useDiscardTally({
         cribRole: CribRole.Dealer,
         dealtCards,
-        initialHandId: INITIAL_HAND_ID,
+        handId,
         isSeededSession: false,
-        wasDeepLinked: false,
+        sortOrder,
+        wasDeepLinked,
       }),
-    { initialProps: { dealtCards: initialDealtCards } },
+    { initialProps },
   );
 };
 
+interface RenderTallyOptions {
+  readonly discarded?: boolean;
+  readonly isSeededSession?: boolean;
+  readonly sortOrder?: SortOrder;
+  readonly wasDeepLinked?: boolean;
+}
+
 export const renderTally = (
   hand: string,
-  { discarded = true, isSeededSession = false, wasDeepLinked = false } = {},
+  {
+    discarded = true,
+    isSeededSession = false,
+    sortOrder = DEFAULT_SORT_ORDER,
+    wasDeepLinked = false,
+  }: RenderTallyOptions = {},
 ) => {
   clearDiscardTally();
   return renderHook(() =>
     useDiscardTally({
       cribRole: CribRole.Dealer,
       dealtCards: handOf(hand, discarded),
-      initialHandId: INITIAL_HAND_ID,
+      handId: INITIAL_HAND_ID,
       isSeededSession,
+      sortOrder,
       wasDeepLinked,
     }),
   );
@@ -154,8 +206,9 @@ export const startWithUnknownOrigin = () => {
       useDiscardTally({
         cribRole: CribRole.Dealer,
         dealtCards: handOf(hand),
-        initialHandId: INITIAL_HAND_ID,
+        handId: INITIAL_HAND_ID,
         isSeededSession: false,
+        sortOrder: DEFAULT_SORT_ORDER,
         wasDeepLinked: false,
       }),
     { initialProps: { hand: HAND } },

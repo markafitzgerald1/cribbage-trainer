@@ -13,6 +13,7 @@ import {
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
+import type { SortOrder } from "../ui/SortOrder";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*
@@ -23,6 +24,8 @@ import { useCallback } from "react";
 // Extends rather than restates, so a change to the telemetry props cannot leave this describing a shape that no longer exists.
 export interface AnalysisReportingProps extends DiscardTelemetryProps {
   readonly cribRole: CribRole;
+  // The sort order on screen right now; see useDiscardTally's own prop for why the tally needs it.
+  readonly sortOrder: SortOrder;
 }
 
 /*
@@ -37,10 +40,21 @@ export type ReportHandReplaced = (
   cribRole: CribRole,
 ) => void;
 
+/*
+ * What a restored history entry recorded, each half null when it recorded
+ * none. Telemetry reads only the scope; the tally also reads the sort order
+ * its capture held when the entry was written (see useDiscardTally's
+ * `capture`).
+ */
+export interface RestoredHistoryEntry {
+  readonly completionSortOrder: SortOrder | null;
+  readonly handScope: HistoryHandScope | null;
+}
+
 // The tally also needs to know which hand a history restore names, which telemetry's own dealNonce-keyed signature has no reason to carry.
 export type ReportHistoryNavigation = (
   dealtCards: readonly DealtCard[],
-  entry: HistoryHandScope | null,
+  entry: RestoredHistoryEntry,
   cribRole: CribRole | null,
 ) => void;
 
@@ -64,6 +78,7 @@ export interface AnalysisReporting extends Omit<
   DiscardTelemetry,
   "reportAnalysisRendered" | "reportHandReplaced" | "reportHistoryNavigation"
 > {
+  readonly completionSortOrder: SortOrder | null;
   readonly reportAnalysisRendered: ReportAnalysisRendered;
   readonly reportHandReplaced: ReportHandReplaced;
   readonly reportHistoryNavigation: ReportHistoryNavigation;
@@ -81,13 +96,15 @@ export const useAnalysisReporting = (
   props: AnalysisReportingProps,
 ): AnalysisReporting => {
   const telemetry = useDiscardTelemetry(props);
-  const { cribRole, dealtCards, isSeededSession, wasDeepLinked } = props;
+  const { cribRole, dealtCards, isSeededSession, sortOrder, wasDeepLinked } =
+    props;
   const { currentHandScope } = telemetry;
   const tally = useDiscardTally({
     cribRole,
     dealtCards,
-    initialHandId: currentHandScope().handId,
+    handId: currentHandScope().handId,
     isSeededSession,
+    sortOrder,
     wasDeepLinked,
   });
   const {
@@ -96,6 +113,7 @@ export const useAnalysisReporting = (
     reportHistoryNavigation: reportHistoryNavigationToTelemetry,
   } = telemetry;
   const {
+    completionSortOrder,
     reportAnalysisRendered: addAnalysisToTally,
     reportHandOrigin,
     reportHandRestored,
@@ -110,10 +128,19 @@ export const useAnalysisReporting = (
     [addAnalysisToTally, reportAnalysisToTelemetry],
   );
 
+  /*
+   * Both reports below hand the tally telemetry's scope as it stands after
+   * telemetry has handled the transition: a replacement or a cross-hand
+   * restore gets a freshly assigned scope, which Trainer then stamps onto the
+   * history entry, so that is the identifier a later Back names. The sort
+   * capture reads the same scope as its handId prop; the restore's copy only
+   * keeps the tally's open hand naming it too, which changes no count today:
+   * a restore that reads the identifier at all has a role, and so marks its
+   * hand practice by card-role key, which is what exempts it from skips.
+   */
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {
       reportHandToTelemetry(cards, cause);
-      // Read after telemetry's own replacement, whose scope is the freshly assigned one rather than the outgoing hand's.
       reportHandOrigin(cards, cause, {
         cribRole: role,
         handId: currentHandScope().handId,
@@ -124,17 +151,20 @@ export const useAnalysisReporting = (
 
   const reportHistoryNavigation: ReportHistoryNavigation = useCallback(
     (cards, entry, role) => {
-      reportHistoryNavigationToTelemetry(cards, entry);
+      reportHistoryNavigationToTelemetry(cards, entry.handScope);
+      const { handId } = currentHandScope();
       reportHandRestored(cards, {
+        completionSortOrder: entry.completionSortOrder,
         cribRole: role,
-        handId: entry?.handId ?? null,
+        handId,
       });
     },
-    [reportHandRestored, reportHistoryNavigationToTelemetry],
+    [currentHandScope, reportHandRestored, reportHistoryNavigationToTelemetry],
   );
 
   return {
     ...telemetry,
+    completionSortOrder,
     reportAnalysisRendered,
     reportHandReplaced,
     reportHistoryNavigation,
