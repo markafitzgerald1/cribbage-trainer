@@ -1,9 +1,0 @@
-Merge branch 'main' into issue-869
-
-Integrate useDiscardTally completionSortOrder capture for telemetry.
-
-- Resolved merge conflicts in Trainer.tsx and useAnalysisReporting.ts
-- Adopted origin/main's useDiscardTally track for recording the single correct complete-discard sort order.
-- Updated useDiscardTelemetry to remove explicit snapshotting of sortOrder, now receiving the accurate completionSortOrder directly from useAnalysisReporting.
-- Updated telemetry events payload to emit sortOrder from completionSortOrder.
-- Fixed unit tests and typings to align with the new structure.

@@ -1,4 +1,5 @@
 /* jscpd:ignore-start */
+import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import type { AnalysisSource, CardToggleEventName } from "../ui/trackEvent";
 import {
   SIX_HEARTS_HAND,
@@ -11,8 +12,10 @@ import {
   startTelemetryCapture,
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
+import type { ExpectedCribPointsTable } from "../game/expectedCribPoints";
+import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import { parseHand } from "../game/Card";
 /* jscpd:ignore-end */
 
@@ -147,6 +150,70 @@ describe("trainer telemetry wiring", () => {
       },
     );
   });
+
+  /* jscpd:ignore-start */
+  it("reports the sort order in effect when the discard was made, even if changed before answers load", async () => {
+    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
+
+    const waitUnderLoad = { timeout: 3000 };
+    const held: { release?: () => void } = {};
+    const heldCribTable = new Promise<ExpectedCribPointsTable>((resolve) => {
+      held.release = () => {
+        resolve(
+          expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+        );
+      };
+    });
+    const spy = jest
+      .spyOn(cribLoader, "loadTable")
+      .mockReturnValue(heldCribTable);
+
+    try {
+      cribLoader.setTableSync(null);
+
+      // Complete discard under descending
+      clickCheckbox(0);
+      clickCheckbox(1);
+
+      // Re-sort to Ascending before answers load
+      fireEvent.click(screen.getByRole("radio", { name: "Ascending" }));
+
+      held.release?.();
+
+      await waitFor(() => {
+        expect(
+          trackEvent.mock.calls.some(
+            ([, eventName]) => eventName === "discard_scored",
+          ),
+        ).toBe(true);
+      }, waitUnderLoad);
+    } finally {
+      spy.mockRestore();
+      setAnalysisTables();
+    }
+
+    expect(lastEventParams(trackEvent, "discard_scored")).toMatchObject({
+      sortOrder: "descending",
+    });
+  });
+  /* jscpd:ignore-end */
+
+  /* jscpd:ignore-start */
+  it("sends sort order as 'deal-order' when deal order is selected", () => {
+    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
+
+    fireEvent.click(screen.getByRole("radio", { name: "DealOrder" }));
+    clickCheckbox(0);
+    clickCheckbox(1);
+
+    const eventParams = lastEventParams(trackEvent, "discard_scored");
+    localStorage.clear();
+
+    expect(eventParams).toMatchObject({
+      sortOrder: "deal-order",
+    });
+  });
+  /* jscpd:ignore-end */
 
   it("scores a completed discard once its ranked answers are on screen", () => {
     const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
