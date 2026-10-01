@@ -83,21 +83,21 @@ describe("mistakeQueueItemCard", () => {
   it.each([
     {
       cribRole: CribRole.Dealer,
-      expectedLabel: "1.00 as dealer, 0.00 as pone",
+      expectedLabel: "1.00 dealer, 0.00 pone",
       expectedMarkClass: roleLossClasses.costsNothing,
       expectedName:
         "Previous discard cost 1.00 points lost as dealer, 0.00 as pone",
-      expectedOppositeCost: "0.00 as pone",
+      expectedOppositeCost: "0.00 pone",
       name: "names both role costs for a dealer",
       oppositeRoleLoss: 0,
     },
     {
       cribRole: CribRole.Pone,
-      expectedLabel: "1.00 as pone, 0.00 as dealer",
+      expectedLabel: "1.00 pone, 0.00 dealer",
       expectedMarkClass: roleLossClasses.costsNothing,
       expectedName:
         "Previous discard cost 1.00 points lost as pone, 0.00 as dealer",
-      expectedOppositeCost: "0.00 as dealer",
+      expectedOppositeCost: "0.00 dealer",
       name: "names both role costs for a pone",
       oppositeRoleLoss: 0,
     },
@@ -107,11 +107,11 @@ describe("mistakeQueueItemCard", () => {
      */
     {
       cribRole: CribRole.Dealer,
-      expectedLabel: "1.00 as dealer, 0.75 as pone",
+      expectedLabel: "1.00 dealer, 0.75 pone",
       expectedMarkClass: "",
       expectedName:
         "Previous discard cost 1.00 points lost as dealer, 0.75 as pone",
-      expectedOppositeCost: "0.75 as pone",
+      expectedOppositeCost: "0.75 pone",
       name: "leaves a reversed role that also cost points unmarked",
       oppositeRoleLoss: 0.75,
     },

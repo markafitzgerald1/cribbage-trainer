@@ -12,10 +12,10 @@ import {
 import { INDICES_PER_SUIT, SUITS_PER_DECK } from "../game/Card";
 import { uncertaintyStandardError } from "../game/uncertaintySidecar";
 
-const DECK_SIZE = INDICES_PER_SUIT * SUITS_PER_DECK;
+export const DECK_SIZE = INDICES_PER_SUIT * SUITS_PER_DECK;
 const TOTAL_SLOT = "total";
 
-interface WeightedIdentity {
+export interface WeightedIdentity {
   readonly identity: string;
   readonly weight: number;
 }
@@ -60,6 +60,22 @@ const starterIdentities = (
       ]
     : relationIdentities(discardKey, role, starterPoints);
 
+export const cribWeightedIdentities = ({
+  cribStarterPoints,
+  discard,
+  role,
+}: Pick<
+  CribUncertaintyBoundOptions,
+  "cribStarterPoints" | "discard" | "role"
+>): readonly WeightedIdentity[] => {
+  const discardKey = normalizeDiscardKey(discard);
+  return cribStarterPoints
+    .filter((starterPoints) => starterPoints.remainingStarterCount > 0)
+    .flatMap((starterPoints) =>
+      starterIdentities(discardKey, role, starterPoints),
+    );
+};
+
 /*
  * The displayed crib average is a fixed non-negative combination of published
  * bucket means whose coefficients sum to one, so `sum(coefficient * se)` is
@@ -68,7 +84,9 @@ const starterIdentities = (
  * independence form `sqrt(sum(coefficient^2 * se^2))`, which assumes that
  * covariance away - and which, measured on real hands here, lands near 0.005
  * and would display as nothing at the two decimals this app shows. The bound
- * is not a confidence interval and nothing downstream may treat it as one.
+ * is on the standard error, not a confidence interval: anything that turns it
+ * into a threshold must scale it by a stated quantile, as
+ * discardNoiseThreshold.ts does, rather than read it as one.
  *
  * Null when any bucket the average consumed has no published record. A
  * relation-based mean never falls back to its rank's root record, because the
@@ -82,12 +100,7 @@ export const cribUncertaintyBound = ({
   role,
   uncertainty,
 }: CribUncertaintyBoundOptions): number | null => {
-  const discardKey = normalizeDiscardKey(discard);
-  const weighted = cribStarterPoints
-    .filter((starterPoints) => starterPoints.remainingStarterCount > 0)
-    .flatMap((starterPoints) =>
-      starterIdentities(discardKey, role, starterPoints),
-    );
+  const weighted = cribWeightedIdentities({ cribStarterPoints, discard, role });
 
   let total = 0;
   for (const { identity, weight } of weighted) {
