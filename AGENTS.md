@@ -925,7 +925,10 @@ they bind any PR that makes a claim about a phone or ships a guard.
   expensive than it looks.
 - Only comment on the "why" behind code; strongly prefer meaningful test names,
   function names, and variable names to comments in code. Do not add redundant
-  comments explaining self-evident code.
+  comments explaining self-evident code. Incident or review-round history
+  belongs in the PR description or a skill, never in a code comment; a comment
+  longer than about eight lines is a signal that history or a second design is
+  hiding in it.
 - Extract duplicated object literals (like `{ exact: true }`) into variables to
   reduce code duplication.
 - When formatting signed expected values, round to display precision before

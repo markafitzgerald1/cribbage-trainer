@@ -28,16 +28,9 @@ export interface DiscardDecisionRecord {
   // Monotonic recording order for queue recency; `at` remains the calendar event time.
   readonly recencyAt?: number;
   /*
-   * The sort order on screen when this discard was completed by a click,
-   * serialized the way urlAnalysisState.ts's sortUrlValue does
-   * ("deal-order", "ascending", or "descending"). Absent on every record
-   * written before version 7, and absent means unknown rather than any
-   * particular order: nothing observed which order an earlier record's hand
-   * was shown in, so it must never be inferred or defaulted (#872). Not
-   * taken when the score arrives: a re-sort while the tables load does not
-   * change it, and Back or Forward onto the discard before it scores takes
-   * the order the restored history entry recorded for its completion, or,
-   * from an entry an earlier build wrote, the order the restore shows (#874).
+   * The sort order on screen when this discard was completed, spelled as
+   * sortUrlValue does. Absent on records written before version 7 and means
+   * unknown: nothing observed it, so it must never be inferred or defaulted.
    */
   readonly sortOrder?: string;
 }
@@ -49,11 +42,7 @@ export interface DiscardDecisionRecord {
  * dot-notation rule rewrites exactly that back to dots on --fix, so the two
  * gates disagree forever. Declaring the fields settles it in the type.
  */
-/*
- * Exactly the spellings this build writes. parseSortParam is not the test,
- * because it ignores case: "Ascending" would pass it and be kept as stored, so a
- * reader grouping records by the string would split one order in two.
- */
+// Not parseSortParam, which ignores case: "Ascending" would pass it and split one order in two for a reader grouping by the string.
 const STORED_SORT_ORDERS: readonly string[] =
   Object.values(SortOrder).map(sortUrlValue);
 

@@ -59,14 +59,7 @@ interface DealState {
 // Invariant: previousUrl is the URL of the entry directly beneath this one.
 // The hand scope rides on the entry because its cards cannot identify the hand: a seeded deal and a later hand-entry of the same six cards are different hands that share a key.
 interface HistoryEntryState {
-  /*
-   * The tally's sort-order capture for the board when the entry was last
-   * written, spelled as the sort URL parameter is, or null when there was
-   * none. It is what lets a restore tell a re-sort's entry from a
-   * completion's (see useDiscardTally's `capture`, #874). Unknown on read,
-   * since an entry from an earlier build lacks it; such an entry falls back
-   * to the order the restore puts on screen.
-   */
+  // The tally's sort-order capture when the entry was last written, as the sort URL parameter spells it (see useDiscardTally's `capture`); unknown on read, since earlier builds wrote none.
   readonly completionSortOrder?: unknown;
   readonly handScope?: HistoryHandScope;
   readonly previousUrl?: string;

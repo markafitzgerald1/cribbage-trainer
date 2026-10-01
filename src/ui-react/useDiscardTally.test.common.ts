@@ -15,7 +15,7 @@ import { SortOrder } from "../ui/SortOrder";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 
-// Matches useSortOrder's own default, since these tests are not about sort order unless they say so.
+// Matches useSortOrder's own default.
 export const DEFAULT_SORT_ORDER = SortOrder.Descending;
 
 export const HAND = "AH,2H,3H,4H,5H,6H";
@@ -118,21 +118,15 @@ export const noteRestore = (
  * distinct
  * from renderTally, whose hand never moves once rendered.
  */
-// A named type rather than a literal written at each call site, so renderHook infers one Props type shared by the callback below and every later rerender call, rather than a narrower one from whichever call happens to supply every field.
+// A named type so renderHook infers one Props shared by the callback and every rerender, not a narrower one from whichever call supplies every field.
 interface MutableTallyProps {
   readonly dealtCards: ReturnType<typeof handOf>;
-  // What telemetry would be reporting for the board: a test that moves to another occurrence passes that occurrence's identifier here as well as to the report.
+  // What telemetry would report for the board; a move to another occurrence passes its identifier here as well as to the report.
   readonly handId?: string;
   readonly sortOrder?: SortOrder;
 }
 
-/*
- * The sort order can be changed on a later render alongside dealtCards, and
- * defaults so a caller that is not testing sort order at all can leave it
- * off every render. That is what lets a test change the sort order between
- * a discard's completion and its score arriving, without dealtCards moving
- * at the same time (#872).
- */
+// Lets a test change the sort order between a discard's completion and its score without dealtCards moving.
 export const renderTallyWithMutableCards = (
   initialDealtCards: ReturnType<typeof handOf>,
   initialSortOrder: SortOrder = DEFAULT_SORT_ORDER,
