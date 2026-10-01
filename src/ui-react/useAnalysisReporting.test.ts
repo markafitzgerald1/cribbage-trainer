@@ -20,12 +20,7 @@ interface StartOptions {
   readonly wasDeepLinked?: boolean;
 }
 
-/*
- * Telemetry and the tally wired together as Trainer wires them, because the
- * defect this suite guards lives in the seam: each reader alone is correct
- * about the identifier it is handed, and only the pair can disagree about
- * which hand occurrence the board is showing.
- */
+// Telemetry and the tally wired as Trainer wires them: the defect lives in the seam, since only the pair can disagree about which hand occurrence is showing.
 const startReporting = (
   initial: BoardProps,
   { isSeededSession = false, wasDeepLinked = false }: StartOptions = {},
@@ -55,17 +50,12 @@ const startReporting = (
 
 type Reporting = ReturnType<typeof startReporting>;
 
-// What Trainer's history effect writes onto an entry after every change: telemetry's scope and the tally's capture.
 interface StampedEntry {
   readonly completionSortOrder: SortOrder | null;
   readonly handId: string;
 }
 
-/*
- * A popstate as Trainer handles it: the entry's scope and capture and the
- * board it restores arrive in one update. Both are whatever Trainer stamped
- * onto that entry, which is always their value at the time it was written.
- */
+// A popstate as Trainer handles it: the entry's scope and capture and the restored board arrive in one update.
 const navigateHistory = (
   reporting: Reporting,
   { completionSortOrder, handId }: StampedEntry,
@@ -86,7 +76,6 @@ const stampedEntry = (reporting: Reporting): StampedEntry => ({
   handId: reporting.result.current.currentHandScope().handId,
 });
 
-// The entries the two re-sorts below push, each still showing the completed discard.
 interface ResortEntries {
   readonly ascending: StampedEntry;
   readonly dealOrder: StampedEntry;
@@ -111,7 +100,7 @@ const forward = restoreCompleted(
   SortOrder.DealOrder,
   (entries) => entries.dealOrder,
 );
-// The same Back onto an entry an earlier build wrote, which carries a scope but no capture.
+// Back onto an entry an earlier build wrote: a scope but no capture.
 const backOntoEntryWithoutCapture = restoreCompleted(
   SortOrder.Ascending,
   (entries) => ({ ...entries.ascending, completionSortOrder: null }),
@@ -129,7 +118,6 @@ const moves: readonly {
     name: "a Back then a Forward",
     wanted: "descending",
   },
-  // Falls back to the order the restore shows, the only observed value left.
   {
     move: [backOntoEntryWithoutCapture],
     name: "a Back onto an entry recording no capture",
@@ -137,13 +125,7 @@ const moves: readonly {
   },
 ];
 
-/*
- * Two sort changes after the discard completed under descending, each
- * pushing an entry, then the given history move, and only then the score, as
- * it arrives when the expected-points tables are still loading. A re-sort
- * leaves the capture alone, and each re-sort's entry is written holding it,
- * so a restore onto one takes back the completion's order (#874).
- */
+// Two re-sorts push entries, then the given history move, then the score, as when the tables are still loading; a restore onto a re-sort's entry takes back the completion's order.
 const resortTwiceMoveAndScore = (
   reporting: Reporting,
   move: readonly HistoryMove[],
@@ -168,7 +150,7 @@ const resortTwiceMoveAndScore = (
   return readTallyForDisplay().records[0]?.sortOrder;
 };
 
-// Back from another hand to this one's completed discard, which makes telemetry open a fresh scope that Trainer stamps over the restored entry.
+// A cross-hand Back makes telemetry open a fresh scope that Trainer stamps over the restored entry.
 const restoredFromAnotherHand = () => {
   const reporting = startReporting({
     dealtCards: handOf(HAND, false),
@@ -209,7 +191,7 @@ const origins = [
     origin: "a seeded session",
     start: completedFirstHand({ isSeededSession: true }),
   },
-  // Never opened for skip counting, which must not read as a different hand when Back names the page load's own scope.
+  // Never opened for skip counting, which must not read as a different hand when Back names the page load's scope.
   {
     origin: "a deep-linked first hand",
     start: completedFirstHand({ wasDeepLinked: true }),
@@ -217,14 +199,7 @@ const origins = [
 ];
 
 describe("the hand identity telemetry and the tally share", () => {
-  /*
-   * A capture keyed on anything but telemetry's current scope changes key
-   * on a re-sort or a same-hand move and is retaken under whatever order is
-   * then showing. Each case pins the rule for every way the hand can have
-   * been opened: re-sorts never move the capture, a same-hand restore lands
-   * on the order its entry recorded, and one onto an entry recording none
-   * lands on the order it shows.
-   */
+  // A capture keyed on anything but telemetry's current scope would be retaken on a re-sort or same-hand move; each case covers one way the hand can have been opened.
   it.each(
     origins.flatMap((origin) => moves.map((move) => ({ ...origin, ...move }))),
   )(

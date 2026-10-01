@@ -460,15 +460,7 @@ describe("discard tally recovery", () => {
   });
 });
 
-/*
- * A sibling describe rather than more cases in the one above, which is
- * already at this file's per-function statement cap. What #872 adds is
- * validated at the storage layer here (a value this build recognizes
- * survives the round trip; one it does not is dropped along with the
- * record, exercised above), and at the hook layer in
- * useDiscardTallySortOrder.test.ts, which owns when a decision's sort order
- * is captured rather than merely whether a stored one parses.
- */
+// A sibling describe because the one above is at the per-function statement cap; when a decision's sort order is captured is covered in useDiscardTallySortOrder.test.ts.
 describe("a record's stored sort order", () => {
   it.each([
     {
@@ -476,12 +468,7 @@ describe("a record's stored sort order", () => {
       stored: { sortOrder: "ascending" },
       wanted: { sortOrder: "ascending" },
     },
-    /*
-     * Absent on every record written before #872, which must read as
-     * unknown rather than any particular order. `wanted` stays empty rather
-     * than naming a sortOrder key at all, since the assertion below has to
-     * tell "absent" apart from a value that merely round-trips as undefined.
-     */
+    // `wanted` names no sortOrder key, so the assertion can tell absent from a value that round-trips as undefined.
     {
       name: "none at all, from before it was recorded",
       stored: {},
