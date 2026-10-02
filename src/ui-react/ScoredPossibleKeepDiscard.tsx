@@ -22,6 +22,7 @@ export interface ScoredPossibleKeepDiscardProps {
   readonly cribUncertainty?: number | null;
   readonly descriptionId?: string | null;
   readonly highlightTier: DiscardHighlightTier;
+  readonly isEarlierChoice?: boolean;
   /** True when the chosen row's loss is within simulation noise (#774). */
   readonly isWithinNoise?: boolean | null;
   /** Forwarded to the expanded breakdown; null while unavailable. */
@@ -33,6 +34,7 @@ export interface ScoredPossibleKeepDiscardProps {
   readonly sortOrder: SortOrder;
 }
 
+const PROGRAMMATIC_FOCUS_TAB_INDEX = -1;
 const ROW_STRIPE_DIVISOR = 2;
 /*
  * The U+2212 minus sign matches the "+" advance width with tabular figures,
@@ -58,26 +60,59 @@ const getTierClass = (tier: DiscardHighlightTier): string => {
   return "";
 };
 
+export interface GetRowTitleOptions {
+  readonly classification?: MistakeClassification | null | undefined;
+  readonly isEarlierChoice?: boolean | undefined;
+  readonly isWithinNoise?: boolean | undefined;
+}
+
 export const getRowTitle = (
   tier: DiscardHighlightTier,
-  classification?: MistakeClassification | null,
-  isWithinNoise = false,
+  options: GetRowTitleOptions = {},
 ): string | undefined => {
+  const {
+    classification = null,
+    isEarlierChoice = false,
+    isWithinNoise = false,
+  } = options;
   if (tier === "chosen") {
+    const earlierSuffix = isEarlierChoice ? ", also earlier drill discard" : "";
     if (classification) {
       const loss = formatAccessibleNetLoss(classification.netLoss);
       const verdict = isWithinNoise
         ? ", within simulation noise, approximate"
         : "";
-      return `Chosen discard (${loss} pts lost${verdict}): ${classification.accessibleLabel}`;
+      return `Chosen discard (${loss} pts lost${verdict}${earlierSuffix}): ${classification.accessibleLabel}`;
     }
-    return "Optimal discard";
+    return isEarlierChoice
+      ? "Optimal discard (also earlier drill discard)"
+      : "Optimal discard";
+  }
+  if (isEarlierChoice) {
+    if (tier === "equal-best") {
+      return "Equal-best discard (also earlier drill discard)";
+    }
+    return "Earlier drill discard";
   }
   if (tier === "equal-best") {
     return "Equal-best discard";
   }
   // eslint-disable-next-line no-undefined
   return undefined;
+};
+
+const getRowAriaLabel = (
+  tier: DiscardHighlightTier,
+  isEarlierChoice?: boolean,
+): string | undefined => {
+  if (!isEarlierChoice) {
+    // eslint-disable-next-line no-undefined
+    return undefined;
+  }
+  if (tier === "chosen") {
+    return "Chosen discard matching earlier drill mistake";
+  }
+  return "Earlier drill discard";
 };
 
 const formatDiscardLabel = (discard: readonly Card[]): string => {
@@ -108,6 +143,7 @@ export function ScoredPossibleKeepDiscard({
   cribUncertainty,
   descriptionId,
   highlightTier,
+  isEarlierChoice,
   isWithinNoise,
   playUncertainty,
   sortOrder,
@@ -149,13 +185,22 @@ export function ScoredPossibleKeepDiscard({
       ? parentClasses.oddRow
       : parentClasses.evenRow;
   const tierClass = getTierClass(highlightTier);
-  const rowTitle = getRowTitle(
-    highlightTier,
+  const rowTitle = getRowTitle(highlightTier, {
     classification,
-    isWithinNoise === true,
-  );
+    isEarlierChoice,
+    isWithinNoise: isWithinNoise === true,
+  });
+  const getEarlierClass = (): string => {
+    if (!isEarlierChoice) {
+      return "";
+    }
+    return highlightTier === "chosen"
+      ? classes.earlierAndChosen
+      : classes.earlierChoice;
+  };
+  const earlierClass = getEarlierClass();
   const rowClassName =
-    `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${classes.clickable}`.trim();
+    `${classes.scoredPossibleKeepDiscard} ${rowStripeClass} ${tierClass} ${earlierClass} ${classes.clickable}`.trim();
 
   const renderHandDiscardCell = () => (
     <span className={classes.handDiscardCell}>
@@ -207,9 +252,32 @@ export function ScoredPossibleKeepDiscard({
           // eslint-disable-next-line no-undefined
           undefined
         }
+        aria-label={
+          getRowAriaLabel(highlightTier, isEarlierChoice) ??
+          // eslint-disable-next-line no-undefined
+          undefined
+        }
         className={rowClassName}
         data-highlight-tier={highlightTier}
+        data-is-earlier-choice={
+          isEarlierChoice
+            ? "true"
+            : // eslint-disable-next-line no-undefined
+              undefined
+        }
+        id={
+          isEarlierChoice
+            ? "drill-earlier-choice-row"
+            : // eslint-disable-next-line no-undefined
+              undefined
+        }
         onClick={handleRowClick}
+        tabIndex={
+          isEarlierChoice
+            ? PROGRAMMATIC_FOCUS_TAB_INDEX
+            : // eslint-disable-next-line no-undefined
+              undefined
+        }
         title={rowTitle}
       >
         {rowContent}
@@ -231,6 +299,7 @@ ScoredPossibleKeepDiscard.defaultProps = {
   classification: null,
   cribUncertainty: null,
   descriptionId: null,
+  isEarlierChoice: false,
   isWithinNoise: null,
   playUncertainty: null,
 };

@@ -3,6 +3,8 @@ declare const classes: {
   readonly badge: string;
   readonly choosing: string;
   readonly discardCards: string;
+  readonly locateEarlierButton: string;
+  readonly locateIcon: string;
   readonly notRecorded: string;
   readonly outcomeGood: string;
   readonly outcomeMastered: string;

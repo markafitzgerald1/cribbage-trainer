@@ -27,6 +27,7 @@ import { useScoredKeepDiscardRows } from "./useScoredKeepDiscardRows";
 export interface ScoredPossibleKeepDiscardsProps {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
+  readonly drillPreviousDiscard?: string | null;
   readonly isPracticeDrill?: boolean;
 
   /**
@@ -103,6 +104,7 @@ const scoreColumnClass = (key: ScoredKeepDiscardSortKey): string => {
 export function ScoredPossibleKeepDiscards({
   cribRole,
   dealtCards,
+  drillPreviousDiscard = null,
   isPracticeDrill = false,
   cribUncertaintySource = shippedCribUncertainty,
   loadCribTable = cribLoader.loadTable,
@@ -193,6 +195,7 @@ export function ScoredPossibleKeepDiscards({
     dealtCards,
     isChosenWithinNoise: withinNoiseThreshold !== null,
     playUncertainty: sidecars.play,
+    previousDiscard: drillPreviousDiscard,
     scoredKeepDiscards,
     scoredKeepDiscardsByNetScore,
   });
@@ -322,6 +325,7 @@ export function ScoredPossibleKeepDiscards({
           cribUncertainty: cribBound,
           descriptionId,
           highlightTier,
+          isEarlierChoice,
           playUncertainty: playStandardError,
           rowIndex,
           scoredKeepDiscard,
@@ -334,6 +338,7 @@ export function ScoredPossibleKeepDiscards({
             cribUncertainty={cribBound}
             descriptionId={descriptionId}
             highlightTier={highlightTier}
+            isEarlierChoice={isEarlierChoice}
             isWithinNoise={
               highlightTier === "chosen" && withinNoiseThreshold !== null
             }
@@ -394,6 +399,7 @@ export function ScoredPossibleKeepDiscards({
 
 ScoredPossibleKeepDiscards.defaultProps = {
   cribUncertaintySource: shippedCribUncertainty,
+  drillPreviousDiscard: null,
   isPracticeDrill: false,
   loadCribTable: cribLoader.loadTable,
   loadPlayTable: playLoader.loadTable,

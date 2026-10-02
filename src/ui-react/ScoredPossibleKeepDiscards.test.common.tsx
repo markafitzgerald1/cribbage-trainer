@@ -29,6 +29,8 @@ export const waitForAnalysis = { timeout: 8000 };
 export interface RenderOptions {
   readonly cribRole?: CribRole;
   readonly cribUncertaintySource?: UncertaintySource;
+  readonly drillPreviousDiscard?: string | null;
+  readonly isPracticeDrill?: boolean;
   readonly onAnalysisRendered?: (analysis: RenderedAnalysis) => void;
   readonly onScoreSortKeyChange?: (
     scoreSortKey: ScoredKeepDiscardSortKey,
@@ -45,6 +47,8 @@ export const scoredElement = (
   {
     cribRole = CribRole.Dealer,
     cribUncertaintySource = noUncertainty,
+    drillPreviousDiscard = null,
+    isPracticeDrill = false,
     onAnalysisRendered = jest.fn(),
     onScoreSortKeyChange = jest.fn(),
     onStatusChange = jest.fn(),
@@ -56,6 +60,8 @@ export const scoredElement = (
     cribRole={cribRole}
     cribUncertaintySource={cribUncertaintySource}
     dealtCards={dealtCards}
+    drillPreviousDiscard={drillPreviousDiscard}
+    isPracticeDrill={isPracticeDrill}
     onAnalysisRendered={onAnalysisRendered}
     onScoreSortKeyChange={onScoreSortKeyChange}
     onStatusChange={onStatusChange}

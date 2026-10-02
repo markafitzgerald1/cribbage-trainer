@@ -14,6 +14,7 @@ const panelElement = (props: PracticeDrillPanelProps): React.JSX.Element => (
     hasNextHand={props.hasNextHand}
     onCommit={props.onCommit}
     onExit={props.onExit}
+    onLocateEarlierChoice={props.onLocateEarlierChoice}
     onNextHand={props.onNextHand}
     phase={props.phase}
     sortOrder={props.sortOrder}
@@ -35,6 +36,24 @@ const renderPanel = (
       }),
     ),
   );
+
+const renderRevealedPanelWithMistake = (
+  overrides: Partial<PracticeDrillPanelProps> = {},
+) => {
+  const result = renderPanel({
+    phase: "revealed",
+    verdict: sampleVerdict({ previousDiscard: "7C,8C" }),
+    ...overrides,
+  });
+
+  return {
+    ...result,
+    scrollButton: () =>
+      result.getByRole("button", {
+        name: "Scroll to previous mistake in table",
+      }),
+  };
+};
 
 describe("practiceDrillPanel", () => {
   it("tells the player suits were reshuffled while choosing", () => {
@@ -139,5 +158,48 @@ describe("practiceDrillPanel", () => {
     fireEvent.click(getByRole("button", { name: "Draw another" }));
 
     expect(onNextHand).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders a button for previous discard and calls onLocateEarlierChoice when clicked", () => {
+    const onLocateEarlierChoice = jest.fn();
+    const { scrollButton } = renderRevealedPanelWithMistake({
+      onLocateEarlierChoice,
+    });
+    const button = scrollButton();
+
+    expect(button).toBeInTheDocument();
+
+    fireEvent.click(button);
+
+    expect(onLocateEarlierChoice).toHaveBeenCalledTimes(1);
+  });
+
+  it("scrolls and focuses earlier choice row when present in DOM with default handler", () => {
+    const mockScroll = jest.fn();
+    const mockFocus = jest.fn();
+    const target = document.createElement("tr");
+    target.id = "drill-earlier-choice-row";
+    target.scrollIntoView = mockScroll;
+    target.focus = mockFocus;
+    document.body.appendChild(target);
+
+    const { scrollButton } = renderRevealedPanelWithMistake();
+
+    fireEvent.click(scrollButton());
+
+    expect(mockScroll).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "nearest",
+    });
+
+    target.remove();
+
+    expect(mockFocus).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not throw when earlier choice row is not found in DOM with default handler", () => {
+    const { scrollButton } = renderRevealedPanelWithMistake();
+
+    expect(() => fireEvent.click(scrollButton())).not.toThrow();
   });
 });

@@ -21,6 +21,7 @@ const renderDrillPanel = (
     hasNextHand,
     onCommit,
     onExit,
+    onLocateEarlierChoice,
     onNextHand,
     phase,
     verdict,
@@ -32,6 +33,7 @@ const renderDrillPanel = (
     hasNextHand={hasNextHand}
     onCommit={onCommit}
     onExit={onExit}
+    onLocateEarlierChoice={onLocateEarlierChoice}
     onNextHand={onNextHand}
     phase={phase}
     sortOrder={sortOrder}

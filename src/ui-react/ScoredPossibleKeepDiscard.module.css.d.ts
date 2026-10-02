@@ -1,4 +1,6 @@
 export const clickable: string;
+export const earlierAndChosen: string;
+export const earlierChoice: string;
 export const equalBest: string;
 export const expandIndicator: string;
 export const expandIndicatorExpanded: string;

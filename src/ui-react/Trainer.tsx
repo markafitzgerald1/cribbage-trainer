@@ -434,6 +434,11 @@ export function Trainer({
           <ScoredPossibleKeepDiscards
             cribRole={cribRole}
             dealtCards={dealtCards}
+            drillPreviousDiscard={
+              drill.isActive && drill.phase === "revealed"
+                ? (drill.verdict?.previousDiscard ?? null)
+                : null
+            }
             isPracticeDrill={drill.isActive}
             onAnalysisRendered={drill.handleAnalysisRendered}
             onScoreSortKeyChange={changeScoreSortKey}

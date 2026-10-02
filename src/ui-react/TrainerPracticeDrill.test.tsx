@@ -14,7 +14,7 @@ import {
   readTallyForDisplay,
   recordDiscardDecision,
 } from "../ui/discardTally";
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { parseHand } from "../game/Card";
@@ -104,6 +104,21 @@ const commitDrillChoice = async (
   await clickDrillButton(view, user, "Check discard");
 };
 
+const commitDrillReviewAndFindEarlierRow = async (indices: number[]) => {
+  const { user, view } = await openDrillFromQueue();
+  await clickIndices(view.getAllByRole, indices, user);
+  await clickDrillButton(view, user, "Check discard");
+  await findAnalysisTable(view);
+
+  return {
+    earlierRow: view.container.querySelector(
+      "#drill-earlier-choice-row",
+    ) as HTMLElement,
+    user,
+    view,
+  };
+};
+
 describe("trainer practice drill", () => {
   it("withholds the analysis until the drill choice is committed", async () => {
     const { user, view } = await openDrillFromQueue();
@@ -191,5 +206,39 @@ describe("trainer practice drill", () => {
 
     expect(screen.queryByLabelText("Practice drill")).toBeNull();
     await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
+  });
+
+  it("marks earlier choice row distinctly from chosen row in drill review", async () => {
+    const { earlierRow, user, view } = await commitDrillReviewAndFindEarlierRow(
+      [2, 3],
+    );
+
+    expect(earlierRow.getAttribute("data-highlight-tier")).not.toBe("chosen");
+    expect(earlierRow.className).toContain("earlierChoice");
+
+    const scrollBtn = view.getByRole("button", {
+      name: "Scroll to previous mistake in table",
+    });
+    const mockScroll = jest.fn();
+    earlierRow.scrollIntoView = mockScroll;
+    await user.click(scrollBtn);
+
+    expect(mockScroll).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "nearest",
+    });
+    expect(earlierRow).toHaveFocus();
+  });
+
+  it("marks the row with both states when earlier choice equals chosen discard", async () => {
+    const { earlierRow } = await commitDrillReviewAndFindEarlierRow([4, 5]);
+
+    expect(earlierRow.getAttribute("data-is-earlier-choice")).toBe("true");
+    expect(earlierRow.getAttribute("data-highlight-tier")).toBe("chosen");
+    expect(earlierRow.getAttribute("aria-label")).toBe(
+      "Chosen discard matching earlier drill mistake",
+    );
+    expect(earlierRow.className).toContain("highlighted");
+    expect(earlierRow.className).toContain("earlierAndChosen");
   });
 });
