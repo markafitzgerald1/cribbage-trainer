@@ -199,20 +199,6 @@ export const useDiscardTally = ({
     ]),
   );
 
-  useEffect(() => {
-    if (!isSeededSession && !wasDeepLinked) {
-      try {
-        sessionStorage.setItem(
-          "cribbage_trainer_own_hand",
-          toHandKey(dealtCards, cribRole),
-        );
-      } catch {
-        // Storage errors are swallowed.
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   /*
    * The sort order on screen when the discard now on the board arrived:
    * by the click that completed it, or by the history move that restored
@@ -319,16 +305,6 @@ export const useDiscardTally = ({
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
       notePractice(key, isPractice);
       openHand.current = { handId, key };
-
-      try {
-        if (isPractice) {
-          sessionStorage.removeItem("cribbage_trainer_own_hand");
-        } else {
-          sessionStorage.setItem("cribbage_trainer_own_hand", key);
-        }
-      } catch {
-        // Storage errors are swallowed.
-      }
     },
     [isSeededSession, notePractice],
   );

@@ -8,7 +8,7 @@ import {
   storePolicyUpdateChoice,
 } from "../ui/analyticsConsent";
 import { type Card, serializeHand } from "../game/Card";
-import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
+import { CribRole, randomCribRole } from "../game/expectedCribPoints";
 import {
   parseSortParam,
   parseUrlAnalysisState,
@@ -32,6 +32,7 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
+import { ownHandKey } from "../ui/ownHandKey";
 import { toDealtCards } from "../game/toDealtCards";
 import { toHandKey } from "../ui/handKey";
 import { useAnalysisReporting } from "./useAnalysisReporting";
@@ -222,11 +223,10 @@ export function Trainer({
       if (initialCards === null) return false;
       try {
         return (
-          sessionStorage.getItem("cribbage_trainer_own_hand") !==
-          toHandKey(dealtCards, cribRole)
+          localStorage.getItem(ownHandKey) !==
+          toHandKey(initialCards, initialCribRole ?? CribRole.Dealer)
         );
       } catch {
-        /* istanbul ignore next */
         return true;
       }
     })(),

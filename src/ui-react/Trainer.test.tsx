@@ -17,6 +17,7 @@ import {
   renderTrainerShowingDealerRole,
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
+  setAnalysisTables,
 } from "./Trainer.test.common";
 import {
   analyticsConsentKey,
@@ -29,6 +30,8 @@ import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { getSortOrderName } from "../ui/SortOrderName";
+import { ownHandKey } from "../ui/ownHandKey";
+import { toHandKey } from "../ui/handKey";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -92,7 +95,53 @@ const renderTrainerWithInitialHand = () =>
     initialCribRole: CribRole.Dealer,
   });
 
+const mockOwnHandStorage = (returnValue: string | null | Error) =>
+  jest.spyOn(Storage.prototype, "getItem").mockImplementation((key) => {
+    if (key === ownHandKey) {
+      if (returnValue instanceof Error) throw returnValue;
+      return returnValue;
+    }
+    return null;
+  });
+
 describe("trainer component", () => {
+  describe("deep-linked hands", () => {
+    it("counts a reloaded own hand as an authentic decision, not practice", async () => {
+      const getItemSpy = mockOwnHandStorage(
+        toHandKey(parseHand("AS,2S,3S,4S,5S,6S"), CribRole.Dealer),
+      );
+
+      setAnalysisTables();
+      await clickIndices(
+        renderTrainerWithInitialProps({
+          initialCards: parseHand("AS,2S,3S,4S,5S,6S"),
+          initialCribRole: CribRole.Dealer,
+        }).getAllByRole,
+        [0, 1],
+        userEvent.setup(),
+      );
+
+      await waitFor(() =>
+        expect(screen.getByRole("status")).not.toHaveTextContent(""),
+      );
+
+      getItemSpy.mockRestore();
+
+      expect(screen.queryByText("Lost per discard")).toBeInTheDocument();
+    });
+
+    it("treats hand as deep-linked when localStorage throws", () => {
+      const getItemSpy = mockOwnHandStorage(new Error("Access denied"));
+      renderTrainerWithInitialProps({
+        initialCards: parseHand("AS,2S,3S,4S,5S,6S"),
+        initialCribRole: CribRole.Dealer,
+      });
+      getItemSpy.mockRestore();
+
+      expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+    });
+  });
+
   it("initially contains a sort in descending order radio input", () => {
     expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();
   });
