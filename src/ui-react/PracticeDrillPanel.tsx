@@ -11,6 +11,7 @@ export interface PracticeDrillPanelProps {
   readonly hasNextHand: boolean;
   readonly onCommit: () => void;
   readonly onExit: () => void;
+  readonly onLocateEarlierChoice?: () => void;
   readonly onNextHand: () => void;
   readonly phase: PracticeDrillPhase;
   readonly sortOrder: SortOrder;
@@ -21,8 +22,17 @@ interface VerdictRow {
   readonly discard: string | null;
   readonly label: string;
   readonly loss: number;
+  readonly onLocate?: (() => void) | undefined;
   readonly sortOrder: SortOrder;
 }
+
+const defaultLocateEarlier = (): void => {
+  const row = document.getElementById("drill-earlier-choice-row");
+  if (row) {
+    row.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+    row.focus();
+  }
+};
 
 /*
  * A plain magnitude, matching how "Lost per discard" and the trend view's
@@ -34,28 +44,50 @@ const formatLoss = (loss: number): string => formatNetLoss(loss);
 const renderDiscard = (
   discard: string | null,
   sortOrder: SortOrder,
-): React.JSX.Element =>
-  discard === null ? (
-    <span className={classes.notRecorded}>not recorded</span>
-  ) : (
-    <span className={classes.discardCards}>
-      <SortedCardLabels
-        cards={parseHand(discard)}
-        keyPrefix="drill-discard"
-        sortOrder={sortOrder}
-      />
-    </span>
+  onLocate?: () => void,
+): React.JSX.Element => {
+  if (discard === null) {
+    return <span className={classes.notRecorded}>not recorded</span>;
+  }
+  const cards = (
+    <SortedCardLabels
+      cards={parseHand(discard)}
+      keyPrefix="drill-discard"
+      sortOrder={sortOrder}
+    />
   );
+  if (onLocate) {
+    return (
+      <button
+        aria-label="Scroll to previous mistake in table"
+        className={classes.locateEarlierButton}
+        onClick={onLocate}
+        title="Scroll to previous mistake in table"
+        type="button"
+      >
+        {cards}
+        <span
+          aria-hidden="true"
+          className={classes.locateIcon}
+        >
+          ↓
+        </span>
+      </button>
+    );
+  }
+  return <span className={classes.discardCards}>{cards}</span>;
+};
 
 const renderVerdictRow = ({
   discard,
   label,
   loss,
+  onLocate,
   sortOrder,
 }: VerdictRow): React.JSX.Element => (
   <div className={classes.verdictRow}>
     <span className={classes.verdictLabel}>{label}</span>
-    {renderDiscard(discard, sortOrder)}
+    {renderDiscard(discard, sortOrder, onLocate)}
     <span className={classes.verdictLoss}>{formatLoss(loss)}</span>
   </div>
 );
@@ -122,7 +154,13 @@ const renderChoosing = ({
 
 const renderVerdict = (
   verdict: PracticeVerdict,
-  { hasNextHand, onExit, onNextHand, sortOrder }: PracticeDrillPanelProps,
+  {
+    hasNextHand,
+    onExit,
+    onLocateEarlierChoice,
+    onNextHand,
+    sortOrder,
+  }: PracticeDrillPanelProps,
 ): React.JSX.Element => (
   <div className={classes.verdict}>
     {renderVerdictRow({
@@ -135,6 +173,9 @@ const renderVerdict = (
       discard: verdict.previousDiscard,
       label: "Before",
       loss: verdict.previousLoss,
+      ...(verdict.previousDiscard === null
+        ? {}
+        : { onLocate: onLocateEarlierChoice }),
       sortOrder,
     })}
     {renderOutcome(verdict)}
@@ -174,6 +215,7 @@ export function PracticeDrillPanel({
   hasNextHand,
   onCommit,
   onExit,
+  onLocateEarlierChoice = defaultLocateEarlier,
   onNextHand,
   phase,
   sortOrder,
@@ -190,6 +232,7 @@ export function PracticeDrillPanel({
         hasNextHand,
         onCommit,
         onExit,
+        onLocateEarlierChoice,
         onNextHand,
         phase,
         sortOrder,
@@ -198,3 +241,7 @@ export function PracticeDrillPanel({
     </section>
   );
 }
+
+PracticeDrillPanel.defaultProps = {
+  onLocateEarlierChoice: defaultLocateEarlier,
+};

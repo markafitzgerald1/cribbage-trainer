@@ -1,7 +1,9 @@
+import { type Card, isSamePhysicalCard, parseHand } from "../game/Card";
 import {
   type DiscardHighlightTier,
   getRowTitle,
 } from "./ScoredPossibleKeepDiscard";
+import { CARDS_PER_DISCARD } from "../game/facts";
 import { type CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { type MistakeClassification } from "../analysis/classifyMistake";
@@ -22,6 +24,7 @@ export interface ScoredKeepDiscardRow {
   readonly cribUncertainty: number | null;
   readonly descriptionId: string | null;
   readonly highlightTier: DiscardHighlightTier;
+  readonly isEarlierChoice: boolean;
   readonly playUncertainty: number | null;
   readonly rowIndex: number;
   readonly rowTitle: string | undefined;
@@ -35,6 +38,7 @@ export interface ScoredKeepDiscardRowsOptions {
   readonly dealtCards: readonly DealtCard[];
   readonly isChosenWithinNoise: boolean;
   readonly playUncertainty: PlayUncertainty | null;
+  readonly previousDiscard?: string | null;
   readonly scoredKeepDiscards: readonly ScoredKeepDiscard<DealtCard>[];
   readonly scoredKeepDiscardsByNetScore: readonly ScoredKeepDiscard<DealtCard>[];
 }
@@ -52,6 +56,35 @@ const getHighlightTier = (
   return "none";
 };
 
+const isMatchingDiscard = (
+  discard: readonly Card[],
+  targetDiscardCards: readonly Card[] | null,
+): boolean => {
+  if (
+    targetDiscardCards === null ||
+    targetDiscardCards.length !== CARDS_PER_DISCARD ||
+    discard.length !== CARDS_PER_DISCARD
+  ) {
+    return false;
+  }
+  return discard.every((card) =>
+    targetDiscardCards.some((targetCard) =>
+      isSamePhysicalCard(card, targetCard),
+    ),
+  );
+};
+
+const parsePreviousDiscard = (discard?: string | null): Card[] | null => {
+  if (!discard) {
+    return null;
+  }
+  try {
+    return parseHand(discard);
+  } catch {
+    return null;
+  }
+};
+
 export const useScoredKeepDiscardRows = ({
   chosenClassification,
   cribRole,
@@ -59,11 +92,13 @@ export const useScoredKeepDiscardRows = ({
   dealtCards,
   isChosenWithinNoise,
   playUncertainty,
+  previousDiscard,
   scoredKeepDiscards,
   scoredKeepDiscardsByNetScore,
 }: ScoredKeepDiscardRowsOptions): readonly ScoredKeepDiscardRow[] =>
   useMemo(() => {
     const bestNet = scoredKeepDiscardsByNetScore[0]?.expectedNetPoints ?? 0;
+    const targetDiscardCards = parsePreviousDiscard(previousDiscard);
 
     return scoredKeepDiscards.map((scoredKeepDiscard, index) => {
       const isChosen = scoredKeepDiscard.keep.every((card) => card.kept);
@@ -71,11 +106,15 @@ export const useScoredKeepDiscardRows = ({
         !isChosen &&
         isEqualBestCandidate(bestNet, scoredKeepDiscard.expectedNetPoints);
       const highlightTier = getHighlightTier(isChosen, isEqualBest);
-      const rowTitle = getRowTitle(
-        highlightTier,
-        isChosen ? chosenClassification : null,
-        isChosen && isChosenWithinNoise,
+      const isEarlierChoice = isMatchingDiscard(
+        scoredKeepDiscard.discard,
+        targetDiscardCards,
       );
+      const rowTitle = getRowTitle(highlightTier, {
+        classification: isChosen ? chosenClassification : null,
+        isEarlierChoice,
+        isWithinNoise: isChosen && isChosenWithinNoise,
+      });
       const descriptionId = rowTitle
         ? `scored-discard-${index}-description`
         : null;
@@ -93,6 +132,7 @@ export const useScoredKeepDiscardRows = ({
               }),
         descriptionId,
         highlightTier,
+        isEarlierChoice,
         playUncertainty:
           playUncertainty === null
             ? null
@@ -113,6 +153,7 @@ export const useScoredKeepDiscardRows = ({
     dealtCards,
     isChosenWithinNoise,
     playUncertainty,
+    previousDiscard,
     scoredKeepDiscards,
     scoredKeepDiscardsByNetScore,
   ]);
