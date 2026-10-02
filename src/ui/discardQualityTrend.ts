@@ -16,6 +16,7 @@ import {
   isSameLocalDay,
   readTallyForDisplay,
 } from "./discardTally";
+import { NO_NOISE, countWithinNoise } from "./noiseVerdicts";
 import { CribRole } from "../game/expectedCribPoints";
 
 export { MAX_RECENT_DECISIONS } from "./discardQualityTrendRolling";
@@ -33,6 +34,8 @@ export interface DiscardPeriodBucket {
   readonly meanExpectedPointsLoss: number | null;
   readonly optimalDecisions: number;
   readonly skippedHands: number;
+  // The share's denominator: `decisions` less those within simulation noise, which like the tally's Best choice (#774) count neither way.
+  readonly judgedDecisions: number;
 }
 export interface DiscardQualityTrend {
   readonly buckets: readonly DiscardPeriodBucket[];
@@ -47,6 +50,7 @@ export interface DiscardQualityTrendOptions {
   readonly granularity: TrendGranularity;
   readonly roleFilter?: CribRoleFilter;
   readonly now?: number;
+  readonly withinNoise?: ReadonlySet<string>;
 }
 
 const DAYS_IN_WEEK = 7;
@@ -241,6 +245,7 @@ interface BaseBucketsArgs {
   readonly records: readonly DiscardDecisionRecord[];
   readonly roleFilter: CribRoleFilter;
   readonly skipped: readonly SkippedHand[];
+  readonly withinNoise: ReadonlySet<string>;
 }
 
 interface CalendarBucketsArgs extends BaseBucketsArgs {
@@ -266,6 +271,7 @@ const buildCalendarBuckets = ({
   records,
   roleFilter,
   skipped,
+  withinNoise,
 }: CalendarBucketsArgs): DiscardPeriodBucket[] => {
   const bucketsMap = new Map<string, MutableCalendarBucket>();
 
@@ -289,6 +295,8 @@ const buildCalendarBuckets = ({
   return sorted.map(({ descriptor, records: bucketRecords, skippedCount }) => ({
     decisions: bucketRecords.length,
     endTime: descriptor.endTime,
+    judgedDecisions:
+      bucketRecords.length - countWithinNoise(bucketRecords, withinNoise),
     key: descriptor.key,
     label: descriptor.label,
     meanExpectedPointsLoss: meanLossOf(bucketRecords),
@@ -319,6 +327,7 @@ const buildSkipOnlyRollingBuckets = (
     ({ endIndex, first, last, size, startIndex }) => ({
       decisions: 0,
       endTime: last.at,
+      judgedDecisions: 0,
       key: `skipped-${startIndex}-${endIndex}`,
       label: `${prefix} ${startIndex}–${endIndex}`,
       meanExpectedPointsLoss: null,
@@ -335,6 +344,7 @@ const buildRollingBuckets = ({
   records,
   roleFilter,
   skipped,
+  withinNoise,
 }: RollingBucketsArgs): DiscardPeriodBucket[] => {
   if (records.length === 0) {
     return roleFilter === "all"
@@ -352,6 +362,7 @@ const buildRollingBuckets = ({
     return {
       decisions: item.size,
       endTime: item.last.at,
+      judgedDecisions: item.size - countWithinNoise(chunk, withinNoise),
       key: `${item.startIndex}-${item.endIndex}`,
       label: `${prefix} ${item.startIndex}–${item.endIndex}`,
       meanExpectedPointsLoss: meanLossOf(chunk),
@@ -405,6 +416,7 @@ export const computeDiscardQualityTrend = (
   options: DiscardQualityTrendOptions,
 ): DiscardQualityTrend => {
   const { granularity, roleFilter = "all", now = Date.now() } = options;
+  const withinNoise = options.withinNoise ?? NO_NOISE;
   const allAuthenticRecords = tally.records.filter(
     (record) => !record.isPractice && matchesRole(record, roleFilter),
   );
@@ -430,6 +442,7 @@ export const computeDiscardQualityTrend = (
           records: authenticRecords,
           roleFilter,
           skipped: retainedSkips,
+          withinNoise,
         })
       : buildCalendarBuckets({
           granularity,
@@ -437,6 +450,7 @@ export const computeDiscardQualityTrend = (
           records: authenticRecords,
           roleFilter,
           skipped: retainedSkips,
+          withinNoise,
         });
 
   const batchSize =
@@ -450,6 +464,7 @@ export const computeDiscardQualityTrend = (
       : buildContinuousDecisionPoints(authenticRecords, batchSize, {
           isRetained: hasTruncatedHistory,
           masteredHandKeys,
+          withinNoise,
         });
 
   const [firstRecord] = authenticRecords;

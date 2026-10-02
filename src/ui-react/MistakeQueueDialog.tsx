@@ -26,6 +26,7 @@ import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import Modal from "./Modal";
+import { NO_NOISE } from "../ui/noiseVerdicts";
 import { SortOrder } from "../ui/SortOrder";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 import { useMistakeQueueClassifications } from "./useMistakeQueueClassifications";
@@ -56,6 +57,7 @@ export type MistakeQueueDialogProps = {
   readonly show: boolean;
   readonly sortOrder?: SortOrder;
   readonly tally?: StoredTally | null | undefined;
+  readonly lossesWithinNoise?: ReadonlySet<string>;
 };
 
 const buildQuantileOptions = (
@@ -140,8 +142,11 @@ interface MistakeQueueBaseData {
   readonly totalCount: number;
 }
 
-function buildMistakeQueueBaseData(tally: StoredTally): MistakeQueueBaseData {
-  const allItems = buildMistakeQueue(tally);
+function buildMistakeQueueBaseData(
+  tally: StoredTally,
+  withinNoise: ReadonlySet<string>,
+): MistakeQueueBaseData {
+  const allItems = buildMistakeQueue(tally, withinNoise);
   const thresholds = computeLossQuantileThresholds(
     allItems.map((item) => item.lossIfWrong),
   );
@@ -171,6 +176,7 @@ export function MistakeQueueDialog({
   initialRoleFilter = "all",
   initialSortOrder = "priority",
   initialStatusFilter = "active",
+  lossesWithinNoise = NO_NOISE,
   onClose,
   onStartAutoDrill = null,
   onStartDrill = null,
@@ -235,8 +241,10 @@ export function MistakeQueueDialog({
   );
   const baseQueueData = useMemo(
     () =>
-      activeTally === null ? null : buildMistakeQueueBaseData(activeTally),
-    [activeTally],
+      activeTally === null
+        ? null
+        : buildMistakeQueueBaseData(activeTally, lossesWithinNoise),
+    [activeTally, lossesWithinNoise],
   );
   const derivedQueueData = useMemo(() => {
     if (baseQueueData === null) {
@@ -412,6 +420,7 @@ MistakeQueueDialog.defaultProps = {
   initialRoleFilter: "all",
   initialSortOrder: "priority",
   initialStatusFilter: "active",
+  lossesWithinNoise: NO_NOISE,
   onStartAutoDrill: null,
   onStartDrill: null,
   sortOrder: SortOrder.Descending,

@@ -34,9 +34,10 @@ export interface LossEntry {
 export const lossPointTitle = (point: DiscardDecisionPoint): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   const mastered = point.isMastered ? ", mastered since" : "";
+  const noise = point.isWithinNoise ? ", within simulation noise" : "";
   return `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
     DECIMAL_PLACES,
-  )} points loss${mastered}`;
+  )} points loss${mastered}${noise}`;
 };
 
 /*
@@ -97,16 +98,18 @@ export function renderLossPoint(
   },
   selectedRecencyAt: number | null,
 ): React.JSX.Element {
+  // Gray for a loss within simulation noise (#774), which is never also mastered.
+  const noiseDot = point.isWithinNoise ? ` ${classes.lossDotNoise}` : "";
   const baseDotClass = point.isMastered
     ? `${classes.lossDot} ${classes.lossDotMastered}`
-    : classes.lossDot;
+    : `${classes.lossDot}${noiseDot}`;
   const dotClass =
     point.recencyAt === selectedRecencyAt
       ? `${baseDotClass} ${classes.lossDotSelected}`
       : baseDotClass;
   const stemClass = point.isMastered
     ? `${classes.lossStem} ${classes.lossStemMastered}`
-    : classes.lossStem;
+    : `${classes.lossStem}${point.isWithinNoise ? ` ${classes.lossStemNoise}` : ""}`;
   return (
     <g
       // The hover title lives on the hit band that covers this marker; here it would only duplicate it.

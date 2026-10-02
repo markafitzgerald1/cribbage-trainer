@@ -450,6 +450,15 @@
   the delta's own standard error already preserves the own-minus-opponent
   pairing within each simulation, so do **not** reconstruct it by summing the
   two seat-total variances.
+- **A recorded decision's noise verdict is recomputed, never read from
+  storage.** `noiseVerdictThreshold` in `discardNoiseThreshold.ts` is the one
+  comparison the caption, queue, tally and chart all make (#774);
+  `useNoiseVerdicts` scores each stored hand and discard again through it. So a
+  fixture's stored `expectedPointsLoss` says nothing about its verdict, and an
+  invented one can land inside the noise under the shipped sidecars:
+  `AC,2C` from `AC,2C,3C,4C,5C,6C` as pone, seeded at 1.5, really loses
+  0.06 and left the e2e mistake queue. Check a seeded hand's real verdict
+  before relying on it as a mistake.
 
 ## Interaction design and visual-state debugging
 

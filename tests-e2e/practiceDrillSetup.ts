@@ -44,7 +44,8 @@ export const SEED_TALLY = {
     {
       at: BASE_AT + ONE_DAY_MS,
       cribRole: "Pone",
-      discardKey: "AC,2C",
+      // Not AC,2C: under the shipped sidecars that loss is within simulation noise and leaves the queue (#774).
+      discardKey: "AC,3C",
       expectedPointsLoss: SECOND_LOSS,
       handKey: "AC,2C,3C,4C,5C,6C|Pone",
       isOptimal: false,
@@ -81,7 +82,7 @@ export const SEED_TALLY_WITH_QUANTILES = {
   ],
 };
 
-const seedBrowser = (page: Page) =>
+const seedBrowser = (page: Page, tally: typeof SEED_TALLY) =>
   page.addInitScript(
     (stored: {
       readonly consent: Record<string, string>;
@@ -102,13 +103,16 @@ const seedBrowser = (page: Page) =>
         [answeredPolicyVersionKey]: PRIVACY_POLICY_VERSION,
       },
       keyPrefix: DISCARD_TALLY_KEY_PREFIX,
-      tally: SEED_TALLY,
+      tally,
     },
   );
 
-export const openSeededTrainer = async (page: Page) => {
+export const openSeededTrainer = async (
+  page: Page,
+  tally: typeof SEED_TALLY = SEED_TALLY,
+) => {
   await blockGoogleAnalytics(page);
-  await seedBrowser(page);
+  await seedBrowser(page, tally);
   await page.goto("/");
 };
 

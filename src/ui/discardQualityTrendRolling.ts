@@ -1,3 +1,4 @@
+import { NO_NOISE, isRecordWithinNoise } from "./noiseVerdicts";
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import type { DiscardDecisionRecord } from "./discardTally";
 
@@ -127,6 +128,8 @@ export interface DiscardDecisionPoint {
   readonly isMastered: boolean;
   readonly isOptimal: boolean;
   readonly isRetained: boolean;
+  // A loss the caption calls simulation noise (#774): drawn neutral, and never a mistake to practice.
+  readonly isWithinNoise: boolean;
   readonly ordinal: number;
   /*
    * The record's monotonic `recencyAt` (strictly increasing across the
@@ -160,6 +163,7 @@ export interface ContinuousDecisionPointOptions {
   readonly isRetained?: boolean;
   // Hand keys the practice ledger reports as mastered; markers for these are painted apart from open mistakes.
   readonly masteredHandKeys?: ReadonlySet<string>;
+  readonly withinNoise?: ReadonlySet<string>;
 }
 
 export function buildContinuousDecisionPoints(
@@ -168,6 +172,7 @@ export function buildContinuousDecisionPoints(
   {
     isRetained = false,
     masteredHandKeys = NO_MASTERED_HAND_KEYS,
+    withinNoise = NO_NOISE,
   }: ContinuousDecisionPointOptions = {},
 ): readonly DiscardDecisionPoint[] {
   if (records.length === 0) {
@@ -190,9 +195,14 @@ export function buildContinuousDecisionPoints(
       discardKey: record.discardKey,
       expectedPointsLoss: record.expectedPointsLoss,
       handKey: record.handKey,
-      isMastered: !record.isOptimal && masteredHandKeys.has(record.handKey),
+      // A within-noise decision left the queue (#774), so it has nothing to have mastered.
+      isMastered:
+        !record.isOptimal &&
+        !isRecordWithinNoise(record, withinNoise) &&
+        masteredHandKeys.has(record.handKey),
       isOptimal: record.isOptimal,
       isRetained,
+      isWithinNoise: isRecordWithinNoise(record, withinNoise),
       ordinal: globalIndex + 1,
       recencyAt: record.recencyAt ?? record.at,
       rollingMeanLoss,

@@ -12,6 +12,7 @@ import {
   makeDecisionPoint,
   makeMasteredDecisionPoint,
   makeRetainedDecisionPoint,
+  makeWithinNoiseDecisionPoint,
   renderChart,
 } from "./DecisionQualityChart.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
@@ -346,5 +347,37 @@ describe("decision quality chart point detail", () => {
       expect.stringContaining("mastered since"),
     );
     expect(view.getByRole("region")).toHaveTextContent("Mastered");
+  });
+});
+
+describe("decision quality chart within-noise point (#774)", () => {
+  it("draws a within-noise loss neutral, says so, and offers nothing to practice", () => {
+    const view = render(
+      <DecisionQualityChart
+        buckets={BUCKETS}
+        decisionPoints={[
+          makeDecisionPoint(1, 0, 0),
+          makeWithinNoiseDecisionPoint(2, 0.09, 0.05),
+        ]}
+        granularity="rolling20"
+        onPracticeDecision={jest.fn()}
+      />,
+    );
+    fireEvent.click(markerFor(view, 2));
+    const dot = view.container.querySelector(`.${classes.lossDot}`);
+
+    expect(dot).toHaveClass(classes.lossDotNoise);
+    expect(markerFor(view, 2)).toHaveAttribute(
+      "aria-label",
+      "Decision #2: 0.09 points loss, within simulation noise. Select to see the hand.",
+    );
+    expect(view.getByRole("region")).toHaveTextContent("Within noise");
+    expect(view.getByRole("region")).toHaveAttribute(
+      "data-within-noise",
+      "true",
+    );
+    expect(
+      view.queryByRole("button", { name: "Practice this hand" }),
+    ).toBeNull();
   });
 });
