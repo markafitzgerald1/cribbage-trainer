@@ -1,0 +1,51 @@
+--- src/ui-react/Trainer.tsx
++++ src/ui-react/Trainer.tsx
+@@ -216,7 +216,14 @@
+     isSeededSession,
+     sortOrder,
+     trackEvent,
+-    wasDeepLinked: initialCards !== null,
++    wasDeepLinked: (() => {
++      if (initialCards === null) return false;
++      try {
++        return sessionStorage.getItem("cribbage_trainer_own_hand") !== toHandKey(dealtCards, cribRole);
++      } catch {
++        return true;
++      }
++    })(),
+   });
+   const applyManualHand = useCallback(
+--- src/ui-react/useDiscardTally.ts
++++ src/ui-react/useDiscardTally.ts
+@@ -198,6 +198,14 @@
+     ]),
+   );
+ 
++  useEffect(() => {
++    if (!isSeededSession && !wasDeepLinked) {
++      try {
++        sessionStorage.setItem("cribbage_trainer_own_hand", toHandKey(dealtCards, cribRole));
++      } catch {}
++    }
++  // eslint-disable-next-line react-hooks/exhaustive-deps
++  }, []);
++
+   /*
+    * The sort order on screen when the discard now on the board arrived:
+    * by the click that completed it, or by the history move that restored
+@@ -274,6 +282,13 @@
+       const key = toHandKey(cards, role);
+       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
+       notePractice(key, isPractice);
+       openHand.current = { handId, key };
++
++      try {
++        if (isPractice) {
++          sessionStorage.removeItem("cribbage_trainer_own_hand");
++        } else {
++          sessionStorage.setItem("cribbage_trainer_own_hand", key);
++        }
++      } catch {}
+     },
+     [isSeededSession, notePractice],
+   );

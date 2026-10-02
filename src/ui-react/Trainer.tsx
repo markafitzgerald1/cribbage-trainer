@@ -33,6 +33,7 @@ import { discardIsComplete } from "../game/discardIsComplete";
 import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
 import { toDealtCards } from "../game/toDealtCards";
+import { toHandKey } from "../ui/handKey";
 import { useAnalysisReporting } from "./useAnalysisReporting";
 import { useDealHand } from "./useDealHand";
 import { useDiscardLiveRegion } from "./useDiscardLiveRegion";
@@ -217,7 +218,18 @@ export function Trainer({
     isSeededSession,
     sortOrder,
     trackEvent,
-    wasDeepLinked: initialCards !== null,
+    wasDeepLinked: (() => {
+      if (initialCards === null) return false;
+      try {
+        return (
+          sessionStorage.getItem("cribbage_trainer_own_hand") !==
+          toHandKey(dealtCards, cribRole)
+        );
+      } catch {
+        /* istanbul ignore next */
+        return true;
+      }
+    })(),
   });
   const applyManualHand = useCallback(
     (state: DealState) => {
