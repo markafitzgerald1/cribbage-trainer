@@ -19,6 +19,7 @@ import type { DiscardDecisionRecord } from "../ui/discardDecisionRecord";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { uniformUncertainty } from "../game/uncertaintySidecar.test.common";
+import { useExpectedTables } from "./useExpectedTables";
 
 const WAIT = { timeout: 8000 };
 
@@ -95,13 +96,43 @@ const verdictWhileANewDecisionWaits = async (): Promise<boolean> => {
   return isKept;
 };
 
-const verdictsWithoutTables = async (): Promise<NoiseVerdicts> => {
+const failFirstCribLoad = () => {
   cribLoader.setTableSync(null);
-  const spy = jest
+  playLoader.setTableSync(null);
+  return jest
     .spyOn(cribLoader, "loadTable")
     .mockRejectedValueOnce(new Error("offline"));
+};
+
+const useAnalysisPanelTables = () =>
+  useExpectedTables(cribLoader.loadTable, playLoader.loadTable);
+
+const verdictsWithoutTables = async (): Promise<NoiseVerdicts> => {
+  const spy = failFirstCribLoad();
   try {
     return await notWaiting(renderVerdicts([WITHIN_NOISE_RECORD]));
+  } finally {
+    spy.mockRestore();
+  }
+};
+
+// The analysis panel's own table hook recovers after the first load failed.
+const verdictsAfterAnotherHooksRetry = async (): Promise<Rendered> => {
+  const spy = failFirstCribLoad().mockResolvedValue(expectedCribPointsTable);
+  try {
+    const history = renderVerdicts([WITHIN_NOISE_RECORD]);
+    await notWaiting(history);
+    const panel = renderHook(useAnalysisPanelTables);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => {
+      panel.result.current.handleRetry();
+    });
+    await waitFor(() => {
+      expect(panel.result.current.tables).not.toBeNull();
+    }, WAIT);
+    return history;
   } finally {
     spy.mockRestore();
   }
@@ -282,6 +313,12 @@ describe("useNoiseVerdicts", () => {
       "withinNoise",
       noiseVerdicts.NO_NOISE,
     );
+  });
+
+  it("judges the history once a retry from the analysis panel recovers the tables", async () => {
+    await expect(
+      judgedCount(await verdictsAfterAnotherHooksRetry(), 1),
+    ).resolves.toHaveProperty("withinNoise.size", 1);
   });
 
   it("keeps every exact verdict once the settle wait times out, even when the document lands after", async () => {
