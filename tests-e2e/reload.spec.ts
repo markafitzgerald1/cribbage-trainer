@@ -13,6 +13,10 @@ test("counts a reload of the app's own undecided hand as a resumed hand", async 
 }) => {
   await blockGoogleAnalytics(page);
   await page.goto("/");
+  const firstCard = page.getByRole("checkbox").first();
+  await firstCard.click();
+  await firstCard.click();
+  await expect(page).toHaveURL(/[?&]hand=/u);
 
   await page.reload();
 
@@ -25,6 +29,11 @@ test("counts a reload of the app's own undecided hand as a resumed hand", async 
 test("counts a skip when a reloaded own hand is left", async ({ page }) => {
   await blockGoogleAnalytics(page);
   await page.goto("/");
+  const firstCard = page.getByRole("checkbox").first();
+  await firstCard.click();
+  await firstCard.click();
+  await expect(page).toHaveURL(/[?&]hand=/u);
+
   await page.reload();
   await page.getByRole("button", { exact: true, name: "Deal" }).click();
 

@@ -25,13 +25,14 @@ import {
   storeAnalyticsChoice,
 } from "../ui/analyticsConsent";
 import { describe, expect, it, jest } from "@jest/globals";
+import { parseHandKey, toHandKey } from "../ui/handKey";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { getSortOrderName } from "../ui/SortOrderName";
 import { ownHandKey } from "../ui/ownHandKey";
-import { parseHandKey } from "../ui/handKey";
+import { readDiscardTally } from "../ui/discardTally";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -86,6 +87,16 @@ const completeTwoDiscards = async () => {
   return setup;
 };
 
+const completeDiscardsAndWait = async (
+  getAllByRole: (role: string) => HTMLElement[],
+  user: UserEvent,
+) => {
+  await clickIndices(getAllByRole, [0, 1], user);
+  await waitFor(() =>
+    expect(screen.getByRole("status")).not.toHaveTextContent(""),
+  );
+};
+
 const openCardEntry = (user: UserEvent) =>
   user.click(screen.getByRole("button", { name: "Enter cards" }));
 
@@ -97,13 +108,12 @@ const renderTrainerWithInitialHand = () =>
 
 const mockThrowingStorage = () =>
   jest.spyOn(Storage.prototype, "getItem").mockImplementation((key) => {
-    if (key === ownHandKey) {
-      throw new Error("Access denied");
-    }
+    if (key === ownHandKey) throw new Error("Access denied");
     return null;
   });
 
 describe("trainer component", () => {
+  /* jscpd:ignore-start */
   describe("deep-linked hands", () => {
     it("counts a reloaded own hand as an authentic decision, not practice", async () => {
       setAnalysisTables();
@@ -115,7 +125,6 @@ describe("trainer component", () => {
       expect(storedKey).not.toBeNull();
 
       initialView.unmount();
-
       const parsed = parseHandKey(String(storedKey));
 
       expect(parsed).not.toBeNull();
@@ -127,25 +136,90 @@ describe("trainer component", () => {
         initialCribRole: parsed!.cribRole,
       });
 
-      await clickIndices(reloadedView.getAllByRole, [0, 1], user);
-      await waitFor(() =>
-        expect(screen.getByRole("status")).not.toHaveTextContent(""),
-      );
+      await completeDiscardsAndWait(reloadedView.getAllByRole, user);
 
       expect(screen.queryByText("Lost per discard")).toBeInTheDocument();
     });
 
-    it("treats hand as deep-linked when localStorage throws", () => {
+    it("treats hand as deep-linked when localStorage throws", async () => {
+      setAnalysisTables();
       const getItemSpy = mockThrowingStorage();
-      renderTrainerWithInitialProps({
+      const user = userEvent.setup();
+      const view = renderTrainerWithInitialProps({
         initialCards: parseHand("AS,2S,3S,4S,5S,6S"),
         initialCribRole: CribRole.Dealer,
       });
+
+      await completeDiscardsAndWait(view.getAllByRole, user);
+
       getItemSpy.mockRestore();
 
-      expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+      expect(screen.queryByText("Lost per discard")).not.toBeInTheDocument();
+    });
+
+    it("does not double count a reloaded already-decided own hand", async () => {
+      setAnalysisTables();
+      localStorage.clear();
+
+      const user = userEvent.setup();
+      const initialView = renderTrainerWithGenerator(() => 0);
+      const parsed = parseHandKey(String(localStorage.getItem(ownHandKey)));
+
+      await completeDiscardsAndWait(initialView.getAllByRole, user);
+
+      expect(screen.queryByText("Lost per discard")).toBeInTheDocument();
+
+      initialView.unmount();
+
+      renderTrainerWithInitialProps({
+        generateRandomNumber: () => 0,
+        initialCards: parsed!.cards,
+        initialCribRole: parsed!.cribRole,
+        initialDiscards: [parsed!.cards[0]!, parsed!.cards[1]!],
+      });
+
+      await waitFor(() =>
+        expect(screen.getByRole("status")).not.toHaveTextContent(""),
+      );
+
+      expect(readDiscardTally(Date.now()).decisions).toBe(1);
+    });
+
+    it("never writes the key during a seeded session or after a seeded deal", async () => {
+      localStorage.clear();
+      renderTrainerWithInitialProps({
+        generateRandomNumber: () => 0,
+        isSeededSession: true,
+      });
+
+      expect(localStorage.getItem(ownHandKey)).toBeNull();
+
+      await clickDeal(userEvent.setup());
+
+      expect(localStorage.getItem(ownHandKey)).toBeNull();
+    });
+
+    it("treats the same cards under the opposite role as a shared link", async () => {
+      setAnalysisTables();
+      localStorage.clear();
+      localStorage.setItem(
+        ownHandKey,
+        toHandKey(parseHand("AS,2S,3S,4S,5S,6S"), CribRole.Dealer),
+      );
+
+      const user = userEvent.setup();
+      const reloadedView = renderTrainerWithInitialProps({
+        generateRandomNumber: () => 0,
+        initialCards: parseHand("AS,2S,3S,4S,5S,6S"),
+        initialCribRole: CribRole.Pone,
+      });
+
+      await completeDiscardsAndWait(reloadedView.getAllByRole, user);
+
+      expect(screen.queryByText("Lost per discard")).not.toBeInTheDocument();
     });
   });
+  /* jscpd:ignore-end */
 
   it("initially contains a sort in descending order radio input", () => {
     expect(renderTrainer().queryByLabelText("↓")).toBeTruthy();

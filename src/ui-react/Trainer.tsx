@@ -161,6 +161,21 @@ const useEnterCardsDialog = (
   return { handleClose, handleOpen, handleSubmit, show };
 };
 
+const checkIsResumedOwnHand = (
+  initialCards: readonly Card[] | null,
+  dealtCards: readonly DealtCard[],
+  cribRole: CribRole,
+): boolean => {
+  if (initialCards === null || discardIsComplete(dealtCards)) {
+    return false;
+  }
+  try {
+    return localStorage.getItem(ownHandKey) === toHandKey(dealtCards, cribRole);
+  } catch {
+    return false;
+  }
+};
+
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
@@ -182,6 +197,9 @@ export function Trainer({
     };
   });
   const { cribRole, dealtCards } = dealState;
+  const [isResumedOwnHand, setIsResumedOwnHand] = useState(() =>
+    checkIsResumedOwnHand(initialCards, dealtCards, cribRole),
+  );
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
@@ -216,28 +234,31 @@ export function Trainer({
     cribRole,
     dealtCards,
     decisionQualityConsented: choice.decisionQualityConsented,
+    isResumedOwnHand,
     isSeededSession,
     sortOrder,
     trackEvent,
-    wasDeepLinked: (() => {
-      if (initialCards === null) return false;
-      try {
-        return (
-          localStorage.getItem(ownHandKey) !== toHandKey(dealtCards, cribRole)
-        );
-      } catch {
-        return true;
-      }
-    })(),
+    wasDeepLinked: initialCards !== null,
   });
+  const handleHandReplaced = useCallback(
+    (
+      cards: readonly DealtCard[],
+      cause: Parameters<typeof reportHandReplaced>[1],
+      role: CribRole,
+    ) => {
+      setIsResumedOwnHand(false);
+      reportHandReplaced(cards, cause, role);
+    },
+    [reportHandReplaced],
+  );
   const applyManualHand = useCallback(
     (state: DealState) => {
       // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
       markHistoryUpdate();
-      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
+      handleHandReplaced(state.dealtCards, "manual", state.cribRole);
       setDealState(state);
     },
-    [markHistoryUpdate, reportHandReplaced],
+    [handleHandReplaced, markHistoryUpdate],
   );
   const {
     deal: dealNewHand,
@@ -247,7 +268,7 @@ export function Trainer({
     dealtCards,
     generateRandomNumber: generator,
     markHistoryUpdate,
-    reportHandReplaced,
+    reportHandReplaced: handleHandReplaced,
     setDealState,
   });
   const drill = usePracticeDrill({
@@ -258,8 +279,6 @@ export function Trainer({
     loadHand: applyManualHand,
     onAnalysisRendered: reportAnalysisRendered,
   });
-  // The pure clear, for the history-restore path below — a Back brings its own hand, so it must not deal a new one.
-  const exitDrill = drill.clearDrill;
   const { handleStatusChange, isAnalysisVisible, liveRegionStatus } =
     useDiscardLiveRegion(dealtCards, drill.isActive, drill.phase);
 
@@ -337,7 +356,7 @@ export function Trainer({
            * known: the restored hand and its analysis stand on their own,
            * the reload-style degradation the drill already accepts.
            */
-          exitDrill();
+          drill.clearDrill();
         }
         setDealState((previous) => ({
           cribRole: urlState.cribRole ?? previous.cribRole,
@@ -355,7 +374,7 @@ export function Trainer({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [exitDrill, reportHistoryNavigation, setSortOrder]);
+  }, [drill, reportHistoryNavigation, setSortOrder]);
 
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
