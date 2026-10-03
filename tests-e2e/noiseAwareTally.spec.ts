@@ -33,33 +33,39 @@ const WITHIN_NOISE_TALLY = {
   ],
 };
 
-// The sidecars are deferred chunks of about 1.5 MB, so the wait gets the room a cold worker needs.
-const settledTally = async (page: Page) => {
-  const tally = page.getByText("Lost per discard").locator("..");
-  await expect(tally).toHaveAttribute("aria-busy", "false", {
-    timeout: 20_000,
-  });
-  return tally;
-};
+/*
+ * History is judged only once a recommendation is on screen, so the page
+ * opens on a deep-linked hand, which is practice and leaves the tally alone.
+ */
+const RECOMMENDATION = "/?hand=4H,5D,KH,6H,8C,KC&role=dealer&discard=8C,KC";
+
+const tallyOf = (page: Page) =>
+  page.getByText("Lost per discard").locator("..");
+
+// The sidecars are deferred chunks of about 1.5 MB, so each wait gets the room a cold worker needs.
+const COLD = { timeout: 20_000 };
 
 test("leaves a within-noise loss out of Best choice and the queue", async ({
   page,
 }) => {
-  await openSeededTrainer(page, WITHIN_NOISE_TALLY);
-  const tally = await settledTally(page);
+  await openSeededTrainer(page, WITHIN_NOISE_TALLY, RECOMMENDATION);
 
-  await expect(tally.getByText(/^1\/1 \(/u)).toBeVisible();
+  await expect(tallyOf(page).getByText(/^1\/1 \(/u)).toBeVisible(COLD);
   await expect(
     page.getByRole("button", { name: "Mistake queue" }),
   ).toBeHidden();
 });
 
+// The refused request proves the load was attempted, so the settled tally that follows has had its chance to change.
 test("keeps the exact verdict when the sidecars cannot load", async ({
   page,
 }) => {
   await blockUncertaintySidecars(page);
-  await openSeededTrainer(page, WITHIN_NOISE_TALLY);
-  const tally = await settledTally(page);
+  const refused = page.waitForRequest(/Uncertainty-/u, COLD);
+  await openSeededTrainer(page, WITHIN_NOISE_TALLY, RECOMMENDATION);
+  await refused;
+  const tally = tallyOf(page);
+  await expect(tally).toHaveAttribute("aria-busy", "false", COLD);
 
   await expect(tally.getByText(/^1\/2 \(/u)).toBeVisible();
   await expect(

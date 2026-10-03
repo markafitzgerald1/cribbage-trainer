@@ -4,9 +4,9 @@ import {
   isSameLocalDay,
   readTallyForDisplay,
 } from "../ui/discardTally";
-import { NO_NOISE, countWithinNoise } from "../ui/noiseVerdicts";
 import { type NoiseVerdictSources, useNoiseVerdicts } from "./useNoiseVerdicts";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
+import { countWithinNoise } from "../ui/noiseVerdicts";
 import { useMemo } from "react";
 
 /*
@@ -31,26 +31,32 @@ const readingOf = (summary: DiscardTallySummary) => {
 export const useTallyNoise = (
   summary: DiscardTallySummary,
   injectedTally: StoredTally | null,
-  sources: NoiseVerdictSources,
+  {
+    hasShownRecommendation,
+    ...sources
+  }: NoiseVerdictSources & { readonly hasShownRecommendation: boolean },
 ) => {
   const { readAt, stored } = readingOf(summary);
   const tally = injectedTally ?? stored;
-  const verdicts = useNoiseVerdicts(tally.records, sources);
+  const { isWaiting, recomputedLosses, withinNoise } = useNoiseVerdicts(
+    tally.records,
+    sources,
+    hasShownRecommendation,
+  );
   return useMemo(() => {
-    // Every surface shows the exact verdict until the noise verdicts settle.
-    const withinNoise = verdicts ?? NO_NOISE;
     const today = tally.records.filter((record) =>
       isSameLocalDay(record.at, readAt),
     );
     return {
       hasMistakes: buildMistakeQueue(tally, withinNoise).length > 0,
-      isJudging: verdicts === null,
+      isWaiting,
       // Option B (#774): a within-noise decision counts neither as a best choice nor against one.
       judgedDecisions:
         summary.decisions - countWithinNoise(tally.records, withinNoise),
       judgedTodayDecisions:
         summary.todayDecisions - countWithinNoise(today, withinNoise),
+      recomputedLosses,
       withinNoise,
     };
-  }, [readAt, summary, tally, verdicts]);
+  }, [isWaiting, readAt, recomputedLosses, summary, tally, withinNoise]);
 };

@@ -7,9 +7,10 @@ import {
 } from "./noiseVerdicts.test.common";
 import {
   type NoiseCandidate,
+  type RecordedVerdict,
   countWithinNoise,
   isNoiseCandidate,
-  isRecordedDiscardWithinNoise,
+  judgeRecordedDiscard,
   noiseVerdictKey,
 } from "./noiseVerdicts";
 import { SUCCESSES_FOR_MASTERY, buildMistakeQueue } from "./mistakeQueue";
@@ -32,8 +33,8 @@ const sidecarsAt = (standardError: number) => ({
 const judge = (
   record: Pick<NoiseCandidate, "discardKey" | "handKey">,
   standardError = NOISE_STANDARD_ERROR,
-): boolean =>
-  isRecordedDiscardWithinNoise(record, tables, sidecarsAt(standardError));
+): RecordedVerdict | null =>
+  judgeRecordedDiscard(record, tables, sidecarsAt(standardError));
 
 const WITHIN_NOISE = new Set([noiseVerdictKey(WITHIN_NOISE_RECORD)]);
 
@@ -63,11 +64,21 @@ describe("recorded discard noise verdicts (#774)", () => {
       record: { ...MISTAKE_RECORD, expectedPointsLoss: 0.01 },
     },
   ])("judges $name against a 0.40 threshold", ({ expected, record }) => {
-    expect(judge(record as NoiseCandidate)).toBe(expected);
+    expect(judge(record as NoiseCandidate)?.isWithinNoise).toBe(expected);
+  });
+
+  // The stored loss in the last two cases above is the wrong one to show beside the verdict.
+  it.each([
+    { loss: 0.0856, record: { ...WITHIN_NOISE_RECORD, expectedPointsLoss: 5 } },
+    { loss: 0.763, record: { ...MISTAKE_RECORD, expectedPointsLoss: 0.01 } },
+  ])("recomputes the $loss loss it judges", ({ loss, record }) => {
+    expect(judge(record as NoiseCandidate)?.loss).toBeCloseTo(loss, 3);
   });
 
   it("calls nothing noise when every published error is zero", () => {
-    expect(judge(WITHIN_NOISE_RECORD as NoiseCandidate, 0)).toBe(false);
+    expect(judge(WITHIN_NOISE_RECORD as NoiseCandidate, 0)?.isWithinNoise).toBe(
+      false,
+    );
   });
 
   it.each([
@@ -77,8 +88,8 @@ describe("recorded discard noise verdicts (#774)", () => {
       handKey: WITHIN_NOISE_RECORD.handKey,
       name: "a discard the hand never held",
     },
-  ])("keeps the exact verdict for $name", (record) => {
-    expect(judge(record, Number.MAX_SAFE_INTEGER)).toBe(false);
+  ])("gives no verdict, so the exact one stands, for $name", (record) => {
+    expect(judge(record, Number.MAX_SAFE_INTEGER)).toBeNull();
   });
 
   it.each([

@@ -1,6 +1,7 @@
-import type {
-  DiscardDecisionRecord,
-  DiscardTallySummary,
+import {
+  type DiscardDecisionRecord,
+  type DiscardTallySummary,
+  isSameLocalDay,
 } from "../ui/discardTally";
 import {
   NOISE_STANDARD_ERROR,
@@ -30,21 +31,27 @@ export const discardTallySummary = (
 
 const noisy = settledSource(NOISE_STANDARD_ERROR);
 
-// The tally view's props for these records, all made today, judged against the given sidecars (#774).
+const optimalCount = (records: readonly DiscardDecisionRecord[]) =>
+  records.filter((record) => record.isOptimal).length;
+
+// The tally view's props for these records, judged against the given sidecars once a recommendation has been shown (#774).
 export const noiseTallyProps = (
   records: readonly DiscardDecisionRecord[],
   crib: UncertaintySource = noisy,
   play: UncertaintySource = noisy,
 ) => {
-  const optimal = records.filter((record) => record.isOptimal).length;
+  const today = records.filter((record) =>
+    isSameLocalDay(record.at, Date.now()),
+  );
   return {
     cribUncertaintySource: crib,
+    hasShownRecommendation: true,
     playUncertaintySource: play,
     summary: discardTallySummary({
       decisions: records.length,
-      optimalDecisions: optimal,
-      todayDecisions: records.length,
-      todayOptimalDecisions: optimal,
+      optimalDecisions: optimalCount(records),
+      todayDecisions: today.length,
+      todayOptimalDecisions: optimalCount(today),
     }),
     tally: noiseTally(records),
   };

@@ -1,5 +1,7 @@
 import {
+  type ContinuousDecisionPointOptions,
   type DiscardDecisionPoint,
+  NO_RECOMPUTED_LOSSES,
   buildContinuousDecisionPoints,
   countRollingSkips,
   getRollingBatchSize,
@@ -46,11 +48,13 @@ export interface DiscardQualityTrend {
   readonly totalAuthenticDecisions: number;
   readonly totalSkippedHands: number;
 }
-export interface DiscardQualityTrendOptions {
+export interface DiscardQualityTrendOptions extends Pick<
+  ContinuousDecisionPointOptions,
+  "recomputedLosses" | "withinNoise"
+> {
   readonly granularity: TrendGranularity;
   readonly roleFilter?: CribRoleFilter;
   readonly now?: number;
-  readonly withinNoise?: ReadonlySet<string>;
 }
 
 const DAYS_IN_WEEK = 7;
@@ -464,6 +468,7 @@ export const computeDiscardQualityTrend = (
       : buildContinuousDecisionPoints(authenticRecords, batchSize, {
           isRetained: hasTruncatedHistory,
           masteredHandKeys,
+          recomputedLosses: options.recomputedLosses ?? NO_RECOMPUTED_LOSSES,
           withinNoise,
         });
 

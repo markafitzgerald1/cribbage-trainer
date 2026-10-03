@@ -1,4 +1,8 @@
-import { NO_NOISE, isRecordWithinNoise } from "./noiseVerdicts";
+import {
+  NO_NOISE,
+  isRecordWithinNoise,
+  noiseVerdictKey,
+} from "./noiseVerdicts";
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import type { DiscardDecisionRecord } from "./discardTally";
 
@@ -138,6 +142,8 @@ export interface DiscardDecisionPoint {
    * `at` is wall-clock time that a rolled-back clock can repeat.
    */
   readonly recencyAt: number;
+  // The loss recomputed under today's tables once judged (#774), else null; `expectedPointsLoss` stays the one recorded.
+  readonly recomputedLoss: number | null;
   readonly rollingMeanLoss: number;
   readonly timestamp: number;
 }
@@ -164,7 +170,10 @@ export interface ContinuousDecisionPointOptions {
   // Hand keys the practice ledger reports as mastered; markers for these are painted apart from open mistakes.
   readonly masteredHandKeys?: ReadonlySet<string>;
   readonly withinNoise?: ReadonlySet<string>;
+  readonly recomputedLosses?: ReadonlyMap<string, number>;
 }
+
+export const NO_RECOMPUTED_LOSSES: ReadonlyMap<string, number> = new Map();
 
 export function buildContinuousDecisionPoints(
   records: readonly DiscardDecisionRecord[],
@@ -173,6 +182,7 @@ export function buildContinuousDecisionPoints(
     isRetained = false,
     masteredHandKeys = NO_MASTERED_HAND_KEYS,
     withinNoise = NO_NOISE,
+    recomputedLosses = NO_RECOMPUTED_LOSSES,
   }: ContinuousDecisionPointOptions = {},
 ): readonly DiscardDecisionPoint[] {
   if (records.length === 0) {
@@ -205,6 +215,7 @@ export function buildContinuousDecisionPoints(
       isWithinNoise: isRecordWithinNoise(record, withinNoise),
       ordinal: globalIndex + 1,
       recencyAt: record.recencyAt ?? record.at,
+      recomputedLoss: recomputedLosses.get(noiseVerdictKey(record)) ?? null,
       rollingMeanLoss,
       timestamp: record.at,
     };

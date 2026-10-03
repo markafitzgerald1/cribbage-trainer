@@ -48,6 +48,8 @@ const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
 
 interface DiscardTallyViewProps {
   readonly cribUncertaintySource?: UncertaintySource;
+  // The history is judged against simulation noise only once a recommendation has been on screen, when its sidecars may load.
+  readonly hasShownRecommendation?: boolean;
   readonly onStartAutoDrill?: StartAutoDrillHandler;
   readonly onStartDrill?: StartDrillHandler;
   readonly playUncertaintySource?: UncertaintySource;
@@ -82,6 +84,7 @@ const renderMeasure = (
  */
 export function DiscardTallyView({
   cribUncertaintySource = shippedCribUncertainty,
+  hasShownRecommendation = false,
   onStartAutoDrill = null,
   onStartDrill = null,
   playUncertaintySource = shippedPlayUncertainty,
@@ -93,6 +96,7 @@ export function DiscardTallyView({
   const [showQueue, setShowQueue] = useState(false);
   const noise = useTallyNoise(summary, injectedTally, {
     cribSource: cribUncertaintySource,
+    hasShownRecommendation,
     playSource: playUncertaintySource,
   });
 
@@ -162,7 +166,7 @@ export function DiscardTallyView({
 
   return (
     <div
-      aria-busy={noise.isJudging}
+      aria-busy={noise.isWaiting}
       className={`${classes.tally} ${columns}`}
     >
       <span />
@@ -237,6 +241,7 @@ export function DiscardTallyView({
           lossesWithinNoise={noise.withinNoise}
           onClose={handleCloseTrend}
           onStartDrill={handleStartDrillFromTrend}
+          recomputedLosses={noise.recomputedLosses}
           show={showTrend}
           sortOrder={sortOrder}
           tally={injectedTally}
@@ -259,6 +264,7 @@ export function DiscardTallyView({
 
 DiscardTallyView.defaultProps = {
   cribUncertaintySource: shippedCribUncertainty,
+  hasShownRecommendation: false,
   onStartAutoDrill: null,
   onStartDrill: null,
   playUncertaintySource: shippedPlayUncertainty,

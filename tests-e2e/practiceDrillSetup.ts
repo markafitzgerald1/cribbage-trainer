@@ -110,10 +110,11 @@ const seedBrowser = (page: Page, tally: typeof SEED_TALLY) =>
 export const openSeededTrainer = async (
   page: Page,
   tally: typeof SEED_TALLY = SEED_TALLY,
+  path = "/",
 ) => {
   await blockGoogleAnalytics(page);
   await seedBrowser(page, tally);
-  await page.goto("/");
+  await page.goto(path);
 };
 
 export const startDrillOnFirstMistake = async (page: Page) => {

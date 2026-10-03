@@ -380,4 +380,38 @@ describe("decision quality chart within-noise point (#774)", () => {
       view.queryByRole("button", { name: "Practice this hand" }),
     ).toBeNull();
   });
+
+  // Recomputed under today's tables (#774): the verdict's own loss leads, and the stored one is only "recorded".
+  it.each([
+    {
+      expected: "0.09 points loss (5.00 recorded), within simulation noise",
+      panel: "0.09 lost (5.00 recorded)",
+      patch: { isWithinNoise: true, recomputedLoss: 0.0856 },
+    },
+    {
+      expected: "0.09 points loss, within simulation noise",
+      panel: "0.09 lost",
+      patch: {
+        expectedPointsLoss: 0.0856,
+        isWithinNoise: true,
+        recomputedLoss: 0.0856,
+      },
+    },
+    {
+      expected: "5.00 points loss recorded, now rated the best choice",
+      panel: "5.00 lost recorded, now rated the best choice",
+      patch: { recomputedLoss: 0 },
+    },
+  ])("names a judged loss as $expected", ({ expected, panel, patch }) => {
+    const view = openDetailOn(
+      withSecondPointPatched({ expectedPointsLoss: 5, ...patch }),
+      2,
+    );
+
+    expect(markerFor(view, 2)).toHaveAttribute(
+      "aria-label",
+      `Decision #2: ${expected}. Select to see the hand.`,
+    );
+    expect(view.getByText(panel)).toBeInTheDocument();
+  });
 });

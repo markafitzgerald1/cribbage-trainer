@@ -150,6 +150,10 @@ interface HandAggregate {
  * the moment the player first made it stays fixed to the earliest record,
  * which is what MistakeQueueItem.originalDecisionAt promises callers.
  */
+// The exact verdict: an authentic decision recorded as losing points, before any noise judgment (#774).
+export const isRecordedMistake = (record: DiscardDecisionRecord): boolean =>
+  !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
+
 const aggregateMistakeRecords = (
   records: readonly DiscardDecisionRecord[],
   withinNoise: ReadonlySet<string>,
@@ -157,12 +161,10 @@ const aggregateMistakeRecords = (
   const map = new Map<string, HandAggregate>();
 
   for (const record of records) {
-    const isMistake =
-      !record.isPractice &&
-      !record.isOptimal &&
-      record.expectedPointsLoss > 0 &&
-      !isRecordWithinNoise(record, withinNoise);
-    if (isMistake) {
+    if (
+      isRecordedMistake(record) &&
+      !isRecordWithinNoise(record, withinNoise)
+    ) {
       const existing = map.get(record.handKey);
       const recencyAt = record.recencyAt ?? record.at;
       const originalAt = existing

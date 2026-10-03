@@ -15,6 +15,7 @@ import {
   buildMistakeQueue,
   computeLossQuantileThresholds,
   filterMistakeQueue,
+  isRecordedMistake,
   sortMistakeQueue,
 } from "../ui/mistakeQueue";
 import type {
@@ -96,6 +97,7 @@ const buildQuantileOptions = (
 
 function renderEmptyState(options: {
   readonly hasLifetimeMistakes: boolean;
+  readonly hasRetainedMistakes: boolean;
   readonly isAllMastered: boolean;
   readonly totalCount: number;
 }): React.JSX.Element {
@@ -117,7 +119,10 @@ function renderEmptyState(options: {
   }
 
   let message = "No mistake hands match the selected filters.";
-  if (options.totalCount === 0) {
+  if (options.hasRetainedMistakes && options.totalCount === 0) {
+    message =
+      "Every recorded mistake's loss is within simulation noise, so none needs practice.";
+  } else if (options.totalCount === 0) {
     message = options.hasLifetimeMistakes
       ? "All recorded mistake hands have aged out of the recent history window. Play more hands to add new mistakes to your practice queue."
       : "No mistake hands recorded yet. Play authentic hands to build your practice queue.";
@@ -137,6 +142,7 @@ interface MistakeQueueBaseData {
   readonly activeCount: number;
   readonly allItems: readonly MistakeQueueItem[];
   readonly hasLifetimeMistakes: boolean;
+  readonly hasRetainedMistakes: boolean;
   readonly masteredCount: number;
   readonly quantileOptions: readonly DialogFilterOption<MistakeQueueQuantileFilter>[];
   readonly totalCount: number;
@@ -161,6 +167,7 @@ function buildMistakeQueueBaseData(
     activeCount,
     allItems,
     hasLifetimeMistakes,
+    hasRetainedMistakes: tally.records.some(isRecordedMistake),
     masteredCount,
     quantileOptions,
     totalCount,
@@ -287,6 +294,7 @@ export function MistakeQueueDialog({
   const {
     activeCount,
     hasLifetimeMistakes,
+    hasRetainedMistakes,
     masteredCount,
     quantileOptions,
     totalCount,
@@ -382,6 +390,7 @@ export function MistakeQueueDialog({
           {sortedItems.length === 0 ? (
             renderEmptyState({
               hasLifetimeMistakes,
+              hasRetainedMistakes,
               isAllMastered,
               totalCount,
             })

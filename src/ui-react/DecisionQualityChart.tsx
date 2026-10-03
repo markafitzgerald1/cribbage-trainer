@@ -22,6 +22,7 @@ import type {
 import React, { useCallback, useEffect, useId, useState } from "react";
 import {
   buildChartDescription,
+  describeLoss,
   renderCalendarPlot,
   renderRollingPlot,
   renderTicks,
@@ -123,7 +124,7 @@ function renderDecisionDetail(
           <span className={classes.decisionDetailRole}>Within noise</span>
         ) : null}
         <span className={classes.decisionDetailLoss}>
-          {`${point.expectedPointsLoss.toFixed(DECIMAL_PLACES)} lost`}
+          {describeLoss(point, "lost")}
         </span>
         <button
           className={classes.detailClose}

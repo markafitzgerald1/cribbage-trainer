@@ -31,13 +31,34 @@ export interface LossEntry {
   readonly point: DiscardDecisionPoint;
 }
 
+/*
+ * A judged decision's verdict comes from today's tables (#774), so its loss
+ * does too, and the stored one is named as recorded when the two differ. A
+ * mistake today's tables rate best keeps its recorded verdict, which says so
+ * rather than showing a loss nobody measured.
+ */
+export const describeLoss = (
+  { expectedPointsLoss, recomputedLoss }: DiscardDecisionPoint,
+  noun: string,
+): string => {
+  const recorded = expectedPointsLoss.toFixed(DECIMAL_PLACES);
+  if (recomputedLoss === null) {
+    return `${recorded} ${noun}`;
+  }
+  if (recomputedLoss === 0) {
+    return `${recorded} ${noun} recorded, now rated the best choice`;
+  }
+  const current = recomputedLoss.toFixed(DECIMAL_PLACES);
+  return current === recorded
+    ? `${current} ${noun}`
+    : `${current} ${noun} (${recorded} recorded)`;
+};
+
 export const lossPointTitle = (point: DiscardDecisionPoint): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   const mastered = point.isMastered ? ", mastered since" : "";
   const noise = point.isWithinNoise ? ", within simulation noise" : "";
-  return `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
-    DECIMAL_PLACES,
-  )} points loss${mastered}${noise}`;
+  return `${prefix} #${point.ordinal}: ${describeLoss(point, "points loss")}${mastered}${noise}`;
 };
 
 /*

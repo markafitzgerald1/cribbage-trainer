@@ -140,8 +140,8 @@ export const OpenMistakeQueue: StoryObj<typeof meta> = {
 /*
  * #774: a decision whose loss is within simulation noise, judged here
  * against sidecars that put every published error at 0.1 points. It leaves
- * both sides of Best choice, the queue and the trend's shares. Each story
- * checks only once the tally stops being busy with those verdicts.
+ * both sides of Best choice, the queue and the trend's shares. A figure
+ * shows its exact verdict until judged, so each story waits for the change.
  */
 const afterVerdicts = (
   records: readonly DiscardDecisionRecord[],
@@ -151,24 +151,22 @@ const afterVerdicts = (
   play: async ({ canvasElement }) => {
     await waitFor(
       async () => {
-        await expect(canvasElement.firstElementChild).toHaveAttribute(
-          "aria-busy",
-          "false",
-        );
+        await check(canvasElement);
       },
       { timeout: 8000 },
     );
-    await check(canvasElement);
   },
 });
 
 const ALL_THREE = [OPTIMAL_RECORD, WITHIN_NOISE_RECORD, MISTAKE_RECORD];
 
+const bestChoiceOfTwo = async (canvasElement: HTMLElement) => {
+  await expect(within(canvasElement).getAllByText("1/2")).toHaveLength(2);
+};
+
 export const WithinNoiseLeftOutOfBestChoice = afterVerdicts(
   ALL_THREE,
-  async (canvasElement) => {
-    await expect(within(canvasElement).getAllByText("1/2")).toHaveLength(2);
-  },
+  bestChoiceOfTwo,
 );
 
 export const EveryMistakeWithinNoise = afterVerdicts(
@@ -180,9 +178,15 @@ export const EveryMistakeWithinNoise = afterVerdicts(
   },
 );
 
-export const WithinNoiseInQualityTrend = afterVerdicts(
-  ALL_THREE,
-  async (canvasElement) => {
+export const WithinNoiseInQualityTrend: StoryObj<typeof meta> = {
+  args: noiseTallyProps(ALL_THREE),
+  play: async ({ canvasElement }) => {
+    await waitFor(
+      async () => {
+        await bestChoiceOfTwo(canvasElement);
+      },
+      { timeout: 8000 },
+    );
     const canvas = within(canvasElement);
     await userEvent.click(
       canvas.getByRole("button", { name: "Quality trend" }),
@@ -194,4 +198,4 @@ export const WithinNoiseInQualityTrend = afterVerdicts(
     // The Best choice card and the one rolling batch's row agree.
     await expect(dialog.getAllByText("50.0%")).toHaveLength(2);
   },
-);
+};

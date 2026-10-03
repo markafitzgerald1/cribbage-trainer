@@ -34,7 +34,8 @@ export interface LoadedUncertainty {
 
 /*
  * `shouldTrackSettled` is true only while a verdict is waiting on the
- * sidecars (a chosen discard with a positive loss). Recording settlement costs
+ * sidecars (a chosen discard with a positive loss, or recorded ones to judge
+ * once a recommendation has been shown). Recording settlement costs
  * a re-render, so it is skipped when nothing reads it; when the flag turns on
  * later, the effect runs again and the loader's cached promise settles it.
  */

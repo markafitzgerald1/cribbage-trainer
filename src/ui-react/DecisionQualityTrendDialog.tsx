@@ -22,6 +22,7 @@ import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
 import { NO_NOISE } from "../ui/noiseVerdicts";
+import { NO_RECOMPUTED_LOSSES } from "../ui/discardQualityTrendRolling";
 import { SortOrder } from "../ui/SortOrder";
 import type { StartDrillHandler } from "./usePracticeDrill";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
@@ -35,6 +36,7 @@ export interface DecisionQualityTrendDialogProps {
   readonly onClose: () => void;
   // Starts a drill on a chart mistake's hand; null hides the detail panel's practice button.
   readonly onStartDrill?: StartDrillHandler;
+  readonly recomputedLosses?: ReadonlyMap<string, number>;
   readonly show: boolean;
   // The card order the rest of the app uses, so the detail panel matches the board.
   readonly sortOrder?: SortOrder;
@@ -133,6 +135,7 @@ export function DecisionQualityTrendDialog({
   lossesWithinNoise = NO_NOISE,
   onClose,
   onStartDrill = null,
+  recomputedLosses = NO_RECOMPUTED_LOSSES,
   show,
   sortOrder = SortOrder.DealOrder,
   tally = null,
@@ -189,6 +192,7 @@ export function DecisionQualityTrendDialog({
   const sourceTally = tally ?? readTallyForDisplay();
   const trend = computeDiscardQualityTrend(sourceTally, {
     granularity,
+    recomputedLosses,
     roleFilter,
     withinNoise: lossesWithinNoise,
   });
@@ -317,6 +321,7 @@ DecisionQualityTrendDialog.defaultProps = {
   initialRoleFilter: "all",
   lossesWithinNoise: NO_NOISE,
   onStartDrill: null,
+  recomputedLosses: NO_RECOMPUTED_LOSSES,
   sortOrder: SortOrder.DealOrder,
   tally: null,
 };

@@ -3,11 +3,14 @@ import {
   type ScoredKeepDiscard,
   allScoredKeepDiscardsByExpectedNetScoreDescending,
 } from "../analysis/analysis";
+import {
+  discardLoss,
+  noiseVerdictThreshold,
+} from "../analysis/discardNoiseThreshold";
 import { type ClassifyMistakeParams } from "../analysis/classifyMistake";
 import { type DiscardDecisionRecord } from "./discardDecisionRecord";
 import { type Uncertainty } from "../game/uncertaintySidecar";
 import { isChosenDiscard } from "../analysis/discardQuality";
-import { noiseVerdictThreshold } from "../analysis/discardNoiseThreshold";
 import { parseHandKey } from "./handKey";
 
 export interface NoiseCandidate extends DiscardDecisionRecord {
@@ -43,15 +46,28 @@ export const countWithinNoise = (
 ): number =>
   records.filter((record) => isRecordWithinNoise(record, withinNoise)).length;
 
+export interface RecordedVerdict {
+  readonly isWithinNoise: boolean;
+  // The loss under the tables shipped today, which a table refresh can move away from the stored one.
+  readonly loss: number;
+}
+
+export type NoiseTables = ClassifyMistakeParams["tables"];
+
+export interface NoiseSidecars {
+  readonly crib: Uncertainty;
+  readonly play: Uncertainty;
+}
+
 // Recomputed from the stored hand and discard, as the caption judges its hand, never from a stored loss or verdict (#774).
-export const isRecordedDiscardWithinNoise = (
+export const judgeRecordedDiscard = (
   { discardKey, handKey }: Pick<NoiseCandidate, "discardKey" | "handKey">,
-  tables: ClassifyMistakeParams["tables"],
-  sidecars: { readonly crib: Uncertainty; readonly play: Uncertainty },
-): boolean => {
+  tables: NoiseTables,
+  sidecars: NoiseSidecars,
+): RecordedVerdict | null => {
   const hand = parseHandKey(handKey);
   if (hand === null) {
-    return false;
+    return null;
   }
   const discard = parseHand(discardKey);
   const scored = allScoredKeepDiscardsByExpectedNetScoreDescending(
@@ -61,14 +77,19 @@ export const isRecordedDiscardWithinNoise = (
   );
   const chosen = scored.find((option) => isChosenDiscard(option, discard));
   // A discard the hand never held is corrupt storage, and keeps the exact verdict; fifteen are always scored, so a best exists.
-  return chosen
-    ? noiseVerdictThreshold({
-        best: scored.at(0) as ScoredKeepDiscard<Card>,
-        chosen,
-        cribUncertainty: sidecars.crib,
-        knownCards: hand.cards,
-        playUncertainty: sidecars.play,
-        role: hand.cribRole,
-      }) !== null
-    : false;
+  if (!chosen) {
+    return null;
+  }
+  const options = {
+    best: scored.at(0) as ScoredKeepDiscard<Card>,
+    chosen,
+    cribUncertainty: sidecars.crib,
+    knownCards: hand.cards,
+    playUncertainty: sidecars.play,
+    role: hand.cribRole,
+  };
+  return {
+    isWithinNoise: noiseVerdictThreshold(options) !== null,
+    loss: discardLoss(options),
+  };
 };

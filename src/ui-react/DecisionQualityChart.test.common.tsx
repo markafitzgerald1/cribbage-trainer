@@ -54,6 +54,7 @@ export const makeDecisionPoint = (
   isWithinNoise: false,
   ordinal,
   recencyAt: 1_700_000_500_000 + ordinal,
+  recomputedLoss: null,
   rollingMeanLoss,
   timestamp: 1700000000000 + ordinal * 1000,
 });

@@ -99,6 +99,7 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   isWithinNoise: false,
   ordinal: index + 1,
   recencyAt: 1700000000000 + index,
+  recomputedLoss: null,
   rollingMeanLoss: mean,
   timestamp: 1700000000000 + index * 100000,
 }));

@@ -359,6 +359,12 @@
   whether a chosen discard's positive loss is flagged or treated as
   simulation noise, so a sub-optimal verdict waits until both have loaded
   or failed; an optimal verdict cannot change and shows at once.
+  **"On screen" means a recommendation, not the consumer's own data.**
+  `DiscardTallyView` is mounted from the first render, so #889's first
+  history judging, gated on the tally holding a sub-optimal decision,
+  fetched both chunks at app start for every returning player. It now
+  waits for `Trainer`'s `useFirstRecommendation`; any new consumer of the
+  sidecars should take that same flag.
 - **One schema describes both documents, so one reader reads both.**
   `src/game/uncertaintySidecar.ts` holds the parser and
   `src/game/uncertaintyLoader.ts` the deferred loader; `cribUncertainty.ts`
