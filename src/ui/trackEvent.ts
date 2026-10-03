@@ -1,3 +1,5 @@
+import type { AnalyticsChoice } from "./analyticsConsent";
+
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DiscardQuality } from "../analysis/discardQuality";
 import { gtag } from "./gtag";
@@ -36,6 +38,7 @@ interface TrainerEventParamsByName {
     // Explicit, so an export stays interpretable once these parameters change.
     readonly schemaVersion: number;
     readonly source: AnalysisSource;
+    readonly sortOrder?: "deal-order" | "ascending" | "descending";
   };
   readonly hand_started: {
     readonly dealNonce: string;
@@ -54,7 +57,7 @@ export type TrainerEventName = keyof TrainerEventParamsByName;
 export type CardToggleEventName = "card_selected" | "card_unselected";
 
 // Raised whenever the decision-quality payload's meaning changes, never for an unrelated event.
-export const DISCARD_SCORED_SCHEMA_VERSION = 1;
+export const DISCARD_SCORED_SCHEMA_VERSION = 2;
 
 type TrainerEventParamKey = {
   [Name in TrainerEventName]: keyof TrainerEventParamsByName[Name];
@@ -75,7 +78,7 @@ export type TrainerEvent = {
 }[TrainerEventName];
 
 export type TrackEvent = (
-  consented: boolean | null,
+  choice: AnalyticsChoice,
   ...event: TrainerEvent
 ) => void;
 
@@ -116,6 +119,7 @@ const eventParamKeys = [
       "isOptimal",
       "schemaVersion",
       "source",
+      "sortOrder",
     ],
   ],
   ["hand_started", ["dealNonce", "generatedFromSeed", "source"]],
@@ -142,19 +146,32 @@ export const toGoogleAnalyticsKey = (key: string) =>
   key.replace(/[A-Z]/gu, (upper) => `_${upper.toLowerCase()}`);
 
 // This gate prevents events before Google Analytics loads or after withdrawal.
-export const trackEvent: TrackEvent = (consented, ...event) => {
-  if (consented !== true) {
+export const trackEvent: TrackEvent = (choice, ...event) => {
+  if (choice.consented !== true) {
     return;
   }
   // Taken apart here rather than named as parameters, which widens the pair back into independent types.
   const [eventName, params] = event;
-  const allowedKeys = allowedParamKeys(eventName);
+  const allowedKeys = allowedParamKeys(eventName).filter((key) => {
+    if (
+      eventName === "discard_scored" &&
+      !choice.decisionContextConsented &&
+      key === "sortOrder"
+    ) {
+      return false;
+    }
+    return true;
+  });
+
   gtag(
     "event",
     eventName,
     Object.fromEntries(
       Object.entries(params)
-        .filter(([key]) => allowedKeys.includes(key))
+        .filter(
+          ([key, value]) =>
+            allowedKeys.includes(key) && typeof value !== "undefined",
+        )
         .map(([key, value]) => [toGoogleAnalyticsKey(key), value]),
     ),
   );

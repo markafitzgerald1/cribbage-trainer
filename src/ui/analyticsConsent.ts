@@ -7,6 +7,7 @@
 export const PRIVACY_POLICY_VERSION = "2026-08-22";
 
 export const DECISION_QUALITY_MEASUREMENT = "decisionQuality";
+export const DECISION_CONTEXT_MEASUREMENT = "decisionContext";
 
 /*
  * Every measurement disclosed on its own, with the policy version that
@@ -18,6 +19,7 @@ export const DECISION_QUALITY_MEASUREMENT = "decisionQuality";
  */
 const gatedMeasurements = [
   { introducedIn: "2026-08-22", name: DECISION_QUALITY_MEASUREMENT },
+  { introducedIn: "2026-10-15", name: DECISION_CONTEXT_MEASUREMENT },
 ] as const;
 
 export const analyticsConsentKey = "analyticsConsent-2026-07-23";
@@ -31,6 +33,7 @@ export interface AnalyticsChoice {
   readonly consented: boolean | null;
   // Consent to the decision-quality collection this policy version adds.
   readonly decisionQualityConsented: boolean;
+  readonly decisionContextConsented: boolean;
   /*
    * True only when analytics is on under an answer given to an earlier
    * policy, which is the one case with something to ask about. An unanswered
@@ -85,6 +88,11 @@ export const readAnalyticsChoice = (): AnalyticsChoice => {
   const consented = readConsent();
   return {
     consented,
+    decisionContextConsented:
+      consented === true &&
+      readMeasurements(acceptedMeasurementsKey).includes(
+        DECISION_CONTEXT_MEASUREMENT,
+      ),
     decisionQualityConsented:
       consented === true &&
       readMeasurements(acceptedMeasurementsKey).includes(
@@ -109,6 +117,7 @@ export const storeAnalyticsChoice = (consented: boolean): AnalyticsChoice => {
     const declined = readMeasurements(declinedMeasurementsKey);
     recordMeasurementChoices(
       gatedMeasurements
+        .filter(({ introducedIn }) => introducedIn <= PRIVACY_POLICY_VERSION)
         .map(({ name }) => name)
         .filter((name) => !declined.includes(name)),
       [],
@@ -135,7 +144,11 @@ export const storePolicyUpdateChoice = (accepted: boolean): AnalyticsChoice => {
     localStorage.getItem(answeredPolicyVersionKey) ?? "";
   localStorage.setItem(answeredPolicyVersionKey, PRIVACY_POLICY_VERSION);
   const added = gatedMeasurements
-    .filter(({ introducedIn }) => introducedIn > previouslyAnswered)
+    .filter(
+      ({ introducedIn }) =>
+        introducedIn <= PRIVACY_POLICY_VERSION &&
+        introducedIn > previouslyAnswered,
+    )
     .map(({ name }) => name);
   recordMeasurementChoices(accepted ? added : [], accepted ? [] : added);
   return readAnalyticsChoice();

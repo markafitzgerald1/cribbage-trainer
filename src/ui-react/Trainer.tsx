@@ -210,10 +210,9 @@ export function Trainer({
     reportHistoryNavigation,
     tallySummary,
   } = useAnalysisReporting({
-    consented: choice.consented,
+    choice,
     cribRole,
     dealtCards,
-    decisionQualityConsented: choice.decisionQualityConsented,
     isSeededSession,
     sortOrder,
     trackEvent,

@@ -8,6 +8,7 @@ import { Trainer, type TrainerProps } from "./Trainer";
 import {
   clearAnalyticsChoice,
   storeAnalyticsChoice,
+  storeMeasurementAccepted,
 } from "../ui/analyticsConsent";
 import { expect, jest } from "@jest/globals";
 import {
@@ -161,6 +162,9 @@ export const startTelemetryCapture = (consent: boolean | null) => {
   clearAnalyticsChoice();
   if (consent !== null) {
     storeAnalyticsChoice(consent);
+    if (consent === true) {
+      storeMeasurementAccepted("decisionContext");
+    }
   }
   return jest.fn<TrainerProps["trackEvent"]>();
 };

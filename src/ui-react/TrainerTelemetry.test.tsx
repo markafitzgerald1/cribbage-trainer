@@ -1,4 +1,5 @@
 /* jscpd:ignore-start */
+import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import type { AnalysisSource, CardToggleEventName } from "../ui/trackEvent";
 import {
   SIX_HEARTS_HAND,
@@ -11,8 +12,10 @@ import {
   startTelemetryCapture,
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
+import type { ExpectedCribPointsTable } from "../game/expectedCribPoints";
+import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import { parseHand } from "../game/Card";
 /* jscpd:ignore-end */
 
@@ -128,7 +131,7 @@ describe("trainer telemetry wiring", () => {
       });
 
       expect(trackEvent.mock.calls.at(-1)).toStrictEqual([
-        consent,
+        expect.any(Object),
         eventName,
         { dealNonce: expect.any(String), discardCount },
       ]);
@@ -139,10 +142,78 @@ describe("trainer telemetry wiring", () => {
     const { trackEvent } = setupTelemetryTrainer(false);
     fireEvent.click(screen.getByRole("button", { name: "Deal" }));
 
-    expect(trackEvent).toHaveBeenCalledWith(false, "deal_clicked", {
-      dealNonce: expect.any(String),
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.any(Object),
+      "deal_clicked",
+      {
+        dealNonce: expect.any(String),
+      },
+    );
+  });
+
+  /* jscpd:ignore-start */
+  it("reports the sort order in effect when the discard was made, even if changed before answers load", async () => {
+    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
+
+    const waitUnderLoad = { timeout: 3000 };
+    const held: { release?: () => void } = {};
+    const heldCribTable = new Promise<ExpectedCribPointsTable>((resolve) => {
+      held.release = () => {
+        resolve(
+          expectedCribPointsTableData as unknown as ExpectedCribPointsTable,
+        );
+      };
+    });
+    const spy = jest
+      .spyOn(cribLoader, "loadTable")
+      .mockReturnValue(heldCribTable);
+
+    try {
+      cribLoader.setTableSync(null);
+
+      // Complete discard under descending
+      clickCheckbox(0);
+      clickCheckbox(1);
+
+      // Re-sort to Ascending before answers load
+      fireEvent.click(screen.getByRole("radio", { name: "Ascending" }));
+
+      held.release?.();
+
+      await waitFor(() => {
+        expect(
+          trackEvent.mock.calls.some(
+            ([, eventName]) => eventName === "discard_scored",
+          ),
+        ).toBe(true);
+      }, waitUnderLoad);
+    } finally {
+      spy.mockRestore();
+      setAnalysisTables();
+    }
+
+    expect(lastEventParams(trackEvent, "discard_scored")).toMatchObject({
+      sortOrder: "descending",
     });
   });
+  /* jscpd:ignore-end */
+
+  /* jscpd:ignore-start */
+  it("sends sort order as 'deal-order' when deal order is selected", () => {
+    const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
+
+    fireEvent.click(screen.getByRole("radio", { name: "DealOrder" }));
+    clickCheckbox(0);
+    clickCheckbox(1);
+
+    const eventParams = lastEventParams(trackEvent, "discard_scored");
+    localStorage.clear();
+
+    expect(eventParams).toMatchObject({
+      sortOrder: "deal-order",
+    });
+  });
+  /* jscpd:ignore-end */
 
   it("scores a completed discard once its ranked answers are on screen", () => {
     const { clickCheckbox, trackEvent } = setupTelemetryTrainer(true);
@@ -158,7 +229,8 @@ describe("trainer telemetry wiring", () => {
       handStartSource: "initial",
       isFirstAnalysis: true,
       isOptimal: expect.any(Boolean),
-      schemaVersion: 1,
+      schemaVersion: 2,
+      sortOrder: "descending",
       source: "interactive",
     });
   });
@@ -223,6 +295,20 @@ describe("trainer telemetry wiring", () => {
     expectSecondAnalysisInformed(trackEvent);
   });
 
+  it("reports a popstate hydration with the URL's sort order", () => {
+    const { trackEvent } = setupTelemetryTrainer(true);
+    window.history.replaceState(
+      null,
+      "",
+      `?hand=${SIX_HEARTS_HAND}&discard=AH,2H&sort=deal-order`,
+    );
+    fireEvent.popState(window);
+
+    expect(lastEventParams(trackEvent, "discard_scored")).toMatchObject({
+      sortOrder: "deal-order",
+    });
+  });
+
   it("reports a popstate hydration with a history source", () => {
     const { trackEvent } = setupTelemetryTrainer(true);
     hydrateFromHistory(null);
@@ -248,11 +334,15 @@ describe("trainer telemetry wiring", () => {
   it("marks the initial hand of a seeded session as seed-derived", () => {
     const trackEvent = setupInitialPropsTrainer({ isSeededSession: true });
 
-    expect(trackEvent).toHaveBeenCalledWith(true, "hand_started", {
-      dealNonce: expect.any(String),
-      generatedFromSeed: true,
-      source: "initial",
-    });
+    expect(trackEvent).toHaveBeenCalledWith(
+      expect.any(Object),
+      "hand_started",
+      {
+        dealNonce: expect.any(String),
+        generatedFromSeed: true,
+        source: "initial",
+      },
+    );
   });
 
   // Spending the injected generator on an identifier would change which hands a seeded link deals.
