@@ -223,8 +223,7 @@ export function Trainer({
       if (initialCards === null) return false;
       try {
         return (
-          localStorage.getItem(ownHandKey) !==
-          toHandKey(initialCards, initialCribRole ?? CribRole.Dealer)
+          localStorage.getItem(ownHandKey) !== toHandKey(dealtCards, cribRole)
         );
       } catch {
         return true;

@@ -19,6 +19,7 @@ import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { SortOrder } from "../ui/SortOrder";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { ownHandKey } from "../ui/ownHandKey";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
 /* jscpd:ignore-end */
@@ -199,6 +200,23 @@ export const useDiscardTally = ({
     ]),
   );
 
+  const hasRecordedInitialHand = useRef(false);
+  useEffect(() => {
+    if (hasRecordedInitialHand.current) {
+      return;
+    }
+    hasRecordedInitialHand.current = true;
+    try {
+      if (!isSeededSession && !wasDeepLinked) {
+        localStorage.setItem(ownHandKey, toHandKey(dealtCards, cribRole));
+      } else {
+        localStorage.removeItem(ownHandKey);
+      }
+    } catch {
+      // Storage errors are swallowed.
+    }
+  }, [cribRole, dealtCards, isSeededSession, wasDeepLinked]);
+
   /*
    * The sort order on screen when the discard now on the board arrived:
    * by the click that completed it, or by the history move that restored
@@ -305,6 +323,16 @@ export const useDiscardTally = ({
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
       notePractice(key, isPractice);
       openHand.current = { handId, key };
+
+      try {
+        if (isPractice) {
+          localStorage.removeItem(ownHandKey);
+        } else {
+          localStorage.setItem(ownHandKey, key);
+        }
+      } catch {
+        // Storage errors are swallowed.
+      }
     },
     [isSeededSession, notePractice],
   );

@@ -31,7 +31,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { getSortOrderName } from "../ui/SortOrderName";
 import { ownHandKey } from "../ui/ownHandKey";
-import { toHandKey } from "../ui/handKey";
+import { parseHandKey } from "../ui/handKey";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -95,11 +95,10 @@ const renderTrainerWithInitialHand = () =>
     initialCribRole: CribRole.Dealer,
   });
 
-const mockOwnHandStorage = (returnValue: string | null | Error) =>
+const mockThrowingStorage = () =>
   jest.spyOn(Storage.prototype, "getItem").mockImplementation((key) => {
     if (key === ownHandKey) {
-      if (returnValue instanceof Error) throw returnValue;
-      return returnValue;
+      throw new Error("Access denied");
     }
     return null;
   });
@@ -107,31 +106,37 @@ const mockOwnHandStorage = (returnValue: string | null | Error) =>
 describe("trainer component", () => {
   describe("deep-linked hands", () => {
     it("counts a reloaded own hand as an authentic decision, not practice", async () => {
-      const getItemSpy = mockOwnHandStorage(
-        toHandKey(parseHand("AS,2S,3S,4S,5S,6S"), CribRole.Dealer),
-      );
-
       setAnalysisTables();
-      await clickIndices(
-        renderTrainerWithInitialProps({
-          initialCards: parseHand("AS,2S,3S,4S,5S,6S"),
-          initialCribRole: CribRole.Dealer,
-        }).getAllByRole,
-        [0, 1],
-        userEvent.setup(),
-      );
+      localStorage.clear();
 
+      const initialView = renderTrainerWithGenerator(() => 0);
+      const storedKey = localStorage.getItem(ownHandKey);
+
+      expect(storedKey).not.toBeNull();
+
+      initialView.unmount();
+
+      const parsed = parseHandKey(String(storedKey));
+
+      expect(parsed).not.toBeNull();
+
+      const user = userEvent.setup();
+      const reloadedView = renderTrainerWithInitialProps({
+        generateRandomNumber: () => 0,
+        initialCards: parsed!.cards,
+        initialCribRole: parsed!.cribRole,
+      });
+
+      await clickIndices(reloadedView.getAllByRole, [0, 1], user);
       await waitFor(() =>
         expect(screen.getByRole("status")).not.toHaveTextContent(""),
       );
-
-      getItemSpy.mockRestore();
 
       expect(screen.queryByText("Lost per discard")).toBeInTheDocument();
     });
 
     it("treats hand as deep-linked when localStorage throws", () => {
-      const getItemSpy = mockOwnHandStorage(new Error("Access denied"));
+      const getItemSpy = mockThrowingStorage();
       renderTrainerWithInitialProps({
         initialCards: parseHand("AS,2S,3S,4S,5S,6S"),
         initialCribRole: CribRole.Dealer,
