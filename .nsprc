@@ -1,1 +1,7 @@
-{}
+{
+  "1240992": {
+    "active": true,
+    "expiry": "2026-11-03",
+    "notes": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns (GHSA-vfj7-8cjw-p6xm). No patched release published yet. Reaches tree only through dev tooling (stylelint -> micromatch -> braces): npm ls braces --omit=dev is empty, so nothing is shipped in the production bundle."
+  }
+}
