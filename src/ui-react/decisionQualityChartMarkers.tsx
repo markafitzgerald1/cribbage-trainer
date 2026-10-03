@@ -31,12 +31,34 @@ export interface LossEntry {
   readonly point: DiscardDecisionPoint;
 }
 
+/*
+ * A judged decision's verdict comes from today's tables (#774), so its loss
+ * does too, and the stored one is named as recorded when the two differ. A
+ * mistake today's tables rate best keeps its recorded verdict, which says so
+ * rather than showing a loss nobody measured.
+ */
+export const describeLoss = (
+  { expectedPointsLoss, recomputedLoss }: DiscardDecisionPoint,
+  noun: string,
+): string => {
+  const recorded = expectedPointsLoss.toFixed(DECIMAL_PLACES);
+  if (recomputedLoss === null) {
+    return `${recorded} ${noun}`;
+  }
+  if (recomputedLoss === 0) {
+    return `${recorded} ${noun} recorded, now rated the best choice`;
+  }
+  const current = recomputedLoss.toFixed(DECIMAL_PLACES);
+  return current === recorded
+    ? `${current} ${noun}`
+    : `${current} ${noun} (${recorded} recorded)`;
+};
+
 export const lossPointTitle = (point: DiscardDecisionPoint): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   const mastered = point.isMastered ? ", mastered since" : "";
-  return `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
-    DECIMAL_PLACES,
-  )} points loss${mastered}`;
+  const noise = point.isWithinNoise ? ", within simulation noise" : "";
+  return `${prefix} #${point.ordinal}: ${describeLoss(point, "points loss")}${mastered}${noise}`;
 };
 
 /*
@@ -97,16 +119,18 @@ export function renderLossPoint(
   },
   selectedRecencyAt: number | null,
 ): React.JSX.Element {
+  // Gray for a loss within simulation noise (#774), which is never also mastered.
+  const noiseDot = point.isWithinNoise ? ` ${classes.lossDotNoise}` : "";
   const baseDotClass = point.isMastered
     ? `${classes.lossDot} ${classes.lossDotMastered}`
-    : classes.lossDot;
+    : `${classes.lossDot}${noiseDot}`;
   const dotClass =
     point.recencyAt === selectedRecencyAt
       ? `${baseDotClass} ${classes.lossDotSelected}`
       : baseDotClass;
   const stemClass = point.isMastered
     ? `${classes.lossStem} ${classes.lossStemMastered}`
-    : classes.lossStem;
+    : `${classes.lossStem}${point.isWithinNoise ? ` ${classes.lossStemNoise}` : ""}`;
   return (
     <g
       // The hover title lives on the hit band that covers this marker; here it would only duplicate it.

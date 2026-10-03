@@ -237,6 +237,18 @@ baselines so CI agrees with what was generated locally.
   that the content renders, so the later absence has one explanation left.
   Sabotage until **every** project fails: a single-project failure among
   passes is the signature of a race, not of a guard.
+- **"Best choice" is no longer a decision counter.** Since #774 a decision
+  whose loss is within simulation noise leaves both sides of that ratio, and
+  a random deal's discard can be one, so a spec that reads the ratio to count
+  decisions flakes at the rate such deals occur. `discardTally.spec.ts`
+  refuses the sidecar chunks with `blockUncertaintySidecars`, which pins every
+  verdict to the exact one. A spec that does want the noise verdict must
+  first put a recommendation on screen (a deep-linked hand is practice and
+  leaves the tally alone), since history is judged only after one. Then wait
+  for the figure the verdict changes, not for `aria-busy`: that covers only
+  the sidecar load, while records are judged a slice at a time afterwards and
+  each figure shows its exact verdict until then. `aria-busy="false"` is the
+  right wait only for the refused-sidecar guard, after the chunk request.
 - `expectChipsFullyVisible` in `mistakeQueueLayout.spec.ts` is the shape to copy
   for chip rows: it asserts each chip is whole inside its group and the group
   inside the viewport, and says nothing about how many rows that takes. An

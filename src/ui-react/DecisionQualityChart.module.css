@@ -107,6 +107,15 @@
   fill: #38c7b8;
 }
 
+/* A loss within simulation noise (#774): gray, so it reads as neither a mistake nor a best choice. */
+.loss-stem-noise {
+  stroke: rgb(195 205 198 / 55%);
+}
+
+.loss-dot-noise {
+  fill: #c3cdc6;
+}
+
 .optimal-dot {
   cursor: pointer;
   fill: #28a745;
@@ -195,6 +204,15 @@
   color: #ffbdbd;
   font-family: var(--card-font-family);
   font-variant-numeric: tabular-nums;
+}
+
+/* A within-noise loss (#774) is not a mistake, so its panel drops the mistake red for the gray of its marker. */
+.decision-detail[data-within-noise="true"] {
+  border-left-color: #c3cdc6;
+}
+
+.decision-detail[data-within-noise="true"] .decision-detail-loss {
+  color: #eef8ef;
 }
 
 /*

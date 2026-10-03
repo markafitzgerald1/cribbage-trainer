@@ -21,6 +21,8 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
+import { NO_NOISE } from "../ui/noiseVerdicts";
+import { NO_RECOMPUTED_LOSSES } from "../ui/discardQualityTrendRolling";
 import { SortOrder } from "../ui/SortOrder";
 import type { StartDrillHandler } from "./usePracticeDrill";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
@@ -30,9 +32,11 @@ import { useCloseOnEscape } from "./useCloseOnEscape";
 export interface DecisionQualityTrendDialogProps {
   readonly initialGranularity?: DiscardTrendGranularity;
   readonly initialRoleFilter?: CribRoleFilter;
+  readonly lossesWithinNoise?: ReadonlySet<string>;
   readonly onClose: () => void;
   // Starts a drill on a chart mistake's hand; null hides the detail panel's practice button.
   readonly onStartDrill?: StartDrillHandler;
+  readonly recomputedLosses?: ReadonlyMap<string, number>;
   readonly show: boolean;
   // The card order the rest of the app uses, so the detail panel matches the board.
   readonly sortOrder?: SortOrder;
@@ -80,10 +84,11 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
       ? "—"
       : bucket.meanExpectedPointsLoss.toFixed(DECIMAL_PLACES);
   const optimalPct =
-    bucket.decisions > 0
-      ? `${((bucket.optimalDecisions / bucket.decisions) * PER_CENT).toFixed(
-          PERCENT_DECIMAL_PLACES,
-        )}%`
+    bucket.judgedDecisions > 0
+      ? `${(
+          (bucket.optimalDecisions / bucket.judgedDecisions) *
+          PER_CENT
+        ).toFixed(PERCENT_DECIMAL_PLACES)}%`
       : "—";
 
   return (
@@ -127,8 +132,10 @@ function renderBreakdownTable(
 export function DecisionQualityTrendDialog({
   initialGranularity = "rolling20",
   initialRoleFilter = "all",
+  lossesWithinNoise = NO_NOISE,
   onClose,
   onStartDrill = null,
+  recomputedLosses = NO_RECOMPUTED_LOSSES,
   show,
   sortOrder = SortOrder.DealOrder,
   tally = null,
@@ -152,15 +159,16 @@ export function DecisionQualityTrendDialog({
       onStartDrill === null
         ? null
         : (point: DiscardDecisionPoint) => {
-            const item = buildMistakeQueue(tally ?? readTallyForDisplay()).find(
-              (queueItem) => queueItem.handKey === point.handKey,
-            );
+            const item = buildMistakeQueue(
+              tally ?? readTallyForDisplay(),
+              lossesWithinNoise,
+            ).find((queueItem) => queueItem.handKey === point.handKey);
             // A MistakeQueueItem is always an object, so a plain truthy check is safe.
             if (item) {
               onStartDrill(item);
             }
           },
-    [onStartDrill, tally],
+    [lossesWithinNoise, onStartDrill, tally],
   );
 
   const changeGranularity = useCallback(
@@ -184,12 +192,18 @@ export function DecisionQualityTrendDialog({
   const sourceTally = tally ?? readTallyForDisplay();
   const trend = computeDiscardQualityTrend(sourceTally, {
     granularity,
+    recomputedLosses,
     roleFilter,
+    withinNoise: lossesWithinNoise,
   });
 
   const totalDecisions = trend.totalAuthenticDecisions;
   const optimalDecisions = trend.buckets.reduce(
     (sum, bucket) => sum + bucket.optimalDecisions,
+    0,
+  );
+  const judgedDecisions = trend.buckets.reduce(
+    (sum, bucket) => sum + bucket.judgedDecisions,
     0,
   );
   const totalLoss = trend.buckets.reduce(
@@ -202,8 +216,8 @@ export function DecisionQualityTrendDialog({
       ? (totalLoss / totalDecisions).toFixed(DECIMAL_PLACES)
       : "—";
   const overallOptimalRate =
-    totalDecisions > 0
-      ? `${((optimalDecisions / totalDecisions) * PER_CENT).toFixed(
+    judgedDecisions > 0
+      ? `${((optimalDecisions / judgedDecisions) * PER_CENT).toFixed(
           PERCENT_DECIMAL_PLACES,
         )}%`
       : "—";
@@ -305,7 +319,9 @@ export function DecisionQualityTrendDialog({
 DecisionQualityTrendDialog.defaultProps = {
   initialGranularity: "rolling20",
   initialRoleFilter: "all",
+  lossesWithinNoise: NO_NOISE,
   onStartDrill: null,
+  recomputedLosses: NO_RECOMPUTED_LOSSES,
   sortOrder: SortOrder.DealOrder,
   tally: null,
 };

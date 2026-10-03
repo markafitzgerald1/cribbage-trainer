@@ -174,11 +174,12 @@ const testDiscardTallyScreenshot = () =>
           stored.keyPrefix + new URL(document.baseURI).pathname,
           JSON.stringify({
             lifetime: stored.lifetime,
-            records: stored.losses.map((loss, index) => ({
+            records: stored.losses.map((loss) => ({
               at: Date.now(),
               cribRole: "Dealer",
               expectedPointsLoss: loss,
-              handKey: `stored-${index}`,
+              // A hand the queue can read: its button shows only when the queue holds something (#774).
+              handKey: "5H,6H,7H,8H,9H,10H|Dealer",
               isOptimal: loss === stored.best,
               isPractice: false,
             })),

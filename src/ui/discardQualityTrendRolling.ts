@@ -1,3 +1,8 @@
+import {
+  NO_NOISE,
+  isRecordWithinNoise,
+  noiseVerdictKey,
+} from "./noiseVerdicts";
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import type { DiscardDecisionRecord } from "./discardTally";
 
@@ -127,6 +132,8 @@ export interface DiscardDecisionPoint {
   readonly isMastered: boolean;
   readonly isOptimal: boolean;
   readonly isRetained: boolean;
+  // A loss the caption calls simulation noise (#774): drawn neutral, and never a mistake to practice.
+  readonly isWithinNoise: boolean;
   readonly ordinal: number;
   /*
    * The record's monotonic `recencyAt` (strictly increasing across the
@@ -135,6 +142,8 @@ export interface DiscardDecisionPoint {
    * `at` is wall-clock time that a rolled-back clock can repeat.
    */
   readonly recencyAt: number;
+  // The loss recomputed under today's tables once judged (#774), else null; `expectedPointsLoss` stays the one recorded.
+  readonly recomputedLoss: number | null;
   readonly rollingMeanLoss: number;
   readonly timestamp: number;
 }
@@ -160,7 +169,11 @@ export interface ContinuousDecisionPointOptions {
   readonly isRetained?: boolean;
   // Hand keys the practice ledger reports as mastered; markers for these are painted apart from open mistakes.
   readonly masteredHandKeys?: ReadonlySet<string>;
+  readonly withinNoise?: ReadonlySet<string>;
+  readonly recomputedLosses?: ReadonlyMap<string, number>;
 }
+
+export const NO_RECOMPUTED_LOSSES: ReadonlyMap<string, number> = new Map();
 
 export function buildContinuousDecisionPoints(
   records: readonly DiscardDecisionRecord[],
@@ -168,6 +181,8 @@ export function buildContinuousDecisionPoints(
   {
     isRetained = false,
     masteredHandKeys = NO_MASTERED_HAND_KEYS,
+    withinNoise = NO_NOISE,
+    recomputedLosses = NO_RECOMPUTED_LOSSES,
   }: ContinuousDecisionPointOptions = {},
 ): readonly DiscardDecisionPoint[] {
   if (records.length === 0) {
@@ -190,11 +205,17 @@ export function buildContinuousDecisionPoints(
       discardKey: record.discardKey,
       expectedPointsLoss: record.expectedPointsLoss,
       handKey: record.handKey,
-      isMastered: !record.isOptimal && masteredHandKeys.has(record.handKey),
+      // A within-noise decision left the queue (#774), so it has nothing to have mastered.
+      isMastered:
+        !record.isOptimal &&
+        !isRecordWithinNoise(record, withinNoise) &&
+        masteredHandKeys.has(record.handKey),
       isOptimal: record.isOptimal,
       isRetained,
+      isWithinNoise: isRecordWithinNoise(record, withinNoise),
       ordinal: globalIndex + 1,
       recencyAt: record.recencyAt ?? record.at,
+      recomputedLoss: recomputedLosses.get(noiseVerdictKey(record)) ?? null,
       rollingMeanLoss,
       timestamp: record.at,
     };

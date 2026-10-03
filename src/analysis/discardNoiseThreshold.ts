@@ -166,3 +166,11 @@ export const isWithinNoise = (
   loss: number,
   threshold: number | null,
 ): boolean => threshold !== null && loss > 0 && loss <= threshold;
+
+// The threshold when the chosen discard's loss is within it, else null: the one comparison every surface judging a loss makes (#774).
+export const noiseVerdictThreshold = (
+  options: DiscardNoiseThresholdOptions,
+): number | null => {
+  const threshold = discardNoiseThreshold(options);
+  return isWithinNoise(discardLoss(options), threshold) ? threshold : null;
+};
