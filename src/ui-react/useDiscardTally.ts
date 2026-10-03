@@ -19,6 +19,7 @@ import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { SortOrder } from "../ui/SortOrder";
 import { discardIsComplete } from "../game/discardIsComplete";
+import { ownHandKey } from "../ui/ownHandKey";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
 /* jscpd:ignore-end */
@@ -43,6 +44,7 @@ interface UseDiscardTallyProps {
   readonly dealtCards: readonly DealtCard[];
   // Telemetry's identifier for the hand on screen now; a second identity kept here would drift from the one Trainer stamps onto history entries.
   readonly handId: string;
+  readonly isResumedOwnHand?: boolean;
   readonly isSeededSession: boolean;
   // The sort order on screen right now (see `capture` below).
   readonly sortOrder: SortOrder;
@@ -127,6 +129,7 @@ export const useDiscardTally = ({
   cribRole,
   dealtCards,
   handId: boardHandId,
+  isResumedOwnHand = false,
   isSeededSession,
   sortOrder,
   wasDeepLinked,
@@ -147,6 +150,8 @@ export const useDiscardTally = ({
    * has to happen at the moment of replacement rather than later: once the
    * cards change there is nothing left to notice was abandoned.
    */
+  const isPracticeInitialHand =
+    isSeededSession || (wasDeepLinked && !isResumedOwnHand);
   const openHand = useRef<OpenHand | null>(
     /*
      * The hand a page load starts with is open like any other. Exempting it
@@ -154,15 +159,14 @@ export const useDiscardTally = ({
      * deliberate abandonment, and leaving it uncounted made the first hand of
      * every session free to walk away from.
      *
-     * Practice starts stay closed: a seeded or deep-linked hand is study, and
-     * study is outside these figures entirely.
+     * Practice starts stay closed: a seeded or foreign deep-linked hand is
+     * study, and study is outside these figures entirely.
      *
-     * One gap remains and cannot be closed from here: reloading the page
-     * abandons the open hand without replacing it, so nothing observes the
-     * departure. Catching that needs the open hand to outlive the session in
-     * storage, which is more machinery than a loophole this visible earns.
+     * Reloading the page restores an authentic in-progress hand as open via
+     * ownHandKey in localStorage (#877), so pressing Deal after a reload counts
+     * the skip. An already decided hand (with complete discards) stays closed.
      */
-    isSeededSession || wasDeepLinked
+    isPracticeInitialHand
       ? null
       : { handId: boardHandId, key: toHandKey(dealtCards, cribRole) },
   );
@@ -195,9 +199,26 @@ export const useDiscardTally = ({
      * would mislabel exactly the decision it was meant to describe.
      */
     new Map<string, boolean>([
-      [toHandKey(dealtCards, cribRole), isSeededSession || wasDeepLinked],
+      [toHandKey(dealtCards, cribRole), isPracticeInitialHand],
     ]),
   );
+
+  const hasRecordedInitialHand = useRef(false);
+  useEffect(() => {
+    if (hasRecordedInitialHand.current) {
+      return;
+    }
+    hasRecordedInitialHand.current = true;
+    try {
+      if (!isSeededSession && !wasDeepLinked) {
+        localStorage.setItem(ownHandKey, toHandKey(dealtCards, cribRole));
+      } else if (!isResumedOwnHand) {
+        localStorage.removeItem(ownHandKey);
+      }
+    } catch {
+      // Storage errors are swallowed.
+    }
+  }, [cribRole, dealtCards, isResumedOwnHand, isSeededSession, wasDeepLinked]);
 
   /*
    * The sort order on screen when the discard now on the board arrived:
@@ -305,6 +326,16 @@ export const useDiscardTally = ({
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
       notePractice(key, isPractice);
       openHand.current = { handId, key };
+
+      try {
+        if (isPractice) {
+          localStorage.removeItem(ownHandKey);
+        } else {
+          localStorage.setItem(ownHandKey, key);
+        }
+      } catch {
+        // Storage errors are swallowed.
+      }
     },
     [isSeededSession, notePractice],
   );

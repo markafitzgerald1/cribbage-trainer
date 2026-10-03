@@ -157,6 +157,7 @@ export const renderTallyWithMutableCards = (
 
 interface RenderTallyOptions {
   readonly discarded?: boolean;
+  readonly isResumedOwnHand?: boolean;
   readonly isSeededSession?: boolean;
   readonly sortOrder?: SortOrder;
   readonly wasDeepLinked?: boolean;
@@ -166,6 +167,7 @@ export const renderTally = (
   hand: string,
   {
     discarded = true,
+    isResumedOwnHand = false,
     isSeededSession = false,
     sortOrder = DEFAULT_SORT_ORDER,
     wasDeepLinked = false,
@@ -177,6 +179,7 @@ export const renderTally = (
       cribRole: CribRole.Dealer,
       dealtCards: handOf(hand, discarded),
       handId: INITIAL_HAND_ID,
+      isResumedOwnHand,
       isSeededSession,
       sortOrder,
       wasDeepLinked,
