@@ -1,7 +1,7 @@
 {
-  "GHSA-vfj7-8cjw-p6xm": {
+  "1240992": {
     "active": true,
-    "expiry": "2026-10-24",
-    "notes": "braces stack-exhaustion DoS on deeply nested patterns. The advisory range is <=3.0.3 and 3.0.3 is the newest braces release, so no patched version exists to override to. It reaches the tree only through stylelint -> micromatch, a dev-only linter that never takes untrusted glob patterns: npm ls braces --omit=dev is empty, so nothing is shipped in the production bundle. Expires so the exception ages out and forces a re-check for a patched release."
+    "expiry": "2026-11-03",
+    "notes": "braces vulnerable to stack-exhaustion denial of service through deeply nested patterns (GHSA-vfj7-8cjw-p6xm). No patched release published yet. Reaches tree only through dev tooling (stylelint -> micromatch -> braces): npm ls braces --omit=dev is empty, so nothing is shipped in the production bundle."
   }
 }
