@@ -25,6 +25,7 @@ import { useCallback } from "react";
 export interface AnalysisReportingProps extends DiscardTelemetryProps {
   readonly cribRole: CribRole;
   readonly isResumedOwnHand?: boolean;
+  readonly resetResumedOwnHand?: (resumed: boolean) => void;
   // The sort order on screen right now, for the tally's capture.
   readonly sortOrder: SortOrder;
 }
@@ -97,6 +98,7 @@ export const useAnalysisReporting = (
     dealtCards,
     isResumedOwnHand = false,
     isSeededSession,
+    resetResumedOwnHand,
     sortOrder,
     wasDeepLinked,
   } = props;
@@ -134,13 +136,19 @@ export const useAnalysisReporting = (
   // Both reports hand the tally telemetry's scope as it stands after telemetry has handled the transition, since that fresh scope is what Trainer stamps onto the history entry.
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {
+      resetResumedOwnHand?.(false);
       reportHandToTelemetry(cards, cause);
       reportHandOrigin(cards, cause, {
         cribRole: role,
         handId: currentHandScope().handId,
       });
     },
-    [currentHandScope, reportHandOrigin, reportHandToTelemetry],
+    [
+      currentHandScope,
+      reportHandOrigin,
+      reportHandToTelemetry,
+      resetResumedOwnHand,
+    ],
   );
 
   const reportHistoryNavigation: ReportHistoryNavigation = useCallback(

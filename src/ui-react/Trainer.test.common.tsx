@@ -3,6 +3,7 @@ import {
   type ByRoleOptions,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import { Trainer, type TrainerProps } from "./Trainer";
 import {
@@ -177,3 +178,21 @@ export const lastEventParams = (
   trackEvent: TelemetryCapture,
   eventName: TrainerEventName,
 ) => eventCalls(trackEvent, eventName).at(-1)?.[2];
+
+export const completeDiscardsAndWait = async (
+  getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],
+  user: UserEvent,
+) => {
+  const checkboxes = getAllByRole("checkbox");
+  await user.click(checkboxes[0]!);
+  await user.click(checkboxes[1]!);
+  await waitFor(() => {
+    expect(screen.getByRole("status").textContent).not.toBe("");
+  });
+};
+
+export const mockThrowingStorage = (keyToThrow: string) =>
+  jest.spyOn(Storage.prototype, "getItem").mockImplementation((key) => {
+    if (key === keyToThrow) throw new Error("Access denied");
+    return null;
+  });
