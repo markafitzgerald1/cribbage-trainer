@@ -293,7 +293,7 @@ export const validateUncertainty = (sidecar, contract) => {
   }
 };
 
-const sha256 = (body) =>
+export const sha256 = (body) =>
   createHash("sha256").update(body, "utf8").digest("hex");
 
 /*
