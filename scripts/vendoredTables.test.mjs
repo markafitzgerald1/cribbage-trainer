@@ -321,6 +321,19 @@ test("the updater writes the lines from the exact published bytes", async (conte
   strictEqual(lines.body, readVendored(PLAY_ASSETS.linesOutputPath));
 });
 
+test("the updater does not add a newline the published lines lack", async (context) => {
+  const published = readVendored(PLAY_ASSETS.linesOutputPath).trimEnd();
+
+  stubRelease(context, [[PLAY_ASSETS.linesUrl, published]]);
+  const files = await downloadMeansAndUncertainty(PLAY_ASSETS);
+
+  strictEqual(
+    files.find(({ outputPath }) => outputPath === PLAY_ASSETS.linesOutputPath)
+      .body,
+    published,
+  );
+});
+
 test("the updater refuses lines paired with other means", async (context) => {
   const otherMeans = { ...linesOf(), means_sha256: "0".repeat(64) };
 

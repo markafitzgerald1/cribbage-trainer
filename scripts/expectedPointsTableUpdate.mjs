@@ -243,7 +243,7 @@ export const downloadMeansAndUncertainty = async (assets, urls = {}) => {
     return files;
   }
   assertLinesDigest(lines.parsed, meansBody);
-  return [...files, { body: lines.body, outputPath: assets.linesOutputPath }];
+  return [...files, { body: lines.raw, outputPath: assets.linesOutputPath }];
 };
 
 const temporaryPathFor = (outputPath) => `${outputPath}.tmp-${process.pid}`;
