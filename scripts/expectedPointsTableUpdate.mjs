@@ -121,11 +121,9 @@ export const validatePlayTable = (table) => {
 const PLAY_LINES_SCHEMA = "expected-play-lines.v1";
 
 /*
- * Only the header and the one-line shape are checked here. The full contract
- * is the browser reader's (src/game/pegLines.ts), whose own specs run it
- * against the vendored bytes, so the two cannot drift without a gate failing.
- * One line matters on its own: the pull request size gate counts every line,
- * and a pretty-printed companion would cost tens of thousands of them.
+ * Only the header and the one-line shape (at most a final newline) are checked
+ * here; the full contract is the browser reader's, whose specs run it against
+ * the vendored bytes. One line matters because the size gate counts every one.
  */
 export const validatePlayLines = (lines, raw) => {
   assertObject(lines, "Downloaded play lines file is not an object");
@@ -136,9 +134,7 @@ export const validatePlayLines = (lines, raw) => {
     );
   }
   if (!/^[^\r\n]*\n?$/u.test(raw)) {
-    throw new Error(
-      "Downloaded play lines file is not minified onto one line with at most a final newline",
-    );
+    throw new Error("Downloaded play lines file is not minified onto one line");
   }
 };
 
