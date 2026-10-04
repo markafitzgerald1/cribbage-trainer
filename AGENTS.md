@@ -474,6 +474,12 @@
   with `!== null`. Its canonical key order is derived from the contract
   (`CANONICAL_PLAY_HAND_KEYS`), never from the means table, for the reason the
   sidecar section gives. `joint_policy_converged` is checked for type only.
+- **A validator must not coerce or normalize what it validates.** Review
+  found `String(value)` before a digest regex (a one-element array holding a
+  digest passes) and `trimEnd()` before a one-line check (blank trailing lines
+  pass and are then written verbatim). Test `typeof` first, and test the raw
+  bytes against an anchored pattern: the lines file allows at most one final
+  `\n`, and `\r\n` is rejected because the generator writes `\n`.
 - A rolling release can be regenerated with the **means byte-identical** and
   only the sidecar's provenance changed (`generated_at`, `source_full_sha256`,
   generation method). That is a legitimate refresh needing no snapshots, and

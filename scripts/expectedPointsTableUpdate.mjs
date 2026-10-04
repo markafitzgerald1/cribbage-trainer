@@ -135,8 +135,10 @@ export const validatePlayLines = (lines, raw) => {
         `${JSON.stringify(lines.schema)}; expected ${PLAY_LINES_SCHEMA}`,
     );
   }
-  if (raw.trimEnd().includes("\n")) {
-    throw new Error("Downloaded play lines file is not minified onto one line");
+  if (!/^[^\r\n]*\n?$/u.test(raw)) {
+    throw new Error(
+      "Downloaded play lines file is not minified onto one line with at most a final newline",
+    );
   }
 };
 

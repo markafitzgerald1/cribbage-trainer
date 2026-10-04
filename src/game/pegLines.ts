@@ -87,6 +87,9 @@ const isIntegerBetween = (
   value >= lower &&
   value <= upper;
 
+const isDigest = (value: unknown): boolean =>
+  typeof value === "string" && SHA256_DIGEST.test(value);
+
 const isStringList = (value: unknown, expected: readonly string[]): boolean =>
   Array.isArray(value) &&
   value.length === expected.length &&
@@ -97,7 +100,7 @@ const hasExpectedHeader = (document: object): boolean => {
   const precision = readField(document, "precision");
   return (
     readField(document, "schema") === SCHEMA &&
-    SHA256_DIGEST.test(String(readField(document, "means_sha256"))) &&
+    isDigest(readField(document, "means_sha256")) &&
     readField(document, "ranks") === RANKS &&
     isStringList(readField(document, "roles"), HEADER_ROLES) &&
     Array.isArray(columns) &&

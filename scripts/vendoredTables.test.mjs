@@ -344,6 +344,20 @@ test("the updater refuses lines paired with other means", async (context) => {
   );
 });
 
+for (const [name, ending] of [
+  ["two newlines", "\n\n"],
+  ["three newlines", "\n\n\n"],
+  ["a carriage return and newline", "\r\n"],
+]) {
+  test(`the updater refuses lines that end in ${name}`, async (context) => {
+    await refusesLines(
+      context,
+      `${JSON.stringify(linesOf())}${ending}`,
+      /not minified/u,
+    );
+  });
+}
+
 test("the updater refuses lines that are not minified onto one line", async (context) => {
   await refusesLines(
     context,

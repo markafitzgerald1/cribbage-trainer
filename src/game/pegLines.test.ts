@@ -139,7 +139,7 @@ const HEADER_REJECTIONS: RejectionCase[] = [
   ...caseTable("schema", ["expected-play-lines.v2", null], setTop("schema")),
   ...caseTable(
     "means digest",
-    ["no", null, "A".repeat(64)],
+    ["no", null, "A".repeat(64), ["a".repeat(64)], 7],
     setTop("means_sha256"),
   ),
   ...caseTable("ranks", ["A23456789TJQ", null], setTop("ranks")),
