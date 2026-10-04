@@ -275,7 +275,7 @@ test("a play means file of different bytes fails the lines pairing guard", () =>
 test("a whitespace-only change to the means is a different pairing", () => {
   const meansBody = readVendored(PLAY_ASSETS.meansOutputPath);
 
-  throws(() => assertLinesDigest(linesOf(), meansBody.replace("{", "{ ")));
+  throws(() => assertLinesDigest(linesOf(), meansBody.replace(/\{/gu, "{ ")));
 });
 
 test("the vendored play lines keys cover the vendored play table exactly", () => {
