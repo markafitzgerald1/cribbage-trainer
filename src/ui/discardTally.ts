@@ -10,7 +10,9 @@ import {
   updatePracticeRecords,
 } from "./practiceLedger";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
+import { encodeTableIdentities } from "./tableIdentityCodec";
 import { isObject } from "./isObject";
+import { normalizeTableIdentity } from "../game/tableIdentity";
 import { withoutStrayDrillRecords } from "./strayDrillRecords";
 export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
@@ -35,14 +37,14 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * 7 adds DiscardDecisionRecord.sortOrder (#872). No rewrite of existing
  * rows; absent means unknown, never a default order.
  */
-const CURRENT_VERSION = 7;
+// 8 interns decision means identities; absent provenance remains unknown.
+const CURRENT_VERSION = 8;
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
  * counters below. They cannot grow without limit either: this shares an origin
- * quota with everything else the app stores. At roughly 135 serialized characters
- * each, ten thousand records occupies ~1.35MB (well below standard 5MB browser
- * quotas), providing roughly five years of active play history within storage
- * budgets at zero operational cost.
+ * quota with everything else the app stores. Table identities are interned rather
+ * than repeated per row; the quota fallback below preserves this session when
+ * a deployment shares its origin with enough other data to exhaust storage.
  */
 export const MAX_RECORDS = 10_000;
 export interface DiscardTallySummary {
@@ -67,6 +69,9 @@ export interface SkippedHand {
   readonly at: number;
 }
 export interface StoredTally {
+  // Reserved transport for the later attempt writer; no entries are created here.
+  readonly attemptLog?: readonly unknown[];
+  readonly tableIdentities?: readonly unknown[];
   readonly lifetime: LifetimeTotals;
   readonly practice: readonly PracticeRecord[];
   readonly records: readonly DiscardDecisionRecord[];
@@ -104,6 +109,8 @@ const emptyTally: StoredTally = {
  * gates disagree forever. Declaring the fields settles it in the type.
  */
 interface MaybeTally {
+  readonly tableIdentities?: unknown;
+  readonly attemptLog?: unknown;
   readonly lifetime?: unknown;
   readonly practice?: unknown;
   readonly records?: unknown;
@@ -185,6 +192,12 @@ const readStoredTally = (): StoredTally | null => {
     ? candidate.practice.filter(isStoredPracticeRecord)
     : [];
   return {
+    ...(Array.isArray(candidate.attemptLog)
+      ? { attemptLog: candidate.attemptLog }
+      : {}),
+    ...(Array.isArray(candidate.tableIdentities)
+      ? { tableIdentities: candidate.tableIdentities }
+      : {}),
     lifetime: parseLifetime(candidate.lifetime),
     practice,
     /*
@@ -200,7 +213,14 @@ const readStoredTally = (): StoredTally | null => {
      * `basisFor` would drop other tabs' unsaved hands.
      */
     records: withoutStrayDrillRecords(
-      Array.isArray(records) ? normalizeStoredRecords(records) : [],
+      Array.isArray(records)
+        ? normalizeStoredRecords(
+            records,
+            Array.isArray(candidate.tableIdentities)
+              ? candidate.tableIdentities
+              : [],
+          )
+        : [],
       practice,
     ),
     // Absent in a tally written before revisions were kept, which simply starts the count.
@@ -350,7 +370,10 @@ const extendStoredTally = (
   // Every write advances the revision, which is what lets another tab's write be noticed at all.
   const next: StoredTally = { ...extended, revision: extended.revision + 1 };
   try {
-    localStorage.setItem(discardTallyKey, JSON.stringify(next));
+    localStorage.setItem(
+      discardTallyKey,
+      JSON.stringify(encodeTableIdentities(next)),
+    );
     forgetUnsaved();
   } catch {
     /*
@@ -423,7 +446,11 @@ export const recordDiscardDecision = (
       (latestAt, record) => Math.max(latestAt, record.lastAttemptAt + 1),
       latestDecisionRecencyAt(tally.records, decision.at - 1) + 1,
     );
-    const recordedDecision = { ...decision, recencyAt };
+    const recordedDecision = {
+      ...decision,
+      recencyAt,
+      tableIdentity: normalizeTableIdentity(decision.tableIdentity),
+    };
     return {
       ...tally,
       lifetime: addToLifetime(tally.lifetime, recordedDecision),

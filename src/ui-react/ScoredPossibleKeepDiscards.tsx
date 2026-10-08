@@ -15,6 +15,7 @@ import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
+import type { TableIdentity } from "../game/tableIdentity";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
 import { renderRoleLossPairText } from "./RoleLossPairText";
@@ -44,6 +45,7 @@ export interface ScoredPossibleKeepDiscardsProps {
    * since they are effect dependencies.
    */
   readonly cribUncertaintySource?: UncertaintySource;
+  readonly tableIdentity?: TableIdentity | null;
   readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
   readonly playUncertaintySource?: UncertaintySource;
 
@@ -53,7 +55,10 @@ export interface ScoredPossibleKeepDiscardsProps {
    * carries what those results say about the discard the user chose, since
    * nothing outside this component has scored them.
    */
-  readonly onAnalysisRendered: (analysis: RenderedAnalysis) => void;
+  readonly onAnalysisRendered: (
+    analysis: RenderedAnalysis,
+    tableIdentity?: TableIdentity | null,
+  ) => void;
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
@@ -109,6 +114,7 @@ export function ScoredPossibleKeepDiscards({
   cribUncertaintySource = shippedCribUncertainty,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
+  tableIdentity = null,
   playUncertaintySource = shippedPlayUncertainty,
   onAnalysisRendered,
   onScoreSortKeyChange,
@@ -119,6 +125,7 @@ export function ScoredPossibleKeepDiscards({
   const { handleRetry, loadError, tables } = useExpectedTables(
     loadCribTable,
     loadPlayTable,
+    tableIdentity,
   );
 
   const scoredKeepDiscardsByNetScore = useMemo(
@@ -161,7 +168,7 @@ export function ScoredPossibleKeepDiscards({
   useEffect(() => {
     // The scored options are a dependency because Back and Forward swap the hand while this component stays mounted.
     if (tables !== null) {
-      onAnalysisRendered(renderedAnalysis);
+      onAnalysisRendered(renderedAnalysis, tables.tableIdentity ?? null);
     }
   }, [onAnalysisRendered, renderedAnalysis, tables]);
   /*
@@ -405,4 +412,5 @@ ScoredPossibleKeepDiscards.defaultProps = {
   loadPlayTable: playLoader.loadTable,
   onStatusChange: null,
   playUncertaintySource: shippedPlayUncertainty,
+  tableIdentity: null,
 };

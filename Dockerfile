@@ -14,6 +14,7 @@ COPY .cspell.json .gitignore .jscpd.json .markdownlint.json .markdownlintignore 
 COPY *.md ./
 COPY skills/ ./skills/
 COPY src/ ./src/
+COPY scripts/expectedTableIdentity.mjs scripts/uncertaintySidecar.mjs scripts/tableIdentityBabel.mjs scripts/tableIdentityJest.mjs scripts/tableIdentityJest.test.mjs ./scripts/
 
 RUN npm test
 

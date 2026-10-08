@@ -1,5 +1,5 @@
-/* jscpd:ignore-start */
 import { type Card, parseHand, serializeHand } from "../game/Card";
+/* jscpd:ignore-start */
 import {
   type MistakeQueueItem,
   SUCCESSES_FOR_MASTERY,
@@ -17,6 +17,7 @@ import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import type { ReportAnalysisRendered } from "./useAnalysisReporting";
+import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
@@ -54,7 +55,10 @@ export interface PracticeDrill {
   // Drops the retained drill state without touching the board — for a history restore, which brings its own hand back.
   readonly clearDrill: () => void;
   // Forwards to the caller's own analysis handler, then records the drill attempt once the answer is on screen.
-  readonly handleAnalysisRendered: (analysis: RenderedAnalysis) => void;
+  readonly handleAnalysisRendered: (
+    analysis: RenderedAnalysis,
+    tableIdentity?: TableIdentity | null,
+  ) => void;
   readonly handleStartAutoDrill: () => void;
   readonly handleStartDrill: (item: MistakeQueueItem) => void;
   readonly hasNextHand: boolean;
@@ -280,7 +284,10 @@ export const usePracticeDrill = ({
   }, [activeItem, beginWith, drawNext, onExit]);
 
   const handleAnalysisRendered = useCallback(
-    (analysis: RenderedAnalysis) => {
+    (
+      analysis: RenderedAnalysis,
+      tableIdentity: TableIdentity | null = null,
+    ) => {
       /*
        * The board is this drill's relabeled stand-in for `activeItem`, so the
        * tally is told which renaming to undo before it decides what decision
@@ -293,6 +300,7 @@ export const usePracticeDrill = ({
         activeItem === null
           ? null
           : drillRelabeling(activeItem, activeViewIndex),
+        tableIdentity,
       );
       if (
         activeItem === null ||

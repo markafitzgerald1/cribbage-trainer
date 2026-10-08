@@ -10,6 +10,7 @@ import {
   formatAccessibleNetLoss,
   formatNetLoss,
 } from "../analysis/classifyMistake";
+import { sameTableIdentity, shippedTableIdentity } from "../game/tableIdentity";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
@@ -111,6 +112,21 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
     </span>
   );
 
+const renderOriginalTables = (item: MistakeQueueItem): React.JSX.Element => {
+  const identity = item.tableIdentity;
+  if (!identity) return <span>Original tables unknown</span>;
+  const label = sameTableIdentity(identity, shippedTableIdentity)
+    ? "Judged with current tables"
+    : "Judged with earlier tables";
+  return (
+    <details className={classes.tableProvenance}>
+      <summary>{label}</summary>
+      <div>Crib means_sha256: {identity.crib.means_sha256}</div>
+      <div>Play means_sha256: {identity.play.means_sha256}</div>
+    </details>
+  );
+};
+
 export function MistakeQueueItemCard({
   classification = null,
   item,
@@ -134,8 +150,12 @@ export function MistakeQueueItemCard({
       <div className={classes.itemHeader}>
         <div className={classes.itemBadges}>
           <span className={classes.roleBadge}>{roleLabel}</span>
-          <span className={classes.lossBadge}>
-            {formatNetLoss(item.lossIfWrong)} pts lost
+          <span
+            aria-label={`Recorded cost: ${formatAccessibleNetLoss(item.previousDiscardLoss)} points`}
+            className={classes.lossBadge}
+            role="note"
+          >
+            Recorded cost: {formatNetLoss(item.previousDiscardLoss)} points
           </span>
           {item.lossQuantile === null ? null : (
             <span
@@ -159,6 +179,7 @@ export function MistakeQueueItemCard({
         <div>{renderStatusBadge(item)}</div>
       </div>
 
+      {renderOriginalTables(item)}
       {renderCardsList(item.cards, sortOrder)}
 
       <div className={classes.itemFooter}>

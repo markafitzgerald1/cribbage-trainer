@@ -6,6 +6,7 @@ import {
   readSynchronousExpectedTables,
 } from "./expectedTables";
 import { useCallback, useEffect, useState } from "react";
+import type { TableIdentity } from "../game/tableIdentity";
 
 export interface ExpectedTablesState {
   readonly handleRetry: () => void;
@@ -21,20 +22,30 @@ export interface ExpectedTablesState {
 export const useExpectedTables = (
   loadCribTable: LoadCribTable,
   loadPlayTable: LoadPlayTable,
+  tableIdentity: TableIdentity | null,
 ): ExpectedTablesState => {
-  const [tables, setTables] = useState(readSynchronousExpectedTables);
+  const [tables, setTables] = useState(() =>
+    readSynchronousExpectedTables(loadCribTable, loadPlayTable),
+  );
   const [loadError, setLoadError] = useState<boolean>(false);
   const [retryCount, setRetryCount] = useState<number>(0);
 
   useEffect(() => {
     if (!tables && !loadError) {
-      loadExpectedTables(loadCribTable, loadPlayTable)
+      loadExpectedTables(loadCribTable, loadPlayTable, tableIdentity)
         .then(setTables)
         .catch(() => {
           setLoadError(true);
         });
     }
-  }, [loadCribTable, loadError, loadPlayTable, retryCount, tables]);
+  }, [
+    loadCribTable,
+    loadError,
+    loadPlayTable,
+    retryCount,
+    tables,
+    tableIdentity,
+  ]);
 
   const handleRetry = useCallback(() => {
     setLoadError(false);

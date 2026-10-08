@@ -48,7 +48,7 @@ describe("discard tally recovery", () => {
   it.each([
     ...junkValues(),
     // A newer build's tally is richer than this one can express, so it is read as empty rather than reduced.
-    { name: "a newer version", stored: asJson(storedWith({ version: 8 })) },
+    { name: "a newer version", stored: asJson(storedWith({ version: 9 })) },
     { name: "no counters", stored: asJson(storedOmitting("lifetime")) },
     {
       name: "counters that are not an object",
@@ -89,7 +89,7 @@ describe("discard tally recovery", () => {
     { name: "a decision", record: () => recordDiscardDecision(decisionOf()) },
     { name: "a skipped hand", record: () => recordSkippedHand(AT) },
   ])("refuses to record $name over a newer version", ({ record }) => {
-    const newer = asJson(storedWith({ version: 8 }));
+    const newer = asJson(storedWith({ version: 9 }));
     storeRaw(newer);
     record();
 
@@ -97,7 +97,7 @@ describe("discard tally recovery", () => {
   });
 
   it("reports nothing while a newer version is present", () => {
-    storeRaw(asJson(storedWith({ version: 8 })));
+    storeRaw(asJson(storedWith({ version: 9 })));
 
     expect(recordDiscardDecision(decisionOf())).toStrictEqual(EMPTY);
   });
@@ -106,7 +106,7 @@ describe("discard tally recovery", () => {
     storeRaw(asJson(storedWith({ version: 1 })));
     recordDiscardDecision(decisionOf({ handKey: "v1-migrated" }));
 
-    expect(localStorage.getItem(discardTallyKey)).toContain('"version":7');
+    expect(localStorage.getItem(discardTallyKey)).toContain('"version":8');
   });
 
   /*
@@ -259,6 +259,7 @@ describe("discard tally recovery", () => {
       handKey: "v2-record",
       isOptimal: false,
       isPractice: false,
+      tableIdentity: null,
     };
     const v3Null = { ...v2Record, discardKey: null, handKey: "v3-null" };
     const v3String = { ...v2Record, discardKey: "AH,2H", handKey: "v3-string" };
@@ -318,7 +319,7 @@ describe("discard tally recovery", () => {
     expectNoRecordsStored();
   });
 
-  it("accepts a v3 tally without practice field and migrates with empty practice list and version 7", () => {
+  it("accepts a v3 tally without practice field and migrates with empty practice list and version 8", () => {
     storeRaw(
       asJson({
         lifetime: {
@@ -346,7 +347,7 @@ describe("discard tally recovery", () => {
 
     const tally = readTallyForDisplay();
 
-    expect(tally.version).toBe(7);
+    expect(tally.version).toBe(8);
     expect(tally.practice).toStrictEqual([]);
   });
 

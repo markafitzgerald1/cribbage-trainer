@@ -2,6 +2,7 @@ import { type DiscardDecisionRecord, type StoredTally } from "./discardTally";
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
+import type { TableIdentity } from "../game/tableIdentity";
 import { parseHandKey } from "./handKey";
 
 export { SUCCESSES_FOR_MASTERY } from "./practiceLedger";
@@ -29,6 +30,7 @@ export interface MistakeQueueQuantileThresholds {
 }
 
 export interface MistakeQueueItem {
+  readonly tableIdentity?: TableIdentity | null;
   readonly attempts: number;
   readonly cards: readonly Card[];
   readonly consecutiveSuccesses: number;
@@ -117,6 +119,7 @@ export const computePriority = (lossIfWrong: number, pWrong: number): number =>
   lossIfWrong * pWrong;
 
 interface HandAggregate {
+  tableIdentity: TableIdentity | null;
   discardKey: string | null;
   expectedPointsLoss: number;
   handKey: string;
@@ -174,6 +177,7 @@ const aggregateMistakeRecords = (
                 record.oppositeRoleExpectedPointsLoss ?? null,
               originalAt,
               recencyAt,
+              tableIdentity: record.tableIdentity ?? null,
             }
           : { ...existing, originalAt },
       );
@@ -225,6 +229,7 @@ const createCandidateQueueItem = ({
     previousDiscardLoss: aggregate.expectedPointsLoss,
     previousDiscardOppositeRoleLoss: aggregate.oppositeRoleExpectedPointsLoss,
     priority,
+    tableIdentity: aggregate.tableIdentity,
     wrong,
   };
 };
