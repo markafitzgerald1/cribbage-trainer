@@ -24,6 +24,8 @@ import { useCallback } from "react";
 // Extends rather than restates, so a change to the telemetry props cannot leave this describing a shape that no longer exists.
 export interface AnalysisReportingProps extends DiscardTelemetryProps {
   readonly cribRole: CribRole;
+  readonly isResumedOwnHand?: boolean;
+  readonly resetResumedOwnHand?: (resumed: boolean) => void;
   // The sort order on screen right now, for the tally's capture.
   readonly sortOrder: SortOrder;
 }
@@ -91,13 +93,21 @@ export const useAnalysisReporting = (
   props: AnalysisReportingProps,
 ): AnalysisReporting => {
   const telemetry = useDiscardTelemetry(props);
-  const { cribRole, dealtCards, isSeededSession, sortOrder, wasDeepLinked } =
-    props;
+  const {
+    cribRole,
+    dealtCards,
+    isResumedOwnHand = false,
+    isSeededSession,
+    resetResumedOwnHand,
+    sortOrder,
+    wasDeepLinked,
+  } = props;
   const { currentHandScope } = telemetry;
   const tally = useDiscardTally({
     cribRole,
     dealtCards,
     handId: currentHandScope().handId,
+    isResumedOwnHand,
     isSeededSession,
     sortOrder,
     wasDeepLinked,
@@ -126,13 +136,19 @@ export const useAnalysisReporting = (
   // Both reports hand the tally telemetry's scope as it stands after telemetry has handled the transition, since that fresh scope is what Trainer stamps onto the history entry.
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {
+      resetResumedOwnHand?.(false);
       reportHandToTelemetry(cards, cause);
       reportHandOrigin(cards, cause, {
         cribRole: role,
         handId: currentHandScope().handId,
       });
     },
-    [currentHandScope, reportHandOrigin, reportHandToTelemetry],
+    [
+      currentHandScope,
+      reportHandOrigin,
+      reportHandToTelemetry,
+      resetResumedOwnHand,
+    ],
   );
 
   const reportHistoryNavigation: ReportHistoryNavigation = useCallback(

@@ -64,6 +64,13 @@ describe("discard tally hook", () => {
       start: () => renderTally(HAND, { wasDeepLinked: true }),
     },
     {
+      counted: 1,
+      name: "a reloaded own hand",
+      reports: 1,
+      start: () =>
+        renderTally(HAND, { isResumedOwnHand: true, wasDeepLinked: true }),
+    },
+    {
       counted: 0,
       name: "a hand entered by hand",
       reports: 1,
