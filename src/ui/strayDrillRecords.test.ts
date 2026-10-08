@@ -256,10 +256,11 @@ const storedTallyOf = (
 ) => ({
   ...storedWith({}),
   practice,
-  records,
+  records: records.map((record) => ({ ...record, tableIdentity: null })),
   revision: 3,
   skipped: [] as readonly SkippedHand[],
-  version: 7,
+  tableIdentities: [],
+  version: 8,
 });
 
 describe("sweeping a tally already in storage", () => {

@@ -4,7 +4,7 @@ import {
   clickStoryButtonExpectingCall,
   expectStoryTextVisible,
 } from "./stories.common";
-import { expect, fn, within } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 import {
   mockItemA,
   mockItemWithRoleLossPair,
@@ -12,6 +12,7 @@ import {
 } from "../ui/mistakeQueue.test.common";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
+import { shippedTableIdentity } from "../game/tableIdentity";
 /* jscpd:ignore-end */
 
 const meta = {
@@ -106,3 +107,67 @@ export const WithClassification: Story = {
     );
   },
 };
+
+/* jscpd:ignore-start */
+export const CurrentTables: Story = {
+  args: { item: { ...mockItemA, tableIdentity: shippedTableIdentity } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.getByText("Recorded cost: 1.00 points")).toBeVisible();
+
+    await userEvent.click(canvas.getByText("Judged with current tables"));
+
+    await expect(
+      canvas.getByText(
+        `Crib means_sha256: ${shippedTableIdentity.crib.means_sha256}`,
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText(
+        `Play means_sha256: ${shippedTableIdentity.play.means_sha256}`,
+      ),
+    ).toBeVisible();
+  },
+};
+
+export const EarlierTables: Story = {
+  args: {
+    item: {
+      ...mockItemA,
+      tableIdentity: {
+        crib: { means_sha256: "a".repeat(64) },
+        play: { means_sha256: "b".repeat(64) },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByText("Judged with different tables"));
+
+    await expect(
+      canvas.getByText(`Play means_sha256: ${"b".repeat(64)}`),
+    ).toBeVisible();
+  },
+};
+
+/* jscpd:ignore-end */
+
+/* jscpd:ignore-start */
+export const SubCentRecordedCost: Story = {
+  args: { item: { ...mockItemA, previousDiscardLoss: 0.004 } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      canvas.getByRole("note", {
+        name: "Recorded cost: less than 0.01 points",
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByText("Recorded cost: < 0.01 points"),
+    ).toBeVisible();
+  },
+};
+
+/* jscpd:ignore-end */

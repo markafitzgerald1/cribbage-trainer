@@ -1,10 +1,10 @@
-/* jscpd:ignore-start */
 import {
   type DiscardTallySummary,
   readDiscardTally,
   recordDiscardDecision,
   recordSkippedHand,
 } from "../ui/discardTally";
+/* jscpd:ignore-start */
 import type {
   HandReplacementCause,
   RenderedAnalysis,
@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { SortOrder } from "../ui/SortOrder";
+import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
@@ -85,13 +86,16 @@ export type ReportHandRestored = (
   entry: RestoredHandIdentity,
 ) => void;
 
+export type ReportAnalysisRendered = (
+  analysis: RenderedAnalysis,
+  displayedAs: DisplayedHandRelabeling | null,
+  tableIdentity?: TableIdentity | null,
+) => void;
+
 export interface DiscardTally {
   // For Trainer to write onto each history entry; null when the board shows no complete discard.
   readonly completionSortOrder: SortOrder | null;
-  readonly reportAnalysisRendered: (
-    analysis: RenderedAnalysis,
-    displayedAs: DisplayedHandRelabeling | null,
-  ) => void;
+  readonly reportAnalysisRendered: ReportAnalysisRendered;
   readonly reportHandOrigin: ReportHandOrigin;
   readonly reportHandRestored: ReportHandRestored;
   readonly summary: DiscardTallySummary;
@@ -357,6 +361,7 @@ export const useDiscardTally = ({
         quality,
       }: RenderedAnalysis,
       displayedAs: DisplayedHandRelabeling | null,
+      tableIdentity: TableIdentity | null = null,
     ) => {
       if (quality === null) {
         return;
@@ -428,6 +433,7 @@ export const useDiscardTally = ({
           ...(typeof capturedSortOrder === "number"
             ? { sortOrder: sortUrlValue(capturedSortOrder) }
             : {}),
+          tableIdentity,
         }),
       );
     },

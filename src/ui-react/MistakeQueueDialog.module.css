@@ -750,3 +750,7 @@
     margin-top: 0;
   }
 }
+
+.table-provenance {
+  overflow-wrap: anywhere;
+}

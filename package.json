@@ -45,7 +45,7 @@
     "test:pr-size-gate": "node --test scripts/prSizeGate.test.mjs",
     "test:pwa-manifest": "node --test scripts/pwaManifest.test.mjs",
     "test:skill-paths": "node --test scripts/skillPaths.test.mjs",
-    "test:vendored-tables": "node --test scripts/vendoredTables.test.mjs",
+    "test:vendored-tables": "node --test scripts/vendoredTables.test.mjs scripts/expectedTableIdentity.test.mjs scripts/tableIdentityJest.test.mjs",
     "verify:gap": "node scripts/verifyGap.mjs"
   },
   "devDependencies": {

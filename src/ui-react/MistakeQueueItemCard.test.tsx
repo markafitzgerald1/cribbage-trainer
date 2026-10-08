@@ -12,6 +12,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { MistakeClassification } from "../analysis/classifyMistake";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
+import { shippedTableIdentity } from "../game/tableIdentity";
 
 interface RenderCardOptions {
   readonly classification?: MistakeClassification | null;
@@ -47,6 +48,95 @@ const renderCard = (options: RenderCardOptions = {}) => {
 };
 
 describe("mistakeQueueItemCard", () => {
+  it("announces a sub-cent recorded cost without the visible less-than glyph", () => {
+    const { getByRole, getByText } = renderCard({
+      item: { ...mockItemA, previousDiscardLoss: 0.004 },
+    });
+
+    expect(getByText("Recorded cost: < 0.01 points")).toBeInTheDocument();
+    expect(
+      getByRole("note", { name: "Recorded cost: less than 0.01 points" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the average over wrong attempts beside the recorded cost once there is a retry", () => {
+    const { getByText } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 1.5, wrong: 3 },
+    });
+
+    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(
+      getByText("Average over 3 wrong attempts: 1.50 points"),
+    ).toBeInTheDocument();
+  });
+
+  it("announces a sub-cent average without the visible less-than glyph", () => {
+    const { getByRole } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 0.004, wrong: 2 },
+    });
+
+    expect(
+      getByRole("note", {
+        name: "Average over 2 wrong attempts: less than 0.01 points",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("omits the average while the recorded decision is the only wrong attempt", () => {
+    const { queryByText } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 7, wrong: 1 },
+    });
+
+    expect(queryByText(/Average over/u)).not.toBeInTheDocument();
+  });
+
+  it("labels the loaded pair as current and uses the original cost instead of the aggregate average", () => {
+    const { getByText } = renderCard({
+      item: {
+        ...mockItemA,
+        lossIfWrong: 7,
+        tableIdentity: shippedTableIdentity,
+      },
+    });
+
+    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByText("Judged with current tables")).toBeInTheDocument();
+  });
+
+  it("names an unknown original table without inventing provenance", () => {
+    const { getByText, queryByText } = renderCard();
+
+    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByText("Original tables unknown")).toBeInTheDocument();
+    expect(queryByText(/Crib means_sha256/u)).toBeNull();
+  });
+
+  it("shows both original digests only in the expandable earlier-table note", () => {
+    /* jscpd:ignore-start */
+    const tableIdentity = {
+      crib: { means_sha256: "a".repeat(64) },
+      play: { means_sha256: "b".repeat(64) },
+    };
+    /* jscpd:ignore-end */
+    const { getByText } = renderCard({ item: { ...mockItemA, tableIdentity } });
+
+    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+
+    const summary = getByText("Judged with different tables");
+    const details = summary.closest("details");
+
+    expect(details).not.toHaveAttribute("open");
+
+    fireEvent.click(summary);
+
+    expect(
+      getByText(`Crib means_sha256: ${tableIdentity.crib.means_sha256}`),
+    ).toBeInTheDocument();
+    expect(
+      getByText(`Play means_sha256: ${tableIdentity.play.means_sha256}`),
+    ).toBeInTheDocument();
+  });
+
   it("renders loss reason badge when provided", () => {
     const { getByRole, getByText, getByTitle } = renderCard({
       lossReason: "Crib",
@@ -157,7 +247,7 @@ describe("mistakeQueueItemCard", () => {
     });
 
     // The card itself rendered, so the badge below is absent rather than simply not reached.
-    expect(getByText("1.00 pts lost")).toBeInTheDocument();
+    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
     expect(queryByRole("note", { name: /Previous discard cost/u })).toBeNull();
   });
 

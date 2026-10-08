@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { playwright } from "@vitest/browser-playwright";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { tableIdentityPlugin } from "./scripts/expectedTableIdentity.mjs";
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,7 +32,7 @@ export default {
       localsConvention: "camelCase",
     },
   },
-  plugins: devHttps ? [basicSsl()] : [],
+  plugins: [tableIdentityPlugin(), ...(devHttps ? [basicSsl()] : [])],
   root: "./src",
   test: {
     // Keep vitest artifacts (cache, coverage) out of ./src to avoid polluting source tree

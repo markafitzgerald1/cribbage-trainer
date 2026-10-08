@@ -105,7 +105,7 @@ test.describe("mistake queue layout", () => {
     });
     await page.getByRole("button", { name: "Mistake queue" }).click();
 
-    const lossBadge = page.getByText(/pts lost/u).first();
+    const lossBadge = page.getByText(/Recorded cost:/u).first();
     await expect(lossBadge).toBeVisible();
     const box = await lossBadge.boundingBox();
     expect(box).not.toBeNull();
