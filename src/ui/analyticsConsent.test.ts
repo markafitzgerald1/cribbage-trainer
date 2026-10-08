@@ -14,15 +14,27 @@ import { describe, expect, it } from "@jest/globals";
 
 const UNANSWERED = {
   consented: null,
+  decisionContextConsented: false,
   decisionQualityConsented: false,
   needsPolicyUpdateChoice: false,
 };
 
-const choiceOf = (
-  consented: boolean,
-  decisionQualityConsented: boolean,
+const choiceOf = ({
+  consented,
+  decisionQualityConsented,
+  decisionContextConsented = false,
   needsPolicyUpdateChoice = false,
-) => ({ consented, decisionQualityConsented, needsPolicyUpdateChoice });
+}: {
+  consented: boolean | null;
+  decisionQualityConsented: boolean;
+  decisionContextConsented?: boolean;
+  needsPolicyUpdateChoice?: boolean;
+}) => ({
+  consented,
+  decisionContextConsented,
+  decisionQualityConsented,
+  needsPolicyUpdateChoice,
+});
 
 // A browser that answered the policy in force before decision-quality collection existed.
 const startWithEarlierChoice = (consent: boolean) => {
@@ -40,14 +52,22 @@ describe("analytics choice storage", () => {
   it("grants what this policy describes when analytics is accepted", () => {
     clearAnalyticsChoice();
 
-    expect(storeAnalyticsChoice(true)).toStrictEqual(choiceOf(true, true));
+    expect(storeAnalyticsChoice(true)).toStrictEqual(
+      choiceOf({
+        consented: true,
+        decisionContextConsented: false,
+        decisionQualityConsented: true,
+      }),
+    );
     expect(localStorage.getItem(answeredPolicyVersionKey)).not.toBeNull();
   });
 
   it("grants nothing when analytics is declined outright", () => {
     clearAnalyticsChoice();
 
-    expect(storeAnalyticsChoice(false)).toStrictEqual(choiceOf(false, false));
+    expect(storeAnalyticsChoice(false)).toStrictEqual(
+      choiceOf({ consented: false, decisionQualityConsented: false }),
+    );
     expect(localStorage.getItem(acceptedMeasurementsKey)).toBeNull();
   });
 
@@ -61,7 +81,12 @@ describe("analytics choice storage", () => {
       startWithEarlierChoice(consent);
 
       expect(readAnalyticsChoice()).toStrictEqual(
-        choiceOf(consent, false, expected),
+        choiceOf({
+          consented: consent,
+          decisionContextConsented: false,
+          decisionQualityConsented: false,
+          needsPolicyUpdateChoice: expected,
+        }),
       );
     },
   );
@@ -74,7 +99,11 @@ describe("analytics choice storage", () => {
     startWithEarlierChoice(true);
 
     expect(storePolicyUpdateChoice(accepted)).toStrictEqual(
-      choiceOf(true, accepted),
+      choiceOf({
+        consented: true,
+        decisionContextConsented: false,
+        decisionQualityConsented: accepted,
+      }),
     );
     expect(localStorage.getItem(analyticsConsentKey)).toBe("true");
   });

@@ -30,10 +30,15 @@ const startReporting = (
   return renderHook(
     ({ dealtCards, sortOrder }: BoardProps) =>
       useAnalysisReporting({
-        consented: false,
+        choice: {
+          consented: false,
+          decisionContextConsented: false,
+          decisionQualityConsented: false,
+          needsPolicyUpdateChoice: false,
+        },
         cribRole: CribRole.Dealer,
         dealtCards,
-        decisionQualityConsented: false,
+
         isSeededSession,
         sortOrder,
         trackEvent,

@@ -117,10 +117,10 @@ export const useAnalysisReporting = (
 
   const reportAnalysisRendered: ReportAnalysisRendered = useCallback(
     (analysis, displayedAs) => {
-      reportAnalysisToTelemetry(analysis);
+      reportAnalysisToTelemetry(analysis, completionSortOrder);
       addAnalysisToTally(analysis, displayedAs);
     },
-    [addAnalysisToTally, reportAnalysisToTelemetry],
+    [addAnalysisToTally, completionSortOrder, reportAnalysisToTelemetry],
   );
 
   // Both reports hand the tally telemetry's scope as it stands after telemetry has handled the transition, since that fresh scope is what Trainer stamps onto the history entry.
