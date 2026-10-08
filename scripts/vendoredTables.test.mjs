@@ -1,14 +1,23 @@
 import {
   CRIB_ASSETS,
   PLAY_ASSETS,
+  assertLinesDigest,
+  downloadMeansAndUncertainty,
   validateCribTable,
+  validatePlayLines,
   validatePlayTable,
 } from "./expectedPointsTableUpdate.mjs";
 import {
   assertMeansDigest,
   validateUncertainty,
 } from "./uncertaintySidecar.mjs";
-import { deepStrictEqual, ok, strictEqual, throws } from "node:assert/strict";
+import {
+  deepStrictEqual,
+  ok,
+  rejects,
+  strictEqual,
+  throws,
+} from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
@@ -233,3 +242,136 @@ for (const { assets, cases } of REJECTION_CASES) {
     });
   }
 }
+
+/*
+ * The pegging-lines companion is paired with the play means the same way the
+ * sidecar is, by the SHA-256 of the exact means bytes. Its full contract is
+ * the browser reader's, run against the vendored bytes by
+ * src/game/pegLines.test.ts; what only this file can check is the pairing
+ * across both on-disk artifacts, since Vite hands the reader one parsed
+ * document rather than two files.
+ */
+const linesOf = () => JSON.parse(readVendored(PLAY_ASSETS.linesOutputPath));
+
+test("the vendored play lines still satisfy the updater's checks", () => {
+  validatePlayLines(linesOf(), readVendored(PLAY_ASSETS.linesOutputPath));
+});
+
+test("the vendored play lines were exported against the vendored means", () => {
+  assertLinesDigest(linesOf(), readVendored(PLAY_ASSETS.meansOutputPath));
+});
+
+test("a play means file of different bytes fails the lines pairing guard", () => {
+  throws(
+    () =>
+      assertLinesDigest(
+        linesOf(),
+        `${readVendored(PLAY_ASSETS.meansOutputPath)} `,
+      ),
+    /play lines file was exported against means/u,
+  );
+});
+
+test("a whitespace-only change to the means is a different pairing", () => {
+  const meansBody = readVendored(PLAY_ASSETS.meansOutputPath);
+
+  throws(() => assertLinesDigest(linesOf(), meansBody.replace(/\{/gu, "{ ")));
+});
+
+test("the vendored play lines keys cover the vendored play table exactly", () => {
+  deepStrictEqual(
+    [...linesOf().keys].sort(),
+    Object.keys(JSON.parse(readVendored(PLAY_ASSETS.meansOutputPath))).sort(),
+  );
+});
+
+/*
+ * The updater end to end against a stubbed release, because the guards above
+ * prove the check function rejects but not that the updater calls it:
+ * deleting the call leaves every one of them green.
+ */
+const stubRelease = (context, replacements = []) => {
+  const bodies = new Map([
+    [PLAY_ASSETS.meansUrl, readVendored(PLAY_ASSETS.meansOutputPath)],
+    [
+      PLAY_ASSETS.uncertaintyUrl,
+      readVendored(PLAY_ASSETS.uncertaintyOutputPath),
+    ],
+    [PLAY_ASSETS.linesUrl, readVendored(PLAY_ASSETS.linesOutputPath)],
+    ...replacements,
+  ]);
+  context.mock.method(globalThis, "fetch", (url) =>
+    Promise.resolve({ ok: true, text: () => Promise.resolve(bodies.get(url)) }),
+  );
+};
+
+const refusesLines = (context, linesBody, message) => {
+  stubRelease(context, [[PLAY_ASSETS.linesUrl, linesBody]]);
+  return rejects(downloadMeansAndUncertainty(PLAY_ASSETS), message);
+};
+
+test("the updater writes the lines from the exact published bytes", async (context) => {
+  stubRelease(context);
+  const files = await downloadMeansAndUncertainty(PLAY_ASSETS);
+  const lines = files.find(
+    ({ outputPath }) => outputPath === PLAY_ASSETS.linesOutputPath,
+  );
+
+  strictEqual(files.length, 3);
+  strictEqual(lines.body, readVendored(PLAY_ASSETS.linesOutputPath));
+});
+
+test("the updater does not add a newline the published lines lack", async (context) => {
+  const published = readVendored(PLAY_ASSETS.linesOutputPath).trimEnd();
+
+  stubRelease(context, [[PLAY_ASSETS.linesUrl, published]]);
+  const files = await downloadMeansAndUncertainty(PLAY_ASSETS);
+
+  strictEqual(
+    files.find(({ outputPath }) => outputPath === PLAY_ASSETS.linesOutputPath)
+      .body,
+    published,
+  );
+});
+
+test("the updater refuses lines paired with other means", async (context) => {
+  const otherMeans = { ...linesOf(), means_sha256: "0".repeat(64) };
+
+  await refusesLines(
+    context,
+    `${JSON.stringify(otherMeans)}\n`,
+    /play lines file was exported against means/u,
+  );
+});
+
+for (const [name, ending] of [
+  ["two newlines", "\n\n"],
+  ["three newlines", "\n\n\n"],
+  ["a carriage return and newline", "\r\n"],
+]) {
+  test(`the updater refuses lines that end in ${name}`, async (context) => {
+    await refusesLines(
+      context,
+      `${JSON.stringify(linesOf())}${ending}`,
+      /not minified/u,
+    );
+  });
+}
+
+test("the updater refuses lines that are not minified onto one line", async (context) => {
+  await refusesLines(
+    context,
+    `${JSON.stringify(linesOf(), null, 1)}\n`,
+    /not minified/u,
+  );
+});
+
+test("the updater refuses a lines file of another schema", async (context) => {
+  const other = { ...linesOf(), schema: "expected-play-lines.v2" };
+
+  await refusesLines(context, `${JSON.stringify(other)}\n`, /declares schema/u);
+});
+
+test("the updater refuses a lines file that is not an object", async (context) => {
+  await refusesLines(context, "[]\n", /not an object/u);
+});
