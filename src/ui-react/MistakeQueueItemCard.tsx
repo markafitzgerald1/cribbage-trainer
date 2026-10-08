@@ -127,6 +127,18 @@ const renderOriginalTables = (item: MistakeQueueItem): React.JSX.Element => {
   );
 };
 
+// The sort key is this average, which mixes the recorded cost with every wrong retry.
+const renderAverageLoss = (item: MistakeQueueItem): React.JSX.Element | null =>
+  item.wrong > 1 ? (
+    <span
+      aria-label={`Average over ${item.wrong} wrong attempts: ${formatAccessibleNetLoss(item.lossIfWrong)} points`}
+      role="note"
+    >
+      Average over {item.wrong} wrong attempts:{" "}
+      {formatNetLoss(item.lossIfWrong)} points
+    </span>
+  ) : null;
+
 export function MistakeQueueItemCard({
   classification = null,
   item,
@@ -185,6 +197,7 @@ export function MistakeQueueItemCard({
       <div className={classes.itemFooter}>
         {renderPreviousDiscard(item.previousDiscard, sortOrder)}
         <div className={classes.itemStats}>
+          {renderAverageLoss(item)}
           <span>Attempts: {item.attempts}</span>
           <span>Error rate: {errorRatePercent}%</span>
           <span>Priority: {item.priority.toFixed(DECIMAL_DIGITS)}</span>

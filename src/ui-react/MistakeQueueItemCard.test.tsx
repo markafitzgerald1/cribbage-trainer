@@ -59,6 +59,37 @@ describe("mistakeQueueItemCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the average over wrong attempts beside the recorded cost once there is a retry", () => {
+    const { getByText } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 1.5, wrong: 3 },
+    });
+
+    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(
+      getByText("Average over 3 wrong attempts: 1.50 points"),
+    ).toBeInTheDocument();
+  });
+
+  it("announces a sub-cent average without the visible less-than glyph", () => {
+    const { getByRole } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 0.004, wrong: 2 },
+    });
+
+    expect(
+      getByRole("note", {
+        name: "Average over 2 wrong attempts: less than 0.01 points",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("omits the average while the recorded decision is the only wrong attempt", () => {
+    const { queryByText } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 7, wrong: 1 },
+    });
+
+    expect(queryByText(/Average over/u)).not.toBeInTheDocument();
+  });
+
   it("labels the loaded pair as current and uses the original cost instead of the aggregate average", () => {
     const { getByText } = renderCard({
       item: {
