@@ -1,6 +1,9 @@
+import {
+  memoizedTableIdentity,
+  tableIdentityTransformer,
+} from "./tableIdentityJest.mjs";
 import { notStrictEqual, strictEqual } from "node:assert/strict";
 import { readTableIdentity } from "./expectedTableIdentity.mjs";
-import { tableIdentityTransformer } from "./tableIdentityJest.mjs";
 import { test } from "node:test";
 
 for (const table of ["crib", "play"]) {
@@ -24,3 +27,19 @@ for (const table of ["crib", "play"]) {
     notStrictEqual(await transform.getCacheKeyAsync(...args), before);
   });
 }
+
+test("the identity is read again only when an artifact file changes", () => {
+  let reads = 0;
+  let signature = "one";
+  const identity = memoizedTableIdentity(
+    () => ({ reads: (reads += 1) }),
+    () => signature,
+  );
+
+  identity();
+  identity();
+  strictEqual(reads, 1);
+
+  signature = "two";
+  strictEqual(identity().reads, 2);
+});

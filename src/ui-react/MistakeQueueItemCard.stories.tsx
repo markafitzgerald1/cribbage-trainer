@@ -143,7 +143,7 @@ export const EarlierTables: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByText("Judged with earlier tables"));
+    await userEvent.click(canvas.getByText("Judged with different tables"));
 
     await expect(
       canvas.getByText(`Play means_sha256: ${"b".repeat(64)}`),

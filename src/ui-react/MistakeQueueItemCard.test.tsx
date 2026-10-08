@@ -91,7 +91,7 @@ describe("mistakeQueueItemCard", () => {
 
     expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
 
-    const summary = getByText("Judged with earlier tables");
+    const summary = getByText("Judged with different tables");
     const details = summary.closest("details");
 
     expect(details).not.toHaveAttribute("open");

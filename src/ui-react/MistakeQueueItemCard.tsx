@@ -117,7 +117,7 @@ const renderOriginalTables = (item: MistakeQueueItem): React.JSX.Element => {
   if (!identity) return <span>Original tables unknown</span>;
   const label = sameTableIdentity(identity, shippedTableIdentity)
     ? "Judged with current tables"
-    : "Judged with earlier tables";
+    : "Judged with different tables";
   return (
     <details className={classes.tableProvenance}>
       <summary>{label}</summary>
