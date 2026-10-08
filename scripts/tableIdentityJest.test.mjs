@@ -1,15 +1,20 @@
 import {
   memoizedTableIdentity,
-  tableIdentityTransformer,
-} from "./tableIdentityJest.mjs";
+  withTableIdentity,
+} from "./tableIdentityCacheKey.mjs";
 import { notStrictEqual, strictEqual } from "node:assert/strict";
 import { readTableIdentity } from "./expectedTableIdentity.mjs";
 import { test } from "node:test";
 
+const fakeBabel = {
+  getCacheKey: () => "babel",
+  getCacheKeyAsync: () => Promise.resolve("babel"),
+};
+
 for (const table of ["crib", "play"]) {
   test(`Jest cache keys change after a ${table}-only refresh`, async () => {
     let identity = readTableIdentity();
-    const transform = tableIdentityTransformer(() => identity);
+    const transform = withTableIdentity(fakeBabel, () => identity);
     const options = {
       config: { cwd: process.cwd(), rootDir: process.cwd() },
       configString: "{}",
