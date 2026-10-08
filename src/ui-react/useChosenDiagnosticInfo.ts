@@ -20,16 +20,12 @@ import {
   type SidecarUncertainties,
   useSidecarUncertainties,
 } from "./useUncertainty";
-import {
-  discardLoss,
-  discardNoiseThreshold,
-  isWithinNoise,
-} from "../analysis/discardNoiseThreshold";
 import { type CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedTables } from "./expectedTables";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
+import { noiseVerdictThreshold } from "../analysis/discardNoiseThreshold";
 import { serializeHand } from "../game/Card";
 import { toHandKey } from "../ui/handKey";
 import { useMemo } from "react";
@@ -95,7 +91,7 @@ const verdictThreshold = ({
   !sidecars.isVerdictTimedOut &&
   sidecars.crib !== null &&
   sidecars.play !== null
-    ? discardNoiseThreshold({
+    ? noiseVerdictThreshold({
         best,
         chosen,
         cribUncertainty: sidecars.crib,
@@ -164,17 +160,13 @@ export const useChosenDiagnosticInfo = ({
       chosenClassification?.netLoss ?? 0,
       oppositeRoleLoss,
     );
-    const threshold = verdictThreshold({
+    const withinNoiseThreshold = verdictThreshold({
       best,
       chosen,
       cribRole,
       dealtCards,
       sidecars,
     });
-    const withinNoiseThreshold =
-      best && chosen && isWithinNoise(discardLoss({ best, chosen }), threshold)
-        ? threshold
-        : null;
     /*
      * An optimal verdict cannot change, so it is announced at once. A positive
      * loss can still turn out to be within the noise, so its verdict waits for

@@ -12,6 +12,7 @@ const sampleBuckets: DiscardPeriodBucket[] = [
   {
     decisions: 20,
     endTime: 1700003600000,
+    judgedDecisions: 20,
     key: "1-20",
     label: "Decisions 1–20",
     meanExpectedPointsLoss: 0.65,
@@ -22,6 +23,7 @@ const sampleBuckets: DiscardPeriodBucket[] = [
   {
     decisions: 20,
     endTime: 1700007200000,
+    judgedDecisions: 20,
     key: "21-40",
     label: "Decisions 21–40",
     meanExpectedPointsLoss: 0.35,
@@ -32,6 +34,7 @@ const sampleBuckets: DiscardPeriodBucket[] = [
   {
     decisions: 15,
     endTime: 1700010800000,
+    judgedDecisions: 15,
     key: "41-55",
     label: "Decisions 41–55",
     meanExpectedPointsLoss: 0.12,
@@ -93,8 +96,10 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   isMastered: mastered,
   isOptimal: loss === 0,
   isRetained: false,
+  isWithinNoise: false,
   ordinal: index + 1,
   recencyAt: 1700000000000 + index,
+  recomputedLoss: null,
   rollingMeanLoss: mean,
   timestamp: 1700000000000 + index * 100000,
 }));
@@ -166,6 +171,28 @@ export const PracticeFromDetail: Story = {
   },
   play: ({ args, canvasElement }) =>
     playPracticeFromDecisionMarker(canvasElement, args.onPracticeDecision),
+};
+
+// A loss the caption calls simulation noise (#774): gray rather than red, named as such, and nothing to practice.
+export const WithinNoiseDecision: Story = {
+  args: {
+    ...rollingWithPointsArgs,
+    decisionPoints: sampleDecisionPoints.map((point) => ({
+      ...point,
+      isWithinNoise: point.ordinal === 5,
+    })),
+    onPracticeDecision: fn(),
+  },
+  play: async ({ canvas, canvasElement }) => {
+    clickElement(
+      canvasElement.querySelector(
+        '[aria-label="Decision #5: 0.25 points loss, within simulation noise. Select to see the hand."]',
+      ) as Element,
+    );
+
+    await expect(await canvas.findByText("Within noise")).toBeVisible();
+    await expect(canvas.queryByText("Practice this hand")).toBeNull();
+  },
 };
 
 export const Empty: Story = {

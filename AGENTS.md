@@ -359,6 +359,12 @@
   whether a chosen discard's positive loss is flagged or treated as
   simulation noise, so a sub-optimal verdict waits until both have loaded
   or failed; an optimal verdict cannot change and shows at once.
+  **"On screen" means a recommendation, not the consumer's own data.**
+  `DiscardTallyView` is mounted from the first render, so #889's first
+  history judging, gated on the tally holding a sub-optimal decision,
+  fetched both chunks at app start for every returning player. It now
+  waits for `Trainer`'s `useFirstRecommendation`; any new consumer of the
+  sidecars should take that same flag.
 - **One schema describes both documents, so one reader reads both.**
   `src/game/uncertaintySidecar.ts` holds the parser and
   `src/game/uncertaintyLoader.ts` the deferred loader; `cribUncertainty.ts`
@@ -450,6 +456,15 @@
   the delta's own standard error already preserves the own-minus-opponent
   pairing within each simulation, so do **not** reconstruct it by summing the
   two seat-total variances.
+- **A recorded decision's noise verdict is recomputed, never read from
+  storage.** `noiseVerdictThreshold` in `discardNoiseThreshold.ts` is the one
+  comparison the caption, queue, tally and chart all make (#774);
+  `useNoiseVerdicts` scores each stored hand and discard again through it. So a
+  fixture's stored `expectedPointsLoss` says nothing about its verdict, and an
+  invented one can land inside the noise under the shipped sidecars:
+  `AC,2C` from `AC,2C,3C,4C,5C,6C` as pone, seeded at 1.5, really loses
+  0.06 and left the e2e mistake queue. Check a seeded hand's real verdict
+  before relying on it as a mistake.
 
 ## Interaction design and visual-state debugging
 

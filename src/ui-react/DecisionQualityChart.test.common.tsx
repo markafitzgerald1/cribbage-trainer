@@ -13,6 +13,7 @@ export const makeBucket = (
 ): DiscardPeriodBucket => ({
   decisions,
   endTime: 1700003600000,
+  judgedDecisions: decisions,
   key,
   label: `Period ${key}`,
   meanExpectedPointsLoss: loss,
@@ -50,13 +51,15 @@ export const makeDecisionPoint = (
   isMastered: false,
   isOptimal: expectedPointsLoss === 0,
   isRetained: false,
+  isWithinNoise: false,
   ordinal,
   recencyAt: 1_700_000_500_000 + ordinal,
+  recomputedLoss: null,
   rollingMeanLoss,
   timestamp: 1700000000000 + ordinal * 1000,
 });
 
-type DecisionPointFlag = "isMastered" | "isRetained";
+type DecisionPointFlag = "isMastered" | "isRetained" | "isWithinNoise";
 
 const makeDecisionPointWith =
   (flag: DecisionPointFlag) =>
@@ -67,3 +70,5 @@ const makeDecisionPointWith =
 
 export const makeMasteredDecisionPoint = makeDecisionPointWith("isMastered");
 export const makeRetainedDecisionPoint = makeDecisionPointWith("isRetained");
+export const makeWithinNoiseDecisionPoint =
+  makeDecisionPointWith("isWithinNoise");

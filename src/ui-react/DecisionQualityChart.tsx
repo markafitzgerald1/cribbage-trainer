@@ -22,6 +22,7 @@ import type {
 import React, { useCallback, useEffect, useId, useState } from "react";
 import {
   buildChartDescription,
+  describeLoss,
   renderCalendarPlot,
   renderRollingPlot,
   renderTicks,
@@ -106,6 +107,7 @@ function renderDecisionDetail(
     <div
       aria-label={`${prefix} #${point.ordinal} detail`}
       className={classes.decisionDetail}
+      data-within-noise={point.isWithinNoise}
       role="region"
     >
       <div className={classes.decisionDetailHead}>
@@ -118,8 +120,11 @@ function renderDecisionDetail(
         {point.isMastered ? (
           <span className={classes.decisionDetailMastered}>Mastered</span>
         ) : null}
+        {point.isWithinNoise ? (
+          <span className={classes.decisionDetailRole}>Within noise</span>
+        ) : null}
         <span className={classes.decisionDetailLoss}>
-          {`${point.expectedPointsLoss.toFixed(DECIMAL_PLACES)} lost`}
+          {describeLoss(point, "lost")}
         </span>
         <button
           className={classes.detailClose}
@@ -232,8 +237,11 @@ function useDecisionSelection(
     setSelectedRecencyAt(null);
   }
 
+  // A loss within simulation noise is not in the mistake queue, so there is nothing to practice.
   const handlePracticeSelected =
-    onPracticeDecision === null || selectedPoint === null
+    onPracticeDecision === null ||
+    selectedPoint === null ||
+    selectedPoint.isWithinNoise
       ? null
       : () => {
           onPracticeDecision(selectedPoint);

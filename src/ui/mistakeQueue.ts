@@ -1,4 +1,5 @@
 import { type DiscardDecisionRecord, type StoredTally } from "./discardTally";
+import { NO_NOISE, isRecordWithinNoise } from "./noiseVerdicts";
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
@@ -149,15 +150,21 @@ interface HandAggregate {
  * the moment the player first made it stays fixed to the earliest record,
  * which is what MistakeQueueItem.originalDecisionAt promises callers.
  */
+// The exact verdict: an authentic decision recorded as losing points, before any noise judgment (#774).
+export const isRecordedMistake = (record: DiscardDecisionRecord): boolean =>
+  !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
+
 const aggregateMistakeRecords = (
   records: readonly DiscardDecisionRecord[],
+  withinNoise: ReadonlySet<string>,
 ): Map<string, HandAggregate> => {
   const map = new Map<string, HandAggregate>();
 
   for (const record of records) {
-    const isMistake =
-      !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
-    if (isMistake) {
+    if (
+      isRecordedMistake(record) &&
+      !isRecordWithinNoise(record, withinNoise)
+    ) {
       const existing = map.get(record.handKey);
       const recencyAt = record.recencyAt ?? record.at;
       const originalAt = existing
@@ -229,10 +236,12 @@ const createCandidateQueueItem = ({
   };
 };
 
+// `withinNoise` names the decisions whose loss the caption calls simulation noise (#774); they are not mistakes to practice.
 export const buildMistakeQueue = (
   tally: StoredTally,
+  withinNoise: ReadonlySet<string> = NO_NOISE,
 ): readonly MistakeQueueItem[] => {
-  const mistakeMap = aggregateMistakeRecords(tally.records);
+  const mistakeMap = aggregateMistakeRecords(tally.records, withinNoise);
   if (mistakeMap.size === 0) {
     return [];
   }

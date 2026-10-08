@@ -18,6 +18,13 @@ export interface ExpectedTablesState {
  * failure the reader has to be told about: without these there is no ranked
  * analysis to show at all.
  */
+const retryListeners = new Set<() => void>();
+
+/*
+ * A retry from any consumer is a retry for all of them: the loaders are shared
+ * and memoized, so one that recovers leaves every other instance's latched
+ * failure stale.
+ */
 export const useExpectedTables = (
   loadCribTable: LoadCribTable,
   loadPlayTable: LoadPlayTable,
@@ -36,9 +43,22 @@ export const useExpectedTables = (
     }
   }, [loadCribTable, loadError, loadPlayTable, retryCount, tables]);
 
-  const handleRetry = useCallback(() => {
+  const reset = useCallback(() => {
     setLoadError(false);
     setRetryCount((prev) => prev + 1);
+  }, []);
+
+  useEffect(() => {
+    retryListeners.add(reset);
+    return () => {
+      retryListeners.delete(reset);
+    };
+  }, [reset]);
+
+  const handleRetry = useCallback(() => {
+    for (const listener of retryListeners) {
+      listener();
+    }
   }, []);
 
   return { handleRetry, loadError, tables };

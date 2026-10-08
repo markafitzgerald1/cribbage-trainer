@@ -1,10 +1,21 @@
 /* jscpd:ignore-start */
+import {
+  type DiscardDecisionRecord,
+  type DiscardTallySummary,
+} from "../ui/discardTally";
+import {
+  MISTAKE_RECORD,
+  OPTIMAL_RECORD,
+  WITHIN_NOISE_RECORD,
+} from "../ui/noiseVerdicts.test.common";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, userEvent } from "storybook/test";
-import type { DiscardTallySummary } from "../ui/discardTally";
+import {
+  discardTallySummary,
+  noiseTallyProps,
+} from "./discardTally.test.common";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { createSampleMistakeTally } from "./MistakeQueueDialog.test.common";
-import { discardTallySummary } from "./discardTally.test.common";
 /* jscpd:ignore-end */
 
 const sampleMistakeTally = createSampleMistakeTally();
@@ -123,5 +134,68 @@ export const OpenMistakeQueue: StoryObj<typeof meta> = {
     await expect(
       canvas.getByRole("heading", { name: "Mistake queue" }),
     ).toBeVisible();
+  },
+};
+
+/*
+ * #774: a decision whose loss is within simulation noise, judged here
+ * against sidecars that put every published error at 0.1 points. It leaves
+ * both sides of Best choice, the queue and the trend's shares. A figure
+ * shows its exact verdict until judged, so each story waits for the change.
+ */
+const afterVerdicts = (
+  records: readonly DiscardDecisionRecord[],
+  check: (canvasElement: HTMLElement) => Promise<void>,
+): StoryObj<typeof meta> => ({
+  args: noiseTallyProps(records),
+  play: async ({ canvasElement }) => {
+    await waitFor(
+      async () => {
+        await check(canvasElement);
+      },
+      { timeout: 8000 },
+    );
+  },
+});
+
+const ALL_THREE = [OPTIMAL_RECORD, WITHIN_NOISE_RECORD, MISTAKE_RECORD];
+
+const bestChoiceOfTwo = async (canvasElement: HTMLElement) => {
+  await expect(within(canvasElement).getAllByText("1/2")).toHaveLength(2);
+};
+
+export const WithinNoiseLeftOutOfBestChoice = afterVerdicts(
+  ALL_THREE,
+  bestChoiceOfTwo,
+);
+
+export const EveryMistakeWithinNoise = afterVerdicts(
+  [OPTIMAL_RECORD, WITHIN_NOISE_RECORD],
+  async (canvasElement) => {
+    await expect(
+      within(canvasElement).queryByRole("button", { name: "Mistake queue" }),
+    ).not.toBeInTheDocument();
+  },
+);
+
+export const WithinNoiseInQualityTrend: StoryObj<typeof meta> = {
+  args: noiseTallyProps(ALL_THREE),
+  play: async ({ canvasElement }) => {
+    await waitFor(
+      async () => {
+        await bestChoiceOfTwo(canvasElement);
+      },
+      { timeout: 8000 },
+    );
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Quality trend" }),
+    );
+    const dialog = within(
+      canvas.getByRole("region", { name: "Decision quality over time" }),
+    );
+
+    // The Best choice card and the one rolling batch's row agree.
+    await expect(dialog.getAllByText("50.0%")).toHaveLength(2);
   },
 };
