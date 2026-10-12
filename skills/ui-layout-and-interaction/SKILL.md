@@ -681,8 +681,9 @@ once you are already editing layout or interaction code.
   table comparisons are separate and explicitly labeled; unavailable is
   unknown, not zero, and today's component costs cannot explain an earlier
   recorded total. Show "Judged with different tables", "Judged with current
-  tables" or "Original tables unknown", with 12-character fingerprints on expansion, full digests in titles and
-  no inferred release date. Admission is settled once at decision time;
+  tables" or "Original tables unknown", with 12-character fingerprints on
+  expansion, full digests in titles and no inferred release date. Admission
+  is settled once at decision time;
   legacy rows retain recorded exact eligibility. A current best/noise verdict
   cannot remove a grandfathered item or its practice action, or add an old
   best choice. Partial streaks and earned mastery survive a table change,
