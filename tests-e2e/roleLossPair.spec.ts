@@ -12,7 +12,7 @@ const SIXTH_DEALT_INDEX = 5;
 
 /*
  * Discarding the 9 of diamonds and the 3 of spades from this hand costs
- * 3.11 as dealer and exactly nothing as pone, which is the widest split
+ * 3.37 as dealer and exactly nothing as pone, which is the widest split
  * between the two roles any fixture here needs.
  */
 const ROLE_SPLIT_QUERY = "?hand=9D,9C,9H,4C,4H,3S&role=dealer&seed=e2e";
@@ -22,8 +22,8 @@ const ROLE_SPLIT_DISCARD_INDICES: readonly [number, number] = [
 ];
 
 /*
- * Discarding the king of hearts and the 6 of spades here costs 3.46 as
- * dealer and 0.82 as pone. Held as dealer the reversed role is the cheaper
+ * Discarding the king of hearts and the 6 of spades here costs 3.38 as
+ * dealer and 1.03 as pone. Held as dealer the reversed role is the cheaper
  * one, so both figures are stated and neither reads as a verdict; held as
  * pone the same discard is the one the reader already got more nearly
  * right, and the reversed figure is withheld.
@@ -48,9 +48,9 @@ test.describe("both crib-role costs for the chosen discard", () => {
     const liveRegion = page.getByRole("status");
 
     await expect(liveRegion).toContainText(
-      "3.11 points lost as dealer, 0.00 as pone",
+      "3.37 points lost as dealer, 0.00 as pone",
     );
-    await expect(caption).toContainText("3.11 dealer, 0.00 pone");
+    await expect(caption).toContainText("3.37 dealer, 0.00 pone");
     // The component decomposition is still there: the pair is evidence beside it, not a replacement for it.
     await expect(caption).toContainText("Crib");
 
@@ -84,11 +84,11 @@ test.describe("both crib-role costs for the chosen discard", () => {
     const liveRegion = page.getByRole("status");
 
     await expect(liveRegion).toContainText(
-      "3.46 points lost as dealer, 0.82 as pone",
+      "3.38 points lost as dealer, 1.03 as pone",
     );
-    await expect(caption).toContainText("3.46 dealer, 0.82 pone");
+    await expect(caption).toContainText("3.38 dealer, 1.03 pone");
     // Nothing here is free, so nothing is marked; the mark has to mean this hand rather than this badge.
-    await expect(caption.getByText("0.82 pone")).toHaveCSS(
+    await expect(caption.getByText("1.03 pone")).toHaveCSS(
       "text-decoration-line",
       "none",
     );
@@ -111,9 +111,9 @@ test.describe("both crib-role costs for the chosen discard", () => {
     const liveRegion = page.getByRole("status");
 
     // The caption is on screen with its single figure before anything is asserted absent, so the pair is withheld rather than simply not yet on screen.
-    await expect(caption).toContainText("Sub-optimal: 0.82 pts lost");
+    await expect(caption).toContainText("Sub-optimal: 1.03 pts lost");
     await expect(caption).not.toContainText("dealer");
-    await expect(liveRegion).toContainText("Sub-optimal: 0.82 points lost");
+    await expect(liveRegion).toContainText("Sub-optimal: 1.03 points lost");
   });
 });
 

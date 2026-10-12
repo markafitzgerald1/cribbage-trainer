@@ -18,7 +18,7 @@ import { toDealtCards } from "../game/toDealtCards";
 import { uniformUncertainty } from "../game/uncertaintySidecar.test.common";
 /* jscpd:ignore-end */
 
-// The KH,KC dealer fixture gives up about 0.09 points against the best discard.
+// The KH,KC dealer fixture gives up about 0.17 points against the best discard.
 const NEAR_MISS_HAND = "4H,5D,KH,6H,8C,KC";
 const NEAR_MISS_DISCARD = "KH,KC";
 
@@ -87,9 +87,9 @@ describe("scored possible keep discards caption", () => {
         cards: "5H,5D,6H,7H,8H,9H",
         discards: "5H,5D",
         expectedAriaLabel:
-          "Optimal discard, 4.05 better than the next best discard",
+          "Optimal discard, 3.64 better than the next best discard",
         expectedMarkedTexts: [],
-        expectedText: "Optimal, 4.05 better than next",
+        expectedText: "Optimal, 3.64 better than next",
         name: "optimal discard caption when chosen discard is optimal",
       },
       {
@@ -97,9 +97,9 @@ describe("scored possible keep discards caption", () => {
         cribRole: CribRole.Pone,
         discards: "3S,9C",
         expectedAriaLabel:
-          "Optimal discard, 0.37 better than the next best distinct discard",
+          "Optimal discard, 1.02 better than the next best distinct discard",
         expectedMarkedTexts: [],
-        expectedText: "Optimal, 0.37 better than next distinct",
+        expectedText: "Optimal, 1.02 better than next distinct",
         name: "optimal discard caption when top choices tie",
       },
       {
@@ -107,21 +107,32 @@ describe("scored possible keep discards caption", () => {
         cribRole: CribRole.Dealer,
         discards: "KH,KC",
         expectedAriaLabel:
-          "Sub-optimal: 0.09 points lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+          "Sub-optimal: 0.17 points lost. 1.31 Crib gain does not cover 1.48 Hand loss",
         expectedMarkedTexts: [],
         expectedText:
-          "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
+          "Sub-optimal: 0.17 pts lost1.31 Crib gain < 1.48 Hand loss",
         name: "sub-optimal caption withholding a reversed role that cost more",
+      },
+      {
+        cards: "JH,7H,AD,9S,3S,3D",
+        cribRole: CribRole.Dealer,
+        discards: "JH,AD",
+        expectedAriaLabel:
+          "Sub-optimal: 0.08 points lost. 0.15 Crib and 0.03 Play gain do not cover 0.26 Hand loss",
+        expectedMarkedTexts: [],
+        expectedText:
+          "Sub-optimal: 0.08 pts lost0.15 Crib + 0.03 Play gain < 0.26 Hand loss",
+        name: "sub-optimal caption naming two gains that together do not cover the loss",
       },
       {
         cards: "9D,9C,9H,4C,4H,3S",
         cribRole: CribRole.Dealer,
         discards: "9D,3S",
         expectedAriaLabel:
-          "Sub-optimal: 3.11 points lost as dealer, 0.00 as pone. 0.64 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
+          "Sub-optimal: 3.37 points lost as dealer, 0.00 as pone. 0.38 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
         expectedMarkedTexts: ["0.00 pone"],
         expectedText:
-          "Sub-optimal: 3.11 dealer, 0.00 pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
+          "Sub-optimal: 3.37 dealer, 0.00 pone0.38 Play gain < 2.05 Crib + 1.70 Hand loss",
         name: "a zero cost under the reversed role stated as a figure, not as a diagnosis",
       },
     ])(
@@ -159,14 +170,21 @@ describe("scored possible keep discards caption", () => {
       cards: "4H,5D,KH,6H,8C,KC",
       cribRole: CribRole.Dealer,
       discards: "KH,KC",
-      expectedSides: ["1.31 Crib + 0.08 Play gain", "< 1.48 Hand loss"],
+      expectedSides: ["1.31 Crib gain", "< 1.48 Hand loss"],
       name: "gain and loss sides in separate",
+    },
+    {
+      cards: "JH,7H,AD,9S,3S,3D",
+      cribRole: CribRole.Dealer,
+      discards: "JH,AD",
+      expectedSides: ["0.15 Crib + 0.03 Play gain", "< 0.26 Hand loss"],
+      name: "two gains joined on one side apart from the loss in separate",
     },
     {
       cards: "5H,5D,JC,QH,KS,9D",
       cribRole: CribRole.Pone,
       discards: "5H,5D",
-      expectedSides: ["7.57 Hand + 5.18 Crib + 0.53 Play loss"],
+      expectedSides: ["7.57 Hand + 5.18 Crib + 0.81 Play loss"],
       name: "a single side with no offsetting gains in one",
     },
   ])(
@@ -220,9 +238,9 @@ describe("scored possible keep discards caption", () => {
       const { container } = renderNearMiss(settledWith(1), settledWith(1));
       const caption = await findCaption(container);
 
-      expect(caption.textContent).toMatch(/^Within noise: 0\.09 pts lost/u);
+      expect(caption.textContent).toMatch(/^Within noise: 0\.17 pts lost/u);
       expect(caption.getAttribute("aria-label")).toMatch(
-        /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\. /u,
+        /^Within simulation noise, 95% one-sided, approximate: 0\.17 points lost, at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\. /u,
       );
       expect(
         container.querySelector("[class*='noiseBadge']")?.getAttribute("title"),
@@ -256,7 +274,7 @@ describe("scored possible keep discards caption", () => {
       const { container } = renderNearMiss(crib, play);
       const caption = await findCaption(container);
 
-      expect(caption.textContent).toMatch(/^Sub-optimal: 0\.09 pts lost/u);
+      expect(caption.textContent).toMatch(/^Sub-optimal: 0\.17 pts lost/u);
     });
 
     it("withholds a sub-optimal verdict from the live region until both sidecars settle", async () => {
@@ -299,7 +317,7 @@ describe("scored possible keep discards caption", () => {
         const container = await renderPastTheWait(lateDocument);
 
         expect(container.querySelector("figcaption")?.textContent).toMatch(
-          /^Sub-optimal: 0\.09 pts lost/u,
+          /^Sub-optimal: 0\.17 pts lost/u,
         );
       },
     );

@@ -153,7 +153,7 @@ const captionAfterLoad = async (
 };
 
 /*
- * Discarding the 9 of diamonds and the 3 of spades here costs 3.11 as
+ * Discarding the 9 of diamonds and the 3 of spades here costs 3.37 as
  * dealer and exactly nothing as pone, so the caption shows the #824 pair of
  * role costs beside the component decomposition it does not replace.
  */
@@ -165,7 +165,7 @@ export const RoleLossPair: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Sub-optimal: 3.11 dealer, 0.00 pone",
+      "Sub-optimal: 3.37 dealer, 0.00 pone",
     );
 
     /*
@@ -192,7 +192,7 @@ const roleLossWithheldStory = createStory(
 );
 
 /*
- * The state most hands are in: this discard costs 0.82 as pone and 3.46 as
+ * The state most hands are in: this discard costs 1.03 as pone and 3.38 as
  * dealer, so the reversed figure would say only that the role not held
  * would have been worse. One figure, in the wording this caption carried
  * before #824.
@@ -203,7 +203,7 @@ export const RoleLossWithheld: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Sub-optimal: 0.82 pts lost",
+      "Sub-optimal: 1.03 pts lost",
     );
 
     // The caption is on screen with its single figure, so the reversed-role clause is absent rather than simply not rendered.
@@ -318,7 +318,7 @@ export const UncertaintyUnavailable: Story = {
 };
 
 /*
- * A wide, fixed standard error so the 0.09-point loss of discarding both kings
+ * A wide, fixed standard error so the 0.17-point loss of discarding both kings
  * lands inside the #774 noise threshold whatever the shipped sidecars say.
  * Held rather than built per render, for the effect-dependency reason above.
  */
@@ -343,7 +343,7 @@ export const WithinSimulationNoise: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Within noise: 0.09 pts lost",
+      "Within noise: 0.17 pts lost",
     );
 
     await expect(canvas.queryByText(/Sub-optimal/u)).toBeNull();

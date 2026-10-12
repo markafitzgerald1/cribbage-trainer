@@ -318,9 +318,23 @@
   `npm run table:update:play` for only the pegging artifact.
 - The browser may look up and combine the shipped means, but must not perform
   pegging Monte Carlo, game-tree search, or policy improvement.
-- Shared expected-points table loaders use `null` to represent absence. Do not
-  use truthiness checks for cached or injected tables, because generic loader
-  callers may validly load falsy values such as `0`, `""`, or `false`.
+- **The play policy behind the vendored means may be a hard-coded heuristic,
+  because it was shown by measurement to be better.** The architectural
+  constraint under Project overview forbids heuristics and subjective
+  weights in this repository's scoring code. It does not forbid the simulated
+  play policy whose pegging the means describe being a documented heuristic,
+  provided the simulator measured it better than the alternatives. The owner
+  ruled this on 2026-10-08: a hard-coded heuristic is acceptable when it can
+  be shown mathematically to be better or best, and each play heuristic in
+  the legacy simulator was shown better than all earlier options, random
+  play included. The first enforced release is the example: the capped
+  trained policies lost to the legacy heuristic by 0.1553 points per hand
+  (standard error 0.0030, 200,000 duplicate deals), so the published means
+  are measured with the heuristic in both seats, and the sidecar says so in
+  `measured_policy`. Do not read this as permission to add a heuristic to
+  the scoring engine, and do not change which policy generates the table
+  without the simulator's promotion gate (mean above zero and at least three
+  standard errors) showing the new one better than the legacy heuristic.
 
 ## Expected-points uncertainty sidecars (vendored)
 

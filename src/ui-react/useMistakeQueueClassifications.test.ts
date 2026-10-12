@@ -16,8 +16,7 @@ const invalidItem: MistakeQueueItem = {
   previousDiscard: "ZZ,YY",
 };
 
-const EXPECTED_MOCK_ITEM_A_LABEL =
-  "0.03 Play gain < 2.33 Hand + 0.14 Crib loss";
+const EXPECTED_MOCK_ITEM_A_LABEL = "2.33 Hand + 0.28 Play + 0.14 Crib loss";
 
 const renderAndFlushPromises = async () => {
   const rendered = renderHook(() =>

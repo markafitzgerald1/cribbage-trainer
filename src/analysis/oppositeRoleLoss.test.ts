@@ -15,15 +15,15 @@ const tables = { crib: expectedCribPointsTable, play: expectedPlayPointsTable };
 
 /*
  * Discarding the 9 of diamonds and the 3 of spades from this hand is exactly
- * equal-best as pone and gives up 3.11 points as dealer, which is the
+ * equal-best as pone and gives up 3.37 points as dealer, which is the
  * widest gap between the two roles that any fixture here needs.
  */
 const ROLE_SENSITIVE_HAND = "9D,9C,9H,4C,4H,3S";
 const ROLE_SENSITIVE_DISCARD = "9D,3S";
 
 /*
- * Discarding the king of hearts and the 6 of spades here loses 3.46 as
- * dealer and 0.82 as pone: sub-optimal under both, so both figures are
+ * Discarding the king of hearts and the 6 of spades here loses 3.38 as
+ * dealer and 1.03 as pone: sub-optimal under both, so both figures are
  * positive and neither role looks like the one the discard was meant for.
  */
 const ROLE_INSENSITIVE_HAND = "KH,QS,10D,9C,6S,5H";
@@ -70,12 +70,12 @@ describe("cost of a discard under the reversed crib role", () => {
         CribRole.Pone,
         ROLE_SENSITIVE_DISCARD,
       ),
-    ).toBeCloseTo(3.11, DECIMALS);
+    ).toBeCloseTo(3.37, DECIMALS);
   });
 
   it.each([
-    { cribRole: CribRole.Dealer, expected: 0.82, name: "dealer" },
-    { cribRole: CribRole.Pone, expected: 3.46, name: "pone" },
+    { cribRole: CribRole.Dealer, expected: 1.03, name: "dealer" },
+    { cribRole: CribRole.Pone, expected: 3.38, name: "pone" },
   ])(
     "is positive under both roles for a discard wrong under both, as $name",
     ({ cribRole, expected }) => {
