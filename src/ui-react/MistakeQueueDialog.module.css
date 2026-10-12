@@ -763,3 +763,8 @@
 .table-provenance {
   overflow-wrap: anywhere;
 }
+
+/* The summary toggles the details, so signal that on hover; user-select is untouched, so its text stays selectable. */
+.table-provenance > summary {
+  cursor: pointer;
+}
