@@ -26,6 +26,7 @@ export const noPreviousDiscard: string;
 export const oppositeRoleBadge: string;
 export const option: string;
 export const paginationRow: string;
+export const pointsValue: string;
 export const previousDiscard: string;
 export const previousDiscardLabel: string;
 export const quantileBadge: string;
@@ -43,3 +44,4 @@ export const summaryLabel: string;
 export const summaryValue: string;
 export const title: string;
 /* jscpd:ignore-end */
+export const tableProvenance: string;

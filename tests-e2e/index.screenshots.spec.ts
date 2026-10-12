@@ -1,6 +1,11 @@
+import {
+  DIFFERENT_TABLE_IDENTITY,
+  openRetryMistakeQueue,
+} from "./mistakeQueueCardSetup";
 import { expect, test } from "@playwright/test";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { constantHandQuery } from "./layoutMeasurements";
+import { openSeededTrainer } from "./practiceDrillSetup";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 import { waitForUncertainties } from "./uncertainty";
 
@@ -221,6 +226,34 @@ const testScreenshots = () => {
   testDoubleExpandedScreenshot();
   testCribExpandedScreenshot();
   testDiscardTallyScreenshot();
+  test("mistake queue retry card keeps badge rows and point units together", async ({
+    page,
+  }) => {
+    await openSeededTrainer(page);
+    const card = await openRetryMistakeQueue(page);
+    await expect(
+      card.getByRole("note", { name: /^Previous discard driven by/u }),
+    ).toBeVisible();
+    await expect(card).toHaveScreenshot();
+  });
+  test("mistake queue table fingerprints expand for bug reports", async ({
+    page,
+  }) => {
+    await openSeededTrainer(page);
+    const card = await openRetryMistakeQueue(page, DIFFERENT_TABLE_IDENTITY);
+    await expect(
+      card.getByRole("note", { name: /^Previous discard driven by/u }),
+    ).toBeVisible();
+    await card
+      .getByText("Judged with different tables", { exact: true })
+      .click();
+    await expect(
+      card.getByRole("note", {
+        name: "Crib table fingerprint 4cd8a9258d32",
+      }),
+    ).toBeVisible();
+    await expect(card).toHaveScreenshot();
+  });
 };
 
 test.describe("portrait", () => {

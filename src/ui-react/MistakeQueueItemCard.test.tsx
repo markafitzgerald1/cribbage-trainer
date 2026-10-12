@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import * as classes from "./MistakeQueueDialog.module.css";
 import * as roleLossClasses from "./RoleLossPairText.module.css";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
@@ -12,6 +13,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { MistakeClassification } from "../analysis/classifyMistake";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import { SortOrder } from "../ui/SortOrder";
+import { shippedTableIdentity } from "../game/tableIdentity";
 
 interface RenderCardOptions {
   readonly classification?: MistakeClassification | null;
@@ -47,6 +49,114 @@ const renderCard = (options: RenderCardOptions = {}) => {
 };
 
 describe("mistakeQueueItemCard", () => {
+  it("announces a sub-cent recorded cost without the visible less-than glyph", () => {
+    const { getByLabelText } = renderCard({
+      item: { ...mockItemA, previousDiscardLoss: 0.004 },
+    });
+
+    expect(
+      getByLabelText("Recorded cost: less than 0.01 points"),
+    ).toHaveTextContent("Recorded cost: < 0.01 points");
+  });
+
+  it("shows the average over wrong attempts beside the recorded cost once there is a retry", () => {
+    const { getByLabelText, getByRole, getByText } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 1.5, wrong: 3 },
+    });
+
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(
+      getByRole("note", { name: "Average over 3 wrong attempts: 1.50 points" }),
+    ).toHaveTextContent("Average over 3 wrong attempts: 1.50 points");
+    expect(getByText("1.50 points")).toHaveClass(classes.pointsValue);
+    expect(getByText("1.00 points")).toHaveClass(classes.pointsValue);
+  });
+
+  it("announces a sub-cent average without the visible less-than glyph", () => {
+    const { getByRole } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 0.004, wrong: 2 },
+    });
+
+    expect(
+      getByRole("note", {
+        name: "Average over 2 wrong attempts: less than 0.01 points",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("omits the average while the recorded decision is the only wrong attempt", () => {
+    const { queryByText } = renderCard({
+      item: { ...mockItemA, lossIfWrong: 7, wrong: 1 },
+    });
+
+    expect(queryByText(/Average over/u)).not.toBeInTheDocument();
+  });
+
+  it("labels the loaded pair as current and uses the original cost instead of the aggregate average", () => {
+    const { getByLabelText, getByText } = renderCard({
+      item: {
+        ...mockItemA,
+        lossIfWrong: 7,
+        tableIdentity: shippedTableIdentity,
+      },
+    });
+
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByText("Judged with current tables")).toBeInTheDocument();
+  });
+
+  it("names an unknown original table without inventing provenance", () => {
+    const { getByLabelText, getByText, queryByText } = renderCard();
+
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByText("Original tables unknown")).toBeInTheDocument();
+    expect(queryByText("Table fingerprints (for bug reports)")).toBeNull();
+  });
+
+  it("shortens fingerprints in expanded details with full digest titles", () => {
+    /* jscpd:ignore-start */
+    const tableIdentity = {
+      crib: { means_sha256: "0123456789abcdef".repeat(4) },
+      play: { means_sha256: "9876543210abcdef".repeat(4) },
+    };
+    /* jscpd:ignore-end */
+    const { getAllByRole, getByLabelText, getByText } = renderCard({
+      item: { ...mockItemA, tableIdentity },
+    });
+
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
+
+    const summary = getByText("Judged with different tables");
+    const details = summary.closest("details");
+
+    expect(details).not.toHaveAttribute("open");
+
+    fireEvent.click(summary);
+
+    expect(
+      getByText("Table fingerprints (for bug reports)"),
+    ).toBeInTheDocument();
+
+    expect(
+      getAllByRole("note", { name: /table fingerprint/u }).map((element) => ({
+        label: element.getAttribute("aria-label"),
+        text: element.textContent,
+        title: element.getAttribute("title"),
+      })),
+    ).toStrictEqual([
+      {
+        label: "Crib table fingerprint 0123456789ab",
+        text: "Crib: 0123456789ab…",
+        title: tableIdentity.crib.means_sha256,
+      },
+      {
+        label: "Play table fingerprint 9876543210ab",
+        text: "Play: 9876543210ab…",
+        title: tableIdentity.play.means_sha256,
+      },
+    ]);
+  });
+
   it("renders loss reason badge when provided", () => {
     const { getByRole, getByText, getByTitle } = renderCard({
       lossReason: "Crib",
@@ -149,7 +259,7 @@ describe("mistakeQueueItemCard", () => {
     { loss: 1.5, name: "a reversed role that would have cost more" },
     { loss: 1.0, name: "a reversed role that would have cost the same" },
   ])("shows no role-cost badge for $name", ({ loss }) => {
-    const { getByText, queryByRole } = renderCard({
+    const { getByLabelText, queryByRole } = renderCard({
       item: {
         ...mockItemWithRoleLossPair,
         previousDiscardOppositeRoleLoss: loss,
@@ -157,7 +267,7 @@ describe("mistakeQueueItemCard", () => {
     });
 
     // The card itself rendered, so the badge below is absent rather than simply not reached.
-    expect(getByText("1.00 pts lost")).toBeInTheDocument();
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
     expect(queryByRole("note", { name: /Previous discard cost/u })).toBeNull();
   });
 
@@ -197,33 +307,47 @@ describe("mistakeQueueItemCard", () => {
       isMastered: true,
       quantile: "medium" as const,
       role: "Dealer",
+      roleCosts: "1.00 dealer, 0.00 pone",
     },
     {
       cribRole: mockItemA.cribRole,
       isMastered: false,
       quantile: "high" as const,
       role: "Dealer",
+      roleCosts: "1.00 dealer, 0.00 pone",
     },
     {
       cribRole: CribRole.Pone,
       isMastered: false,
       quantile: "low" as const,
       role: "Pone",
+      roleCosts: "1.00 pone, 0.00 dealer",
     },
   ])(
-    "renders quantile $quantile and role $role",
-    ({ cribRole, isMastered, quantile, role }) => {
+    "orders role $role, quantile $quantile, recorded cost, reason and role costs in the wrapping row",
+    ({ cribRole, isMastered, quantile, role, roleCosts }) => {
       const { getByText } = renderCard({
+        classification: mockTradeOffClassification,
         item: {
-          ...mockItemA,
+          ...mockItemWithRoleLossPair,
           cribRole,
           isMastered,
           lossQuantile: quantile,
         },
       });
 
-      expect(getByText(quantile)).toBeInTheDocument();
-      expect(getByText(role)).toBeInTheDocument();
+      const badges = getByText(role).parentElement as HTMLElement;
+
+      expect(badges).toHaveClass(classes.itemBadges);
+      expect(
+        Array.from(badges.children, (badge) => badge.textContent),
+      ).toStrictEqual([
+        role,
+        quantile,
+        "Recorded cost: 1.00 points",
+        "Prev: Crib gain < Hand loss",
+        roleCosts,
+      ]);
     },
   );
 

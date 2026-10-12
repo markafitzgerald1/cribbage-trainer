@@ -1,5 +1,5 @@
-/* jscpd:ignore-start */
 import { describe, expect, it, jest } from "@jest/globals";
+/* jscpd:ignore-start */
 import {
   findCaption,
   renderHand,
@@ -10,13 +10,14 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { Combination } from "js-combinatorics";
 import { CribRole } from "../game/expectedCribPoints";
-import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
+import type { ScoredPossibleKeepDiscardsProps } from "./ScoredPossibleKeepDiscards";
 import { dealHand } from "../game/dealHand";
 import { expectedCribPointsTable } from "../analysis/analysis.test.common";
 import { parseHand } from "../game/Card";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
+import { shippedTableIdentity } from "../game/tableIdentity";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
 
@@ -238,7 +239,7 @@ describe("scored possible keep discards component", () => {
     "reports $name",
     async ({ cribRole, discards, expected }) => {
       const onAnalysisRendered =
-        jest.fn<(analysis: RenderedAnalysis) => void>();
+        jest.fn<ScoredPossibleKeepDiscardsProps["onAnalysisRendered"]>();
       renderScoredPossibleKeepDiscards(
         toDealtCards(parseHand(REPORTED_HAND), discards),
         { cribRole, onAnalysisRendered },
@@ -249,7 +250,10 @@ describe("scored possible keep discards component", () => {
         expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
       }, waitForAnalysis);
 
-      expect(onAnalysisRendered).toHaveBeenCalledWith(expected);
+      expect(onAnalysisRendered).toHaveBeenCalledWith(
+        expected,
+        shippedTableIdentity,
+      );
     },
   );
 

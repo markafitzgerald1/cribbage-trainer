@@ -672,3 +672,11 @@ once you are already editing layout or interaction code.
   takes its own row, and `roleLossPair.spec.ts` asserts the verdict is one line
   and the reason sits below it at a desktop and a phone-portrait width. The
   `practiceDrill.spec.ts` caption-height budget (65px) held unchanged.
+
+- A recorded table identity must travel beside the analysis produced by that
+  loaded means pair. Reading a global digest later can stamp the wrong pair;
+  injected means must explicitly supply their identity or remain unknown.
+  The v8 tally interns identities, and its registry must retain existing
+  indices when writing decisions: reserved attempt data can already refer
+  to an entry that no retained decision uses. Rebuilding the registry from
+  decisions alone corrupts those references.

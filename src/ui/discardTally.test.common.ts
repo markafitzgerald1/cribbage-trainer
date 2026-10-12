@@ -67,6 +67,7 @@ export const decisionOf = (
   handKey: "AH,2H,3H,4H,5H,6H",
   isOptimal: false,
   isPractice: false,
+  tableIdentity: null,
   ...overrides,
 });
 
