@@ -86,6 +86,18 @@ describe("practice attempt payload validation", () => {
     ).toStrictEqual([2, 3]);
   });
 
+  it("retains the latest 1,000 stored retries when older logs exceed the cap", () => {
+    const log = Array.from({ length: 1_001 }, (_, index) => ({
+      ...entry,
+      order: index + 1,
+    }));
+    const retained = normalizeAttemptLog(log, []);
+
+    expect(retained).toHaveLength(1_000);
+    expect(retained[0]?.order).toBe(2);
+    expect(retained.at(-1)?.order).toBe(1_001);
+  });
+
   it("reads compact attempt transport without assigning unknown provenance", () => {
     const stored = [
       handKey,

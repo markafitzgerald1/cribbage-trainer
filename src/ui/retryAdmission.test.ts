@@ -32,6 +32,35 @@ const retry = (identity = pairA, isOptimal = true): PracticeAttempt => {
     : { ...common, expectedPointsLoss: 0.5, isOptimal: false };
 };
 
+const seedFullAttemptLog = (): void => {
+  clearDiscardTally();
+  const first = retry();
+  const log = Array.from({ length: 1_000 }, (_, index) => ({
+    ...first.detail!,
+    at: 100,
+    handKey,
+    order: index + 1,
+  }));
+  const stored = {
+    ...readTallyForDisplay(),
+    attemptLog: log,
+    practice: [
+      {
+        attempts: 1_000,
+        consecutiveSuccesses: 1_000,
+        handKey,
+        lastAttemptAt: 1_000,
+        totalWrongLoss: 0,
+        wrong: 0,
+      },
+    ],
+  };
+  localStorage.setItem(
+    discardTallyKey,
+    JSON.stringify(encodeTableIdentities(stored)),
+  );
+};
+
 describe("frozen retry and admission evidence", () => {
   it("retains both attempt stamps while A success plus B success masters and B miss removes mastery", () => {
     clearDiscardTally();
@@ -120,51 +149,26 @@ describe("retry retention and quota", () => {
   });
 
   it("trims individual attempts while keeping streaks, counts and monotonic order across clock rollback", () => {
-    clearDiscardTally();
-    const first = retry();
-    const log = Array.from({ length: 10_000 }, (_, index) => ({
-      ...first.detail!,
-      at: 100,
-      handKey,
-      order: index + 1,
-    }));
-    const stored = {
-      ...readTallyForDisplay(),
-      attemptLog: log,
-      practice: [
-        {
-          attempts: 10_000,
-          consecutiveSuccesses: 10_000,
-          handKey,
-          lastAttemptAt: 10_000,
-          totalWrongLoss: 0,
-          wrong: 0,
-        },
-      ],
-    };
-    localStorage.setItem(
-      discardTallyKey,
-      JSON.stringify(encodeTableIdentities(stored)),
-    );
+    seedFullAttemptLog();
     recordPracticeAttempt({ ...retry(pairB), at: 1 });
     const tally = readTallyForDisplay();
 
-    expect(tally.attemptLog).toHaveLength(10_000);
+    expect(tally.attemptLog).toHaveLength(1_000);
     expect(tally.attemptLog?.[0]?.order).toBe(2);
     expect(tally.attemptLog?.at(-1)).toMatchObject({
       at: 1,
-      order: 10_001,
+      order: 1_001,
       tableIdentity: pairB,
     });
     expect(tally.practice[0]).toMatchObject({
-      attempts: 10_001,
-      consecutiveSuccesses: 10_001,
-      lastAttemptAt: 10_001,
+      attempts: 1_001,
+      consecutiveSuccesses: 1_001,
+      lastAttemptAt: 1_001,
     });
   });
 
   it("uses one atomic write, retains session attempts after quota failure, and flushes them on recovery", () => {
-    clearDiscardTally();
+    seedFullAttemptLog();
     const writes = jest
       .spyOn(Storage.prototype, "setItem")
       .mockImplementation(() => {
@@ -174,21 +178,38 @@ describe("retry retention and quota", () => {
       recordPracticeAttempt(retry());
       recordPracticeAttempt(retry(pairB));
 
+      const session = readTallyForDisplay();
+
       expect(writes).toHaveBeenCalledTimes(2);
-      expect(readTallyForDisplay().attemptLog).toHaveLength(2);
+      expect({
+        aggregateAttempts: session.practice[0]?.attempts,
+        orders: session.attemptLog?.map((entry) => entry.order),
+      }).toStrictEqual({
+        aggregateAttempts: 1_002,
+        orders: Array.from({ length: 1_000 }, (_, index) => index + 3),
+      });
 
       writes.mockRestore();
       recordPracticeAttempt(retry(pairB, false));
 
-      expect(readTallyForDisplay().attemptLog).toHaveLength(3);
       expect(
-        JSON.parse(localStorage.getItem(discardTallyKey) as string),
-      ).toHaveProperty("attemptLog", expect.any(Array));
+        readTallyForDisplay().attemptLog?.map((entry) => entry.order),
+      ).toStrictEqual(Array.from({ length: 1_000 }, (_, index) => index + 4));
+
+      const durable = JSON.parse(
+        localStorage.getItem(discardTallyKey) as string,
+      ) as { attemptLog: readonly unknown[] };
+
+      expect(durable.attemptLog).toHaveLength(1_000);
     } finally {
       writes.mockRestore();
     }
 
-    expect(readTallyForDisplay().practice[0]?.consecutiveSuccesses).toBe(0);
+    expect(readTallyForDisplay().practice[0]).toMatchObject({
+      attempts: 1_003,
+      consecutiveSuccesses: 0,
+      wrong: 1,
+    });
   });
 
   it("updates aggregate success from the final outcome without losing a positive exact noise loss", () => {

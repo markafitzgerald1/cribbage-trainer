@@ -7,7 +7,11 @@ import { isObject } from "./isObject";
 import { parseHandKey } from "./handKey";
 import { resolveTableIdentity } from "./tableIdentityCodec";
 
-export const MAX_ATTEMPT_LOG = 10_000;
+// Full-cap stress storage in Chromium measures 5,147,904 bytes with 1,000
+// Retries, reloads exactly, and leaves 94,955 ASCII characters of headroom.
+// A 2,000-retry fixture exceeds quota; decision/aggregate compaction is separate.
+// Aggregates remain the mastery authority when individual retries age out.
+export const MAX_ATTEMPT_LOG = 1_000;
 export interface PracticeAttemptDetail {
   readonly basis: JudgmentBasis;
   readonly discardKey: string;
