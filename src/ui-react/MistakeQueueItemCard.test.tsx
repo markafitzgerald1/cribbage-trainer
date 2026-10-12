@@ -349,7 +349,7 @@ describe("mistakeQueueItemCard", () => {
         role,
         quantile,
         "Recorded cost: 1.00 points",
-        "Prev: Crib gain < Hand loss",
+        "Current-table comparison: Crib gain < Hand loss",
         roleCosts,
       ]);
     },
