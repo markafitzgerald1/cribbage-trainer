@@ -105,7 +105,11 @@ describe("practiceDrillPanel", () => {
       verdict: sampleVerdict(),
     });
 
-    expect(getByText("Optimal — 1 of 2 toward mastery.")).toBeInTheDocument();
+    expect(
+      getByText(
+        "Best choice with current tables. 1 of 2 successful retries toward mastery.",
+      ),
+    ).toBeInTheDocument();
     expect(getByRole("button", { name: "Draw another" })).toBeInTheDocument();
   });
 
@@ -116,7 +120,9 @@ describe("practiceDrillPanel", () => {
       verdict: sampleVerdict({ consecutiveSuccesses: 2, isMastered: true }),
     });
 
-    expect(getByText("Mastered.")).toBeInTheDocument();
+    expect(
+      getByText("Mastered. Mastery kept from earlier retries."),
+    ).toBeInTheDocument();
     expect(
       queryByRole("button", { name: "Draw another" }),
     ).not.toBeInTheDocument();
@@ -124,12 +130,14 @@ describe("practiceDrillPanel", () => {
 
   it.each([
     {
-      expectedOutcome: "0.42 behind the best discard.",
+      expectedOutcome:
+        "0.42 points behind the best choice with current tables.",
       loss: 0.42,
       name: "shows the loss magnitude and a missing previous discard on a miss",
     },
     {
-      expectedOutcome: "< 0.01 behind the best discard.",
+      expectedOutcome:
+        "< 0.01 points behind the best choice with current tables.",
       loss: 0.003754,
       name: "formats sub-cent loss as '< 0.01' in verdict outcome",
     },

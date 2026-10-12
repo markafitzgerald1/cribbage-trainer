@@ -1,3 +1,7 @@
+import {
+  type RecordedAdmission,
+  normalizeAdmission,
+} from "./recordedAdmission";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "./SortOrder";
@@ -10,8 +14,7 @@ import { sortUrlValue } from "./urlAnalysisState";
 
 export interface DiscardDecisionRecord {
   readonly tableIdentity?: TableIdentity | null;
-  // Reserved for the settled admission writer; this PR does not judge admission.
-  readonly recordedAdmission?: unknown;
+  readonly recordedAdmission?: RecordedAdmission | null;
   readonly at: number;
   readonly cribRole: CribRole;
   // Serialized in deal order; null on records from versions before 3.
@@ -154,6 +157,11 @@ export const normalizeStoredRecords = (
           normalizeRecencyAt(record.recencyAt, record.at),
           previousRecencyAt + 1,
         ),
+        ...(typeof record.recordedAdmission === "undefined"
+          ? {}
+          : {
+              recordedAdmission: normalizeAdmission(record.recordedAdmission),
+            }),
         tableIdentity: resolveTableIdentity(record.tableIdentity, identities),
       });
     }

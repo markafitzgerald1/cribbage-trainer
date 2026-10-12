@@ -65,8 +65,13 @@ describe("scored analysis provenance", () => {
     const hook = renderTallyWithMutableCards(handOf(HAND));
     const report = jest.fn<
       ScoredPossibleKeepDiscardsProps["onAnalysisRendered"]
-    >((analysis, tableIdentity) =>
-      hook.result.current.reportAnalysisRendered(analysis, null, tableIdentity),
+    >((analysis, tableIdentity, admission) =>
+      hook.result.current.reportAnalysisRendered(
+        analysis,
+        null,
+        tableIdentity,
+        admission,
+      ),
     );
     const element = (
       key: string,
@@ -118,6 +123,7 @@ describe("scored analysis provenance", () => {
             }),
           }),
           identityB,
+          { basis: "exact-v1", eligible: false },
         ),
       waitForAnalysis,
     );
@@ -176,11 +182,12 @@ describe("scored analysis provenance", () => {
               }),
             }),
             tableIdentity,
+            expect.any(Object),
           ),
         waitForAnalysis,
       );
 
-      expect(report).toHaveBeenCalledTimes(1);
+      expect(report).toHaveBeenCalledTimes(2);
     },
   );
 });

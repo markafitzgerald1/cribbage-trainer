@@ -55,7 +55,10 @@ export const MissVerdict: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    await expectStoryTextVisible(canvasElement, /behind the best discard/u);
+    await expectStoryTextVisible(
+      canvasElement,
+      /points behind the best choice with current tables/u,
+    );
   },
 };
 
@@ -104,7 +107,7 @@ export const ReviewWithRepeatedMistake: Story = {
 
     await expectStoryTextVisible(
       canvasElement,
-      /1\.42 behind the best discard/u,
+      /1\.42 points behind the best choice with current tables/u,
     );
   },
 };

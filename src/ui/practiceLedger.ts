@@ -1,3 +1,7 @@
+import {
+  type PracticeAttemptDetail,
+  isAttemptDetail,
+} from "./practiceAttemptLog";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { parseHandKey } from "./handKey";
 
@@ -13,7 +17,7 @@ export interface PracticeRecord {
   readonly wrong: number;
 }
 
-export type PracticeAttempt =
+export type PracticeAttempt = { readonly detail?: PracticeAttemptDetail } & (
   | {
       readonly at: number;
       readonly expectedPointsLoss?: undefined;
@@ -25,7 +29,8 @@ export type PracticeAttempt =
       readonly expectedPointsLoss: number;
       readonly handKey: string;
       readonly isOptimal: false;
-    };
+    }
+);
 
 interface MaybePracticeRecord {
   readonly attempts?: unknown;
@@ -99,6 +104,15 @@ const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
     typeof candidate.at !== "number" ||
     !Number.isFinite(candidate.at) ||
     candidate.at < 0
+  ) {
+    return false;
+  }
+  if (
+    typeof candidate.detail !== "undefined" &&
+    (!isAttemptDetail(candidate.detail, candidate.handKey) ||
+      candidate.detail.isOptimal !== candidate.isOptimal ||
+      candidate.detail.expectedPointsLoss !==
+        (candidate.expectedPointsLoss ?? 0))
   ) {
     return false;
   }

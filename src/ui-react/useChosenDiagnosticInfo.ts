@@ -30,11 +30,14 @@ import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedTables } from "./expectedTables";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
+import type { RecordedAdmission } from "../ui/recordedAdmission";
+import { exactAdmission } from "../ui/recordedAdmission";
 import { serializeHand } from "../game/Card";
 import { toHandKey } from "../ui/handKey";
 import { useMemo } from "react";
 
 export interface ChosenDiagnosticInfo {
+  readonly admission: RecordedAdmission | null;
   readonly captionAriaLabel: string | null;
   readonly chosenClassification: MistakeClassification | null;
   // Hover text for the within-noise badge, saying what the badge's "within noise" means, including that the threshold is approximate; empty whenever the badge is not shown.
@@ -191,7 +194,22 @@ export const useChosenDiagnosticInfo = ({
           : `Within simulation noise, 95% one-sided, approximate: ${rolePair.accessibleLabel}, at or below the ${formatAccessibleNetLoss(withinNoiseThreshold)} point threshold, ${NOISE_THRESHOLD_QUALIFIER}. ${chosenClassification.accessibleLabel}`;
     }
 
+    const admission: RecordedAdmission | null =
+      quality === null
+        ? null
+        : quality.isOptimal
+          ? exactAdmission(true)
+          : !sidecars.isSettled
+            ? "pending"
+            : {
+                basis:
+                  threshold === null
+                    ? "exact-fallback-v1"
+                    : "sampling-noise-v1",
+                eligible: withinNoiseThreshold === null,
+              };
     return {
+      admission,
       captionAriaLabel,
       chosenClassification,
       noiseBadgeTitle: noiseBadgeTitleFor(withinNoiseThreshold),
@@ -200,6 +218,6 @@ export const useChosenDiagnosticInfo = ({
       rolePair,
       withinNoiseThreshold,
     };
-  }, [cribRole, dealtCards, scoredOptions, sidecars, tables]);
+  }, [cribRole, dealtCards, quality, scoredOptions, sidecars, tables]);
   return { ...info, quality, sidecars };
 };

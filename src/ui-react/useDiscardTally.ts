@@ -1,7 +1,8 @@
+import { type RecordedAdmission } from "../ui/recordedAdmission";
+import { useAdmissionRecording } from "./useAdmissionRecording";
 import {
   type DiscardTallySummary,
   readDiscardTally,
-  recordDiscardDecision,
   recordSkippedHand,
 } from "../ui/discardTally";
 /* jscpd:ignore-start */
@@ -90,6 +91,7 @@ export type ReportAnalysisRendered = (
   analysis: RenderedAnalysis,
   displayedAs: DisplayedHandRelabeling | null,
   tableIdentity?: TableIdentity | null,
+  admission?: RecordedAdmission | null,
 ) => void;
 
 export interface DiscardTally {
@@ -138,6 +140,7 @@ export const useDiscardTally = ({
   const [summary, setSummary] = useState<DiscardTallySummary>(() =>
     readDiscardTally(Date.now()),
   );
+  const recordDecision = useAdmissionRecording(boardHandId, setSummary);
   /*
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
@@ -362,6 +365,7 @@ export const useDiscardTally = ({
       }: RenderedAnalysis,
       displayedAs: DisplayedHandRelabeling | null,
       tableIdentity: TableIdentity | null = null,
+      admission: RecordedAdmission | null = null,
     ) => {
       if (quality === null) {
         return;
@@ -394,7 +398,7 @@ export const useDiscardTally = ({
           ? capture.sortOrder
           : null;
       setSummary(
-        recordDiscardDecision({
+        recordDecision({
           at: Date.now(),
           cribRole: scoredRole,
           discardKey,
@@ -433,11 +437,12 @@ export const useDiscardTally = ({
           ...(typeof capturedSortOrder === "number"
             ? { sortOrder: sortUrlValue(capturedSortOrder) }
             : {}),
+          ...(admission === null ? {} : { recordedAdmission: admission }),
           tableIdentity,
         }),
       );
     },
-    [boardHandId, capture, dealtCards],
+    [boardHandId, capture, dealtCards, recordDecision],
   );
 
   return {

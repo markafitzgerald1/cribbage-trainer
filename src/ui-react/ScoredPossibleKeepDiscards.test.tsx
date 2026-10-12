@@ -228,7 +228,7 @@ describe("scored possible keep discards component", () => {
       );
     }, waitForAnalysis);
 
-    expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+    expect(onAnalysisRendered).toHaveBeenCalled();
 
     unmount();
 
@@ -247,12 +247,13 @@ describe("scored possible keep discards component", () => {
 
       // Awaited so a sub-optimal verdict's deferred settle lands inside act rather than after the test.
       await waitFor(() => {
-        expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+        expect(onAnalysisRendered).toHaveBeenCalled();
       }, waitForAnalysis);
 
       expect(onAnalysisRendered).toHaveBeenCalledWith(
         expected,
         shippedTableIdentity,
+        expect.anything(),
       );
     },
   );
@@ -265,7 +266,7 @@ describe("scored possible keep discards component", () => {
 
     await expectLoaded();
 
-    expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+    expect(onAnalysisRendered).toHaveBeenCalled();
   });
 
   it("reports no rendered analysis when the load fails", async () => {

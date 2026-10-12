@@ -1,9 +1,13 @@
 import * as classes from "./PracticeDrillPanel.module.css";
 import type { PracticeDrillPhase, PracticeVerdict } from "./usePracticeDrill";
+import { sameTableIdentity } from "../game/tableIdentity";
 import { SUCCESSES_FOR_MASTERY } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
-import { formatNetLoss } from "../analysis/classifyMistake";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { parseHand } from "../game/Card";
 
 export interface PracticeDrillPanelProps {
@@ -88,25 +92,38 @@ const renderVerdictRow = ({
   <div className={classes.verdictRow}>
     <span className={classes.verdictLabel}>{label}</span>
     {renderDiscard(discard, sortOrder, onLocate)}
-    <span className={classes.verdictLoss}>{formatLoss(loss)}</span>
+    <span
+      aria-label={`${formatAccessibleNetLoss(loss)} points`}
+      className={classes.verdictLoss}
+    >
+      {formatLoss(loss)}
+    </span>
   </div>
 );
 
 const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
   if (verdict.isMastered) {
-    return <p className={classes.outcomeMastered}>Mastered.</p>;
+    return (
+      <p className={classes.outcomeMastered}>
+        Mastered. Mastery kept from earlier retries.
+      </p>
+    );
   }
   if (verdict.isOptimal) {
     return (
       <p className={classes.outcomeGood}>
-        Optimal — {verdict.consecutiveSuccesses} of {SUCCESSES_FOR_MASTERY}{" "}
-        toward mastery.
+        Best choice with current tables. {verdict.consecutiveSuccesses} of{" "}
+        {SUCCESSES_FOR_MASTERY} successful retries toward mastery.
       </p>
     );
   }
   return (
-    <p className={classes.outcomeMiss}>
-      {formatLoss(verdict.chosenLoss)} behind the best discard.
+    <p
+      aria-label={`${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables.`}
+      className={classes.outcomeMiss}
+    >
+      {formatLoss(verdict.chosenLoss)} points behind the best choice with
+      current tables.
     </p>
   );
 };
@@ -152,6 +169,27 @@ const renderChoosing = ({
   </div>
 );
 
+const renderTableBoundary = (
+  verdict: PracticeVerdict,
+): React.JSX.Element | null => {
+  const original = verdict.originalTableIdentity;
+  const retry = verdict.retryTableIdentity;
+  if (!retry)
+    return <p className={classes.provenanceNote}>Table versions unknown.</p>;
+  if (!original)
+    return (
+      <p className={classes.provenanceNote}>
+        The original tables were not recorded. This retry uses current tables.
+      </p>
+    );
+  return sameTableIdentity(original, retry) ? null : (
+    <p className={classes.provenanceNote}>
+      Tables changed since this decision. Your earlier result and streak are
+      kept; this retry uses the current tables.
+    </p>
+  );
+};
+
 const renderVerdict = (
   verdict: PracticeVerdict,
   {
@@ -165,13 +203,13 @@ const renderVerdict = (
   <div className={classes.verdict}>
     {renderVerdictRow({
       discard: verdict.chosenDiscard,
-      label: "Now",
+      label: "Retry — current tables",
       loss: verdict.chosenLoss,
       sortOrder,
     })}
     {renderVerdictRow({
       discard: verdict.previousDiscard,
-      label: "Before",
+      label: "Then — recorded cost",
       loss: verdict.previousLoss,
       ...(verdict.previousDiscard === null
         ? {}
@@ -179,6 +217,7 @@ const renderVerdict = (
       sortOrder,
     })}
     {renderOutcome(verdict)}
+    {renderTableBoundary(verdict)}
     {renderActions(
       hasNextHand ? (
         <button

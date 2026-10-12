@@ -18,7 +18,9 @@ export const resolveTableIdentity = (
 // Only the transport interns identities; callers always see the complete digest pair.
 export const encodeTableIdentities = (tally: StoredTally): unknown => {
   const tableIdentities = [...(tally.tableIdentities ?? [])];
-  const records = tally.records.map((record) => {
+  function encode<T extends { readonly tableIdentity?: TableIdentity | null }>(
+    record: T,
+  ) {
     const identity = normalizeTableIdentity(record.tableIdentity);
     let reference: string | null = null;
     if (identity !== null) {
@@ -33,6 +35,13 @@ export const encodeTableIdentities = (tally: StoredTally): unknown => {
       reference = String(index);
     }
     return { ...record, tableIdentity: reference };
-  });
-  return { ...tally, records, tableIdentities };
+  }
+  const records = tally.records.map(encode);
+  const attemptLog = tally.attemptLog?.map(encode);
+  return {
+    ...tally,
+    records,
+    ...(attemptLog ? { attemptLog } : {}),
+    tableIdentities,
+  };
 };

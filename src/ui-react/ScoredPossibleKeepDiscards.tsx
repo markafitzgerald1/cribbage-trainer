@@ -12,6 +12,7 @@ import {
 } from "../analysis/compareByExpectedScoreDescending";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
+import type { RecordedAdmission } from "../ui/recordedAdmission";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
@@ -58,6 +59,7 @@ export interface ScoredPossibleKeepDiscardsProps {
   readonly onAnalysisRendered: (
     analysis: RenderedAnalysis,
     tableIdentity?: TableIdentity | null,
+    admission?: RecordedAdmission | null,
   ) => void;
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
@@ -140,6 +142,7 @@ export function ScoredPossibleKeepDiscards({
     [cribRole, dealtCards, tables],
   );
   const {
+    admission,
     captionAriaLabel,
     chosenClassification,
     noiseBadgeTitle,
@@ -168,9 +171,13 @@ export function ScoredPossibleKeepDiscards({
   useEffect(() => {
     // The scored options are a dependency because Back and Forward swap the hand while this component stays mounted.
     if (tables !== null) {
-      onAnalysisRendered(renderedAnalysis, tables.tableIdentity ?? null);
+      onAnalysisRendered(
+        renderedAnalysis,
+        tables.tableIdentity ?? null,
+        admission,
+      );
     }
-  }, [onAnalysisRendered, renderedAnalysis, tables]);
+  }, [admission, onAnalysisRendered, renderedAnalysis, tables]);
   /*
    * Separate from the report above: a sub-optimal verdict now arrives after
    * the sidecars settle (#774), and sharing one effect re-sent the analysis
