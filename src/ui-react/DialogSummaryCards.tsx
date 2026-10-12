@@ -1,6 +1,7 @@
 import type React from "react";
 
 export interface DialogSummaryMetric {
+  readonly accessibleValue?: string;
   readonly label: string;
   readonly value: number | string;
 }
@@ -27,7 +28,13 @@ export function DialogSummaryCards({
           key={metric.label}
         >
           <span className={classes.summaryLabel}>{metric.label}</span>
-          <span className={classes.summaryValue}>{metric.value}</span>
+          <span
+            aria-label={metric.accessibleValue}
+            className={classes.summaryValue}
+            role="note"
+          >
+            {metric.value}
+          </span>
         </div>
       ))}
     </div>

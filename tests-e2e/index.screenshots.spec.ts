@@ -211,7 +211,9 @@ const testDiscardTallyScreenshot = () =>
      * row and failed on a difference that says nothing about this feature.
      * Where it sits is asserted in discardTally.spec.ts instead.
      */
-    const tally = page.getByText("Lost per discard").locator("..");
+    const tally = page
+      .getByText("Recorded loss", { exact: true })
+      .locator("..");
     await expect(tally).toHaveScreenshot();
   });
 

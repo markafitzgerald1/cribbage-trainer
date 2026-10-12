@@ -69,6 +69,11 @@ const clickMarker = (rendered: Rendered, ordinal: number) =>
     ) as Element,
   );
 
+const practiceButtonFor = (view: Rendered, ordinal: number) => {
+  clickMarker(view, ordinal);
+  return view.queryByRole("button", { name: "Practice this hand" });
+};
+
 const practiceButton = "Practice this hand";
 
 const clickPractice = (rendered: Rendered) =>
@@ -85,6 +90,12 @@ const practiceFromMarker = (ordinal: number, useStoredTally = false) => {
   clickPractice(rendered);
   return onStartDrill;
 };
+
+const seedPracticeHistory = () =>
+  localStorage.setItem(
+    discardTallyKey,
+    JSON.stringify(dialogFixtures.practiceReadyDialogTally()),
+  );
 
 describe("decision quality trend dialog", () => {
   it("renders nothing when closed", () => {
@@ -224,9 +235,18 @@ describe("decision quality trend dialog", () => {
     );
   });
 
-  it("does nothing when the tapped mistake is not in the queue", () => {
-    // Ordinal 3 is the zero-loss non-optimal record the queue excludes.
-    expect(practiceFromMarker(3)).not.toHaveBeenCalled();
+  it("hides practice when the tapped decision is not admitted", () => {
+    const rendered = renderDialog({
+      onStartDrill: jest.fn(),
+      tally: dialogFixtures.practiceReadyDialogTally(),
+    });
+    clickMarker(rendered, 3);
+
+    expect(
+      rendered.getByRole("region", { name: "Decision #3 detail" }),
+    ).toBeInTheDocument();
+
+    expect(rendered.queryByRole("button", { name: practiceButton })).toBeNull();
   });
 
   it("omits the chart practice button when onStartDrill is left to default", () => {
@@ -240,16 +260,27 @@ describe("decision quality trend dialog", () => {
       />,
     );
 
-    clickMarker(rendered, 1);
+    expect(practiceButtonFor(rendered, 1)).toBeNull();
+  });
 
-    expect(rendered.queryByRole("button", { name: practiceButton })).toBeNull();
+  it("does not resurrect an evicted practice item after the detail opens", () => {
+    seedPracticeHistory();
+    const onStartDrill = jest.fn();
+    const view = renderDialog({ onStartDrill, useStoredTally: true });
+    clickMarker(view, 1);
+
+    expect(
+      view.getByRole("button", { name: practiceButton }),
+    ).toBeInTheDocument();
+
+    localStorage.clear();
+    clickPractice(view);
+
+    expect(onStartDrill).not.toHaveBeenCalled();
   });
 
   it("resolves the practice hand from stored history when no tally prop", () => {
-    localStorage.setItem(
-      discardTallyKey,
-      JSON.stringify(dialogFixtures.practiceReadyDialogTally()),
-    );
+    seedPracticeHistory();
     const onStartDrill = practiceFromMarker(1, true);
     localStorage.clear();
 

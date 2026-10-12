@@ -125,3 +125,22 @@ export const OpenMistakeQueue: StoryObj<typeof meta> = {
     ).toBeVisible();
   },
 };
+
+export const RecordedSmallLoss: StoryObj<typeof meta> = {
+  args: { summary: discardTallySummary({ meanExpectedPointsLoss: 0.004 }) },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("note", {
+        name: "Recorded loss: less than 0.01 points per discard",
+      }),
+    ).toHaveTextContent("< 0.01");
+
+    await userEvent.click(canvas.getByText("As recorded"));
+
+    await expect(
+      canvas.getByText(
+        /Earlier results, queue membership and mastery are kept/u,
+      ),
+    ).toBeVisible();
+  },
+};

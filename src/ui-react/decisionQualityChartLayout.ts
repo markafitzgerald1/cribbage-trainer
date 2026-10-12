@@ -373,12 +373,12 @@ export const createRollingXAxisLabels = (
   return mapPositionedToXLabels(positioned);
 };
 
-export const getLatestLoss = (points: readonly ChartPoint[]): string => {
+export const getLatestLoss = (points: readonly ChartPoint[]): number => {
   const lastPoint = points[points.length - 1];
   if (!lastPoint) {
-    return "0.00";
+    return 0;
   }
-  return lastPoint.loss.toFixed(DECIMAL_PLACES);
+  return lastPoint.loss;
 };
 
 export const getRollingWindowLabel = (

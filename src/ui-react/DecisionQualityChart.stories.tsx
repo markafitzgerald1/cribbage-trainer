@@ -6,6 +6,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { DecisionQualityChart } from "./DecisionQualityChart";
 import { SortOrder } from "../ui/SortOrder";
+import { originalIdentity } from "./PracticeDrillPanel.test.common";
 import { playPracticeFromDecisionMarker } from "./stories.common";
 
 const sampleBuckets: DiscardPeriodBucket[] = [
@@ -92,10 +93,12 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   handKey: "5H,6H,7H,8H,9H,10H|Dealer",
   isMastered: mastered,
   isOptimal: loss === 0,
+  isPracticeEligible: loss > 0,
   isRetained: false,
   ordinal: index + 1,
   recencyAt: 1700000000000 + index,
   rollingMeanLoss: mean,
+  tableIdentity: null,
   timestamp: 1700000000000 + index * 100000,
 }));
 
@@ -139,7 +142,7 @@ export const DecisionDetailPopup: Story = {
     clickElement(marker);
     const panel = await canvas.findByRole("region");
 
-    await expect(panel).toHaveTextContent("lost");
+    await expect(panel).toHaveTextContent("Recorded cost:");
     await expect(panel).toHaveTextContent("Dealer");
     await expect(panel).toHaveTextContent("Hand");
     await expect(panel).toHaveTextContent("Discarded");
@@ -176,6 +179,57 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     await expect(canvasElement.textContent).toContain(
       "No discard decisions recorded yet",
+    );
+  },
+};
+
+export const EarlierRecordedDetail: Story = {
+  args: {
+    buckets: [
+      { ...sampleBuckets[0]!, decisions: 1, meanExpectedPointsLoss: 0.004 },
+    ],
+    decisionPoints: [
+      {
+        ...sampleDecisionPoints[1]!,
+        expectedPointsLoss: 0.004,
+        ordinal: 1,
+        rollingMeanLoss: 0.004,
+        tableIdentity: originalIdentity,
+      },
+    ],
+    granularity: "rolling20",
+    onPracticeDecision: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const marker = canvas.getByRole("button", {
+      name: "Decision #1: Recorded cost: less than 0.01 points, mastery kept from earlier retries. Select to see the hand.",
+    });
+    await fireEvent.click(marker);
+
+    await expect(
+      canvas.getByRole("note", {
+        name: "Recorded cost: less than 0.01 points",
+      }),
+    ).toHaveTextContent("Recorded cost: < 0.01 points");
+    await expect(
+      canvas.getByText("Mastered — mastery kept from earlier retries"),
+    ).toBeVisible();
+
+    await fireEvent.click(canvas.getByText("Judged with different tables"));
+
+    await expect(
+      canvas.getByText(
+        `Crib: ${originalIdentity.crib.means_sha256.slice(0, 12)}…`,
+      ),
+    ).toBeVisible();
+
+    await fireEvent.click(
+      canvas.getByRole("button", { name: "Practice this hand" }),
+    );
+
+    await expect(args.onPracticeDecision).toHaveBeenCalledWith(
+      args.decisionPoints![0],
     );
   },
 };

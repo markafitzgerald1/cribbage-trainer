@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, fn, within } from "storybook/test";
 import {
   expectStoryTextVisible,
   playPracticeFromDecisionMarker,
@@ -8,7 +9,6 @@ import {
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { SortOrder } from "../ui/SortOrder";
 import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
-import { fn } from "storybook/test";
 
 const sampleTally = dialogFixtures.dialogTally(30);
 const cappedTally = dialogFixtures.cappedDialogTally();
@@ -73,4 +73,36 @@ export const PracticeFromChartMistake: Story = {
   },
   play: ({ args, canvasElement }) =>
     playPracticeFromDecisionMarker(canvasElement, args.onStartDrill),
+};
+
+export const RecordedCalendarLoss: Story = {
+  args: {
+    initialGranularity: "day",
+    tally: {
+      ...practiceReadyTally,
+      lifetime: {
+        decisions: 1,
+        expectedPointsLossTotal: 0.004,
+        optimalDecisions: 0,
+        skippedHands: 0,
+      },
+      records: practiceReadyTally.records
+        .slice(0, 1)
+        .map((record) => ({ ...record, expectedPointsLoss: 0.004 })),
+    },
+  },
+  play: async ({ canvas }) => {
+    const history = within(
+      canvas.getByRole("table", { name: "Recorded decision history" }),
+    );
+
+    await expect(
+      history.getByRole("note", {
+        name: "Recorded loss: less than 0.01 points per discard",
+      }),
+    ).toHaveTextContent("< 0.01");
+    await expect(
+      canvas.getByRole("note", { name: "less than 0.01 points per discard" }),
+    ).toHaveTextContent("< 0.01");
+  },
 };

@@ -104,7 +104,7 @@ describe("decision quality chart point detail", () => {
     const panel = view.getByRole("region");
 
     expect(panel).toHaveTextContent("Decision #2");
-    expect(panel).toHaveTextContent("0.45 lost");
+    expect(panel).toHaveTextContent("Recorded cost: 0.45 points");
     expect(panel).toHaveTextContent("Hand");
     expect(panel).toHaveTextContent("Discarded");
     expect(cardLabelCount(view)).toBe(8);
@@ -297,7 +297,9 @@ describe("decision quality chart point detail", () => {
 
     expectPanelText(view, "Retained decision #2");
 
-    expect(view.getByRole("region")).toHaveTextContent("0.40 lost");
+    expect(view.getByRole("region")).toHaveTextContent(
+      "Recorded cost: 0.40 points",
+    );
   });
 
   it("offers a practice button that forwards the tapped decision", () => {
@@ -343,7 +345,7 @@ describe("decision quality chart point detail", () => {
     expect(openDot).not.toHaveClass(classes.lossDotMastered);
     expect(markerFor(view, 1)).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("mastered since"),
+      expect.stringContaining("mastery kept from earlier retries"),
     );
     expect(view.getByRole("region")).toHaveTextContent("Mastered");
   });

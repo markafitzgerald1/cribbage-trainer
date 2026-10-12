@@ -673,6 +673,30 @@ once you are already editing layout or interaction code.
   and the reason sits below it at a desktop and a phone-portrait width. The
   `practiceDrill.spec.ts` caption-height budget (65px) held unchanged.
 
+- **History stays as recorded across a table change.** The tally, rolling
+  and calendar views, chart costs and best-choice figures use recorded
+  results by default. Label historical averages "Recorded loss" and a
+  decision's cost "Recorded cost"; announce positive sub-cent values with
+  the accessible formatter, separately from the visible formatter. Current
+  table comparisons are separate and explicitly labeled; unavailable is
+  unknown, not zero, and today's component costs cannot explain an earlier
+  recorded total. Show "Judged with different tables", "Judged with current
+  tables" or "Original tables unknown", with 12-character fingerprints on expansion, full digests in titles and
+  no inferred release date. Admission is settled once at decision time;
+  legacy rows retain recorded exact eligibility. A current best/noise verdict
+  cannot remove a grandfathered item or its practice action, or add an old
+  best choice. Partial streaks and earned mastery survive a table change,
+  including unknown legacy provenance; only an actual failed retry resets
+  them. Retry judgments use the pair loaded for that retry. Priority uses
+  recorded wrong attempts. Aggregate practice evidence survives attempt-log
+  trimming, and all-time statistics must not be reconstructed from capped
+  retained rows. Historical figures can span models and are not a controlled
+  measurement of model-independent improvement. Any future noise-aware
+  history integration must use captured exclusions rather than recomputing
+  admission or denominators with current tables; legacy noise remains
+  unknown and falls back to its recorded exact verdict. Opt-in re-judging or
+  replacing history requires a separate owner decision.
+
 - A recorded table identity must travel beside the analysis produced by that
   loaded means pair. Reading a global digest later can stamp the wrong pair;
   injected means must explicitly supply their identity or remain unknown.

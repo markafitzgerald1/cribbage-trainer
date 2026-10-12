@@ -9,12 +9,16 @@ import type {
   StartAutoDrillHandler,
   StartDrillHandler,
 } from "./usePracticeDrill";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
+import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
 
-const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
 const PER_CENT = 100;
 
@@ -60,6 +64,15 @@ const renderMeasure = (
     {today === null ? null : <span className={classes.figure}>{today}</span>}
     <span className={classes.figure}>{allTime}</span>
   </>
+);
+
+const recordedLossFigure = (loss: number): ReactNode => (
+  <span
+    aria-label={`Recorded loss: ${formatAccessibleNetLoss(loss)} points per discard`}
+    role="note"
+  >
+    {formatNetLoss(loss)}
+  </span>
 );
 
 /*
@@ -151,6 +164,10 @@ export function DiscardTallyView({
 
   return (
     <div className={`${classes.tally} ${columns}`}>
+      <details className={classes.historyHelp}>
+        <summary>As recorded</summary>
+        <p>{RECORDED_HISTORY_HELP}</p>
+      </details>
       <span />
       {hasToday ? <span className={classes.period}>today</span> : null}
       <span className={classes.period}>all time</span>
@@ -164,13 +181,11 @@ export function DiscardTallyView({
         ? null
         : renderMeasure(
             // "Points lost per discard" wraps mid-phrase on a phone, worst where the device font is set large; this keeps the per-discard sense, which a bare "points lost" would read as a total.
-            "Lost per discard",
+            "Recorded loss",
             summary.todayMeanExpectedPointsLoss === null
               ? blankWhen(hasToday)
-              : summary.todayMeanExpectedPointsLoss.toFixed(
-                  LOSS_FRACTION_DIGITS,
-                ),
-            summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
+              : recordedLossFigure(summary.todayMeanExpectedPointsLoss),
+            recordedLossFigure(summary.meanExpectedPointsLoss),
           )}
       {summary.decisions === 0
         ? null

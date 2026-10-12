@@ -1,18 +1,30 @@
+import {
+  type DiscardTrendGranularity,
+  computeDiscardQualityTrend,
+} from "../ui/discardQualityTrend";
 import { HAND_KEY, freshHarness } from "./usePracticeDrill.test.common";
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
+import {
+  discardTallyKey,
+  readDiscardTally,
+  readTallyForDisplay,
+  recordDiscardDecision,
+} from "../ui/discardTally";
 import {
   expectedCribPointsTable,
   expectedPlayPointsTable,
 } from "../analysis/analysis.test.common";
+import { fireEvent, render } from "@testing-library/react";
 import {
   originalIdentity,
   retryIdentity,
 } from "./PracticeDrillPanel.test.common";
 import { parseHand, serializeHand } from "../game/Card";
-import { readTallyForDisplay, recordDiscardDecision } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
+import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
+import { createElement } from "react";
 import { getDiscardQuality } from "../analysis/discardQuality";
 import { toDealtCards } from "../game/toDealtCards";
 
@@ -250,5 +262,92 @@ describe("retries across loaded table pairs", () => {
     reportRetry(harness, quality, retryIdentity);
 
     expect(readTallyForDisplay().attemptLog).toHaveLength(1);
+  });
+});
+
+const HISTORY_VIEWS: DiscardTrendGranularity[] = [
+  "rolling20",
+  "rolling50",
+  "day",
+  "week",
+  "month",
+];
+
+describe("recorded history across loaded table pairs", () => {
+  it.each(HISTORY_VIEWS)(
+    "keeps %s costs and best-choice counts across A to B and a storage reload",
+    (granularity) => {
+      freshHarness();
+      const { then, now } = comparedChoice("5H,6H");
+
+      expect([then.isOptimal, now.isOptimal]).toStrictEqual([false, true]);
+
+      recordOriginal("5H,6H", then);
+      const before = computeDiscardQualityTrend(readTallyForDisplay(), {
+        granularity,
+        now: 100,
+      });
+      const originalSummary = readDiscardTally(100);
+      const originalBytes = localStorage.getItem(discardTallyKey);
+      recordCurrent(now);
+      const after = computeDiscardQualityTrend(readTallyForDisplay(), {
+        granularity,
+        now: 100,
+      });
+
+      expect(after).toStrictEqual(before);
+      expect(after.buckets[0]).toMatchObject({
+        decisions: 1,
+        meanExpectedPointsLoss: then.expectedPointsLoss,
+        optimalDecisions: 0,
+      });
+      expect(readDiscardTally(100)).toStrictEqual(originalSummary);
+      expect(localStorage.getItem(discardTallyKey)).toBe(originalBytes);
+    },
+  );
+
+  it("keeps a mastered A mistake's trend practice action when B proves it best", () => {
+    const harness = freshHarness({ followLoadedHand: true });
+    const { then, now } = comparedChoice("5H,6H");
+
+    expect(now.isOptimal).toBe(true);
+
+    recordOriginal("5H,6H", then);
+    actualRetry(harness, tablesA, { identity: originalIdentity });
+    actualRetry(harness, tablesB, { identity: retryIdentity });
+    const tally = readTallyForDisplay();
+    const original = tally.records[0]!;
+    const point = computeDiscardQualityTrend(tally, {
+      granularity: "rolling20",
+    }).decisionPoints[0]!;
+
+    expect(point).toMatchObject({
+      expectedPointsLoss: original.expectedPointsLoss,
+      isMastered: true,
+      isPracticeEligible: true,
+      tableIdentity: originalIdentity,
+    });
+
+    const onStartDrill = jest.fn();
+    const view = render(
+      createElement(DecisionQualityTrendDialog, {
+        onClose: jest.fn(),
+        onStartDrill,
+        show: true,
+        tally,
+      }),
+    );
+    fireEvent.click(
+      view.getByRole("button", { name: /Select to see the hand/u }),
+    );
+    fireEvent.click(view.getByRole("button", { name: "Practice this hand" }));
+
+    expect(onStartDrill).toHaveBeenCalledWith(
+      expect.objectContaining({
+        handKey: HAND_KEY,
+        isMastered: true,
+        previousDiscardLoss: original.expectedPointsLoss,
+      }),
+    );
   });
 });

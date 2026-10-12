@@ -2,7 +2,6 @@ import * as classes from "./DecisionQualityChart.module.css";
 import {
   type ChartPoint,
   type ChartTick,
-  DECIMAL_PLACES,
   MARGIN_LEFT,
   MARGIN_TOP,
   PLOT_HEIGHT,
@@ -21,6 +20,10 @@ import type {
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import React from "react";
 
 // A band's edge sits at the midpoint between its mistake and the next one.
@@ -31,13 +34,22 @@ export interface LossEntry {
   readonly point: DiscardDecisionPoint;
 }
 
-export const lossPointTitle = (point: DiscardDecisionPoint): string => {
+const decisionCostText = (
+  point: DiscardDecisionPoint,
+  cost: string,
+): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
-  const mastered = point.isMastered ? ", mastered since" : "";
-  return `${prefix} #${point.ordinal}: ${point.expectedPointsLoss.toFixed(
-    DECIMAL_PLACES,
-  )} points loss${mastered}`;
+  const mastered = point.isMastered
+    ? ", mastery kept from earlier retries"
+    : "";
+  return `${prefix} #${point.ordinal}: Recorded cost: ${cost} points${mastered}`;
 };
+
+export const lossPointTitle = (point: DiscardDecisionPoint): string =>
+  decisionCostText(point, formatNetLoss(point.expectedPointsLoss));
+
+const lossPointLabel = (point: DiscardDecisionPoint): string =>
+  decisionCostText(point, formatAccessibleNetLoss(point.expectedPointsLoss));
 
 /*
  * The pointer hit area is a row of transparent rectangles, painted last so
@@ -110,7 +122,7 @@ export function renderLossPoint(
   return (
     <g
       // The hover title lives on the hit band that covers this marker; here it would only duplicate it.
-      aria-label={`${lossPointTitle(point)}. Select to see the hand.`}
+      aria-label={`${lossPointLabel(point)}. Select to see the hand.`}
       className={classes.lossMarker}
       data-decision-ordinal={point.ordinal}
       data-decision-recency={point.recencyAt}
@@ -175,7 +187,7 @@ export function renderRollingPlot(
   const movingPath = formatPathData(movingPoints);
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const lastMovingPoint = movingPoints[movingPoints.length - 1]!;
-  const latestLoss = lastMovingPoint.loss.toFixed(DECIMAL_PLACES);
+  const latestLoss = formatAccessibleNetLoss(lastMovingPoint.loss);
   const windowLabel = getRollingWindowLabel(total, granularity);
   const decisionEntries = decisionPoints.map((point, index) => ({
     cx: calculateIndexedX(index, total),
@@ -199,7 +211,7 @@ export function renderRollingPlot(
               key={`decision-${point.ordinal}`}
               r={1.5}
             >
-              <title>{`${prefix} #${point.ordinal}: 0.00 points loss (optimal)`}</title>
+              <title>{`${prefix} #${point.ordinal}: Recorded cost: 0.00 points (best choice then)`}</title>
             </circle>
           );
         }
@@ -224,7 +236,7 @@ export function renderRollingPlot(
         fill={lastMovingPoint.color}
         r={POINT_RADIUS}
       >
-        <title>{`Latest ${windowLabel}: ${latestLoss} points loss`}</title>
+        <title>{`Latest ${windowLabel}: ${latestLoss} points recorded loss per discard`}</title>
       </circle>
 
       {hasMistake
@@ -256,11 +268,9 @@ export function renderCalendarPlot(
           r={POINT_RADIUS}
         >
           <title>
-            {`${point.bucket.label}: ${point.bucket.meanExpectedPointsLoss?.toFixed(
-              DECIMAL_PLACES,
-            )} points loss (${point.bucket.decisions} decisions, ${
+            {`${point.bucket.label}: ${formatAccessibleNetLoss(point.loss)} points recorded loss per discard (${point.bucket.decisions} decisions, ${
               point.bucket.optimalDecisions
-            } optimal${
+            } best choices then${
               point.bucket.skippedHands > 0
                 ? `, ${point.bucket.skippedHands} skipped`
                 : ""
@@ -277,7 +287,7 @@ interface ChartDescriptionInput {
   readonly decisionPoints: readonly DiscardDecisionPoint[];
   readonly granularity: DiscardTrendGranularity;
   readonly hasDecisionPoints: boolean;
-  readonly latestLoss: string;
+  readonly latestLoss: number;
   readonly scoredBuckets: readonly DiscardPeriodBucket[];
   readonly totalDecisions: number | null | undefined;
 }
@@ -301,14 +311,14 @@ export const buildChartDescription = ({
       totalDecisions > decisionPoints.length
         ? `the most recent ${decisionPoints.length} of ${totalDecisions}`
         : `${decisionPoints.length}`;
-    return `Trend chart with ${countText} decisions (${windowLabel}). Latest average expected loss is ${latestLoss} points.`;
+    return `Trend chart with ${countText} decisions (${windowLabel}). Latest recorded loss is ${formatAccessibleNetLoss(latestLoss)} points per discard.`;
   }
   const latestScoredBucket = scoredBuckets[
     scoredBuckets.length - 1
   ] as DiscardPeriodBucket;
   const calendarDesc =
     latestScoredBucket.key === buckets[buckets.length - 1]?.key
-      ? `Latest average expected loss is ${latestLoss} points.`
-      : `Latest scored period (${latestScoredBucket.label}) average expected loss is ${latestLoss} points.`;
+      ? `Latest recorded loss is ${formatAccessibleNetLoss(latestLoss)} points per discard.`
+      : `Latest scored period (${latestScoredBucket.label}) recorded loss is ${formatAccessibleNetLoss(latestLoss)} points per discard.`;
   return `Trend chart with ${buckets.length} periods. ${calendarDesc}`;
 };
