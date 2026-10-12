@@ -110,17 +110,17 @@ describe("mistakeQueueItemCard", () => {
 
     expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
     expect(getByText("Original tables unknown")).toBeInTheDocument();
-    expect(queryByText(/Crib means_sha256/u)).toBeNull();
+    expect(queryByText("Table fingerprints (for bug reports)")).toBeNull();
   });
 
-  it("shows both original digests only in the expandable earlier-table note", () => {
+  it("shortens fingerprints in expanded details with full digest titles", () => {
     /* jscpd:ignore-start */
     const tableIdentity = {
-      crib: { means_sha256: "a".repeat(64) },
-      play: { means_sha256: "b".repeat(64) },
+      crib: { means_sha256: "0123456789abcdef".repeat(4) },
+      play: { means_sha256: "9876543210abcdef".repeat(4) },
     };
     /* jscpd:ignore-end */
-    const { getByLabelText, getByText } = renderCard({
+    const { getAllByRole, getByLabelText, getByText } = renderCard({
       item: { ...mockItemA, tableIdentity },
     });
 
@@ -134,11 +134,27 @@ describe("mistakeQueueItemCard", () => {
     fireEvent.click(summary);
 
     expect(
-      getByText(`Crib means_sha256: ${tableIdentity.crib.means_sha256}`),
+      getByText("Table fingerprints (for bug reports)"),
     ).toBeInTheDocument();
+
     expect(
-      getByText(`Play means_sha256: ${tableIdentity.play.means_sha256}`),
-    ).toBeInTheDocument();
+      getAllByRole("note", { name: /table fingerprint/u }).map((element) => ({
+        label: element.getAttribute("aria-label"),
+        text: element.textContent,
+        title: element.getAttribute("title"),
+      })),
+    ).toStrictEqual([
+      {
+        label: "Crib table fingerprint 0123456789ab",
+        text: "Crib: 0123456789ab…",
+        title: tableIdentity.crib.means_sha256,
+      },
+      {
+        label: "Play table fingerprint 9876543210ab",
+        text: "Play: 9876543210ab…",
+        title: tableIdentity.play.means_sha256,
+      },
+    ]);
   });
 
   it("renders loss reason badge when provided", () => {

@@ -20,6 +20,7 @@ import { useMemo } from "react";
 
 const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
+const FINGERPRINT_PREVIEW_LENGTH = 12;
 
 export interface MistakeQueueItemCardProps {
   readonly classification?: MistakeClassification | null;
@@ -112,6 +113,22 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
     </span>
   );
 
+const renderTableFingerprint = (
+  role: "Crib" | "Play",
+  digest: string,
+): React.JSX.Element => {
+  const preview = digest.slice(0, FINGERPRINT_PREVIEW_LENGTH);
+  return (
+    <div
+      aria-label={`${role} table fingerprint ${preview}`}
+      role="note"
+      title={digest}
+    >
+      {role}: {preview}…
+    </div>
+  );
+};
+
 const renderOriginalTables = (item: MistakeQueueItem): React.JSX.Element => {
   const identity = item.tableIdentity;
   if (!identity) return <span>Original tables unknown</span>;
@@ -121,8 +138,9 @@ const renderOriginalTables = (item: MistakeQueueItem): React.JSX.Element => {
   return (
     <details className={classes.tableProvenance}>
       <summary>{label}</summary>
-      <div>Crib means_sha256: {identity.crib.means_sha256}</div>
-      <div>Play means_sha256: {identity.play.means_sha256}</div>
+      <div>Table fingerprints (for bug reports)</div>
+      {renderTableFingerprint("Crib", identity.crib.means_sha256)}
+      {renderTableFingerprint("Play", identity.play.means_sha256)}
     </details>
   );
 };

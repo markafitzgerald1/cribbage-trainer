@@ -121,15 +121,24 @@ export const CurrentTables: Story = {
     await userEvent.click(canvas.getByText("Judged with current tables"));
 
     await expect(
-      canvas.getByText(
-        `Crib means_sha256: ${shippedTableIdentity.crib.means_sha256}`,
-      ),
+      canvas.getByText("Table fingerprints (for bug reports)"),
     ).toBeVisible();
-    await expect(
-      canvas.getByText(
-        `Play means_sha256: ${shippedTableIdentity.play.means_sha256}`,
-      ),
-    ).toBeVisible();
+
+    await Promise.all(
+      [
+        { digest: shippedTableIdentity.crib.means_sha256, role: "Crib" },
+        { digest: shippedTableIdentity.play.means_sha256, role: "Play" },
+      ].map(async ({ role, digest }) => {
+        const preview = digest.slice(0, 12);
+        const fingerprint = canvas.getByRole("note", {
+          name: `${role} table fingerprint ${preview}`,
+        });
+
+        await expect(fingerprint).toBeVisible();
+        await expect(fingerprint).toHaveTextContent(`${role}: ${preview}…`);
+        await expect(fingerprint).toHaveAttribute("title", digest);
+      }),
+    );
   },
 };
 
@@ -147,9 +156,12 @@ export const EarlierTables: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByText("Judged with different tables"));
 
-    await expect(
-      canvas.getByText(`Play means_sha256: ${"b".repeat(64)}`),
-    ).toBeVisible();
+    const fingerprint = canvas.getByRole("note", {
+      name: `Play table fingerprint ${"b".repeat(12)}`,
+    });
+
+    await expect(fingerprint).toHaveTextContent(`Play: ${"b".repeat(12)}…`);
+    await expect(fingerprint).toHaveAttribute("title", "b".repeat(64));
   },
 };
 
