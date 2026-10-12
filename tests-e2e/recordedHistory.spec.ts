@@ -122,6 +122,20 @@ const expandAndPractice = async (page: Page, panel: Locator) => {
     .click();
 };
 
+const rereadHistory = async (
+  page: Page,
+  viewport: typeof phonePortraitViewport,
+  fontSize: number,
+) => {
+  // A fresh page has no fixture init script, so it reads the retry's actual persisted tally.
+  const restored = await page.context().newPage();
+  await restored.setViewportSize(viewport);
+  await restored.goto("/");
+  if (fontSize === ENLARGED_FONT_SIZE)
+    await restored.addStyleTag({ content: LARGE_ROOT_FONT });
+  return restored;
+};
+
 for (const [mode, viewport] of [
   ["stacked", phonePortraitViewport],
   [
@@ -159,14 +173,15 @@ for (const [mode, viewport] of [
       await expandAndPractice(page, panel);
       await checkCurrentBestRetry(page);
       await expect(tallyLoss).toHaveText("< 0.01");
-      const after = await openRecordedPoint(page, true);
+      const restored = await rereadHistory(page, viewport, fontSize);
+      const after = await openRecordedPoint(restored, true);
       await expect(after).toContainText(
         "Mastered — mastery kept from earlier retries",
       );
       await expect(
         after.getByRole("button", { exact: true, name: "Practice this hand" }),
       ).toBeVisible();
-      const table = page.getByRole("table", {
+      const table = restored.getByRole("table", {
         exact: true,
         name: "Recorded decision history",
       });

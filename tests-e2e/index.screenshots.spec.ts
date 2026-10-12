@@ -163,7 +163,7 @@ const nearSquareLandscapeViewportSize = {
 };
 
 const testDiscardTallyScreenshot = () =>
-  test("discard tally still visually the same", async ({ page }) => {
+  test("recorded discard tally", async ({ page }) => {
     await page.addInitScript(
       /*
        * The key is built in the browser, because it carries the deployment's
