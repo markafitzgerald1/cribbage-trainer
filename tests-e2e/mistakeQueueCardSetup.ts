@@ -1,4 +1,9 @@
-import type { Locator, Page, TestInfo } from "@playwright/test";
+import {
+  type Locator,
+  type Page,
+  type TestInfo,
+  expect,
+} from "@playwright/test";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { SEED_TALLY_WITH_QUANTILES } from "./practiceDrillSetup";
 import type { TableIdentity } from "../src/game/tableIdentity";
@@ -57,9 +62,13 @@ export const openRetryMistakeQueue = async (
   await page
     .getByRole("button", { exact: true, name: "Mistake queue" })
     .click();
-  return page
+  const card = page
     .getByRole("note", { name: "Average over 3 wrong attempts: 3.18 points" })
     .locator("../../..");
+  await expect(
+    card.getByRole("note", { name: /^Current-table comparison:/u }),
+  ).toBeVisible();
+  return card;
 };
 
 const measureTextLines = (note: Locator) =>
