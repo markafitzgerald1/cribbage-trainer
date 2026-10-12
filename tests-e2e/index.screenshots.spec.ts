@@ -232,7 +232,7 @@ const testScreenshots = () => {
     await openSeededTrainer(page);
     const card = await openRetryMistakeQueue(page);
     await expect(
-      card.getByRole("note", { name: /^Previous discard driven by/u }),
+      card.getByRole("note", { name: /^Current-table comparison:/u }),
     ).toBeVisible();
     await expect(card).toHaveScreenshot();
   });
@@ -242,7 +242,7 @@ const testScreenshots = () => {
     await openSeededTrainer(page);
     const card = await openRetryMistakeQueue(page, DIFFERENT_TABLE_IDENTITY);
     await expect(
-      card.getByRole("note", { name: /^Previous discard driven by/u }),
+      card.getByRole("note", { name: /^Current-table comparison:/u }),
     ).toBeVisible();
     await card
       .getByText("Judged with different tables", { exact: true })

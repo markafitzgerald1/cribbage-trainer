@@ -66,7 +66,7 @@ test.describe("mistake queue layout", () => {
         });
         const card = await openRetryMistakeQueue(page);
         await expect(
-          card.getByRole("note", { name: /^Previous discard driven by/u }),
+          card.getByRole("note", { name: /^Current-table comparison:/u }),
         ).toBeVisible();
         const measurements = await measureRetryCard(card, testInfo);
         const { cost, quantile, role } = measurements;
