@@ -95,7 +95,7 @@ const testFilterSelection = ({
   filterName: RegExp | string;
   presentText: string;
 }): boolean => {
-  const { getByRole, queryByText } = renderQueueDialog({
+  const { getByRole, queryByLabelText } = renderQueueDialog({
     initialStatusFilter: "all",
   });
   const radio = getByRole("radio", { name: filterName });
@@ -103,8 +103,8 @@ const testFilterSelection = ({
 
   return (
     (radio as HTMLInputElement).checked &&
-    queryByText(presentText) !== null &&
-    queryByText(absentText) === null
+    queryByLabelText(presentText) !== null &&
+    queryByLabelText(absentText) === null
   );
 };
 
@@ -140,22 +140,17 @@ describe("mistake queue dialog", () => {
       expect(getAllByText("Dealer")).toHaveLength(2);
     });
 
-    it("renders previous discard choice when recorded", () => {
-      const { queryByText } = renderQueueDialog({ initialStatusFilter: "all" });
-
-      expect(queryByText("Recorded cost: 2.50 points")).not.toBeNull();
-      expect(queryByText("Recorded cost: 1.20 points")).not.toBeNull();
-    });
-
-    it("renders missing-discard fallback", () => {
+    it("renders recorded costs and the missing-discard fallback", () => {
       const rendered = renderQueueDialog({ initialStatusFilter: "all" });
 
       expect(
         rendered.getByText("Previous choice not recorded"),
       ).toBeInTheDocument();
       expect(
-        rendered.getByText("Recorded cost: 0.40 points"),
-      ).toBeInTheDocument();
+        ["2.50", "1.20", "0.40"].map((cost) =>
+          rendered.getByLabelText(`Recorded cost: ${cost} points`),
+        ),
+      ).toHaveLength(3);
     });
 
     it("switches sort order when selected", () => {
@@ -181,9 +176,9 @@ describe("mistake queue dialog", () => {
 
   describe("filtering, pagination, and dismissal", () => {
     it("filters by status Active and Mastered", () => {
-      const { getByRole, queryByText } = renderQueueDialog();
+      const { getByRole, queryByLabelText: queryCost } = renderQueueDialog();
 
-      expect(queryByText("Recorded cost: 0.40 points")).not.toBeInTheDocument();
+      expect(queryCost("Recorded cost: 0.40 points")).not.toBeInTheDocument();
 
       const masteredRadio = getByRole("radio", { name: "Mastered" });
 
@@ -191,9 +186,9 @@ describe("mistake queue dialog", () => {
 
       expect(masteredRadio).toBeChecked();
 
-      expect(queryByText("Recorded cost: 0.40 points")).toBeInTheDocument();
+      expect(queryCost("Recorded cost: 0.40 points")).toBeInTheDocument();
 
-      expect(queryByText("Recorded cost: 2.50 points")).not.toBeInTheDocument();
+      expect(queryCost("Recorded cost: 2.50 points")).not.toBeInTheDocument();
     });
 
     it("filters by status All", () => {
@@ -290,10 +285,10 @@ describe("mistake queue dialog", () => {
         rendered.queryByText("high"),
       ]).toStrictEqual([null, null, null]);
       expect(
-        rendered.getByText("Recorded cost: 2.00 points"),
+        rendered.getByLabelText("Recorded cost: 2.00 points"),
       ).toBeInTheDocument();
       expect(
-        rendered.getByText("Recorded cost: 1.50 points"),
+        rendered.getByLabelText("Recorded cost: 1.50 points"),
       ).toBeInTheDocument();
     });
 

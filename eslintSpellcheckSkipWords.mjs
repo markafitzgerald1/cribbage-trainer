@@ -67,6 +67,7 @@ export const spellcheckSkipWords = [
   "Mobx",
   "mousedown",
   "msedge",
+  "nowrap",
   "os",
   "pathname",
   "personalization",

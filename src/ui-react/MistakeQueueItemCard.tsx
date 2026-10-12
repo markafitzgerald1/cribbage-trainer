@@ -135,7 +135,9 @@ const renderAverageLoss = (item: MistakeQueueItem): React.JSX.Element | null =>
       role="note"
     >
       Average over {item.wrong} wrong attempts:{" "}
-      {formatNetLoss(item.lossIfWrong)} points
+      <span className={classes.pointsValue}>
+        {formatNetLoss(item.lossIfWrong)} points
+      </span>
     </span>
   ) : null;
 
@@ -162,13 +164,6 @@ export function MistakeQueueItemCard({
       <div className={classes.itemHeader}>
         <div className={classes.itemBadges}>
           <span className={classes.roleBadge}>{roleLabel}</span>
-          <span
-            aria-label={`Recorded cost: ${formatAccessibleNetLoss(item.previousDiscardLoss)} points`}
-            className={classes.lossBadge}
-            role="note"
-          >
-            Recorded cost: {formatNetLoss(item.previousDiscardLoss)} points
-          </span>
           {item.lossQuantile === null ? null : (
             <span
               className={`${classes.quantileBadge} ${getQuantileBadgeClass(item.lossQuantile)}`}
@@ -190,6 +185,17 @@ export function MistakeQueueItemCard({
         </div>
         <div>{renderStatusBadge(item)}</div>
       </div>
+
+      <span
+        aria-label={`Recorded cost: ${formatAccessibleNetLoss(item.previousDiscardLoss)} points`}
+        className={classes.lossBadge}
+        role="note"
+      >
+        Recorded cost:{" "}
+        <span className={classes.pointsValue}>
+          {formatNetLoss(item.previousDiscardLoss)} points
+        </span>
+      </span>
 
       {renderOriginalTables(item)}
       {renderCardsList(item.cards, sortOrder)}

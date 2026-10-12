@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import * as classes from "./MistakeQueueDialog.module.css";
 import * as roleLossClasses from "./RoleLossPairText.module.css";
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react";
@@ -49,25 +50,26 @@ const renderCard = (options: RenderCardOptions = {}) => {
 
 describe("mistakeQueueItemCard", () => {
   it("announces a sub-cent recorded cost without the visible less-than glyph", () => {
-    const { getByRole, getByText } = renderCard({
+    const { getByLabelText } = renderCard({
       item: { ...mockItemA, previousDiscardLoss: 0.004 },
     });
 
-    expect(getByText("Recorded cost: < 0.01 points")).toBeInTheDocument();
     expect(
-      getByRole("note", { name: "Recorded cost: less than 0.01 points" }),
-    ).toBeInTheDocument();
+      getByLabelText("Recorded cost: less than 0.01 points"),
+    ).toHaveTextContent("Recorded cost: < 0.01 points");
   });
 
   it("shows the average over wrong attempts beside the recorded cost once there is a retry", () => {
-    const { getByText } = renderCard({
+    const { getByLabelText, getByRole, getByText } = renderCard({
       item: { ...mockItemA, lossIfWrong: 1.5, wrong: 3 },
     });
 
-    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
     expect(
-      getByText("Average over 3 wrong attempts: 1.50 points"),
-    ).toBeInTheDocument();
+      getByRole("note", { name: "Average over 3 wrong attempts: 1.50 points" }),
+    ).toHaveTextContent("Average over 3 wrong attempts: 1.50 points");
+    expect(getByText("1.50 points")).toHaveClass(classes.pointsValue);
+    expect(getByText("1.00 points")).toHaveClass(classes.pointsValue);
   });
 
   it("announces a sub-cent average without the visible less-than glyph", () => {
@@ -91,7 +93,7 @@ describe("mistakeQueueItemCard", () => {
   });
 
   it("labels the loaded pair as current and uses the original cost instead of the aggregate average", () => {
-    const { getByText } = renderCard({
+    const { getByLabelText, getByText } = renderCard({
       item: {
         ...mockItemA,
         lossIfWrong: 7,
@@ -99,14 +101,14 @@ describe("mistakeQueueItemCard", () => {
       },
     });
 
-    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
     expect(getByText("Judged with current tables")).toBeInTheDocument();
   });
 
   it("names an unknown original table without inventing provenance", () => {
-    const { getByText, queryByText } = renderCard();
+    const { getByLabelText, getByText, queryByText } = renderCard();
 
-    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
     expect(getByText("Original tables unknown")).toBeInTheDocument();
     expect(queryByText(/Crib means_sha256/u)).toBeNull();
   });
@@ -118,9 +120,11 @@ describe("mistakeQueueItemCard", () => {
       play: { means_sha256: "b".repeat(64) },
     };
     /* jscpd:ignore-end */
-    const { getByText } = renderCard({ item: { ...mockItemA, tableIdentity } });
+    const { getByLabelText, getByText } = renderCard({
+      item: { ...mockItemA, tableIdentity },
+    });
 
-    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
 
     const summary = getByText("Judged with different tables");
     const details = summary.closest("details");
@@ -239,7 +243,7 @@ describe("mistakeQueueItemCard", () => {
     { loss: 1.5, name: "a reversed role that would have cost more" },
     { loss: 1.0, name: "a reversed role that would have cost the same" },
   ])("shows no role-cost badge for $name", ({ loss }) => {
-    const { getByText, queryByRole } = renderCard({
+    const { getByLabelText, queryByRole } = renderCard({
       item: {
         ...mockItemWithRoleLossPair,
         previousDiscardOppositeRoleLoss: loss,
@@ -247,7 +251,7 @@ describe("mistakeQueueItemCard", () => {
     });
 
     // The card itself rendered, so the badge below is absent rather than simply not reached.
-    expect(getByText("Recorded cost: 1.00 points")).toBeInTheDocument();
+    expect(getByLabelText("Recorded cost: 1.00 points")).toBeInTheDocument();
     expect(queryByRole("note", { name: /Previous discard cost/u })).toBeNull();
   });
 

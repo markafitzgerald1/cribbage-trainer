@@ -114,7 +114,9 @@ export const CurrentTables: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    await expect(canvas.getByText("Recorded cost: 1.00 points")).toBeVisible();
+    await expect(
+      canvas.getByRole("note", { name: "Recorded cost: 1.00 points" }),
+    ).toBeVisible();
 
     await userEvent.click(canvas.getByText("Judged with current tables"));
 
@@ -165,9 +167,34 @@ export const SubCentRecordedCost: Story = {
       }),
     ).toBeVisible();
     await expect(
-      canvas.getByText("Recorded cost: < 0.01 points"),
-    ).toBeVisible();
+      canvas.getByRole("note", {
+        name: "Recorded cost: less than 0.01 points",
+      }),
+    ).toHaveTextContent("Recorded cost: < 0.01 points");
   },
 };
 
 /* jscpd:ignore-end */
+
+export const WithWrongRetries: Story = {
+  args: {
+    item: {
+      ...mockItemA,
+      lossIfWrong: 3.18,
+      previousDiscardLoss: 3.08,
+      wrong: 3,
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const average = within(canvasElement).getByRole("note", {
+      name: "Average over 3 wrong attempts: 3.18 points",
+    });
+
+    await expect(average).toHaveTextContent(
+      "Average over 3 wrong attempts: 3.18 points",
+    );
+    await expect(within(average).getByText("3.18 points")).toHaveStyle({
+      whiteSpace: "nowrap",
+    });
+  },
+};
