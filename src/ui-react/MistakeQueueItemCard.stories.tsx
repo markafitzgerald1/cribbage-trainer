@@ -87,6 +87,18 @@ export const WithRoleLossPair: Story = {
     await expect(pair).toBeVisible();
     await expect(pair).toHaveTextContent("1.00 dealer, 0.00 pone");
     await expect(canvas.getByText("Prev: Crib gain < Hand loss")).toBeVisible();
+    await expect(
+      Array.from(
+        pair.parentElement?.children ?? [],
+        (badge) => badge.textContent,
+      ),
+    ).toEqual([
+      "Dealer",
+      "medium",
+      "Recorded cost: 1.00 points",
+      "Prev: Crib gain < Hand loss",
+      "1.00 dealer, 0.00 pone",
+    ]);
   },
 };
 
@@ -208,5 +220,10 @@ export const WithWrongRetries: Story = {
     await expect(within(average).getByText("3.18 points")).toHaveStyle({
       whiteSpace: "nowrap",
     });
+    await expect(
+      within(canvasElement).getByRole("note", {
+        name: "Recorded cost: 3.08 points",
+      }),
+    ).toHaveStyle({ whiteSpace: "nowrap" });
   },
 };

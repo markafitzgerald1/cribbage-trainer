@@ -307,33 +307,47 @@ describe("mistakeQueueItemCard", () => {
       isMastered: true,
       quantile: "medium" as const,
       role: "Dealer",
+      roleCosts: "1.00 dealer, 0.00 pone",
     },
     {
       cribRole: mockItemA.cribRole,
       isMastered: false,
       quantile: "high" as const,
       role: "Dealer",
+      roleCosts: "1.00 dealer, 0.00 pone",
     },
     {
       cribRole: CribRole.Pone,
       isMastered: false,
       quantile: "low" as const,
       role: "Pone",
+      roleCosts: "1.00 pone, 0.00 dealer",
     },
   ])(
-    "renders quantile $quantile and role $role",
-    ({ cribRole, isMastered, quantile, role }) => {
+    "orders role $role, quantile $quantile, recorded cost, reason and role costs in the wrapping row",
+    ({ cribRole, isMastered, quantile, role, roleCosts }) => {
       const { getByText } = renderCard({
+        classification: mockTradeOffClassification,
         item: {
-          ...mockItemA,
+          ...mockItemWithRoleLossPair,
           cribRole,
           isMastered,
           lossQuantile: quantile,
         },
       });
 
-      expect(getByText(quantile)).toBeInTheDocument();
-      expect(getByText(role)).toBeInTheDocument();
+      const badges = getByText(role).parentElement as HTMLElement;
+
+      expect(badges).toHaveClass(classes.itemBadges);
+      expect(
+        Array.from(badges.children, (badge) => badge.textContent),
+      ).toStrictEqual([
+        role,
+        quantile,
+        "Recorded cost: 1.00 points",
+        "Prev: Crib gain < Hand loss",
+        roleCosts,
+      ]);
     },
   );
 

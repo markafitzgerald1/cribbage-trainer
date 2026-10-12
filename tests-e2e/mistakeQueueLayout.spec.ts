@@ -4,47 +4,31 @@ import {
   expectActionWithinViewport,
   openSeededTrainer,
 } from "./practiceDrillSetup";
-import { type Locator, type Page, expect, test } from "@playwright/test";
+import { type Page, expect, test } from "@playwright/test";
 import {
   expectChipsFullyVisible,
   expectChipsShareARow,
 } from "./chipContainment";
 import {
+  measureRetryCard,
+  openRetryMistakeQueue,
+} from "./mistakeQueueCardSetup";
+import {
   phoneLandscapeViewport,
   phonePortraitViewport,
 } from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
-import { openRetryMistakeQueue } from "./mistakeQueueCardSetup";
 
 const NARROW_PHONE_WIDTH = 375;
 const WIDE_PHONE_WIDTH = 430;
 const DEFAULT_ROOT_FONT_PX = 16;
 const LARGE_ROOT_FONT_PX = 28;
 const TWO = 2;
+const TABLET_VIEWPORT = { height: 1024, width: 768 };
+const DESKTOP_VIEWPORT = { height: 900, width: 1440 };
 
-const measurePointLines = (note: Locator) =>
-  note.evaluate((element) => {
-    const valuePrefixLength = 2;
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-    const lines: number[] = [];
-    let node = walker.nextNode();
-    while (node) {
-      for (
-        let offset = 0;
-        offset < (node.textContent ?? "").length;
-        offset += 1
-      ) {
-        const range = document.createRange();
-        range.setStart(node, offset);
-        range.setEnd(node, offset + 1);
-        lines.push(range.getBoundingClientRect().top);
-      }
-      node = walker.nextNode();
-    }
-    const text = element.textContent ?? "";
-    const valueStart = text.indexOf(":") + valuePrefixLength;
-    return lines.slice(valueStart);
-  });
+const centerY = (box: { y: number; height: number } | null) =>
+  (box?.y ?? Number.NaN) + (box?.height ?? 0) / TWO;
 
 const SORT_BY_CHIP_COUNT = 3;
 const LOSS_SEVERITY_CHIP_COUNT = 4;
@@ -60,23 +44,23 @@ test.describe("mistake queue layout", () => {
     await openSeededTrainer(page);
   });
 
-  for (const width of [
-    NARROW_PHONE_WIDTH,
-    phonePortraitViewport.width,
-    WIDE_PHONE_WIDTH,
-    phoneLandscapeViewport.width,
+  for (const viewport of [
+    { ...phonePortraitViewport, width: NARROW_PHONE_WIDTH },
+    phonePortraitViewport,
+    { ...phonePortraitViewport, width: WIDE_PHONE_WIDTH },
+    {
+      ...phoneLandscapeViewport,
+      height: phoneLandscapeViewport.height - REAL_CHROME_HEIGHT_PX,
+    },
+    TABLET_VIEWPORT,
+    DESKTOP_VIEWPORT,
   ]) {
+    const { width } = viewport;
     for (const rootFont of [DEFAULT_ROOT_FONT_PX, LARGE_ROOT_FONT_PX]) {
       test(`keeps card badge rows and point units together at ${width}px and ${rootFont}px root`, async ({
         page,
       }, testInfo) => {
-        await page.setViewportSize({
-          height:
-            width === phoneLandscapeViewport.width
-              ? phoneLandscapeViewport.height - REAL_CHROME_HEIGHT_PX
-              : phonePortraitViewport.height,
-          width,
-        });
+        await page.setViewportSize(viewport);
         await page.addStyleTag({
           content: `html { font-size: ${rootFont}px; }`,
         });
@@ -84,59 +68,17 @@ test.describe("mistake queue layout", () => {
         await expect(
           card.getByRole("note", { name: /^Previous discard driven by/u }),
         ).toBeVisible();
-        await card.screenshot({ path: testInfo.outputPath("card.png") });
-        const recorded = card.getByRole("note", {
-          name: "Recorded cost: 3.08 points",
-        });
-        const average = card.getByRole("note", {
-          name: "Average over 3 wrong attempts: 3.18 points",
-        });
-        const role = await card
-          .getByText("Dealer", { exact: true })
-          .boundingBox();
-        const quantile = await card
-          .getByText("medium", { exact: true })
-          .boundingBox();
-        const cost = await recorded.boundingBox();
-        const measurements = {
-          averageLines: await measurePointLines(average),
-          card: await card.boundingBox(),
-          cost,
-          overflow: await card.evaluate(
-            (element) => element.scrollWidth - element.clientWidth,
-          ),
-          pointsWhiteSpace: await Promise.all(
-            [recorded, average].map((note) =>
-              note.evaluate((element) =>
-                element.lastElementChild === null
-                  ? null
-                  : getComputedStyle(element.lastElementChild).whiteSpace,
-              ),
-            ),
-          ),
-          quantile,
-          recordedLines: await measurePointLines(recorded),
-          role,
-          rootFont,
-          width,
-        };
-        await testInfo.attach("card-measurements", {
-          body: JSON.stringify(measurements, null, TWO),
-          contentType: "application/json",
-        });
+        const measurements = await measureRetryCard(card, testInfo);
+        const { cost, quantile, role } = measurements;
         expect.soft(role).not.toBeNull();
         expect
-          .soft(
-            Math.abs(
-              (quantile?.y ?? Number.NaN) +
-                (quantile?.height ?? 0) / TWO -
-                ((role?.y ?? Number.NaN) + (role?.height ?? 0) / TWO),
-            ),
-          )
+          .soft(Math.abs(centerY(quantile) - centerY(role)))
           .toBeLessThanOrEqual(1);
-        expect
-          .soft(cost?.y ?? Number.NaN)
-          .toBeGreaterThanOrEqual((role?.y ?? 0) + (role?.height ?? 0));
+        if (width >= phoneLandscapeViewport.width) {
+          expect
+            .soft(Math.abs(centerY(cost) - centerY(role)))
+            .toBeLessThanOrEqual(1);
+        }
         for (const lines of [
           measurements.recordedLines,
           measurements.averageLines,
@@ -146,6 +88,16 @@ test.describe("mistake queue layout", () => {
             .toBeLessThanOrEqual(1);
         }
         expect.soft(measurements.overflow).toBe(0);
+        expect.soft(measurements.pageOverflow).toBe(0);
+        expect.soft(measurements.badgeWhiteSpace).toBe("nowrap");
+        const row = measurements.badgeRow;
+        expect.soft(cost?.x ?? Number.NaN).toBeGreaterThanOrEqual(row?.x ?? 0);
+        expect
+          .soft((cost?.x ?? 0) + (cost?.width ?? Number.NaN))
+          .toBeLessThanOrEqual((row?.x ?? 0) + (row?.width ?? 0));
+        expect
+          .soft((row?.x ?? 0) + (row?.width ?? Number.NaN))
+          .toBeLessThanOrEqual(width);
         expect
           .soft(measurements.pointsWhiteSpace)
           .toEqual(["nowrap", "nowrap"]);

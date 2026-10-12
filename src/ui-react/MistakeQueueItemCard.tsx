@@ -189,6 +189,16 @@ export function MistakeQueueItemCard({
               {item.lossQuantile}
             </span>
           )}
+          <span
+            aria-label={`Recorded cost: ${formatAccessibleNetLoss(item.previousDiscardLoss)} points`}
+            className={classes.lossBadge}
+            role="note"
+          >
+            Recorded cost:{" "}
+            <span className={classes.pointsValue}>
+              {formatNetLoss(item.previousDiscardLoss)} points
+            </span>
+          </span>
           {effectiveReason === null ? null : (
             <span
               aria-label={`Previous discard driven by ${effectiveReason}`}
@@ -203,17 +213,6 @@ export function MistakeQueueItemCard({
         </div>
         <div>{renderStatusBadge(item)}</div>
       </div>
-
-      <span
-        aria-label={`Recorded cost: ${formatAccessibleNetLoss(item.previousDiscardLoss)} points`}
-        className={classes.lossBadge}
-        role="note"
-      >
-        Recorded cost:{" "}
-        <span className={classes.pointsValue}>
-          {formatNetLoss(item.previousDiscardLoss)} points
-        </span>
-      </span>
 
       {renderOriginalTables(item)}
       {renderCardsList(item.cards, sortOrder)}

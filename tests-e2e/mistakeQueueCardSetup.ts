@@ -1,8 +1,9 @@
+import type { Locator, Page, TestInfo } from "@playwright/test";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
-import type { Page } from "@playwright/test";
 import { SEED_TALLY_WITH_QUANTILES } from "./practiceDrillSetup";
 import type { TableIdentity } from "../src/game/tableIdentity";
 
+const JSON_INDENT = 2;
 const RECORDED_COST = 3.08;
 const HIGH_LOSS_INDEX = 3;
 const HIGH_LOSS = 5;
@@ -59,4 +60,76 @@ export const openRetryMistakeQueue = async (
   return page
     .getByRole("note", { name: "Average over 3 wrong attempts: 3.18 points" })
     .locator("../../..");
+};
+
+const measureTextLines = (note: Locator) =>
+  note.evaluate((element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const lines: number[] = [];
+    let node = walker.nextNode();
+    while (node) {
+      for (
+        let offset = 0;
+        offset < (node.textContent ?? "").length;
+        offset += 1
+      ) {
+        const range = document.createRange();
+        range.setStart(node, offset);
+        range.setEnd(node, offset + 1);
+        lines.push(range.getBoundingClientRect().top);
+      }
+      node = walker.nextNode();
+    }
+    return lines;
+  });
+
+export const measureRetryCard = async (card: Locator, testInfo: TestInfo) => {
+  await card.screenshot({ path: testInfo.outputPath("card.png") });
+  const recorded = card.getByRole("note", {
+    name: "Recorded cost: 3.08 points",
+  });
+  const average = card.getByRole("note", {
+    name: "Average over 3 wrong attempts: 3.18 points",
+  });
+  const role = await card.getByText("Dealer", { exact: true }).boundingBox();
+  const quantile = await card
+    .getByText("medium", { exact: true })
+    .boundingBox();
+  const cost = await recorded.boundingBox();
+  const measurements = {
+    averageLines: await measureTextLines(average.locator("span")),
+    badgeRow: await recorded.locator("..").boundingBox(),
+    badgeWhiteSpace: await recorded.evaluate(
+      (element) => getComputedStyle(element).whiteSpace,
+    ),
+    card: await card.boundingBox(),
+    cost,
+    overflow: await card.evaluate(
+      (element) => element.scrollWidth - element.clientWidth,
+    ),
+    pageOverflow: await card
+      .page()
+      .evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+    pointsWhiteSpace: await Promise.all(
+      [recorded, average].map((note) =>
+        note.evaluate((element) =>
+          element.lastElementChild === null
+            ? null
+            : getComputedStyle(element.lastElementChild).whiteSpace,
+        ),
+      ),
+    ),
+    quantile,
+    recordedLines: await measureTextLines(recorded),
+    role,
+    rootFont: await card.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).fontSize),
+    ),
+    viewport: card.page().viewportSize(),
+  };
+  await testInfo.attach("card-measurements", {
+    body: JSON.stringify(measurements, null, JSON_INDENT),
+    contentType: "application/json",
+  });
+  return measurements;
 };

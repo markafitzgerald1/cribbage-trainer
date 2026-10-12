@@ -345,7 +345,6 @@
 }
 
 .loss-badge {
-  align-self: flex-start;
   background-color: #4a270f;
   border: 1px solid #7e4419;
   border-radius: 4px;
@@ -355,6 +354,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
+  white-space: nowrap;
 }
 
 .points-value {
@@ -663,6 +663,10 @@
 
   .summary-cards {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .loss-badge {
+    font-size: min(0.8rem, 3.5vw);
   }
 
   .item-footer {
