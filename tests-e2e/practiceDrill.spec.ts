@@ -1,7 +1,9 @@
 import {
   LARGE_ROOT_FONT,
   expectActionWithinViewport,
+  expectChangedPanelReachable,
   openSeededTrainer,
+  reviewAtLargePortrait,
   selectTwoDiscards,
   startDrillOnFirstMistake,
 } from "./practiceDrillSetup";
@@ -96,7 +98,7 @@ test.describe("practice drill", () => {
      * rem rhythm is under test rather than the dialog interaction. The
      * choosing state keeps its buttons on screen; the taller revealed state
      * puts its actions first and caps the panel height so Draw another /
-     * Exit stay visible while the Now / Before comparison and the outcome
+     * Exit stay visible while the Then / Retry comparison and the outcome
      * line stay reachable by scrolling the panel.
      */
     await startDrillOnFirstMistake(page);
@@ -132,7 +134,7 @@ test.describe("practice drill", () => {
     /*
      * The panel caps its own height and scrolls, so its box stays within the
      * viewport (rather than the outcome line being clipped by Trainer's
-     * non-scrolling column) and the Now / Before comparison and outcome are
+     * non-scrolling column) and the Then / Retry comparison and outcome are
      * reachable by scrolling the panel itself.
      */
     const panel = page.getByRole("region", { name: "Practice drill" });
@@ -146,7 +148,7 @@ test.describe("practice drill", () => {
     expect(panelOverflows).toBe(true);
 
     const outcome = page.getByText(
-      /toward mastery|behind the best discard|Mastered/u,
+      /toward mastery|behind the best choice with current tables|Mastered/u,
     );
     await outcome.scrollIntoViewIfNeeded();
     await expect(outcome).toBeInViewport();
@@ -220,13 +222,7 @@ test.describe("practice drill", () => {
   test("diagnostic caption and multiple analysis rows stay visible during drill review at large root font in portrait", async ({
     page,
   }) => {
-    await startDrillOnFirstMistake(page);
-    await page.setViewportSize(phonePortraitViewport);
-    await page.addStyleTag({ content: LARGE_ROOT_FONT });
-
-    await selectTwoDiscards(page);
-    await page.getByRole("button", { name: "Check discard" }).click();
-    await waitForAnalysis(page);
+    await reviewAtLargePortrait(page);
 
     const analysisFigure = page
       .locator("figure")
@@ -250,5 +246,6 @@ test.describe("practice drill", () => {
     const minTwoRowsContainerHeight = 95;
     const containerBox = await requireBoundingBox(tableContainer);
     expect(containerBox.height).toBeGreaterThan(minTwoRowsContainerHeight);
+    await expectChangedPanelReachable(page);
   });
 });

@@ -5,7 +5,16 @@ import {
   type PracticeDrillPanelProps,
 } from "./PracticeDrillPanel";
 import { type RenderResult, fireEvent, render } from "@testing-library/react";
-import { basePanelArgs, sampleVerdict } from "./PracticeDrillPanel.test.common";
+import {
+  basePanelArgs,
+  changedTablesNote,
+  changedVerdict,
+  currentVerdict,
+  retryIdentity,
+  revealedPanelArgs,
+  sampleVerdict,
+  unknownTablesNote,
+} from "./PracticeDrillPanel.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 
 const panelElement = (props: PracticeDrillPanelProps): React.JSX.Element => (
@@ -209,5 +218,29 @@ describe("practiceDrillPanel", () => {
     const { scrollButton } = renderRevealedPanelWithMistake();
 
     expect(() => fireEvent.click(scrollButton())).not.toThrow();
+  });
+});
+
+describe("retry table boundary copy", () => {
+  it.each([
+    { note: changedTablesNote, verdict: changedVerdict() },
+    {
+      note: unknownTablesNote,
+      verdict: sampleVerdict({ retryTableIdentity: retryIdentity }),
+    },
+    { note: "Table versions unknown.", verdict: sampleVerdict() },
+  ])("announces the actual provenance boundary: $note", ({ verdict, note }) => {
+    const view = renderPanel({ phase: "revealed", verdict });
+
+    expect(view.getByText(note)).toBeInTheDocument();
+    expect(view.getByText("Then — recorded cost")).toBeInTheDocument();
+    expect(view.getByText("Retry — current tables")).toBeInTheDocument();
+  });
+
+  it("does not announce a table change for an equal pair", () => {
+    const view = renderPanel(revealedPanelArgs(currentVerdict()));
+
+    expect(view.getByText("Retry — current tables")).toBeInTheDocument();
+    expect(view.queryByText(changedTablesNote)).not.toBeInTheDocument();
   });
 });

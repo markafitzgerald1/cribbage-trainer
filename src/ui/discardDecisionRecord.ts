@@ -1,7 +1,4 @@
-import {
-  type RecordedAdmission,
-  normalizeAdmission,
-} from "./recordedAdmission";
+import { type RecordedAdmission, decisionAdmission } from "./recordedAdmission";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "./SortOrder";
@@ -160,7 +157,7 @@ export const normalizeStoredRecords = (
         ...(typeof record.recordedAdmission === "undefined"
           ? {}
           : {
-              recordedAdmission: normalizeAdmission(record.recordedAdmission),
+              recordedAdmission: decisionAdmission(record),
             }),
         tableIdentity: resolveTableIdentity(record.tableIdentity, identities),
       });

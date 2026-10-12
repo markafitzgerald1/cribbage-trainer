@@ -3,13 +3,13 @@ import {
   latestDecisionRecencyAt,
 } from "./discardDecisionRecord";
 import { type PracticeAttempt, updatePracticeRecords } from "./practiceLedger";
-import { MAX_ATTEMPT_LOG } from "./practiceAttemptLog";
-import type { StoredTally } from "./discardTally";
-import { normalizeAdmission } from "./recordedAdmission";
 import {
   normalizeTableIdentity,
   sameTableIdentity,
 } from "../game/tableIdentity";
+import { MAX_ATTEMPT_LOG } from "./practiceAttemptLog";
+import type { StoredTally } from "./discardTally";
+import { decisionAdmission } from "./recordedAdmission";
 
 const addToLifetime = (
   lifetime: StoredTally["lifetime"],
@@ -58,15 +58,18 @@ const matchesIdentity = (
   one: DiscardDecisionRecord,
   other: DiscardDecisionRecord,
 ): boolean => {
-  const a = normalizeTableIdentity(one.tableIdentity);
-  const b = normalizeTableIdentity(other.tableIdentity);
-  return a === null || b === null ? a === b : sameTableIdentity(a, b);
+  const first = normalizeTableIdentity(one.tableIdentity);
+  const second = normalizeTableIdentity(other.tableIdentity);
+  return first === null || second === null
+    ? first === second
+    : sameTableIdentity(first, second);
 };
 
 export const sameDecisionJudgment = (
   one: DiscardDecisionRecord,
   other: DiscardDecisionRecord,
 ): boolean =>
+  one.handKey === other.handKey &&
   one.discardKey === other.discardKey &&
   one.isPractice === other.isPractice &&
   one.expectedPointsLoss === other.expectedPointsLoss &&
@@ -79,7 +82,7 @@ export const extendDecisionTally = (
   maxRecords: number,
 ): StoredTally => {
   const existing = repeatOf(tally.records, decision);
-  const admission = normalizeAdmission(decision.recordedAdmission);
+  const admission = decisionAdmission(decision);
   if (existing) {
     if (
       existing.recordedAdmission !== "pending" ||
@@ -106,6 +109,9 @@ export const extendDecisionTally = (
   const recordedDecision = {
     ...decision,
     recencyAt,
+    ...(typeof decision.recordedAdmission === "undefined"
+      ? {}
+      : { recordedAdmission: admission }),
     tableIdentity: normalizeTableIdentity(decision.tableIdentity),
   };
   return {
@@ -114,6 +120,9 @@ export const extendDecisionTally = (
     records: [...tally.records, recordedDecision].slice(-maxRecords),
   };
 };
+
+const lastAttemptOrder = (tally: StoredTally): number =>
+  tally.attemptLog?.[tally.attemptLog.length - 1]?.order ?? 0;
 
 export const extendPracticeTally = (
   tally: StoredTally,
@@ -131,7 +140,7 @@ export const extendPracticeTally = (
   if (practice === tally.practice) {
     return tally;
   }
-  const detail = attempt.detail;
+  const { detail } = attempt;
   return {
     ...tally,
     practice,
@@ -143,7 +152,7 @@ export const extendPracticeTally = (
               ...detail,
               at: attempt.at,
               handKey: attempt.handKey,
-              order: (tally.attemptLog?.at(-1)?.order ?? 0) + 1,
+              order: lastAttemptOrder(tally) + 1,
               tableIdentity: normalizeTableIdentity(detail.tableIdentity),
             },
           ].slice(-MAX_ATTEMPT_LOG),

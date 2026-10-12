@@ -3,8 +3,8 @@ import type {
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
+import { type RenderResult, render } from "@testing-library/react";
 import { DecisionQualityChart } from "./DecisionQualityChart";
-import { render } from "@testing-library/react";
 
 export const makeBucket = (
   key: string,
@@ -25,7 +25,7 @@ export const renderChart = (
   buckets: readonly DiscardPeriodBucket[],
   granularity: DiscardTrendGranularity,
   decisionPoints?: readonly DiscardDecisionPoint[],
-) =>
+): RenderResult =>
   render(
     <DecisionQualityChart
       buckets={buckets}

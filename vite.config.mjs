@@ -68,10 +68,10 @@ export default {
        * 81.49 -> 81.4, functions 92.96 -> 92.9, lines 91.08 -> 91.0).
        */
       thresholds: {
-        branches: 81.4,
-        functions: 92.9,
-        lines: 91.0,
-        statements: 91.2,
+        branches: 82.68,
+        functions: 92.96,
+        lines: 91.34,
+        statements: 91.48,
       },
     },
     projects: [

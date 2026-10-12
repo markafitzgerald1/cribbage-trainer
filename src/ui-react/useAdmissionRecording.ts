@@ -6,8 +6,8 @@ import {
 } from "../ui/discardTally";
 import { useCallback, useEffect, useRef } from "react";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
-import { sameDecisionJudgment } from "../ui/tallyUpdates";
 import { exactAdmission } from "../ui/recordedAdmission";
+import { sameDecisionJudgment } from "../ui/tallyUpdates";
 
 interface PendingDecision {
   readonly decision: DiscardDecisionRecord;
@@ -16,7 +16,6 @@ interface PendingDecision {
 
 // The wait belongs to the recorded decision, so leaving its analysis cannot strand it.
 export const useAdmissionRecording = (
-  handId: string,
   onWritten: (summary: DiscardTallySummary) => void,
 ): typeof recordDiscardDecision => {
   const abandoned = useRef(
@@ -25,18 +24,6 @@ export const useAdmissionRecording = (
     ),
   );
   const pending = useRef(new Map<string, PendingDecision>());
-  const flush = useCallback(() => {
-    for (const { decision, timer } of pending.current.values()) {
-      clearTimeout(timer);
-      onWritten(
-        recordDiscardDecision({
-          ...decision,
-          recordedAdmission: exactAdmission(decision.isOptimal),
-        }),
-      );
-    }
-    pending.current.clear();
-  }, [onWritten]);
   useEffect(() => {
     for (const decision of abandoned.current) {
       onWritten(
@@ -48,7 +35,6 @@ export const useAdmissionRecording = (
     }
     abandoned.current = [];
   }, [onWritten]);
-  useEffect(() => flush, [flush, handId]);
 
   return useCallback(
     (decision) => {

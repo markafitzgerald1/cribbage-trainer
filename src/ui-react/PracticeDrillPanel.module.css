@@ -16,6 +16,8 @@
   font-family: var(--text-font-family);
   gap: 0.25rem;
   margin-top: 0.35rem;
+  max-height: 24dvh;
+  overflow-y: auto;
   min-width: 0;
   padding: 0.35rem 0.5rem;
   width: 100%;
@@ -177,6 +179,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
+  order: -1;
 }
 
 .primary,
@@ -292,12 +295,6 @@
     font-size: min(1rem, 1.65vw);
   }
 
-  /*
-   * A capped font here would shrink well below a readable size at a large
-   * device font on a narrow phone (see AGENTS.md's rem-floor traps), and
-   * unlike the score text around it this note carries no figure the player
-   * needs — so it drops entirely in landscape rather than shrinking.
-   */
   .provenance-note {
     font-size: min(0.75rem, 1.35vw);
   }
@@ -326,19 +323,5 @@
 
   .actions {
     gap: min(0.4rem, 0.9vw);
-  }
-
-  /*
-   * Short-screen pattern (AGENTS.md): in the revealed state the actions ride
-   * above the verdict, so Draw another / Exit stay on screen when a large
-   * device font makes the two rows plus the outcome line tall. The panel
-   * then caps its own height and scrolls, so the Then / Retry comparison
-   * and the outcome stay reachable rather than clipped by Trainer's
-   * fixed-height, non-scrolling left column. The dvh term only bites on a
-   * short phone-landscape viewport; a desktop landscape resolves the rem
-   * term and the panel never scrolls there.
-   */
-  .verdict .actions {
-    order: -1;
   }
 }

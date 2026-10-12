@@ -7,14 +7,14 @@ import {
   type PracticeRecord,
   isStoredPracticeRecord,
 } from "./practiceLedger";
-import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
-import { encodeTableIdentities } from "./tableIdentityCodec";
-import { isObject } from "./isObject";
-import { extendDecisionTally, extendPracticeTally } from "./tallyUpdates";
 import {
   type PracticeAttemptEntry,
   normalizeAttemptLog,
 } from "./practiceAttemptLog";
+import { extendDecisionTally, extendPracticeTally } from "./tallyUpdates";
+import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
+import { encodeTableIdentities } from "./tableIdentityCodec";
+import { isObject } from "./isObject";
 import { withoutStrayDrillRecords } from "./strayDrillRecords";
 export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
@@ -403,9 +403,9 @@ export const recordDiscardDecision = (
   ) {
     return readDiscardTally(Date.now());
   }
-  return extendStoredTally(decision.at, (tally) => {
-    return extendDecisionTally(tally, decision, MAX_RECORDS);
-  });
+  return extendStoredTally(decision.at, (tally) =>
+    extendDecisionTally(tally, decision, MAX_RECORDS),
+  );
 };
 
 export const recordPracticeAttempt = (
@@ -418,9 +418,9 @@ export const recordPracticeAttempt = (
   ) {
     return readDiscardTally(Date.now());
   }
-  return extendStoredTally(attempt.at, (tally) => {
-    return extendPracticeTally(tally, attempt, MAX_RECORDS);
-  });
+  return extendStoredTally(attempt.at, (tally) =>
+    extendPracticeTally(tally, attempt, MAX_RECORDS),
+  );
 };
 
 /*

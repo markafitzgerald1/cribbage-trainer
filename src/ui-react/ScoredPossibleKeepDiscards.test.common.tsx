@@ -1,10 +1,10 @@
 /* jscpd:ignore-start */
+import { type RenderResult, render, waitFor } from "@testing-library/react";
 import { expect, jest } from "@jest/globals";
 import {
   expectedCribPointsTable,
   expectedPlayPointsTable,
 } from "../analysis/analysis.test.common";
-import { render, waitFor } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
@@ -74,7 +74,7 @@ export const scoredElement = (
 export const renderScoredPossibleKeepDiscards = (
   dealtCards: DealtCard[],
   { preload = true, ...options }: RenderOptions = {},
-) => {
+): RenderResult => {
   if (preload) {
     setTableSync(expectedCribPointsTable);
     setPlayTableSync(expectedPlayPointsTable);
@@ -87,7 +87,7 @@ export const renderHand = (
   cards: string,
   discards: string,
   options: RenderOptions = {},
-) =>
+): RenderResult =>
   renderScoredPossibleKeepDiscards(
     toDealtCards(parseHand(cards), parseHand(discards)),
     options,

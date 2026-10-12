@@ -1,5 +1,3 @@
-import { type RecordedAdmission } from "../ui/recordedAdmission";
-import { useAdmissionRecording } from "./useAdmissionRecording";
 import {
   type DiscardTallySummary,
   readDiscardTally,
@@ -18,11 +16,13 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import { type RecordedAdmission } from "../ui/recordedAdmission";
 import type { SortOrder } from "../ui/SortOrder";
 import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
+import { useAdmissionRecording } from "./useAdmissionRecording";
 /* jscpd:ignore-end */
 
 /*
@@ -88,10 +88,12 @@ export type ReportHandRestored = (
 ) => void;
 
 export type ReportAnalysisRendered = (
-  analysis: RenderedAnalysis,
-  displayedAs: DisplayedHandRelabeling | null,
-  tableIdentity?: TableIdentity | null,
-  admission?: RecordedAdmission | null,
+  ...args: [
+    analysis: RenderedAnalysis,
+    displayedAs: DisplayedHandRelabeling | null,
+    tableIdentity?: TableIdentity | null,
+    admission?: RecordedAdmission | null,
+  ]
 ) => void;
 
 export interface DiscardTally {
@@ -140,7 +142,7 @@ export const useDiscardTally = ({
   const [summary, setSummary] = useState<DiscardTallySummary>(() =>
     readDiscardTally(Date.now()),
   );
-  const recordDecision = useAdmissionRecording(boardHandId, setSummary);
+  const recordDecision = useAdmissionRecording(setSummary);
   /*
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
@@ -357,16 +359,13 @@ export const useDiscardTally = ({
   );
 
   const reportAnalysisRendered = useCallback(
-    (
-      {
-        cribRole: scoredRole,
-        oppositeRoleExpectedPointsLoss,
-        quality,
-      }: RenderedAnalysis,
-      displayedAs: DisplayedHandRelabeling | null,
-      tableIdentity: TableIdentity | null = null,
-      admission: RecordedAdmission | null = null,
-    ) => {
+    (...args: Parameters<ReportAnalysisRendered>) => {
+      const [
+        { cribRole: scoredRole, oppositeRoleExpectedPointsLoss, quality },
+        displayedAs,
+        tableIdentity = null,
+        admission = null,
+      ] = args;
       if (quality === null) {
         return;
       }

@@ -14,6 +14,7 @@ import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 import { type Uncertainty } from "../game/uncertaintySidecar";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { parseHand } from "../game/Card";
+import { shippedTableIdentity } from "../game/tableIdentity";
 import { toDealtCards } from "../game/toDealtCards";
 import { uniformUncertainty } from "../game/uncertaintySidecar.test.common";
 /* jscpd:ignore-end */
@@ -216,6 +217,31 @@ describe("scored possible keep discards caption", () => {
   });
 
   describe("simulation-noise verdict (#774)", () => {
+    it("reports the original pending admission then its settled noise exclusion beside the positive exact loss", async () => {
+      const onAnalysisRendered = jest.fn();
+      const source = settledWith(1);
+      const { container } = renderHand(NEAR_MISS_HAND, NEAR_MISS_DISCARD, {
+        cribUncertaintySource: source,
+        onAnalysisRendered,
+        playUncertaintySource: source,
+      });
+      await findCaption(container);
+
+      expect(
+        onAnalysisRendered.mock.calls.map((call) => call[2]),
+      ).toStrictEqual([
+        "pending",
+        { basis: "sampling-noise-v1", eligible: false },
+      ]);
+      expect(onAnalysisRendered).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          quality: { expectedPointsLoss: 0.085633, isOptimal: false },
+        }),
+        shippedTableIdentity,
+        { basis: "sampling-noise-v1", eligible: false },
+      );
+    });
+
     it("calls a loss inside the noise threshold within noise, never sub-optimal or optimal", async () => {
       const { container } = renderNearMiss(settledWith(1), settledWith(1));
       const caption = await findCaption(container);

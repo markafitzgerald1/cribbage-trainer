@@ -35,8 +35,24 @@ export const exactAdmission = (isOptimal: boolean): SettledAdmission => ({
   eligible: !isOptimal,
 });
 
-export const isAdmittedMistake = (record: DiscardDecisionRecord): boolean => {
+export const decisionAdmission = (
+  record: Pick<
+    DiscardDecisionRecord,
+    "recordedAdmission" | "isOptimal" | "expectedPointsLoss"
+  >,
+): RecordedAdmission | null => {
   const admission = normalizeAdmission(record.recordedAdmission);
+  const mistake = !record.isOptimal && record.expectedPointsLoss > 0;
+  if (admission === "pending") return mistake ? admission : null;
+  if (admission === null) return null;
+  if (admission.basis === "sampling-noise-v1") {
+    return mistake ? admission : null;
+  }
+  return admission.eligible === mistake ? admission : null;
+};
+
+export const isAdmittedMistake = (record: DiscardDecisionRecord): boolean => {
+  const admission = decisionAdmission(record);
   return (
     !record.isPractice &&
     (admission === null

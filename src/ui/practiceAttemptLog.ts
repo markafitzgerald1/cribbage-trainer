@@ -1,9 +1,8 @@
 import { type Card, parseHand, serializeHand } from "../game/Card";
+import { type JudgmentBasis, isJudgmentBasis } from "./recordedAdmission";
 import { CARDS_PER_DISCARD } from "../game/facts";
-import type { JudgmentBasis } from "./recordedAdmission";
 import type { TableIdentity } from "../game/tableIdentity";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
-import { isJudgmentBasis } from "./recordedAdmission";
 import { isObject } from "./isObject";
 import { parseHandKey } from "./handKey";
 import { resolveTableIdentity } from "./tableIdentityCodec";
@@ -58,9 +57,39 @@ export const isAttemptDetail = (
     item.isOptimal === (item.expectedPointsLoss === 0) &&
     (item.outcome === "success" || item.outcome === "failure") &&
     isJudgmentBasis(item.basis) &&
-    (item.basis !== "exact-v1" ||
-      (item.outcome === "success") === item.isOptimal)
+    (item.isOptimal
+      ? item.outcome === "success"
+      : item.basis === "sampling-noise-v1" || item.outcome === "failure")
   );
+};
+
+const STORED_ATTEMPT_FIELDS = 9;
+
+const decodeAttempt = (value: unknown): unknown => {
+  if (!Array.isArray(value) || value.length !== STORED_ATTEMPT_FIELDS)
+    return value;
+  const [
+    handKey,
+    discardKey,
+    at,
+    order,
+    tableIdentity,
+    expectedPointsLoss,
+    isOptimal,
+    outcome,
+    basis,
+  ] = value as readonly unknown[];
+  return {
+    at,
+    basis,
+    discardKey,
+    expectedPointsLoss,
+    handKey,
+    isOptimal,
+    order,
+    outcome,
+    tableIdentity,
+  };
 };
 
 export const normalizeAttemptLog = (
@@ -68,7 +97,8 @@ export const normalizeAttemptLog = (
   identities: readonly unknown[],
 ): readonly PracticeAttemptEntry[] => {
   const log: PracticeAttemptEntry[] = [];
-  for (const value of entries) {
+  for (const stored of entries) {
+    const value = decodeAttempt(stored);
     if (isObject(value)) {
       const item = value as Partial<PracticeAttemptEntry>;
       const { at, handKey, order } = item;
@@ -77,6 +107,7 @@ export const normalizeAttemptLog = (
         isFiniteNonNegative(at) &&
         Number.isSafeInteger(order) &&
         isFiniteNonNegative(order) &&
+        order > (log[log.length - 1]?.order ?? 0) &&
         isAttemptDetail(item, handKey)
       ) {
         log.push({

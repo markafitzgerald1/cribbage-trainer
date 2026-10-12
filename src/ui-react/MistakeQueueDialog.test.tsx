@@ -434,7 +434,7 @@ describe("mistake queue dialog", () => {
     it("renders dominant component badges for mistake cards", async () => {
       clearClassificationCache();
       const { findAllByTitle } = renderQueueDialog();
-      const badges = await findAllByTitle(/driven by/u, {}, { timeout: 5000 });
+      const badges = await findAllByTitle(/comparison/u, {}, { timeout: 5000 });
 
       expect(badges.length).toBeGreaterThan(0);
     });
@@ -447,7 +447,7 @@ describe("mistake queue dialog", () => {
         const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
 
         const badges = await rendered.findAllByTitle(
-          /driven by/u,
+          /comparison/u,
           {},
           { timeout: 5000 },
         );
@@ -461,7 +461,7 @@ describe("mistake queue dialog", () => {
       const badge = await runAsyncTableLoad();
 
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent("Prev: Play gain < Hand, Crib loss");
+      expect(badge).toHaveTextContent(/Play gain < Hand, Crib loss/u);
     });
 
     const runTableLoadFailure = async () => {

@@ -37,7 +37,20 @@ export const encodeTableIdentities = (tally: StoredTally): unknown => {
     return { ...record, tableIdentity: reference };
   }
   const records = tally.records.map(encode);
-  const attemptLog = tally.attemptLog?.map(encode);
+  const attemptLog = tally.attemptLog?.map((entry) => {
+    const encoded = encode(entry);
+    return [
+      encoded.handKey,
+      encoded.discardKey,
+      encoded.at,
+      encoded.order,
+      encoded.tableIdentity,
+      encoded.expectedPointsLoss,
+      encoded.isOptimal,
+      encoded.outcome,
+      encoded.basis,
+    ];
+  });
   return {
     ...tally,
     records,

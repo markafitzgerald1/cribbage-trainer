@@ -43,14 +43,14 @@ describe("decision table provenance", () => {
   it("preserves reserved attempt/admission data and their registry references on ordinary writes", () => {
     const entry = {
       at: 1,
-      handKey: "AH,2H,3H,4H,5H,6H|Dealer",
-      discardKey: "AH,2H",
-      order: 1,
-      tableIdentity: identity,
-      expectedPointsLoss: 0,
-      isOptimal: true,
-      outcome: "success",
       basis: "exact-v1",
+      discardKey: "AH,2H",
+      expectedPointsLoss: 0,
+      handKey: "AH,2H,3H,4H,5H,6H|Dealer",
+      isOptimal: true,
+      order: 1,
+      outcome: "success",
+      tableIdentity: identity,
     };
     const attemptLog = [{ ...entry, tableIdentity: "1" }];
     storeRaw(
@@ -60,7 +60,7 @@ describe("decision table provenance", () => {
           records: [
             {
               ...decisionOf(),
-              recordedAdmission: { eligible: true, basis: "exact-fallback-v1" },
+              recordedAdmission: { basis: "exact-fallback-v1", eligible: true },
             },
           ],
           tableIdentities: [null, identity],
@@ -77,8 +77,8 @@ describe("decision table provenance", () => {
     expect(decoded.attemptLog).toStrictEqual([entry]);
     expect(decoded.tableIdentities).toStrictEqual([null, identity]);
     expect(decoded.records[0]?.recordedAdmission).toStrictEqual({
-      eligible: true,
       basis: "exact-fallback-v1",
+      eligible: true,
     });
     expect(decoded.records[1]?.tableIdentity).toStrictEqual(identity);
   });

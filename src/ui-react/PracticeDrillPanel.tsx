@@ -1,14 +1,14 @@
 import * as classes from "./PracticeDrillPanel.module.css";
 import type { PracticeDrillPhase, PracticeVerdict } from "./usePracticeDrill";
-import { sameTableIdentity } from "../game/tableIdentity";
-import { SUCCESSES_FOR_MASTERY } from "../ui/mistakeQueue";
-import { SortOrder } from "../ui/SortOrder";
-import { SortedCardLabels } from "./SortedCardLabels";
 import {
   formatAccessibleNetLoss,
   formatNetLoss,
 } from "../analysis/classifyMistake";
+import { SUCCESSES_FOR_MASTERY } from "../ui/mistakeQueue";
+import { SortOrder } from "../ui/SortOrder";
+import { SortedCardLabels } from "./SortedCardLabels";
 import { parseHand } from "../game/Card";
+import { sameTableIdentity } from "../game/tableIdentity";
 
 export interface PracticeDrillPanelProps {
   readonly canCommit: boolean;

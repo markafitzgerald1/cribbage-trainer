@@ -5,7 +5,7 @@ import {
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { parseHandKey } from "./handKey";
 
-// Two consecutive optimal choices since the last error; the one place the copy, the state machine, and the trend chart all read.
+// Two consecutive successful retries since the last failure; the one place the copy, the state machine, and the trend chart all read.
 export const SUCCESSES_FOR_MASTERY = 2;
 
 export interface PracticeRecord {
@@ -132,11 +132,14 @@ const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
   return false;
 };
 
+const attemptSucceeded = (attempt: PracticeAttempt): boolean =>
+  attempt.detail ? attempt.detail.outcome === "success" : attempt.isOptimal;
+
 const computeConsecutiveSuccesses = (
   existing: PracticeRecord | undefined,
   attempt: PracticeAttempt,
 ): number => {
-  if (!attempt.isOptimal) {
+  if (!attemptSucceeded(attempt)) {
     return 0;
   }
   return (existing?.consecutiveSuccesses ?? 0) + 1;
@@ -182,7 +185,8 @@ export const updatePracticeRecords = (
   const existing = practice.find(
     (recordItem) => recordItem.handKey === attempt.handKey,
   );
-  const loss = attempt.isOptimal ? 0 : attempt.expectedPointsLoss;
+  const success = attemptSucceeded(attempt);
+  const loss = success ? 0 : (attempt.expectedPointsLoss as number);
   const consecutiveSuccesses = computeConsecutiveSuccesses(existing, attempt);
   const lastAttemptAt = getNextAttemptAt(
     practice,
@@ -196,7 +200,7 @@ export const updatePracticeRecords = (
         handKey: attempt.handKey,
         lastAttemptAt,
         totalWrongLoss: existing.totalWrongLoss + loss,
-        wrong: existing.wrong + (attempt.isOptimal ? 0 : 1),
+        wrong: existing.wrong + (success ? 0 : 1),
       }
     : {
         attempts: 1,
@@ -204,7 +208,7 @@ export const updatePracticeRecords = (
         handKey: attempt.handKey,
         lastAttemptAt,
         totalWrongLoss: loss,
-        wrong: attempt.isOptimal ? 0 : 1,
+        wrong: success ? 0 : 1,
       };
 
   const remaining = practice.filter(

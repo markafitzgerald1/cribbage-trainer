@@ -29,3 +29,34 @@ export const basePanelArgs = (
   verdict: null,
   ...overrides,
 });
+
+export const retryIdentity = {
+  crib: { means_sha256: "d".repeat(64) },
+  play: { means_sha256: "e".repeat(64) },
+};
+export const originalIdentity = {
+  ...retryIdentity,
+  play: { means_sha256: "f".repeat(64) },
+};
+export const changedVerdict = () =>
+  sampleVerdict({
+    originalTableIdentity: originalIdentity,
+    retryTableIdentity: retryIdentity,
+  });
+export const changedTablesNote =
+  "Tables changed since this decision. Your earlier result and streak are kept; this retry uses the current tables.";
+export const unknownTablesNote =
+  "The original tables were not recorded. This retry uses current tables.";
+
+export const currentVerdict = () =>
+  sampleVerdict({
+    originalTableIdentity: retryIdentity,
+    retryTableIdentity: retryIdentity,
+  });
+export const revealedPanelArgs = (verdict: PracticeVerdict) => ({
+  phase: "revealed" as const,
+  verdict,
+});
+
+export const failedVerdict = (chosenLoss: number) =>
+  sampleVerdict({ chosenLoss, consecutiveSuccesses: 0, isOptimal: false });

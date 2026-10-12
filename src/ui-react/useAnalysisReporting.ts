@@ -112,9 +112,10 @@ export const useAnalysisReporting = (
   } = tally;
 
   const reportAnalysisRendered: ReportAnalysisRendered = useCallback(
-    (analysis, displayedAs, tableIdentity, admission) => {
+    (...args) => {
+      const [analysis] = args;
       reportAnalysisToTelemetry(analysis);
-      addAnalysisToTally(analysis, displayedAs, tableIdentity, admission);
+      addAnalysisToTally(...args);
     },
     [addAnalysisToTally, reportAnalysisToTelemetry],
   );

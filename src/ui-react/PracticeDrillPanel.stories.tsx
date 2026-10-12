@@ -1,6 +1,16 @@
 /* jscpd:ignore-start */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { basePanelArgs, sampleVerdict } from "./PracticeDrillPanel.test.common";
+import {
+  basePanelArgs,
+  changedTablesNote,
+  changedVerdict,
+  currentVerdict,
+  failedVerdict,
+  retryIdentity,
+  revealedPanelArgs,
+  sampleVerdict,
+  unknownTablesNote,
+} from "./PracticeDrillPanel.test.common";
 import {
   clickStoryButtonExpectingCall,
   expectStoryTextVisible,
@@ -97,10 +107,8 @@ export const ReviewWithRepeatedMistake: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
     await expect(
-      canvas.getByRole("button", {
+      within(canvasElement).getByRole("button", {
         name: "Scroll to previous mistake in table",
       }),
     ).toBeInTheDocument();
@@ -109,5 +117,58 @@ export const ReviewWithRepeatedMistake: Story = {
       canvasElement,
       /1\.42 points behind the best choice with current tables/u,
     );
+  },
+};
+
+export const ChangedTables: Story = {
+  args: revealedPanelArgs(changedVerdict()),
+  play: async ({ canvasElement }) => {
+    await expectStoryTextVisible(canvasElement, changedTablesNote);
+  },
+};
+
+export const CurrentTables: Story = {
+  args: revealedPanelArgs(currentVerdict()),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.queryByText(changedTablesNote)).toBeNull();
+    await expect(canvas.getByText("Retry — current tables")).toBeVisible();
+  },
+};
+
+export const UnknownOriginalTables: Story = {
+  args: revealedPanelArgs(sampleVerdict({ retryTableIdentity: retryIdentity })),
+  play: async ({ canvasElement }) => {
+    await expectStoryTextVisible(canvasElement, unknownTablesNote);
+  },
+};
+
+export const KeptMastery: Story = {
+  args: {
+    hasNextHand: false,
+    phase: "revealed",
+    verdict: sampleVerdict({
+      ...changedVerdict(),
+      consecutiveSuccesses: 2,
+      isMastered: true,
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    await expectStoryTextVisible(
+      canvasElement,
+      "Mastered. Mastery kept from earlier retries.",
+    );
+  },
+};
+
+export const SubCentRetry: Story = {
+  args: revealedPanelArgs(failedVerdict(0.004)),
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByLabelText(
+        "less than 0.01 points behind the best choice with current tables.",
+      ),
+    ).toBeVisible();
   },
 };

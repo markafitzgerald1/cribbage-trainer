@@ -4,8 +4,14 @@ import {
   answeredPolicyVersionKey,
 } from "../src/ui/analyticsConsent";
 import { type Page, expect } from "@playwright/test";
+import {
+  phonePortraitViewport,
+  requireBoundingBox,
+} from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
+import { originalIdentity } from "../src/ui-react/PracticeDrillPanel.test.common";
+import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 export const LARGE_ROOT_FONT = "html { font-size: 28px; }";
 
@@ -81,7 +87,7 @@ export const SEED_TALLY_WITH_QUANTILES = {
   ],
 };
 
-const seedBrowser = (page: Page) =>
+const seedBrowser = (page: Page, tally: typeof SEED_TALLY) =>
   page.addInitScript(
     (stored: {
       readonly consent: Record<string, string>;
@@ -102,18 +108,22 @@ const seedBrowser = (page: Page) =>
         [answeredPolicyVersionKey]: PRIVACY_POLICY_VERSION,
       },
       keyPrefix: DISCARD_TALLY_KEY_PREFIX,
-      tally: SEED_TALLY,
+      tally,
     },
   );
 
-export const openSeededTrainer = async (page: Page) => {
+export const openSeededTrainer = async (page: Page, tally = SEED_TALLY) => {
   await blockGoogleAnalytics(page);
-  await seedBrowser(page);
+  await seedBrowser(page, tally);
   await page.goto("/");
 };
 
 export const startDrillOnFirstMistake = async (page: Page) => {
   await page.getByRole("button", { name: "Mistake queue" }).click();
+  // This seeded mistake's asynchronous comparison moves its action as the badge arrives.
+  await expect(
+    page.getByRole("note", { name: /^Current-table comparison:/u }).first(),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Practice this" }).first().click();
 };
 
@@ -140,4 +150,55 @@ export const expectActionWithinViewport = async (
   expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(
     viewportHeight,
   );
+};
+
+export const openEarlierTableTrainer = (page: Page) =>
+  openSeededTrainer(page, {
+    ...SEED_TALLY,
+    records: SEED_TALLY.records.map((record) => ({
+      ...record,
+      tableIdentity: originalIdentity,
+    })),
+    version: 8,
+  });
+
+const expectPanelActionReachable = async (page: Page, name: string) => {
+  const panel = page.getByRole("region", { name: "Practice drill" });
+  const [bounds, panelBounds] = await Promise.all([
+    requireBoundingBox(panel.getByRole("button", { name })),
+    requireBoundingBox(panel),
+  ]);
+  expect(bounds.y).toBeGreaterThanOrEqual(panelBounds.y);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+    panelBounds.y + panelBounds.height,
+  );
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+    page.viewportSize()?.height ?? Number.NaN,
+  );
+  const action = panel.getByRole("button", { name });
+  if (await action.isEnabled()) await action.click({ trial: true });
+};
+
+export const expectChangedPanelReachable = async (page: Page) => {
+  await expectPanelActionReachable(page, "Draw another");
+  await expectPanelActionReachable(page, "Exit drill");
+  const panel = page.getByRole("region", { name: "Practice drill" });
+  const note = panel.getByText(/Tables changed since this decision/u);
+  await note.scrollIntoViewIfNeeded();
+  await expect(note).toBeInViewport();
+  await panel.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+};
+
+export const reviewAtLargePortrait = async (page: Page) => {
+  await openEarlierTableTrainer(page);
+  await startDrillOnFirstMistake(page);
+  await page.setViewportSize(phonePortraitViewport);
+  await page.addStyleTag({ content: LARGE_ROOT_FONT });
+  await expectPanelActionReachable(page, "Check discard");
+  await expectPanelActionReachable(page, "Exit drill");
+  await selectTwoDiscards(page);
+  await page.getByRole("button", { name: "Check discard" }).click();
+  await waitForAnalysis(page);
 };

@@ -367,9 +367,9 @@ export const usePracticeDrill = ({
         consecutiveSuccesses,
         isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
         isOptimal,
+        originalTableIdentity: activeItem.tableIdentity ?? null,
         previousDiscard: permutedPreviousDiscard(activeItem, activeViewIndex),
         previousLoss: activeItem.previousDiscardLoss,
-        originalTableIdentity: activeItem.tableIdentity ?? null,
         retryTableIdentity: tableIdentity,
       });
     },
