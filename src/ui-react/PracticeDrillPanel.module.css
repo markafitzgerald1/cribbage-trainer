@@ -295,8 +295,16 @@
     font-size: min(1rem, 1.65vw);
   }
 
+  /*
+   * Plain rem, unlike the capped sizes around it: a vw cap renders this
+   * note near 9px on a phone landscape, and unlike the suit note it carries
+   * the table provenance the verdict depends on, so it cannot simply drop.
+   * The panel scrolls, so the height a large device font adds stays
+   * reachable (skills/ui-layout-and-interaction/SKILL.md, capping spacing
+   * rather than font size).
+   */
   .provenance-note {
-    font-size: min(0.75rem, 1.35vw);
+    font-size: 0.75rem;
   }
 
   .suit-note {
