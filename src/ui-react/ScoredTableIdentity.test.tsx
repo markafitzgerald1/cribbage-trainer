@@ -124,6 +124,7 @@ describe("scored analysis provenance", () => {
           }),
           identityB,
           { basis: "exact-v1", eligible: false },
+          expect.any(Function),
         ),
       waitForAnalysis,
     );
@@ -183,6 +184,7 @@ describe("scored analysis provenance", () => {
             }),
             tableIdentity,
             expect.any(Object),
+            expect.any(Function),
           ),
         waitForAnalysis,
       );

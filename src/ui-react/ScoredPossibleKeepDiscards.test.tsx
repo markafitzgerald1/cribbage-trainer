@@ -234,6 +234,7 @@ describe("scored possible keep discards component", () => {
       expect.any(Object),
       shippedTableIdentity,
       expect.any(Object),
+      expect.any(Function),
     );
 
     unmount();
@@ -257,6 +258,7 @@ describe("scored possible keep discards component", () => {
           expect.any(Object),
           shippedTableIdentity,
           admission,
+          expect.any(Function),
         );
       }, waitForAnalysis);
 
@@ -264,6 +266,7 @@ describe("scored possible keep discards component", () => {
         expected,
         shippedTableIdentity,
         admission,
+        expect.any(Function),
       );
     },
   );
@@ -280,6 +283,7 @@ describe("scored possible keep discards component", () => {
       expect.any(Object),
       shippedTableIdentity,
       null,
+      expect.any(Function),
     );
   });
 

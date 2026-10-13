@@ -1,3 +1,4 @@
+import { type DeadlineJudgment, exactAdmission } from "../ui/recordedAdmission";
 import {
   type DiscardDecisionRecord,
   type DiscardTallySummary,
@@ -6,7 +7,6 @@ import {
 } from "../ui/discardTally";
 import { useCallback, useEffect, useRef } from "react";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
-import { exactAdmission } from "../ui/recordedAdmission";
 import { sameDecisionJudgment } from "../ui/tallyUpdates";
 
 interface PendingDecision {
@@ -20,10 +20,15 @@ const settleExactly = (decision: DiscardDecisionRecord): DiscardTallySummary =>
     recordedAdmission: exactAdmission(decision.isOptimal),
   });
 
+export type RecordDecision = (
+  decision: DiscardDecisionRecord,
+  judgeAtDeadline?: DeadlineJudgment | null,
+) => DiscardTallySummary;
+
 // The wait belongs to the recorded decision, so leaving its analysis cannot strand it.
 export const useAdmissionRecording = (
   onWritten: (summary: DiscardTallySummary) => void,
-): typeof recordDiscardDecision => {
+): RecordDecision => {
   // Read in the effect rather than during render, which re-parsed the whole tally on every render.
   const hasRecoveredStored = useRef(false);
   const pending = useRef(new Map<string, PendingDecision>());
@@ -55,7 +60,7 @@ export const useAdmissionRecording = (
   }, [onWritten]);
 
   return useCallback(
-    (decision) => {
+    (decision, judgeAtDeadline = null) => {
       const waiting = pending.current.get(decision.handKey);
       const matching =
         waiting && sameDecisionJudgment(waiting.decision, decision);
@@ -72,7 +77,14 @@ export const useAdmissionRecording = (
         );
         if (!waiting && stored) {
           const timer = setTimeout(() => {
-            onWritten(settleExactly(stored));
+            onWritten(
+              judgeAtDeadline === null
+                ? settleExactly(stored)
+                : recordDiscardDecision({
+                    ...stored,
+                    recordedAdmission: judgeAtDeadline(),
+                  }),
+            );
             pending.current.delete(stored.handKey);
           }, SIDECAR_SETTLE_TIMEOUT_MS);
           pending.current.set(stored.handKey, { decision: stored, timer });

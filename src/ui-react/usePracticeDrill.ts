@@ -13,11 +13,10 @@ import {
 } from "../game/suitPermutation";
 import { readTallyForDisplay, recordPracticeAttempt } from "../ui/discardTally";
 import { useCallback, useRef, useState } from "react";
+import type { AnalysisRenderedHandler } from "./ScoredPossibleKeepDiscards";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
-import type { RecordedAdmission } from "../ui/recordedAdmission";
-import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import type { ReportAnalysisRendered } from "./useAnalysisReporting";
 import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
@@ -59,11 +58,7 @@ export interface PracticeDrill {
   // Drops the retained drill state without touching the board — for a history restore, which brings its own hand back.
   readonly clearDrill: () => void;
   // Forwards to the caller's own analysis handler, then records the drill attempt once the answer is on screen.
-  readonly handleAnalysisRendered: (
-    analysis: RenderedAnalysis,
-    tableIdentity?: TableIdentity | null,
-    admission?: RecordedAdmission | null,
-  ) => void;
+  readonly handleAnalysisRendered: AnalysisRenderedHandler;
   readonly handleStartAutoDrill: () => void;
   readonly handleStartDrill: (item: MistakeQueueItem) => void;
   readonly hasNextHand: boolean;
@@ -288,12 +283,14 @@ export const usePracticeDrill = ({
     beginWith(next);
   }, [activeItem, beginWith, drawNext, onExit]);
 
-  const handleAnalysisRendered = useCallback(
-    (
-      analysis: RenderedAnalysis,
-      tableIdentity: TableIdentity | null = null,
-      admission: RecordedAdmission | null = null,
-    ) => {
+  const handleAnalysisRendered: AnalysisRenderedHandler = useCallback(
+    (...args: Parameters<AnalysisRenderedHandler>) => {
+      const [
+        analysis,
+        tableIdentity = null,
+        admission = null,
+        judgeAtDeadline = null,
+      ] = args;
       /*
        * The board is this drill's relabeled stand-in for `activeItem`, so the
        * tally is told which renaming to undo before it decides what decision
@@ -308,6 +305,7 @@ export const usePracticeDrill = ({
           : drillRelabeling(activeItem, activeViewIndex),
         tableIdentity,
         admission,
+        judgeAtDeadline,
       );
       if (
         activeItem === null ||

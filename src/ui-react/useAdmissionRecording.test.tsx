@@ -191,6 +191,21 @@ describe("decision-owned admission settlement", () => {
     });
   });
 
+  it("settles a decision whose analysis was left from its own deadline judgment", () => {
+    expectWithClock(() => {
+      const hook = recordingHook();
+      act(() => {
+        hook.result.current(pendingDecision(), () => noiseAdmission);
+      });
+      hook.unmount();
+      act(() => {
+        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS);
+      });
+
+      expect(storedAdmission()).toStrictEqual(noiseAdmission);
+    });
+  });
+
   it("does not read storage again when it re-renders", () => {
     expectWithClock(() => {
       const reads = jest.spyOn(Storage.prototype, "getItem");

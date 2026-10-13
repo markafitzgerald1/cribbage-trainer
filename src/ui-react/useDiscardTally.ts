@@ -1,4 +1,9 @@
+import type {
+  DeadlineJudgment,
+  RecordedAdmission,
+} from "../ui/recordedAdmission";
 import {
+  type DiscardDecisionRecord,
   type DiscardTallySummary,
   readDiscardTally,
   recordSkippedHand,
@@ -16,7 +21,6 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
-import { type RecordedAdmission } from "../ui/recordedAdmission";
 import type { SortOrder } from "../ui/SortOrder";
 import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
@@ -93,6 +97,7 @@ export type ReportAnalysisRendered = (
     displayedAs: DisplayedHandRelabeling | null,
     tableIdentity?: TableIdentity | null,
     admission?: RecordedAdmission | null,
+    judgeAtDeadline?: DeadlineJudgment | null,
   ]
 ) => void;
 
@@ -365,6 +370,7 @@ export const useDiscardTally = ({
         displayedAs,
         tableIdentity = null,
         admission = null,
+        judgeAtDeadline = null,
       ] = args;
       if (quality === null) {
         return;
@@ -396,8 +402,10 @@ export const useDiscardTally = ({
         `${boardHandId}|${completionKeyFor(dealtCards, scoredRole)}`
           ? capture.sortOrder
           : null;
+      const recordJudged = (decision: DiscardDecisionRecord) =>
+        recordDecision(decision, judgeAtDeadline);
       setSummary(
-        recordDecision({
+        recordJudged({
           at: Date.now(),
           cribRole: scoredRole,
           discardKey,

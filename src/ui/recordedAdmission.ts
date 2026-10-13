@@ -19,6 +19,12 @@ export interface ForeignAdmission {
   readonly eligible: boolean;
 }
 export type RecordedAdmission = SettledAdmission | ForeignAdmission | "pending";
+/*
+ * How a pending decision is settled at its deadline, judged from whatever
+ * sidecars have arrived by then. The analysis that recorded the decision
+ * supplies it, so leaving that analysis early cannot change the verdict.
+ */
+export type DeadlineJudgment = () => SettledAdmission;
 
 export const isJudgmentBasis = (value: unknown): value is JudgmentBasis =>
   value === "exact-v1" ||

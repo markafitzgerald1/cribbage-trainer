@@ -217,6 +217,43 @@ describe("scored possible keep discards caption", () => {
   });
 
   describe("simulation-noise verdict (#774)", () => {
+    it("judges at the deadline from whichever sidecars have arrived by then", async () => {
+      const onAnalysisRendered = jest.fn();
+      const releases: Release[] = [];
+      let arrived: Uncertainty | null = null;
+      const lateSource: UncertaintySource = {
+        ...heldSource(releases),
+        getUncertaintySync: () => arrived,
+      };
+      renderHand(NEAR_MISS_HAND, NEAR_MISS_DISCARD, {
+        cribUncertaintySource: lateSource,
+        onAnalysisRendered,
+        playUncertaintySource: lateSource,
+      });
+      await waitFor(() => {
+        expect(onAnalysisRendered).toHaveBeenCalledWith(
+          expect.any(Object),
+          shippedTableIdentity,
+          "pending",
+          expect.any(Function),
+        );
+      }, waitForAnalysis);
+      const judgeAtDeadline = onAnalysisRendered.mock.calls.at(-1)?.[3] as
+        (() => unknown) | undefined;
+
+      expect(judgeAtDeadline?.()).toStrictEqual({
+        basis: "exact-fallback-v1",
+        eligible: true,
+      });
+
+      arrived = uniformUncertainty(1);
+
+      expect(judgeAtDeadline?.()).toStrictEqual({
+        basis: "sampling-noise-v1",
+        eligible: false,
+      });
+    });
+
     it("reports the original pending admission then its settled noise exclusion beside the positive exact loss", async () => {
       const onAnalysisRendered = jest.fn();
       const source = settledWith(1);
@@ -239,6 +276,7 @@ describe("scored possible keep discards caption", () => {
         }),
         shippedTableIdentity,
         { basis: "sampling-noise-v1", eligible: false },
+        expect.any(Function),
       );
     });
 
