@@ -11,8 +11,12 @@ import {
   recordPracticeAttempt,
   recordSkippedHand,
 } from "./discardTally";
+import {
+  decisionOf,
+  noiseAdmission,
+  noiseJudgedSuccess,
+} from "./discardTally.test.common";
 import { describe, expect, it } from "@jest/globals";
-import { decisionOf } from "./discardTally.test.common";
 
 const laterBasis = "sampling-noise-v2";
 const laterAdmission = { basis: laterBasis, eligible: false };
@@ -26,27 +30,8 @@ const storedRows = () =>
 // Written through this build with a basis it knows, then renamed in storage the way a later build would have written it.
 const storeLaterBasisRows = (): void => {
   clearDiscardTally();
-  const handKey = "AH,2H,3H,4H,5H,6H|Dealer";
-  recordDiscardDecision(
-    decisionOf({
-      handKey,
-      recordedAdmission: { basis: "sampling-noise-v1", eligible: false },
-    }),
-  );
-  recordPracticeAttempt({
-    at: 200,
-    detail: {
-      basis: "sampling-noise-v1",
-      discardKey: "AH,2H",
-      expectedPointsLoss: 0.5,
-      isOptimal: false,
-      outcome: "success",
-      tableIdentity: null,
-    },
-    expectedPointsLoss: 0.5,
-    handKey,
-    isOptimal: false,
-  });
+  recordDiscardDecision(decisionOf({ recordedAdmission: noiseAdmission }));
+  recordPracticeAttempt(noiseJudgedSuccess(0.5));
   localStorage.setItem(
     discardTallyKey,
     storedJson().replaceAll("sampling-noise-v1", laterBasis),
@@ -80,8 +65,12 @@ describe("recorded admission validation", () => {
         recordedAdmission: { basis: "exact-fallback-v1", eligible: false },
       }),
     },
+    {
+      expected: true,
+      record: decisionOf({ recordedAdmission: laterAdmission }),
+    },
   ])(
-    "retains the legacy exact eligibility when admission contradicts the recorded verdict: $expected",
+    "retains the legacy exact eligibility when admission contradicts the recorded verdict or names a basis this build cannot read: $expected",
     ({ expected, record }) => {
       expect(decisionAdmission(record)).toBeNull();
       expect(isAdmittedMistake(record)).toBe(expected);
@@ -90,12 +79,8 @@ describe("recorded admission validation", () => {
 });
 
 describe("an admission basis from a later build", () => {
-  it("is kept as stored but never read as a verdict", () => {
-    const record = decisionOf({ recordedAdmission: laterAdmission });
-
+  it("is kept as stored", () => {
     expect(normalizeAdmission(laterAdmission)).toStrictEqual(laterAdmission);
-    expect(decisionAdmission(record)).toBeNull();
-    expect(isAdmittedMistake(record)).toBe(true);
   });
 
   it("survives an unrelated write byte for byte on both the decision and the attempt", () => {
@@ -104,11 +89,13 @@ describe("an admission basis from a later build", () => {
     recordSkippedHand(300);
     const after = storedRows();
 
-    expect(JSON.stringify(before.records)).toContain(laterBasis);
-    expect(JSON.stringify(before.attemptLog)).toContain(laterBasis);
-    expect(JSON.stringify(after.records)).toBe(JSON.stringify(before.records));
-    expect(JSON.stringify(after.attemptLog)).toBe(
-      JSON.stringify(before.attemptLog),
-    );
+    const fields = ["records", "attemptLog"] as const;
+    const serialized = (rows: ReturnType<typeof storedRows>) =>
+      fields.map((field) => JSON.stringify(rows[field]));
+
+    expect(
+      serialized(before).map((json) => json.includes(laterBasis)),
+    ).toStrictEqual([true, true]);
+    expect(serialized(after)).toStrictEqual(serialized(before));
   });
 });

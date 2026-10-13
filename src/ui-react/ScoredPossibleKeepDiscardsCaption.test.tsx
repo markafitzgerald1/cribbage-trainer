@@ -6,6 +6,7 @@ import {
   noUncertainty,
   renderHand,
   renderScoredPossibleKeepDiscards,
+  reportedWith,
   scoredElement,
   waitForAnalysis,
 } from "./ScoredPossibleKeepDiscards.test.common";
@@ -232,10 +233,7 @@ describe("scored possible keep discards caption", () => {
       });
       await waitFor(() => {
         expect(onAnalysisRendered).toHaveBeenCalledWith(
-          expect.any(Object),
-          shippedTableIdentity,
-          "pending",
-          expect.any(Function),
+          ...reportedWith("pending"),
         );
       }, waitForAnalysis);
       const judgeAtDeadline = onAnalysisRendered.mock.calls.at(-1)?.[3] as

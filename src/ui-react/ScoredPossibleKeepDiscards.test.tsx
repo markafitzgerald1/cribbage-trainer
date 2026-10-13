@@ -4,6 +4,7 @@ import {
   findCaption,
   renderHand,
   renderScoredPossibleKeepDiscards,
+  reportedWith,
   waitForAnalysis,
 } from "./ScoredPossibleKeepDiscards.test.common";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
@@ -255,10 +256,7 @@ describe("scored possible keep discards component", () => {
       // Awaited so a sub-optimal verdict's deferred settle lands inside act rather than after the test.
       await waitFor(() => {
         expect(onAnalysisRendered).toHaveBeenCalledWith(
-          expect.any(Object),
-          shippedTableIdentity,
-          admission,
-          expect.any(Function),
+          ...reportedWith(admission),
         );
       }, waitForAnalysis);
 

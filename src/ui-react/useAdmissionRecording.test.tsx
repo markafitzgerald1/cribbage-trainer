@@ -1,14 +1,18 @@
-import { StrictMode, useEffect } from "react";
-import { act, renderHook } from "@testing-library/react";
+import { AT, decisionOf } from "../ui/discardTally.test.common";
 import {
+  type DiscardDecisionRecord,
   clearDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
 } from "../ui/discardTally";
+import {
+  type RecordDecision,
+  useAdmissionRecording,
+} from "./useAdmissionRecording";
+import { StrictMode, useEffect } from "react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
-import { decisionOf } from "../ui/discardTally.test.common";
-import { useAdmissionRecording } from "./useAdmissionRecording";
 
 const pendingDecision = () => decisionOf({ recordedAdmission: "pending" });
 const storedAdmission = () =>
@@ -35,6 +39,20 @@ const expectExactFallback = () =>
     basis: "exact-fallback-v1",
     eligible: true,
   });
+const waitOut = (milliseconds = SIDECAR_SETTLE_TIMEOUT_MS) => {
+  act(() => {
+    jest.advanceTimersByTime(milliseconds);
+  });
+};
+const settleAsNoiseThenWaitOut = (
+  record: RecordDecision,
+  decision: DiscardDecisionRecord,
+) => {
+  act(() => {
+    record({ ...decision, recordedAdmission: noiseAdmission });
+  });
+  waitOut();
+};
 
 describe("decision-owned admission settlement", () => {
   it("keeps the first original noise settlement reachable during StrictMode replay", () => {
@@ -53,13 +71,7 @@ describe("decision-owned admission settlement", () => {
 
       expect(storedAdmission()).toBe("pending");
 
-      act(() => {
-        view.result.current({
-          ...pendingDecision(),
-          recordedAdmission: noiseAdmission,
-        });
-        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS);
-      });
+      settleAsNoiseThenWaitOut(view.result.current, pendingDecision());
 
       expect(storedAdmission()).toStrictEqual(noiseAdmission);
 
@@ -83,10 +95,7 @@ describe("decision-owned admission settlement", () => {
 
       expect(storedAdmission()).toBe("pending");
 
-      act(() => {
-        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS);
-      });
-
+      waitOut();
       expectExactFallback();
 
       expect(onWritten).toHaveBeenLastCalledWith(
@@ -120,23 +129,18 @@ describe("decision-owned admission settlement", () => {
     });
   });
 
-  it("recovers a crashed pending row without accepting today's noise judgment", () => {
+  it.each([
+    {
+      atFor: () => AT,
+      name: "a crashed pending row without accepting today's noise judgment",
+    },
+    {
+      atFor: (now: number) => now - SIDECAR_SETTLE_TIMEOUT_MS,
+      name: "a pending row whose owner's deadline has just passed",
+    },
+  ])("settles on mount $name", ({ atFor }) => {
     expectWithClock(() => {
-      recordDiscardDecision(pendingDecision());
-      const hook = recordingHook();
-
-      expectExactFallback();
-
-      hook.unmount();
-    });
-  });
-
-  it("settles a pending row on mount once its owner's deadline has passed", () => {
-    expectWithClock(() => {
-      recordDiscardDecision({
-        ...pendingDecision(),
-        at: Date.now() - SIDECAR_SETTLE_TIMEOUT_MS,
-      });
+      recordDiscardDecision({ ...pendingDecision(), at: atFor(Date.now()) });
       const hook = recordingHook();
 
       expectExactFallback();
@@ -156,13 +160,7 @@ describe("decision-owned admission settlement", () => {
 
       expect(storedAdmission()).toBe("pending");
 
-      act(() => {
-        owner.result.current({
-          ...decision,
-          recordedAdmission: noiseAdmission,
-        });
-        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS);
-      });
+      settleAsNoiseThenWaitOut(owner.result.current, decision);
 
       expect(storedAdmission()).toStrictEqual(noiseAdmission);
 
@@ -175,16 +173,11 @@ describe("decision-owned admission settlement", () => {
     expectWithClock(() => {
       recordDiscardDecision({ ...pendingDecision(), at: Date.now() });
       const hook = recordingHook();
-      act(() => {
-        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS - 1);
-      });
+      waitOut(SIDECAR_SETTLE_TIMEOUT_MS - 1);
 
       expect(storedAdmission()).toBe("pending");
 
-      act(() => {
-        jest.advanceTimersByTime(1);
-      });
-
+      waitOut(1);
       expectExactFallback();
 
       hook.unmount();
@@ -198,9 +191,7 @@ describe("decision-owned admission settlement", () => {
         hook.result.current(pendingDecision(), () => noiseAdmission);
       });
       hook.unmount();
-      act(() => {
-        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS);
-      });
+      waitOut();
 
       expect(storedAdmission()).toStrictEqual(noiseAdmission);
     });
