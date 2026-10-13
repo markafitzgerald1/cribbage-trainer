@@ -61,11 +61,10 @@ export default {
        * red on noise. The margin absorbs that variance while staying well
        * above what a real regression would cost.
        *
-       * Set for #880 from the lowest of observed Docker runs (local runs
-       * 91.56 / 81.80 / 93.32 / 91.40 and 91.56 / 81.74 / 93.32 / 91.40, and
-       * CI Docker run 91.49 / 81.74 / 93.21 / 91.33). Pinned with a quarter-point
-       * margin under the lowest totals (statements 91.24 -> 91.2, branches
-       * 81.49 -> 81.4, functions 92.96 -> 92.9, lines 91.08 -> 91.0).
+       * Set for #894's second pull request a quarter point under the lowest
+       * Docker totals observed across its gate runs, metric by metric:
+       * statements 91.73 -> 91.48, branches 82.93 -> 82.68, functions
+       * 93.21 -> 92.96, lines 91.59 -> 91.34.
        */
       thresholds: {
         branches: 82.68,
