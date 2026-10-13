@@ -9,6 +9,13 @@ import { useCallback, useEffect, useRef } from "react";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 import { sameDecisionJudgment } from "../ui/tallyUpdates";
 
+/*
+ * The owner's timer starts when it records the row, a moment after the row's
+ * own `at`. A hidden owner tab whose timer the browser throttles past this
+ * grace still loses the race, and its decision settles as an exact fallback.
+ */
+export const RECOVERY_GRACE_MS = 1000;
+
 interface PendingDecision {
   readonly decision: DiscardDecisionRecord;
   readonly timer: ReturnType<typeof setTimeout>;
@@ -43,10 +50,15 @@ export const useAdmissionRecording = (
          * A pending row may belong to another tab, or to this tab before a
          * reload, that is still waiting on its sidecars. Settling it now
          * would steal that judgment, so it waits out the owner's own
-         * deadline, measured from the row's `at` on the same Date.now clock;
-         * a row still pending after that has no owner left to settle it.
+         * deadline, measured from the row's `at` on the same Date.now clock
+         * plus a grace so a live owner's judgment lands first; a row still
+         * pending after that has no owner left to settle it.
          */
-        const remaining = decision.at + SIDECAR_SETTLE_TIMEOUT_MS - Date.now();
+        const remaining =
+          decision.at +
+          SIDECAR_SETTLE_TIMEOUT_MS +
+          RECOVERY_GRACE_MS -
+          Date.now();
         const settle = () => {
           onWritten(settleExactly(decision));
         };

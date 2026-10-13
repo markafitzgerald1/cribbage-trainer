@@ -6,12 +6,14 @@ import {
   recordDiscardDecision,
 } from "../ui/discardTally";
 import {
+  RECOVERY_GRACE_MS,
   type RecordDecision,
   useAdmissionRecording,
 } from "./useAdmissionRecording";
 import { StrictMode, useEffect } from "react";
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
+import type { DeadlineJudgment } from "../ui/recordedAdmission";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 
 const pendingDecision = () => decisionOf({ recordedAdmission: "pending" });
@@ -52,6 +54,30 @@ const settleAsNoiseThenWaitOut = (
     record({ ...decision, recordedAdmission: noiseAdmission });
   });
   waitOut();
+};
+
+const ownerSettlesBesideSecondTab = ({
+  judgeAtDeadline,
+  ownerWriteLag,
+  settle,
+}: {
+  judgeAtDeadline: DeadlineJudgment | null;
+  ownerWriteLag: number;
+  settle: (record: RecordDecision, decision: DiscardDecisionRecord) => void;
+}) => {
+  const owner = recordingHook();
+  const decision = { ...pendingDecision(), at: Date.now() };
+  waitOut(ownerWriteLag);
+  act(() => {
+    owner.result.current(decision, judgeAtDeadline);
+  });
+  const secondTab = recordingHook();
+  settle(owner.result.current, decision);
+
+  expect(storedAdmission()).toStrictEqual(noiseAdmission);
+
+  secondTab.unmount();
+  owner.unmount();
 };
 
 describe("decision-owned admission settlement", () => {
@@ -135,7 +161,8 @@ describe("decision-owned admission settlement", () => {
       name: "a crashed pending row without accepting today's noise judgment",
     },
     {
-      atFor: (now: number) => now - SIDECAR_SETTLE_TIMEOUT_MS,
+      atFor: (now: number) =>
+        now - SIDECAR_SETTLE_TIMEOUT_MS - RECOVERY_GRACE_MS,
       name: "a pending row whose owner's deadline has just passed",
     },
   ])("settles on mount $name", ({ atFor }) => {
@@ -151,29 +178,23 @@ describe("decision-owned admission settlement", () => {
 
   it("leaves a live pending row to the tab that owns it", () => {
     expectWithClock(() => {
-      const owner = recordingHook();
-      const decision = { ...pendingDecision(), at: Date.now() };
-      act(() => {
-        owner.result.current(decision);
+      ownerSettlesBesideSecondTab({
+        judgeAtDeadline: null,
+        ownerWriteLag: 0,
+        settle: (record, decision) => {
+          expect(storedAdmission()).toBe("pending");
+
+          settleAsNoiseThenWaitOut(record, decision);
+        },
       });
-      const secondTab = recordingHook();
-
-      expect(storedAdmission()).toBe("pending");
-
-      settleAsNoiseThenWaitOut(owner.result.current, decision);
-
-      expect(storedAdmission()).toStrictEqual(noiseAdmission);
-
-      secondTab.unmount();
-      owner.unmount();
     });
   });
 
-  it("settles a young pending row nobody owns at its own deadline", () => {
+  it("settles a young pending row nobody owns once the owner's grace has passed", () => {
     expectWithClock(() => {
       recordDiscardDecision({ ...pendingDecision(), at: Date.now() });
       const hook = recordingHook();
-      waitOut(SIDECAR_SETTLE_TIMEOUT_MS - 1);
+      waitOut(SIDECAR_SETTLE_TIMEOUT_MS + RECOVERY_GRACE_MS - 1);
 
       expect(storedAdmission()).toBe("pending");
 
@@ -181,6 +202,19 @@ describe("decision-owned admission settlement", () => {
       expectExactFallback();
 
       hook.unmount();
+    });
+  });
+
+  it("lets a live owner's deadline judgment land before another tab's recovery", () => {
+    expectWithClock(() => {
+      ownerSettlesBesideSecondTab({
+        judgeAtDeadline: () => noiseAdmission,
+        // A literal lag, so that zeroing the grace cannot also zero the race it guards.
+        ownerWriteLag: 500,
+        settle: () => {
+          waitOut();
+        },
+      });
     });
   });
 
