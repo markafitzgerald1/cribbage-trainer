@@ -44,7 +44,7 @@ export const changedVerdict = () =>
     retryTableIdentity: retryIdentity,
   });
 export const changedTablesNote =
-  "Tables changed since this decision. Your earlier result and streak are kept; this retry uses the current tables.";
+  "Tables changed since this decision. Its recorded cost is from the original tables; this retry uses the current tables.";
 export const unknownTablesNote =
   "The original tables were not recorded. This retry uses current tables.";
 

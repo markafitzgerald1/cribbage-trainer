@@ -144,7 +144,7 @@ export const UnknownOriginalTables: Story = {
   },
 };
 
-export const KeptMastery: Story = {
+export const MasteredUnderChangedTables: Story = {
   args: {
     hasNextHand: false,
     phase: "revealed",
@@ -155,10 +155,7 @@ export const KeptMastery: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    await expectStoryTextVisible(
-      canvasElement,
-      "Mastered. Mastery kept from earlier retries.",
-    );
+    await expectStoryTextVisible(canvasElement, "Mastered.");
   },
 };
 
@@ -166,9 +163,9 @@ export const SubCentRetry: Story = {
   args: revealedPanelArgs(failedVerdict(0.004)),
   play: async ({ canvasElement }) => {
     await expect(
-      within(canvasElement).getByLabelText(
-        "less than 0.01 points behind the best choice with current tables.",
-      ),
+      within(canvasElement).getByRole("note", {
+        name: "less than 0.01 points behind the best choice with current tables.",
+      }),
     ).toBeVisible();
   },
 };

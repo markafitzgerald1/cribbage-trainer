@@ -10,6 +10,8 @@ import {
   changedTablesNote,
   changedVerdict,
   currentVerdict,
+  failedVerdict,
+  originalIdentity,
   retryIdentity,
   revealedPanelArgs,
   sampleVerdict,
@@ -129,9 +131,7 @@ describe("practiceDrillPanel", () => {
       verdict: sampleVerdict({ consecutiveSuccesses: 2, isMastered: true }),
     });
 
-    expect(
-      getByText("Mastered. Mastery kept from earlier retries."),
-    ).toBeInTheDocument();
+    expect(getByText("Mastered.")).toBeInTheDocument();
     expect(
       queryByRole("button", { name: "Draw another" }),
     ).not.toBeInTheDocument();
@@ -235,6 +235,34 @@ describe("retry table boundary copy", () => {
     expect(view.getByText(note)).toBeInTheDocument();
     expect(view.getByText("Then — recorded cost")).toBeInTheDocument();
     expect(view.getByText("Retry — current tables")).toBeInTheDocument();
+  });
+
+  it("claims no kept streak when a failed retry under changed tables reset it", () => {
+    const view = renderPanel(
+      revealedPanelArgs({
+        ...failedVerdict(0.42),
+        originalTableIdentity: originalIdentity,
+        retryTableIdentity: retryIdentity,
+      }),
+    );
+
+    expect(view.getByText(changedTablesNote)).toBeInTheDocument();
+    expect(view.queryByText(/streak/u)).not.toBeInTheDocument();
+  });
+
+  it("names each loss with its spoken sub-cent form", () => {
+    const view = renderPanel(revealedPanelArgs(failedVerdict(0.004)));
+
+    expect(
+      view.getByRole("note", {
+        name: "Retry — current tables, less than 0.01 points",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      view.getByRole("note", {
+        name: "less than 0.01 points behind the best choice with current tables.",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("does not announce a table change for an equal pair", () => {

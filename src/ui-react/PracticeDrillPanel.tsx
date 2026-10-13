@@ -92,9 +92,11 @@ const renderVerdictRow = ({
   <div className={classes.verdictRow}>
     <span className={classes.verdictLabel}>{label}</span>
     {renderDiscard(discard, sortOrder, onLocate)}
+    {/* A generic span cannot carry a name, so the role is what lets the spoken sub-cent form replace the visible "<". */}
     <span
-      aria-label={`${formatAccessibleNetLoss(loss)} points`}
+      aria-label={`${label}, ${formatAccessibleNetLoss(loss)} points`}
       className={classes.verdictLoss}
+      role="note"
     >
       {formatLoss(loss)}
     </span>
@@ -103,11 +105,7 @@ const renderVerdictRow = ({
 
 const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
   if (verdict.isMastered) {
-    return (
-      <p className={classes.outcomeMastered}>
-        Mastered. Mastery kept from earlier retries.
-      </p>
-    );
+    return <p className={classes.outcomeMastered}>Mastered.</p>;
   }
   if (verdict.isOptimal) {
     return (
@@ -121,6 +119,7 @@ const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
     <p
       aria-label={`${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables.`}
       className={classes.outcomeMiss}
+      role="note"
     >
       {formatLoss(verdict.chosenLoss)} points behind the best choice with
       current tables.
@@ -184,8 +183,8 @@ const renderTableBoundary = (
     );
   return sameTableIdentity(original, retry) ? null : (
     <p className={classes.provenanceNote}>
-      Tables changed since this decision. Your earlier result and streak are
-      kept; this retry uses the current tables.
+      Tables changed since this decision. Its recorded cost is from the original
+      tables; this retry uses the current tables.
     </p>
   );
 };
