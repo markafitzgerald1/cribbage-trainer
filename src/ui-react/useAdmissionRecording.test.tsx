@@ -130,4 +130,83 @@ describe("decision-owned admission settlement", () => {
       hook.unmount();
     });
   });
+
+  it("settles a pending row on mount once its owner's deadline has passed", () => {
+    expectWithClock(() => {
+      recordDiscardDecision({
+        ...pendingDecision(),
+        at: Date.now() - SIDECAR_SETTLE_TIMEOUT_MS,
+      });
+      const hook = recordingHook();
+
+      expectExactFallback();
+
+      hook.unmount();
+    });
+  });
+
+  it("leaves a live pending row to the tab that owns it", () => {
+    expectWithClock(() => {
+      const owner = recordingHook();
+      const decision = { ...pendingDecision(), at: Date.now() };
+      act(() => {
+        owner.result.current(decision);
+      });
+      const secondTab = recordingHook();
+
+      expect(storedAdmission()).toBe("pending");
+
+      act(() => {
+        owner.result.current({
+          ...decision,
+          recordedAdmission: noiseAdmission,
+        });
+        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS);
+      });
+
+      expect(storedAdmission()).toStrictEqual(noiseAdmission);
+
+      secondTab.unmount();
+      owner.unmount();
+    });
+  });
+
+  it("settles a young pending row nobody owns at its own deadline", () => {
+    expectWithClock(() => {
+      recordDiscardDecision({ ...pendingDecision(), at: Date.now() });
+      const hook = recordingHook();
+      act(() => {
+        jest.advanceTimersByTime(SIDECAR_SETTLE_TIMEOUT_MS - 1);
+      });
+
+      expect(storedAdmission()).toBe("pending");
+
+      act(() => {
+        jest.advanceTimersByTime(1);
+      });
+
+      expectExactFallback();
+
+      hook.unmount();
+    });
+  });
+
+  it("does not read storage again when it re-renders", () => {
+    expectWithClock(() => {
+      const reads = jest.spyOn(Storage.prototype, "getItem");
+      try {
+        const hook = recordingHook();
+        const readsAfterMount = reads.mock.calls.length;
+        for (let render = 0; render < 10; render += 1) {
+          hook.rerender();
+        }
+
+        expect(reads).toHaveBeenCalledTimes(readsAfterMount);
+
+        hook.unmount();
+      } finally {
+        reads.mockRestore();
+      }
+    });
+  });
 });

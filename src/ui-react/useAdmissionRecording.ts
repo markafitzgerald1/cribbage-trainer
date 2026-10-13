@@ -14,26 +14,44 @@ interface PendingDecision {
   readonly timer: ReturnType<typeof setTimeout>;
 }
 
+const settleExactly = (decision: DiscardDecisionRecord): DiscardTallySummary =>
+  recordDiscardDecision({
+    ...decision,
+    recordedAdmission: exactAdmission(decision.isOptimal),
+  });
+
 // The wait belongs to the recorded decision, so leaving its analysis cannot strand it.
 export const useAdmissionRecording = (
   onWritten: (summary: DiscardTallySummary) => void,
 ): typeof recordDiscardDecision => {
-  const abandoned = useRef(
-    readTallyForDisplay().records.filter(
-      (record) => record.recordedAdmission === "pending",
-    ),
-  );
+  // Read in the effect rather than during render, which re-parsed the whole tally on every render.
+  const hasRecoveredStored = useRef(false);
   const pending = useRef(new Map<string, PendingDecision>());
   useEffect(() => {
-    for (const decision of abandoned.current) {
-      onWritten(
-        recordDiscardDecision({
-          ...decision,
-          recordedAdmission: exactAdmission(decision.isOptimal),
-        }),
-      );
+    if (hasRecoveredStored.current) {
+      return;
     }
-    abandoned.current = [];
+    hasRecoveredStored.current = true;
+    for (const decision of readTallyForDisplay().records) {
+      if (decision.recordedAdmission === "pending") {
+        /*
+         * A pending row may belong to another tab, or to this tab before a
+         * reload, that is still waiting on its sidecars. Settling it now
+         * would steal that judgment, so it waits out the owner's own
+         * deadline, measured from the row's `at` on the same Date.now clock;
+         * a row still pending after that has no owner left to settle it.
+         */
+        const remaining = decision.at + SIDECAR_SETTLE_TIMEOUT_MS - Date.now();
+        const settle = () => {
+          onWritten(settleExactly(decision));
+        };
+        if (remaining > 0) {
+          setTimeout(settle, remaining);
+        } else {
+          settle();
+        }
+      }
+    }
   }, [onWritten]);
 
   return useCallback(
@@ -54,12 +72,7 @@ export const useAdmissionRecording = (
         );
         if (!waiting && stored) {
           const timer = setTimeout(() => {
-            onWritten(
-              recordDiscardDecision({
-                ...stored,
-                recordedAdmission: exactAdmission(stored.isOptimal),
-              }),
-            );
+            onWritten(settleExactly(stored));
             pending.current.delete(stored.handKey);
           }, SIDECAR_SETTLE_TIMEOUT_MS);
           pending.current.set(stored.handKey, { decision: stored, timer });
