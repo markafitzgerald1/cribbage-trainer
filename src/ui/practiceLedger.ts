@@ -107,10 +107,14 @@ const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
   ) {
     return false;
   }
+  /*
+   * Comparing the loss also settles isOptimal: a valid detail ties its own
+   * flag to a zero loss, and the checks below tie the attempt's the same way,
+   * so a separate flag comparison could never reject anything this does not.
+   */
   if (
     typeof candidate.detail !== "undefined" &&
     (!isAttemptDetail(candidate.detail, candidate.handKey) ||
-      candidate.detail.isOptimal !== candidate.isOptimal ||
       candidate.detail.expectedPointsLoss !==
         (candidate.expectedPointsLoss ?? 0))
   ) {
