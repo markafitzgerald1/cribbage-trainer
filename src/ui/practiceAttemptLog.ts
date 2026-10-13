@@ -20,7 +20,15 @@ export interface PracticeAttemptDetail {
   readonly outcome: "success" | "failure";
   readonly tableIdentity: TableIdentity | null;
 }
-export interface PracticeAttemptEntry extends PracticeAttemptDetail {
+/*
+ * A logged attempt as storage holds it. Its basis may be a later build's,
+ * which this build carries verbatim rather than dropping the row; nothing
+ * reads a logged basis, so no verdict depends on interpreting it.
+ */
+interface StoredAttemptDetail extends Omit<PracticeAttemptDetail, "basis"> {
+  readonly basis: string;
+}
+export interface PracticeAttemptEntry extends StoredAttemptDetail {
   readonly at: number;
   readonly handKey: string;
   readonly order: number;
@@ -45,14 +53,17 @@ const discardBelongsToHand = (handKey: string, discardKey: string): boolean => {
   }
 };
 
-export const isAttemptDetail = (
+// Only this build's exact bases forbid a positive-loss success; a basis it cannot read is not second-guessed.
+const EXACT_BASES: readonly string[] = ["exact-v1", "exact-fallback-v1"];
+
+const isStoredAttemptDetail = (
   value: unknown,
   handKey: string,
-): value is PracticeAttemptDetail => {
+): value is StoredAttemptDetail => {
   if (!isObject(value)) {
     return false;
   }
-  const item = value as Partial<PracticeAttemptDetail>;
+  const item = value as Partial<StoredAttemptDetail>;
   return (
     typeof item.discardKey === "string" &&
     discardBelongsToHand(handKey, item.discardKey) &&
@@ -60,12 +71,19 @@ export const isAttemptDetail = (
     typeof item.isOptimal === "boolean" &&
     item.isOptimal === (item.expectedPointsLoss === 0) &&
     (item.outcome === "success" || item.outcome === "failure") &&
-    isJudgmentBasis(item.basis) &&
+    typeof item.basis === "string" &&
     (item.isOptimal
       ? item.outcome === "success"
-      : item.basis === "sampling-noise-v1" || item.outcome === "failure")
+      : !EXACT_BASES.includes(item.basis) || item.outcome === "failure")
   );
 };
+
+// A new attempt is this build's own judgment, so its basis must be one this build defines.
+export const isAttemptDetail = (
+  value: unknown,
+  handKey: string,
+): value is PracticeAttemptDetail =>
+  isStoredAttemptDetail(value, handKey) && isJudgmentBasis(value.basis);
 
 const STORED_ATTEMPT_FIELDS = 9;
 
@@ -112,7 +130,7 @@ export const normalizeAttemptLog = (
         Number.isSafeInteger(order) &&
         isFiniteNonNegative(order) &&
         order > (log[log.length - 1]?.order ?? 0) &&
-        isAttemptDetail(item, handKey)
+        isStoredAttemptDetail(item, handKey)
       ) {
         log.push({
           ...item,

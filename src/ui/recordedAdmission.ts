@@ -7,7 +7,18 @@ export interface SettledAdmission {
   readonly basis: JudgmentBasis;
   readonly eligible: boolean;
 }
-export type RecordedAdmission = SettledAdmission | "pending";
+/*
+ * An admission naming a basis this build cannot interpret, such as a later
+ * build's revision of the noise rule. It is kept exactly as stored, so an
+ * unrelated write here never rewrites a judgment this build did not make,
+ * but nothing here reads its verdict: the queue treats it as it treats
+ * contradictory metadata.
+ */
+export interface ForeignAdmission {
+  readonly basis: string;
+  readonly eligible: boolean;
+}
+export type RecordedAdmission = SettledAdmission | ForeignAdmission | "pending";
 
 export const isJudgmentBasis = (value: unknown): value is JudgmentBasis =>
   value === "exact-v1" ||
@@ -23,10 +34,10 @@ export const normalizeAdmission = (
   if (!isObject(value)) {
     return null;
   }
-  const candidate = value as Partial<SettledAdmission>;
+  const candidate = value as Partial<ForeignAdmission>;
   return typeof candidate.eligible === "boolean" &&
-    isJudgmentBasis(candidate.basis)
-    ? { basis: candidate.basis, eligible: candidate.eligible }
+    typeof candidate.basis === "string"
+    ? (candidate as ForeignAdmission)
     : null;
 };
 
@@ -44,7 +55,7 @@ export const decisionAdmission = (
   const admission = normalizeAdmission(record.recordedAdmission);
   const mistake = !record.isOptimal && record.expectedPointsLoss > 0;
   if (admission === "pending") return mistake ? admission : null;
-  if (admission === null) return null;
+  if (admission === null || !isJudgmentBasis(admission.basis)) return null;
   if (admission.basis === "sampling-noise-v1") {
     return mistake ? admission : null;
   }

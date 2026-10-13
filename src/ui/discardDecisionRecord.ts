@@ -1,4 +1,7 @@
-import { type RecordedAdmission, decisionAdmission } from "./recordedAdmission";
+import {
+  type RecordedAdmission,
+  normalizeAdmission,
+} from "./recordedAdmission";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "./SortOrder";
@@ -157,7 +160,8 @@ export const normalizeStoredRecords = (
         ...(typeof record.recordedAdmission === "undefined"
           ? {}
           : {
-              recordedAdmission: decisionAdmission(record),
+              // Kept as written rather than as judged, so the next write cannot erase an admission this build cannot read.
+              recordedAdmission: normalizeAdmission(record.recordedAdmission),
             }),
         tableIdentity: resolveTableIdentity(record.tableIdentity, identities),
       });
