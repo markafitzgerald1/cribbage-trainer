@@ -98,4 +98,22 @@ describe("an admission basis from a later build", () => {
     ).toStrictEqual([true, true]);
     expect(serialized(after)).toStrictEqual(serialized(before));
   });
+
+  it.each(["deferred-v2", { basis: laterBasis, eligible: "maybe" }])(
+    "keeps an admission of a shape this build cannot read, %j, through an unrelated write",
+    (laterShape) => {
+      clearDiscardTally();
+      recordDiscardDecision(decisionOf({ recordedAdmission: "pending" }));
+      const rows = JSON.parse(storedJson()) as {
+        records: { recordedAdmission: unknown }[];
+      };
+      rows.records[0] = { ...rows.records[0], recordedAdmission: laterShape };
+      localStorage.setItem(discardTallyKey, JSON.stringify(rows));
+      recordSkippedHand(300);
+
+      expect(storedRows().records[0]).toStrictEqual(
+        expect.objectContaining({ recordedAdmission: laterShape }),
+      );
+    },
+  );
 });

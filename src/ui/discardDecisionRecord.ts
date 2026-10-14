@@ -161,7 +161,10 @@ export const normalizeStoredRecords = (
           ? {}
           : {
               // Kept as written rather than as judged, so the next write cannot erase an admission this build cannot read.
-              recordedAdmission: normalizeAdmission(record.recordedAdmission),
+              // Every reader re-normalizes it, so an unreadable shape only ever reads as no admission.
+              recordedAdmission:
+                normalizeAdmission(record.recordedAdmission) ??
+                record.recordedAdmission,
             }),
         tableIdentity: resolveTableIdentity(record.tableIdentity, identities),
       });
