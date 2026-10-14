@@ -48,21 +48,19 @@ export const useAdmissionRecording = (
       return;
     }
     hasRecoveredStored.current = true;
+    const maximumWait = SIDECAR_SETTLE_TIMEOUT_MS + RECOVERY_GRACE_MS;
     for (const decision of readTallyForDisplay().records) {
       if (decision.recordedAdmission === "pending") {
         /*
-         * A pending row may belong to another tab, or to this tab before a
-         * reload, that is still waiting on its sidecars. Settling it now
-         * would steal that judgment, so it waits out the owner's own
-         * deadline, measured from the row's `at` on the same Date.now clock
-         * plus a grace so a live owner's judgment lands first; a row still
-         * pending after that has no owner left to settle it.
+         * Recovery allows a live owner's deadline plus grace before taking over.
+         * The stored wall-clock timestamp cannot distinguish a forward clock jump
+         * from a crashed owner's expired deadline, so a live row may still settle early.
+         * A backward jump must not extend the wait beyond a fresh owner's deadline plus grace.
          */
-        const remaining =
-          decision.at +
-          SIDECAR_SETTLE_TIMEOUT_MS +
-          RECOVERY_GRACE_MS -
-          Date.now();
+        const remaining = Math.min(
+          decision.at + maximumWait - Date.now(),
+          maximumWait,
+        );
         const settle = () => {
           settleExactly(decision);
           onWritten(readDiscardTally(Date.now()));

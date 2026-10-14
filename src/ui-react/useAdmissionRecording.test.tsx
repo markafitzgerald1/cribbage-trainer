@@ -302,20 +302,27 @@ describe("decision-owned admission settlement", () => {
     });
   });
 
-  it("settles a young pending row nobody owns once the owner's grace has passed", () => {
-    expectWithClock(() => {
-      recordDiscardDecision({ ...pendingDecision(), at: Date.now() });
-      const hook = recordingHook();
-      waitOut(SIDECAR_SETTLE_TIMEOUT_MS + RECOVERY_GRACE_MS - 1);
+  it.each([0, 3_600_000])(
+    "bounds orphan recovery from mount with a %i ms clock rollback",
+    (rollback) => {
+      expectWithClock(() => {
+        recordDiscardDecision({ ...pendingDecision(), at: Date.now() });
+        const recordedAt = Date.now();
+        jest.setSystemTime(recordedAt - rollback);
+        const hook = recordingHook();
+        waitOut(SIDECAR_SETTLE_TIMEOUT_MS + RECOVERY_GRACE_MS - 1);
 
-      expect(storedAdmission()).toBe("pending");
+        expect(storedAdmission()).toBe("pending");
 
-      waitOut(1);
-      expectExactFallback();
+        waitOut(1);
+        expectExactFallback();
 
-      hook.unmount();
-    });
-  });
+        expect(readTallyForDisplay().records[0]?.at).toBe(recordedAt);
+
+        hook.unmount();
+      });
+    },
+  );
 
   it("lets a live owner's deadline judgment land before another tab's recovery", () => {
     expectWithClock(() => {
