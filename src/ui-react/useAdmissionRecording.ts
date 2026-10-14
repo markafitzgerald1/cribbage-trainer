@@ -2,6 +2,7 @@ import { type DeadlineJudgment, exactAdmission } from "../ui/recordedAdmission";
 import {
   type DiscardDecisionRecord,
   type DiscardTallySummary,
+  readDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
 } from "../ui/discardTally";
@@ -60,7 +61,8 @@ export const useAdmissionRecording = (
           RECOVERY_GRACE_MS -
           Date.now();
         const settle = () => {
-          onWritten(settleExactly(decision));
+          settleExactly(decision);
+          onWritten(readDiscardTally(Date.now()));
         };
         if (remaining > 0) {
           setTimeout(settle, remaining);
@@ -89,14 +91,14 @@ export const useAdmissionRecording = (
         );
         if (!waiting && stored) {
           const timer = setTimeout(() => {
-            onWritten(
-              judgeAtDeadline === null
-                ? settleExactly(stored)
-                : recordDiscardDecision({
-                    ...stored,
-                    recordedAdmission: judgeAtDeadline(),
-                  }),
-            );
+            recordDiscardDecision({
+              ...stored,
+              recordedAdmission:
+                judgeAtDeadline === null
+                  ? exactAdmission(stored.isOptimal)
+                  : judgeAtDeadline(),
+            });
+            onWritten(readDiscardTally(Date.now()));
             pending.current.delete(stored.handKey);
           }, SIDECAR_SETTLE_TIMEOUT_MS);
           pending.current.set(stored.handKey, { decision: stored, timer });

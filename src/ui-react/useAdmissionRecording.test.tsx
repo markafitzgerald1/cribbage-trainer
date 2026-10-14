@@ -2,6 +2,7 @@ import { AT, decisionOf } from "../ui/discardTally.test.common";
 import {
   type DiscardDecisionRecord,
   clearDiscardTally,
+  readDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
 } from "../ui/discardTally";
@@ -36,6 +37,34 @@ const expectWithClock = (run: () => void) => {
 
 const recordingHook = (onWritten = jest.fn()) =>
   renderHook(() => useAdmissionRecording(onWritten));
+const yesterdaySettlement = ({
+  owned,
+  judge,
+  onWritten,
+}: {
+  owned: boolean;
+  judge: DeadlineJudgment | null;
+  onWritten: ReturnType<typeof jest.fn>;
+}) => {
+  jest.setSystemTime(AT);
+  const decision = pendingDecision();
+  const owner = recordingHook(onWritten);
+  if (owned) {
+    owner.result.current(decision, judge);
+  } else {
+    recordDiscardDecision(decision);
+  }
+  jest.setSystemTime(AT + 86_400_000);
+  recordDiscardDecision(
+    decisionOf({
+      at: Date.now(),
+      expectedPointsLoss: 0,
+      handKey: "today",
+      isOptimal: true,
+    }),
+  );
+  return { owner, recovery: owned ? owner : recordingHook(onWritten) };
+};
 const expectExactFallback = () =>
   expect(storedAdmission()).toStrictEqual({
     basis: "exact-fallback-v1",
@@ -81,6 +110,44 @@ const ownerSettlesBesideSecondTab = ({
 };
 
 describe("decision-owned admission settlement", () => {
+  it.each([
+    { judge: null, name: "recovery", owned: false },
+    { judge: null, name: "the owner's exact deadline", owned: true },
+    {
+      judge: () => noiseAdmission,
+      name: "the owner's judged deadline",
+      owned: true,
+    },
+  ])(
+    "reports today's summary after $name settles yesterday's row",
+    ({ owned, judge }) => {
+      expectWithClock(() => {
+        const onWritten = jest.fn();
+        const { owner, recovery } = yesterdaySettlement({
+          judge,
+          onWritten,
+          owned,
+        });
+        waitOut();
+
+        expect(onWritten).toHaveBeenLastCalledWith(
+          readDiscardTally(Date.now()),
+        );
+        expect(onWritten).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            todayDecisions: 1,
+            todayMeanExpectedPointsLoss: 0,
+            todayOptimalDecisions: 1,
+          }),
+        );
+        expect(readTallyForDisplay().records[0]?.at).toBe(AT);
+
+        recovery.unmount();
+        owner.unmount();
+      });
+    },
+  );
+
   it("keeps the first original noise settlement reachable during StrictMode replay", () => {
     expectWithClock(() => {
       const onWritten = jest.fn();
