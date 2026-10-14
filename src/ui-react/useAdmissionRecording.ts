@@ -108,6 +108,8 @@ export const useAdmissionRecording = (
       } else if (matching) {
         clearTimeout(waiting.timer);
         pending.current.delete(key);
+        // The write summarized the original event's day, which may be yesterday by now.
+        return readDiscardTally(Date.now());
       }
       return summary;
     },
