@@ -22,6 +22,9 @@ interface PendingDecision {
   readonly timer: ReturnType<typeof setTimeout>;
 }
 
+const pendingKey = (decision: DiscardDecisionRecord): string =>
+  `${decision.handKey}|${decision.isPractice}`;
+
 const settleExactly = (decision: DiscardDecisionRecord): DiscardTallySummary =>
   recordDiscardDecision({
     ...decision,
@@ -75,7 +78,8 @@ export const useAdmissionRecording = (
 
   return useCallback(
     (decision, judgeAtDeadline = null) => {
-      const waiting = pending.current.get(decision.handKey);
+      const key = pendingKey(decision);
+      const waiting = pending.current.get(key);
       const matching =
         waiting && sameDecisionJudgment(waiting.decision, decision);
       const captured = matching
@@ -85,7 +89,7 @@ export const useAdmissionRecording = (
       if (captured.recordedAdmission === "pending") {
         const stored = readTallyForDisplay().records.find(
           (record) =>
-            record.handKey === captured.handKey &&
+            sameDecisionJudgment(record, captured) &&
             record.at === captured.at &&
             record.recordedAdmission === "pending",
         );
@@ -99,13 +103,13 @@ export const useAdmissionRecording = (
                   : judgeAtDeadline(),
             });
             onWritten(readDiscardTally(Date.now()));
-            pending.current.delete(stored.handKey);
+            pending.current.delete(key);
           }, SIDECAR_SETTLE_TIMEOUT_MS);
-          pending.current.set(stored.handKey, { decision: stored, timer });
+          pending.current.set(key, { decision: stored, timer });
         }
       } else if (matching) {
         clearTimeout(waiting.timer);
-        pending.current.delete(decision.handKey);
+        pending.current.delete(key);
       }
       return summary;
     },

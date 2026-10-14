@@ -20,6 +20,8 @@ import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 const pendingDecision = () => decisionOf({ recordedAdmission: "pending" });
 const storedAdmission = () =>
   readTallyForDisplay().records[0]?.recordedAdmission;
+const storedAdmissions = () =>
+  readTallyForDisplay().records.map((record) => record.recordedAdmission);
 const noiseAdmission = { basis: "sampling-noise-v1", eligible: false } as const;
 
 const expectWithClock = (run: () => void) => {
@@ -75,6 +77,15 @@ const waitOut = (milliseconds = SIDECAR_SETTLE_TIMEOUT_MS) => {
     jest.advanceTimersByTime(milliseconds);
   });
 };
+const recordPending = (
+  record: RecordDecision,
+  decision: DiscardDecisionRecord,
+  judge: DeadlineJudgment | null = null,
+) => {
+  act(() => {
+    record(decision, judge);
+  });
+};
 const settleAsNoiseThenWaitOut = (
   record: RecordDecision,
   decision: DiscardDecisionRecord,
@@ -110,6 +121,40 @@ const ownerSettlesBesideSecondTab = ({
 };
 
 describe("decision-owned admission settlement", () => {
+  it.each([0, 100])(
+    "keeps separate study and authentic deadlines %i ms apart",
+    (gap) => {
+      expectWithClock(() => {
+        const hook = recordingHook();
+        const study = {
+          ...pendingDecision(),
+          at: Date.now(),
+          isPractice: true,
+        };
+        recordPending(hook.result.current, study, () => noiseAdmission);
+        waitOut(gap);
+        const authentic = { ...study, at: Date.now(), isPractice: false };
+        recordPending(hook.result.current, authentic);
+
+        waitOut(SIDECAR_SETTLE_TIMEOUT_MS - gap - 1);
+
+        expect(storedAdmissions()).toStrictEqual(["pending", "pending"]);
+
+        waitOut(gap + 1);
+
+        expect(storedAdmissions()).toStrictEqual([
+          noiseAdmission,
+          { basis: "exact-fallback-v1", eligible: true },
+        ]);
+        expect(
+          readTallyForDisplay().records.map((record) => record.at),
+        ).toStrictEqual([study.at, authentic.at]);
+
+        hook.unmount();
+      });
+    },
+  );
+
   it.each([
     { judge: null, name: "recovery", owned: false },
     { judge: null, name: "the owner's exact deadline", owned: true },
