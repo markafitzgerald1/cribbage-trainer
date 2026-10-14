@@ -156,31 +156,37 @@ describe("decision-owned admission settlement", () => {
     },
   );
 
-  it("returns today's summary when a live report settles yesterday's row", () => {
-    expectWithClock(() => {
-      const { owner } = yesterdaySettlement({
-        judge: null,
-        onWritten: jest.fn(),
-        owned: true,
-      });
-      let reported: DiscardTallySummary | null = null;
-      act(() => {
-        reported = owner.result.current({
-          ...pendingDecision(),
-          at: Date.now(),
-          recordedAdmission: noiseAdmission,
+  it.each([
+    { admission: noiseAdmission, name: "settles" },
+    { admission: "pending" as const, name: "repeats" },
+  ])(
+    "returns today's summary when a live report $name yesterday's row",
+    ({ admission }) => {
+      expectWithClock(() => {
+        const { owner } = yesterdaySettlement({
+          judge: null,
+          onWritten: jest.fn(),
+          owned: true,
         });
+        let reported: DiscardTallySummary | null = null;
+        act(() => {
+          reported = owner.result.current({
+            ...pendingDecision(),
+            at: Date.now(),
+            recordedAdmission: admission,
+          });
+        });
+
+        expect(storedAdmission()).toStrictEqual(admission);
+        expect(reported).toStrictEqual(readDiscardTally(Date.now()));
+        expect(reported).toStrictEqual(
+          expect.objectContaining({ todayOptimalDecisions: 1 }),
+        );
+
+        owner.unmount();
       });
-
-      expect(storedAdmission()).toStrictEqual(noiseAdmission);
-      expect(reported).toStrictEqual(readDiscardTally(Date.now()));
-      expect(reported).toStrictEqual(
-        expect.objectContaining({ todayOptimalDecisions: 1 }),
-      );
-
-      owner.unmount();
-    });
-  });
+    },
+  );
 
   it.each([
     { judge: null, name: "recovery", owned: false },
