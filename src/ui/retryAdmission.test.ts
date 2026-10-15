@@ -62,7 +62,7 @@ const seedFullAttemptLog = (): void => {
 };
 
 describe("frozen retry and admission evidence", () => {
-  it("retains both attempt stamps while A success plus B success masters and B miss removes mastery", () => {
+  it("two successful retries under different tables master an item, each logged attempt keeps the tables it was judged under, and a later miss resets the streak", () => {
     clearDiscardTally();
     recordDiscardDecision(decisionOf({ handKey, tableIdentity: pairA }));
     recordPracticeAttempt(retry());

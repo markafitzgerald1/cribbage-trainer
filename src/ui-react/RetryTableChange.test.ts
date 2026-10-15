@@ -139,7 +139,7 @@ const actualRetry = (
 };
 
 describe("retries across loaded table pairs", () => {
-  it("keeps a genuine A mistake reachable through browse, manual practice and automatic practice when B rates it best", () => {
+  it("keeps a mistake made under the original tables in the queue, and reachable in manual and automatic practice, even when the newer tables rate that discard best", () => {
     const harness = freshHarness({ followLoadedHand: true });
     const discard = "5H,6H";
     const { then, now } = comparedChoice(discard);
@@ -170,7 +170,7 @@ describe("retries across loaded table pairs", () => {
     ).toBe(then.expectedPointsLoss);
   });
 
-  it("keeps an original A best choice out even after positively scoring its B mistake", () => {
+  it("keeps a decision that was best under the original tables out of the queue even when the newer tables score it a mistake", () => {
     const harness = freshHarness();
     const [best] = allScoredKeepDiscardsByExpectedNetScoreDescending(
       toDealtCards(originalHand, []),
@@ -192,7 +192,7 @@ describe("retries across loaded table pairs", () => {
     ]).toStrictEqual([false, []]);
   });
 
-  it("preserves the original and both stamps through actual A and B successes, then a B miss removes mastery", () => {
+  it("keeps the original recorded cost and each retry's table stamp through two real successful retries, one under each table pair, then a miss under the newer tables removes mastery", () => {
     const { harness, original } = seededSnapshot();
 
     const firstQuality = actualRetry(harness, tablesA, {
