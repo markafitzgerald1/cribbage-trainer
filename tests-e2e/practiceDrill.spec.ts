@@ -98,8 +98,7 @@ test.describe("practice drill", () => {
      * rem rhythm is under test rather than the dialog interaction. The
      * choosing state keeps its buttons on screen; the taller revealed state
      * puts its actions first and caps the panel height so Draw another /
-     * Exit stay visible while the Then / Retry comparison and the outcome
-     * line stay reachable by scrolling the panel.
+     * Exit stay visible while the Then / Retry comparison can be scrolled.
      */
     await startDrillOnFirstMistake(page);
     await page.setViewportSize(phoneLandscapeViewport);
@@ -134,8 +133,8 @@ test.describe("practice drill", () => {
     /*
      * The panel caps its own height and scrolls, so its box stays within the
      * viewport (rather than the outcome line being clipped by Trainer's
-     * non-scrolling column) and the Then / Retry comparison and outcome are
-     * reachable by scrolling the panel itself.
+     * non-scrolling column). The comparison remains reachable by scrolling
+     * the panel itself.
      */
     const panel = page.getByRole("region", { name: "Practice drill" });
     const panelBox = await panel.boundingBox();

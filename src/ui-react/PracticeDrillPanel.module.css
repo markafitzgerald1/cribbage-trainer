@@ -261,14 +261,12 @@
  */
 @media (aspect-ratio >= 6 / 5) {
   .panel {
-    gap: min(0.4rem, 0.9vw);
+    gap: min(0.25rem, 0.5vh);
 
     /*
      * Cap the panel's height and let it scroll so the revealed Then / Retry
-     * comparison and the outcome line stay reachable, not clipped by
-     * Trainer's fixed-height, non-scrolling left column at a large device
-     * font. The dvh term only bites on a short phone-landscape viewport; a
-     * desktop landscape resolves the rem term and the panel never scrolls.
+     * comparison stays reachable without displacing the verdict and actions in
+     * Trainer's fixed-height left column at a large device font.
      */
     margin-top: min(0.5rem, 1vw);
     max-height: min(16rem, 34dvh);
@@ -282,7 +280,7 @@
 
   .choosing,
   .verdict {
-    gap: min(0.4rem, 0.9vw);
+    gap: min(0.25rem, 0.5vh);
   }
 
   .prompt,
@@ -330,6 +328,6 @@
   }
 
   .actions {
-    gap: min(0.4rem, 0.9vw);
+    gap: min(0.25rem, 0.5vh);
   }
 }

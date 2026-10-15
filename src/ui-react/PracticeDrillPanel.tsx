@@ -200,6 +200,19 @@ const renderVerdict = (
   }: PracticeDrillPanelProps,
 ): React.JSX.Element => (
   <div className={classes.verdict}>
+    {renderOutcome(verdict)}
+    {renderActions(
+      hasNextHand ? (
+        <button
+          className={classes.primary}
+          onClick={onNextHand}
+          type="button"
+        >
+          Draw another
+        </button>
+      ) : null,
+      onExit,
+    )}
     {renderVerdictRow({
       discard: verdict.chosenDiscard,
       label: "Retry — current tables",
@@ -215,20 +228,7 @@ const renderVerdict = (
         : { onLocate: onLocateEarlierChoice }),
       sortOrder,
     })}
-    {renderOutcome(verdict)}
     {renderTableBoundary(verdict)}
-    {renderActions(
-      hasNextHand ? (
-        <button
-          className={classes.primary}
-          onClick={onNextHand}
-          type="button"
-        >
-          Draw another
-        </button>
-      ) : null,
-      onExit,
-    )}
   </div>
 );
 

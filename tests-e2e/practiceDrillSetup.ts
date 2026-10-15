@@ -162,7 +162,7 @@ export const openEarlierTableTrainer = (page: Page) =>
     version: 8,
   });
 
-const expectPanelActionReachable = async (page: Page, name: string) => {
+export const expectPanelActionReachable = async (page: Page, name: string) => {
   const panel = page.getByRole("region", { name: "Practice drill" });
   const [bounds, panelBounds] = await Promise.all([
     requireBoundingBox(panel.getByRole("button", { name })),
