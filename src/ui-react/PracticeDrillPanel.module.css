@@ -7,6 +7,13 @@
  * above it and never widens the column into the analysis table's share.
  */
 .panel {
+  /* Local covers hide each scroll shadow only when that content edge is reached. */
+  background:
+    linear-gradient(#1f6536 30%, transparent) center top / 100% 12px local,
+    linear-gradient(transparent, #1f6536 70%) center bottom / 100% 12px local,
+    linear-gradient(#a7c7ad, transparent) center top / 100% 6px scroll,
+    linear-gradient(transparent, #a7c7ad) center bottom / 100% 6px scroll;
+  background-repeat: no-repeat;
   border: 1.5px solid #43a047;
   border-radius: 10px;
   box-sizing: border-box;
@@ -14,17 +21,31 @@
   display: flex;
   flex-direction: column;
   font-family: var(--text-font-family);
-  gap: 0.25rem;
+  gap: min(0.25rem, 0.5vh);
   margin-top: 0.35rem;
-  max-height: 24dvh;
+  max-height: 36dvh;
   overflow-y: auto;
+  scrollbar-color: #a7c7ad #143b18;
   min-width: 0;
-  padding: 0.35rem 0.5rem;
+  padding: min(0.25rem, 0.6vh) 0.5rem;
   width: 100%;
 }
 
+.panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background-color: #143b18;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background-color: #a7c7ad;
+  border-radius: 4px;
+}
+
 .badge {
-  align-self: flex-start;
+  align-self: center;
   background-color: #2f7d3a;
   border-radius: 4px;
   color: #fff;
@@ -39,7 +60,7 @@
 .verdict {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: min(0.1rem, 0.25vh);
   min-width: 0;
 }
 
@@ -70,17 +91,25 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: min(0.25rem, 0.5vh);
   min-width: 0;
 }
 
 .verdict-label {
-  flex-basis: 100%;
+  flex: 0 0 auto;
   font-size: 0.8rem;
   font-weight: 700;
-  min-width: 3.1rem;
+  max-width: 100%;
+  min-width: 0;
   opacity: 0.85;
   text-transform: uppercase;
+}
+
+.verdict-values {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: inherit;
 }
 
 /*
@@ -161,9 +190,10 @@
 .outcome-miss {
   font-size: 0.95rem;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.15;
   margin: 0;
   overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
 .outcome-good,
@@ -178,7 +208,7 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: min(0.15rem, 0.4vh);
   order: -1;
 }
 
@@ -189,7 +219,7 @@
   font-family: var(--text-font-family);
   font-size: 0.95rem;
   font-weight: 700;
-  padding: 0.25em 0.6em;
+  padding: 0.25em 0.45em;
   transition:
     background-color var(--transition-duration) var(--transition-timing),
     border-color var(--transition-duration) var(--transition-timing);
@@ -261,7 +291,7 @@
  */
 @media (aspect-ratio >= 6 / 5) {
   .panel {
-    gap: min(0.25rem, 0.5vh);
+    gap: min(0.25rem, 0.4vh);
 
     /*
      * Cap the panel's height and let it scroll so the revealed Then / Retry
@@ -271,7 +301,7 @@
     margin-top: min(0.5rem, 1vw);
     max-height: min(16rem, 34dvh);
     overflow-y: auto;
-    padding: min(0.5rem, 1vw) min(0.6rem, 1.2vw);
+    padding: min(0.35rem, 1vh) min(0.6rem, 1.2vw);
   }
 
   .badge {
@@ -280,7 +310,7 @@
 
   .choosing,
   .verdict {
-    gap: min(0.25rem, 0.5vh);
+    gap: min(0.25rem, 0.4vh);
   }
 
   .prompt,
@@ -320,7 +350,6 @@
 
   .verdict-label {
     font-size: min(0.85rem, 1.45vw);
-    min-width: min(3.4rem, 6.1vw);
   }
 
   .not-recorded {
@@ -328,6 +357,6 @@
   }
 
   .actions {
-    gap: min(0.25rem, 0.5vh);
+    gap: min(0.25rem, 0.4vh);
   }
 }

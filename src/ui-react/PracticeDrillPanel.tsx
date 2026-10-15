@@ -91,15 +91,17 @@ const renderVerdictRow = ({
 }: VerdictRow): React.JSX.Element => (
   <div className={classes.verdictRow}>
     <span className={classes.verdictLabel}>{label}</span>
-    {renderDiscard(discard, sortOrder, onLocate)}
-    {/* A generic span cannot carry a name, so the role is what lets the spoken sub-cent form replace the visible "<". */}
-    <span
-      aria-label={`${label}, ${formatAccessibleNetLoss(loss)} points`}
-      className={classes.verdictLoss}
-      role="note"
-    >
-      {formatLoss(loss)}
-    </span>
+    <div className={classes.verdictValues}>
+      {renderDiscard(discard, sortOrder, onLocate)}
+      {/* A generic span cannot carry a name, so the role is what lets the spoken sub-cent form replace the visible "<". */}
+      <span
+        aria-label={`${label}, ${formatAccessibleNetLoss(loss)} points`}
+        className={classes.verdictLoss}
+        role="note"
+      >
+        {formatLoss(loss)}
+      </span>
+    </div>
   </div>
 );
 
@@ -132,6 +134,7 @@ const renderActions = (
   onExit: () => void,
 ): React.JSX.Element => (
   <div className={classes.actions}>
+    <span className={classes.badge}>Practice</span>
     {primary}
     <button
       className={classes.secondary}
@@ -264,7 +267,6 @@ export function PracticeDrillPanel({
       aria-label="Practice drill"
       className={classes.panel}
     >
-      <span className={classes.badge}>Practice</span>
       {renderBody({
         canCommit,
         hasNextHand,

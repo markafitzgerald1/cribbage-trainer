@@ -19,5 +19,6 @@ declare const classes: {
   readonly verdictLabel: string;
   readonly verdictLoss: string;
   readonly verdictRow: string;
+  readonly verdictValues: string;
 };
 export = classes;
