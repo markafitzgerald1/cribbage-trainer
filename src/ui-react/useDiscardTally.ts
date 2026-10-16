@@ -1,7 +1,11 @@
+import type {
+  DeadlineJudgment,
+  RecordedAdmission,
+} from "../ui/recordedAdmission";
 import {
+  type DiscardDecisionRecord,
   type DiscardTallySummary,
   readDiscardTally,
-  recordDiscardDecision,
   recordSkippedHand,
 } from "../ui/discardTally";
 /* jscpd:ignore-start */
@@ -22,6 +26,7 @@ import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
+import { useAdmissionRecording } from "./useAdmissionRecording";
 /* jscpd:ignore-end */
 
 /*
@@ -87,9 +92,13 @@ export type ReportHandRestored = (
 ) => void;
 
 export type ReportAnalysisRendered = (
-  analysis: RenderedAnalysis,
-  displayedAs: DisplayedHandRelabeling | null,
-  tableIdentity?: TableIdentity | null,
+  ...args: [
+    analysis: RenderedAnalysis,
+    displayedAs: DisplayedHandRelabeling | null,
+    tableIdentity?: TableIdentity | null,
+    admission?: RecordedAdmission | null,
+    judgeAtDeadline?: DeadlineJudgment | null,
+  ]
 ) => void;
 
 export interface DiscardTally {
@@ -138,6 +147,7 @@ export const useDiscardTally = ({
   const [summary, setSummary] = useState<DiscardTallySummary>(() =>
     readDiscardTally(Date.now()),
   );
+  const recordDecision = useAdmissionRecording(setSummary);
   /*
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
@@ -354,15 +364,14 @@ export const useDiscardTally = ({
   );
 
   const reportAnalysisRendered = useCallback(
-    (
-      {
-        cribRole: scoredRole,
-        oppositeRoleExpectedPointsLoss,
-        quality,
-      }: RenderedAnalysis,
-      displayedAs: DisplayedHandRelabeling | null,
-      tableIdentity: TableIdentity | null = null,
-    ) => {
+    (...args: Parameters<ReportAnalysisRendered>) => {
+      const [
+        { cribRole: scoredRole, oppositeRoleExpectedPointsLoss, quality },
+        displayedAs,
+        tableIdentity = null,
+        admission = null,
+        judgeAtDeadline = null,
+      ] = args;
       if (quality === null) {
         return;
       }
@@ -393,8 +402,10 @@ export const useDiscardTally = ({
         `${boardHandId}|${completionKeyFor(dealtCards, scoredRole)}`
           ? capture.sortOrder
           : null;
+      const recordJudged = (decision: DiscardDecisionRecord) =>
+        recordDecision(decision, judgeAtDeadline);
       setSummary(
-        recordDiscardDecision({
+        recordJudged({
           at: Date.now(),
           cribRole: scoredRole,
           discardKey,
@@ -433,11 +444,12 @@ export const useDiscardTally = ({
           ...(typeof capturedSortOrder === "number"
             ? { sortOrder: sortUrlValue(capturedSortOrder) }
             : {}),
+          ...(admission === null ? {} : { recordedAdmission: admission }),
           tableIdentity,
         }),
       );
     },
-    [boardHandId, capture, dealtCards],
+    [boardHandId, capture, dealtCards, recordDecision],
   );
 
   return {

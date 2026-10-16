@@ -201,12 +201,12 @@ export function MistakeQueueItemCard({
           </span>
           {effectiveReason === null ? null : (
             <span
-              aria-label={`Previous discard driven by ${effectiveReason}`}
+              aria-label={`Current-table comparison: ${effectiveReason}`}
               className={classes.componentBadge}
               role="note"
-              title={`Previous discard (${formatAccessibleNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
+              title={`Current-table comparison (${formatAccessibleNetLoss(effectiveLoss)} pts lost): ${effectiveReason}`}
             >
-              Prev: {effectiveShortReason}
+              Current-table comparison: {effectiveShortReason}
             </span>
           )}
           {renderRoleLossPairBadge(item)}
@@ -223,7 +223,10 @@ export function MistakeQueueItemCard({
           {renderAverageLoss(item)}
           <span>Attempts: {item.attempts}</span>
           <span>Error rate: {errorRatePercent}%</span>
-          <span>Priority: {item.priority.toFixed(DECIMAL_DIGITS)}</span>
+          <span>
+            Priority from recorded attempts:{" "}
+            {item.priority.toFixed(DECIMAL_DIGITS)}
+          </span>
         </div>
         {handlePractice === null ? null : (
           <button

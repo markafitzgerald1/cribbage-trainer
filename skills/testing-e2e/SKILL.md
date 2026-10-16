@@ -256,3 +256,8 @@ baselines so CI agrees with what was generated locally.
   earlier version asserted a single row, which a `nowrap` + `overflow-x: auto`
   strip satisfied while cropping a label — the row assertion was what the
   cropping mechanism existed to satisfy.
+
+- Normalize ancestor scroll positions before paired layout measurements.
+  Trial clicks can scroll the outer layout even when the measured panel has
+  `scrollTop === 0`, changing how many analysis rows fit in the viewport
+  without changing the table's scroll-area height.

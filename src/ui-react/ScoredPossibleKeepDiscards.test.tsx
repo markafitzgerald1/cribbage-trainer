@@ -4,6 +4,7 @@ import {
   findCaption,
   renderHand,
   renderScoredPossibleKeepDiscards,
+  reportedWith,
   waitForAnalysis,
 } from "./ScoredPossibleKeepDiscards.test.common";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
@@ -42,6 +43,7 @@ const REPORTED_HAND = "AH,2H,3H,4H,5H,6H";
 
 const REPORTED_ANALYSIS_CASES = [
   {
+    admission: expect.any(Object),
     cribRole: CribRole.Pone,
     discards: parseHand("AH,2H"),
     expected: {
@@ -55,6 +57,7 @@ const REPORTED_ANALYSIS_CASES = [
     name: "the role and what the chosen discard gave up",
   },
   {
+    admission: null,
     cribRole: CribRole.Dealer,
     discards: null,
     expected: {
@@ -228,7 +231,12 @@ describe("scored possible keep discards component", () => {
       );
     }, waitForAnalysis);
 
-    expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+    expect(onAnalysisRendered).toHaveBeenCalledWith(
+      expect.any(Object),
+      shippedTableIdentity,
+      expect.any(Object),
+      expect.any(Function),
+    );
 
     unmount();
 
@@ -237,7 +245,7 @@ describe("scored possible keep discards component", () => {
 
   it.each(REPORTED_ANALYSIS_CASES)(
     "reports $name",
-    async ({ cribRole, discards, expected }) => {
+    async ({ admission, cribRole, discards, expected }) => {
       const onAnalysisRendered =
         jest.fn<ScoredPossibleKeepDiscardsProps["onAnalysisRendered"]>();
       renderScoredPossibleKeepDiscards(
@@ -247,12 +255,16 @@ describe("scored possible keep discards component", () => {
 
       // Awaited so a sub-optimal verdict's deferred settle lands inside act rather than after the test.
       await waitFor(() => {
-        expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+        expect(onAnalysisRendered).toHaveBeenCalledWith(
+          ...reportedWith(admission),
+        );
       }, waitForAnalysis);
 
       expect(onAnalysisRendered).toHaveBeenCalledWith(
         expected,
         shippedTableIdentity,
+        admission,
+        expect.any(Function),
       );
     },
   );
@@ -265,7 +277,12 @@ describe("scored possible keep discards component", () => {
 
     await expectLoaded();
 
-    expect(onAnalysisRendered).toHaveBeenCalledTimes(1);
+    expect(onAnalysisRendered).toHaveBeenCalledWith(
+      expect.any(Object),
+      shippedTableIdentity,
+      null,
+      expect.any(Function),
+    );
   });
 
   it("reports no rendered analysis when the load fails", async () => {

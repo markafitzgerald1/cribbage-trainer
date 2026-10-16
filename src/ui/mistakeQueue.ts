@@ -3,6 +3,7 @@ import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import type { TableIdentity } from "../game/tableIdentity";
+import { isAdmittedMistake } from "./recordedAdmission";
 import { parseHandKey } from "./handKey";
 
 export { SUCCESSES_FOR_MASTERY } from "./practiceLedger";
@@ -158,9 +159,7 @@ const aggregateMistakeRecords = (
   const map = new Map<string, HandAggregate>();
 
   for (const record of records) {
-    const isMistake =
-      !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
-    if (isMistake) {
+    if (isAdmittedMistake(record)) {
       const existing = map.get(record.handKey);
       const recencyAt = record.recencyAt ?? record.at;
       const originalAt = existing

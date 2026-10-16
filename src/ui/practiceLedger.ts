@@ -1,7 +1,11 @@
+import {
+  type PracticeAttemptDetail,
+  isAttemptDetail,
+} from "./practiceAttemptLog";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { parseHandKey } from "./handKey";
 
-// Two consecutive optimal choices since the last error; the one place the copy, the state machine, and the trend chart all read.
+// Two consecutive successful retries since the last failure; the one place the copy, the state machine, and the trend chart all read.
 export const SUCCESSES_FOR_MASTERY = 2;
 
 export interface PracticeRecord {
@@ -13,7 +17,7 @@ export interface PracticeRecord {
   readonly wrong: number;
 }
 
-export type PracticeAttempt =
+export type PracticeAttempt = { readonly detail?: PracticeAttemptDetail } & (
   | {
       readonly at: number;
       readonly expectedPointsLoss?: undefined;
@@ -25,7 +29,8 @@ export type PracticeAttempt =
       readonly expectedPointsLoss: number;
       readonly handKey: string;
       readonly isOptimal: false;
-    };
+    }
+);
 
 interface MaybePracticeRecord {
   readonly attempts?: unknown;
@@ -102,6 +107,19 @@ const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
   ) {
     return false;
   }
+  /*
+   * Comparing the loss also settles isOptimal: a valid detail ties its own
+   * flag to a zero loss, and the checks below tie the attempt's the same way,
+   * so a separate flag comparison could never reject anything this does not.
+   */
+  if (
+    typeof candidate.detail !== "undefined" &&
+    (!isAttemptDetail(candidate.detail, candidate.handKey) ||
+      candidate.detail.expectedPointsLoss !==
+        (candidate.expectedPointsLoss ?? 0))
+  ) {
+    return false;
+  }
   if (candidate.isOptimal === true) {
     return (
       !("expectedPointsLoss" in candidate) ||
@@ -118,11 +136,14 @@ const isValidAttempt = (attempt: unknown): attempt is PracticeAttempt => {
   return false;
 };
 
+const attemptSucceeded = (attempt: PracticeAttempt): boolean =>
+  attempt.detail ? attempt.detail.outcome === "success" : attempt.isOptimal;
+
 const computeConsecutiveSuccesses = (
   existing: PracticeRecord | undefined,
   attempt: PracticeAttempt,
 ): number => {
-  if (!attempt.isOptimal) {
+  if (!attemptSucceeded(attempt)) {
     return 0;
   }
   return (existing?.consecutiveSuccesses ?? 0) + 1;
@@ -168,7 +189,8 @@ export const updatePracticeRecords = (
   const existing = practice.find(
     (recordItem) => recordItem.handKey === attempt.handKey,
   );
-  const loss = attempt.isOptimal ? 0 : attempt.expectedPointsLoss;
+  const success = attemptSucceeded(attempt);
+  const loss = success ? 0 : (attempt.expectedPointsLoss as number);
   const consecutiveSuccesses = computeConsecutiveSuccesses(existing, attempt);
   const lastAttemptAt = getNextAttemptAt(
     practice,
@@ -182,7 +204,7 @@ export const updatePracticeRecords = (
         handKey: attempt.handKey,
         lastAttemptAt,
         totalWrongLoss: existing.totalWrongLoss + loss,
-        wrong: existing.wrong + (attempt.isOptimal ? 0 : 1),
+        wrong: existing.wrong + (success ? 0 : 1),
       }
     : {
         attempts: 1,
@@ -190,7 +212,7 @@ export const updatePracticeRecords = (
         handKey: attempt.handKey,
         lastAttemptAt,
         totalWrongLoss: loss,
-        wrong: attempt.isOptimal ? 0 : 1,
+        wrong: success ? 0 : 1,
       };
 
   const remaining = practice.filter(

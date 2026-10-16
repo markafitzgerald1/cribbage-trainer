@@ -1,6 +1,7 @@
 import {
   type ByRoleMatcher,
   type ByRoleOptions,
+  type RenderResult,
   render,
   screen,
 } from "@testing-library/react";
@@ -52,7 +53,7 @@ export const setAnalysisTables = () => {
 export const renderTrainerWithGenerator = (
   generateRandomNumber: () => number,
   trackEvent: TrainerProps["trackEvent"] = jest.fn(),
-) => {
+): RenderResult => {
   setAnalysisTables();
 
   return render(
@@ -64,7 +65,8 @@ export const renderTrainerWithGenerator = (
   );
 };
 
-export const renderTrainer = () => renderTrainerWithGenerator(mathRandom);
+export const renderTrainer = (): RenderResult =>
+  renderTrainerWithGenerator(mathRandom);
 
 type InitialTrainerProps = Partial<
   Pick<
@@ -89,7 +91,7 @@ export const renderTrainerWithInitialProps = ({
   initialSortOrder = null,
   isSeededSession = false,
   trackEvent = jest.fn(),
-}: InitialTrainerProps) =>
+}: InitialTrainerProps): RenderResult =>
   render(
     <Trainer
       generateRandomNumber={generateRandomNumber}
@@ -116,7 +118,7 @@ export const createRoleRandomValues = (roleValues: readonly number[]) =>
     roleValue,
   ]);
 
-export const renderTrainerShowingDealerRole = () =>
+export const renderTrainerShowingDealerRole = (): RenderResult =>
   renderTrainerWithGenerator(
     createSequenceGenerator(createRoleRandomValues([DEALER_RANDOM_VALUE])),
   );

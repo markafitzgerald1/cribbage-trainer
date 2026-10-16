@@ -680,3 +680,14 @@ once you are already editing layout or interaction code.
   indices when writing decisions: reserved attempt data can already refer
   to an entry that no retained decision uses. Rebuilding the registry from
   decisions alone corrupts those references.
+- A pending admission's deadline belongs to its recorded choice, not to the
+  analysis component's lifetime. Finalizing exact fallback in effect cleanup
+  can preempt a valid noise settlement: StrictMode replays that cleanup even
+  without navigation. Keep the bounded timer alive across navigation and
+  unmount, carrying the original choice and loaded pair; a stale report for
+  another choice must neither settle that record nor cancel its timer.
+- Check a capped drill panel's actions against its own clipping box, as well
+  as the viewport. A button can have an on-screen rectangle and still sit
+  below the panel's visible edge. Check the adjacent analysis rows before
+  scrolling to provenance text: `scrollIntoViewIfNeeded` can also scroll the
+  outer layout and make an uncapped panel pass a rows-in-viewport assertion.
