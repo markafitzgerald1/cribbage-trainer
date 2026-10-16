@@ -32,6 +32,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Choosing: Story = {
   play: async ({ args, canvasElement }) => {
+    const first = canvasElement.querySelector("section > div > :first-child");
+
+    await expect(first).toHaveTextContent(/^PracticeCheck discardExit drill$/u);
+
     await clickStoryButtonExpectingCall(
       canvasElement,
       "Check discard",
@@ -47,6 +51,12 @@ export const AwaitingAnswer: Story = {
 export const OptimalVerdict: Story = {
   args: { phase: "revealed", verdict: sampleVerdict() },
   play: async ({ canvasElement }) => {
+    const badge = within(canvasElement).getByText("Practice");
+
+    await expect(badge.parentElement?.nextElementSibling).toHaveTextContent(
+      /toward mastery/u,
+    );
+
     await expectStoryTextVisible(canvasElement, /toward mastery/u);
   },
 };

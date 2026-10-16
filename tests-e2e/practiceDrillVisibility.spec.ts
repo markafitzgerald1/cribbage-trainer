@@ -1,10 +1,13 @@
 import { type Locator, type Page, expect, test } from "@playwright/test";
 import {
   expectPanelActionReachable,
+  expectPanelContentReachable,
+  expectPracticeComparisonsReachable,
   openEarlierTableTrainer,
   selectTwoDiscards,
   startDrillOnFirstMistake,
 } from "./practiceDrillSetup";
+import { practiceTableBaselines } from "./practiceTableBaselines";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 const settings = [
@@ -22,20 +25,6 @@ const settings = [
 ];
 
 const PIXEL_WIDTH = 412;
-const PIXEL_TABLE_BASELINES = new Map([
-  [
-    "chromium",
-    { missHeight: 214, missRows: 4, successHeight: 244, successRows: 4 },
-  ],
-  [
-    "firefox",
-    { missHeight: 192, missRows: 2, successHeight: 225, successRows: 4 },
-  ],
-  [
-    "webkit",
-    { missHeight: 188, missRows: 3, successHeight: 222, successRows: 4 },
-  ],
-]);
 const SIDE_BY_SIDE_RATIO = 1.2;
 const SHORT_LANDSCAPE_HEIGHT = 600;
 const ABOVE_COMPARISON_COUNT = 2;
@@ -84,6 +73,8 @@ const measurePractice = (panel: Locator) =>
     const tally = figure.nextElementSibling as HTMLElement;
     return {
       backgroundAttachment: getComputedStyle(element).backgroundAttachment,
+      backgroundImage: getComputedStyle(element).backgroundImage,
+      backgroundSize: getComputedStyle(element).backgroundSize,
       clientHeight: element.clientHeight,
       contents,
       deviceScaleFactor: devicePixelRatio,
@@ -95,6 +86,7 @@ const measurePractice = (panel: Locator) =>
       footerMargin: getComputedStyle(tally).marginTop,
       gridGap: getComputedStyle(tally.parentElement as Element).rowGap,
       overflowY: getComputedStyle(element).overflowY,
+      paddingRight: parseFloat(getComputedStyle(element).paddingRight),
       panel: rectangle(element),
       rootFont: getComputedStyle(document.documentElement).fontSize,
       scrollHeight: element.scrollHeight,
@@ -109,6 +101,20 @@ const measurePractice = (panel: Locator) =>
       },
     };
   });
+
+const expectScrollCue = (
+  measurements: Awaited<ReturnType<typeof measurePractice>>,
+) => {
+  expect(measurements.overflowY).toBe("auto");
+  expect(measurements.backgroundAttachment).toContain("local");
+  expect(measurements.backgroundAttachment).toContain("scroll");
+  expect(measurements.backgroundSize).toBe(
+    "4px 12px, 4px 12px, 4px 6px, 4px 6px",
+  );
+  expect(measurements.backgroundImage).toContain("50%");
+  const cueClearance = 6;
+  expect(measurements.paddingRight).toBeGreaterThanOrEqual(cueClearance);
+};
 
 const expectPracticeContents = async (
   panel: Locator,
@@ -128,15 +134,12 @@ const expectPracticeContents = async (
     }
   }
   if (shortLandscape) {
-    expect(measurements.overflowY).toBe("auto");
-    expect(measurements.backgroundAttachment).toContain("local");
-    expect(measurements.backgroundAttachment).toContain("scroll");
-    await panel.evaluate((element) => {
-      element.scrollTop = element.scrollHeight;
-    });
-    await expect(
+    expectScrollCue(measurements);
+    await expectPracticeComparisonsReachable(panel);
+    await expectPanelContentReachable(
+      panel,
       panel.getByText(/Tables changed since this decision/u),
-    ).toBeInViewport({ ratio: 1 });
+    );
     await panel.evaluate((element) => {
       element.scrollTop = 0;
     });
@@ -155,9 +158,9 @@ const expectComparisonLines = (
     ABOVE_COMPARISON_COUNT + COMPARISON_COUNT,
   );
   for (const row of rows) {
-    expect(Math.max(...row.children.map((child) => child.top))).toBeLessThan(
-      Math.min(...row.children.map((child) => child.bottom)),
-    );
+    expect
+      .soft(Math.max(...row.children.map((child) => child.top)))
+      .toBeLessThan(Math.min(...row.children.map((child) => child.bottom)));
   }
 };
 
@@ -177,6 +180,13 @@ const revealPractice = async (
   });
   await expectPanelActionReachable(page, "Check discard");
   await expectPanelActionReachable(page, "Exit drill");
+  const actions = page
+    .getByRole("region", { name: "Practice drill" })
+    .locator(":scope > div > :first-child");
+  await expect(actions).toContainText("Practice");
+  await expect(
+    actions.getByRole("button", { name: "Check discard" }),
+  ).toBeVisible();
   if (successful) {
     await page.getByRole("checkbox", { name: /^Keep 10/u }).click();
     await page.getByRole("checkbox", { name: /^Keep 5/u }).click();
@@ -190,6 +200,14 @@ const revealPractice = async (
       hasText: successful ? /^Optimal/u : /^Sub-optimal/u,
     }),
   ).toBeVisible();
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+  await page.getByRole("table").evaluate((element) => {
+    const figure = element.closest("figure") as HTMLElement;
+    (figure.parentElement as HTMLElement).scrollTop = 0;
+    (element.parentElement as HTMLElement).scrollTop = 0;
+  });
 };
 
 for (const setting of settings) {
@@ -198,7 +216,6 @@ for (const setting of settings) {
 
     for (const successful of [false, true]) {
       test(`revealed ${successful ? "successful retry" : "miss"} stays visible where space permits`, async ({
-        browserName,
         page,
       }, testInfo) => {
         await revealPractice(page, setting, successful);
@@ -219,24 +236,28 @@ for (const setting of settings) {
           body: await page.screenshot(),
           contentType: "image/png",
         });
+        expect.soft(measurements.contents.at(0)?.text).toMatch(/^Practice/u);
+        const baseline = practiceTableBaselines
+          .get(testInfo.project.name)
+          ?.get(setting.name);
+        if (!baseline) throw new Error("Missing table-height baseline");
+        expect
+          .soft(measurements.table.clientHeight)
+          .toBeGreaterThanOrEqual(
+            successful ? baseline.successHeight : baseline.missHeight,
+          );
+        expect
+          .soft(measurements.table.fullyVisibleRows)
+          .toBeGreaterThanOrEqual(
+            successful ? baseline.successRows : baseline.missRows,
+          );
+        expectComparisonLines(measurements);
         await expectPracticeContents(
           panel,
           measurements,
           setting.width / setting.height >= SIDE_BY_SIDE_RATIO &&
             setting.height <= SHORT_LANDSCAPE_HEIGHT,
         );
-        if (setting.width >= PIXEL_WIDTH) expectComparisonLines(measurements);
-        if (setting.width === PIXEL_WIDTH) {
-          // Font metrics differ by engine; retain each measured capped-panel budget.
-          const baseline = PIXEL_TABLE_BASELINES.get(browserName);
-          if (!baseline) throw new Error("Missing table-height baseline");
-          expect(measurements.table.clientHeight).toBeGreaterThanOrEqual(
-            successful ? baseline.successHeight : baseline.missHeight,
-          );
-          expect(measurements.table.fullyVisibleRows).toBeGreaterThanOrEqual(
-            successful ? baseline.successRows : baseline.missRows,
-          );
-        }
         await expectPanelActionReachable(page, "Draw another");
         await expectPanelActionReachable(page, "Exit drill");
       });

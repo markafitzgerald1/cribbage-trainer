@@ -152,11 +152,6 @@ const renderChoosing = ({
   onExit,
 }: PracticeDrillPanelProps): React.JSX.Element => (
   <div className={classes.choosing}>
-    <p className={classes.prompt}>
-      Choose two cards to discard, then check your answer.
-    </p>
-    {/* Reshuffled from the original mistake so recognizing the picture cannot substitute for re-deriving the answer. */}
-    <p className={classes.suitNote}>Suits reshuffled for this drill.</p>
     {renderActions(
       <button
         className={classes.primary}
@@ -168,6 +163,11 @@ const renderChoosing = ({
       </button>,
       onExit,
     )}
+    <p className={classes.prompt}>
+      Choose two cards to discard, then check your answer.
+    </p>
+    {/* Reshuffled from the original mistake so recognizing the picture cannot substitute for re-deriving the answer. */}
+    <p className={classes.suitNote}>Suits reshuffled for this drill.</p>
   </div>
 );
 
@@ -203,7 +203,6 @@ const renderVerdict = (
   }: PracticeDrillPanelProps,
 ): React.JSX.Element => (
   <div className={classes.verdict}>
-    {renderOutcome(verdict)}
     {renderActions(
       hasNextHand ? (
         <button
@@ -216,6 +215,7 @@ const renderVerdict = (
       ) : null,
       onExit,
     )}
+    {renderOutcome(verdict)}
     {renderVerdictRow({
       discard: verdict.chosenDiscard,
       label: "Retry — current tables",
@@ -243,8 +243,8 @@ const renderBody = (props: PracticeDrillPanelProps): React.JSX.Element => {
     // Exit stays reachable here: if the tables never load there is no verdict and no other way out of the drill.
     return (
       <div className={classes.choosing}>
-        <p className={classes.prompt}>Checking your discard…</p>
         {renderActions(null, props.onExit)}
+        <p className={classes.prompt}>Checking your discard…</p>
       </div>
     );
   }

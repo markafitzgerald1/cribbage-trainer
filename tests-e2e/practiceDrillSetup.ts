@@ -1,9 +1,9 @@
+import { type Locator, type Page, expect } from "@playwright/test";
 import {
   PRIVACY_POLICY_VERSION,
   analyticsConsentKey,
   answeredPolicyVersionKey,
 } from "../src/ui/analyticsConsent";
-import { type Page, expect } from "@playwright/test";
 import {
   phonePortraitViewport,
   requireBoundingBox,
@@ -201,4 +201,62 @@ export const reviewAtLargePortrait = async (page: Page) => {
   await selectTwoDiscards(page);
   await page.getByRole("button", { name: "Check discard" }).click();
   await waitForAnalysis(page);
+};
+
+export const expectPanelContentReachable = async (
+  panel: Locator,
+  content: Locator,
+) => {
+  const panelBefore = await requireBoundingBox(panel);
+  const scroll = await content.evaluate((element) => {
+    const region = element.closest("section") as HTMLElement;
+    const bounds = element.getBoundingClientRect();
+    const panelBounds = region.getBoundingClientRect();
+    const clipped =
+      bounds.top < panelBounds.top || bounds.bottom > panelBounds.bottom;
+    const before = region.scrollTop;
+    const centerDivisor = 2;
+    if (region.scrollHeight > region.clientHeight) {
+      region.scrollTop +=
+        bounds.top -
+        panelBounds.top -
+        (region.clientHeight - bounds.height) / centerDivisor;
+    }
+    return { after: region.scrollTop, before, clipped };
+  });
+  if (scroll.clipped) expect(scroll.after).not.toBe(scroll.before);
+  const contentBounds = await requireBoundingBox(content);
+  const panelAfter = await requireBoundingBox(panel);
+  expect(panelAfter).toEqual(panelBefore);
+  expect(contentBounds.y).toBeGreaterThanOrEqual(panelAfter.y);
+  expect(contentBounds.y + contentBounds.height).toBeLessThanOrEqual(
+    panelAfter.y + panelAfter.height,
+  );
+  const childrenFit = await content.evaluate((element) => {
+    const panelBounds = (
+      element.closest("section") as HTMLElement
+    ).getBoundingClientRect();
+    return [...element.querySelectorAll("*")].every((child) => {
+      const bounds = child.getBoundingClientRect();
+      return (
+        bounds.top >= panelBounds.top &&
+        bounds.bottom <= panelBounds.bottom &&
+        bounds.left >= panelBounds.left &&
+        bounds.right <= panelBounds.right
+      );
+    });
+  });
+  expect(childrenFit).toBe(true);
+  await expect(content).toBeInViewport({ ratio: 1 });
+};
+
+export const expectPracticeComparisonsReachable = async (panel: Locator) => {
+  const labels = ["Retry — current tables", "Then — recorded cost"];
+  await labels.reduce(async (previous, label) => {
+    await previous;
+    await expectPanelContentReachable(
+      panel,
+      panel.getByText(label).locator(".."),
+    );
+  }, Promise.resolve());
 };

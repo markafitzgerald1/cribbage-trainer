@@ -7,12 +7,12 @@
  * above it and never widens the column into the analysis table's share.
  */
 .panel {
-  /* Local covers hide each scroll shadow only when that content edge is reached. */
+  /* Side padding keeps the cue clear of text; local covers hide it at each resting edge. */
   background:
-    linear-gradient(#1f6536 30%, transparent) center top / 100% 12px local,
-    linear-gradient(transparent, #1f6536 70%) center bottom / 100% 12px local,
-    linear-gradient(#a7c7ad, transparent) center top / 100% 6px scroll,
-    linear-gradient(transparent, #a7c7ad) center bottom / 100% 6px scroll;
+    linear-gradient(#1f6536 50%, transparent) right 2px top / 4px 12px local,
+    linear-gradient(transparent, #1f6536 50%) right 2px bottom / 4px 12px local,
+    linear-gradient(#a7c7ad, transparent) right 2px top / 4px 6px scroll,
+    linear-gradient(transparent, #a7c7ad) right 2px bottom / 4px 6px scroll;
   background-repeat: no-repeat;
   border: 1.5px solid #43a047;
   border-radius: 10px;
@@ -23,11 +23,11 @@
   font-family: var(--text-font-family);
   gap: min(0.25rem, 0.5vh);
   margin-top: 0.35rem;
-  max-height: 36dvh;
+  max-height: 24dvh;
   overflow-y: auto;
   scrollbar-color: #a7c7ad #143b18;
   min-width: 0;
-  padding: min(0.25rem, 0.6vh) 0.5rem;
+  padding: min(0.1rem, 0.25vh) 0.35rem;
   width: 100%;
 }
 
@@ -60,7 +60,7 @@
 .verdict {
   display: flex;
   flex-direction: column;
-  gap: min(0.1rem, 0.25vh);
+  gap: min(0.05rem, 0.125vh);
   min-width: 0;
 }
 
@@ -87,11 +87,15 @@
   overflow-wrap: anywhere;
 }
 
+.provenance-note {
+  line-height: 1.15;
+}
+
 .verdict-row {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: min(0.25rem, 0.5vh);
+  gap: min(0.1rem, 0.25vh);
   min-width: 0;
 }
 
@@ -209,7 +213,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: min(0.15rem, 0.4vh);
-  order: -1;
 }
 
 .primary,
@@ -302,6 +305,11 @@
     max-height: min(16rem, 34dvh);
     overflow-y: auto;
     padding: min(0.35rem, 1vh) min(0.6rem, 1.2vw);
+  }
+
+  /* The spanning analysis grid takes height from this column, so shrinking it can also shrink the table. */
+  .panel:has(.verdict) {
+    min-height: min(16rem, 34dvh);
   }
 
   .badge {

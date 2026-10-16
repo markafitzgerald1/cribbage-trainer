@@ -67,6 +67,40 @@ const renderRevealedPanelWithMistake = (
 };
 
 describe("practiceDrillPanel", () => {
+  it.each([
+    { following: "Choose two cards", name: "choosing", props: {} },
+    {
+      following: "Checking your discard",
+      name: "loading",
+      props: { phase: "revealed" as const },
+    },
+    {
+      following: "0.42 points behind",
+      name: "miss",
+      props: revealedPanelArgs(failedVerdict(0.42)),
+    },
+    {
+      following: "Best choice",
+      name: "success",
+      props: revealedPanelArgs(sampleVerdict()),
+    },
+  ])(
+    "reads badge and actions before the $name body",
+    ({ props, following }) => {
+      const view = renderPanel(props);
+      const body = view.getByRole("region", {
+        name: "Practice drill",
+      }).firstElementChild;
+      const actions = body?.firstElementChild;
+
+      expect(actions?.firstElementChild).toHaveTextContent(/^Practice$/u);
+      expect(actions).toContainElement(
+        view.getByRole("button", { name: "Exit drill" }),
+      );
+      expect(actions?.nextElementSibling?.textContent).toMatch(following);
+    },
+  );
+
   it("tells the player suits were reshuffled while choosing", () => {
     const { getByText } = renderPanel();
 

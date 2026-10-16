@@ -2,6 +2,7 @@ import {
   LARGE_ROOT_FONT,
   expectActionWithinViewport,
   expectChangedPanelReachable,
+  expectPracticeComparisonsReachable,
   openSeededTrainer,
   reviewAtLargePortrait,
   selectTwoDiscards,
@@ -146,11 +147,7 @@ test.describe("practice drill", () => {
     );
     expect(panelOverflows).toBe(true);
 
-    const outcome = page.getByText(
-      /toward mastery|behind the best choice with current tables|Mastered/u,
-    );
-    await outcome.scrollIntoViewIfNeeded();
-    await expect(outcome).toBeInViewport();
+    await expectPracticeComparisonsReachable(panel);
   });
 
   /*
