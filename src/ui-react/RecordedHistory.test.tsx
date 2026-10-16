@@ -53,17 +53,28 @@ const openPracticeDetail = (tally: StoredTally, index = 0) => {
 const practiceIsOffered = (view: ReturnType<typeof render>) =>
   view.queryByRole("button", { name: "Practice this hand" }) !== null;
 
+const renderSmallTally = () =>
+  render(
+    <DiscardTallyView
+      summary={discardTallySummary({
+        meanExpectedPointsLoss: 0.004,
+        todayDecisions: 1,
+        todayMeanExpectedPointsLoss: 0.004,
+      })}
+    />,
+  );
+
 describe("recorded history presentation", () => {
   it("announces sub-cent marker, detail and rolling mean as recorded costs", () => {
     const view = openSmallCost();
 
     expect(
       view.getByRole("button", {
-        name: "Decision #1: Recorded cost: less than 0.01 points. Select to see the hand.",
+        name: "Decision #1, recorded cost less than 0.01 points. Select to see the hand.",
       }),
     ).toBeInTheDocument();
     expect(
-      view.getByText("Decision #1: Recorded cost: less than 0.01 points"),
+      view.getByText("Decision #1, recorded cost less than 0.01 points"),
     ).toBeInTheDocument();
     expect(
       view.getByText(
@@ -97,17 +108,10 @@ describe("recorded history presentation", () => {
     );
   });
 
-  it("labels tally averages and explains the table-change boundary", () => {
-    const view = render(
-      <DiscardTallyView
-        summary={discardTallySummary({
-          meanExpectedPointsLoss: 0.004,
-          todayDecisions: 1,
-          todayMeanExpectedPointsLoss: 0.004,
-        })}
-      />,
-    );
+  it("labels tally averages", () => {
+    const view = renderSmallTally();
 
+    expect(view.getByText("Avg recorded loss")).toBeInTheDocument();
     expect(view.getAllByRole("note")).toHaveLength(2);
     expect(
       view.getByRole("note", {
@@ -119,8 +123,21 @@ describe("recorded history presentation", () => {
         name: "Recorded loss all time: less than 0.01 points per discard",
       }),
     ).toHaveTextContent("< 0.01");
+  });
+
+  it("explains the scoring inputs and the table-change boundary", () => {
+    const view = renderSmallTally();
 
     fireEvent.click(view.getByText("As recorded"));
+
+    expect(
+      view.getByText(/The hand, discard and crib role are observed/u),
+    ).toHaveTextContent(
+      "Hand and starter outcomes are enumerated; crib and pegging expectations come from the app's simulation tables as they were when recorded.",
+    );
+    expect(view.getByText(/Recorded cost is the gap/u)).toHaveTextContent(
+      "Avg recorded loss averages those gaps (lower is better).",
+    );
 
     expect(
       view.getByText(/Earlier results, queue membership and mastery are kept/u),
@@ -154,6 +171,11 @@ describe("recorded history presentation", () => {
     const notes = view.getAllByRole("note");
     const names = notes.map((element) => element.getAttribute("aria-label")!);
 
+    expect(
+      view.getByRole("columnheader", { name: "Avg recorded loss" }),
+    ).toBeInTheDocument();
+    expect(view.getAllByText("Avg recorded loss")).toHaveLength(2);
+
     expect(names).toStrictEqual([
       "Recorded loss overall: less than 0.01 points per discard",
       "Recorded loss for Decisions 1–1: less than 0.01 points per discard",
@@ -169,7 +191,12 @@ describe("recorded history presentation", () => {
   it("does not offer an inert practice action for a non-admitted point or invalid hand", () => {
     const tally = practiceReadyDialogTally();
 
-    expect(tally.records[2]?.cribRole).toBe(CribRole.Dealer);
+    expect(tally.records[2]).toMatchObject({
+      cribRole: CribRole.Dealer,
+      expectedPointsLoss: 0.2,
+      isOptimal: false,
+      recordedAdmission: { basis: "sampling-noise-v1", eligible: false },
+    });
 
     const view = openPracticeDetail(tally, 2);
 
@@ -266,10 +293,9 @@ describe("captured chart practice admission", () => {
         }),
       ).toBeInTheDocument();
       expect(practiceIsOffered(view)).toBe(offered);
-      expect(
-        view.queryByText("Mastered — mastery kept from earlier retries") !==
-          null,
-      ).toBe(offered);
+      expect(view.queryByText("Mastered in a later retry") !== null).toBe(
+        offered,
+      );
     },
   );
 });

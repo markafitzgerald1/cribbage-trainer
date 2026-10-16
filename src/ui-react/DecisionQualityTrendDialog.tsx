@@ -127,7 +127,7 @@ function renderBreakdownTable(
           <tr>
             <th>Period / Batch</th>
             <th>Decisions</th>
-            <th>Recorded loss</th>
+            <th>Avg recorded loss</th>
             <th>Best choice</th>
             <th>Skipped (rate)</th>
           </tr>
@@ -290,7 +290,7 @@ export function DecisionQualityTrendDialog({
                 totalDecisions > 0
                   ? `Recorded loss overall: ${formatAccessibleNetLoss(totalLoss / totalDecisions)} points per discard`
                   : "Recorded loss overall unavailable",
-              label: "Recorded loss",
+              label: "Avg recorded loss",
               value: overallAvgLoss,
             },
             { label: "Best choice", value: overallOptimalRate },

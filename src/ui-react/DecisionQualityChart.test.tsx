@@ -334,12 +334,12 @@ describe("decision quality chart rolling mode and points", () => {
 
     expect(
       getByText(
-        "Retained decision #1: Recorded cost: 0.00 points (best choice then)",
+        "Retained decision #1, recorded cost 0.00 points (best choice then)",
       ),
     ).toBeInTheDocument();
 
     expect(
-      getByText("Retained decision #2: Recorded cost: 0.45 points"),
+      getByText("Retained decision #2, recorded cost 0.45 points"),
     ).toBeInTheDocument();
 
     const xLabels = container.querySelectorAll(`.${classes.xLabel}`);

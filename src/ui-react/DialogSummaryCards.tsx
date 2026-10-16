@@ -1,7 +1,7 @@
 import type React from "react";
 
 export interface DialogSummaryMetric {
-  readonly accessibleValue?: string;
+  readonly accessibleValue?: string | null;
   readonly label: string;
   readonly value: number | string;
 }
@@ -22,25 +22,29 @@ export function DialogSummaryCards({
 }: DialogSummaryCardsProps): React.JSX.Element {
   return (
     <div className={classes.summaryCards}>
-      {metrics.map((metric) => (
-        <div
-          className={classes.summaryCard}
-          key={metric.label}
-        >
-          <span className={classes.summaryLabel}>{metric.label}</span>
-          {metric.accessibleValue ? (
-            <span
-              aria-label={metric.accessibleValue}
-              className={classes.summaryValue}
-              role="note"
-            >
-              {metric.value}
-            </span>
-          ) : (
-            <span className={classes.summaryValue}>{metric.value}</span>
-          )}
-        </div>
-      ))}
+      {metrics.map(({ accessibleValue, label, value }) => {
+        const name = accessibleValue ?? null;
+        const hasAccessibleValue = name !== null;
+        return (
+          <div
+            className={classes.summaryCard}
+            key={label}
+          >
+            <span className={classes.summaryLabel}>{label}</span>
+            {hasAccessibleValue ? (
+              <span
+                aria-label={name}
+                className={classes.summaryValue}
+                role="note"
+              >
+                {value}
+              </span>
+            ) : (
+              <span className={classes.summaryValue}>{value}</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

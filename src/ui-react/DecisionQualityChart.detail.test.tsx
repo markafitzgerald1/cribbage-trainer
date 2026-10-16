@@ -164,7 +164,7 @@ describe("decision quality chart point detail", () => {
     {
       close: (view: RenderChart): boolean =>
         fireEvent.click(view.getByRole("button", { name: "Dismiss" })),
-      name: "its Close button is pressed",
+      name: "Dismiss is pressed",
     },
     {
       close: (view: RenderChart): boolean =>
@@ -345,8 +345,36 @@ describe("decision quality chart point detail", () => {
     expect(openDot).not.toHaveClass(classes.lossDotMastered);
     expect(markerFor(view, 1)).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("mastery kept from earlier retries"),
+      expect.stringContaining("mastered in a later retry"),
     );
     expect(view.getByRole("region")).toHaveTextContent("Mastered");
+  });
+});
+
+describe("decision quality chart dismissal focus", () => {
+  it("returns focus to the selected marker after Dismiss", () => {
+    const other = renderPlainChart();
+    const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
+    const marker = markerFor(view, 2);
+    const dismiss = view.getByRole("button", { name: "Dismiss" });
+    dismiss.focus();
+
+    fireEvent.click(dismiss);
+
+    expectNoPanel(view);
+
+    expect(document.activeElement).toBe(marker);
+    expect(other.container.querySelector("[role=button]")).not.toBe(
+      document.activeElement,
+    );
+  });
+
+  it("dismisses a detail after switching to a calendar without decision markers", () => {
+    const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
+    rerenderChart(view, OPTIMAL_THEN_LOSS, "day");
+
+    fireEvent.click(view.getByRole("button", { name: "Dismiss" }));
+
+    expectNoPanel(view);
   });
 });

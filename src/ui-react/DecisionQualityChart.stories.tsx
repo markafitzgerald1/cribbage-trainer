@@ -203,7 +203,7 @@ export const EarlierRecordedDetail: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     const marker = canvas.getByRole("button", {
-      name: "Decision #1: Recorded cost: less than 0.01 points, mastery kept from earlier retries. Select to see the hand.",
+      name: "Decision #1, recorded cost less than 0.01 points, mastered in a later retry. Select to see the hand.",
     });
     await fireEvent.click(marker);
 
@@ -212,9 +212,7 @@ export const EarlierRecordedDetail: Story = {
         name: "Recorded cost for selected decision: less than 0.01 points",
       }),
     ).toHaveTextContent("Recorded cost: < 0.01 points");
-    await expect(
-      canvas.getByText("Mastered — mastery kept from earlier retries"),
-    ).toBeVisible();
+    await expect(canvas.getByText("Mastered in a later retry")).toBeVisible();
 
     await fireEvent.click(canvas.getByText("Judged with different tables"));
 
@@ -251,7 +249,7 @@ export const RetainedDecisionDetail: Story = {
     ).toHaveAccessibleDescription(/the most recent 2 of 200/u);
 
     const retained = canvas.getByRole("button", {
-      name: /^Retained decision #2: Recorded cost: 0\.50 points/u,
+      name: /^Retained decision #2, recorded cost 0\.50 points/u,
     });
     retained.focus();
     await fireEvent.keyDown(retained, { key: "Enter" });
@@ -261,7 +259,7 @@ export const RetainedDecisionDetail: Story = {
     ).toHaveTextContent("Recorded cost: 0.50 points");
     await expect(
       canvas.getByText(
-        "Retained decision #1: Recorded cost: 0.00 points (best choice then)",
+        "Retained decision #1, recorded cost 0.00 points (best choice then)",
       ),
     ).toBeInTheDocument();
   },

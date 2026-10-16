@@ -67,7 +67,7 @@ const openRecordedPoint = async (page: Page, pointer = false) => {
     .click();
   const marker = page.getByRole("button", {
     exact: true,
-    name: "Decision #1: Recorded cost: less than 0.01 points, mastery kept from earlier retries. Select to see the hand.",
+    name: "Decision #1, recorded cost less than 0.01 points, mastered in a later retry. Select to see the hand.",
   });
   await marker.scrollIntoViewIfNeeded();
   await expect(marker).toBeVisible();
@@ -169,9 +169,7 @@ for (const [mode, viewport] of [
           name: "Recorded cost for selected decision: less than 0.01 points",
         }),
       ).toHaveText("Recorded cost: < 0.01 points");
-      await expect(panel).toContainText(
-        "Mastered — mastery kept from earlier retries",
-      );
+      await expect(panel).toContainText("Mastered in a later retry");
       await panel
         .getByText("Judged with different tables", { exact: true })
         .click();
@@ -180,9 +178,7 @@ for (const [mode, viewport] of [
       await expect(tallyLoss).toHaveText("< 0.01");
       const restored = await rereadHistory(page, viewport, fontSize);
       const after = await openRecordedPoint(restored, true);
-      await expect(after).toContainText(
-        "Mastered — mastery kept from earlier retries",
-      );
+      await expect(after).toContainText("Mastered in a later retry");
       await expect(
         after.getByRole("button", { exact: true, name: "Practice this hand" }),
       ).toBeVisible();

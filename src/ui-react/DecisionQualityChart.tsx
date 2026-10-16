@@ -121,7 +121,7 @@ function renderDecisionDetail(
         )}
         {point.isMastered ? (
           <span className={classes.decisionDetailMastered}>
-            Mastered — mastery kept from earlier retries
+            Mastered in a later retry
           </span>
         ) : null}
         <span
@@ -178,6 +178,7 @@ function renderDecisionDetail(
  * and the panel closes on its own.
  */
 function useDecisionSelection(
+  chartId: string,
   decisionPoints: readonly DiscardDecisionPoint[],
   onPracticeDecision: PracticeDecisionHandler,
 ): {
@@ -193,8 +194,13 @@ function useDecisionSelection(
   );
 
   const handleCloseDetail = useCallback(() => {
+    document
+      .querySelector<SVGElement>(
+        `[id="${chartId}"] [role="button"][data-decision-recency="${selectedRecencyAt}"]`,
+      )
+      ?.focus();
     setSelectedRecencyAt(null);
-  }, []);
+  }, [chartId, selectedRecencyAt]);
 
   const handleChartActivate = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent) => {
@@ -274,7 +280,7 @@ export function DecisionQualityChart({
     handleChartActivate,
     handleCloseDetail,
     handlePracticeSelected,
-  } = useDecisionSelection(decisionPoints, onPracticeDecision);
+  } = useDecisionSelection(chartId, decisionPoints, onPracticeDecision);
 
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
   const hasDecisionPoints = isRolling && decisionPoints.length > 0;
@@ -329,6 +335,7 @@ export function DecisionQualityChart({
         aria-describedby={`${chartId}-desc`}
         aria-label="Decision quality over time trend chart"
         className={classes.chart}
+        id={chartId}
         onClick={handleChartActivate}
         onKeyDown={handleChartActivate}
         // Not role="img": a screen reader then ignores everything inside, including the marker buttons that take focus.

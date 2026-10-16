@@ -183,8 +183,7 @@ export function DiscardTallyView({
       {summary.meanExpectedPointsLoss === null
         ? null
         : renderMeasure(
-            // "Points lost per discard" wraps mid-phrase on a phone, worst where the device font is set large; this keeps the per-discard sense, which a bare "points lost" would read as a total.
-            "Recorded loss",
+            "Avg recorded loss",
             summary.todayMeanExpectedPointsLoss === null
               ? blankWhen(hasToday)
               : recordedLossFigure(

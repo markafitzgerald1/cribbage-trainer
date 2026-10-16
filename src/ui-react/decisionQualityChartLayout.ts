@@ -39,7 +39,6 @@ export const HALF_DIVISOR = 2;
 export const TICK_OFFSET_X = 6;
 export const TICK_OFFSET_Y = 3.5;
 export const X_LABEL_OFFSET_Y = 22;
-export const DECIMAL_PLACES = 2;
 export const TICK_LABEL_X = MARGIN_LEFT - TICK_OFFSET_X;
 export const POINT_RADIUS = 4.5;
 export const LAST_INDEX = -1;

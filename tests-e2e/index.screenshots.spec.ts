@@ -212,7 +212,7 @@ const testDiscardTallyScreenshot = () =>
      * Where it sits is asserted in discardTally.spec.ts instead.
      */
     const tally = page
-      .getByText("Recorded loss", { exact: true })
+      .getByText("Avg recorded loss", { exact: true })
       .locator("..");
     await expect(tally).toHaveScreenshot();
   });

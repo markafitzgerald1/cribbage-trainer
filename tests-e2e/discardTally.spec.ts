@@ -103,7 +103,9 @@ test("leaves a seeded deep link out of the tally", async ({ page }) => {
   await page.goto(`/${constantHandQuery}`);
   await selectTwoDiscards(page);
 
-  await expect(page.getByText("Recorded loss", { exact: true })).toBeHidden();
+  await expect(
+    page.getByText("Avg recorded loss", { exact: true }),
+  ).toBeHidden();
 });
 
 /*
@@ -117,7 +119,7 @@ test("renders the tally between the analysis and the privacy links", async ({
   await playOneAuthenticHand(page);
 
   const tally = await page
-    .getByText("Recorded loss", { exact: true })
+    .getByText("Avg recorded loss", { exact: true })
     .boundingBox();
   const table = await page.getByRole("table").boundingBox();
   const privacy = await page
@@ -134,7 +136,7 @@ const SINGLE_LINE_HEIGHT_RATIO = 1.7;
 /*
  * The tally labels are em-sized and share their row with the today and
  * all-time figure columns, which take their width first. A device font-size
- * setting above the default used to grow the labels until "Recorded loss"
+ * setting above the default used to grow the labels until "Avg recorded loss"
  * and "Best choice" wrapped into ragged multi-line cells; each mode's cap
  * keeps them on one line. A wrapped label is ~3x its font size tall, well
  * past the 1.7x bound, so this fails against the uncapped stylesheet.
@@ -144,7 +146,7 @@ const expectTallyLabelsUnwrapped = async (page: Page) => {
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   const labelMetrics = await Promise.all(
-    ["As recorded", "Recorded loss", "Best choice"].map(async (label) => {
+    ["As recorded", "Avg recorded loss", "Best choice"].map(async (label) => {
       const locator = page.getByText(label, { exact: true });
       const box = await locator.boundingBox();
       const fontSize = await locator.evaluate((element) =>
@@ -198,7 +200,7 @@ test("caps the stacked tally's em lengths and drops the share so its figures fit
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   const metrics = await page
-    .getByText("Recorded loss", { exact: true })
+    .getByText("Avg recorded loss", { exact: true })
     .evaluate((label) => {
       const grid = label.parentElement as HTMLElement;
       const dynamicUi = grid.closest("[class*='dynamic-ui']") as HTMLElement;

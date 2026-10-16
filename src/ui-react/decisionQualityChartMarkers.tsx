@@ -36,10 +36,8 @@ const decisionCostText = (
   cost: string,
 ): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
-  const mastered = point.isMastered
-    ? ", mastery kept from earlier retries"
-    : "";
-  return `${prefix} #${point.ordinal}: Recorded cost: ${cost} points${mastered}`;
+  const mastered = point.isMastered ? ", mastered in a later retry" : "";
+  return `${prefix} #${point.ordinal}, recorded cost ${cost} points${mastered}`;
 };
 
 export const lossPointTitle = (point: DiscardDecisionPoint): string =>
@@ -205,7 +203,7 @@ export function renderRollingPlot(
               key={`decision-${point.ordinal}`}
               r={1.5}
             >
-              <title>{`${prefix} #${point.ordinal}: Recorded cost: 0.00 points (best choice then)`}</title>
+              <title>{`${prefix} #${point.ordinal}, recorded cost 0.00 points (best choice then)`}</title>
             </circle>
           );
         }

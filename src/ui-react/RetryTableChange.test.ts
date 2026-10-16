@@ -274,15 +274,22 @@ const HISTORY_VIEWS: DiscardTrendGranularity[] = [
 ];
 
 describe("recorded history across loaded table pairs", () => {
-  it.each(HISTORY_VIEWS)(
-    "keeps %s costs and best-choice counts as recorded after the tables change and storage reloads",
-    (granularity) => {
+  it.each(
+    HISTORY_VIEWS.flatMap((granularity) =>
+      ["5H,6H", "5H,10H"].map((discard) => ({ discard, granularity })),
+    ),
+  )(
+    "keeps $granularity costs and best-choice counts as recorded for $discard after the tables change and storage reloads",
+    ({ discard, granularity }) => {
       freshHarness();
-      const { then, now } = comparedChoice("5H,6H");
+      // History is recorded from tablesB while tablesA stays installed, so a reader that scores history again with the installed tables changes the answer.
+      const then = qualityWith(discard, tablesB);
+      const now = qualityWith(discard, tablesA);
 
-      expect([then.isOptimal, now.isOptimal]).toStrictEqual([false, true]);
+      expect(then.isOptimal).toBe(!now.isOptimal);
+      expect(then.expectedPointsLoss).not.toBe(now.expectedPointsLoss);
 
-      recordOriginal("5H,6H", then);
+      recordOriginal(discard, then);
       const before = computeDiscardQualityTrend(readTallyForDisplay(), {
         granularity,
         now: 100,
@@ -299,10 +306,17 @@ describe("recorded history across loaded table pairs", () => {
       expect(after.buckets[0]).toMatchObject({
         decisions: 1,
         meanExpectedPointsLoss: then.expectedPointsLoss,
-        optimalDecisions: 0,
+        optimalDecisions: Number(then.isOptimal),
       });
-      expect(readDiscardTally(100)).toStrictEqual(originalSummary);
-      expect(localStorage.getItem(discardTallyKey)).toBe(originalBytes);
+      expect({
+        bytes: localStorage.getItem(discardTallyKey),
+        decisions: after.totalAuthenticDecisions,
+        summary: readDiscardTally(100),
+      }).toStrictEqual({
+        bytes: originalBytes,
+        decisions: 1,
+        summary: originalSummary,
+      });
     },
   );
 

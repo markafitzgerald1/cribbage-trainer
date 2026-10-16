@@ -12,13 +12,13 @@ const mockSummaryClasses = {
 };
 
 describe("dialogSummaryCards", () => {
-  it("renders metric labels and values and only exposes a note when named", () => {
+  it("renders metric labels and values and exposes notes for supplied accessible values", () => {
     const { getByRole, getByText } = render(
       <DialogSummaryCards
         classes={mockSummaryClasses}
         metrics={[
           { label: "Metric One", value: 42 },
-          { accessibleValue: "", label: "Metric Three", value: "unnamed" },
+          { accessibleValue: null, label: "Metric Three", value: "unnamed" },
           {
             accessibleValue: "Metric Two: 85 percent",
             label: "Metric Two",

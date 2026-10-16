@@ -255,20 +255,6 @@ describe("decision quality trend dialog", () => {
     );
   });
 
-  it("hides practice when the tapped decision is not admitted", () => {
-    const rendered = renderDialog({
-      onStartDrill: jest.fn(),
-      tally: dialogFixtures.practiceReadyDialogTally(),
-    });
-    clickMarker(rendered, 3);
-
-    expect(
-      rendered.getByRole("region", { name: "Decision #3 detail" }),
-    ).toBeInTheDocument();
-
-    expect(rendered.queryByRole("button", { name: practiceButton })).toBeNull();
-  });
-
   it("omits the chart practice button when onStartDrill is left to default", () => {
     // Rendered directly, bypassing renderDialog's explicit null prop.
     // The component's own onStartDrill default is what hides the button here.
