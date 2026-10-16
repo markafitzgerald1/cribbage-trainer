@@ -16,6 +16,7 @@ import {
   playToggle,
 } from "./stories.common";
 import { Rank, Suit, createCard } from "../game/Card";
+import { discardTallyKey, readTallyForDisplay } from "../ui/discardTally";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import mistakeFixtures, {
   DRILLED_HAND_KEY,
@@ -26,7 +27,6 @@ import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDesc
 import { Trainer } from "./Trainer";
 import { clearStoredSortOrder } from "../ui/sortOrderPreference";
 import { createGenerator } from "../game/randomNumberGenerator";
-import { discardTallyKey } from "../ui/discardTally";
 import { getSortOrderName } from "../ui/SortOrderName";
 
 const SEED = "1";
@@ -383,6 +383,38 @@ const seedStoredTally = (createTally: () => unknown) => () => {
   return () => {
     localStorage.removeItem(discardTallyKey);
   };
+};
+
+export const RecoverUnfinishedDecisions = {
+  beforeEach: seedStoredTally(() => {
+    const tally = mistakeFixtures.createSampleMistakeTally();
+    return {
+      ...tally,
+      records: tally.records.map((record) => ({
+        ...record,
+        recordedAdmission: "pending",
+      })),
+    };
+  }),
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    await waitFor(async () => {
+      await expect(
+        readTallyForDisplay().records.map((record) => record.recordedAdmission),
+      ).toEqual([
+        ...Array.from({ length: 3 }, () => ({
+          basis: "exact-fallback-v1",
+          eligible: true,
+        })),
+        { basis: "exact-v1", eligible: false },
+      ]);
+    });
+
+    await fireEvent.click(getButton(canvasElement, "Mistake queue"));
+
+    await expect(
+      within(canvasElement).getByRole("heading", { name: "Mistake queue" }),
+    ).toBeVisible();
+  },
 };
 
 export const PracticeDrillFromMistakeQueue = {

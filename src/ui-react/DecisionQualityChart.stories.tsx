@@ -233,3 +233,36 @@ export const EarlierRecordedDetail: Story = {
     );
   },
 };
+
+export const RetainedDecisionDetail: Story = {
+  args: {
+    ...rollingWithPointsArgs,
+    decisionPoints: sampleDecisionPoints.slice(0, 2).map((point) => ({
+      ...point,
+      isRetained: true,
+    })),
+    totalDecisions: 200,
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("group", {
+        name: "Decision quality over time trend chart",
+      }),
+    ).toHaveAccessibleDescription(/the most recent 2 of 200/u);
+
+    const retained = canvas.getByRole("button", {
+      name: /^Retained decision #2: Recorded cost: 0\.50 points/u,
+    });
+    retained.focus();
+    await fireEvent.keyDown(retained, { key: "Enter" });
+
+    await expect(
+      canvas.getByRole("region", { name: "Retained decision #2 detail" }),
+    ).toHaveTextContent("Recorded cost: 0.50 points");
+    await expect(
+      canvas.getByText(
+        "Retained decision #1: Recorded cost: 0.00 points (best choice then)",
+      ),
+    ).toBeInTheDocument();
+  },
+};
