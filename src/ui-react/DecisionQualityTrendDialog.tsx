@@ -99,8 +99,8 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
         <span
           aria-label={
             bucket.meanExpectedPointsLoss === null
-              ? "Recorded loss unavailable"
-              : `Recorded loss: ${formatAccessibleNetLoss(bucket.meanExpectedPointsLoss)} points per discard`
+              ? `Recorded loss for ${bucket.label} unavailable`
+              : `Recorded loss for ${bucket.label}: ${formatAccessibleNetLoss(bucket.meanExpectedPointsLoss)} points per discard`
           }
           className={`${classes.lossPill} ${getLossPillClass(bucket.meanExpectedPointsLoss)}`}
           role="note"
@@ -288,8 +288,8 @@ export function DecisionQualityTrendDialog({
             {
               accessibleValue:
                 totalDecisions > 0
-                  ? `${formatAccessibleNetLoss(totalLoss / totalDecisions)} points per discard`
-                  : "unavailable",
+                  ? `Recorded loss overall: ${formatAccessibleNetLoss(totalLoss / totalDecisions)} points per discard`
+                  : "Recorded loss overall unavailable",
               label: "Recorded loss",
               value: overallAvgLoss,
             },

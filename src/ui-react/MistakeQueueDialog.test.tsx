@@ -128,6 +128,13 @@ describe("mistake queue dialog", () => {
       expect(rendered.getByText("Needs practice")).toBeInTheDocument();
 
       expect(rendered.getAllByText("Mastered")).toHaveLength(2);
+      expect(
+        ["Total mistakes", "Needs practice", "Mastered"].map((label) =>
+          rendered
+            .getAllByText(label)[0]!
+            .nextElementSibling!.getAttribute("role"),
+        ),
+      ).toStrictEqual([null, null, null]);
     });
 
     it("renders default radio filter selections", () => {

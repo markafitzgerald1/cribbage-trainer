@@ -63,6 +63,14 @@ describe("recorded history presentation", () => {
       }),
     ).toBeInTheDocument();
     expect(
+      view.getByText("Decision #1: Recorded cost: less than 0.01 points"),
+    ).toBeInTheDocument();
+    expect(
+      view.getByText(
+        "Latest 1-decision rolling average: less than 0.01 points recorded loss per discard",
+      ),
+    ).toBeInTheDocument();
+    expect(
       view.getByRole("note", { name: "Recorded cost: less than 0.01 points" }),
     ).toHaveTextContent("Recorded cost: < 0.01 points");
     expect(view.getByRole("group")).toHaveAccessibleDescription(
@@ -81,11 +89,17 @@ describe("recorded history presentation", () => {
       />,
     );
 
+    expect(view.getAllByRole("note")).toHaveLength(2);
     expect(
-      view.getAllByRole("note", {
-        name: "Recorded loss: less than 0.01 points per discard",
+      view.getByRole("note", {
+        name: "Recorded loss today: less than 0.01 points per discard",
       }),
-    ).toHaveLength(2);
+    ).toHaveTextContent("< 0.01");
+    expect(
+      view.getByRole("note", {
+        name: "Recorded loss all time: less than 0.01 points per discard",
+      }),
+    ).toHaveTextContent("< 0.01");
 
     fireEvent.click(view.getByText("As recorded"));
 
@@ -94,7 +108,48 @@ describe("recorded history presentation", () => {
     ).toBeInTheDocument();
   });
 
-  it("does not offer an inert practice action for a non-admitted point", () => {
+  it("gives summary and period recorded-loss notes distinct non-substring names", () => {
+    const base = practiceReadyDialogTally();
+    const view = render(
+      <DecisionQualityTrendDialog
+        onClose={jest.fn()}
+        show
+        tally={{
+          ...base,
+          lifetime: {
+            ...base.lifetime,
+            decisions: 1,
+            expectedPointsLossTotal: 0.004,
+            optimalDecisions: 0,
+            skippedHands: 0,
+          },
+          records: [
+            {
+              ...base.records[0]!,
+              expectedPointsLoss: 0.004,
+            },
+          ],
+        }}
+      />,
+    );
+    const notes = view.getAllByRole("note");
+    const names = notes.map(
+      (element) => element.getAttribute("aria-label")!,
+    );
+
+    expect(names).toStrictEqual([
+      "Recorded loss overall: less than 0.01 points per discard",
+      "Recorded loss for Decisions 1–1: less than 0.01 points per discard",
+    ]);
+    expect(names[0]?.toLowerCase().includes(names[1]!.toLowerCase())).toBe(
+      false,
+    );
+    expect(names[1]?.toLowerCase().includes(names[0]!.toLowerCase())).toBe(
+      false,
+    );
+  });
+
+  it("does not offer an inert practice action for a non-admitted point or invalid hand", () => {
     const tally = practiceReadyDialogTally();
 
     expect(tally.records[2]?.cribRole).toBe(CribRole.Dealer);
@@ -105,6 +160,19 @@ describe("recorded history presentation", () => {
       view.getByRole("region", { name: "Decision #3 detail" }),
     ).toBeInTheDocument();
     expect(practiceIsOffered(view)).toBe(false);
+
+    view.unmount();
+    const invalidView = openPracticeDetail({
+      ...tally,
+      records: [{ ...tally.records[0]!, handKey: "legacy-hand" }],
+    });
+
+    expect(
+      invalidView.getByRole("region", {
+        name: "Retained decision #1 detail",
+      }),
+    ).toBeInTheDocument();
+    expect(practiceIsOffered(invalidView)).toBe(false);
   });
 });
 

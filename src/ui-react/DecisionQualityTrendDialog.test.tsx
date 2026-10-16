@@ -181,20 +181,40 @@ describe("decision quality trend dialog", () => {
   });
 
   it("renders cleanly with empty tally", () => {
-    const { getByText } = renderDialog({ tally: emptyTally });
+    const { getAllByRole, getByRole, getByText } = renderDialog({
+      tally: emptyTally,
+    });
 
     expect(
       getByText("No discard decisions recorded yet for this view."),
     ).toBeInTheDocument();
+    expect(getAllByRole("note")).toHaveLength(1);
+    expect(
+      getByRole("note", { name: "Recorded loss overall unavailable" })
+        .textContent,
+    ).toBe("—");
   });
 
   it("renders periods with skipped hands and no decisions in day view", () => {
-    const { getAllByText } = renderDialog({
+    const { getAllByRole, getByRole } = renderDialog({
       initialGranularity: "day",
       tally: tallyWithSkipOnlyPeriod,
     });
 
-    expect(getAllByText("—").length).toBeGreaterThan(0);
+    expect(getAllByRole("note")).toHaveLength(3);
+    expect(
+      getByRole("note", {
+        name: "Recorded loss overall: 0.50 points per discard",
+      }),
+    ).toHaveTextContent("0.50");
+    expect(
+      getByRole("note", {
+        name: /^Recorded loss for .+: 0\.50 points per discard$/u,
+      }),
+    ).toHaveTextContent("0.50");
+    expect(
+      getByRole("note", { name: /^Recorded loss for .+ unavailable$/u }),
+    ).toHaveTextContent("—");
   });
 
   it("reads from storage helper when tally prop is omitted", () => {

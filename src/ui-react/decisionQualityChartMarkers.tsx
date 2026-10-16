@@ -20,11 +20,8 @@ import type {
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
-import {
-  formatAccessibleNetLoss,
-  formatNetLoss,
-} from "../analysis/classifyMistake";
 import React from "react";
+import { formatAccessibleNetLoss } from "../analysis/classifyMistake";
 
 // A band's edge sits at the midpoint between its mistake and the next one.
 const MIDPOINT_DIVISOR = 2;
@@ -46,9 +43,6 @@ const decisionCostText = (
 };
 
 export const lossPointTitle = (point: DiscardDecisionPoint): string =>
-  decisionCostText(point, formatNetLoss(point.expectedPointsLoss));
-
-const lossPointLabel = (point: DiscardDecisionPoint): string =>
   decisionCostText(point, formatAccessibleNetLoss(point.expectedPointsLoss));
 
 /*
@@ -122,7 +116,7 @@ export function renderLossPoint(
   return (
     <g
       // The hover title lives on the hit band that covers this marker; here it would only duplicate it.
-      aria-label={`${lossPointLabel(point)}. Select to see the hand.`}
+      aria-label={`${lossPointTitle(point)}. Select to see the hand.`}
       className={classes.lossMarker}
       data-decision-ordinal={point.ordinal}
       data-decision-recency={point.recencyAt}
@@ -301,6 +295,7 @@ export const buildChartDescription = ({
   scoredBuckets,
   totalDecisions,
 }: ChartDescriptionInput): string => {
+  const formattedLoss = formatAccessibleNetLoss(latestLoss);
   if (hasDecisionPoints) {
     const windowLabel = getRollingWindowLabel(
       decisionPoints.length,
@@ -311,14 +306,14 @@ export const buildChartDescription = ({
       totalDecisions > decisionPoints.length
         ? `the most recent ${decisionPoints.length} of ${totalDecisions}`
         : `${decisionPoints.length}`;
-    return `Trend chart with ${countText} decisions (${windowLabel}). Latest recorded loss is ${formatAccessibleNetLoss(latestLoss)} points per discard.`;
+    return `Trend chart with ${countText} decisions (${windowLabel}). Latest recorded loss is ${formattedLoss} points per discard.`;
   }
   const latestScoredBucket = scoredBuckets[
     scoredBuckets.length - 1
   ] as DiscardPeriodBucket;
   const calendarDesc =
     latestScoredBucket.key === buckets[buckets.length - 1]?.key
-      ? `Latest recorded loss is ${formatAccessibleNetLoss(latestLoss)} points per discard.`
-      : `Latest scored period (${latestScoredBucket.label}) recorded loss is ${formatAccessibleNetLoss(latestLoss)} points per discard.`;
+      ? `Latest recorded loss is ${formattedLoss} points per discard.`
+      : `Latest scored period (${latestScoredBucket.label}) recorded loss is ${formattedLoss} points per discard.`;
   return `Trend chart with ${buckets.length} periods. ${calendarDesc}`;
 };

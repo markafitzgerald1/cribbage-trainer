@@ -158,7 +158,7 @@ for (const [mode, viewport] of [
         await page.addStyleTag({ content: LARGE_ROOT_FONT });
       const tallyLoss = page.getByRole("note", {
         exact: true,
-        name: "Recorded loss: less than 0.01 points per discard",
+        name: "Recorded loss all time: less than 0.01 points per discard",
       });
       await expect(tallyLoss).toHaveText("< 0.01");
       await expectContained(page, tallyLoss);
@@ -194,7 +194,7 @@ for (const [mode, viewport] of [
       await expect(
         table.getByRole("note", {
           exact: true,
-          name: "Recorded loss: less than 0.01 points per discard",
+          name: "Recorded loss for Decisions 1–1: less than 0.01 points per discard",
         }),
       ).toHaveText("< 0.01");
     });

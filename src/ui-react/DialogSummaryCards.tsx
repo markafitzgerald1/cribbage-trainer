@@ -28,13 +28,17 @@ export function DialogSummaryCards({
           key={metric.label}
         >
           <span className={classes.summaryLabel}>{metric.label}</span>
-          <span
-            aria-label={metric.accessibleValue}
-            className={classes.summaryValue}
-            role="note"
-          >
-            {metric.value}
-          </span>
+          {metric.accessibleValue ? (
+            <span
+              aria-label={metric.accessibleValue}
+              className={classes.summaryValue}
+              role="note"
+            >
+              {metric.value}
+            </span>
+          ) : (
+            <span className={classes.summaryValue}>{metric.value}</span>
+          )}
         </div>
       ))}
     </div>

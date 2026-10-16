@@ -131,7 +131,7 @@ export const RecordedSmallLoss: StoryObj<typeof meta> = {
   play: async ({ canvas }) => {
     await expect(
       canvas.getByRole("note", {
-        name: "Recorded loss: less than 0.01 points per discard",
+        name: "Recorded loss all time: less than 0.01 points per discard",
       }),
     ).toHaveTextContent("< 0.01");
 

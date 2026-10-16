@@ -66,9 +66,12 @@ const renderMeasure = (
   </>
 );
 
-const recordedLossFigure = (loss: number): ReactNode => (
+const recordedLossFigure = (
+  period: "all time" | "today",
+  loss: number,
+): ReactNode => (
   <span
-    aria-label={`Recorded loss: ${formatAccessibleNetLoss(loss)} points per discard`}
+    aria-label={`Recorded loss ${period}: ${formatAccessibleNetLoss(loss)} points per discard`}
     role="note"
   >
     {formatNetLoss(loss)}
@@ -184,8 +187,11 @@ export function DiscardTallyView({
             "Recorded loss",
             summary.todayMeanExpectedPointsLoss === null
               ? blankWhen(hasToday)
-              : recordedLossFigure(summary.todayMeanExpectedPointsLoss),
-            recordedLossFigure(summary.meanExpectedPointsLoss),
+              : recordedLossFigure(
+                  "today",
+                  summary.todayMeanExpectedPointsLoss,
+                ),
+            recordedLossFigure("all time", summary.meanExpectedPointsLoss),
           )}
       {summary.decisions === 0
         ? null

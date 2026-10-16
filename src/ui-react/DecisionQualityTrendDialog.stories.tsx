@@ -98,11 +98,13 @@ export const RecordedCalendarLoss: Story = {
 
     await expect(
       history.getByRole("note", {
-        name: "Recorded loss: less than 0.01 points per discard",
+        name: /^Recorded loss for .+: less than 0\.01 points per discard$/u,
       }),
     ).toHaveTextContent("< 0.01");
     await expect(
-      canvas.getByRole("note", { name: "less than 0.01 points per discard" }),
+      canvas.getByRole("note", {
+        name: "Recorded loss overall: less than 0.01 points per discard",
+      }),
     ).toHaveTextContent("< 0.01");
   },
 };
