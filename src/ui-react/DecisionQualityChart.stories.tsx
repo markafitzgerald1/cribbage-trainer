@@ -156,7 +156,7 @@ export const DecisionDetailPopup: Story = {
     await expectPanelGone(canvasElement);
 
     clickElement(marker);
-    clickElement(await canvas.findByRole("button", { name: "Close" }));
+    clickElement(await canvas.findByRole("button", { name: "Dismiss" }));
     await expectPanelGone(canvasElement);
   },
 };

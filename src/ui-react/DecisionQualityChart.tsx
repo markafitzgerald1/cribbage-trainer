@@ -136,7 +136,7 @@ function renderDecisionDetail(
           onClick={onClose}
           type="button"
         >
-          Close
+          Dismiss
         </button>
       </div>
       <RecordedTableProvenance identity={point.tableIdentity} />

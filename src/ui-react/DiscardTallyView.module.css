@@ -37,8 +37,13 @@
   grid-template-columns: 1fr auto;
 }
 
-.history-help {
+/* Closed help reuses the header cell so practice keeps its table height. */
+.history-help[open] {
   grid-column: 1 / -1;
+}
+
+.history-help:not([open]) + span {
+  display: none;
 }
 
 .history-help p {

@@ -696,7 +696,9 @@ once you are already editing layout or interaction code.
   history integration must use captured exclusions rather than recomputing
   admission or denominators with current tables; legacy noise remains
   unknown and falls back to its recorded exact verdict. Opt-in re-judging or
-  replacing history requires a separate owner decision.
+  replacing history requires a separate owner decision. Keep the collapsed
+  tally explanation in its existing header row: an extra row takes height
+  from the analysis and can violate the per-browser practice table budgets.
 
 - A recorded table identity must travel beside the analysis produced by that
   loaded means pair. Reading a global digest later can stamp the wrong pair;

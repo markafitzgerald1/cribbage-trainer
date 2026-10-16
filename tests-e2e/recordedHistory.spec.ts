@@ -95,9 +95,14 @@ const checkCurrentBestRetry = async (page: Page) => {
   });
   await expect(drill).toContainText("Then — recorded cost");
   await expect(drill).toContainText("Retry — current tables");
-  await expect(drill).toContainText("Your earlier result and streak are kept");
+  await expect(drill).toContainText(
+    "Its recorded cost is from the original tables; this retry uses the current tables.",
+  );
   await expect(
-    drill.getByLabel("less than 0.01 points", { exact: true }),
+    drill.getByRole("note", {
+      exact: true,
+      name: "Then — recorded cost, less than 0.01 points",
+    }),
   ).toHaveText("< 0.01");
   await page.getByRole("button", { exact: true, name: "Exit drill" }).click();
 };

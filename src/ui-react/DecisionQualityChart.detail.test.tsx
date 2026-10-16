@@ -163,7 +163,7 @@ describe("decision quality chart point detail", () => {
     },
     {
       close: (view: RenderChart): boolean =>
-        fireEvent.click(view.getByRole("button", { name: "Close" })),
+        fireEvent.click(view.getByRole("button", { name: "Dismiss" })),
       name: "its Close button is pressed",
     },
     {
