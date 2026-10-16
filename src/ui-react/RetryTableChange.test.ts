@@ -275,7 +275,7 @@ const HISTORY_VIEWS: DiscardTrendGranularity[] = [
 
 describe("recorded history across loaded table pairs", () => {
   it.each(HISTORY_VIEWS)(
-    "keeps %s costs and best-choice counts across A to B and a storage reload",
+    "keeps %s costs and best-choice counts as recorded after the tables change and storage reloads",
     (granularity) => {
       freshHarness();
       const { then, now } = comparedChoice("5H,6H");
@@ -306,7 +306,7 @@ describe("recorded history across loaded table pairs", () => {
     },
   );
 
-  it("keeps a mastered A mistake's trend practice action when B proves it best", () => {
+  it("keeps the trend's practice action for a mistake already mastered under the original tables, even when the newer tables rate that discard best", () => {
     const harness = freshHarness({ followLoadedHand: true });
     const { then, now } = comparedChoice("5H,6H");
 
