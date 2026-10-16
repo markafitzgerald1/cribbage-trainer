@@ -144,7 +144,7 @@ const expectTallyLabelsUnwrapped = async (page: Page) => {
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   const labelMetrics = await Promise.all(
-    ["Recorded loss", "Best choice"].map(async (label) => {
+    ["As recorded", "Recorded loss", "Best choice"].map(async (label) => {
       const locator = page.getByText(label, { exact: true });
       const box = await locator.boundingBox();
       const fontSize = await locator.evaluate((element) =>
@@ -157,6 +157,9 @@ const expectTallyLabelsUnwrapped = async (page: Page) => {
   for (const { fontSize, height } of labelMetrics) {
     expect(height).toBeLessThan(fontSize * SINGLE_LINE_HEIGHT_RATIO);
   }
+  const help = page.getByText("As recorded", { exact: true });
+  await expect(help).toHaveCSS("white-space", "nowrap");
+  await expect(help).toHaveCSS("cursor", "pointer");
 };
 
 test("keeps the tally labels on one line at a large device font", async ({

@@ -46,6 +46,11 @@
   display: none;
 }
 
+.history-help summary {
+  white-space: nowrap;
+  cursor: pointer;
+}
+
 .history-help p {
   white-space: normal;
 }
