@@ -166,7 +166,7 @@ for (const [mode, viewport] of [
       await expect(
         panel.getByRole("note", {
           exact: true,
-          name: "Recorded cost: less than 0.01 points",
+          name: "Recorded cost for selected decision: less than 0.01 points",
         }),
       ).toHaveText("Recorded cost: < 0.01 points");
       await expect(panel).toContainText(

@@ -123,10 +123,6 @@ describe("mistake queue dialog", () => {
         "Mistake queue",
       );
 
-      expect(rendered.getByText("Total mistakes")).toBeInTheDocument();
-
-      expect(rendered.getByText("Needs practice")).toBeInTheDocument();
-
       expect(rendered.getAllByText("Mastered")).toHaveLength(2);
       expect(
         ["Total mistakes", "Needs practice", "Mastered"].map((label) =>

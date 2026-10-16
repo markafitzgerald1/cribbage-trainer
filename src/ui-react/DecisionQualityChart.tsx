@@ -125,7 +125,7 @@ function renderDecisionDetail(
           </span>
         ) : null}
         <span
-          aria-label={`Recorded cost: ${formatAccessibleNetLoss(point.expectedPointsLoss)} points`}
+          aria-label={`Recorded cost for selected decision: ${formatAccessibleNetLoss(point.expectedPointsLoss)} points`}
           className={classes.decisionDetailLoss}
           role="note"
         >

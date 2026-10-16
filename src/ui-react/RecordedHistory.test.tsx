@@ -71,10 +71,29 @@ describe("recorded history presentation", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      view.getByRole("note", { name: "Recorded cost: less than 0.01 points" }),
+      view.getByRole("note", {
+        name: "Recorded cost for selected decision: less than 0.01 points",
+      }),
     ).toHaveTextContent("Recorded cost: < 0.01 points");
     expect(view.getByRole("group")).toHaveAccessibleDescription(
       "Trend chart with 1 decisions (1-decision rolling average). Latest recorded loss is less than 0.01 points per discard.",
+    );
+  });
+
+  it("distinguishes the selected cost note from its chart marker", () => {
+    const view = openSmallCost();
+    const note = view.getByRole("note");
+    const markerName = view
+      .getByRole("button", {
+        name: /Select to see the hand/u,
+      })
+      .getAttribute("aria-label")!;
+
+    expect(markerName.toLowerCase()).not.toContain(
+      note.getAttribute("aria-label")!.toLowerCase(),
+    );
+    expect(note).toHaveAccessibleName(
+      "Recorded cost for selected decision: less than 0.01 points",
     );
   });
 
@@ -133,9 +152,7 @@ describe("recorded history presentation", () => {
       />,
     );
     const notes = view.getAllByRole("note");
-    const names = notes.map(
-      (element) => element.getAttribute("aria-label")!,
-    );
+    const names = notes.map((element) => element.getAttribute("aria-label")!);
 
     expect(names).toStrictEqual([
       "Recorded loss overall: less than 0.01 points per discard",
@@ -187,9 +204,9 @@ describe("recorded chart provenance", () => {
     expect(
       view.getByRole("region", { name: "Decision #1 detail" }),
     ).toHaveTextContent(label);
-    expect(
-      view.getByRole("note", { name: "Recorded cost: less than 0.01 points" }),
-    ).toHaveTextContent("< 0.01");
+    expect(view.getByText("Recorded cost: < 0.01 points")).toHaveAccessibleName(
+      "Recorded cost for selected decision: less than 0.01 points",
+    );
   });
 
   it("announces a sub-cent calendar mean without calling it zero", () => {
@@ -244,7 +261,9 @@ describe("captured chart practice admission", () => {
       const view = openPracticeDetail(tally);
 
       expect(
-        view.getByRole("note", { name: "Recorded cost: 1.40 points" }),
+        view.getByRole("note", {
+          name: "Recorded cost for selected decision: 1.40 points",
+        }),
       ).toBeInTheDocument();
       expect(practiceIsOffered(view)).toBe(offered);
       expect(
