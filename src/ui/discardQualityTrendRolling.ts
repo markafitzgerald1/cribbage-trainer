@@ -1,8 +1,8 @@
 /* jscpd:ignore-start */
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
+import { isAdmittedMistake, isRecordedWithinNoise } from "./recordedAdmission";
 import type { DiscardDecisionRecord } from "./discardTally";
 import type { TableIdentity } from "../game/tableIdentity";
-import { isAdmittedMistake } from "./recordedAdmission";
 import { parseHandKey } from "./handKey";
 
 /* jscpd:ignore-end */
@@ -134,6 +134,8 @@ export interface DiscardDecisionPoint {
   readonly isOptimal: boolean;
   readonly isPracticeEligible: boolean;
   readonly isRetained: boolean;
+  // Recorded as within simulation noise (#774): drawn neutral, never a mistake to practice.
+  readonly isWithinNoise: boolean;
   readonly ordinal: number;
   /*
    * The record's monotonic `recencyAt` (strictly increasing across the
@@ -204,6 +206,7 @@ export function buildContinuousDecisionPoints(
       isPracticeEligible:
         isAdmittedMistake(record) && parseHandKey(record.handKey) !== null,
       isRetained,
+      isWithinNoise: isRecordedWithinNoise(record),
       ordinal: globalIndex + 1,
       recencyAt: record.recencyAt ?? record.at,
       rollingMeanLoss,

@@ -55,13 +55,12 @@ export const makeDecisionPoint = (
   isWithinNoise: false,
   ordinal,
   recencyAt: 1_700_000_500_000 + ordinal,
-  recomputedLoss: null,
   rollingMeanLoss,
   tableIdentity: null,
   timestamp: 1700000000000 + ordinal * 1000,
 });
 
-type DecisionPointFlag = "isMastered" | "isRetained" | "isWithinNoise";
+type DecisionPointFlag = "isMastered" | "isRetained";
 
 const makeDecisionPointWith =
   (flag: DecisionPointFlag) =>
@@ -72,5 +71,3 @@ const makeDecisionPointWith =
 
 export const makeMasteredDecisionPoint = makeDecisionPointWith("isMastered");
 export const makeRetainedDecisionPoint = makeDecisionPointWith("isRetained");
-export const makeWithinNoiseDecisionPoint =
-  makeDecisionPointWith("isWithinNoise");

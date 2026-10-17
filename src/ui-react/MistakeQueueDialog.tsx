@@ -15,7 +15,6 @@ import {
   buildMistakeQueue,
   computeLossQuantileThresholds,
   filterMistakeQueue,
-  isRecordedMistake,
   sortMistakeQueue,
 } from "../ui/mistakeQueue";
 import type {
@@ -27,7 +26,6 @@ import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import Modal from "./Modal";
-import { NO_NOISE } from "../ui/noiseVerdicts";
 import { SortOrder } from "../ui/SortOrder";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 import { useMistakeQueueClassifications } from "./useMistakeQueueClassifications";
@@ -58,7 +56,6 @@ export type MistakeQueueDialogProps = {
   readonly show: boolean;
   readonly sortOrder?: SortOrder;
   readonly tally?: StoredTally | null | undefined;
-  readonly lossesWithinNoise?: ReadonlySet<string>;
 };
 
 const buildQuantileOptions = (
@@ -97,7 +94,6 @@ const buildQuantileOptions = (
 
 function renderEmptyState(options: {
   readonly hasLifetimeMistakes: boolean;
-  readonly hasRetainedMistakes: boolean;
   readonly isAllMastered: boolean;
   readonly totalCount: number;
 }): React.JSX.Element {
@@ -119,10 +115,7 @@ function renderEmptyState(options: {
   }
 
   let message = "No mistake hands match the selected filters.";
-  if (options.hasRetainedMistakes && options.totalCount === 0) {
-    message =
-      "Every recorded mistake's loss is within simulation noise, so none needs practice.";
-  } else if (options.totalCount === 0) {
+  if (options.totalCount === 0) {
     message = options.hasLifetimeMistakes
       ? "All recorded mistake hands have aged out of the recent history window. Play more hands to add new mistakes to your practice queue."
       : "No mistake hands recorded yet. Play authentic hands to build your practice queue.";
@@ -142,17 +135,13 @@ interface MistakeQueueBaseData {
   readonly activeCount: number;
   readonly allItems: readonly MistakeQueueItem[];
   readonly hasLifetimeMistakes: boolean;
-  readonly hasRetainedMistakes: boolean;
   readonly masteredCount: number;
   readonly quantileOptions: readonly DialogFilterOption<MistakeQueueQuantileFilter>[];
   readonly totalCount: number;
 }
 
-function buildMistakeQueueBaseData(
-  tally: StoredTally,
-  withinNoise: ReadonlySet<string>,
-): MistakeQueueBaseData {
-  const allItems = buildMistakeQueue(tally, withinNoise);
+function buildMistakeQueueBaseData(tally: StoredTally): MistakeQueueBaseData {
+  const allItems = buildMistakeQueue(tally);
   const thresholds = computeLossQuantileThresholds(
     allItems.map((item) => item.lossIfWrong),
   );
@@ -167,7 +156,6 @@ function buildMistakeQueueBaseData(
     activeCount,
     allItems,
     hasLifetimeMistakes,
-    hasRetainedMistakes: tally.records.some(isRecordedMistake),
     masteredCount,
     quantileOptions,
     totalCount,
@@ -183,7 +171,6 @@ export function MistakeQueueDialog({
   initialRoleFilter = "all",
   initialSortOrder = "priority",
   initialStatusFilter = "active",
-  lossesWithinNoise = NO_NOISE,
   onClose,
   onStartAutoDrill = null,
   onStartDrill = null,
@@ -248,10 +235,8 @@ export function MistakeQueueDialog({
   );
   const baseQueueData = useMemo(
     () =>
-      activeTally === null
-        ? null
-        : buildMistakeQueueBaseData(activeTally, lossesWithinNoise),
-    [activeTally, lossesWithinNoise],
+      activeTally === null ? null : buildMistakeQueueBaseData(activeTally),
+    [activeTally],
   );
   const derivedQueueData = useMemo(() => {
     if (baseQueueData === null) {
@@ -294,7 +279,6 @@ export function MistakeQueueDialog({
   const {
     activeCount,
     hasLifetimeMistakes,
-    hasRetainedMistakes,
     masteredCount,
     quantileOptions,
     totalCount,
@@ -390,7 +374,6 @@ export function MistakeQueueDialog({
           {sortedItems.length === 0 ? (
             renderEmptyState({
               hasLifetimeMistakes,
-              hasRetainedMistakes,
               isAllMastered,
               totalCount,
             })
@@ -429,7 +412,6 @@ MistakeQueueDialog.defaultProps = {
   initialRoleFilter: "all",
   initialSortOrder: "priority",
   initialStatusFilter: "active",
-  lossesWithinNoise: NO_NOISE,
   onStartAutoDrill: null,
   onStartDrill: null,
   sortOrder: SortOrder.Descending,

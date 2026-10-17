@@ -1,12 +1,12 @@
 import { type Page, expect, test } from "@playwright/test";
 import { SEED_TALLY, openSeededTrainer } from "./practiceDrillSetup";
-import { blockUncertaintySidecars } from "./blockUncertaintySidecars";
 
 /*
- * One best choice, and a pone discard of the ace and two from A-6 of clubs:
- * a 0.06 loss that the shipped sidecars put inside its threshold (#774).
- * This runs the real tables and the real sidecars, which the unit tests
- * stand in for with uniform errors.
+ * One best choice and one pone discard of the ace and two from A-6 of
+ * clubs, whose verdict the tally reads from the admission recorded with it
+ * (#774, #894). That hand loses 0.06 under the shipped tables, inside its
+ * noise threshold today, so the recorded-mistake case also guards against
+ * re-judging stored history with the installed tables and sidecars.
  */
 const OPTIMAL = {
   at: 1_700_000_000_000,
@@ -16,58 +16,48 @@ const OPTIMAL = {
   handKey: "9H,10H,JH,QH,KH,KS|Dealer",
   isOptimal: true,
   isPractice: false,
+  recordedAdmission: { basis: "exact-v1", eligible: false },
 };
-const WITHIN_NOISE_TALLY = {
+
+const tallyRecording = (eligible: boolean) => ({
   ...SEED_TALLY,
   lifetime: { ...SEED_TALLY.lifetime, decisions: 2 },
   records: [
     OPTIMAL,
     {
       ...OPTIMAL,
+      at: OPTIMAL.at + 1,
       cribRole: "Pone",
       discardKey: "AC,2C",
-      expectedPointsLoss: 0.055813,
+      expectedPointsLoss: 0.055_813,
       handKey: "AC,2C,3C,4C,5C,6C|Pone",
       isOptimal: false,
+      recordedAdmission: { basis: "sampling-noise-v1", eligible },
     },
   ],
-};
-
-/*
- * History is judged only once a recommendation is on screen, so the page
- * opens on a deep-linked hand, which is practice and leaves the tally alone.
- */
-const RECOMMENDATION = "/?hand=4H,5D,KH,6H,8C,KC&role=dealer&discard=8C,KC";
+  version: 8,
+});
 
 const tallyOf = (page: Page) =>
-  page.getByText("Lost per discard").locator("..");
+  page.getByText("Avg recorded loss", { exact: true }).locator("..");
 
-// The sidecars are deferred chunks of about 1.5 MB, so each wait gets the room a cold worker needs.
-const COLD = { timeout: 20_000 };
-
-test("leaves a within-noise loss out of Best choice and the queue", async ({
+test("leaves a decision recorded as within noise out of Best choice and the queue", async ({
   page,
 }) => {
-  await openSeededTrainer(page, WITHIN_NOISE_TALLY, RECOMMENDATION);
+  await openSeededTrainer(page, tallyRecording(false));
 
-  await expect(tallyOf(page).getByText(/^1\/1 \(/u)).toBeVisible(COLD);
+  await expect(tallyOf(page).getByText(/^1\/1 \(/u)).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Mistake queue" }),
   ).toBeHidden();
 });
 
-// The refused request proves the load was attempted, so the settled tally that follows has had its chance to change.
-test("keeps the exact verdict when the sidecars cannot load", async ({
+test("keeps a recorded mistake that today's tables would call noise", async ({
   page,
 }) => {
-  await blockUncertaintySidecars(page);
-  const refused = page.waitForRequest(/Uncertainty-/u, COLD);
-  await openSeededTrainer(page, WITHIN_NOISE_TALLY, RECOMMENDATION);
-  await refused;
-  const tally = tallyOf(page);
-  await expect(tally).toHaveAttribute("aria-busy", "false", COLD);
+  await openSeededTrainer(page, tallyRecording(true));
 
-  await expect(tally.getByText(/^1\/2 \(/u)).toBeVisible();
+  await expect(tallyOf(page).getByText(/^1\/2 \(/u)).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Mistake queue" }),
   ).toBeVisible();

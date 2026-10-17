@@ -101,7 +101,6 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   isWithinNoise: false,
   ordinal: index + 1,
   recencyAt: 1700000000000 + index,
-  recomputedLoss: null,
   rollingMeanLoss: mean,
   tableIdentity: null,
   timestamp: 1700000000000 + index * 100000,
@@ -176,21 +175,22 @@ export const PracticeFromDetail: Story = {
     playPracticeFromDecisionMarker(canvasElement, args.onPracticeDecision),
 };
 
-// A loss the caption calls simulation noise (#774): gray rather than red, named as such, and nothing to practice.
+// Recorded as within simulation noise (#774): gray rather than red, named as such, and nothing to practice.
 export const WithinNoiseDecision: Story = {
   args: {
     ...rollingWithPointsArgs,
-    decisionPoints: sampleDecisionPoints.map((point) => ({
-      ...point,
-      isWithinNoise: point.ordinal === 5,
-    })),
+    decisionPoints: sampleDecisionPoints.map((point) =>
+      point.ordinal === 5
+        ? { ...point, isPracticeEligible: false, isWithinNoise: true }
+        : point,
+    ),
     onPracticeDecision: fn(),
   },
-  play: async ({ canvas, canvasElement }) => {
+  play: async ({ canvas }) => {
     clickElement(
-      canvasElement.querySelector(
-        '[aria-label="Decision #5: 0.25 points loss, within simulation noise. Select to see the hand."]',
-      ) as Element,
+      canvas.getByRole("button", {
+        name: "Decision #5, recorded cost 0.25 points, within simulation noise. Select to see the hand.",
+      }),
     );
 
     await expect(await canvas.findByText("Within noise")).toBeVisible();

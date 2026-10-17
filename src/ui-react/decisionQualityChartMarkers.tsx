@@ -37,7 +37,8 @@ const decisionCostText = (
 ): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   const mastered = point.isMastered ? ", mastered in later retries" : "";
-  return `${prefix} #${point.ordinal}, recorded cost ${cost} points${mastered}`;
+  const noise = point.isWithinNoise ? ", within simulation noise" : "";
+  return `${prefix} #${point.ordinal}, recorded cost ${cost} points${mastered}${noise}`;
 };
 
 export const lossPointTitle = (point: DiscardDecisionPoint): string =>
@@ -101,16 +102,19 @@ export function renderLossPoint(
   },
   selectedRecencyAt: number | null,
 ): React.JSX.Element {
+  // Gray for a decision recorded as within simulation noise (#774), which is never also mastered.
+  const noiseDot = point.isWithinNoise ? ` ${classes.lossDotNoise}` : "";
+  const noiseStem = point.isWithinNoise ? ` ${classes.lossStemNoise}` : "";
   const baseDotClass = point.isMastered
     ? `${classes.lossDot} ${classes.lossDotMastered}`
-    : classes.lossDot;
+    : `${classes.lossDot}${noiseDot}`;
   const dotClass =
     point.recencyAt === selectedRecencyAt
       ? `${baseDotClass} ${classes.lossDotSelected}`
       : baseDotClass;
   const stemClass = point.isMastered
     ? `${classes.lossStem} ${classes.lossStemMastered}`
-    : classes.lossStem;
+    : `${classes.lossStem}${noiseStem}`;
   return (
     <g
       // The hover title lives on the hit band that covers this marker; here it would only duplicate it.

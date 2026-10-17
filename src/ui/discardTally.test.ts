@@ -1,8 +1,13 @@
 import {
   AT,
+  DAYS_EARLIER,
   EMPTY,
+  asJson,
   decisionOf,
+  noiseAdmission,
+  storeRaw,
   storedRecords,
+  storedWith,
   summaryOf,
 } from "./discardTally.test.common";
 import {
@@ -160,5 +165,52 @@ describe("discard tally storage", () => {
     recordDiscardDecision(decisionOf({ expectedPointsLoss: 2.5 }));
 
     expect(readDiscardTally(AT).meanExpectedPointsLoss).toBe(2.5);
+  });
+});
+
+describe("decisions recorded as within simulation noise (#774)", () => {
+  const withinNoise = (overrides: Partial<DiscardDecisionRecord>) =>
+    decisionOf({ recordedAdmission: noiseAdmission, ...overrides });
+
+  it("counts the retained authentic ones, today's apart", () => {
+    clearDiscardTally();
+    recordDiscardDecision(withinNoise({ handKey: "today" }));
+    recordDiscardDecision(
+      withinNoise({ at: AT - DAYS_EARLIER, handKey: "earlier" }),
+    );
+    recordDiscardDecision(withinNoise({ handKey: "drill", isPractice: true }));
+    const summary = recordDiscardDecision(decisionOf({ handKey: "mistake" }));
+
+    expect(summary).toStrictEqual(
+      expect.objectContaining({
+        decisions: 3,
+        todayWithinNoiseDecisions: 1,
+        withinNoiseDecisions: 2,
+      }),
+    );
+  });
+
+  // Lifetime counters outlive the records they summarize, and only a record can say it was within noise.
+  it("cannot identify one that has aged out of the retained records", () => {
+    storeRaw(
+      asJson(
+        storedWith({
+          lifetime: {
+            decisions: 4,
+            expectedPointsLossTotal: 0.4,
+            optimalDecisions: 1,
+            skippedHands: 0,
+          },
+          records: [],
+          version: 8,
+        }),
+      ),
+    );
+
+    expect(
+      recordDiscardDecision(withinNoise({ expectedPointsLoss: 0.1 })),
+    ).toStrictEqual(
+      expect.objectContaining({ decisions: 5, withinNoiseDecisions: 1 }),
+    );
   });
 });

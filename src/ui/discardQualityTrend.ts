@@ -1,7 +1,5 @@
 import {
-  type ContinuousDecisionPointOptions,
   type DiscardDecisionPoint,
-  NO_RECOMPUTED_LOSSES,
   buildContinuousDecisionPoints,
   countRollingSkips,
   getRollingBatchSize,
@@ -18,8 +16,8 @@ import {
   isSameLocalDay,
   readTallyForDisplay,
 } from "./discardTally";
-import { NO_NOISE, countWithinNoise } from "./noiseVerdicts";
 import { CribRole } from "../game/expectedCribPoints";
+import { isRecordedWithinNoise } from "./recordedAdmission";
 
 export { MAX_RECENT_DECISIONS } from "./discardQualityTrendRolling";
 export type { DiscardDecisionPoint } from "./discardQualityTrendRolling";
@@ -33,11 +31,11 @@ export interface DiscardPeriodBucket {
   readonly startTime: number;
   readonly endTime: number;
   readonly decisions: number;
+  // The Best choice share's denominator: `decisions` less those recorded as within simulation noise, as in the tally (#774).
+  readonly judgedDecisions: number;
   readonly meanExpectedPointsLoss: number | null;
   readonly optimalDecisions: number;
   readonly skippedHands: number;
-  // The share's denominator: `decisions` less those within simulation noise, which like the tally's Best choice (#774) count neither way.
-  readonly judgedDecisions: number;
 }
 export interface DiscardQualityTrend {
   readonly buckets: readonly DiscardPeriodBucket[];
@@ -48,10 +46,7 @@ export interface DiscardQualityTrend {
   readonly totalAuthenticDecisions: number;
   readonly totalSkippedHands: number;
 }
-export interface DiscardQualityTrendOptions extends Pick<
-  ContinuousDecisionPointOptions,
-  "recomputedLosses" | "withinNoise"
-> {
+export interface DiscardQualityTrendOptions {
   readonly granularity: TrendGranularity;
   readonly roleFilter?: CribRoleFilter;
   readonly now?: number;
@@ -76,6 +71,9 @@ const meanLossOf = (
   );
   return total / records.length;
 };
+
+const judgedCountOf = (records: readonly DiscardDecisionRecord[]): number =>
+  records.filter((record) => !isRecordedWithinNoise(record)).length;
 
 const padTwo = (value: number): string =>
   value < PAD_THRESHOLD ? `0${value}` : `${value}`;
@@ -249,7 +247,6 @@ interface BaseBucketsArgs {
   readonly records: readonly DiscardDecisionRecord[];
   readonly roleFilter: CribRoleFilter;
   readonly skipped: readonly SkippedHand[];
-  readonly withinNoise: ReadonlySet<string>;
 }
 
 interface CalendarBucketsArgs extends BaseBucketsArgs {
@@ -275,7 +272,6 @@ const buildCalendarBuckets = ({
   records,
   roleFilter,
   skipped,
-  withinNoise,
 }: CalendarBucketsArgs): DiscardPeriodBucket[] => {
   const bucketsMap = new Map<string, MutableCalendarBucket>();
 
@@ -299,8 +295,7 @@ const buildCalendarBuckets = ({
   return sorted.map(({ descriptor, records: bucketRecords, skippedCount }) => ({
     decisions: bucketRecords.length,
     endTime: descriptor.endTime,
-    judgedDecisions:
-      bucketRecords.length - countWithinNoise(bucketRecords, withinNoise),
+    judgedDecisions: judgedCountOf(bucketRecords),
     key: descriptor.key,
     label: descriptor.label,
     meanExpectedPointsLoss: meanLossOf(bucketRecords),
@@ -348,7 +343,6 @@ const buildRollingBuckets = ({
   records,
   roleFilter,
   skipped,
-  withinNoise,
 }: RollingBucketsArgs): DiscardPeriodBucket[] => {
   if (records.length === 0) {
     return roleFilter === "all"
@@ -366,7 +360,7 @@ const buildRollingBuckets = ({
     return {
       decisions: item.size,
       endTime: item.last.at,
-      judgedDecisions: item.size - countWithinNoise(chunk, withinNoise),
+      judgedDecisions: judgedCountOf(chunk),
       key: `${item.startIndex}-${item.endIndex}`,
       label: `${prefix} ${item.startIndex}–${item.endIndex}`,
       meanExpectedPointsLoss: meanLossOf(chunk),
@@ -420,7 +414,6 @@ export const computeDiscardQualityTrend = (
   options: DiscardQualityTrendOptions,
 ): DiscardQualityTrend => {
   const { granularity, roleFilter = "all", now = Date.now() } = options;
-  const withinNoise = options.withinNoise ?? NO_NOISE;
   const allAuthenticRecords = tally.records.filter(
     (record) => !record.isPractice && matchesRole(record, roleFilter),
   );
@@ -446,7 +439,6 @@ export const computeDiscardQualityTrend = (
           records: authenticRecords,
           roleFilter,
           skipped: retainedSkips,
-          withinNoise,
         })
       : buildCalendarBuckets({
           granularity,
@@ -454,7 +446,6 @@ export const computeDiscardQualityTrend = (
           records: authenticRecords,
           roleFilter,
           skipped: retainedSkips,
-          withinNoise,
         });
 
   const batchSize =
@@ -468,8 +459,6 @@ export const computeDiscardQualityTrend = (
       : buildContinuousDecisionPoints(authenticRecords, batchSize, {
           isRetained: hasTruncatedHistory,
           masteredHandKeys,
-          recomputedLosses: options.recomputedLosses ?? NO_RECOMPUTED_LOSSES,
-          withinNoise,
         });
 
   const [firstRecord] = authenticRecords;

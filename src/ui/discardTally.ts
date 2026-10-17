@@ -15,6 +15,7 @@ import { extendDecisionTally, extendPracticeTally } from "./tallyUpdates";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 import { encodeTableIdentities } from "./tableIdentityCodec";
 import { isObject } from "./isObject";
+import { isRecordedWithinNoise } from "./recordedAdmission";
 import { withoutStrayDrillRecords } from "./strayDrillRecords";
 export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
@@ -60,6 +61,14 @@ export interface DiscardTallySummary {
   readonly todaySkippedHands: number;
   // Hands dealt and abandoned without a discard; counted so averages stay honest about omissions.
   readonly skippedHands: number;
+  /*
+   * Retained decisions recorded as within simulation noise (#774), which
+   * Best choice counts neither way. Only retained records can say so: one
+   * that ages out of the record cap stays in the lifetime counters as a
+   * decision that was not the best choice.
+   */
+  readonly todayWithinNoiseDecisions: number;
+  readonly withinNoiseDecisions: number;
 }
 interface LifetimeTotals {
   readonly decisions: number;
@@ -271,6 +280,8 @@ const summarize = (
     todayOptimalDecisions: today.filter((record) => record.isOptimal).length,
     todaySkippedHands: skipped.filter((hand) => isSameLocalDay(hand.at, now))
       .length,
+    todayWithinNoiseDecisions: today.filter(isRecordedWithinNoise).length,
+    withinNoiseDecisions: records.filter(isRecordedWithinNoise).length,
   };
 };
 

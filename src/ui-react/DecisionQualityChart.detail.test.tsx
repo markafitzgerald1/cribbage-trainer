@@ -378,3 +378,41 @@ describe("decision quality chart dismissal focus", () => {
     expectNoPanel(view);
   });
 });
+
+describe("decision quality chart within-noise point (#774)", () => {
+  it("draws a decision recorded as within noise neutral, and says so", () => {
+    const view = openDetailOn(
+      withSecondPointPatched({
+        expectedPointsLoss: 0.09,
+        isPracticeEligible: false,
+        isWithinNoise: true,
+      }),
+      2,
+    );
+
+    expect(view.container.querySelector(`.${classes.lossDot}`)).toHaveClass(
+      classes.lossDotNoise,
+    );
+    expect(view.container.querySelector(`.${classes.lossStem}`)).toHaveClass(
+      classes.lossStemNoise,
+    );
+    expect(markerFor(view, 2)).toHaveAttribute(
+      "aria-label",
+      "Decision #2, recorded cost 0.09 points, within simulation noise. Select to see the hand.",
+    );
+    expect(view.getByRole("region")).toHaveTextContent("Within noise");
+    expect(view.getByRole("region")).toHaveAttribute(
+      "data-within-noise",
+      "true",
+    );
+  });
+
+  it("leaves a recorded mistake red", () => {
+    const view = openDetailOn(withSecondPointPatched({}), 2);
+
+    expect(view.container.querySelector(`.${classes.lossDot}`)).not.toHaveClass(
+      classes.lossDotNoise,
+    );
+    expect(view.getByRole("region")).not.toHaveTextContent("Within noise");
+  });
+});

@@ -2,9 +2,9 @@ import {
   buildContinuousDecisionPoints,
   masteredHandKeysOf,
 } from "./discardQualityTrendRolling";
+import { decisionOf, noiseAdmission } from "./discardTally.test.common";
 import { describe, expect, it } from "@jest/globals";
 import { createTestPracticeRecord } from "./mistakeQueue.test.common";
-import { decisionOf } from "./discardTally.test.common";
 
 const masteredKeys = (...handKeys: string[]): ReadonlySet<string> =>
   masteredHandKeysOf(
@@ -76,6 +76,48 @@ describe("buildContinuousDecisionPoints mastered marking", () => {
 
     expect(points.map((point) => point.isPracticeEligible)).toStrictEqual([
       true,
+      false,
+      false,
+    ]);
+  });
+});
+
+describe("buildContinuousDecisionPoints within-noise marking (#774)", () => {
+  const validHandKey = "5H,6H,7H,8H,9H,10H|Dealer";
+
+  it("marks a decision recorded as within noise, never as mastered or to practice", () => {
+    const [point] = buildContinuousDecisionPoints(
+      [
+        decisionOf({
+          handKey: validHandKey,
+          recordedAdmission: noiseAdmission,
+        }),
+      ],
+      20,
+      { masteredHandKeys: masteredKeys(validHandKey) },
+    );
+
+    expect(point).toStrictEqual(
+      expect.objectContaining({
+        isMastered: false,
+        isPracticeEligible: false,
+        isWithinNoise: true,
+      }),
+    );
+  });
+
+  it("leaves a recorded mistake and a legacy record outside the noise", () => {
+    const points = buildContinuousDecisionPoints(
+      [
+        decisionOf({
+          recordedAdmission: { ...noiseAdmission, eligible: true },
+        }),
+        decisionOf({ handKey: "legacy" }),
+      ],
+      20,
+    );
+
+    expect(points.map((point) => point.isWithinNoise)).toStrictEqual([
       false,
       false,
     ]);

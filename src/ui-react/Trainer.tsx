@@ -36,7 +36,6 @@ import { toDealtCards } from "../game/toDealtCards";
 import { useAnalysisReporting } from "./useAnalysisReporting";
 import { useDealHand } from "./useDealHand";
 import { useDiscardLiveRegion } from "./useDiscardLiveRegion";
-import { useFirstRecommendation } from "./useFirstRecommendation";
 import { usePracticeDrill } from "./usePracticeDrill";
 import { useSortOrder } from "./useSortOrder";
 
@@ -248,8 +247,6 @@ export function Trainer({
     loadHand: applyManualHand,
     onAnalysisRendered: reportAnalysisRendered,
   });
-  const { handleAnalysisRendered, hasShownRecommendation } =
-    useFirstRecommendation(drill.handleAnalysisRendered);
   // The pure clear, for the history-restore path below — a Back brings its own hand, so it must not deal a new one.
   const exitDrill = drill.clearDrill;
   const { handleStatusChange, isAnalysisVisible, liveRegionStatus } =
@@ -443,7 +440,7 @@ export function Trainer({
                 : null
             }
             isPracticeDrill={drill.isActive}
-            onAnalysisRendered={handleAnalysisRendered}
+            onAnalysisRendered={drill.handleAnalysisRendered}
             onScoreSortKeyChange={changeScoreSortKey}
             onStatusChange={handleStatusChange}
             scoreSortKey={scoreSortKey}
@@ -451,7 +448,6 @@ export function Trainer({
           />
         ) : null}
         <DiscardTallyView
-          hasShownRecommendation={hasShownRecommendation}
           // While a drill is running its own "Draw another" advances it; the queue's auto "Start drill" would just be a second, stranger route to the same thing.
           onStartAutoDrill={drill.isActive ? null : drill.handleStartAutoDrill}
           onStartDrill={drill.handleStartDrill}

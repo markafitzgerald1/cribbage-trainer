@@ -2,181 +2,157 @@
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
 import {
-  MISTAKE_RECORD,
-  OPTIMAL_RECORD,
-  WITHIN_NOISE_RECORD,
-  settledSource,
-} from "../ui/noiseVerdicts.test.common";
+  RECORDED_MISTAKE,
+  RECORDED_OPTIMAL,
+  RECORDED_WITHIN_NOISE,
+  seedRecordedTally,
+} from "./discardTallyNoise.test.common";
 import { describe, expect, it } from "@jest/globals";
-import {
-  expectedCribPointsTable,
-  expectedPlayPointsTable,
-} from "../analysis/analysis.test.common";
-import { fireEvent, render, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
+import { CribRole } from "../game/expectedCribPoints";
 import type { DiscardDecisionRecord } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { ONE_DAY_MS } from "../ui/mistakeQueue.test.common";
-import { type UncertaintySource } from "../game/uncertaintyLoader";
-import { noiseTallyProps } from "./discardTally.test.common";
-import { rejectingUncertainty } from "../game/uncertaintySidecar.test.common";
-import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
-import { setTableSync } from "../game/expectedCribPointsTableLoader";
 /* jscpd:ignore-end */
 
-// Explicit because findBy/waitFor default to one second and testTimeout does not govern them (AGENTS.md).
-const WAIT = { timeout: 8000 };
-
-// Period, Decisions, Avg loss, Optimal, Skipped.
+// Period, Decisions, Avg recorded loss, Best choice, Skipped.
 const OPTIMAL_COLUMN = 3;
 
-const renderTally = (
-  records: readonly DiscardDecisionRecord[],
-  crib?: UncertaintySource,
-  play?: UncertaintySource,
-) => {
-  setTableSync(expectedCribPointsTable);
-  setPlayTableSync(expectedPlayPointsTable);
-  const props = noiseTallyProps(records, crib, play);
-  return render(
-    <DiscardTallyView
-      cribUncertaintySource={props.cribUncertaintySource}
-      hasShownRecommendation={props.hasShownRecommendation}
-      playUncertaintySource={props.playUncertaintySource}
-      summary={props.summary}
-      tally={props.tally}
-    />,
-  );
-};
+const renderTally = (records: readonly DiscardDecisionRecord[]) =>
+  render(<DiscardTallyView summary={seedRecordedTally(records)} />);
 
 type View = ReturnType<typeof renderTally>;
 
-const ALL_THREE = [OPTIMAL_RECORD, WITHIN_NOISE_RECORD, MISTAKE_RECORD];
+const ALL_THREE = [RECORDED_OPTIMAL, RECORDED_WITHIN_NOISE, RECORDED_MISTAKE];
 
-// The tally is busy only while the sidecars load; judging after that updates each figure in place.
-const eventually = (assertion: () => void): Promise<void> =>
-  waitFor(assertion, WAIT);
+const queueButton = (view: View) =>
+  view.queryByRole("button", { name: "Mistake queue" });
 
-const sidecarsSettled = (view: View) =>
-  eventually(() => {
-    expect(view.container.firstElementChild).toHaveAttribute(
-      "aria-busy",
-      "false",
-    );
-  });
+const openTrend = (view: View) => {
+  fireEvent.click(view.getByRole("button", { name: "Quality trend" }));
+  return view.getByRole("region", { name: "Decision quality over time" });
+};
 
-// Today and all time, each 1 best of 2 counted: the within-noise decision is in neither count.
-const bestChoiceOfTwo = (view: View) =>
-  eventually(() => {
+// The first match is the summary card; the breakdown table's header repeats the label.
+const summaryCardValue = (region: HTMLElement, label: string) =>
+  within(region).getAllByText(label)[0]?.nextElementSibling?.textContent ??
+  null;
+
+// Spelled out rather than spread, since a record stored before #894 has no admission field at all.
+const UNRECORDED_ADMISSION: DiscardDecisionRecord = {
+  at: RECORDED_WITHIN_NOISE.at,
+  cribRole: RECORDED_WITHIN_NOISE.cribRole,
+  discardKey: RECORDED_WITHIN_NOISE.discardKey,
+  expectedPointsLoss: RECORDED_WITHIN_NOISE.expectedPointsLoss,
+  handKey: RECORDED_WITHIN_NOISE.handKey,
+  isOptimal: false,
+  isPractice: false,
+  tableIdentity: null,
+};
+
+/*
+ * Two real hands whose verdict under the installed tables is the opposite of
+ * the one recorded: the pone A-2 of clubs from A-6 loses 0.06, inside its
+ * noise threshold today, and the dealer pair of kings loses 0.09, just above
+ * its own. History keeps what was recorded (#894), so each case fails if the
+ * tally re-judges a stored hand and discard with the current tables.
+ */
+const RECORDED_MISTAKE_NOW_NOISE: DiscardDecisionRecord = {
+  ...RECORDED_MISTAKE,
+  cribRole: CribRole.Pone,
+  discardKey: "AC,2C",
+  expectedPointsLoss: 0.055_813,
+  handKey: "AC,2C,3C,4C,5C,6C|Pone",
+};
+const RECORDED_NOISE_NOW_MISTAKE: DiscardDecisionRecord = {
+  ...RECORDED_WITHIN_NOISE,
+  discardKey: "KH,KC",
+  expectedPointsLoss: 0.0856,
+  handKey: "KC,8C,6H,5D,4H,KH|Dealer",
+};
+
+describe("noise-aware tally, queue and trend, as recorded (#774)", () => {
+  it("takes a decision recorded as within noise out of both sides of Best choice", () => {
+    const view = renderTally(ALL_THREE);
+
     expect(view.getAllByText("1/2")).toHaveLength(2);
   });
 
-const openTrend = async (view: View): Promise<void> => {
-  await bestChoiceOfTwo(view);
-  fireEvent.click(view.getByRole("button", { name: "Quality trend" }));
-};
-
-const summaryCardValue = (
-  view: View,
-  dialog: string,
-  label: string,
-): string | null =>
-  within(view.getByRole("region", { name: dialog })).getByText(label)
-    .nextElementSibling?.textContent ?? null;
-
-describe("noise-aware tally, queue and trend (#774)", () => {
-  it("takes a within-noise decision out of both sides of Best choice", async () => {
-    await expect(
-      bestChoiceOfTwo(renderTally(ALL_THREE)),
-    ).resolves.toBeUndefined();
-  });
-
   // Two days back, so no daylight-saving day can fold it into today.
-  it("takes only today's within-noise decisions out of today's count", async () => {
+  it("takes only today's within-noise decisions out of today's count", () => {
     const view = renderTally([
-      { ...WITHIN_NOISE_RECORD, at: Date.now() - 2 * ONE_DAY_MS },
-      OPTIMAL_RECORD,
-      MISTAKE_RECORD,
+      { ...RECORDED_OPTIMAL, at: Date.now() - 2 * ONE_DAY_MS },
+      RECORDED_WITHIN_NOISE,
+      RECORDED_MISTAKE,
     ]);
 
-    await expect(bestChoiceOfTwo(view)).resolves.toBeUndefined();
+    expect(view.getByText("0/1")).toBeInTheDocument();
+    expect(view.getByText("1/2")).toBeInTheDocument();
   });
 
-  it("keeps the exact Best choice when a sidecar is unavailable", async () => {
-    const view = renderTally(
-      ALL_THREE,
-      rejectingUncertainty(),
-      settledSource(Number.MAX_SAFE_INTEGER),
-    );
-    await sidecarsSettled(view);
+  it.each([
+    {
+      name: "a pending decision",
+      record: { ...RECORDED_WITHIN_NOISE, recordedAdmission: "pending" },
+    },
+    {
+      name: "a decision with no recorded admission",
+      record: UNRECORDED_ADMISSION,
+    },
+  ])("keeps $name in the exact Best choice", ({ record }) => {
+    const view = renderTally([
+      RECORDED_OPTIMAL,
+      record as DiscardDecisionRecord,
+    ]);
 
-    expect(view.getAllByText("1/3")).toHaveLength(2);
+    expect(view.getAllByText("1/2")).toHaveLength(2);
+    expect(queueButton(view)).toBeInTheDocument();
   });
 
-  it("hides the Mistake queue button when every mistake is within noise", async () => {
-    const view = renderTally([OPTIMAL_RECORD, WITHIN_NOISE_RECORD]);
+  it("hides the Mistake queue button when every mistake is recorded as within noise", () => {
+    const view = renderTally([RECORDED_OPTIMAL, RECORDED_WITHIN_NOISE]);
 
-    await eventually(() => {
-      expect(view.queryByRole("button", { name: "Mistake queue" })).toBeNull();
-    });
-
+    expect(queueButton(view)).toBeNull();
     expect(view.getAllByText("1/1")).toHaveLength(2);
   });
 
-  // Opened while its one mistake still has the exact verdict, so the noise empties it in place.
-  it("says the noise emptied an open queue, not that its mistakes aged out", async () => {
-    const view = renderTally([OPTIMAL_RECORD, WITHIN_NOISE_RECORD]);
-    fireEvent.click(view.getByRole("button", { name: "Mistake queue" }));
+  it.each([
+    {
+      bestChoice: "1/2",
+      name: "a recorded mistake that today's tables would call noise",
+      queued: true,
+      record: RECORDED_MISTAKE_NOW_NOISE,
+    },
+    {
+      bestChoice: "1/1",
+      name: "a recorded within-noise decision that today's tables would call a mistake",
+      queued: false,
+      record: RECORDED_NOISE_NOW_MISTAKE,
+    },
+  ])("keeps $name as recorded", ({ bestChoice, queued, record }) => {
+    const view = renderTally([RECORDED_OPTIMAL, record]);
 
-    await expect(
-      view.findByText(/within simulation noise/u, {}, WAIT),
-    ).resolves.toBeInTheDocument();
-    expect(view.queryByText(/aged out/u)).toBeNull();
+    expect(view.getAllByText(bestChoice)).toHaveLength(2);
+    expect(queueButton(view) !== null).toBe(queued);
   });
 
-  it("names a within-noise point by its recomputed loss beside the recorded one", async () => {
-    const view = renderTally([
-      OPTIMAL_RECORD,
-      { ...WITHIN_NOISE_RECORD, expectedPointsLoss: 5 },
-      MISTAKE_RECORD,
-    ]);
-    await openTrend(view);
+  it("marks a within-noise point neutral and leaves it out of the rolling Best choice", () => {
+    const dialog = openTrend(renderTally(ALL_THREE));
 
+    expect(summaryCardValue(dialog, "Best choice")).toBe("50.0%");
     expect(
-      view.getByRole("button", {
-        name: "Decision #2: 0.09 points loss (5.00 recorded), within simulation noise. Select to see the hand.",
+      within(dialog).getByRole("button", {
+        name: "Decision #2, recorded cost 0.04 points, within simulation noise. Select to see the hand.",
       }),
     ).toBeInTheDocument();
   });
 
-  it("lists only the mistakes outside the noise in the queue", async () => {
-    const view = renderTally(ALL_THREE);
-    await bestChoiceOfTwo(view);
-    fireEvent.click(view.getByRole("button", { name: "Mistake queue" }));
+  it("leaves a within-noise decision out of each calendar period's Best choice share", () => {
+    const dialog = openTrend(renderTally(ALL_THREE));
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Day" }));
 
-    expect(summaryCardValue(view, "Mistake queue", "Total mistakes")).toBe("1");
-  });
-
-  it("marks a within-noise point neutral and leaves it out of the rolling Best choice", async () => {
-    const view = renderTally(ALL_THREE);
-    await openTrend(view);
-
-    expect(
-      summaryCardValue(view, "Decision quality over time", "Best choice"),
-    ).toBe("50.0%");
-    expect(
-      view.getByRole("button", {
-        name: "Decision #2: 0.09 points loss, within simulation noise. Select to see the hand.",
-      }),
-    ).toBeInTheDocument();
-  });
-
-  it("leaves a within-noise decision out of each calendar period's Optimal share", async () => {
-    const view = renderTally(ALL_THREE);
-    await openTrend(view);
-    fireEvent.click(view.getByRole("radio", { name: "Day" }));
-
-    const optimalCell = view.getByRole("cell", { name: "Today" }).parentElement
-      ?.children[OPTIMAL_COLUMN];
+    const optimalCell = within(dialog).getByRole("cell", { name: "Today" })
+      .parentElement?.children[OPTIMAL_COLUMN];
 
     expect(optimalCell).toHaveTextContent("50.0%");
   });
