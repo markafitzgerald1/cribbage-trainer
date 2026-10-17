@@ -988,7 +988,11 @@ they bind any PR that makes a claim about a phone or ships a guard.
   agent-attribution prefix; when Codex quota is exhausted it replies "usage
   limits reached" instead of reviewing). It draws from the same plan usage as
   the CLI and its threads and status comments add noise to the PR, so it is a
-  cheap confirmation, not the main review.
+  cheap confirmation, not the main review. **Any `@codex` in a comment
+  triggers the bot, code span or not**: writing the mention inside backticks
+  on #906 and #907 produced a PR summary and a failed review. Post the mention
+  only as the deliberate request, and write "Codex" with no at-sign everywhere
+  else.
 - **Both automatic GitHub reviews were turned off on 2026-09-12.** Every GitHub
   round from either reviewer is requested by hand: Copilot through the REST
   endpoint in `skills/working-an-issue/SKILL.md`, and `@codex review` (when
@@ -1017,7 +1021,19 @@ they bind any PR that makes a claim about a phone or ships a guard.
   comment or review object, so the description table is where a reader sees
   every round that ran, which head it read, and its outcome. After the last
   round, post one short attributed in-thread sign-off comment listing each
-  reviewer, the head it reviewed, and the outcome.
+  reviewer, the head it reviewed, and the outcome. Where plan usage is
+  visible, add a `usage before and after` figure per round, so the next
+  comparison of review options rests on measured numbers.
+- **Spend review where it pays.** The evidence is #906's rounds, whose
+  findings that changed code were mutation-proven test gaps, provenance
+  wording and focus or name defects, while later wording-only and clean
+  GitHub rounds found nothing. Run `npm run verify:fast` and the Docker gate
+  before any adversarial round, so lint and spelling cost no round. Use two
+  independent reviewers on the first round of a pull request over about 250
+  gated lines (their should-fix findings did not overlap on #906) and one on a
+  smaller one, briefed to mutate and to check provenance. Review a later round
+  only by its delta, and skip it when the delta is wording or test assertions
+  covered by the gates. `skills/working-an-issue/SKILL.md` has the tiers.
 - **A review applies only to the head it ran on, and a new commit or push
   retires every review on the previous head.** That is the whole mechanic;
   everything below follows from it and nothing else about ordering is generally

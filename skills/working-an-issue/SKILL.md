@@ -130,6 +130,22 @@ agreed, the pull request says what actually happened.
   review in the PR description table, post the attributed in-thread sign-off,
   and reply to and resolve every GitHub thread — are in `AGENTS.md` under
   GitHub PR Reviews, because they apply to any PR and not only to issue work.
+- **Review tiers, cheapest first, stopping when a round is clean.** (1) Local
+  gates: `npm run verify:fast` and the Docker gate on the head, which catch
+  lint, spelling and layout for free. (2) First adversarial round: two
+  independent reviewers (for example a Claude Opus agent and a Codex CLI
+  session) on a pull request over about 250 gated lines, one on a smaller
+  one, each given a read-only brief that asks for mutation-proven test gaps,
+  provenance and wording claims checked against the code, accessible-name
+  collisions, and focus behavior. Prefer the reviewer whose plan has the most
+  budget left; Opus agents cost roughly 150-200k tokens and five to seven
+  minutes per round. (3) Later rounds review only the delta since the last
+  round, in a brief that lists what is already fixed, and are skipped when the
+  delta is wording or test assertions the gates already cover. (4) At most one
+  GitHub `@codex review` on the final head, written as a plain comment with no
+  other `@codex` mention in the PR text, since any such mention triggers the
+  bot. Record usage before and after each round in the review table when the
+  plan shows it.
 - Move an issue to **In Progress** on the `Cribbage Trainer` project board when
   you start work on it; merging a PR whose body closes the issue moves it to
   Done on its own. A board reading Todo while a branch and PR exist misreports
