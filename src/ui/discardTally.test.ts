@@ -190,6 +190,26 @@ describe("decisions recorded as within simulation noise (#774)", () => {
     );
   });
 
+  // Malformed lifetime counters fall back to zero while the records survive, so the count must not outrun them.
+  it("never counts more within noise than the lifetime has non-best decisions", () => {
+    storeRaw(
+      asJson(
+        storedWith({
+          lifetime: null,
+          records: [
+            withinNoise({ handKey: "first" }),
+            withinNoise({ handKey: "second" }),
+          ],
+          version: 8,
+        }),
+      ),
+    );
+
+    expect(recordDiscardDecision(withinNoise({}))).toStrictEqual(
+      expect.objectContaining({ decisions: 1, withinNoiseDecisions: 1 }),
+    );
+  });
+
   // Lifetime counters outlive the records they summarize, and only a record can say it was within noise.
   it("cannot identify one that has aged out of the retained records", () => {
     storeRaw(

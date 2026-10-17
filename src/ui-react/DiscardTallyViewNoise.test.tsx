@@ -111,6 +111,45 @@ describe("noise-aware tally, queue and trend, as recorded (#774)", () => {
     expect(queueButton(view)).toBeInTheDocument();
   });
 
+  // Each guard is reached by a history with no decisions at all too, so only these cases fail if it tests decisions rather than judged ones.
+  it.each([
+    {
+      allTimeRatios: 0,
+      name: "every decision is recorded as within noise",
+      records: [RECORDED_WITHIN_NOISE],
+    },
+    {
+      allTimeRatios: 1,
+      name: "today's only decision is recorded as within noise",
+      records: [
+        { ...RECORDED_OPTIMAL, at: Date.now() - 2 * ONE_DAY_MS },
+        RECORDED_WITHIN_NOISE,
+      ],
+    },
+  ])(
+    "shows no empty Best choice ratio when $name",
+    ({ allTimeRatios, records }) => {
+      const view = renderTally(records);
+
+      expect(view.queryByText(/^0\/0/u)).toBeNull();
+      expect(view.queryAllByText("1/1")).toHaveLength(allTimeRatios);
+    },
+  );
+
+  it("says an aged-out within-noise decision counts as not best only in the tally, which reads lifetime counters", () => {
+    const view = renderTally(ALL_THREE);
+    const agedOut = /after which the all-time figure counts it as not best/u;
+
+    expect(view.getByText(agedOut)).toBeInTheDocument();
+
+    const dialog = openTrend(view);
+
+    expect(within(dialog).queryByText(agedOut)).toBeNull();
+    expect(
+      within(dialog).getByText(/against an approximate threshold/u),
+    ).toBeInTheDocument();
+  });
+
   it("hides the Mistake queue button when every mistake is recorded as within noise", () => {
     const view = renderTally([RECORDED_OPTIMAL, RECORDED_WITHIN_NOISE]);
 

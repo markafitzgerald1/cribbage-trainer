@@ -25,9 +25,9 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
-import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
 import type { StartDrillHandler } from "./usePracticeDrill";
+import { TREND_HISTORY_HELP } from "../ui/recordedHistory";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 /* jscpd:ignore-end */
@@ -265,8 +265,8 @@ export function DecisionQualityTrendDialog({
         ) : null}
 
         <p className={classes.methodology}>
-          {RECORDED_HISTORY_HELP} Rolling batches smooth small-sample swings;
-          use each calendar period&apos;s decision count to judge its signal.
+          {TREND_HISTORY_HELP} Rolling batches smooth small-sample swings; use
+          each calendar period&apos;s decision count to judge its signal.
         </p>
 
         {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (

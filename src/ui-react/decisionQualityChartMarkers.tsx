@@ -41,6 +41,12 @@ const decisionCostText = (
   return `${prefix} #${point.ordinal}, recorded cost ${cost} points${mastered}${noise}`;
 };
 
+// Out of the judged decisions, so the count agrees with the period's Best choice share (#774).
+const bestChoicesText = (bucket: DiscardPeriodBucket): string =>
+  bucket.judgedDecisions === bucket.decisions
+    ? `${bucket.optimalDecisions} best choices then`
+    : `${bucket.decisions - bucket.judgedDecisions} within simulation noise, ${bucket.optimalDecisions} best choices of ${bucket.judgedDecisions} then`;
+
 export const lossPointTitle = (point: DiscardDecisionPoint): string =>
   decisionCostText(point, formatAccessibleNetLoss(point.expectedPointsLoss));
 
@@ -264,9 +270,7 @@ export function renderCalendarPlot(
           r={POINT_RADIUS}
         >
           <title>
-            {`${point.bucket.label}: ${formatAccessibleNetLoss(point.loss)} points recorded loss per discard (${point.bucket.decisions} decisions, ${
-              point.bucket.optimalDecisions
-            } best choices then${
+            {`${point.bucket.label}: ${formatAccessibleNetLoss(point.loss)} points recorded loss per discard (${point.bucket.decisions} decisions, ${bestChoicesText(point.bucket)}${
               point.bucket.skippedHands > 0
                 ? `, ${point.bucket.skippedHands} skipped`
                 : ""

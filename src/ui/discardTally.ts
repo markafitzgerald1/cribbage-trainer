@@ -281,7 +281,14 @@ const summarize = (
     todaySkippedHands: skipped.filter((hand) => isSameLocalDay(hand.at, now))
       .length,
     todayWithinNoiseDecisions: today.filter(isRecordedWithinNoise).length,
-    withinNoiseDecisions: records.filter(isRecordedWithinNoise).length,
+    // Capped at the lifetime's non-best decisions, since malformed counters can lag the records and would turn Best choice negative.
+    withinNoiseDecisions: Math.max(
+      0,
+      Math.min(
+        records.filter(isRecordedWithinNoise).length,
+        lifetime.decisions - lifetime.optimalDecisions,
+      ),
+    ),
   };
 };
 

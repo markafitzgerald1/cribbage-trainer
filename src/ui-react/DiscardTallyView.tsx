@@ -16,8 +16,8 @@ import {
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
-import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
+import { TALLY_HISTORY_HELP } from "../ui/recordedHistory";
 
 const SHARE_FRACTION_DIGITS = 1;
 const PER_CENT = 100;
@@ -173,7 +173,7 @@ export function DiscardTallyView({
     <div className={`${classes.tally} ${columns}`}>
       <details className={classes.historyHelp}>
         <summary>As recorded</summary>
-        <p>{RECORDED_HISTORY_HELP}</p>
+        <p>{TALLY_HISTORY_HELP}</p>
       </details>
       <span />
       {hasToday ? <span className={classes.period}>today</span> : null}

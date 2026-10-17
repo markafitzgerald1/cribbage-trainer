@@ -254,8 +254,9 @@ baselines so CI agrees with what was generated locally.
   recorded as within simulation noise leaves both sides of that ratio, and a
   random deal's discard can be one, so a spec that reads the ratio to count
   decisions flakes at the rate such deals occur. `discardTally.spec.ts`
-  refuses the sidecar chunks with `blockUncertaintySidecars`, so every
-  admission settles as the exact fallback. A spec that wants the noise
+  refuses the sidecar chunks with `blockUncertaintySidecars`, so no
+  admission settles as `sampling-noise-v1`: an optimal discard settles as
+  `exact-v1` and any other as `exact-fallback-v1`. A spec that wants the noise
   verdict seeds a `recordedAdmission` instead: the tally reads what was
   recorded and never re-judges a stored hand, so a seeded hand's verdict
   under today's tables says nothing about how it is counted.
