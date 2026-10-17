@@ -171,6 +171,8 @@ describe("discard tally storage", () => {
 describe("decisions recorded as within simulation noise (#774)", () => {
   const withinNoise = (overrides: Partial<DiscardDecisionRecord>) =>
     decisionOf({ recordedAdmission: noiseAdmission, ...overrides });
+  const retainedNoiseRecords = () =>
+    ["first", "second"].map((handKey) => withinNoise({ handKey }));
 
   it("counts the retained authentic ones, today's apart", () => {
     clearDiscardTally();
@@ -196,10 +198,7 @@ describe("decisions recorded as within simulation noise (#774)", () => {
       asJson(
         storedWith({
           lifetime: null,
-          records: [
-            withinNoise({ handKey: "first" }),
-            withinNoise({ handKey: "second" }),
-          ],
+          records: retainedNoiseRecords(),
           version: 8,
         }),
       ),
@@ -207,6 +206,40 @@ describe("decisions recorded as within simulation noise (#774)", () => {
 
     expect(recordDiscardDecision(withinNoise({}))).toStrictEqual(
       expect.objectContaining({ decisions: 1, withinNoiseDecisions: 1 }),
+    );
+  });
+
+  it.each([
+    {
+      decisions: 2,
+      name: "caps within noise at non-best decisions rather than all decisions",
+      optimalDecisions: 1,
+      withinNoiseDecisions: 1,
+    },
+    {
+      decisions: 1,
+      name: "floors within noise at zero when optimal decisions exceed decisions",
+      optimalDecisions: 2,
+      withinNoiseDecisions: 0,
+    },
+  ])("$name", ({ decisions, optimalDecisions, withinNoiseDecisions }) => {
+    storeRaw(
+      asJson(
+        storedWith({
+          lifetime: {
+            decisions,
+            expectedPointsLossTotal: 3,
+            optimalDecisions,
+            skippedHands: 0,
+          },
+          records: retainedNoiseRecords(),
+          version: 8,
+        }),
+      ),
+    );
+
+    expect(readDiscardTally(AT).withinNoiseDecisions).toBe(
+      withinNoiseDecisions,
     );
   });
 
