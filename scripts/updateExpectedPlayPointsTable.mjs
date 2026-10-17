@@ -5,8 +5,12 @@ import {
   writeTablesAtomically,
 } from "./expectedPointsTableUpdate.mjs";
 
-const [, , meansUrl, uncertaintyUrl] = process.argv;
+const [, , meansUrl, uncertaintyUrl, linesUrl] = process.argv;
 
-downloadMeansAndUncertainty(PLAY_ASSETS, meansUrl, uncertaintyUrl)
+downloadMeansAndUncertainty(PLAY_ASSETS, {
+  linesUrl,
+  meansUrl,
+  uncertaintyUrl,
+})
   .then(writeTablesAtomically)
   .catch(reportFailure);
