@@ -32,7 +32,9 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
+import { ownHandKey } from "../ui/ownHandKey";
 import { toDealtCards } from "../game/toDealtCards";
+import { toHandKey } from "../ui/handKey";
 import { useAnalysisReporting } from "./useAnalysisReporting";
 import { useDealHand } from "./useDealHand";
 import { useDiscardLiveRegion } from "./useDiscardLiveRegion";
@@ -159,6 +161,21 @@ const useEnterCardsDialog = (
   return { handleClose, handleOpen, handleSubmit, show };
 };
 
+const checkIsResumedOwnHand = (
+  initialCards: readonly Card[] | null,
+  dealtCards: readonly DealtCard[],
+  cribRole: CribRole,
+): boolean => {
+  if (initialCards === null || discardIsComplete(dealtCards)) {
+    return false;
+  }
+  try {
+    return localStorage.getItem(ownHandKey) === toHandKey(dealtCards, cribRole);
+  } catch {
+    return false;
+  }
+};
+
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
@@ -180,6 +197,9 @@ export function Trainer({
     };
   });
   const { cribRole, dealtCards } = dealState;
+  const [isResumedOwnHand, setIsResumedOwnHand] = useState(() =>
+    checkIsResumedOwnHand(initialCards, dealtCards, cribRole),
+  );
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
@@ -214,7 +234,9 @@ export function Trainer({
     cribRole,
     dealtCards,
     decisionQualityConsented: choice.decisionQualityConsented,
+    isResumedOwnHand,
     isSeededSession,
+    resetResumedOwnHand: setIsResumedOwnHand,
     sortOrder,
     trackEvent,
     wasDeepLinked: initialCards !== null,
