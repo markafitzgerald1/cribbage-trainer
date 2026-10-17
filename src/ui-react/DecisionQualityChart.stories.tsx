@@ -203,7 +203,7 @@ export const EarlierRecordedDetail: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     const marker = canvas.getByRole("button", {
-      name: "Decision #1, recorded cost less than 0.01 points, mastered in a later retry. Select to see the hand.",
+      name: "Decision #1, recorded cost less than 0.01 points, mastered in later retries. Select to see the hand.",
     });
     await fireEvent.click(marker);
 

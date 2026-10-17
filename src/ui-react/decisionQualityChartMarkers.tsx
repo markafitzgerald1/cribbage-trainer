@@ -36,7 +36,7 @@ const decisionCostText = (
   cost: string,
 ): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
-  const mastered = point.isMastered ? ", mastered in a later retry" : "";
+  const mastered = point.isMastered ? ", mastered in later retries" : "";
   return `${prefix} #${point.ordinal}, recorded cost ${cost} points${mastered}`;
 };
 

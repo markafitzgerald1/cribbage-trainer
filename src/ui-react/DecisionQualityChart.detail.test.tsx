@@ -345,7 +345,7 @@ describe("decision quality chart point detail", () => {
     expect(openDot).not.toHaveClass(classes.lossDotMastered);
     expect(markerFor(view, 1)).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("mastered in a later retry"),
+      expect.stringContaining("mastered in later retries"),
     );
     expect(view.getByRole("region")).toHaveTextContent("Mastered");
   });
