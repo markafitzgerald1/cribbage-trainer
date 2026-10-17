@@ -251,9 +251,10 @@ baselines so CI agrees with what was generated locally.
   Sabotage until **every** project fails: a single-project failure among
   passes is the signature of a race, not of a guard.
 - **"Best choice" is no longer a decision counter.** Since #774 a decision
-  recorded as within simulation noise leaves both sides of that ratio, and a
-  random deal's discard can be one, so a spec that reads the ratio to count
-  decisions flakes at the rate such deals occur. `discardTally.spec.ts`
+  recorded as within simulation noise leaves both sides of that ratio while
+  its record is retained, and a random deal's discard can be one, so a spec
+  that reads the ratio to count decisions flakes at the rate such deals
+  occur. `discardTally.spec.ts`
   refuses the sidecar chunks with `blockUncertaintySidecars`, so no
   admission settles as `sampling-noise-v1`: an optimal discard settles as
   `exact-v1` and any other as `exact-fallback-v1`. A spec that wants the noise

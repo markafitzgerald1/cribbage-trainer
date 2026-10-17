@@ -410,8 +410,14 @@ describe("decision quality chart within-noise point (#774)", () => {
   it("leaves a recorded mistake red", () => {
     const view = openDetailOn(withSecondPointPatched({}), 2);
 
-    expect(view.container.querySelector(`.${classes.lossDot}`)).not.toHaveClass(
-      classes.lossDotNoise,
+    expect(
+      markerFor(view, 2).querySelectorAll(
+        `.${classes.lossDotNoise}, .${classes.lossStemNoise}`,
+      ),
+    ).toHaveLength(0);
+    expect(view.getByRole("region")).toHaveAttribute(
+      "data-within-noise",
+      "false",
     );
     expect(view.getByRole("region")).not.toHaveTextContent("Within noise");
   });

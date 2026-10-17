@@ -21,6 +21,8 @@ import { describe, expect, it } from "@jest/globals";
 
 const laterBasis = "sampling-noise-v2";
 const laterAdmission = { basis: laterBasis, eligible: false };
+const optimalRecord = (recordedAdmission: RecordedAdmission) =>
+  decisionOf({ expectedPointsLoss: 0, isOptimal: true, recordedAdmission });
 // An exact fallback admitting nothing for a decision that lost points: contradictory metadata.
 const CONTRADICTED_FALLBACK = decisionOf({
   recordedAdmission: { basis: "exact-fallback-v1", eligible: false },
@@ -50,9 +52,6 @@ describe("recorded admission validation", () => {
       expect(normalizeAdmission(value)).toBeNull();
     },
   );
-
-  const optimalRecord = (recordedAdmission: RecordedAdmission) =>
-    decisionOf({ expectedPointsLoss: 0, isOptimal: true, recordedAdmission });
 
   it.each([
     { expected: false, record: optimalRecord("pending") },
@@ -171,6 +170,14 @@ describe("a decision recorded as within simulation noise (#774)", () => {
         isOptimal: true,
         recordedAdmission: { basis: "exact-v1", eligible: false },
       }),
+    },
+    {
+      expected: false,
+      name: "a best choice with positive recorded loss",
+      record: {
+        ...optimalRecord({ basis: "exact-v1", eligible: false }),
+        expectedPointsLoss: 0.15,
+      },
     },
     {
       expected: false,
