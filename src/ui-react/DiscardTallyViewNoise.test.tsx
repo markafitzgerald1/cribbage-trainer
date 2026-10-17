@@ -78,10 +78,12 @@ describe("noise-aware tally, queue and trend, as recorded (#774)", () => {
     expect(view.getAllByText("1/2")).toHaveLength(2);
   });
 
-  // Two days back, so no daylight-saving day can fold it into today.
+  // Two days back, so no daylight-saving day can fold them into today.
   it("takes only today's within-noise decisions out of today's count", () => {
+    const earlier = Date.now() - 2 * ONE_DAY_MS;
     const view = renderTally([
-      { ...RECORDED_OPTIMAL, at: Date.now() - 2 * ONE_DAY_MS },
+      { ...RECORDED_OPTIMAL, at: earlier },
+      { ...RECORDED_NOISE_NOW_MISTAKE, at: earlier },
       RECORDED_WITHIN_NOISE,
       RECORDED_MISTAKE,
     ]);
