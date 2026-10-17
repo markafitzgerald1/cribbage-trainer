@@ -14,8 +14,11 @@ import { createMockTally } from "../ui/mistakeQueue.test.common";
  * settled when it was made. The noise verdict is read from that admission
  * alone, so the hands need not be ones today's tables agree with.
  */
+// A millisecond apart, so each is its own chart point even in a tally passed in unread, which carries no recencyAt.
+const NOW = Date.now();
+
 export const RECORDED_OPTIMAL: DiscardDecisionRecord = {
-  at: Date.now(),
+  at: NOW - 2,
   cribRole: CribRole.Dealer,
   discardKey: "8C,KC",
   expectedPointsLoss: 0,
@@ -27,6 +30,7 @@ export const RECORDED_OPTIMAL: DiscardDecisionRecord = {
 };
 export const RECORDED_WITHIN_NOISE: DiscardDecisionRecord = {
   ...RECORDED_OPTIMAL,
+  at: NOW - 1,
   discardKey: "KH,8C",
   expectedPointsLoss: 0.041,
   handKey: "5D,4H,KH,6H,8C,KC|Dealer",
@@ -35,6 +39,7 @@ export const RECORDED_WITHIN_NOISE: DiscardDecisionRecord = {
 };
 export const RECORDED_MISTAKE: DiscardDecisionRecord = {
   ...RECORDED_WITHIN_NOISE,
+  at: NOW,
   discardKey: "5H,6H",
   expectedPointsLoss: 1.5,
   handKey: "AH,2H,3H,4H,5H,6H|Dealer",
