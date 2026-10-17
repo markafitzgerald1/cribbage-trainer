@@ -238,18 +238,37 @@ describe("recorded chart provenance", () => {
 
   // The second case counts best choices out of the judged decisions, as the period's Best choice share does (#774).
   it.each([
-    { counts: "10 decisions, 5 best choices then", judgedDecisions: 10 },
+    {
+      counts: "10 decisions, 5 best choices then",
+      decisions: 10,
+      judgedDecisions: 10,
+      optimalDecisions: 5,
+    },
     {
       counts:
         "10 decisions, 2 within simulation noise, 5 best choices of 8 then",
+      decisions: 10,
       judgedDecisions: 8,
+      optimalDecisions: 5,
+    },
+    {
+      counts: "1 decision, 1 within simulation noise",
+      decisions: 1,
+      judgedDecisions: 0,
+      optimalDecisions: 0,
     },
   ])(
     "announces a sub-cent calendar mean without calling it zero ($counts)",
-    ({ counts, judgedDecisions }) => {
+    ({ counts, decisions, judgedDecisions, optimalDecisions }) => {
       const view = render(
         <DecisionQualityChart
-          buckets={[{ ...makeBucket("calendar", 0.004), judgedDecisions }]}
+          buckets={[
+            {
+              ...makeBucket("calendar", 0.004, decisions),
+              judgedDecisions,
+              optimalDecisions,
+            },
+          ]}
           granularity="day"
         />,
       );

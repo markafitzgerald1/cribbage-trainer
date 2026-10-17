@@ -1,5 +1,6 @@
 import {
   buildContinuousDecisionPoints,
+  countRollingSkips,
   masteredHandKeysOf,
 } from "./discardQualityTrendRolling";
 import { decisionOf, noiseAdmission } from "./discardTally.test.common";
@@ -85,6 +86,11 @@ describe("buildContinuousDecisionPoints mastered marking", () => {
 describe("buildContinuousDecisionPoints within-noise marking (#774)", () => {
   const validHandKey = "5H,6H,7H,8H,9H,10H|Dealer";
 
+  it("handles empty arrays for continuous decision points and rolling skips", () => {
+    expect(buildContinuousDecisionPoints([], 20)).toStrictEqual([]);
+    expect(countRollingSkips([], 20, [{ at: 1000 }])).toStrictEqual([]);
+  });
+
   it("marks a decision recorded as within noise, never as mastered or to practice", () => {
     const [point] = buildContinuousDecisionPoints(
       [
@@ -106,18 +112,22 @@ describe("buildContinuousDecisionPoints within-noise marking (#774)", () => {
     );
   });
 
-  it("leaves a recorded mistake and a legacy record outside the noise", () => {
+  it("leaves recorded mistakes, legacy, pending and zero-loss decisions outside the noise", () => {
     const points = buildContinuousDecisionPoints(
       [
         decisionOf({
           recordedAdmission: { ...noiseAdmission, eligible: true },
         }),
         decisionOf({ handKey: "legacy" }),
+        decisionOf({ recordedAdmission: "pending" }),
+        decisionOf({ expectedPointsLoss: 0, isOptimal: false }),
       ],
       20,
     );
 
     expect(points.map((point) => point.isWithinNoise)).toStrictEqual([
+      false,
+      false,
       false,
       false,
     ]);

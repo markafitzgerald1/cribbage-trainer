@@ -163,7 +163,7 @@ export function DiscardTallyView({
   const facedToday = summary.todayDecisions + summary.todaySkippedHands;
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
-  // Option B (#774): a decision recorded as within noise counts neither as a best choice nor against one.
+  // Recorded noise cannot establish whether the choice was best, so it must not change the share.
   const judged = summary.decisions - summary.withinNoiseDecisions;
   const judgedToday =
     summary.todayDecisions - summary.todayWithinNoiseDecisions;

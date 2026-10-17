@@ -1,5 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 import { SEED_TALLY, openSeededTrainer } from "./practiceDrillSetup";
+import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 /*
  * One best choice and one pone discard of the ace and two from A-6 of
@@ -56,6 +57,20 @@ test("keeps a recorded mistake that today's tables would call noise", async ({
   page,
 }) => {
   await openSeededTrainer(page, tallyRecording(true));
+  // A study hand exercises analysis without adding an authentic decision to the seeded ratio.
+  await page.goto("/?hand=AC,2C,3C,4C,5C,6C&role=pone&seed=e2e");
+  const sidecars = [
+    /CribPointsUncertainty-[\w-]+\.js$/u,
+    /PlayPointsUncertainty-[\w-]+\.js$/u,
+  ].map((pattern) => page.waitForResponse(pattern));
+  await page.getByRole("checkbox", { name: /^Keep A/u }).click();
+  await page.getByRole("checkbox", { name: /^Keep 2/u }).click();
+  await waitForAnalysis(page);
+  await Promise.all(sidecars);
+  await expect(page.locator("figcaption[aria-label]")).toContainText(
+    "Within noise",
+    { timeout: 20_000 },
+  );
 
   await expect(tallyOf(page).getByText(/^1\/2 \(/u)).toBeVisible();
   await expect(
