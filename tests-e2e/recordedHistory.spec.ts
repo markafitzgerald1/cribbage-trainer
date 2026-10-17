@@ -169,7 +169,7 @@ for (const [mode, viewport] of [
           name: "Recorded cost for selected decision: less than 0.01 points",
         }),
       ).toHaveText("Recorded cost: < 0.01 points");
-      await expect(panel).toContainText("Mastered in a later retry");
+      await expect(panel).toContainText("Mastered in later retries");
       await panel
         .getByText("Judged with different tables", { exact: true })
         .click();
@@ -178,7 +178,7 @@ for (const [mode, viewport] of [
       await expect(tallyLoss).toHaveText("< 0.01");
       const restored = await rereadHistory(page, viewport, fontSize);
       const after = await openRecordedPoint(restored, true);
-      await expect(after).toContainText("Mastered in a later retry");
+      await expect(after).toContainText("Mastered in later retries");
       await expect(
         after.getByRole("button", { exact: true, name: "Practice this hand" }),
       ).toBeVisible();

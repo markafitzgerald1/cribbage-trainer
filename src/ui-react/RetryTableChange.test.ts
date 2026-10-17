@@ -312,10 +312,18 @@ describe("recorded history across loaded table pairs", () => {
         bytes: localStorage.getItem(discardTallyKey),
         decisions: after.totalAuthenticDecisions,
         summary: readDiscardTally(100),
+        today: {
+          loss: originalSummary.todayMeanExpectedPointsLoss,
+          optimal: originalSummary.todayOptimalDecisions,
+        },
       }).toStrictEqual({
         bytes: originalBytes,
         decisions: 1,
         summary: originalSummary,
+        today: {
+          loss: then.expectedPointsLoss,
+          optimal: Number(then.isOptimal),
+        },
       });
     },
   );

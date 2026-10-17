@@ -293,7 +293,7 @@ describe("captured chart practice admission", () => {
         }),
       ).toBeInTheDocument();
       expect(practiceIsOffered(view)).toBe(offered);
-      expect(view.queryByText("Mastered in a later retry") !== null).toBe(
+      expect(view.queryByText("Mastered in later retries") !== null).toBe(
         offered,
       );
     },

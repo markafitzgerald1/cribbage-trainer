@@ -212,7 +212,7 @@ export const EarlierRecordedDetail: Story = {
         name: "Recorded cost for selected decision: less than 0.01 points",
       }),
     ).toHaveTextContent("Recorded cost: < 0.01 points");
-    await expect(canvas.getByText("Mastered in a later retry")).toBeVisible();
+    await expect(canvas.getByText("Mastered in later retries")).toBeVisible();
 
     await fireEvent.click(canvas.getByText("Judged with different tables"));
 

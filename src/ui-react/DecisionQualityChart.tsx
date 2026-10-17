@@ -121,7 +121,7 @@ function renderDecisionDetail(
         )}
         {point.isMastered ? (
           <span className={classes.decisionDetailMastered}>
-            Mastered in a later retry
+            Mastered in later retries
           </span>
         ) : null}
         <span
