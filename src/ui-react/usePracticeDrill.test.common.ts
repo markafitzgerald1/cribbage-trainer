@@ -23,6 +23,7 @@ import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
+import type { TableIdentity } from "../game/tableIdentity";
 import { mockItemA } from "../ui/mistakeQueue.test.common";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
@@ -108,7 +109,10 @@ export interface Harness {
   readonly loadedHands: readonly PracticeDrillHand[];
   readonly loadHandCalls: number;
   readonly next: () => void;
-  readonly render: (analysis: RenderedAnalysis) => void;
+  readonly render: (
+    analysis: RenderedAnalysis,
+    tableIdentity?: TableIdentity | null,
+  ) => void;
   readonly replaceBoard: (props: BoardProps) => void;
   readonly start: (item?: MistakeQueueItem) => void;
 }
@@ -184,8 +188,8 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
       return loadedHands;
     },
     next: () => step((drill) => drill.onNextHand()),
-    render: (analysis) =>
-      step((drill) => drill.handleAnalysisRendered(analysis)),
+    render: (analysis, tableIdentity) =>
+      step((drill) => drill.handleAnalysisRendered(analysis, tableIdentity)),
     replaceBoard: (props) => {
       act(() => {
         rerender(props);

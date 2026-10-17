@@ -1,5 +1,9 @@
 import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import * as playLoader from "../game/expectedPlayPointsTableLoader";
+import {
+  type TableIdentity,
+  shippedTableIdentity,
+} from "../game/tableIdentity";
 import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 
@@ -7,6 +11,7 @@ export type LoadCribTable = () => Promise<ExpectedCribPointsTable>;
 export type LoadPlayTable = () => Promise<ExpectedPlayPointsTable>;
 
 export interface ExpectedTables {
+  readonly tableIdentity?: TableIdentity | null;
   readonly crib: ExpectedCribPointsTable;
   readonly play: ExpectedPlayPointsTable;
 }
@@ -18,17 +23,33 @@ export interface ExpectedTables {
  * Explicit null checks rather than truthiness, because the shared loaders use
  * null for absence and a caller may validly inject a falsy table.
  */
-export const readSynchronousExpectedTables = (): ExpectedTables | null => {
+export const readSynchronousExpectedTables = (
+  loadCribTable: LoadCribTable = cribLoader.loadTable,
+  loadPlayTable: LoadPlayTable = playLoader.loadTable,
+): ExpectedTables | null => {
+  if (
+    loadCribTable !== cribLoader.loadTable ||
+    loadPlayTable !== playLoader.loadTable
+  )
+    return null;
   const crib = cribLoader.getTableSync();
   const play = playLoader.getTableSync();
-  return crib !== null && play !== null ? { crib, play } : null;
+  return crib !== null && play !== null
+    ? { crib, play, tableIdentity: shippedTableIdentity }
+    : null;
 };
 
 export const loadExpectedTables = (
   loadCribTable: LoadCribTable,
   loadPlayTable: LoadPlayTable,
+  tableIdentity: TableIdentity | null = null,
 ): Promise<ExpectedTables> =>
   Promise.all([loadCribTable(), loadPlayTable()]).then(([crib, play]) => ({
     crib,
     play,
+    tableIdentity:
+      loadCribTable === cribLoader.loadTable &&
+      loadPlayTable === playLoader.loadTable
+        ? shippedTableIdentity
+        : tableIdentity,
   }));

@@ -1,21 +1,11 @@
 /* jscpd:ignore-start */
-import {
-  type DiscardDecisionRecord,
-  type DiscardTallySummary,
-} from "../ui/discardTally";
-import {
-  MISTAKE_RECORD,
-  OPTIMAL_RECORD,
-  WITHIN_NOISE_RECORD,
-} from "../ui/noiseVerdicts.test.common";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import {
-  discardTallySummary,
-  noiseTallyProps,
-} from "./discardTally.test.common";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor } from "storybook/test";
+import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
 import { createSampleMistakeTally } from "./MistakeQueueDialog.test.common";
+import { discardTallySummary } from "./discardTally.test.common";
+import { playPracticeFromDecisionMarker } from "./stories.common";
 /* jscpd:ignore-end */
 
 const sampleMistakeTally = createSampleMistakeTally();
@@ -116,6 +106,10 @@ export const OpenQualityTrend: StoryObj<typeof meta> = {
     await userEvent.click(trendButton);
 
     await expect(canvas.getByText("Decision quality over time")).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Close modal" }));
+
+    await expect(canvas.queryByText("Decision quality over time")).toBeNull();
   },
 };
 
@@ -134,68 +128,73 @@ export const OpenMistakeQueue: StoryObj<typeof meta> = {
     await expect(
       canvas.getByRole("heading", { name: "Mistake queue" }),
     ).toBeVisible();
-  },
-};
 
-/*
- * #774: a decision whose loss is within simulation noise, judged here
- * against sidecars that put every published error at 0.1 points. It leaves
- * both sides of Best choice, the queue and the trend's shares. A figure
- * shows its exact verdict until judged, so each story waits for the change.
- */
-const afterVerdicts = (
-  records: readonly DiscardDecisionRecord[],
-  check: (canvasElement: HTMLElement) => Promise<void>,
-): StoryObj<typeof meta> => ({
-  args: noiseTallyProps(records),
-  play: async ({ canvasElement }) => {
+    // Classification runs in chunks after the dialog opens; wait for both recorded discards.
     await waitFor(
       async () => {
-        await check(canvasElement);
+        await expect(
+          canvas.getAllByRole("note", { name: /^Current-table comparison:/u }),
+        ).toHaveLength(2);
       },
-      { timeout: 8000 },
+      { timeout: 10000 },
     );
   },
-});
-
-const ALL_THREE = [OPTIMAL_RECORD, WITHIN_NOISE_RECORD, MISTAKE_RECORD];
-
-const bestChoiceOfTwo = async (canvasElement: HTMLElement) => {
-  await expect(within(canvasElement).getAllByText("1/2")).toHaveLength(2);
 };
 
-export const WithinNoiseLeftOutOfBestChoice = afterVerdicts(
-  ALL_THREE,
-  bestChoiceOfTwo,
-);
-
-export const EveryMistakeWithinNoise = afterVerdicts(
-  [OPTIMAL_RECORD, WITHIN_NOISE_RECORD],
-  async (canvasElement) => {
+export const RecordedSmallLoss: StoryObj<typeof meta> = {
+  args: { summary: discardTallySummary({ meanExpectedPointsLoss: 0.004 }) },
+  play: async ({ canvas }) => {
     await expect(
-      within(canvasElement).queryByRole("button", { name: "Mistake queue" }),
-    ).not.toBeInTheDocument();
+      canvas.getByRole("note", {
+        name: "Recorded loss all time: less than 0.01 points per discard",
+      }),
+    ).toHaveTextContent("< 0.01");
+
+    await userEvent.click(canvas.getByText("As recorded"));
+
+    await expect(
+      canvas.getByText(
+        /Earlier results, queue membership and mastery are kept/u,
+      ),
+    ).toBeVisible();
   },
+};
+
+export const OnlySkippedToday = showing(
+  discardTallySummary({ skippedHands: 2, todaySkippedHands: 1 }),
+  "1/1",
 );
 
-export const WithinNoiseInQualityTrend: StoryObj<typeof meta> = {
-  args: noiseTallyProps(ALL_THREE),
-  play: async ({ canvasElement }) => {
-    await waitFor(
-      async () => {
-        await bestChoiceOfTwo(canvasElement);
-      },
-      { timeout: 8000 },
+export const StartAutomaticDrill: StoryObj<typeof meta> = {
+  args: {
+    ...OpenMistakeQueue.args,
+    onStartAutoDrill: fn(),
+  },
+  play: async ({ args, canvas }) => {
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Mistake queue" }),
     );
-    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Start drill" }));
+
+    await expect(args.onStartAutoDrill).toHaveBeenCalledTimes(1);
+    await expect(
+      canvas.queryByRole("heading", { name: "Mistake queue" }),
+    ).toBeNull();
+  },
+};
+
+export const PracticeClosesTrend: StoryObj<typeof meta> = {
+  args: {
+    ...OpenMistakeQueue.args,
+    onStartDrill: fn(),
+  },
+  play: async ({ args, canvas, canvasElement }) => {
     await userEvent.click(
       canvas.getByRole("button", { name: "Quality trend" }),
     );
-    const dialog = within(
-      canvas.getByRole("region", { name: "Decision quality over time" }),
-    );
+    await playPracticeFromDecisionMarker(canvasElement, args.onStartDrill);
 
-    // The Best choice card and the one rolling batch's row agree.
-    await expect(dialog.getAllByText("50.0%")).toHaveLength(2);
+    await expect(canvas.queryByRole("region")).toBeNull();
+    await expect(canvas.queryByText("Decision quality over time")).toBeNull();
   },
 };

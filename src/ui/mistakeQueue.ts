@@ -1,8 +1,9 @@
 import { type DiscardDecisionRecord, type StoredTally } from "./discardTally";
-import { NO_NOISE, isRecordWithinNoise } from "./noiseVerdicts";
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
+import type { TableIdentity } from "../game/tableIdentity";
+import { isAdmittedMistake } from "./recordedAdmission";
 import { parseHandKey } from "./handKey";
 
 export { SUCCESSES_FOR_MASTERY } from "./practiceLedger";
@@ -30,6 +31,7 @@ export interface MistakeQueueQuantileThresholds {
 }
 
 export interface MistakeQueueItem {
+  readonly tableIdentity?: TableIdentity | null;
   readonly attempts: number;
   readonly cards: readonly Card[];
   readonly consecutiveSuccesses: number;
@@ -118,6 +120,7 @@ export const computePriority = (lossIfWrong: number, pWrong: number): number =>
   lossIfWrong * pWrong;
 
 interface HandAggregate {
+  tableIdentity: TableIdentity | null;
   discardKey: string | null;
   expectedPointsLoss: number;
   handKey: string;
@@ -150,21 +153,13 @@ interface HandAggregate {
  * the moment the player first made it stays fixed to the earliest record,
  * which is what MistakeQueueItem.originalDecisionAt promises callers.
  */
-// The exact verdict: an authentic decision recorded as losing points, before any noise judgment (#774).
-export const isRecordedMistake = (record: DiscardDecisionRecord): boolean =>
-  !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
-
 const aggregateMistakeRecords = (
   records: readonly DiscardDecisionRecord[],
-  withinNoise: ReadonlySet<string>,
 ): Map<string, HandAggregate> => {
   const map = new Map<string, HandAggregate>();
 
   for (const record of records) {
-    if (
-      isRecordedMistake(record) &&
-      !isRecordWithinNoise(record, withinNoise)
-    ) {
+    if (isAdmittedMistake(record)) {
       const existing = map.get(record.handKey);
       const recencyAt = record.recencyAt ?? record.at;
       const originalAt = existing
@@ -181,6 +176,7 @@ const aggregateMistakeRecords = (
                 record.oppositeRoleExpectedPointsLoss ?? null,
               originalAt,
               recencyAt,
+              tableIdentity: record.tableIdentity ?? null,
             }
           : { ...existing, originalAt },
       );
@@ -232,16 +228,15 @@ const createCandidateQueueItem = ({
     previousDiscardLoss: aggregate.expectedPointsLoss,
     previousDiscardOppositeRoleLoss: aggregate.oppositeRoleExpectedPointsLoss,
     priority,
+    tableIdentity: aggregate.tableIdentity,
     wrong,
   };
 };
 
-// `withinNoise` names the decisions whose loss the caption calls simulation noise (#774); they are not mistakes to practice.
 export const buildMistakeQueue = (
   tally: StoredTally,
-  withinNoise: ReadonlySet<string> = NO_NOISE,
 ): readonly MistakeQueueItem[] => {
-  const mistakeMap = aggregateMistakeRecords(tally.records, withinNoise);
+  const mistakeMap = aggregateMistakeRecords(tally.records);
   if (mistakeMap.size === 0) {
     return [];
   }
@@ -347,15 +342,15 @@ const itemAt = (
 ): MistakeQueueItem => items.at(index) as MistakeQueueItem;
 
 /*
- * Draws one active (non-mastered) hand weighted by `priority` — the expected
- * points a single correct drill of that hand recovers, the same quantity the
- * "priority" sort order ranks by, so the browse list and the auto-deal share
- * one function. `random` is a uniform value in [0, 1); callers pass their
- * existing generator. When every active hand still has priority 0 (no wrong
- * attempt has cost anything yet) the draw falls back to uniform so a hand is
- * still dealt. `excludeHandKey` drops the hand just drilled so a run never
- * deals it twice in a row, unless it is the only active hand left. Returns
- * null only when no active hand exists.
+ * Draws one active (non-mastered) hand using the recorded-attempt priority
+ * that also ranks the browse list, so sorting and automatic practice agree
+ * without scoring history under current tables. Priority is the expected
+ * points one correct drill recovers. `random` is a uniform value in [0, 1);
+ * callers pass their existing generator. When every active hand still has
+ * priority 0 (no wrong attempt has cost anything yet), the draw falls back
+ * to uniform so a hand is still dealt. `excludeHandKey` drops the hand just
+ * drilled so a run never deals it twice in a row, unless it is the only
+ * active hand left. Returns null only when no active hand exists.
  */
 export const sampleMistakeQueueByPriority = (
   items: readonly MistakeQueueItem[],

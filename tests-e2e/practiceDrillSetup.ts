@@ -1,11 +1,17 @@
+import { type Locator, type Page, expect } from "@playwright/test";
 import {
   PRIVACY_POLICY_VERSION,
   analyticsConsentKey,
   answeredPolicyVersionKey,
 } from "../src/ui/analyticsConsent";
-import { type Page, expect } from "@playwright/test";
+import {
+  phonePortraitViewport,
+  requireBoundingBox,
+} from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
+import { originalIdentity } from "../src/ui-react/PracticeDrillPanel.test.common";
+import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 export const LARGE_ROOT_FONT = "html { font-size: 28px; }";
 
@@ -44,8 +50,7 @@ export const SEED_TALLY = {
     {
       at: BASE_AT + ONE_DAY_MS,
       cribRole: "Pone",
-      // Not AC,2C: under the shipped sidecars that loss is within simulation noise and leaves the queue (#774).
-      discardKey: "AC,3C",
+      discardKey: "AC,2C",
       expectedPointsLoss: SECOND_LOSS,
       handKey: "AC,2C,3C,4C,5C,6C|Pone",
       isOptimal: false,
@@ -82,12 +87,12 @@ export const SEED_TALLY_WITH_QUANTILES = {
   ],
 };
 
-const seedBrowser = (page: Page, tally: typeof SEED_TALLY) =>
+const seedBrowser = (page: Page, tally: unknown) =>
   page.addInitScript(
     (stored: {
       readonly consent: Record<string, string>;
       readonly keyPrefix: string;
-      readonly tally: typeof SEED_TALLY;
+      readonly tally: unknown;
     }) => {
       window.localStorage.setItem(
         stored.keyPrefix + new URL(document.baseURI).pathname,
@@ -109,16 +114,19 @@ const seedBrowser = (page: Page, tally: typeof SEED_TALLY) =>
 
 export const openSeededTrainer = async (
   page: Page,
-  tally: typeof SEED_TALLY = SEED_TALLY,
-  path = "/",
+  tally: unknown = SEED_TALLY,
 ) => {
   await blockGoogleAnalytics(page);
   await seedBrowser(page, tally);
-  await page.goto(path);
+  await page.goto("/");
 };
 
 export const startDrillOnFirstMistake = async (page: Page) => {
   await page.getByRole("button", { name: "Mistake queue" }).click();
+  // This seeded mistake's asynchronous comparison moves its action as the badge arrives.
+  await expect(
+    page.getByRole("note", { name: /^Current-table comparison:/u }).first(),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Practice this" }).first().click();
 };
 
@@ -145,4 +153,113 @@ export const expectActionWithinViewport = async (
   expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(
     viewportHeight,
   );
+};
+
+export const openEarlierTableTrainer = (page: Page) =>
+  openSeededTrainer(page, {
+    ...SEED_TALLY,
+    records: SEED_TALLY.records.map((record) => ({
+      ...record,
+      tableIdentity: originalIdentity,
+    })),
+    version: 8,
+  });
+
+export const expectPanelActionReachable = async (page: Page, name: string) => {
+  const panel = page.getByRole("region", { name: "Practice drill" });
+  const [bounds, panelBounds] = await Promise.all([
+    requireBoundingBox(panel.getByRole("button", { name })),
+    requireBoundingBox(panel),
+  ]);
+  expect(bounds.y).toBeGreaterThanOrEqual(panelBounds.y);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+    panelBounds.y + panelBounds.height,
+  );
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+    page.viewportSize()?.height ?? Number.NaN,
+  );
+  const action = panel.getByRole("button", { name });
+  if (await action.isEnabled()) await action.click({ trial: true });
+};
+
+export const expectChangedPanelReachable = async (page: Page) => {
+  await expectPanelActionReachable(page, "Draw another");
+  await expectPanelActionReachable(page, "Exit drill");
+  const panel = page.getByRole("region", { name: "Practice drill" });
+  const note = panel.getByText(/Tables changed since this decision/u);
+  await note.scrollIntoViewIfNeeded();
+  await expect(note).toBeInViewport();
+  await panel.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+};
+
+export const reviewAtLargePortrait = async (page: Page) => {
+  await openEarlierTableTrainer(page);
+  await startDrillOnFirstMistake(page);
+  await page.setViewportSize(phonePortraitViewport);
+  await page.addStyleTag({ content: LARGE_ROOT_FONT });
+  await expectPanelActionReachable(page, "Check discard");
+  await expectPanelActionReachable(page, "Exit drill");
+  await selectTwoDiscards(page);
+  await page.getByRole("button", { name: "Check discard" }).click();
+  await waitForAnalysis(page);
+};
+
+export const expectPanelContentReachable = async (
+  panel: Locator,
+  content: Locator,
+) => {
+  const panelBefore = await requireBoundingBox(panel);
+  const scroll = await content.evaluate((element) => {
+    const region = element.closest("section") as HTMLElement;
+    const bounds = element.getBoundingClientRect();
+    const panelBounds = region.getBoundingClientRect();
+    const clipped =
+      bounds.top < panelBounds.top || bounds.bottom > panelBounds.bottom;
+    const before = region.scrollTop;
+    const centerDivisor = 2;
+    if (region.scrollHeight > region.clientHeight) {
+      region.scrollTop +=
+        bounds.top -
+        panelBounds.top -
+        (region.clientHeight - bounds.height) / centerDivisor;
+    }
+    return { after: region.scrollTop, before, clipped };
+  });
+  if (scroll.clipped) expect(scroll.after).not.toBe(scroll.before);
+  const contentBounds = await requireBoundingBox(content);
+  const panelAfter = await requireBoundingBox(panel);
+  expect(panelAfter).toEqual(panelBefore);
+  expect(contentBounds.y).toBeGreaterThanOrEqual(panelAfter.y);
+  expect(contentBounds.y + contentBounds.height).toBeLessThanOrEqual(
+    panelAfter.y + panelAfter.height,
+  );
+  const childrenFit = await content.evaluate((element) => {
+    const panelBounds = (
+      element.closest("section") as HTMLElement
+    ).getBoundingClientRect();
+    return [...element.querySelectorAll("*")].every((child) => {
+      const bounds = child.getBoundingClientRect();
+      return (
+        bounds.top >= panelBounds.top &&
+        bounds.bottom <= panelBounds.bottom &&
+        bounds.left >= panelBounds.left &&
+        bounds.right <= panelBounds.right
+      );
+    });
+  });
+  expect(childrenFit).toBe(true);
+  await expect(content).toBeInViewport({ ratio: 1 });
+};
+
+export const expectPracticeComparisonsReachable = async (panel: Locator) => {
+  const labels = ["Retry — current tables", "Then — recorded cost"];
+  await labels.reduce(async (previous, label) => {
+    await previous;
+    await expectPanelContentReachable(
+      panel,
+      panel.getByText(label).locator(".."),
+    );
+  }, Promise.resolve());
 };

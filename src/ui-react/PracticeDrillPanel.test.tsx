@@ -5,7 +5,18 @@ import {
   type PracticeDrillPanelProps,
 } from "./PracticeDrillPanel";
 import { type RenderResult, fireEvent, render } from "@testing-library/react";
-import { basePanelArgs, sampleVerdict } from "./PracticeDrillPanel.test.common";
+import {
+  basePanelArgs,
+  changedTablesNote,
+  changedVerdict,
+  currentVerdict,
+  failedVerdict,
+  originalIdentity,
+  retryIdentity,
+  revealedPanelArgs,
+  sampleVerdict,
+  unknownTablesNote,
+} from "./PracticeDrillPanel.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 
 const panelElement = (props: PracticeDrillPanelProps): React.JSX.Element => (
@@ -56,6 +67,40 @@ const renderRevealedPanelWithMistake = (
 };
 
 describe("practiceDrillPanel", () => {
+  it.each([
+    { following: "Choose two cards", name: "choosing", props: {} },
+    {
+      following: "Checking your discard",
+      name: "loading",
+      props: { phase: "revealed" as const },
+    },
+    {
+      following: "0.42 points behind",
+      name: "miss",
+      props: revealedPanelArgs(failedVerdict(0.42)),
+    },
+    {
+      following: "Best choice",
+      name: "success",
+      props: revealedPanelArgs(sampleVerdict()),
+    },
+  ])(
+    "reads badge and actions before the $name body",
+    ({ props, following }) => {
+      const view = renderPanel(props);
+      const body = view.getByRole("region", {
+        name: "Practice drill",
+      }).firstElementChild;
+      const actions = body?.firstElementChild;
+
+      expect(actions?.firstElementChild).toHaveTextContent(/^Practice$/u);
+      expect(actions).toContainElement(
+        view.getByRole("button", { name: "Exit drill" }),
+      );
+      expect(actions?.nextElementSibling?.textContent).toMatch(following);
+    },
+  );
+
   it("tells the player suits were reshuffled while choosing", () => {
     const { getByText } = renderPanel();
 
@@ -105,7 +150,11 @@ describe("practiceDrillPanel", () => {
       verdict: sampleVerdict(),
     });
 
-    expect(getByText("Optimal — 1 of 2 toward mastery.")).toBeInTheDocument();
+    expect(
+      getByText(
+        "Best choice with current tables. 1 of 2 successful retries toward mastery.",
+      ),
+    ).toBeInTheDocument();
     expect(getByRole("button", { name: "Draw another" })).toBeInTheDocument();
   });
 
@@ -124,12 +173,14 @@ describe("practiceDrillPanel", () => {
 
   it.each([
     {
-      expectedOutcome: "0.42 behind the best discard.",
+      expectedOutcome:
+        "0.42 points behind the best choice with current tables.",
       loss: 0.42,
       name: "shows the loss magnitude and a missing previous discard on a miss",
     },
     {
-      expectedOutcome: "< 0.01 behind the best discard.",
+      expectedOutcome:
+        "< 0.01 points behind the best choice with current tables.",
       loss: 0.003754,
       name: "formats sub-cent loss as '< 0.01' in verdict outcome",
     },
@@ -201,5 +252,57 @@ describe("practiceDrillPanel", () => {
     const { scrollButton } = renderRevealedPanelWithMistake();
 
     expect(() => fireEvent.click(scrollButton())).not.toThrow();
+  });
+});
+
+describe("retry table boundary copy", () => {
+  it.each([
+    { note: changedTablesNote, verdict: changedVerdict() },
+    {
+      note: unknownTablesNote,
+      verdict: sampleVerdict({ retryTableIdentity: retryIdentity }),
+    },
+    { note: "Table versions unknown.", verdict: sampleVerdict() },
+  ])("announces the actual provenance boundary: $note", ({ verdict, note }) => {
+    const view = renderPanel({ phase: "revealed", verdict });
+
+    expect(view.getByText(note)).toBeInTheDocument();
+    expect(view.getByText("Then — recorded cost")).toBeInTheDocument();
+    expect(view.getByText("Retry — current tables")).toBeInTheDocument();
+  });
+
+  it("claims no kept streak when a failed retry under changed tables reset it", () => {
+    const view = renderPanel(
+      revealedPanelArgs({
+        ...failedVerdict(0.42),
+        originalTableIdentity: originalIdentity,
+        retryTableIdentity: retryIdentity,
+      }),
+    );
+
+    expect(view.getByText(changedTablesNote)).toBeInTheDocument();
+    expect(view.queryByText(/streak/u)).not.toBeInTheDocument();
+  });
+
+  it("names each loss with its spoken sub-cent form", () => {
+    const view = renderPanel(revealedPanelArgs(failedVerdict(0.004)));
+
+    expect(
+      view.getByRole("note", {
+        name: "Retry — current tables, less than 0.01 points",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      view.getByRole("note", {
+        name: "less than 0.01 points behind the best choice with current tables.",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not announce a table change for an equal pair", () => {
+    const view = renderPanel(revealedPanelArgs(currentVerdict()));
+
+    expect(view.getByText("Retry — current tables")).toBeInTheDocument();
+    expect(view.queryByText(changedTablesNote)).not.toBeInTheDocument();
   });
 });

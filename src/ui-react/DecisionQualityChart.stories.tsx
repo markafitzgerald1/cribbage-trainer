@@ -6,6 +6,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, fn, waitFor, within } from "storybook/test";
 import { DecisionQualityChart } from "./DecisionQualityChart";
 import { SortOrder } from "../ui/SortOrder";
+import { originalIdentity } from "./PracticeDrillPanel.test.common";
 import { playPracticeFromDecisionMarker } from "./stories.common";
 
 const sampleBuckets: DiscardPeriodBucket[] = [
@@ -95,12 +96,14 @@ const sampleDecisionPoints: DiscardDecisionPoint[] = [
   handKey: "5H,6H,7H,8H,9H,10H|Dealer",
   isMastered: mastered,
   isOptimal: loss === 0,
+  isPracticeEligible: loss > 0,
   isRetained: false,
   isWithinNoise: false,
   ordinal: index + 1,
   recencyAt: 1700000000000 + index,
   recomputedLoss: null,
   rollingMeanLoss: mean,
+  tableIdentity: null,
   timestamp: 1700000000000 + index * 100000,
 }));
 
@@ -144,7 +147,7 @@ export const DecisionDetailPopup: Story = {
     clickElement(marker);
     const panel = await canvas.findByRole("region");
 
-    await expect(panel).toHaveTextContent("lost");
+    await expect(panel).toHaveTextContent("Recorded cost:");
     await expect(panel).toHaveTextContent("Dealer");
     await expect(panel).toHaveTextContent("Hand");
     await expect(panel).toHaveTextContent("Discarded");
@@ -158,7 +161,7 @@ export const DecisionDetailPopup: Story = {
     await expectPanelGone(canvasElement);
 
     clickElement(marker);
-    clickElement(await canvas.findByRole("button", { name: "Close" }));
+    clickElement(await canvas.findByRole("button", { name: "Dismiss" }));
     await expectPanelGone(canvasElement);
   },
 };
@@ -204,5 +207,87 @@ export const Empty: Story = {
     await expect(canvasElement.textContent).toContain(
       "No discard decisions recorded yet",
     );
+  },
+};
+
+export const EarlierRecordedDetail: Story = {
+  args: {
+    buckets: [
+      { ...sampleBuckets[0]!, decisions: 1, meanExpectedPointsLoss: 0.004 },
+    ],
+    decisionPoints: [
+      {
+        ...sampleDecisionPoints[1]!,
+        expectedPointsLoss: 0.004,
+        ordinal: 1,
+        rollingMeanLoss: 0.004,
+        tableIdentity: originalIdentity,
+      },
+    ],
+    granularity: "rolling20",
+    onPracticeDecision: fn(),
+  },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const marker = canvas.getByRole("button", {
+      name: "Decision #1, recorded cost less than 0.01 points, mastered in later retries. Select to see the hand.",
+    });
+    await fireEvent.click(marker);
+
+    await expect(
+      canvas.getByRole("note", {
+        name: "Recorded cost for selected decision: less than 0.01 points",
+      }),
+    ).toHaveTextContent("Recorded cost: < 0.01 points");
+    await expect(canvas.getByText("Mastered in later retries")).toBeVisible();
+
+    await fireEvent.click(canvas.getByText("Judged with different tables"));
+
+    await expect(
+      canvas.getByText(
+        `Crib: ${originalIdentity.crib.means_sha256.slice(0, 12)}…`,
+      ),
+    ).toBeVisible();
+
+    await fireEvent.click(
+      canvas.getByRole("button", { name: "Practice this hand" }),
+    );
+
+    await expect(args.onPracticeDecision).toHaveBeenCalledWith(
+      args.decisionPoints![0],
+    );
+  },
+};
+
+export const RetainedDecisionDetail: Story = {
+  args: {
+    ...rollingWithPointsArgs,
+    decisionPoints: sampleDecisionPoints.slice(0, 2).map((point) => ({
+      ...point,
+      isRetained: true,
+    })),
+    totalDecisions: 200,
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("group", {
+        name: "Decision quality over time trend chart",
+      }),
+    ).toHaveAccessibleDescription(/the most recent 2 of 200/u);
+
+    const retained = canvas.getByRole("button", {
+      name: /^Retained decision #2, recorded cost 0\.50 points/u,
+    });
+    retained.focus();
+    await fireEvent.keyDown(retained, { key: "Enter" });
+
+    await expect(
+      canvas.getByRole("region", { name: "Retained decision #2 detail" }),
+    ).toHaveTextContent("Recorded cost: 0.50 points");
+    await expect(
+      canvas.getByText(
+        "Retained decision #1, recorded cost 0.00 points (best choice then)",
+      ),
+    ).toBeInTheDocument();
   },
 };

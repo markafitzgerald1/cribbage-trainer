@@ -18,11 +18,14 @@ import {
   type StoredTally,
   readTallyForDisplay,
 } from "../ui/discardTally";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
-import { NO_NOISE } from "../ui/noiseVerdicts";
-import { NO_RECOMPUTED_LOSSES } from "../ui/discardQualityTrendRolling";
+import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
 import type { StartDrillHandler } from "./usePracticeDrill";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
@@ -32,11 +35,9 @@ import { useCloseOnEscape } from "./useCloseOnEscape";
 export interface DecisionQualityTrendDialogProps {
   readonly initialGranularity?: DiscardTrendGranularity;
   readonly initialRoleFilter?: CribRoleFilter;
-  readonly lossesWithinNoise?: ReadonlySet<string>;
   readonly onClose: () => void;
   // Starts a drill on a chart mistake's hand; null hides the detail panel's practice button.
   readonly onStartDrill?: StartDrillHandler;
-  readonly recomputedLosses?: ReadonlyMap<string, number>;
   readonly show: boolean;
   // The card order the rest of the app uses, so the detail panel matches the board.
   readonly sortOrder?: SortOrder;
@@ -55,7 +56,7 @@ const GRANULARITY_OPTIONS: {
 ];
 
 const PER_CENT = 100;
-const DECIMAL_PLACES = 2;
+
 const PERCENT_DECIMAL_PLACES = 1;
 
 const formatSkipRate = (decisions: number, skipped: number): string => {
@@ -82,13 +83,12 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
   const avgLoss =
     bucket.meanExpectedPointsLoss === null
       ? "—"
-      : bucket.meanExpectedPointsLoss.toFixed(DECIMAL_PLACES);
+      : formatNetLoss(bucket.meanExpectedPointsLoss);
   const optimalPct =
-    bucket.judgedDecisions > 0
-      ? `${(
-          (bucket.optimalDecisions / bucket.judgedDecisions) *
-          PER_CENT
-        ).toFixed(PERCENT_DECIMAL_PLACES)}%`
+    bucket.decisions > 0
+      ? `${((bucket.optimalDecisions / bucket.decisions) * PER_CENT).toFixed(
+          PERCENT_DECIMAL_PLACES,
+        )}%`
       : "—";
 
   return (
@@ -97,7 +97,13 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
       <td>{bucket.decisions}</td>
       <td>
         <span
+          aria-label={
+            bucket.meanExpectedPointsLoss === null
+              ? `Recorded loss for ${bucket.label} unavailable`
+              : `Recorded loss for ${bucket.label}: ${formatAccessibleNetLoss(bucket.meanExpectedPointsLoss)} points per discard`
+          }
           className={`${classes.lossPill} ${getLossPillClass(bucket.meanExpectedPointsLoss)}`}
+          role="note"
         >
           {avgLoss}
         </span>
@@ -113,13 +119,16 @@ function renderBreakdownTable(
 ): React.JSX.Element {
   return (
     <div className={classes.tableWrapper}>
-      <table className={classes.table}>
+      <table
+        aria-label="Recorded decision history"
+        className={classes.table}
+      >
         <thead>
           <tr>
             <th>Period / Batch</th>
             <th>Decisions</th>
-            <th>Avg loss</th>
-            <th>Optimal</th>
+            <th>Avg recorded loss</th>
+            <th>Best choice</th>
             <th>Skipped (rate)</th>
           </tr>
         </thead>
@@ -132,10 +141,8 @@ function renderBreakdownTable(
 export function DecisionQualityTrendDialog({
   initialGranularity = "rolling20",
   initialRoleFilter = "all",
-  lossesWithinNoise = NO_NOISE,
   onClose,
   onStartDrill = null,
-  recomputedLosses = NO_RECOMPUTED_LOSSES,
   show,
   sortOrder = SortOrder.DealOrder,
   tally = null,
@@ -159,16 +166,15 @@ export function DecisionQualityTrendDialog({
       onStartDrill === null
         ? null
         : (point: DiscardDecisionPoint) => {
-            const item = buildMistakeQueue(
-              tally ?? readTallyForDisplay(),
-              lossesWithinNoise,
-            ).find((queueItem) => queueItem.handKey === point.handKey);
+            const item = buildMistakeQueue(tally ?? readTallyForDisplay()).find(
+              (queueItem) => queueItem.handKey === point.handKey,
+            );
             // A MistakeQueueItem is always an object, so a plain truthy check is safe.
             if (item) {
               onStartDrill(item);
             }
           },
-    [lossesWithinNoise, onStartDrill, tally],
+    [onStartDrill, tally],
   );
 
   const changeGranularity = useCallback(
@@ -192,18 +198,12 @@ export function DecisionQualityTrendDialog({
   const sourceTally = tally ?? readTallyForDisplay();
   const trend = computeDiscardQualityTrend(sourceTally, {
     granularity,
-    recomputedLosses,
     roleFilter,
-    withinNoise: lossesWithinNoise,
   });
 
   const totalDecisions = trend.totalAuthenticDecisions;
   const optimalDecisions = trend.buckets.reduce(
     (sum, bucket) => sum + bucket.optimalDecisions,
-    0,
-  );
-  const judgedDecisions = trend.buckets.reduce(
-    (sum, bucket) => sum + bucket.judgedDecisions,
     0,
   );
   const totalLoss = trend.buckets.reduce(
@@ -212,12 +212,10 @@ export function DecisionQualityTrendDialog({
     0,
   );
   const overallAvgLoss =
-    totalDecisions > 0
-      ? (totalLoss / totalDecisions).toFixed(DECIMAL_PLACES)
-      : "—";
+    totalDecisions > 0 ? formatNetLoss(totalLoss / totalDecisions) : "—";
   const overallOptimalRate =
-    judgedDecisions > 0
-      ? `${((optimalDecisions / judgedDecisions) * PER_CENT).toFixed(
+    totalDecisions > 0
+      ? `${((optimalDecisions / totalDecisions) * PER_CENT).toFixed(
           PERCENT_DECIMAL_PLACES,
         )}%`
       : "—";
@@ -265,10 +263,8 @@ export function DecisionQualityTrendDialog({
         ) : null}
 
         <p className={classes.methodology}>
-          Average loss is the expected points left on the table by your first
-          discard, so lower is better. Rolling batches smooth small-sample
-          swings; use each calendar period&apos;s decision count to judge its
-          signal.
+          {RECORDED_HISTORY_HELP} Rolling batches smooth small-sample swings;
+          use each calendar period&apos;s decision count to judge its signal.
         </p>
 
         {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (
@@ -289,7 +285,14 @@ export function DecisionQualityTrendDialog({
           classes={classes}
           metrics={[
             { label: "Decisions", value: totalDecisions },
-            { label: "Avg loss", value: overallAvgLoss },
+            {
+              accessibleValue:
+                totalDecisions > 0
+                  ? `Recorded loss overall: ${formatAccessibleNetLoss(totalLoss / totalDecisions)} points per discard`
+                  : "Recorded loss overall unavailable",
+              label: "Avg recorded loss",
+              value: overallAvgLoss,
+            },
             { label: "Best choice", value: overallOptimalRate },
             {
               label: "Skipped",
@@ -319,9 +322,7 @@ export function DecisionQualityTrendDialog({
 DecisionQualityTrendDialog.defaultProps = {
   initialGranularity: "rolling20",
   initialRoleFilter: "all",
-  lossesWithinNoise: NO_NOISE,
   onStartDrill: null,
-  recomputedLosses: NO_RECOMPUTED_LOSSES,
   sortOrder: SortOrder.DealOrder,
   tally: null,
 };

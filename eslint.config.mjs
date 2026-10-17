@@ -280,6 +280,13 @@ export default [
     files: ["**/*.test.ts*", "**/*.test.common.ts*", "**/*.stories.ts*"],
   })),
   {
+    files: ["tests-e2e/**/*.ts"],
+    rules: {
+      // Wire-format fixture properties retain the generated document's names.
+      camelcase: ["error", { properties: "never" }],
+    },
+  },
+  {
     files: ["**/*.test.ts*", "**/*.test.common.ts*", "**/*.stories.ts*"],
     plugins: {
       jest,
@@ -327,6 +334,8 @@ export default [
             "expectSecondAnalysisInformed",
             "expectHistoryMove",
             "expectNoRecordsStored",
+            "expectWithClock",
+            "expectExactFallback",
             "expectDrillState",
             "expectNoVerdictRecorded",
             "expectDrillFinished",
@@ -372,6 +381,8 @@ export default [
             "expectSecondAnalysisInformed",
             "expectHistoryMove",
             "expectNoRecordsStored",
+            "expectWithClock",
+            "expectExactFallback",
             "expectDrillState",
             "expectNoVerdictRecorded",
             "expectDrillFinished",

@@ -58,4 +58,26 @@ describe("buildContinuousDecisionPoints mastered marking", () => {
 
     expect(points.every((point) => !point.isMastered)).toBe(true);
   });
+
+  it("requires both an admitted mistake and a valid hand key for practice eligibility", () => {
+    const validHandKey = "5H,6H,7H,8H,9H,10H|Dealer";
+    const points = buildContinuousDecisionPoints(
+      [
+        decisionOf({ expectedPointsLoss: 0.5, handKey: validHandKey }),
+        decisionOf({ expectedPointsLoss: 0.5, handKey: "still-open" }),
+        decisionOf({
+          expectedPointsLoss: 0,
+          handKey: validHandKey,
+          isOptimal: true,
+        }),
+      ],
+      20,
+    );
+
+    expect(points.map((point) => point.isPracticeEligible)).toStrictEqual([
+      true,
+      false,
+      false,
+    ]);
+  });
 });

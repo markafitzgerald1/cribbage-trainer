@@ -12,7 +12,6 @@ import {
   makeDecisionPoint,
   makeMasteredDecisionPoint,
   makeRetainedDecisionPoint,
-  makeWithinNoiseDecisionPoint,
   renderChart,
 } from "./DecisionQualityChart.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
@@ -105,7 +104,7 @@ describe("decision quality chart point detail", () => {
     const panel = view.getByRole("region");
 
     expect(panel).toHaveTextContent("Decision #2");
-    expect(panel).toHaveTextContent("0.45 lost");
+    expect(panel).toHaveTextContent("Recorded cost: 0.45 points");
     expect(panel).toHaveTextContent("Hand");
     expect(panel).toHaveTextContent("Discarded");
     expect(cardLabelCount(view)).toBe(8);
@@ -164,8 +163,8 @@ describe("decision quality chart point detail", () => {
     },
     {
       close: (view: RenderChart): boolean =>
-        fireEvent.click(view.getByRole("button", { name: "Close" })),
-      name: "its Close button is pressed",
+        fireEvent.click(view.getByRole("button", { name: "Dismiss" })),
+      name: "Dismiss is pressed",
     },
     {
       close: (view: RenderChart): boolean =>
@@ -298,7 +297,9 @@ describe("decision quality chart point detail", () => {
 
     expectPanelText(view, "Retained decision #2");
 
-    expect(view.getByRole("region")).toHaveTextContent("0.40 lost");
+    expect(view.getByRole("region")).toHaveTextContent(
+      "Recorded cost: 0.40 points",
+    );
   });
 
   it("offers a practice button that forwards the tapped decision", () => {
@@ -344,74 +345,36 @@ describe("decision quality chart point detail", () => {
     expect(openDot).not.toHaveClass(classes.lossDotMastered);
     expect(markerFor(view, 1)).toHaveAttribute(
       "aria-label",
-      expect.stringContaining("mastered since"),
+      expect.stringContaining("mastered in later retries"),
     );
     expect(view.getByRole("region")).toHaveTextContent("Mastered");
   });
 });
 
-describe("decision quality chart within-noise point (#774)", () => {
-  it("draws a within-noise loss neutral, says so, and offers nothing to practice", () => {
-    const view = render(
-      <DecisionQualityChart
-        buckets={BUCKETS}
-        decisionPoints={[
-          makeDecisionPoint(1, 0, 0),
-          makeWithinNoiseDecisionPoint(2, 0.09, 0.05),
-        ]}
-        granularity="rolling20"
-        onPracticeDecision={jest.fn()}
-      />,
-    );
-    fireEvent.click(markerFor(view, 2));
-    const dot = view.container.querySelector(`.${classes.lossDot}`);
+describe("decision quality chart dismissal focus", () => {
+  it("returns focus to the selected marker after Dismiss", () => {
+    const other = renderPlainChart();
+    const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
+    const marker = markerFor(view, 2);
+    const dismiss = view.getByRole("button", { name: "Dismiss" });
+    dismiss.focus();
 
-    expect(dot).toHaveClass(classes.lossDotNoise);
-    expect(markerFor(view, 2)).toHaveAttribute(
-      "aria-label",
-      "Decision #2: 0.09 points loss, within simulation noise. Select to see the hand.",
+    fireEvent.click(dismiss);
+
+    expectNoPanel(view);
+
+    expect(document.activeElement).toBe(marker);
+    expect(other.container.querySelector("[role=button]")).not.toBe(
+      document.activeElement,
     );
-    expect(view.getByRole("region")).toHaveTextContent("Within noise");
-    expect(view.getByRole("region")).toHaveAttribute(
-      "data-within-noise",
-      "true",
-    );
-    expect(
-      view.queryByRole("button", { name: "Practice this hand" }),
-    ).toBeNull();
   });
 
-  // Recomputed under today's tables (#774): the verdict's own loss leads, and the stored one is only "recorded".
-  it.each([
-    {
-      expected: "0.09 points loss (5.00 recorded), within simulation noise",
-      panel: "0.09 lost (5.00 recorded)",
-      patch: { isWithinNoise: true, recomputedLoss: 0.0856 },
-    },
-    {
-      expected: "0.09 points loss, within simulation noise",
-      panel: "0.09 lost",
-      patch: {
-        expectedPointsLoss: 0.0856,
-        isWithinNoise: true,
-        recomputedLoss: 0.0856,
-      },
-    },
-    {
-      expected: "5.00 points loss recorded, now rated the best choice",
-      panel: "5.00 lost recorded, now rated the best choice",
-      patch: { recomputedLoss: 0 },
-    },
-  ])("names a judged loss as $expected", ({ expected, panel, patch }) => {
-    const view = openDetailOn(
-      withSecondPointPatched({ expectedPointsLoss: 5, ...patch }),
-      2,
-    );
+  it("dismisses a detail after switching to a calendar without decision markers", () => {
+    const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
+    rerenderChart(view, OPTIMAL_THEN_LOSS, "day");
 
-    expect(markerFor(view, 2)).toHaveAttribute(
-      "aria-label",
-      `Decision #2: ${expected}. Select to see the hand.`,
-    );
-    expect(view.getByText(panel)).toBeInTheDocument();
+    fireEvent.click(view.getByRole("button", { name: "Dismiss" }));
+
+    expectNoPanel(view);
   });
 });

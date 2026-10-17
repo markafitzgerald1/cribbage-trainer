@@ -1,4 +1,10 @@
 import {
+  type DeadlineJudgment,
+  type RecordedAdmission,
+  type SettledAdmission,
+  exactAdmission,
+} from "../ui/recordedAdmission";
+import {
   type DiscardQuality,
   getDiscardQuality,
 } from "../analysis/discardQuality";
@@ -20,19 +26,26 @@ import {
   type SidecarUncertainties,
   useSidecarUncertainties,
 } from "./useUncertainty";
+import {
+  discardLoss,
+  discardNoiseThreshold,
+  isWithinNoise,
+} from "../analysis/discardNoiseThreshold";
 import { type CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedTables } from "./expectedTables";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
-import { noiseVerdictThreshold } from "../analysis/discardNoiseThreshold";
 import { serializeHand } from "../game/Card";
 import { toHandKey } from "../ui/handKey";
 import { useMemo } from "react";
 
 export interface ChosenDiagnosticInfo {
+  readonly admission: RecordedAdmission | null;
   readonly captionAriaLabel: string | null;
   readonly chosenClassification: MistakeClassification | null;
+  // Settles a pending admission when its wait ends, from the sidecars that have arrived by then.
+  readonly judgeAtDeadline: DeadlineJudgment;
   // Hover text for the within-noise badge, saying what the badge's "within noise" means, including that the threshold is approximate; empty whenever the badge is not shown.
   readonly noiseBadgeTitle: string;
   readonly optimalMargin: OptimalDiscardMargin;
@@ -91,7 +104,7 @@ const verdictThreshold = ({
   !sidecars.isVerdictTimedOut &&
   sidecars.crib !== null &&
   sidecars.play !== null
-    ? noiseVerdictThreshold({
+    ? discardNoiseThreshold({
         best,
         chosen,
         cribUncertainty: sidecars.crib,
@@ -160,13 +173,40 @@ export const useChosenDiagnosticInfo = ({
       chosenClassification?.netLoss ?? 0,
       oppositeRoleLoss,
     );
-    const withinNoiseThreshold = verdictThreshold({
-      best,
-      chosen,
-      cribRole,
-      dealtCards,
-      sidecars,
-    });
+    const judgeWith = (judged: SidecarUncertainties) => {
+      const threshold = verdictThreshold({
+        best,
+        chosen,
+        cribRole,
+        dealtCards,
+        sidecars: judged,
+      });
+      const within =
+        best &&
+        chosen &&
+        isWithinNoise(discardLoss({ best, chosen }), threshold)
+          ? threshold
+          : null;
+      const settled: SettledAdmission = {
+        basis: threshold === null ? "exact-fallback-v1" : "sampling-noise-v1",
+        eligible: within === null,
+      };
+      return { settled, within };
+    };
+    const { settled, within: withinNoiseThreshold } = judgeWith(sidecars);
+    /*
+     * Judged when the decision's wait ends, which may be after this analysis
+     * has left the screen: sidecars that arrived in time then decide it just
+     * as they would have on screen, rather than the departure forcing the
+     * exact fallback.
+     */
+    const judgeAtDeadline = (): SettledAdmission =>
+      judgeWith({
+        crib: cribUncertaintySource.getUncertaintySync(),
+        isSettled: true,
+        isVerdictTimedOut: false,
+        play: playUncertaintySource.getUncertaintySync(),
+      }).settled;
     /*
      * An optimal verdict cannot change, so it is announced at once. A positive
      * loss can still turn out to be within the noise, so its verdict waits for
@@ -183,15 +223,32 @@ export const useChosenDiagnosticInfo = ({
           : `Within simulation noise, 95% one-sided, approximate: ${rolePair.accessibleLabel}, at or below the ${formatAccessibleNetLoss(withinNoiseThreshold)} point threshold, ${NOISE_THRESHOLD_QUALIFIER}. ${chosenClassification.accessibleLabel}`;
     }
 
+    let admission: RecordedAdmission | null = null;
+    if (quality !== null) {
+      admission = "pending";
+      if (quality.isOptimal) admission = exactAdmission(true);
+      else if (sidecars.isSettled) admission = settled;
+    }
     return {
+      admission,
       captionAriaLabel,
       chosenClassification,
+      judgeAtDeadline,
       noiseBadgeTitle: noiseBadgeTitleFor(withinNoiseThreshold),
       oppositeRoleLoss,
       optimalMargin,
       rolePair,
       withinNoiseThreshold,
     };
-  }, [cribRole, dealtCards, scoredOptions, sidecars, tables]);
+  }, [
+    cribRole,
+    cribUncertaintySource,
+    dealtCards,
+    playUncertaintySource,
+    quality,
+    scoredOptions,
+    sidecars,
+    tables,
+  ]);
   return { ...info, quality, sidecars };
 };

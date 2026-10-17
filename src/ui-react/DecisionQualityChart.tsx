@@ -1,7 +1,11 @@
 /* jscpd:ignore-start */
 import * as classes from "./DecisionQualityChart.module.css";
+import type {
+  DiscardDecisionPoint,
+  DiscardPeriodBucket,
+  DiscardTrendGranularity,
+} from "../ui/discardQualityTrend";
 import {
-  DECIMAL_PLACES,
   MARGIN_TOP,
   MIN_MAX_LOSS,
   PLOT_HEIGHT,
@@ -14,19 +18,18 @@ import {
   createXAxisLabels,
   getLatestLoss,
 } from "./decisionQualityChartLayout";
-import type {
-  DiscardDecisionPoint,
-  DiscardPeriodBucket,
-  DiscardTrendGranularity,
-} from "../ui/discardQualityTrend";
 import React, { useCallback, useEffect, useId, useState } from "react";
 import {
   buildChartDescription,
-  describeLoss,
   renderCalendarPlot,
   renderRollingPlot,
   renderTicks,
 } from "./decisionQualityChartMarkers";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
+import { RecordedTableProvenance } from "./RecordedTableProvenance";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { parseHand } from "../game/Card";
@@ -107,7 +110,6 @@ function renderDecisionDetail(
     <div
       aria-label={`${prefix} #${point.ordinal} detail`}
       className={classes.decisionDetail}
-      data-within-noise={point.isWithinNoise}
       role="region"
     >
       <div className={classes.decisionDetailHead}>
@@ -118,22 +120,26 @@ function renderDecisionDetail(
           <span className={classes.decisionDetailRole}>{role}</span>
         )}
         {point.isMastered ? (
-          <span className={classes.decisionDetailMastered}>Mastered</span>
+          <span className={classes.decisionDetailMastered}>
+            Mastered in later retries
+          </span>
         ) : null}
-        {point.isWithinNoise ? (
-          <span className={classes.decisionDetailRole}>Within noise</span>
-        ) : null}
-        <span className={classes.decisionDetailLoss}>
-          {describeLoss(point, "lost")}
+        <span
+          aria-label={`Recorded cost for selected decision: ${formatAccessibleNetLoss(point.expectedPointsLoss)} points`}
+          className={classes.decisionDetailLoss}
+          role="note"
+        >
+          {`Recorded cost: ${formatNetLoss(point.expectedPointsLoss)} points`}
         </span>
         <button
           className={classes.detailClose}
           onClick={onClose}
           type="button"
         >
-          Close
+          Dismiss
         </button>
       </div>
+      <RecordedTableProvenance identity={point.tableIdentity} />
       {renderDetailCards({
         cards,
         keyPrefix: `chart-hand-${point.ordinal}`,
@@ -172,6 +178,7 @@ function renderDecisionDetail(
  * and the panel closes on its own.
  */
 function useDecisionSelection(
+  chartId: string,
   decisionPoints: readonly DiscardDecisionPoint[],
   onPracticeDecision: PracticeDecisionHandler,
 ): {
@@ -187,8 +194,13 @@ function useDecisionSelection(
   );
 
   const handleCloseDetail = useCallback(() => {
+    document
+      .querySelector<SVGElement>(
+        `[id="${chartId}"] [role="button"][data-decision-recency="${selectedRecencyAt}"]`,
+      )
+      ?.focus();
     setSelectedRecencyAt(null);
-  }, []);
+  }, [chartId, selectedRecencyAt]);
 
   const handleChartActivate = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent) => {
@@ -237,11 +249,10 @@ function useDecisionSelection(
     setSelectedRecencyAt(null);
   }
 
-  // A loss within simulation noise is not in the mistake queue, so there is nothing to practice.
   const handlePracticeSelected =
     onPracticeDecision === null ||
     selectedPoint === null ||
-    selectedPoint.isWithinNoise
+    !selectedPoint.isPracticeEligible
       ? null
       : () => {
           onPracticeDecision(selectedPoint);
@@ -269,7 +280,7 @@ export function DecisionQualityChart({
     handleChartActivate,
     handleCloseDetail,
     handlePracticeSelected,
-  } = useDecisionSelection(decisionPoints, onPracticeDecision);
+  } = useDecisionSelection(chartId, decisionPoints, onPracticeDecision);
 
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
   const hasDecisionPoints = isRolling && decisionPoints.length > 0;
@@ -305,9 +316,7 @@ export function DecisionQualityChart({
 
   const latestLoss = hasDecisionPoints
     ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      decisionPoints[decisionPoints.length - 1]!.rollingMeanLoss.toFixed(
-        DECIMAL_PLACES,
-      )
+      decisionPoints[decisionPoints.length - 1]!.rollingMeanLoss
     : getLatestLoss(calendarPoints);
 
   const chartDesc = buildChartDescription({
@@ -326,6 +335,7 @@ export function DecisionQualityChart({
         aria-describedby={`${chartId}-desc`}
         aria-label="Decision quality over time trend chart"
         className={classes.chart}
+        id={chartId}
         onClick={handleChartActivate}
         onKeyDown={handleChartActivate}
         // Not role="img": a screen reader then ignores everything inside, including the marker buttons that take focus.

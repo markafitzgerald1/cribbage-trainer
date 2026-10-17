@@ -9,16 +9,16 @@ import type {
   StartAutoDrillHandler,
   StartDrillHandler,
 } from "./usePracticeDrill";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
+import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
-import { type UncertaintySource } from "../game/uncertaintyLoader";
-import { shippedCribUncertainty } from "../game/cribUncertaintyLoader";
-import { shippedPlayUncertainty } from "../game/playUncertaintyLoader";
-import { useTallyNoise } from "./useTallyNoise";
 
-const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
 const PER_CENT = 100;
 
@@ -47,12 +47,8 @@ const countAndShare = (part: number, whole: number): ReactNode => (
 const blankWhen = (hasToday: boolean) => (hasToday ? "" : null);
 
 interface DiscardTallyViewProps {
-  readonly cribUncertaintySource?: UncertaintySource;
-  // The history is judged against simulation noise only once a recommendation has been on screen, when its sidecars may load.
-  readonly hasShownRecommendation?: boolean;
   readonly onStartAutoDrill?: StartAutoDrillHandler;
   readonly onStartDrill?: StartDrillHandler;
-  readonly playUncertaintySource?: UncertaintySource;
   readonly sortOrder?: SortOrder;
   readonly summary: DiscardTallySummary;
   readonly tally?: StoredTally | null;
@@ -70,6 +66,18 @@ const renderMeasure = (
   </>
 );
 
+const recordedLossFigure = (
+  period: "all time" | "today",
+  loss: number,
+): ReactNode => (
+  <span
+    aria-label={`Recorded loss ${period}: ${formatAccessibleNetLoss(loss)} points per discard`}
+    role="note"
+  >
+    {formatNetLoss(loss)}
+  </span>
+);
+
 /*
  * What a player's own discards have given up against the best available one,
  * across every session on this browser. Named for the quantity rather than
@@ -83,22 +91,14 @@ const renderMeasure = (
  * room, which on a phone turned two rows into four ragged ones.
  */
 export function DiscardTallyView({
-  cribUncertaintySource = shippedCribUncertainty,
-  hasShownRecommendation = false,
   onStartAutoDrill = null,
   onStartDrill = null,
-  playUncertaintySource = shippedPlayUncertainty,
   sortOrder = SortOrder.Descending,
   summary,
   tally: injectedTally = null,
 }: DiscardTallyViewProps): ReactNode {
   const [showTrend, setShowTrend] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
-  const noise = useTallyNoise(summary, injectedTally, {
-    cribSource: cribUncertaintySource,
-    hasShownRecommendation,
-    playSource: playUncertaintySource,
-  });
 
   const handleOpenTrend = useCallback(() => {
     setShowTrend(true);
@@ -163,12 +163,14 @@ export function DiscardTallyView({
   const facedToday = summary.todayDecisions + summary.todaySkippedHands;
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
+  const hasMistakes = summary.decisions > summary.optimalDecisions;
 
   return (
-    <div
-      aria-busy={noise.isWaiting}
-      className={`${classes.tally} ${columns}`}
-    >
+    <div className={`${classes.tally} ${columns}`}>
+      <details className={classes.historyHelp}>
+        <summary>As recorded</summary>
+        <p>{RECORDED_HISTORY_HELP}</p>
+      </details>
       <span />
       {hasToday ? <span className={classes.period}>today</span> : null}
       <span className={classes.period}>all time</span>
@@ -181,27 +183,26 @@ export function DiscardTallyView({
       {summary.meanExpectedPointsLoss === null
         ? null
         : renderMeasure(
-            // "Points lost per discard" wraps mid-phrase on a phone, worst where the device font is set large; this keeps the per-discard sense, which a bare "points lost" would read as a total.
-            "Lost per discard",
+            "Avg recorded loss",
             summary.todayMeanExpectedPointsLoss === null
               ? blankWhen(hasToday)
-              : summary.todayMeanExpectedPointsLoss.toFixed(
-                  LOSS_FRACTION_DIGITS,
+              : recordedLossFigure(
+                  "today",
+                  summary.todayMeanExpectedPointsLoss,
                 ),
-            summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
+            recordedLossFigure("all time", summary.meanExpectedPointsLoss),
           )}
-      {/* A within-noise decision leaves both sides of this ratio (#774); "Lost per discard" above stays the exact mean of every decision. */}
-      {noise.judgedDecisions === 0
+      {summary.decisions === 0
         ? null
         : renderMeasure(
             "Best choice",
-            noise.judgedTodayDecisions === 0
+            summary.todayDecisions === 0
               ? blankWhen(hasToday)
               : countAndShare(
                   summary.todayOptimalDecisions,
-                  noise.judgedTodayDecisions,
+                  summary.todayDecisions,
                 ),
-            countAndShare(summary.optimalDecisions, noise.judgedDecisions),
+            countAndShare(summary.optimalDecisions, summary.decisions),
           )}
       {/*
        * Only once a hand has been abandoned, so an untouched row never implies
@@ -226,7 +227,7 @@ export function DiscardTallyView({
         >
           Quality trend
         </button>
-        {noise.hasMistakes ? (
+        {hasMistakes ? (
           <button
             className={classes.trendButton}
             onClick={handleOpenQueue}
@@ -238,10 +239,8 @@ export function DiscardTallyView({
       </div>
       {showTrend ? (
         <DecisionQualityTrendDialog
-          lossesWithinNoise={noise.withinNoise}
           onClose={handleCloseTrend}
           onStartDrill={handleStartDrillFromTrend}
-          recomputedLosses={noise.recomputedLosses}
           show={showTrend}
           sortOrder={sortOrder}
           tally={injectedTally}
@@ -249,7 +248,6 @@ export function DiscardTallyView({
       ) : null}
       {showQueue ? (
         <MistakeQueueDialog
-          lossesWithinNoise={noise.withinNoise}
           onClose={handleCloseQueue}
           onStartAutoDrill={handleStartAutoDrill}
           onStartDrill={handleStartDrill}
@@ -263,11 +261,8 @@ export function DiscardTallyView({
 }
 
 DiscardTallyView.defaultProps = {
-  cribUncertaintySource: shippedCribUncertainty,
-  hasShownRecommendation: false,
   onStartAutoDrill: null,
   onStartDrill: null,
-  playUncertaintySource: shippedPlayUncertainty,
   sortOrder: SortOrder.Descending,
   tally: null,
 };

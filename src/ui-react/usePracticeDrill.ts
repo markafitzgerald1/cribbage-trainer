@@ -1,5 +1,5 @@
-/* jscpd:ignore-start */
 import { type Card, parseHand, serializeHand } from "../game/Card";
+/* jscpd:ignore-start */
 import {
   type MistakeQueueItem,
   SUCCESSES_FOR_MASTERY,
@@ -7,16 +7,18 @@ import {
   sampleMistakeQueueByPriority,
 } from "../ui/mistakeQueue";
 import {
+  invertSuitPermutation,
   permuteCardSuits,
   suitPermutationForView,
 } from "../game/suitPermutation";
 import { readTallyForDisplay, recordPracticeAttempt } from "../ui/discardTally";
 import { useCallback, useRef, useState } from "react";
+import type { AnalysisRenderedHandler } from "./ScoredPossibleKeepDiscards";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
-import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import type { ReportAnalysisRendered } from "./useAnalysisReporting";
+import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
@@ -38,6 +40,8 @@ export interface PracticeDrillHand {
  * re-deriving the recommendation.
  */
 export interface PracticeVerdict {
+  readonly originalTableIdentity?: TableIdentity | null;
+  readonly retryTableIdentity?: TableIdentity | null;
   readonly chosenDiscard: string;
   readonly chosenLoss: number;
   readonly consecutiveSuccesses: number;
@@ -54,7 +58,7 @@ export interface PracticeDrill {
   // Drops the retained drill state without touching the board — for a history restore, which brings its own hand back.
   readonly clearDrill: () => void;
   // Forwards to the caller's own analysis handler, then records the drill attempt once the answer is on screen.
-  readonly handleAnalysisRendered: (analysis: RenderedAnalysis) => void;
+  readonly handleAnalysisRendered: AnalysisRenderedHandler;
   readonly handleStartAutoDrill: () => void;
   readonly handleStartDrill: (item: MistakeQueueItem) => void;
   readonly hasNextHand: boolean;
@@ -81,7 +85,7 @@ interface UsePracticeDrillArgs {
 
 /*
  * The renaming a given view of a drilled mistake is shown under. Three
- * callers need it — the cards on the board, the "Before" discard beside
+ * callers need it — the cards on the board, the "Then" discard beside
  * them, and the identity the tally is told to undo — and each calls this
  * independently rather than sharing one computed value. What keeps them
  * agreeing is that the result is a pure function of `item` and `viewIndex`
@@ -120,7 +124,7 @@ const toDrillHand = (
 });
 
 /*
- * The verdict panel's "Before" row must show the mistake's previous discard
+ * The verdict panel's "Then" row must show the mistake's previous discard
  * in the same relabeled suits as the hand on screen, or the two rows name
  * cards that are not in front of the player — coherence over preserving the
  * original record, which stays untouched in storage either way.
@@ -279,8 +283,14 @@ export const usePracticeDrill = ({
     beginWith(next);
   }, [activeItem, beginWith, drawNext, onExit]);
 
-  const handleAnalysisRendered = useCallback(
-    (analysis: RenderedAnalysis) => {
+  const handleAnalysisRendered: AnalysisRenderedHandler = useCallback(
+    (...args: Parameters<AnalysisRenderedHandler>) => {
+      const [
+        analysis,
+        tableIdentity = null,
+        admission = null,
+        judgeAtDeadline = null,
+      ] = args;
       /*
        * The board is this drill's relabeled stand-in for `activeItem`, so the
        * tally is told which renaming to undo before it decides what decision
@@ -293,6 +303,9 @@ export const usePracticeDrill = ({
         activeItem === null
           ? null
           : drillRelabeling(activeItem, activeViewIndex),
+        tableIdentity,
+        admission,
+        judgeAtDeadline,
       );
       if (
         activeItem === null ||
@@ -305,15 +318,24 @@ export const usePracticeDrill = ({
       }
       recordedRef.current = true;
       const { expectedPointsLoss, isOptimal } = analysis.quality;
+      const detail = {
+        basis: "exact-v1" as const,
+        discardKey: serializeHand(
+          permuteCardSuits(
+            dealtCards.filter((card) => !card.kept),
+            invertSuitPermutation(drillRelabeling(activeItem, activeViewIndex)),
+          ),
+        ),
+        expectedPointsLoss,
+        isOptimal,
+        outcome: isOptimal ? ("success" as const) : ("failure" as const),
+        tableIdentity,
+      };
+      const attempt = { at: Date.now(), detail, handKey: activeItem.handKey };
       recordPracticeAttempt(
         isOptimal
-          ? { at: Date.now(), handKey: activeItem.handKey, isOptimal: true }
-          : {
-              at: Date.now(),
-              expectedPointsLoss,
-              handKey: activeItem.handKey,
-              isOptimal: false,
-            },
+          ? { ...attempt, isOptimal: true }
+          : { ...attempt, expectedPointsLoss, isOptimal: false },
       );
       /*
        * Read the streak back from the record just written, not from the
@@ -343,8 +365,10 @@ export const usePracticeDrill = ({
         consecutiveSuccesses,
         isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
         isOptimal,
+        originalTableIdentity: activeItem.tableIdentity ?? null,
         previousDiscard: permutedPreviousDiscard(activeItem, activeViewIndex),
         previousLoss: activeItem.previousDiscardLoss,
+        retryTableIdentity: tableIdentity,
       });
     },
     [activeItem, activeViewIndex, dealtCards, onAnalysisRendered, phase],
