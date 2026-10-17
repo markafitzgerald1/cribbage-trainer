@@ -673,6 +673,20 @@ once you are already editing layout or interaction code.
   and the reason sits below it at a desktop and a phone-portrait width. The
   `practiceDrill.spec.ts` caption-height budget (65px) held unchanged.
 
+- **History stays as recorded across a table change.** Tally, trend and
+  chart figures use recorded results; show the visible average as
+  "Avg recorded loss" (accessible names say "Recorded loss … per discard")
+  and costs as "Recorded cost", and keep current-table comparisons separate
+  and explicitly labeled. Announce positive sub-cent values with the
+  accessible formatter, not the visible one. Unavailable is unknown, never
+  zero, and today's component costs cannot explain an earlier recorded total.
+  Never recompute admission or denominators with current tables: a current
+  verdict cannot remove a grandfathered item or add an old best choice.
+  Historical figures can span models, so they are not a controlled measure
+  of improvement. Keep the collapsed tally explanation in its existing header
+  row: an extra row takes height from the analysis and breaks the per-browser
+  practice table budgets.
+
 - A recorded table identity must travel beside the analysis produced by that
   loaded means pair. Reading a global digest later can stamp the wrong pair;
   injected means must explicitly supply their identity or remain unknown.

@@ -18,9 +18,14 @@ import {
   type StoredTally,
   readTallyForDisplay,
 } from "../ui/discardTally";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
+import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
 import type { StartDrillHandler } from "./usePracticeDrill";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
@@ -51,7 +56,7 @@ const GRANULARITY_OPTIONS: {
 ];
 
 const PER_CENT = 100;
-const DECIMAL_PLACES = 2;
+
 const PERCENT_DECIMAL_PLACES = 1;
 
 const formatSkipRate = (decisions: number, skipped: number): string => {
@@ -78,7 +83,7 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
   const avgLoss =
     bucket.meanExpectedPointsLoss === null
       ? "—"
-      : bucket.meanExpectedPointsLoss.toFixed(DECIMAL_PLACES);
+      : formatNetLoss(bucket.meanExpectedPointsLoss);
   const optimalPct =
     bucket.decisions > 0
       ? `${((bucket.optimalDecisions / bucket.decisions) * PER_CENT).toFixed(
@@ -92,7 +97,13 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
       <td>{bucket.decisions}</td>
       <td>
         <span
+          aria-label={
+            bucket.meanExpectedPointsLoss === null
+              ? `Recorded loss for ${bucket.label} unavailable`
+              : `Recorded loss for ${bucket.label}: ${formatAccessibleNetLoss(bucket.meanExpectedPointsLoss)} points per discard`
+          }
           className={`${classes.lossPill} ${getLossPillClass(bucket.meanExpectedPointsLoss)}`}
+          role="note"
         >
           {avgLoss}
         </span>
@@ -108,13 +119,16 @@ function renderBreakdownTable(
 ): React.JSX.Element {
   return (
     <div className={classes.tableWrapper}>
-      <table className={classes.table}>
+      <table
+        aria-label="Recorded decision history"
+        className={classes.table}
+      >
         <thead>
           <tr>
             <th>Period / Batch</th>
             <th>Decisions</th>
-            <th>Avg loss</th>
-            <th>Optimal</th>
+            <th>Avg recorded loss</th>
+            <th>Best choice</th>
             <th>Skipped (rate)</th>
           </tr>
         </thead>
@@ -198,9 +212,7 @@ export function DecisionQualityTrendDialog({
     0,
   );
   const overallAvgLoss =
-    totalDecisions > 0
-      ? (totalLoss / totalDecisions).toFixed(DECIMAL_PLACES)
-      : "—";
+    totalDecisions > 0 ? formatNetLoss(totalLoss / totalDecisions) : "—";
   const overallOptimalRate =
     totalDecisions > 0
       ? `${((optimalDecisions / totalDecisions) * PER_CENT).toFixed(
@@ -251,10 +263,8 @@ export function DecisionQualityTrendDialog({
         ) : null}
 
         <p className={classes.methodology}>
-          Average loss is the expected points left on the table by your first
-          discard, so lower is better. Rolling batches smooth small-sample
-          swings; use each calendar period&apos;s decision count to judge its
-          signal.
+          {RECORDED_HISTORY_HELP} Rolling batches smooth small-sample swings;
+          use each calendar period&apos;s decision count to judge its signal.
         </p>
 
         {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (
@@ -275,7 +285,14 @@ export function DecisionQualityTrendDialog({
           classes={classes}
           metrics={[
             { label: "Decisions", value: totalDecisions },
-            { label: "Avg loss", value: overallAvgLoss },
+            {
+              accessibleValue:
+                totalDecisions > 0
+                  ? `Recorded loss overall: ${formatAccessibleNetLoss(totalLoss / totalDecisions)} points per discard`
+                  : "Recorded loss overall unavailable",
+              label: "Avg recorded loss",
+              value: overallAvgLoss,
+            },
             { label: "Best choice", value: overallOptimalRate },
             {
               label: "Skipped",

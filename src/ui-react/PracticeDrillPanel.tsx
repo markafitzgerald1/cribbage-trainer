@@ -39,9 +39,7 @@ const defaultLocateEarlier = (): void => {
 };
 
 /*
- * A plain magnitude, matching how "Lost per discard" and the trend view's
- * "Avg loss" already show what a discard gave up: it is a cost, never a gain,
- * so a sign would only be noise.
+ * Recorded and retry losses are costs, so a sign would imply a gain.
  */
 const formatLoss = (loss: number): string => formatNetLoss(loss);
 

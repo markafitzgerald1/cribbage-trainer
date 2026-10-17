@@ -87,12 +87,12 @@ export const SEED_TALLY_WITH_QUANTILES = {
   ],
 };
 
-const seedBrowser = (page: Page, tally: typeof SEED_TALLY) =>
+const seedBrowser = (page: Page, tally: unknown) =>
   page.addInitScript(
     (stored: {
       readonly consent: Record<string, string>;
       readonly keyPrefix: string;
-      readonly tally: typeof SEED_TALLY;
+      readonly tally: unknown;
     }) => {
       window.localStorage.setItem(
         stored.keyPrefix + new URL(document.baseURI).pathname,
@@ -112,7 +112,10 @@ const seedBrowser = (page: Page, tally: typeof SEED_TALLY) =>
     },
   );
 
-export const openSeededTrainer = async (page: Page, tally = SEED_TALLY) => {
+export const openSeededTrainer = async (
+  page: Page,
+  tally: unknown = SEED_TALLY,
+) => {
   await blockGoogleAnalytics(page);
   await seedBrowser(page, tally);
   await page.goto("/");
