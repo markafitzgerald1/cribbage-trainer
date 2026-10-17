@@ -105,9 +105,10 @@ describe("scored analysis provenance", () => {
     );
     await waitFor(
       () =>
-        expect(
-          readTallyForDisplay().records[0]?.expectedPointsLoss,
-        ).toBeGreaterThan(0),
+        expect(readTallyForDisplay().records[0]).toMatchObject({
+          isOptimal: false,
+          recordedAdmission: { basis: "exact-fallback-v1", eligible: true },
+        }),
       waitForAnalysis,
     );
     const [original] = readTallyForDisplay().records;

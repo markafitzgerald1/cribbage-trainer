@@ -44,4 +44,3 @@ export const summaryLabel: string;
 export const summaryValue: string;
 export const title: string;
 /* jscpd:ignore-end */
-export const tableProvenance: string;

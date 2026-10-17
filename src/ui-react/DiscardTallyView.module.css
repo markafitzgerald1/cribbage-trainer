@@ -37,6 +37,24 @@
   grid-template-columns: 1fr auto;
 }
 
+/* Closed help reuses the header cell so practice keeps its table height. */
+.history-help[open] {
+  grid-column: 1 / -1;
+}
+
+.history-help:not([open]) + span {
+  display: none;
+}
+
+.history-help summary {
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.history-help p {
+  white-space: normal;
+}
+
 .figure {
   font-variant-numeric: tabular-nums;
   font-weight: bold;
@@ -102,7 +120,7 @@
 /*
  * On a phone with the device font-size setting above the default, the
  * em-sized labels grow while the two figure columns take their share of the
- * row first, squeezing the 1fr label track until "Lost per discard" and
+ * row first, squeezing the 1fr label track until the loss label and
  * "Best choice" wrapped into several ragged lines (AGENTS.md's rem/em-floor
  * trap). Cap the tally font with a viewport unit and keep every label and
  * figure on one line, so a squeeze overflows predictably rather than
@@ -162,7 +180,7 @@
 /*
  * Side-by-side mode has the same rem/em-floor trap, and worse consequences:
  * the tally sits in the fixed-height left column below the cards, so when a
- * large device font-size wraps "Lost per discard" and "Hands skipped" onto
+ * large device font-size wraps the loss label and "Hands skipped" onto
  * two or three lines each, the extra height pushes the "Quality trend" and
  * "Mistake queue" buttons past the bottom of a short phone-landscape
  * viewport — and Android Chrome does not always scroll the app box to

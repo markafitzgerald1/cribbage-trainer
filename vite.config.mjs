@@ -61,17 +61,15 @@ export default {
        * red on noise. The margin absorbs that variance while staying well
        * above what a real regression would cost.
        *
-       * Set for #894's second pull request a quarter point under the lowest
-       * Docker totals observed across its gate runs, metric by metric:
-       * statements 91.64 -> 91.39, branches 82.93 -> 82.68, functions
-       * 92.94 -> 92.69, lines 91.50 -> 91.25. The review-round commits moved
-       * functions from 93.21 to 92.94, which the earlier 92.96 floor rejected.
+       * Recorded-history integration: Docker measured 91.78% statements,
+       * 83.23% branches, 93.07% functions and 91.64% lines. A quarter-point
+       * margin absorbs the measured run-to-run variation.
        */
       thresholds: {
-        branches: 82.68,
-        functions: 92.69,
-        lines: 91.25,
-        statements: 91.39,
+        branches: 82.98,
+        functions: 92.82,
+        lines: 91.39,
+        statements: 91.53,
       },
     },
     projects: [

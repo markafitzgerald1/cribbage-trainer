@@ -342,15 +342,15 @@ const itemAt = (
 ): MistakeQueueItem => items.at(index) as MistakeQueueItem;
 
 /*
- * Draws one active (non-mastered) hand weighted by `priority` — the expected
- * points a single correct drill of that hand recovers, the same quantity the
- * "priority" sort order ranks by, so the browse list and the auto-deal share
- * one function. `random` is a uniform value in [0, 1); callers pass their
- * existing generator. When every active hand still has priority 0 (no wrong
- * attempt has cost anything yet) the draw falls back to uniform so a hand is
- * still dealt. `excludeHandKey` drops the hand just drilled so a run never
- * deals it twice in a row, unless it is the only active hand left. Returns
- * null only when no active hand exists.
+ * Draws one active (non-mastered) hand using the recorded-attempt priority
+ * that also ranks the browse list, so sorting and automatic practice agree
+ * without scoring history under current tables. Priority is the expected
+ * points one correct drill recovers. `random` is a uniform value in [0, 1);
+ * callers pass their existing generator. When every active hand still has
+ * priority 0 (no wrong attempt has cost anything yet), the draw falls back
+ * to uniform so a hand is still dealt. `excludeHandKey` drops the hand just
+ * drilled so a run never deals it twice in a row, unless it is the only
+ * active hand left. Returns null only when no active hand exists.
  */
 export const sampleMistakeQueueByPriority = (
   items: readonly MistakeQueueItem[],

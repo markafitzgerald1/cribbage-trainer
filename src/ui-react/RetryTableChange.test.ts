@@ -1,18 +1,30 @@
+import {
+  type DiscardTrendGranularity,
+  computeDiscardQualityTrend,
+} from "../ui/discardQualityTrend";
 import { HAND_KEY, freshHarness } from "./usePracticeDrill.test.common";
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
+import {
+  discardTallyKey,
+  readDiscardTally,
+  readTallyForDisplay,
+  recordDiscardDecision,
+} from "../ui/discardTally";
 import {
   expectedCribPointsTable,
   expectedPlayPointsTable,
 } from "../analysis/analysis.test.common";
+import { fireEvent, render } from "@testing-library/react";
 import {
   originalIdentity,
   retryIdentity,
 } from "./PracticeDrillPanel.test.common";
 import { parseHand, serializeHand } from "../game/Card";
-import { readTallyForDisplay, recordDiscardDecision } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
+import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
+import { createElement } from "react";
 import { getDiscardQuality } from "../analysis/discardQuality";
 import { toDealtCards } from "../game/toDealtCards";
 
@@ -250,5 +262,114 @@ describe("retries across loaded table pairs", () => {
     reportRetry(harness, quality, retryIdentity);
 
     expect(readTallyForDisplay().attemptLog).toHaveLength(1);
+  });
+});
+
+const HISTORY_VIEWS: DiscardTrendGranularity[] = [
+  "rolling20",
+  "rolling50",
+  "day",
+  "week",
+  "month",
+];
+
+describe("recorded history across loaded table pairs", () => {
+  it.each(
+    HISTORY_VIEWS.flatMap((granularity) =>
+      ["5H,6H", "5H,10H"].map((discard) => ({ discard, granularity })),
+    ),
+  )(
+    "keeps $granularity costs and best-choice counts as recorded for $discard after the tables change and storage reloads",
+    ({ discard, granularity }) => {
+      freshHarness();
+      // History is recorded from tablesB while tablesA stays installed, so a reader that scores history again with the installed tables changes the answer.
+      const then = qualityWith(discard, tablesB);
+      const now = qualityWith(discard, tablesA);
+
+      expect(then.isOptimal).toBe(!now.isOptimal);
+      expect(then.expectedPointsLoss).not.toBe(now.expectedPointsLoss);
+
+      recordOriginal(discard, then);
+      const before = computeDiscardQualityTrend(readTallyForDisplay(), {
+        granularity,
+        now: 100,
+      });
+      const originalSummary = readDiscardTally(100);
+      const originalBytes = localStorage.getItem(discardTallyKey);
+      recordCurrent(now);
+      const after = computeDiscardQualityTrend(readTallyForDisplay(), {
+        granularity,
+        now: 100,
+      });
+
+      expect(after).toStrictEqual(before);
+      expect(after.buckets[0]).toMatchObject({
+        decisions: 1,
+        meanExpectedPointsLoss: then.expectedPointsLoss,
+        optimalDecisions: Number(then.isOptimal),
+      });
+      expect({
+        bytes: localStorage.getItem(discardTallyKey),
+        decisions: after.totalAuthenticDecisions,
+        summary: readDiscardTally(100),
+        today: {
+          loss: originalSummary.todayMeanExpectedPointsLoss,
+          optimal: originalSummary.todayOptimalDecisions,
+        },
+      }).toStrictEqual({
+        bytes: originalBytes,
+        decisions: 1,
+        summary: originalSummary,
+        today: {
+          loss: then.expectedPointsLoss,
+          optimal: Number(then.isOptimal),
+        },
+      });
+    },
+  );
+
+  it("keeps the trend's practice action for a mistake already mastered under the original tables, even when the newer tables rate that discard best", () => {
+    const harness = freshHarness({ followLoadedHand: true });
+    const { then, now } = comparedChoice("5H,6H");
+
+    expect(now.isOptimal).toBe(true);
+
+    recordOriginal("5H,6H", then);
+    actualRetry(harness, tablesA, { identity: originalIdentity });
+    actualRetry(harness, tablesB, { identity: retryIdentity });
+    const tally = readTallyForDisplay();
+    const original = tally.records[0]!;
+    const point = computeDiscardQualityTrend(tally, {
+      granularity: "rolling20",
+    }).decisionPoints[0]!;
+
+    expect(point).toMatchObject({
+      expectedPointsLoss: original.expectedPointsLoss,
+      isMastered: true,
+      isPracticeEligible: true,
+      tableIdentity: originalIdentity,
+    });
+
+    const onStartDrill = jest.fn();
+    const view = render(
+      createElement(DecisionQualityTrendDialog, {
+        onClose: jest.fn(),
+        onStartDrill,
+        show: true,
+        tally,
+      }),
+    );
+    fireEvent.click(
+      view.getByRole("button", { name: /Select to see the hand/u }),
+    );
+    fireEvent.click(view.getByRole("button", { name: "Practice this hand" }));
+
+    expect(onStartDrill).toHaveBeenCalledWith(
+      expect.objectContaining({
+        handKey: HAND_KEY,
+        isMastered: true,
+        previousDiscardLoss: original.expectedPointsLoss,
+      }),
+    );
   });
 });
