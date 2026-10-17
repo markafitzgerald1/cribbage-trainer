@@ -1,5 +1,11 @@
 /* jscpd:ignore-start */
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import {
+  RECORDED_MISTAKE,
+  RECORDED_OPTIMAL,
+  RECORDED_WITHIN_NOISE,
+  recordedTally,
+} from "./discardTallyNoise.test.common";
 import { expect, fn, userEvent, waitFor } from "storybook/test";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import { DiscardTallyView } from "./DiscardTallyView";
@@ -196,5 +202,57 @@ export const PracticeClosesTrend: StoryObj<typeof meta> = {
 
     await expect(canvas.queryByRole("region")).toBeNull();
     await expect(canvas.queryByText("Decision quality over time")).toBeNull();
+  },
+};
+
+/*
+ * #774: a decision whose recorded admission says its loss was within
+ * simulation noise. It leaves both sides of Best choice, the queue and the
+ * trend's shares, read from what was recorded rather than re-judged.
+ */
+const ALL_THREE = [RECORDED_OPTIMAL, RECORDED_WITHIN_NOISE, RECORDED_MISTAKE];
+// One best choice and one decision recorded as within noise, among `decisions`.
+const oneWithinNoise = (decisions: number, meanExpectedPointsLoss: number) =>
+  discardTallySummary({
+    decisions,
+    meanExpectedPointsLoss,
+    optimalDecisions: 1,
+    withinNoiseDecisions: 1,
+  });
+const allThreeSummary = oneWithinNoise(3, 0.5137);
+
+export const WithinNoiseLeftOutOfBestChoice = showing(allThreeSummary, "1/2");
+
+export const EveryMistakeWithinNoise: StoryObj<typeof meta> = {
+  args: {
+    summary: oneWithinNoise(2, 0.0205),
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("1/1")).toBeVisible();
+    await expect(
+      canvas.queryByRole("button", { name: "Mistake queue" }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const WithinNoiseInQualityTrend: StoryObj<typeof meta> = {
+  args: { summary: allThreeSummary, tally: recordedTally(ALL_THREE) },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("1/2")).toBeVisible();
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Quality trend" }),
+    );
+
+    // The Best choice card and the one rolling batch's row agree.
+    await expect(canvas.getAllByText("50.0%")).toHaveLength(2);
+
+    canvas
+      .getByRole("button", {
+        name: "Decision #2, recorded cost 0.04 points, within simulation noise. Select to see the hand.",
+      })
+      .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+    await expect(await canvas.findByText("Within noise")).toBeVisible();
   },
 };

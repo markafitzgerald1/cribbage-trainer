@@ -5,6 +5,7 @@ import {
   phonePortraitViewport,
 } from "./layoutMeasurements";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
+import { blockUncertaintySidecars } from "./blockUncertaintySidecars";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 /*
@@ -47,6 +48,7 @@ const selectTwoDiscards = async (page: Page) => {
 // An ordinary deal: no seed and no hand parameter, so the decision is authentic.
 const playOneAuthenticHand = async (page: Page) => {
   await blockGoogleAnalytics(page);
+  await blockUncertaintySidecars(page);
   await page.goto("/");
   await selectTwoDiscards(page);
 };

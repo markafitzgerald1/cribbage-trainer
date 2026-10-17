@@ -55,6 +55,8 @@ export const summaryOf = (
   todayMeanExpectedPointsLoss: meanExpectedPointsLoss,
   todayOptimalDecisions: optimalDecisions,
   todaySkippedHands: 0,
+  todayWithinNoiseDecisions: 0,
+  withinNoiseDecisions: 0,
 });
 
 // For the cases where today and the lifetime figures genuinely differ.

@@ -110,6 +110,7 @@ function renderDecisionDetail(
     <div
       aria-label={`${prefix} #${point.ordinal} detail`}
       className={classes.decisionDetail}
+      data-within-noise={point.isWithinNoise}
       role="region"
     >
       <div className={classes.decisionDetailHead}>
@@ -123,6 +124,9 @@ function renderDecisionDetail(
           <span className={classes.decisionDetailMastered}>
             Mastered in later retries
           </span>
+        ) : null}
+        {point.isWithinNoise ? (
+          <span className={classes.decisionDetailRole}>Within noise</span>
         ) : null}
         <span
           aria-label={`Recorded cost for selected decision: ${formatAccessibleNetLoss(point.expectedPointsLoss)} points`}

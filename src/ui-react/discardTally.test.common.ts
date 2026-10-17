@@ -16,5 +16,7 @@ export const discardTallySummary = (
   todayMeanExpectedPointsLoss: null,
   todayOptimalDecisions: 0,
   todaySkippedHands: 0,
+  todayWithinNoiseDecisions: 0,
+  withinNoiseDecisions: 0,
   ...overrides,
 });

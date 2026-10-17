@@ -13,6 +13,7 @@ export const makeBucket = (
 ): DiscardPeriodBucket => ({
   decisions,
   endTime: 1700003600000,
+  judgedDecisions: decisions,
   key,
   label: `Period ${key}`,
   meanExpectedPointsLoss: loss,
@@ -51,6 +52,7 @@ export const makeDecisionPoint = (
   isOptimal: expectedPointsLoss === 0,
   isPracticeEligible: expectedPointsLoss > 0,
   isRetained: false,
+  isWithinNoise: false,
   ordinal,
   recencyAt: 1_700_000_500_000 + ordinal,
   rollingMeanLoss,
