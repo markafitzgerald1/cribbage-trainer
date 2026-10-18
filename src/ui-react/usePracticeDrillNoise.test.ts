@@ -2,24 +2,32 @@ import {
   HAND_KEY,
   type Harness,
   analysisOf,
+  committedHarness,
   expectNoDrillStarted,
   expectNoVerdictRecorded,
   freshHarness,
+  refuseWrites,
 } from "./usePracticeDrill.test.common";
-import { describe, expect, it } from "@jest/globals";
+import type {
+  RecordedAdmission,
+  SettledAdmission,
+} from "../ui/recordedAdmission";
+import { describe, expect, it, jest } from "@jest/globals";
 import {
   readTallyForDisplay,
   recordDiscardDecision,
   recordPracticeAttempt,
 } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
-import type { RecordedAdmission } from "../ui/recordedAdmission";
+import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
+import { act } from "@testing-library/react";
 
-const WITHIN_NOISE: RecordedAdmission = {
+const WITHIN_NOISE: SettledAdmission = {
   basis: "sampling-noise-v1",
   eligible: false,
 };
 const NOISE_LOSS = 0.06;
+const DEADLINE_MS = SIDECAR_SETTLE_TIMEOUT_MS + 1000;
 
 const retry = (
   harness: Harness,
@@ -39,6 +47,10 @@ const retryWith = (admission: RecordedAdmission | null): Harness => {
 
 const recordEarlierSuccess = () =>
   recordPracticeAttempt({ at: 1, handKey: HAND_KEY, isOptimal: true });
+
+const expectOneAttempt = () => {
+  expect(readTallyForDisplay().practice[0]?.attempts).toBe(1);
+};
 
 const expectStoredAttempt = (basis: string, outcome: string) => {
   expect(readTallyForDisplay().attemptLog?.at(-1)).toMatchObject({
@@ -67,12 +79,23 @@ describe("grading a drill retry by the caption's verdict", () => {
     expectStoredAttempt("sampling-noise-v1", "success");
   });
 
-  it("masters a hand whose earlier success is followed by a within-noise retry", () => {
+  it.each([
+    {
+      expected: { isMastered: true },
+      name: "masters a hand whose earlier success is followed by one",
+      prepare: recordEarlierSuccess,
+    },
+    {
+      expected: { consecutiveSuccesses: 1 },
+      name: "counts toward the streak when a newer tally refuses the write for",
+      prepare: refuseWrites,
+    },
+  ])("$name a within-noise retry", ({ expected, prepare }) => {
     const harness = freshHarness({ seed: true });
-    recordEarlierSuccess();
+    prepare();
     retry(harness, NOISE_LOSS, WITHIN_NOISE);
 
-    expect(harness.drill().verdict?.isMastered).toBe(true);
+    expect(harness.drill().verdict).toMatchObject(expected);
   });
 
   it.each([
@@ -106,16 +129,8 @@ describe("grading a drill retry by the caption's verdict", () => {
     harness.render(analysisOf(false, NOISE_LOSS), null, WITHIN_NOISE);
 
     expect(harness.drill().verdict?.isWithinNoise).toBe(true);
-    expect(readTallyForDisplay().practice[0]?.attempts).toBe(1);
-  });
 
-  it("keeps an optimal retry exact", () => {
-    const harness = freshHarness({ seed: true });
-    retry(harness, 0, { basis: "exact-v1", eligible: false });
-
-    expect(harness.drill().verdict?.isWithinNoise).toBe(false);
-
-    expectStoredAttempt("exact-v1", "success");
+    expectOneAttempt();
   });
 
   it("never lets the auto-drill deal a hand recorded as within noise", () => {
@@ -133,5 +148,110 @@ describe("grading a drill retry by the caption's verdict", () => {
     harness.auto();
 
     expectNoDrillStarted(harness);
+  });
+
+  it.each([
+    { admission: { basis: "exact-v1", eligible: false }, name: "exact" },
+    { admission: WITHIN_NOISE, name: "within-noise" },
+  ])(
+    "keeps an optimal retry exact under a $name admission",
+    ({ admission }) => {
+      const harness = freshHarness({ seed: true });
+      retry(harness, 0, admission);
+
+      expectStoredAttempt("exact-v1", "success");
+
+      expect(harness.drill().verdict?.isWithinNoise).toBe(false);
+    },
+  );
+});
+
+const elapse = (milliseconds: number) =>
+  act(() => {
+    jest.advanceTimersByTime(milliseconds);
+  });
+
+const elapseDeadline = () => elapse(DEADLINE_MS);
+
+const withFakeTimers = (scenario: () => void) => {
+  jest.useFakeTimers();
+  try {
+    scenario();
+  } finally {
+    jest.useRealTimers();
+  }
+};
+
+const PENDING_LOSS = 1.5;
+const WORSE: SettledAdmission = { basis: "sampling-noise-v1", eligible: true };
+
+const pendingRetry = (judge: () => SettledAdmission): Harness => {
+  const harness = committedHarness();
+  harness.renderPending(analysisOf(false, PENDING_LOSS), judge);
+  return harness;
+};
+
+const renderSettled = (harness: Harness) =>
+  harness.render(analysisOf(false, PENDING_LOSS), null, WORSE);
+
+describe("a retry whose verdict is still pending", () => {
+  it.each([
+    { basis: "exact-v1", judged: WORSE, outcome: "failure" },
+    { basis: "sampling-noise-v1", judged: WITHIN_NOISE, outcome: "success" },
+  ])(
+    "is graded by its deadline's verdict ($outcome) when the player leaves first",
+    ({ basis, judged, outcome }) => {
+      withFakeTimers(() => {
+        pendingRetry(() => judged).exit();
+        elapseDeadline();
+      });
+
+      expectStoredAttempt(basis, outcome);
+    },
+  );
+
+  it("falls back to an exact grade, once, when it was re-reported without a judge", () => {
+    withFakeTimers(() => {
+      const harness = committedHarness();
+      harness.render(analysisOf(false, PENDING_LOSS), null, "pending");
+      harness.render(analysisOf(false, PENDING_LOSS), null, "pending");
+      harness.exit();
+      elapseDeadline();
+    });
+
+    expectOneAttempt();
+    expectStoredAttempt("exact-v1", "failure");
+  });
+
+  it("resets the streak it could not grade at once, even after another drill started", () => {
+    recordEarlierSuccess();
+    withFakeTimers(() => {
+      const harness = pendingRetry(() => WORSE);
+      harness.exit();
+      harness.start();
+      elapseDeadline();
+    });
+
+    expect(readTallyForDisplay().practice[0]).toMatchObject({
+      consecutiveSuccesses: 0,
+      wrong: 1,
+    });
+  });
+
+  it.each([
+    { name: "settles on screen before its deadline", waitBeforeSettling: 0 },
+    {
+      name: "passes its deadline before it settles",
+      waitBeforeSettling: DEADLINE_MS,
+    },
+  ])("is recorded once when it $name", ({ waitBeforeSettling }) => {
+    withFakeTimers(() => {
+      const harness = pendingRetry(() => WORSE);
+      elapse(waitBeforeSettling);
+      renderSettled(harness);
+      elapseDeadline();
+    });
+
+    expectOneAttempt();
   });
 });

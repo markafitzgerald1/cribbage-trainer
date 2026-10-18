@@ -7,6 +7,10 @@ import {
   sampleMistakeQueueByPriority,
 } from "../ui/mistakeQueue";
 import {
+  type RecordedAdmission,
+  exactAdmission,
+} from "../ui/recordedAdmission";
+import {
   invertSuitPermutation,
   permuteCardSuits,
   suitPermutationForView,
@@ -17,11 +21,11 @@ import type { AnalysisRenderedHandler } from "./ScoredPossibleKeepDiscards";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
-import type { RecordedAdmission } from "../ui/recordedAdmission";
 import type { ReportAnalysisRendered } from "./useAnalysisReporting";
 import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { toDealtCards } from "../game/toDealtCards";
+import { useRetryGrading } from "./useRetryGrading";
 /* jscpd:ignore-end */
 
 // Draw one specific mistake, or let the sampler pick; both optional, exposed by the tally view and its queue dialog.
@@ -156,6 +160,86 @@ const permutedPreviousDiscard = (
         ),
       );
 
+interface GradeRetryInput {
+  readonly activeItem: MistakeQueueItem;
+  readonly activeViewIndex: number;
+  readonly dealtCards: readonly DealtCard[];
+  readonly quality: {
+    readonly expectedPointsLoss: number;
+    readonly isOptimal: boolean;
+  };
+  readonly settled: RecordedAdmission | null;
+  readonly tableIdentity: TableIdentity | null;
+}
+
+// Writes the attempt and returns the verdict read back from the record just written.
+const gradeRetry = ({
+  activeItem,
+  activeViewIndex,
+  dealtCards,
+  quality,
+  settled,
+  tableIdentity,
+}: GradeRetryInput): PracticeVerdict => {
+  const { expectedPointsLoss, isOptimal } = quality;
+  const isWithinNoise = isRetryWithinNoise(isOptimal, settled);
+  const isSuccess = isOptimal || isWithinNoise;
+  const detail = {
+    basis: isWithinNoise
+      ? ("sampling-noise-v1" as const)
+      : ("exact-v1" as const),
+    discardKey: serializeHand(
+      permuteCardSuits(
+        dealtCards.filter((card) => !card.kept),
+        invertSuitPermutation(drillRelabeling(activeItem, activeViewIndex)),
+      ),
+    ),
+    expectedPointsLoss,
+    isOptimal,
+    outcome: isSuccess ? ("success" as const) : ("failure" as const),
+    tableIdentity,
+  };
+  const attempt = { at: Date.now(), detail, handKey: activeItem.handKey };
+  recordPracticeAttempt(
+    isOptimal
+      ? { ...attempt, isOptimal: true }
+      : { ...attempt, expectedPointsLoss, isOptimal: false },
+  );
+  /*
+   * Read the streak back from the record just written, not from the
+   * activeItem snapshot taken when the drill started: recordPracticeAttempt
+   * merges against whatever another tab has stored since, so the snapshot's
+   * consecutiveSuccesses can be stale (an external miss can have reset it,
+   * which would otherwise let this tab display two successes and declare
+   * mastery over a stored streak of one).
+   *
+   * The record is absent only when recordPracticeAttempt refused the write
+   * to protect a newer-build tally another tab left in localStorage; the
+   * local estimate is the honest fallback there, matching the read-only
+   * state the rest of the tally is already in.
+   */
+  const localStreakEstimate = isSuccess
+    ? activeItem.consecutiveSuccesses + 1
+    : 0;
+  const stored = readTallyForDisplay().practice.find(
+    (record) => record.handKey === activeItem.handKey,
+  );
+  const consecutiveSuccesses =
+    stored?.consecutiveSuccesses ?? localStreakEstimate;
+  return {
+    chosenDiscard: serializeHand(dealtCards.filter((card) => !card.kept)),
+    chosenLoss: expectedPointsLoss,
+    consecutiveSuccesses,
+    isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
+    isOptimal,
+    isWithinNoise,
+    originalTableIdentity: activeItem.tableIdentity ?? null,
+    previousDiscard: permutedPreviousDiscard(activeItem, activeViewIndex),
+    previousLoss: activeItem.previousDiscardLoss,
+    retryTableIdentity: tableIdentity,
+  };
+};
+
 const activeHandsExist = (): boolean =>
   buildMistakeQueue(readTallyForDisplay()).some((item) => !item.isMastered);
 
@@ -173,8 +257,7 @@ export const usePracticeDrill = ({
   const [phase, setPhase] = useState<PracticeDrillPhase>("choosing");
   const [verdict, setVerdict] = useState<PracticeVerdict | null>(null);
   const [hasNextHand, setHasNextHand] = useState(false);
-  // Guards a single record per committed choice; onAnalysisRendered re-fires on every re-sort.
-  const recordedRef = useRef(false);
+  const pendingGrade = useRetryGrading();
   /*
    * How many times this browser tab has loaded each mistake, keyed by
    * handKey rather than object identity: sampling can hand back a fresh
@@ -239,7 +322,7 @@ export const usePracticeDrill = ({
 
   const beginWith = useCallback(
     (item: MistakeQueueItem) => {
-      recordedRef.current = false;
+      pendingGrade.start();
       const viewIndex = viewCounts.current.get(item.handKey) ?? 0;
       viewCounts.current.set(item.handKey, viewIndex + 1);
       setActiveItem(item);
@@ -249,7 +332,7 @@ export const usePracticeDrill = ({
       setHasNextHand(activeHandsExist());
       loadHand(toDrillHand(item, viewIndex));
     },
-    [loadHand],
+    [loadHand, pendingGrade],
   );
 
   const drawNext = useCallback(
@@ -270,9 +353,9 @@ export const usePracticeDrill = ({
   }, [beginWith, drawNext]);
 
   const clearDrill = useCallback(() => {
-    recordedRef.current = false;
+    pendingGrade.reset();
     resetActiveDrill();
-  }, [resetActiveDrill]);
+  }, [pendingGrade, resetActiveDrill]);
 
   // "Exit drill": drop practice and deal a fresh authentic hand rather than leaving the drilled study hand on the board.
   const onExit = useCallback(() => {
@@ -325,73 +408,51 @@ export const usePracticeDrill = ({
         activeItem === null ||
         analysis.cribRole !== activeItem.cribRole ||
         phase !== "revealed" ||
-        recordedRef.current ||
-        analysis.quality === null ||
-        admission === "pending"
+        pendingGrade.isRecorded() ||
+        analysis.quality === null
       ) {
         return;
       }
-      recordedRef.current = true;
-      const { expectedPointsLoss, isOptimal } = analysis.quality;
-      const isWithinNoise = isRetryWithinNoise(isOptimal, admission);
-      const isSuccess = isOptimal || isWithinNoise;
-      const detail = {
-        basis: isWithinNoise
-          ? ("sampling-noise-v1" as const)
-          : ("exact-v1" as const),
-        discardKey: serializeHand(
-          permuteCardSuits(
-            dealtCards.filter((card) => !card.kept),
-            invertSuitPermutation(drillRelabeling(activeItem, activeViewIndex)),
-          ),
-        ),
-        expectedPointsLoss,
-        isOptimal,
-        outcome: isSuccess ? ("success" as const) : ("failure" as const),
-        tableIdentity,
+      const { quality } = analysis;
+      const grade = (settled: RecordedAdmission | null): PracticeVerdict =>
+        gradeRetry({
+          activeItem,
+          activeViewIndex,
+          dealtCards,
+          quality,
+          settled,
+          tableIdentity,
+        });
+      const announce = (settled: RecordedAdmission | null) => {
+        const graded = grade(settled);
+        setHasNextHand(activeHandsExist());
+        setVerdict(graded);
       };
-      const attempt = { at: Date.now(), detail, handKey: activeItem.handKey };
-      recordPracticeAttempt(
-        isOptimal
-          ? { ...attempt, isOptimal: true }
-          : { ...attempt, expectedPointsLoss, isOptimal: false },
-      );
-      /*
-       * Read the streak back from the record just written, not from the
-       * activeItem snapshot taken when the drill started: recordPracticeAttempt
-       * merges against whatever another tab has stored since, so the snapshot's
-       * consecutiveSuccesses can be stale (an external miss can have reset it,
-       * which would otherwise let this tab display two successes and declare
-       * mastery over a stored streak of one).
-       *
-       * The record is absent only when recordPracticeAttempt refused the write
-       * to protect a newer-build tally another tab left in localStorage; the
-       * local estimate is the honest fallback there, matching the read-only
-       * state the rest of the tally is already in.
-       */
-      const localStreakEstimate = isSuccess
-        ? activeItem.consecutiveSuccesses + 1
-        : 0;
-      const stored = readTallyForDisplay().practice.find(
-        (record) => record.handKey === activeItem.handKey,
-      );
-      const consecutiveSuccesses =
-        stored?.consecutiveSuccesses ?? localStreakEstimate;
-      setHasNextHand(activeHandsExist());
-      setVerdict({
-        chosenDiscard: serializeHand(dealtCards.filter((card) => !card.kept)),
-        chosenLoss: expectedPointsLoss,
-        consecutiveSuccesses,
-        isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
-        isOptimal,
-        isWithinNoise,
-        originalTableIdentity: activeItem.tableIdentity ?? null,
-        previousDiscard: permutedPreviousDiscard(activeItem, activeViewIndex),
-        previousLoss: activeItem.previousDiscardLoss,
-        retryTableIdentity: tableIdentity,
-      });
+      if (admission === "pending") {
+        pendingGrade.defer((isSameDrill) => {
+          if (isSameDrill) {
+            pendingGrade.markRecorded();
+          }
+          grade(
+            judgeAtDeadline === null
+              ? exactAdmission(false)
+              : judgeAtDeadline(),
+          );
+        });
+        return;
+      }
+      pendingGrade.settle();
+      pendingGrade.markRecorded();
+      announce(admission);
     },
-    [activeItem, activeViewIndex, dealtCards, onAnalysisRendered, phase],
+    [
+      activeItem,
+      activeViewIndex,
+      dealtCards,
+      onAnalysisRendered,
+      pendingGrade,
+      phase,
+    ],
   );
 
   /*

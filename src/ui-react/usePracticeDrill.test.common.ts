@@ -1,4 +1,8 @@
 /* jscpd:ignore-start */
+import type {
+  DeadlineJudgment,
+  RecordedAdmission,
+} from "../ui/recordedAdmission";
 import {
   type PracticeDrill,
   type PracticeDrillHand,
@@ -9,10 +13,12 @@ import {
 import { act, renderHook } from "@testing-library/react";
 import {
   clearDiscardTally,
+  discardTallyKey,
   readTallyForDisplay,
   recordDiscardDecision,
   recordPracticeAttempt,
 } from "../ui/discardTally";
+import { createMockTally, mockItemA } from "../ui/mistakeQueue.test.common";
 import { expect, jest } from "@jest/globals";
 import {
   permuteCardSuits,
@@ -22,10 +28,8 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
-import type { RecordedAdmission } from "../ui/recordedAdmission";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import type { TableIdentity } from "../game/tableIdentity";
-import { mockItemA } from "../ui/mistakeQueue.test.common";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
@@ -84,6 +88,13 @@ export const seedMistake = (handKey = HAND_KEY, discardKey = "5H,6H") =>
     isPractice: false,
   });
 
+// A newer deployment's tally in another tab: recordPracticeAttempt leaves it untouched, so nothing is stored to read back.
+export const refuseWrites = () =>
+  localStorage.setItem(
+    discardTallyKey,
+    JSON.stringify(createMockTally({ version: 999 })),
+  );
+
 export const OTHER_KEY = "2C,3D,4S,5H,6C,7D|Pone";
 
 export const masterSeededHand = () => {
@@ -114,6 +125,10 @@ export interface Harness {
     analysis: RenderedAnalysis,
     tableIdentity?: TableIdentity | null,
     admission?: RecordedAdmission | null,
+  ) => void;
+  readonly renderPending: (
+    analysis: RenderedAnalysis,
+    judgeAtDeadline: DeadlineJudgment,
   ) => void;
   readonly replaceBoard: (props: BoardProps) => void;
   readonly start: (item?: MistakeQueueItem) => void;
@@ -193,6 +208,15 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
     render: (analysis, tableIdentity, admission) =>
       step((drill) =>
         drill.handleAnalysisRendered(analysis, tableIdentity, admission),
+      ),
+    renderPending: (analysis, judgeAtDeadline) =>
+      step((drill) =>
+        drill.handleAnalysisRendered(
+          analysis,
+          null,
+          "pending",
+          judgeAtDeadline,
+        ),
       ),
     replaceBoard: (props) => {
       act(() => {
