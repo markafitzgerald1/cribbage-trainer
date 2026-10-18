@@ -60,7 +60,7 @@ const renderSettledNearMiss = async () => {
 };
 
 const findExplanation = (caption: HTMLElement) =>
-  caption.querySelector("[class*='noiseExplanation']");
+  caption.querySelector<HTMLElement>("[class*='noiseExplanation']");
 
 const figureIn = (element: Element | null): string | undefined =>
   /\d+\.\d{2}/u.exec(element?.textContent ?? "")?.[0];
@@ -318,29 +318,30 @@ describe("scored possible keep discards caption", () => {
 
     it("reveals the approximate threshold in visible text only after the within-noise badge is tapped", async () => {
       const { badge, caption } = await renderNearMissBadge();
-      const explanation =
-        /^Approximate threshold \d+\.\d{2} pts: a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u;
 
       expect(badge.getAttribute("aria-expanded")).toBe("false");
-      expect(caption.textContent).not.toMatch(/Approximate threshold/u);
+      expect(findExplanation(caption)?.hidden).toBe(true);
 
       fireEvent.click(badge);
 
       expect(badge.getAttribute("aria-expanded")).toBe("true");
-      expect(findExplanation(caption)?.textContent).toMatch(explanation);
+      expect(findExplanation(caption)?.hidden).toBe(false);
 
       fireEvent.click(badge);
 
-      expect(caption.textContent).not.toMatch(/Approximate threshold/u);
+      expect(findExplanation(caption)?.hidden).toBe(true);
     });
 
     it("discloses the same threshold figure its tooltip states, wired through aria-controls", async () => {
       const { badge, caption } = await renderNearMissBadge();
+      const explanation =
+        /^Approximate threshold \d+\.\d{2} pts: a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u;
 
       fireEvent.click(badge);
       const shown = findExplanation(caption);
 
       expect(badge.getAttribute("aria-controls")).toBe(shown?.id);
+      expect(shown?.textContent).toMatch(explanation);
       expect(badge.getAttribute("title")).toContain(
         `approximate ${figureIn(shown)} point`,
       );

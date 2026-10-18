@@ -1,8 +1,11 @@
 import * as classes from "./ScoredPossibleKeepDiscards.module.css";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { useCallback, useId, useState } from "react";
 import { NOISE_THRESHOLD_QUALIFIER } from "../ui/recordedHistory";
 import type { RoleLossPairLabel } from "../analysis/oppositeRoleLoss";
-import { formatNetLoss } from "../analysis/classifyMistake";
 import { renderRoleLossPairText } from "./RoleLossPairText";
 
 interface NoiseVerdictBadgeProps {
@@ -38,15 +41,16 @@ export function NoiseVerdictBadge({
       >
         Within noise: {renderRoleLossPairText(rolePair)}
       </button>
-      {isExplained ? (
-        <span
-          className={classes.noiseExplanation}
-          id={explanationId}
-        >
-          Approximate threshold {formatNetLoss(threshold)} pts:{" "}
-          {NOISE_THRESHOLD_QUALIFIER}.
-        </span>
-      ) : null}
+      <span
+        aria-label={`Approximate threshold ${formatAccessibleNetLoss(threshold)} points: ${NOISE_THRESHOLD_QUALIFIER}.`}
+        className={classes.noiseExplanation}
+        hidden={!isExplained}
+        id={explanationId}
+        role="note"
+      >
+        Approximate threshold {formatNetLoss(threshold)} pts:{" "}
+        {NOISE_THRESHOLD_QUALIFIER}.
+      </span>
     </>
   );
 }
