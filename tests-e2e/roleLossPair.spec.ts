@@ -149,7 +149,7 @@ test.describe("diagnostic caption rows", () => {
 
       const badges = page
         .locator("figcaption[aria-label]")
-        .locator(":scope > span");
+        .locator(":scope > button, :scope > span:not([hidden])");
       const verdict = badges.nth(0);
       const reason = badges.nth(1);
       // The verdict waits on two deferred sidecar chunks, so it gets the explicit timeout those loads need on a cold worker.
