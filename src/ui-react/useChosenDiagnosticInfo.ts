@@ -64,7 +64,7 @@ export interface ChosenDiagnosticInfo {
 const noiseBadgeTitleFor = (threshold: number | null): string =>
   threshold === null
     ? ""
-    : `Within noise: at or below the ${formatAccessibleNetLoss(threshold)} point threshold, ${NOISE_THRESHOLD_QUALIFIER}.`;
+    : `Within noise: at or below the approximate ${formatAccessibleNetLoss(threshold)} point threshold, ${NOISE_THRESHOLD_QUALIFIER}.`;
 
 interface ChosenDiagnosticInput {
   readonly cribRole: CribRole;

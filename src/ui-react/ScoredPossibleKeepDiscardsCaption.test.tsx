@@ -289,7 +289,7 @@ describe("scored possible keep discards caption", () => {
       expect(
         container.querySelector("[class*='noiseBadge']")?.getAttribute("title"),
       ).toMatch(
-        /^Within noise: at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u,
+        /^Within noise: at or below the approximate \d+\.\d{2} point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u,
       );
       expect(
         container
