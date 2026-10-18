@@ -4,10 +4,15 @@ import "@testing-library/jest-dom/jest-globals";
 import * as classes from "./DecisionQualityTrendDialog.module.css";
 import { type StoredTally, discardTallyKey } from "../ui/discardTally";
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
+import {
+  storedTallyOf,
+  testDecisionOf,
+} from "../ui/discardQualityTrend.test.common";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import type { DiscardTrendGranularity } from "../ui/discardQualityTrend";
 import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
+import { noiseAdmission } from "../ui/discardTally.test.common";
 /* jscpd:ignore-end */
 
 const sampleTally = dialogFixtures.dialogTally(25);
@@ -98,6 +103,36 @@ const seedPracticeHistory = () =>
   );
 
 describe("decision quality trend dialog", () => {
+  it.each([
+    {
+      name: "noise-only",
+      tally: storedTallyOf([
+        testDecisionOf({ recordedAdmission: noiseAdmission }),
+      ]),
+    },
+    {
+      name: "skip-only",
+      tally: storedTallyOf([], [{ at: 1_700_000_000_000 }]),
+    },
+  ])(
+    "shows unavailable Best choice summary and row values for $name history",
+    ({ tally }) => {
+      const view = renderDialog({ tally });
+      const table = view.getByRole("table", {
+        name: "Recorded decision history",
+      });
+      const rows = within(table).getAllByRole("row").slice(1);
+
+      expect(
+        view.getByText("Best choice", { selector: "span" }).parentElement,
+      ).toHaveTextContent("Best choice—");
+      expect(
+        rows.map((row) => within(row).getAllByRole("cell")[3]?.textContent),
+      ).toStrictEqual(["—"]);
+      expect(view.container).not.toHaveTextContent("NaN%");
+    },
+  );
+
   it("renders nothing when closed", () => {
     const closedView = renderDialog({ show: false });
 

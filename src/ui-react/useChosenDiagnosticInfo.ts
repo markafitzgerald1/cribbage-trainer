@@ -34,6 +34,7 @@ import {
 import { type CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedTables } from "./expectedTables";
+import { NOISE_THRESHOLD_QUALIFIER } from "../ui/recordedHistory";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { serializeHand } from "../game/Card";
@@ -59,10 +60,6 @@ export interface ChosenDiagnosticInfo {
    */
   readonly withinNoiseThreshold: number | null;
 }
-
-// #774's acceptance criteria require every surface quoting the threshold to say what it is and is not.
-const NOISE_THRESHOLD_QUALIFIER =
-  "a conservative bound on the simulation's reported sampling error, not a calibrated interval";
 
 const noiseBadgeTitleFor = (threshold: number | null): string =>
   threshold === null

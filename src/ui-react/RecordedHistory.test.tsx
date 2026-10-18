@@ -236,23 +236,53 @@ describe("recorded chart provenance", () => {
     );
   });
 
-  it("announces a sub-cent calendar mean without calling it zero", () => {
-    const view = render(
-      <DecisionQualityChart
-        buckets={[makeBucket("calendar", 0.004)]}
-        granularity="day"
-      />,
-    );
+  // The second case counts best choices out of the judged decisions, as the period's Best choice share does (#774).
+  it.each([
+    {
+      counts: "10 decisions, 5 best choices then",
+      decisions: 10,
+      judgedDecisions: 10,
+      optimalDecisions: 5,
+    },
+    {
+      counts:
+        "10 decisions, 2 within simulation noise, 5 best choices of 8 then",
+      decisions: 10,
+      judgedDecisions: 8,
+      optimalDecisions: 5,
+    },
+    {
+      counts: "1 decision, 1 within simulation noise",
+      decisions: 1,
+      judgedDecisions: 0,
+      optimalDecisions: 0,
+    },
+  ])(
+    "announces a sub-cent calendar mean without calling it zero ($counts)",
+    ({ counts, decisions, judgedDecisions, optimalDecisions }) => {
+      const view = render(
+        <DecisionQualityChart
+          buckets={[
+            {
+              ...makeBucket("calendar", 0.004, decisions),
+              judgedDecisions,
+              optimalDecisions,
+            },
+          ]}
+          granularity="day"
+        />,
+      );
 
-    expect(view.getByRole("group")).toHaveAccessibleDescription(
-      "Trend chart with 1 periods. Latest recorded loss is less than 0.01 points per discard.",
-    );
-    expect(
-      view.getByText(
-        "Period calendar: less than 0.01 points recorded loss per discard (10 decisions, 5 best choices then, 1 skipped)",
-      ),
-    ).toBeInTheDocument();
-  });
+      expect(view.getByRole("group")).toHaveAccessibleDescription(
+        "Trend chart with 1 periods. Latest recorded loss is less than 0.01 points per discard.",
+      );
+      expect(
+        view.getByText(
+          `Period calendar: less than 0.01 points recorded loss per discard (${counts}, 1 skipped)`,
+        ),
+      ).toBeInTheDocument();
+    },
+  );
 });
 
 const ADMISSION_CASES: { admission: RecordedAdmission; offered: boolean }[] = [

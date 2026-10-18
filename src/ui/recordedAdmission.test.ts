@@ -2,6 +2,7 @@ import {
   type RecordedAdmission,
   decisionAdmission,
   isAdmittedMistake,
+  isRecordedWithinNoise,
   normalizeAdmission,
 } from "./recordedAdmission";
 import {
@@ -20,6 +21,12 @@ import { describe, expect, it } from "@jest/globals";
 
 const laterBasis = "sampling-noise-v2";
 const laterAdmission = { basis: laterBasis, eligible: false };
+const optimalRecord = (recordedAdmission: RecordedAdmission) =>
+  decisionOf({ expectedPointsLoss: 0, isOptimal: true, recordedAdmission });
+// An exact fallback admitting nothing for a decision that lost points: contradictory metadata.
+const CONTRADICTED_FALLBACK = decisionOf({
+  recordedAdmission: { basis: "exact-fallback-v1", eligible: false },
+});
 const storedJson = (): string => localStorage.getItem(discardTallyKey) ?? "";
 const storedRows = () =>
   JSON.parse(storedJson()) as {
@@ -46,9 +53,6 @@ describe("recorded admission validation", () => {
     },
   );
 
-  const optimalRecord = (recordedAdmission: RecordedAdmission) =>
-    decisionOf({ expectedPointsLoss: 0, isOptimal: true, recordedAdmission });
-
   it.each([
     { expected: false, record: optimalRecord("pending") },
     {
@@ -61,9 +65,7 @@ describe("recorded admission validation", () => {
     },
     {
       expected: true,
-      record: decisionOf({
-        recordedAdmission: { basis: "exact-fallback-v1", eligible: false },
-      }),
+      record: CONTRADICTED_FALLBACK,
     },
     {
       expected: true,
@@ -116,4 +118,76 @@ describe("an admission basis from a later build", () => {
       );
     },
   );
+});
+
+describe("a decision recorded as within simulation noise (#774)", () => {
+  it.each([
+    {
+      expected: true,
+      name: "a noise-settled mistake",
+      record: decisionOf({ recordedAdmission: noiseAdmission }),
+    },
+    {
+      expected: false,
+      name: "a noise-settled mistake outside the threshold",
+      record: decisionOf({
+        recordedAdmission: { ...noiseAdmission, eligible: true },
+      }),
+    },
+    {
+      expected: false,
+      name: "a pending decision",
+      record: decisionOf({ recordedAdmission: "pending" }),
+    },
+    {
+      expected: false,
+      name: "a legacy decision with no admission",
+      record: decisionOf(),
+    },
+    {
+      expected: false,
+      name: "a later build's basis",
+      record: decisionOf({ recordedAdmission: laterAdmission }),
+    },
+    {
+      expected: false,
+      name: "an exact fallback that contradicts its own verdict",
+      record: CONTRADICTED_FALLBACK,
+    },
+    {
+      expected: false,
+      name: "a practice decision",
+      record: decisionOf({
+        isPractice: true,
+        recordedAdmission: noiseAdmission,
+      }),
+    },
+    {
+      expected: false,
+      name: "a best choice",
+      record: decisionOf({
+        expectedPointsLoss: 0,
+        isOptimal: true,
+        recordedAdmission: { basis: "exact-v1", eligible: false },
+      }),
+    },
+    {
+      expected: false,
+      name: "a best choice with positive recorded loss",
+      record: {
+        ...optimalRecord({ basis: "exact-v1", eligible: false }),
+        expectedPointsLoss: 0.15,
+      },
+    },
+    {
+      expected: false,
+      name: "a sub-optimal discard that lost nothing",
+      record: decisionOf({
+        expectedPointsLoss: 0,
+        recordedAdmission: { basis: "exact-fallback-v1", eligible: false },
+      }),
+    },
+  ])("is $expected for $name", ({ expected, record }) => {
+    expect(isRecordedWithinNoise(record)).toBe(expected);
+  });
 });

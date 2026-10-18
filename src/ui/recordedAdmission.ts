@@ -77,3 +77,23 @@ export const isAdmittedMistake = (record: DiscardDecisionRecord): boolean => {
       : admission !== "pending" && admission.eligible)
   );
 };
+
+/*
+ * The caption's "Within noise", as recorded when the decision was made: a
+ * loss the noise rule settled as not worth practicing. Pending, contradictory
+ * and foreign admissions are not, so those decisions keep their exact
+ * verdict. Never re-judged under the tables installed now (#894).
+ */
+export const isRecordedWithinNoise = (
+  record: DiscardDecisionRecord,
+): boolean => {
+  const admission = decisionAdmission(record);
+  return (
+    !record.isPractice &&
+    !record.isOptimal &&
+    record.expectedPointsLoss > 0 &&
+    admission !== null &&
+    admission !== "pending" &&
+    !admission.eligible
+  );
+};

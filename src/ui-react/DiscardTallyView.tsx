@@ -16,8 +16,8 @@ import {
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
-import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
+import { TALLY_HISTORY_HELP } from "../ui/recordedHistory";
 
 const SHARE_FRACTION_DIGITS = 1;
 const PER_CENT = 100;
@@ -163,13 +163,17 @@ export function DiscardTallyView({
   const facedToday = summary.todayDecisions + summary.todaySkippedHands;
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
-  const hasMistakes = summary.decisions > summary.optimalDecisions;
+  // Recorded noise cannot establish whether the choice was best, so it must not change the share.
+  const judged = summary.decisions - summary.withinNoiseDecisions;
+  const judgedToday =
+    summary.todayDecisions - summary.todayWithinNoiseDecisions;
+  const hasMistakes = judged > summary.optimalDecisions;
 
   return (
     <div className={`${classes.tally} ${columns}`}>
       <details className={classes.historyHelp}>
         <summary>As recorded</summary>
-        <p>{RECORDED_HISTORY_HELP}</p>
+        <p>{TALLY_HISTORY_HELP}</p>
       </details>
       <span />
       {hasToday ? <span className={classes.period}>today</span> : null}
@@ -192,17 +196,14 @@ export function DiscardTallyView({
                 ),
             recordedLossFigure("all time", summary.meanExpectedPointsLoss),
           )}
-      {summary.decisions === 0
+      {judged === 0
         ? null
         : renderMeasure(
             "Best choice",
-            summary.todayDecisions === 0
+            judgedToday === 0
               ? blankWhen(hasToday)
-              : countAndShare(
-                  summary.todayOptimalDecisions,
-                  summary.todayDecisions,
-                ),
-            countAndShare(summary.optimalDecisions, summary.decisions),
+              : countAndShare(summary.todayOptimalDecisions, judgedToday),
+            countAndShare(summary.optimalDecisions, judged),
           )}
       {/*
        * Only once a hand has been abandoned, so an untouched row never implies

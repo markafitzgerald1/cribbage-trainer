@@ -37,7 +37,19 @@ const decisionCostText = (
 ): string => {
   const prefix = point.isRetained ? "Retained decision" : "Decision";
   const mastered = point.isMastered ? ", mastered in later retries" : "";
-  return `${prefix} #${point.ordinal}, recorded cost ${cost} points${mastered}`;
+  const noise = point.isWithinNoise ? ", within simulation noise" : "";
+  return `${prefix} #${point.ordinal}, recorded cost ${cost} points${mastered}${noise}`;
+};
+
+// Out of the judged decisions, so the count agrees with the period's Best choice share (#774).
+const bestChoicesText = (bucket: DiscardPeriodBucket): string => {
+  if (bucket.judgedDecisions === bucket.decisions) {
+    return `${bucket.optimalDecisions} best choices then`;
+  }
+  const noise = `${bucket.decisions - bucket.judgedDecisions} within simulation noise`;
+  return bucket.judgedDecisions === 0
+    ? noise
+    : `${noise}, ${bucket.optimalDecisions} best choices of ${bucket.judgedDecisions} then`;
 };
 
 export const lossPointTitle = (point: DiscardDecisionPoint): string =>
@@ -101,16 +113,19 @@ export function renderLossPoint(
   },
   selectedRecencyAt: number | null,
 ): React.JSX.Element {
+  // Gray for a decision recorded as within simulation noise (#774), which is never also mastered.
+  const noiseDot = point.isWithinNoise ? ` ${classes.lossDotNoise}` : "";
+  const noiseStem = point.isWithinNoise ? ` ${classes.lossStemNoise}` : "";
   const baseDotClass = point.isMastered
     ? `${classes.lossDot} ${classes.lossDotMastered}`
-    : classes.lossDot;
+    : `${classes.lossDot}${noiseDot}`;
   const dotClass =
     point.recencyAt === selectedRecencyAt
       ? `${baseDotClass} ${classes.lossDotSelected}`
       : baseDotClass;
   const stemClass = point.isMastered
     ? `${classes.lossStem} ${classes.lossStemMastered}`
-    : classes.lossStem;
+    : `${classes.lossStem}${noiseStem}`;
   return (
     <g
       // The hover title lives on the hit band that covers this marker; here it would only duplicate it.
@@ -260,9 +275,7 @@ export function renderCalendarPlot(
           r={POINT_RADIUS}
         >
           <title>
-            {`${point.bucket.label}: ${formatAccessibleNetLoss(point.loss)} points recorded loss per discard (${point.bucket.decisions} decisions, ${
-              point.bucket.optimalDecisions
-            } best choices then${
+            {`${point.bucket.label}: ${formatAccessibleNetLoss(point.loss)} points recorded loss per discard (${point.bucket.decisions} ${point.bucket.decisions === 1 ? "decision" : "decisions"}, ${bestChoicesText(point.bucket)}${
               point.bucket.skippedHands > 0
                 ? `, ${point.bucket.skippedHands} skipped`
                 : ""

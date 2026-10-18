@@ -25,9 +25,9 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { DialogSummaryCards } from "./DialogSummaryCards";
 import Modal from "./Modal";
-import { RECORDED_HISTORY_HELP } from "../ui/recordedHistory";
 import { SortOrder } from "../ui/SortOrder";
 import type { StartDrillHandler } from "./usePracticeDrill";
+import { TREND_HISTORY_HELP } from "../ui/recordedHistory";
 import { buildMistakeQueue } from "../ui/mistakeQueue";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 /* jscpd:ignore-end */
@@ -79,17 +79,21 @@ const getLossPillClass = (loss: number | null): string => {
   return "";
 };
 
+// Out of the decisions judged either way: one recorded as within simulation noise counts neither way (#774).
+const bestChoiceShare = (optimal: number, judged: number): string =>
+  judged > 0
+    ? `${((optimal / judged) * PER_CENT).toFixed(PERCENT_DECIMAL_PLACES)}%`
+    : "—";
+
 function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
   const avgLoss =
     bucket.meanExpectedPointsLoss === null
       ? "—"
       : formatNetLoss(bucket.meanExpectedPointsLoss);
-  const optimalPct =
-    bucket.decisions > 0
-      ? `${((bucket.optimalDecisions / bucket.decisions) * PER_CENT).toFixed(
-          PERCENT_DECIMAL_PLACES,
-        )}%`
-      : "—";
+  const optimalPct = bestChoiceShare(
+    bucket.optimalDecisions,
+    bucket.judgedDecisions,
+  );
 
   return (
     <tr key={bucket.key}>
@@ -202,9 +206,12 @@ export function DecisionQualityTrendDialog({
   });
 
   const totalDecisions = trend.totalAuthenticDecisions;
-  const optimalDecisions = trend.buckets.reduce(
-    (sum, bucket) => sum + bucket.optimalDecisions,
-    0,
+  const shares = trend.buckets.reduce(
+    (totals, bucket) => ({
+      judged: totals.judged + bucket.judgedDecisions,
+      optimal: totals.optimal + bucket.optimalDecisions,
+    }),
+    { judged: 0, optimal: 0 },
   );
   const totalLoss = trend.buckets.reduce(
     (sum, bucket) =>
@@ -213,12 +220,7 @@ export function DecisionQualityTrendDialog({
   );
   const overallAvgLoss =
     totalDecisions > 0 ? formatNetLoss(totalLoss / totalDecisions) : "—";
-  const overallOptimalRate =
-    totalDecisions > 0
-      ? `${((optimalDecisions / totalDecisions) * PER_CENT).toFixed(
-          PERCENT_DECIMAL_PLACES,
-        )}%`
-      : "—";
+  const overallOptimalRate = bestChoiceShare(shares.optimal, shares.judged);
 
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
 
@@ -263,8 +265,8 @@ export function DecisionQualityTrendDialog({
         ) : null}
 
         <p className={classes.methodology}>
-          {RECORDED_HISTORY_HELP} Rolling batches smooth small-sample swings;
-          use each calendar period&apos;s decision count to judge its signal.
+          {TREND_HISTORY_HELP} Rolling batches smooth small-sample swings; use
+          each calendar period&apos;s decision count to judge its signal.
         </p>
 
         {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (
