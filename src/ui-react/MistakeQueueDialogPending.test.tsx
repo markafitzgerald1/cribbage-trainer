@@ -1,9 +1,15 @@
 import "@testing-library/jest-dom";
 import "@testing-library/jest-dom/jest-globals";
+import {
+  MistakeQueueDialog,
+  type MistakeQueueDialogProps,
+} from "./MistakeQueueDialog";
+import {
+  createAgedOutTally,
+  createSampleMistakeTally,
+} from "./MistakeQueueDialog.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
-import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import type { StoredTally } from "../ui/discardTally";
-import { createAgedOutTally } from "./MistakeQueueDialog.test.common";
 import { createTestMistakeRecord } from "../ui/mistakeQueue.test.common";
 import { render } from "@testing-library/react";
 import { setAnalysisTables } from "./Trainer.test.common";
@@ -23,16 +29,34 @@ const withRecord = (
   ],
 });
 
-const renderQueue = (tally: StoredTally) => {
+const renderQueue = (
+  tally: StoredTally,
+  filters: Pick<
+    MistakeQueueDialogProps,
+    "initialRoleFilter" | "initialStatusFilter"
+  > = {},
+) => {
   setAnalysisTables();
 
   return render(
     <MistakeQueueDialog
+      initialRoleFilter={filters.initialRoleFilter}
+      initialStatusFilter={filters.initialStatusFilter}
       onClose={jest.fn()}
       show
       tally={tally}
     />,
   );
+};
+
+const expectOnlyMessage = (
+  rendered: ReturnType<typeof renderQueue>,
+  shown: RegExp,
+) => {
+  expect(rendered.getByText(shown)).toBeInTheDocument();
+  expect(
+    rendered.queryByText(/Judging your last discard/iu),
+  ).not.toBeInTheDocument();
 };
 
 describe("mistake queue while a decision is pending", () => {
@@ -56,9 +80,22 @@ describe("mistake queue while a decision is pending", () => {
     },
     { name: "a pending practice record", overrides: { isPractice: true } },
   ])("still says mistakes aged out with $name", ({ overrides }) => {
-    const { getByText, queryByText } = renderQueue(withRecord(overrides));
+    expectOnlyMessage(renderQueue(withRecord(overrides)), /aged out/iu);
+  });
 
-    expect(getByText(/aged out/iu)).toBeInTheDocument();
-    expect(queryByText(/Judging your last discard/iu)).not.toBeInTheDocument();
+  it("keeps the filter message for a non-empty queue the filters emptied", () => {
+    const sample = createSampleMistakeTally();
+    const rendered = renderQueue(
+      {
+        ...sample,
+        records: [
+          ...sample.records,
+          createTestMistakeRecord({ recordedAdmission: "pending" }),
+        ],
+      },
+      { initialRoleFilter: "pone", initialStatusFilter: "mastered" },
+    );
+
+    expectOnlyMessage(rendered, /match the selected filters/iu);
   });
 });

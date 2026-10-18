@@ -123,7 +123,7 @@ function renderEmptyState(options: {
       : "No mistake hands recorded yet. Play authentic hands to build your practice queue.";
     if (options.hasPendingMistake) {
       message =
-        "Judging your last discard. It joins this queue if it turns out to be worth practicing.";
+        "Judging your last discard. Reopen this in a few seconds to see whether it joins the queue.";
     }
   }
 
