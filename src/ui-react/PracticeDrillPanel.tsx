@@ -111,15 +111,13 @@ const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
       : `${verdict.consecutiveSuccesses} of ${SUCCESSES_FOR_MASTERY} toward mastery.`;
     return (
       <p
-        aria-label={`Within simulation noise, approximate: ${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables, ${NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry. ${progress}`}
+        aria-label={`Within noise (approximate): counts as a successful retry. ${progress} ${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables, ${NOISE_THRESHOLD_QUALIFIER}.`}
         className={
           verdict.isMastered ? classes.outcomeMastered : classes.outcomeGood
         }
         role="note"
       >
-        Within noise: {formatLoss(verdict.chosenLoss)} points behind the best
-        choice with current tables, inside an approximate threshold,{" "}
-        {NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry. {progress}
+        Within noise (approximate): counts as a successful retry. {progress}
       </p>
     );
   }

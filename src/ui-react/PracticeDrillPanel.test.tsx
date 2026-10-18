@@ -179,15 +179,15 @@ describe("practiceDrillPanel", () => {
         isWithinNoise: true,
       }),
     });
-    const note = getByRole("note", { name: /^Within simulation noise/u });
+    const note = getByRole("note", { name: /^Within noise \(approximate\)/u });
     const qualifier =
       "a conservative bound on the simulation's reported sampling error, not a calibrated interval";
 
     expect(note).toHaveAccessibleName(
-      `Within simulation noise, approximate: 0.06 points behind the best choice with current tables, ${qualifier}. Counts as a successful retry. ${progress}`,
+      `Within noise (approximate): counts as a successful retry. ${progress} 0.06 points behind the best choice with current tables, ${qualifier}.`,
     );
     expect(note).toHaveTextContent(
-      `Within noise: 0.06 points behind the best choice with current tables, inside an approximate threshold, ${qualifier}. Counts as a successful retry. ${progress}`,
+      `Within noise (approximate): counts as a successful retry. ${progress}`,
     );
   });
 
