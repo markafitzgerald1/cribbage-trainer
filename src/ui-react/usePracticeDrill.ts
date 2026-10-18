@@ -17,6 +17,7 @@ import type { AnalysisRenderedHandler } from "./ScoredPossibleKeepDiscards";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
+import type { RecordedAdmission } from "../ui/recordedAdmission";
 import type { ReportAnalysisRendered } from "./useAnalysisReporting";
 import type { TableIdentity } from "../game/tableIdentity";
 import { discardIsComplete } from "../game/discardIsComplete";
@@ -47,9 +48,22 @@ export interface PracticeVerdict {
   readonly consecutiveSuccesses: number;
   readonly isMastered: boolean;
   readonly isOptimal: boolean;
+  // A positive loss the live noise verdict called within noise, which counted as a success; never true for an optimal choice.
+  readonly isWithinNoise: boolean;
   readonly previousDiscard: string | null;
   readonly previousLoss: number;
 }
+
+// The caption's own verdict, as the analysis recorded it; no admission, or one this build cannot read, grades exactly.
+const isRetryWithinNoise = (
+  isOptimal: boolean,
+  admission: RecordedAdmission | null,
+): boolean =>
+  !isOptimal &&
+  admission !== null &&
+  admission !== "pending" &&
+  admission.basis === "sampling-noise-v1" &&
+  !admission.eligible;
 
 export type PracticeDrillPhase = "choosing" | "revealed";
 
@@ -312,14 +326,19 @@ export const usePracticeDrill = ({
         analysis.cribRole !== activeItem.cribRole ||
         phase !== "revealed" ||
         recordedRef.current ||
-        analysis.quality === null
+        analysis.quality === null ||
+        admission === "pending"
       ) {
         return;
       }
       recordedRef.current = true;
       const { expectedPointsLoss, isOptimal } = analysis.quality;
+      const isWithinNoise = isRetryWithinNoise(isOptimal, admission);
+      const isSuccess = isOptimal || isWithinNoise;
       const detail = {
-        basis: "exact-v1" as const,
+        basis: isWithinNoise
+          ? ("sampling-noise-v1" as const)
+          : ("exact-v1" as const),
         discardKey: serializeHand(
           permuteCardSuits(
             dealtCards.filter((card) => !card.kept),
@@ -328,7 +347,7 @@ export const usePracticeDrill = ({
         ),
         expectedPointsLoss,
         isOptimal,
-        outcome: isOptimal ? ("success" as const) : ("failure" as const),
+        outcome: isSuccess ? ("success" as const) : ("failure" as const),
         tableIdentity,
       };
       const attempt = { at: Date.now(), detail, handKey: activeItem.handKey };
@@ -350,7 +369,7 @@ export const usePracticeDrill = ({
        * local estimate is the honest fallback there, matching the read-only
        * state the rest of the tally is already in.
        */
-      const localStreakEstimate = isOptimal
+      const localStreakEstimate = isSuccess
         ? activeItem.consecutiveSuccesses + 1
         : 0;
       const stored = readTallyForDisplay().practice.find(
@@ -365,6 +384,7 @@ export const usePracticeDrill = ({
         consecutiveSuccesses,
         isMastered: consecutiveSuccesses >= SUCCESSES_FOR_MASTERY,
         isOptimal,
+        isWithinNoise,
         originalTableIdentity: activeItem.tableIdentity ?? null,
         previousDiscard: permutedPreviousDiscard(activeItem, activeViewIndex),
         previousLoss: activeItem.previousDiscardLoss,

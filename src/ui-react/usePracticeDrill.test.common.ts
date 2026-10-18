@@ -22,6 +22,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DisplayedHandRelabeling } from "./useDiscardTally";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
+import type { RecordedAdmission } from "../ui/recordedAdmission";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import type { TableIdentity } from "../game/tableIdentity";
 import { mockItemA } from "../ui/mistakeQueue.test.common";
@@ -112,6 +113,7 @@ export interface Harness {
   readonly render: (
     analysis: RenderedAnalysis,
     tableIdentity?: TableIdentity | null,
+    admission?: RecordedAdmission | null,
   ) => void;
   readonly replaceBoard: (props: BoardProps) => void;
   readonly start: (item?: MistakeQueueItem) => void;
@@ -188,8 +190,10 @@ export const setupHarness = ({ followLoadedHand = false } = {}): Harness => {
       return loadedHands;
     },
     next: () => step((drill) => drill.onNextHand()),
-    render: (analysis, tableIdentity) =>
-      step((drill) => drill.handleAnalysisRendered(analysis, tableIdentity)),
+    render: (analysis, tableIdentity, admission) =>
+      step((drill) =>
+        drill.handleAnalysisRendered(analysis, tableIdentity, admission),
+      ),
     replaceBoard: (props) => {
       act(() => {
         rerender(props);

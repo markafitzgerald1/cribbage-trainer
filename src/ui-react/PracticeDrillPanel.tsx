@@ -4,6 +4,7 @@ import {
   formatAccessibleNetLoss,
   formatNetLoss,
 } from "../analysis/classifyMistake";
+import { NOISE_THRESHOLD_QUALIFIER } from "../ui/recordedHistory";
 import { SUCCESSES_FOR_MASTERY } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
@@ -106,6 +107,21 @@ const renderVerdictRow = ({
 const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
   if (verdict.isMastered) {
     return <p className={classes.outcomeMastered}>Mastered.</p>;
+  }
+  if (verdict.isWithinNoise) {
+    return (
+      <p
+        aria-label={`Within simulation noise, approximate: ${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables, ${NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry: ${verdict.consecutiveSuccesses} of ${SUCCESSES_FOR_MASTERY} toward mastery.`}
+        className={classes.outcomeGood}
+        role="note"
+      >
+        Within noise: {formatLoss(verdict.chosenLoss)} points behind the best
+        choice with current tables, inside an approximate threshold,{" "}
+        {NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry:{" "}
+        {verdict.consecutiveSuccesses} of {SUCCESSES_FOR_MASTERY} toward
+        mastery.
+      </p>
+    );
   }
   if (verdict.isOptimal) {
     return (

@@ -158,6 +158,24 @@ describe("practiceDrillPanel", () => {
     expect(getByRole("button", { name: "Draw another" })).toBeInTheDocument();
   });
 
+  it("says a within-noise retry counted, approximately and without a calibrated claim", () => {
+    const { getByRole } = renderPanel({
+      phase: "revealed",
+      verdict: sampleVerdict({
+        chosenLoss: 0.06,
+        consecutiveSuccesses: 1,
+        isOptimal: false,
+        isWithinNoise: true,
+      }),
+    });
+    const note = getByRole("note", { name: /Within simulation noise/u });
+
+    expect(note).toHaveTextContent(
+      "Within noise: 0.06 points behind the best choice with current tables, inside an approximate threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval. Counts as a successful retry: 1 of 2 toward mastery.",
+    );
+    expect(note).not.toHaveTextContent("Sub-optimal");
+  });
+
   it("announces mastery and hides Draw another when nothing remains", () => {
     const { getByText, queryByRole } = renderPanel({
       hasNextHand: false,
