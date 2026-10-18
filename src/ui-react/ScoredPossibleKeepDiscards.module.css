@@ -74,7 +74,7 @@
 
 .noise-badge::before {
   content: "";
-  inset: -8px;
+  inset: -8px 0;
   position: absolute;
 }
 
@@ -83,20 +83,22 @@
   background-color: #26323d;
   border: 1px solid currentcolor;
   border-radius: 50%;
+  bottom: -9px;
   content: "i" / "";
   display: flex;
-  font-size: 0.8em;
-  height: 1.4em;
+  font-size: 10px;
+  height: 12px;
   justify-content: center;
   position: absolute;
-  bottom: -7px;
-  right: -6px;
-  width: 1.4em;
+  right: 0;
+  width: 12px;
+  z-index: 1;
 }
 
 .noise-explanation {
   color: #eef2f6;
   font-size: 0.82em;
+  font-weight: 400;
 }
 
 .diagnostic-reason {
@@ -138,7 +140,7 @@
 }
 
 .in-drill .noise-badge::after {
-  bottom: -4px;
+  bottom: -6px;
 }
 
 .table-container {
