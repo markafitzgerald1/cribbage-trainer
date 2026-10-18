@@ -16,6 +16,7 @@ import {
 } from "../analysis/compareByExpectedScoreDescending";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
+import { NoiseVerdictBadge } from "./NoiseVerdictBadge";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
@@ -319,12 +320,11 @@ export function ScoredPossibleKeepDiscards({
                 Sub-optimal: {renderRoleLossPairText(rolePair)}
               </span>
             ) : (
-              <span
-                className={classes.noiseBadge}
+              <NoiseVerdictBadge
+                rolePair={rolePair}
+                threshold={withinNoiseThreshold}
                 title={noiseBadgeTitle}
-              >
-                Within noise: {renderRoleLossPairText(rolePair)}
-              </span>
+              />
             )}
             <span className={classes.diagnosticReason}>
               {chosenClassification.gainPart === null ? (
