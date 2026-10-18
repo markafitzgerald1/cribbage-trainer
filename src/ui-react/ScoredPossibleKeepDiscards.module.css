@@ -60,17 +60,14 @@
  * so swapping between them never changes the caption's row count.
  */
 .noise-badge {
-  align-items: center;
   background-color: #26323d;
   border: 1px solid #aab7c4;
   border-radius: 4px;
   color: #eef2f6;
   cursor: pointer;
-  display: inline-flex;
   font-family: inherit;
   font-size: 0.82em;
   font-weight: 700;
-  gap: 6px;
   padding: 3px 8px;
   position: relative;
 }
@@ -82,15 +79,19 @@
 }
 
 .noise-badge::after {
-  content: "i" / "";
   align-items: center;
+  background-color: #26323d;
   border: 1px solid currentcolor;
   border-radius: 50%;
-  display: inline-flex;
+  content: "i" / "";
+  display: flex;
   font-size: 0.8em;
-  height: 1.3em;
+  height: 1.4em;
   justify-content: center;
-  width: 1.3em;
+  position: absolute;
+  right: -6px;
+  top: -7px;
+  width: 1.4em;
 }
 
 .noise-explanation {
