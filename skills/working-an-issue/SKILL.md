@@ -239,20 +239,13 @@ agreed, the pull request says what actually happened.
   `.items` filtered on `.status`. Nothing groups the columns inside the
   project order: on 2026-10-18 Todo was sixteen cards, then one Backlog, ten
   more Todo, then In Progress and Done cards, with Todo reappearing in
-  short runs throughout. So "move to the top of the project" is the top of
-  Todo only while the first card is a Todo card, and `afterId` has to be
-  chosen against the column, not the project:
+  short runs throughout. Because only the relative order of cards sharing a
+  Status is read as rank, the cards of other columns around a placement are
+  irrelevant, and two rules cover every case:
   - to rank behind a card `X` in the same column, pass `X`'s id;
-  - to rank first in a column, pass the id of the card immediately before
-    that column's first card in the full list, or omit `afterId` when the
-    column's first card is already first overall;
-  - read the neighbor from a list that excludes the card being moved, since
-    its own old slot disappears when it moves.
-
-  Stated from the mechanism: only the relative order of cards sharing a
-  Status is ever read as rank, so any `afterId` that lands the card at the
-  right place among its column's cards is correct, and the cards of other
-  columns around it are irrelevant.
+  - to rank first in a column, omit `afterId`: the top of the project
+    precedes every card, so it is the top of every column whatever sits
+    first today.
 
 - **A new card's placement is four steps, and the last is a re-read.**
   `gh project item-add` leaves Status empty, so: `item-add`, then `item-edit`
