@@ -3,16 +3,19 @@ import {
   type Harness,
   analysisOf,
   committedHarness,
+  elapse,
   expectNoDrillStarted,
   expectNoVerdictRecorded,
   freshHarness,
   refuseWrites,
+  withFakeTimers,
 } from "./usePracticeDrill.test.common";
 import type {
   RecordedAdmission,
   SettledAdmission,
 } from "../ui/recordedAdmission";
-import { describe, expect, it, jest } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
+import { mockItemA, mockItemB } from "../ui/mistakeQueue.test.common";
 import {
   readTallyForDisplay,
   recordDiscardDecision,
@@ -20,7 +23,6 @@ import {
 } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
-import { act } from "@testing-library/react";
 
 const WITHIN_NOISE: SettledAdmission = {
   basis: "sampling-noise-v1",
@@ -166,21 +168,7 @@ describe("grading a drill retry by the caption's verdict", () => {
   );
 });
 
-const elapse = (milliseconds: number) =>
-  act(() => {
-    jest.advanceTimersByTime(milliseconds);
-  });
-
 const elapseDeadline = () => elapse(DEADLINE_MS);
-
-const withFakeTimers = (scenario: () => void) => {
-  jest.useFakeTimers();
-  try {
-    scenario();
-  } finally {
-    jest.useRealTimers();
-  }
-};
 
 const PENDING_LOSS = 1.5;
 const WORSE: SettledAdmission = { basis: "sampling-noise-v1", eligible: true };
@@ -223,12 +211,15 @@ describe("a retry whose verdict is still pending", () => {
     expectStoredAttempt("exact-v1", "failure");
   });
 
-  it("resets the streak it could not grade at once, even after another drill started", () => {
+  it.each([
+    { name: "the same hand starts again", next: mockItemA },
+    { name: "a different hand has started", next: mockItemB },
+  ])("grades a left retry in attempt order when $name", ({ next }) => {
     recordEarlierSuccess();
     withFakeTimers(() => {
       const harness = pendingRetry(() => WORSE);
       harness.exit();
-      harness.start();
+      harness.start(next);
       elapseDeadline();
     });
 

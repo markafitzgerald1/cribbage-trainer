@@ -105,23 +105,26 @@ const renderVerdictRow = ({
 );
 
 const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
-  if (verdict.isMastered) {
-    return <p className={classes.outcomeMastered}>Mastered.</p>;
-  }
   if (verdict.isWithinNoise) {
+    const progress = verdict.isMastered
+      ? "Mastered."
+      : `${verdict.consecutiveSuccesses} of ${SUCCESSES_FOR_MASTERY} toward mastery.`;
     return (
       <p
-        aria-label={`Within simulation noise, approximate: ${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables, ${NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry: ${verdict.consecutiveSuccesses} of ${SUCCESSES_FOR_MASTERY} toward mastery.`}
-        className={classes.outcomeGood}
+        aria-label={`Within simulation noise, approximate: ${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables, ${NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry. ${progress}`}
+        className={
+          verdict.isMastered ? classes.outcomeMastered : classes.outcomeGood
+        }
         role="note"
       >
         Within noise: {formatLoss(verdict.chosenLoss)} points behind the best
         choice with current tables, inside an approximate threshold,{" "}
-        {NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry:{" "}
-        {verdict.consecutiveSuccesses} of {SUCCESSES_FOR_MASTERY} toward
-        mastery.
+        {NOISE_THRESHOLD_QUALIFIER}. Counts as a successful retry. {progress}
       </p>
     );
+  }
+  if (verdict.isMastered) {
+    return <p className={classes.outcomeMastered}>Mastered.</p>;
   }
   if (verdict.isOptimal) {
     return (

@@ -316,3 +316,17 @@ export const startedThenNext = (
   harness.next();
   return harness;
 };
+
+export const withFakeTimers = (scenario: () => void) => {
+  jest.useFakeTimers();
+  try {
+    scenario();
+  } finally {
+    jest.useRealTimers();
+  }
+};
+
+export const elapse = (milliseconds: number) =>
+  act(() => {
+    jest.advanceTimersByTime(milliseconds);
+  });

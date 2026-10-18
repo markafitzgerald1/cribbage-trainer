@@ -158,24 +158,37 @@ describe("practiceDrillPanel", () => {
     expect(getByRole("button", { name: "Draw another" })).toBeInTheDocument();
   });
 
-  it("says a within-noise retry counted, approximately and without a calibrated claim", () => {
+  it.each([
+    {
+      name: "says a within-noise retry counted, approximately and without a calibrated claim",
+      progress: "1 of 2 toward mastery.",
+      verdict: { consecutiveSuccesses: 1, isMastered: false },
+    },
+    {
+      name: "keeps the within-noise explanation when that retry completes mastery",
+      progress: "Mastered.",
+      verdict: { consecutiveSuccesses: 2, isMastered: true },
+    },
+  ])("$name", ({ progress, verdict }) => {
     const { getByRole } = renderPanel({
       phase: "revealed",
       verdict: sampleVerdict({
+        ...verdict,
         chosenLoss: 0.06,
-        consecutiveSuccesses: 1,
         isOptimal: false,
         isWithinNoise: true,
       }),
     });
-    const note = getByRole("note", {
-      name: "Within simulation noise, approximate: 0.06 points behind the best choice with current tables, a conservative bound on the simulation's reported sampling error, not a calibrated interval. Counts as a successful retry: 1 of 2 toward mastery.",
-    });
+    const note = getByRole("note", { name: /^Within simulation noise/u });
+    const qualifier =
+      "a conservative bound on the simulation's reported sampling error, not a calibrated interval";
 
-    expect(note).toHaveTextContent(
-      "Within noise: 0.06 points behind the best choice with current tables, inside an approximate threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval. Counts as a successful retry: 1 of 2 toward mastery.",
+    expect(note).toHaveAccessibleName(
+      `Within simulation noise, approximate: 0.06 points behind the best choice with current tables, ${qualifier}. Counts as a successful retry. ${progress}`,
     );
-    expect(note).not.toHaveTextContent("Sub-optimal");
+    expect(note).toHaveTextContent(
+      `Within noise: 0.06 points behind the best choice with current tables, inside an approximate threshold, ${qualifier}. Counts as a successful retry. ${progress}`,
+    );
   });
 
   it("announces mastery and hides Draw another when nothing remains", () => {

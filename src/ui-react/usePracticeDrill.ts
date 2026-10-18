@@ -161,6 +161,7 @@ const permutedPreviousDiscard = (
       );
 
 interface GradeRetryInput {
+  readonly at: number;
   readonly activeItem: MistakeQueueItem;
   readonly activeViewIndex: number;
   readonly dealtCards: readonly DealtCard[];
@@ -175,6 +176,7 @@ interface GradeRetryInput {
 // Writes the attempt and returns the verdict read back from the record just written.
 const gradeRetry = ({
   activeItem,
+  at,
   activeViewIndex,
   dealtCards,
   quality,
@@ -199,7 +201,7 @@ const gradeRetry = ({
     outcome: isSuccess ? ("success" as const) : ("failure" as const),
     tableIdentity,
   };
-  const attempt = { at: Date.now(), detail, handKey: activeItem.handKey };
+  const attempt = { at, detail, handKey: activeItem.handKey };
   recordPracticeAttempt(
     isOptimal
       ? { ...attempt, isOptimal: true }
@@ -313,8 +315,9 @@ export const usePracticeDrill = ({
    * sanctioned "adjust state while rendering" path, which it retries
    * without committing the discarded output — is what stops selecting two
    * cards on a Back-restored hand from resurrecting the old drill with its
-   * stale verdict. `beginWith` resets `recordedRef` before the next drill,
-   * so it needs no reset here.
+   * stale verdict. `beginWith` resets the recorded flag before the next drill, so
+   * it needs no reset here. A pending deadline grade deliberately survives
+   * this reset: it belongs to the retry that was left, not to the board.
    */
   if (activeItem !== null && !drillLive) {
     resetActiveDrill();
@@ -322,7 +325,7 @@ export const usePracticeDrill = ({
 
   const beginWith = useCallback(
     (item: MistakeQueueItem) => {
-      pendingGrade.start();
+      pendingGrade.start(item.handKey);
       const viewIndex = viewCounts.current.get(item.handKey) ?? 0;
       viewCounts.current.set(item.handKey, viewIndex + 1);
       setActiveItem(item);
@@ -414,31 +417,39 @@ export const usePracticeDrill = ({
         return;
       }
       const { quality } = analysis;
-      const grade = (settled: RecordedAdmission | null): PracticeVerdict =>
+      const startedAt = Date.now();
+      const grade = (
+        settled: RecordedAdmission | null,
+        at: number,
+      ): PracticeVerdict =>
         gradeRetry({
           activeItem,
           activeViewIndex,
+          at,
           dealtCards,
           quality,
           settled,
           tableIdentity,
         });
       const announce = (settled: RecordedAdmission | null) => {
-        const graded = grade(settled);
+        const graded = grade(settled, startedAt);
         setHasNextHand(activeHandsExist());
         setVerdict(graded);
       };
       if (admission === "pending") {
-        pendingGrade.defer((isSameDrill) => {
-          if (isSameDrill) {
-            pendingGrade.markRecorded();
-          }
-          grade(
+        pendingGrade.defer(
+          activeItem.handKey,
+          () =>
             judgeAtDeadline === null
               ? exactAdmission(false)
               : judgeAtDeadline(),
-          );
-        });
+          (settled, isSameDrill) => {
+            if (isSameDrill) {
+              pendingGrade.markRecorded();
+            }
+            grade(settled, startedAt);
+          },
+        );
         return;
       }
       pendingGrade.settle();
