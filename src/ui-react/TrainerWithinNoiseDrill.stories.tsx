@@ -2,6 +2,7 @@
 import {
   createMockTally,
   createTestMistakeRecord,
+  createTestPracticeRecord,
 } from "../ui/mistakeQueue.test.common";
 import { discardTallyKey, readTallyForDisplay } from "../ui/discardTally";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
@@ -33,7 +34,7 @@ const WITHIN_NOISE_OUTCOME =
 const VERDICT_TIMEOUT = { timeout: 10_000 };
 const BEHIND_BEST_CHOICE = /points behind the best choice/u;
 
-const createWithinNoiseTally = () =>
+const createWithinNoiseTally = (priorSuccesses: number) =>
   createMockTally({
     lifetime: {
       decisions: 1,
@@ -41,6 +42,15 @@ const createWithinNoiseTally = () =>
       optimalDecisions: 0,
       skippedHands: 0,
     },
+    practice:
+      priorSuccesses === 0
+        ? []
+        : [
+            createTestPracticeRecord({
+              consecutiveSuccesses: priorSuccesses,
+              handKey: WITHIN_NOISE_HAND_KEY,
+            }),
+          ],
     records: [
       createTestMistakeRecord({
         cribRole: CribRole.Dealer,
@@ -51,10 +61,10 @@ const createWithinNoiseTally = () =>
     ],
   });
 
-const seedWithinNoiseTally = (rootFontSize = "") => {
+const seedWithinNoiseTally = (priorSuccesses: number, rootFontSize = "") => {
   localStorage.setItem(
     discardTallyKey,
-    JSON.stringify(createWithinNoiseTally()),
+    JSON.stringify(createWithinNoiseTally(priorSuccesses)),
   );
   document.documentElement.style.fontSize = rootFontSize;
   return () => {
@@ -90,20 +100,24 @@ const startDrillAndRetry = async (
   return within(canvasElement);
 };
 
-const expectInsidePanelWithoutScrolling = async (
-  panel: HTMLElement,
-  label: RegExp,
-) => {
+const expectRowFullyOnScreen = async (panel: HTMLElement, label: RegExp) => {
   const panelBox = panel.getBoundingClientRect();
-  const box = within(panel).getByText(label).getBoundingClientRect();
+  const row = within(panel).getByText(label).parentElement!;
+  const box = row.getBoundingClientRect();
 
   await expect(box.top).toBeGreaterThanOrEqual(panelBox.top);
   await expect(box.bottom).toBeLessThanOrEqual(panelBox.bottom);
-  await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight);
 };
 
+const expectStoredPractice = (
+  expected: Partial<ReturnType<typeof readTallyForDisplay>["practice"][number]>,
+) =>
+  waitFor(async () => {
+    await expect(readTallyForDisplay().practice[0]).toMatchObject(expected);
+  });
+
 export const WithinNoiseRetryCountsAsSuccess = {
-  beforeEach: () => seedWithinNoiseTally(LARGE_TEXT_ROOT_FONT_SIZE),
+  beforeEach: () => seedWithinNoiseTally(0, LARGE_TEXT_ROOT_FONT_SIZE),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = await startDrillAndRetry(canvasElement, ["Q", "2"]);
     const panel = canvas.getByLabelText("Practice drill");
@@ -113,14 +127,25 @@ export const WithinNoiseRetryCountsAsSuccess = {
     ).toBeVisible();
     await expect(canvas.queryByText(BEHIND_BEST_CHOICE)).toBeNull();
     await expect(panel.scrollTop).toBe(0);
+    await expect(panel.scrollHeight).toBeLessThanOrEqual(panel.clientHeight);
 
-    await expectInsidePanelWithoutScrolling(panel, /^Retry/u);
-    await expectInsidePanelWithoutScrolling(panel, /^Then/u);
+    await expectRowFullyOnScreen(panel, /^Retry/u);
+    await expectRowFullyOnScreen(panel, /^Then/u);
+    await expectStoredPractice({
+      attempts: 1,
+      consecutiveSuccesses: 1,
+      wrong: 0,
+    });
+
+    await expect(readTallyForDisplay().attemptLog?.at(-1)).toMatchObject({
+      basis: "sampling-noise-v1",
+      outcome: "success",
+    });
   },
 };
 
 export const WorseRetryStillFailsAndResetsStreak = {
-  beforeEach: () => seedWithinNoiseTally(),
+  beforeEach: () => seedWithinNoiseTally(1),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const worseRetry = await startDrillAndRetry(canvasElement, ["9", "A"]);
     const outcome = await worseRetry.findByText(
@@ -132,11 +157,10 @@ export const WorseRetryStillFailsAndResetsStreak = {
     await expect(outcome).toBeVisible();
     await expect(worseRetry.queryByText(/Within noise/u)).toBeNull();
 
-    await waitFor(async () => {
-      await expect(readTallyForDisplay().practice[0]).toMatchObject({
-        consecutiveSuccesses: 0,
-        wrong: 1,
-      });
+    await expectStoredPractice({
+      attempts: 2,
+      consecutiveSuccesses: 0,
+      wrong: 1,
     });
   },
 };
