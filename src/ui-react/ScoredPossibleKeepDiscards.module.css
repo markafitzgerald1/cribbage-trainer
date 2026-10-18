@@ -82,7 +82,7 @@
 }
 
 .noise-badge::after {
-  content: "i";
+  content: "i" / "";
   align-items: center;
   border: 1px solid currentcolor;
   border-radius: 50%;

@@ -59,6 +59,20 @@ const renderSettledNearMiss = async () => {
   return { caption: await findCaption(container), container };
 };
 
+const findExplanation = (caption: HTMLElement) =>
+  caption.querySelector("[class*='noiseExplanation']");
+
+const figureIn = (element: Element | null): string | undefined =>
+  /\d+\.\d{2}/u.exec(element?.textContent ?? "")?.[0];
+
+const renderNearMissBadge = async () => {
+  const { caption } = await renderSettledNearMiss();
+  return {
+    badge: within(caption).getByRole("button", { name: /^Within noise/u }),
+    caption,
+  };
+};
+
 // Runs out the settle wait on fake timers, then delivers a document to the held crib load.
 const waitOutThenRelease = async (
   cribReleases: Release[],
@@ -303,10 +317,7 @@ describe("scored possible keep discards caption", () => {
     });
 
     it("reveals the approximate threshold in visible text only after the within-noise badge is tapped", async () => {
-      const { caption } = await renderSettledNearMiss();
-      const badge = within(caption).getByRole("button", {
-        name: /^Within noise/u,
-      });
+      const { badge, caption } = await renderNearMissBadge();
       const explanation =
         /^Approximate threshold \d+\.\d{2} pts: a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u;
 
@@ -316,13 +327,23 @@ describe("scored possible keep discards caption", () => {
       fireEvent.click(badge);
 
       expect(badge.getAttribute("aria-expanded")).toBe("true");
-      expect(
-        caption.querySelector("[class*='noiseExplanation']")?.textContent,
-      ).toMatch(explanation);
+      expect(findExplanation(caption)?.textContent).toMatch(explanation);
 
       fireEvent.click(badge);
 
       expect(caption.textContent).not.toMatch(/Approximate threshold/u);
+    });
+
+    it("discloses the same threshold figure its tooltip states, wired through aria-controls", async () => {
+      const { badge, caption } = await renderNearMissBadge();
+
+      fireEvent.click(badge);
+      const shown = findExplanation(caption);
+
+      expect(badge.getAttribute("aria-controls")).toBe(shown?.id);
+      expect(badge.getAttribute("title")).toContain(
+        `approximate ${figureIn(shown)} point`,
+      );
     });
 
     it.each([
