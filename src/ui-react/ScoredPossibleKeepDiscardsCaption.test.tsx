@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { act, waitFor } from "@testing-library/react";
+import { act, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import {
   findCaption,
@@ -53,6 +53,11 @@ const renderNearMiss = (
     onStatusChange,
     playUncertaintySource: play,
   });
+
+const renderSettledNearMiss = async () => {
+  const { container } = renderNearMiss(settledWith(1), settledWith(1));
+  return { caption: await findCaption(container), container };
+};
 
 // Runs out the settle wait on fake timers, then delivers a document to the held crib load.
 const waitOutThenRelease = async (
@@ -279,8 +284,7 @@ describe("scored possible keep discards caption", () => {
     });
 
     it("calls a loss inside the noise threshold within noise, never sub-optimal or optimal", async () => {
-      const { container } = renderNearMiss(settledWith(1), settledWith(1));
-      const caption = await findCaption(container);
+      const { caption, container } = await renderSettledNearMiss();
 
       expect(caption.textContent).toMatch(/^Within noise: 0\.09 pts lost/u);
       expect(caption.getAttribute("aria-label")).toMatch(
@@ -296,6 +300,29 @@ describe("scored possible keep discards caption", () => {
           .querySelector("tr[data-highlight-tier='chosen']")
           ?.getAttribute("title"),
       ).toMatch(/within simulation noise, approximate/u);
+    });
+
+    it("reveals the approximate threshold in visible text only after the within-noise badge is tapped", async () => {
+      const { caption } = await renderSettledNearMiss();
+      const badge = within(caption).getByRole("button", {
+        name: /^Within noise/u,
+      });
+      const explanation =
+        /^Approximate threshold \d+\.\d{2} pts: a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u;
+
+      expect(badge.getAttribute("aria-expanded")).toBe("false");
+      expect(caption.textContent).not.toMatch(/Approximate threshold/u);
+
+      fireEvent.click(badge);
+
+      expect(badge.getAttribute("aria-expanded")).toBe("true");
+      expect(
+        caption.querySelector("[class*='noiseExplanation']")?.textContent,
+      ).toMatch(explanation);
+
+      fireEvent.click(badge);
+
+      expect(caption.textContent).not.toMatch(/Approximate threshold/u);
     });
 
     it.each([
