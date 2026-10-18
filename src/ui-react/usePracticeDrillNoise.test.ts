@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import {
   HAND_KEY,
   type Harness,
@@ -14,7 +15,7 @@ import type {
   RecordedAdmission,
   SettledAdmission,
 } from "../ui/recordedAdmission";
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
 import { mockItemA, mockItemB } from "../ui/mistakeQueue.test.common";
 import {
   readTallyForDisplay,
@@ -23,6 +24,7 @@ import {
 } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
+/* jscpd:ignore-end */
 
 const WITHIN_NOISE: SettledAdmission = {
   basis: "sampling-noise-v1",
@@ -209,6 +211,21 @@ describe("a retry whose verdict is still pending", () => {
 
     expectOneAttempt();
     expectStoredAttempt("exact-v1", "failure");
+  });
+
+  it("records a left retry the moment its hand starts again, under the time it was made", () => {
+    const startedAt = 1_800_000_000_000;
+    withFakeTimers(() => {
+      jest.setSystemTime(startedAt);
+      const harness = pendingRetry(() => WORSE);
+      harness.exit();
+      elapse(1000);
+      harness.start(mockItemA);
+    });
+
+    expectOneAttempt();
+
+    expect(readTallyForDisplay().attemptLog?.at(-1)?.at).toBe(startedAt);
   });
 
   it.each([

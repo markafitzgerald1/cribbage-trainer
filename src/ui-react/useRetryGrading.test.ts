@@ -15,6 +15,8 @@ const EXACT_MISS: SettledAdmission = {
 };
 const AFTER_GRACE_MS = SIDECAR_SETTLE_TIMEOUT_MS + 1000;
 
+type Retries = ReturnType<typeof useRetryGrading>;
+
 const grading = () => renderHook(() => useRetryGrading()).result.current;
 
 const withPendingA = (run: () => void) => {
@@ -61,5 +63,45 @@ describe("useRetryGrading", () => {
     });
 
     expect(run).toHaveBeenCalledWith(EXACT_MISS, true);
+  });
+
+  it("leaves another hand's pending retry waiting for its own deadline", () => {
+    const run = jest.fn();
+    withFakeTimers(() => {
+      withPendingA(run).start("B");
+      elapse(SIDECAR_SETTLE_TIMEOUT_MS);
+    });
+
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      after: () => null,
+      calls: 0,
+      name: "not yet during the grace",
+      waited: SIDECAR_SETTLE_TIMEOUT_MS + 100,
+    },
+    {
+      after: () => null,
+      calls: 1,
+      name: "once the grace has passed",
+      waited: AFTER_GRACE_MS,
+    },
+    {
+      after: (retries: Retries) => retries.start("A"),
+      calls: 1,
+      name: "once, even when the same hand restarts after the deadline",
+      waited: AFTER_GRACE_MS,
+    },
+  ])("grades $name", ({ after, calls, waited }) => {
+    const run = jest.fn();
+    withFakeTimers(() => {
+      const retries = withPendingA(run);
+      elapse(waited);
+      after(retries);
+    });
+
+    expect(run).toHaveBeenCalledTimes(calls);
   });
 });
