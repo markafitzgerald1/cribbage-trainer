@@ -27,6 +27,7 @@ import { DialogSummaryCards } from "./DialogSummaryCards";
 import { MistakeQueueItemCard } from "./MistakeQueueItemCard";
 import Modal from "./Modal";
 import { SortOrder } from "../ui/SortOrder";
+import { isPendingMistake } from "../ui/recordedAdmission";
 import { useCloseOnEscape } from "./useCloseOnEscape";
 import { useMistakeQueueClassifications } from "./useMistakeQueueClassifications";
 
@@ -94,6 +95,7 @@ const buildQuantileOptions = (
 
 function renderEmptyState(options: {
   readonly hasLifetimeMistakes: boolean;
+  readonly hasPendingMistake: boolean;
   readonly isAllMastered: boolean;
   readonly totalCount: number;
 }): React.JSX.Element {
@@ -119,6 +121,10 @@ function renderEmptyState(options: {
     message = options.hasLifetimeMistakes
       ? "All recorded mistake hands have aged out of the recent history window. Play more hands to add new mistakes to your practice queue."
       : "No mistake hands recorded yet. Play authentic hands to build your practice queue.";
+    if (options.hasPendingMistake) {
+      message =
+        "Judging your last discard. It joins this queue if it turns out to be worth practicing.";
+    }
   }
 
   return (
@@ -135,6 +141,7 @@ interface MistakeQueueBaseData {
   readonly activeCount: number;
   readonly allItems: readonly MistakeQueueItem[];
   readonly hasLifetimeMistakes: boolean;
+  readonly hasPendingMistake: boolean;
   readonly masteredCount: number;
   readonly quantileOptions: readonly DialogFilterOption<MistakeQueueQuantileFilter>[];
   readonly totalCount: number;
@@ -151,11 +158,13 @@ function buildMistakeQueueBaseData(tally: StoredTally): MistakeQueueBaseData {
   const masteredCount = allItems.filter((item) => item.isMastered).length;
   const hasLifetimeMistakes =
     tally.lifetime.decisions > tally.lifetime.optimalDecisions;
+  const hasPendingMistake = tally.records.some(isPendingMistake);
 
   return {
     activeCount,
     allItems,
     hasLifetimeMistakes,
+    hasPendingMistake,
     masteredCount,
     quantileOptions,
     totalCount,
@@ -279,6 +288,7 @@ export function MistakeQueueDialog({
   const {
     activeCount,
     hasLifetimeMistakes,
+    hasPendingMistake,
     masteredCount,
     quantileOptions,
     totalCount,
@@ -374,6 +384,7 @@ export function MistakeQueueDialog({
           {sortedItems.length === 0 ? (
             renderEmptyState({
               hasLifetimeMistakes,
+              hasPendingMistake,
               isAllMastered,
               totalCount,
             })
