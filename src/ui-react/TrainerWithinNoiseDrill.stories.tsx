@@ -29,6 +29,8 @@ const WITHIN_NOISE_HAND_KEY = "QD,9S,6S,6H,2S,AH|Dealer";
 const LARGE_TEXT_ROOT_FONT_SIZE = "125%";
 const WITHIN_NOISE_OUTCOME =
   "Within noise (approximate): counts as a successful retry. 1 of 2 toward mastery.";
+// The verdict waits for the lazily loaded uncertainty sidecars, which findBy*'s one-second default cannot absorb under Docker.
+const VERDICT_TIMEOUT = { timeout: 10_000 };
 const BEHIND_BEST_CHOICE = /points behind the best choice/u;
 
 const createWithinNoiseTally = () =>
@@ -106,7 +108,9 @@ export const WithinNoiseRetryCountsAsSuccess = {
     const canvas = await startDrillAndRetry(canvasElement, ["Q", "2"]);
     const panel = canvas.getByLabelText("Practice drill");
 
-    await expect(await canvas.findByText(WITHIN_NOISE_OUTCOME)).toBeVisible();
+    await expect(
+      await canvas.findByText(WITHIN_NOISE_OUTCOME, {}, VERDICT_TIMEOUT),
+    ).toBeVisible();
     await expect(canvas.queryByText(BEHIND_BEST_CHOICE)).toBeNull();
     await expect(panel.scrollTop).toBe(0);
 
@@ -119,7 +123,11 @@ export const WorseRetryStillFailsAndResetsStreak = {
   beforeEach: () => seedWithinNoiseTally(),
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const worseRetry = await startDrillAndRetry(canvasElement, ["9", "A"]);
-    const outcome = await worseRetry.findByText(BEHIND_BEST_CHOICE);
+    const outcome = await worseRetry.findByText(
+      BEHIND_BEST_CHOICE,
+      {},
+      VERDICT_TIMEOUT,
+    );
 
     await expect(outcome).toBeVisible();
     await expect(worseRetry.queryByText(/Within noise/u)).toBeNull();
