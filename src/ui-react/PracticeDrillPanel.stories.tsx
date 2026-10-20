@@ -82,6 +82,20 @@ export const MissVerdict: Story = {
   },
 };
 
+export const WithinNoiseVerdict: Story = {
+  args: {
+    phase: "revealed",
+    verdict: sampleVerdict({
+      chosenDiscard: "10H,10S",
+      chosenLoss: 0.06,
+      consecutiveSuccesses: 1,
+      isOptimal: false,
+      isWithinNoise: true,
+      previousLoss: 0.63,
+    }),
+  },
+};
+
 export const ReviewWithEarlierDiscardLocate: Story = {
   args: {
     onLocateEarlierChoice: fn(),

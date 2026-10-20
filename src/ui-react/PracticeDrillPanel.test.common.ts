@@ -8,6 +8,7 @@ const OPTIMAL_VERDICT: PracticeVerdict = {
   consecutiveSuccesses: 1,
   isMastered: false,
   isOptimal: true,
+  isWithinNoise: false,
   previousDiscard: "7C,8C",
   previousLoss: 1.42,
 };

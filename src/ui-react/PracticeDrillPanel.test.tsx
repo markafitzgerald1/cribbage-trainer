@@ -158,6 +158,39 @@ describe("practiceDrillPanel", () => {
     expect(getByRole("button", { name: "Draw another" })).toBeInTheDocument();
   });
 
+  it.each([
+    {
+      name: "says a within-noise retry counted, approximately and without a calibrated claim",
+      progress: "1 of 2 toward mastery.",
+      verdict: { consecutiveSuccesses: 1, isMastered: false },
+    },
+    {
+      name: "keeps the within-noise explanation when that retry completes mastery",
+      progress: "Mastered.",
+      verdict: { consecutiveSuccesses: 2, isMastered: true },
+    },
+  ])("$name", ({ progress, verdict }) => {
+    const { getByRole } = renderPanel({
+      phase: "revealed",
+      verdict: sampleVerdict({
+        ...verdict,
+        chosenLoss: 0.06,
+        isOptimal: false,
+        isWithinNoise: true,
+      }),
+    });
+    const note = getByRole("note", { name: /^Within noise \(approximate\)/u });
+    const qualifier =
+      "a conservative bound on the simulation's reported sampling error, not a calibrated interval";
+
+    expect(note).toHaveAccessibleName(
+      `Within noise (approximate): counts as a successful retry. ${progress} 0.06 points behind the best choice with current tables, ${qualifier}.`,
+    );
+    expect(note).toHaveTextContent(
+      `Within noise (approximate): counts as a successful retry. ${progress}`,
+    );
+  });
+
   it("announces mastery and hides Draw another when nothing remains", () => {
     const { getByText, queryByRole } = renderPanel({
       hasNextHand: false,
