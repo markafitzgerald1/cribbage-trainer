@@ -67,6 +67,15 @@ describe("mistake queue while a decision is pending", () => {
     expect(queryByText(/aged out/iu)).not.toBeInTheDocument();
   });
 
+  it("judges a first-ever discard, the only record in the history", () => {
+    const { getByText } = renderQueue({
+      ...agedOut,
+      records: withRecord({}).records.slice(-1),
+    });
+
+    expect(getByText(/Judging your last discard/iu)).toBeInTheDocument();
+  });
+
   it.each([
     {
       name: "an optimal pending record",
