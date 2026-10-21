@@ -266,8 +266,9 @@
   reader and writer carry additive fields through an older build's write
   (#929), but an older reader cannot know what a reshaped field means, so it
   drops the row or resets the counter. Only the version bump protects that
-  data. Equal-hash table identities with different metadata keep distinct
-  pool entries in `encodeTableIdentities` for the same reason.
+  data. A version bump cannot help one case, so the code covers it:
+  equal-hash table identities with different metadata keep distinct pool
+  entries in `encodeTableIdentities`.
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.
