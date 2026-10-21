@@ -176,7 +176,7 @@ describe("a later build's stored fields through this build's write", () => {
     expect(readTallyForDisplay().records[0]?.tableIdentity).toBeNull();
   });
 
-  it("does not read a stored key named like the carried reference as one", () => {
+  it("does not trust a stored unreadableTableIdentity key", () => {
     expect(
       writtenRecordAfterUnrelatedWrite({
         ...validRecord,

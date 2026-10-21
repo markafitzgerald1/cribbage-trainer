@@ -17,7 +17,7 @@ export const resolveTableIdentity = (
 
 /*
  * A reference this build cannot resolve is a later build's, not an absent one.
- * It is carried beside the typed (null) identity so the next write can put the
+ * It is kept beside the typed (null) identity so the next write can put the
  * stored value back, while every consumer keeps reading the identity as unavailable.
  */
 export interface UnreadableTableIdentity {
@@ -44,8 +44,9 @@ export const resolveStoredReference = (
     : { tableIdentity };
 };
 
-// Spread first so a stored key spelled like the carrier cannot pose as one.
-export const withoutCarrier = <T extends object>(stored: T): T =>
+// This build sets `unreadableTableIdentity` in memory only, never in storage.
+// A stored key with that name is dropped so the writer cannot copy it out.
+export const withoutUnreadableReference = <T extends object>(stored: T): T =>
   Object.fromEntries(
     Object.entries(stored).filter(([key]) => key !== "unreadableTableIdentity"),
   ) as T;
