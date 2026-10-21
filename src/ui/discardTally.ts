@@ -148,6 +148,7 @@ const parseLifetime = (value: unknown): LifetimeTotals => {
     typeof expectedPointsLossTotal === "number" &&
     typeof optimalDecisions === "number"
     ? {
+        ...value,
         decisions,
         expectedPointsLossTotal,
         optimalDecisions,
@@ -166,6 +167,22 @@ const isFromNewerBuild = (parsed: unknown): boolean =>
   isObject(parsed) &&
   typeof (parsed as MaybeTally).version === "number" &&
   ((parsed as MaybeTally).version as number) > CURRENT_VERSION;
+
+const READ_FIELDS: readonly string[] = [
+  "attemptLog",
+  "lifetime",
+  "practice",
+  "records",
+  "revision",
+  "skipped",
+  "tableIdentities",
+  "version",
+];
+
+const laterFields = (candidate: MaybeTally): object =>
+  Object.fromEntries(
+    Object.entries(candidate).filter(([key]) => !READ_FIELDS.includes(key)),
+  );
 
 const readableTally = (parsed: unknown): MaybeTally | null => {
   if (!isObject(parsed)) {
@@ -202,6 +219,8 @@ const readStoredTally = (): StoredTally | null => {
     ? candidate.practice.filter(isStoredPracticeRecord)
     : [];
   return {
+    // Fields a later build added at the same version; carried so this build's write does not erase them.
+    ...laterFields(candidate),
     ...(Array.isArray(candidate.attemptLog)
       ? {
           attemptLog: normalizeAttemptLog(

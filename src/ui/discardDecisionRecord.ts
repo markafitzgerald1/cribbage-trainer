@@ -2,6 +2,10 @@ import {
   type RecordedAdmission,
   normalizeAdmission,
 } from "./recordedAdmission";
+import {
+  resolveStoredReference,
+  withoutUnreadableReference,
+} from "./tableIdentityCodec";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "./SortOrder";
@@ -9,10 +13,11 @@ import { type TableIdentity } from "../game/tableIdentity";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHand } from "../game/Card";
-import { resolveTableIdentity } from "./tableIdentityCodec";
 import { sortUrlValue } from "./urlAnalysisState";
 
 export interface DiscardDecisionRecord {
+  // A later build's table reference this build cannot read, kept so a write can restore it.
+  readonly unreadableTableIdentity?: unknown;
   readonly tableIdentity?: TableIdentity | null;
   readonly recordedAdmission?: RecordedAdmission | null;
   readonly at: number;
@@ -150,7 +155,7 @@ export const normalizeStoredRecords = (
       const previousRecencyAt =
         normalized[normalized.length - 1]?.recencyAt ?? record.at - 1;
       normalized.push({
-        ...record,
+        ...withoutUnreadableReference(record),
         // Absent in a record written before version 3, or invalid, permanently null.
         discardKey: normalizeDiscardKey(record.discardKey),
         recencyAt: Math.max(
@@ -166,7 +171,7 @@ export const normalizeStoredRecords = (
                 normalizeAdmission(record.recordedAdmission) ??
                 record.recordedAdmission,
             }),
-        tableIdentity: resolveTableIdentity(record.tableIdentity, identities),
+        ...resolveStoredReference(record.tableIdentity, identities),
       });
     }
   }
