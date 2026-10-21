@@ -204,6 +204,59 @@ agreed, the pull request says what actually happened.
   issue next. Within Todo the milestone discriminates almost nothing, since
   nearly every card there is `MLP`; the manual order is what carries the
   ranking, and `Paused` is where the milestone actually separates things.
+- **Ranking a card is a GraphQL mutation; `gh project item-edit` cannot do
+  it.** It sets field values and has no notion of position. The mutation is
+  `updateProjectV2ItemPosition`, whose input is `projectId` (ID!), `itemId`
+  (ID!) and an optional `afterId` (ID): omitting it, or passing null, moves
+  the item to the top of the **whole project**. Introspect it rather than
+  trusting this copy:
+
+  ```bash
+  gh api graphql --field query='
+  { __type(name: "UpdateProjectV2ItemPositionInput") {
+      inputFields { name description } } }'
+  ```
+
+  The project id is `gh project view 1 --owner <owner> --format json --jq .id`,
+  and item ids are `.items[].id` from `gh project item-list`; so is the id
+  `gh project item-add ... --format json` returns for a new card. Moving one
+  card after another:
+
+  ```bash
+  gh api graphql \
+    --raw-field query='mutation($p:ID!,$i:ID!,$a:ID!){
+      updateProjectV2ItemPosition(
+        input:{projectId:$p, itemId:$i, afterId:$a}){
+        items { totalCount } } }' \
+    --raw-field p=<projectId> --raw-field i=<itemId> \
+    --raw-field a=<afterItemId>
+  ```
+
+- **Order is project-wide, and a column's rank is that order filtered by
+  Status.** `gh project item-list 1 --owner <owner> --limit 400 --format json`
+  returns items in board order (its first hundred matched a GraphQL
+  `items(first: 100)` read id for id on 2026-10-18), so a column's ranking is
+  `.items` filtered on `.status`. Nothing groups the columns inside the
+  project order: on 2026-10-18 Todo was sixteen cards, then one Backlog, ten
+  more Todo, then In Progress and Done cards, with Todo reappearing in
+  short runs throughout. Because only the relative order of cards sharing a
+  Status is read as rank, the cards of other columns around a placement are
+  irrelevant, and two rules cover every case:
+  - to rank behind a card `X` in the same column, pass `X`'s id;
+  - to rank first in a column, omit `afterId`: the top of the project
+    precedes every card, so it is the top of every column whatever sits
+    first today.
+
+- **A new card's placement is four steps, and the last is a re-read.**
+  `gh project item-add` leaves Status empty, so: `item-add`, then `item-edit`
+  for Status, then the reorder, then `item-list` again to confirm both the
+  Status and the position. The mutation answers with a count, not a
+  position, so a success response does not show the card landed where you
+  meant. The Status field currently has six options, **Backlog** among them,
+  which the five-name list above omits; read the live ones with `field-list`.
+- The reorder is GraphQL, so it fails in Claude Code on the web sessions,
+  where GraphQL is blocked (`CLAUDE.md`, cloud sessions); hand the ranking to
+  a local session instead of concluding the card cannot be moved.
 - **`Waiting on` is a board field, and a stale one is worse than an empty
   one.** It holds the issue numbers a card is blocked by, terse — `#725`,
   `#627 + #725` — and it is populated only where a blocker is real, which

@@ -18,6 +18,7 @@ import {
   expectNoVerdictRecorded,
   freshHarness,
   masterSeededHand,
+  refuseWrites,
   scoredOptimalVerdict,
   seedMistake,
   setupHarness,
@@ -26,16 +27,11 @@ import {
 } from "./usePracticeDrill.test.common";
 import {
   clearDiscardTally,
-  discardTallyKey,
   readTallyForDisplay,
   recordPracticeAttempt,
 } from "../ui/discardTally";
-import {
-  createMockTally,
-  mockItemA,
-  mockItemB,
-} from "../ui/mistakeQueue.test.common";
 import { describe, expect, it } from "@jest/globals";
+import { mockItemA, mockItemB } from "../ui/mistakeQueue.test.common";
 import {
   permuteCardSuits,
   suitPermutationForView,
@@ -231,11 +227,7 @@ describe("usePracticeDrill", () => {
 
   it("uses a local streak estimate when a newer-build tally refuses the write", () => {
     const harness = freshHarness({ seed: true });
-    // A newer deployment's tally in another tab: recordPracticeAttempt leaves it untouched, so nothing is stored to read back.
-    localStorage.setItem(
-      discardTallyKey,
-      JSON.stringify(createMockTally({ version: 999 })),
-    );
+    refuseWrites();
 
     const verdict = scoredOptimalVerdict(harness);
 

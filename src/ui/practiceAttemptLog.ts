@@ -13,7 +13,7 @@ import { resolveTableIdentity } from "./tableIdentityCodec";
 // Aggregates remain the mastery authority when individual retries age out.
 export const MAX_ATTEMPT_LOG = 1_000;
 export interface PracticeAttemptDetail {
-  // What graded this retry, not a queue admission: a retry is graded by exact loss alone, so this build always writes "exact-v1" here, even where a decision's admission would read "exact-fallback-v1".
+  // What graded this retry, not a queue admission: "exact-v1" when exact loss alone graded it (even where a decision's admission would read "exact-fallback-v1"), "sampling-noise-v1" when the live noise verdict made a positive loss a success.
   readonly basis: JudgmentBasis;
   readonly discardKey: string;
   readonly expectedPointsLoss: number;
