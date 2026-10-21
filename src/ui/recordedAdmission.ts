@@ -78,6 +78,9 @@ export const isAdmittedMistake = (record: DiscardDecisionRecord): boolean => {
   );
 };
 
+export const isPendingMistake = (record: DiscardDecisionRecord): boolean =>
+  !record.isPractice && decisionAdmission(record) === "pending";
+
 /*
  * The caption's "Within noise", as recorded when the decision was made: a
  * loss the noise rule settled as not worth practicing. Pending, contradictory
