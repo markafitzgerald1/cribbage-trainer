@@ -287,6 +287,14 @@ export const useDiscardTally = ({
   useEffect(() => {
     if (discardIsComplete(dealtCards) && openHand.current !== null) {
       decidedHands.current.add(openHand.current.handId ?? openHand.current.key);
+      // A decided hand must not reopen after a card is withdrawn and the page reloads.
+      try {
+        if (localStorage.getItem(ownHandKey) === openHand.current.key) {
+          localStorage.removeItem(ownHandKey);
+        }
+      } catch {
+        // Storage errors are swallowed.
+      }
     }
   }, [dealtCards]);
 
