@@ -1,5 +1,6 @@
 import {
   AT,
+  decisionOf,
   noiseJudgedSuccess,
   storeRaw,
   validRecord,
@@ -7,6 +8,8 @@ import {
 import { describe, expect, it } from "@jest/globals";
 import {
   discardTallyKey,
+  readTallyForDisplay,
+  recordDiscardDecision,
   recordPracticeAttempt,
   recordSkippedHand,
 } from "./discardTally";
@@ -20,10 +23,11 @@ interface WrittenTally {
 
 const HAND_KEY = "AH,2H,3H,4H,5H,6H|Dealer";
 const sha = (digit: string) => digit.repeat(64);
-const readable = {
-  crib: { means_sha256: sha("a") },
-  play: { means_sha256: sha("b") },
-};
+const identityOf = (crib: string, play: string) => ({
+  crib: { means_sha256: sha(crib) },
+  play: { means_sha256: sha(play) },
+});
+const readable = identityOf("a", "b");
 // A later build's identity this build cannot read, such as a renamed digest field.
 const futureIdentity = {
   crib: { means_sha512: sha("c") },
@@ -69,13 +73,14 @@ const writeUnrelatedAndReadStored = (stored: unknown) => {
   ) as WrittenTally;
 };
 
+const writtenRecordAfterUnrelatedWrite = (record: Record<string, unknown>) =>
+  writeUnrelatedAndReadStored(storedTallyWith({ records: [record] })).records;
+
 describe("a later build's stored fields through this build's write", () => {
   it("keeps a decision's reference to an identity it cannot read", () => {
-    const written = writeUnrelatedAndReadStored(
-      storedTallyWith({ records: [{ ...validRecord, tableIdentity: "1" }] }),
-    );
-
-    expect(written.records).toMatchObject([{ tableIdentity: "1" }]);
+    expect(
+      writtenRecordAfterUnrelatedWrite({ ...validRecord, tableIdentity: "1" }),
+    ).toMatchObject([{ tableIdentity: "1" }]);
   });
 
   it("keeps a logged attempt's reference to an identity it cannot read", () => {
@@ -150,5 +155,34 @@ describe("a later build's stored fields through this build's write", () => {
         }
       ).practice,
     ).toMatchObject([{ attempts: 2, futureField: "kept" }]);
+  });
+
+  it("does not let a reference past the stored pool adopt an identity added later", () => {
+    storeRaw(
+      JSON.stringify(
+        storedTallyWith({
+          records: [{ ...validRecord, tableIdentity: "2" }],
+          tableIdentities: [readable, futureIdentity],
+        }),
+      ),
+    );
+
+    recordDiscardDecision(
+      decisionOf({
+        tableIdentity: identityOf("e", "f"),
+      }),
+    );
+
+    expect(readTallyForDisplay().records[0]?.tableIdentity).toBeNull();
+  });
+
+  it("does not read a stored key named like the carried reference as one", () => {
+    expect(
+      writtenRecordAfterUnrelatedWrite({
+        ...validRecord,
+        tableIdentity: null,
+        unreadableTableIdentity: "0",
+      }),
+    ).toMatchObject([{ tableIdentity: null }]);
   });
 });

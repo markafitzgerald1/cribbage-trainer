@@ -2,6 +2,7 @@ import {
   type RecordedAdmission,
   normalizeAdmission,
 } from "./recordedAdmission";
+import { resolveStoredReference, withoutCarrier } from "./tableIdentityCodec";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "./SortOrder";
@@ -9,7 +10,6 @@ import { type TableIdentity } from "../game/tableIdentity";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHand } from "../game/Card";
-import { resolveStoredReference } from "./tableIdentityCodec";
 import { sortUrlValue } from "./urlAnalysisState";
 
 export interface DiscardDecisionRecord {
@@ -152,7 +152,7 @@ export const normalizeStoredRecords = (
       const previousRecencyAt =
         normalized[normalized.length - 1]?.recencyAt ?? record.at - 1;
       normalized.push({
-        ...record,
+        ...withoutCarrier(record),
         // Absent in a record written before version 3, or invalid, permanently null.
         discardKey: normalizeDiscardKey(record.discardKey),
         recencyAt: Math.max(

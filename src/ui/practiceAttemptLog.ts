@@ -3,6 +3,7 @@ import { type JudgmentBasis, isJudgmentBasis } from "./recordedAdmission";
 import {
   type UnreadableTableIdentity,
   resolveStoredReference,
+  withoutCarrier,
 } from "./tableIdentityCodec";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import type { TableIdentity } from "../game/tableIdentity";
@@ -138,7 +139,7 @@ export const normalizeAttemptLog = (
         isStoredAttemptDetail(item, handKey)
       ) {
         log.push({
-          ...item,
+          ...withoutCarrier(item),
           at,
           handKey,
           order,

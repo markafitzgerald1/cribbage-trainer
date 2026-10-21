@@ -24,6 +24,10 @@ export interface UnreadableTableIdentity {
   readonly unreadableTableIdentity?: unknown;
 }
 
+const pointsPastPool = (value: unknown, identities: readonly unknown[]) =>
+  typeof value === "string" &&
+  !identities.some((_, index) => String(index) === value);
+
 export const resolveStoredReference = (
   value: unknown,
   identities: readonly unknown[],
@@ -31,12 +35,20 @@ export const resolveStoredReference = (
   readonly tableIdentity: TableIdentity | null;
 } => {
   const tableIdentity = resolveTableIdentity(value, identities);
+  // A reference past the pool names nothing, and the pool grows by appending, so keeping it would later point at an identity it never meant.
   return tableIdentity === null &&
     value !== null &&
-    typeof value !== "undefined"
+    typeof value !== "undefined" &&
+    !pointsPastPool(value, identities)
     ? { tableIdentity, unreadableTableIdentity: value }
     : { tableIdentity };
 };
+
+// Spread first so a stored key spelled like the carrier cannot pose as one.
+export const withoutCarrier = <T extends object>(stored: T): T =>
+  Object.fromEntries(
+    Object.entries(stored).filter(([key]) => key !== "unreadableTableIdentity"),
+  ) as T;
 
 const ATTEMPT_FIELDS: readonly string[] = [
   "handKey",
