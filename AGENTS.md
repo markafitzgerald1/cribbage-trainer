@@ -261,6 +261,13 @@
   as `"version":N` before assuming you have them all — and do not
   search-and-replace the integer, since `expect(…).toBe(5)` also appears as a
   mean points loss two files away.
+- **A build that reshapes a stored tally field must bump `CURRENT_VERSION`;
+  one that only adds a field need not** (Mark, 2026-10-21, on #931). The
+  reader and writer carry additive fields through an older build's write
+  (#929), but an older reader cannot know what a reshaped field means, so it
+  drops the row or resets the counter. Only the version bump protects that
+  data. Equal-hash table identities with different metadata keep distinct
+  pool entries in `encodeTableIdentities` for the same reason.
 - If `npm run docker:build-and-test-all` is interrupted after build, lint, and
   Storybook coverage have passed, rerun `npm run docker:run-e2e-only` against
   the built image to verify the Playwright tail before reporting final status.
