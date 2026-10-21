@@ -1,10 +1,15 @@
 import * as classes from "./PracticeDrillPanel.module.css";
 import type { PracticeDrillPhase, PracticeVerdict } from "./usePracticeDrill";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
+import { NOISE_THRESHOLD_QUALIFIER } from "../ui/recordedHistory";
 import { SUCCESSES_FOR_MASTERY } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
-import { formatNetLoss } from "../analysis/classifyMistake";
 import { parseHand } from "../game/Card";
+import { sameTableIdentity } from "../game/tableIdentity";
 
 export interface PracticeDrillPanelProps {
   readonly canCommit: boolean;
@@ -35,9 +40,7 @@ const defaultLocateEarlier = (): void => {
 };
 
 /*
- * A plain magnitude, matching how "Lost per discard" and the trend view's
- * "Avg loss" already show what a discard gave up: it is a cost, never a gain,
- * so a sign would only be noise.
+ * Recorded and retry losses are costs, so a sign would imply a gain.
  */
 const formatLoss = (loss: number): string => formatNetLoss(loss);
 
@@ -87,26 +90,56 @@ const renderVerdictRow = ({
 }: VerdictRow): React.JSX.Element => (
   <div className={classes.verdictRow}>
     <span className={classes.verdictLabel}>{label}</span>
-    {renderDiscard(discard, sortOrder, onLocate)}
-    <span className={classes.verdictLoss}>{formatLoss(loss)}</span>
+    <div className={classes.verdictValues}>
+      {renderDiscard(discard, sortOrder, onLocate)}
+      {/* A generic span cannot carry a name, so the role is what lets the spoken sub-cent form replace the visible "<". */}
+      <span
+        aria-label={`${label}, ${formatAccessibleNetLoss(loss)} points`}
+        className={classes.verdictLoss}
+        role="note"
+      >
+        {formatLoss(loss)}
+      </span>
+    </div>
   </div>
 );
 
 const renderOutcome = (verdict: PracticeVerdict): React.JSX.Element => {
+  if (verdict.isWithinNoise) {
+    const progress = verdict.isMastered
+      ? "Mastered."
+      : `${verdict.consecutiveSuccesses} of ${SUCCESSES_FOR_MASTERY} toward mastery.`;
+    return (
+      <p
+        aria-label={`Within noise (approximate): counts as a successful retry. ${progress} ${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables, ${NOISE_THRESHOLD_QUALIFIER}.`}
+        className={
+          verdict.isMastered ? classes.outcomeMastered : classes.outcomeGood
+        }
+        role="note"
+      >
+        Within noise (approximate): counts as a successful retry. {progress}
+      </p>
+    );
+  }
   if (verdict.isMastered) {
     return <p className={classes.outcomeMastered}>Mastered.</p>;
   }
   if (verdict.isOptimal) {
     return (
       <p className={classes.outcomeGood}>
-        Optimal — {verdict.consecutiveSuccesses} of {SUCCESSES_FOR_MASTERY}{" "}
-        toward mastery.
+        Best choice with current tables. {verdict.consecutiveSuccesses} of{" "}
+        {SUCCESSES_FOR_MASTERY} successful retries toward mastery.
       </p>
     );
   }
   return (
-    <p className={classes.outcomeMiss}>
-      {formatLoss(verdict.chosenLoss)} behind the best discard.
+    <p
+      aria-label={`${formatAccessibleNetLoss(verdict.chosenLoss)} points behind the best choice with current tables.`}
+      className={classes.outcomeMiss}
+      role="note"
+    >
+      {formatLoss(verdict.chosenLoss)} points behind the best choice with
+      current tables.
     </p>
   );
 };
@@ -116,6 +149,7 @@ const renderActions = (
   onExit: () => void,
 ): React.JSX.Element => (
   <div className={classes.actions}>
+    <span className={classes.badge}>Practice</span>
     {primary}
     <button
       className={classes.secondary}
@@ -133,11 +167,6 @@ const renderChoosing = ({
   onExit,
 }: PracticeDrillPanelProps): React.JSX.Element => (
   <div className={classes.choosing}>
-    <p className={classes.prompt}>
-      Choose two cards to discard, then check your answer.
-    </p>
-    {/* Reshuffled from the original mistake so recognizing the picture cannot substitute for re-deriving the answer. */}
-    <p className={classes.suitNote}>Suits reshuffled for this drill.</p>
     {renderActions(
       <button
         className={classes.primary}
@@ -149,8 +178,34 @@ const renderChoosing = ({
       </button>,
       onExit,
     )}
+    <p className={classes.prompt}>
+      Choose two cards to discard, then check your answer.
+    </p>
+    {/* Reshuffled from the original mistake so recognizing the picture cannot substitute for re-deriving the answer. */}
+    <p className={classes.suitNote}>Suits reshuffled for this drill.</p>
   </div>
 );
+
+const renderTableBoundary = (
+  verdict: PracticeVerdict,
+): React.JSX.Element | null => {
+  const original = verdict.originalTableIdentity;
+  const retry = verdict.retryTableIdentity;
+  if (!retry)
+    return <p className={classes.provenanceNote}>Table versions unknown.</p>;
+  if (!original)
+    return (
+      <p className={classes.provenanceNote}>
+        The original tables were not recorded. This retry uses current tables.
+      </p>
+    );
+  return sameTableIdentity(original, retry) ? null : (
+    <p className={classes.provenanceNote}>
+      Tables changed since this decision. Its recorded cost is from the original
+      tables; this retry uses the current tables.
+    </p>
+  );
+};
 
 const renderVerdict = (
   verdict: PracticeVerdict,
@@ -163,22 +218,6 @@ const renderVerdict = (
   }: PracticeDrillPanelProps,
 ): React.JSX.Element => (
   <div className={classes.verdict}>
-    {renderVerdictRow({
-      discard: verdict.chosenDiscard,
-      label: "Now",
-      loss: verdict.chosenLoss,
-      sortOrder,
-    })}
-    {renderVerdictRow({
-      discard: verdict.previousDiscard,
-      label: "Before",
-      loss: verdict.previousLoss,
-      ...(verdict.previousDiscard === null
-        ? {}
-        : { onLocate: onLocateEarlierChoice }),
-      sortOrder,
-    })}
-    {renderOutcome(verdict)}
     {renderActions(
       hasNextHand ? (
         <button
@@ -191,6 +230,23 @@ const renderVerdict = (
       ) : null,
       onExit,
     )}
+    {renderOutcome(verdict)}
+    {renderVerdictRow({
+      discard: verdict.chosenDiscard,
+      label: "Retry — current tables",
+      loss: verdict.chosenLoss,
+      sortOrder,
+    })}
+    {renderVerdictRow({
+      discard: verdict.previousDiscard,
+      label: "Then — recorded cost",
+      loss: verdict.previousLoss,
+      ...(verdict.previousDiscard === null
+        ? {}
+        : { onLocate: onLocateEarlierChoice }),
+      sortOrder,
+    })}
+    {renderTableBoundary(verdict)}
   </div>
 );
 
@@ -202,8 +258,8 @@ const renderBody = (props: PracticeDrillPanelProps): React.JSX.Element => {
     // Exit stays reachable here: if the tables never load there is no verdict and no other way out of the drill.
     return (
       <div className={classes.choosing}>
-        <p className={classes.prompt}>Checking your discard…</p>
         {renderActions(null, props.onExit)}
+        <p className={classes.prompt}>Checking your discard…</p>
       </div>
     );
   }
@@ -226,7 +282,6 @@ export function PracticeDrillPanel({
       aria-label="Practice drill"
       className={classes.panel}
     >
-      <span className={classes.badge}>Practice</span>
       {renderBody({
         canCommit,
         hasNextHand,

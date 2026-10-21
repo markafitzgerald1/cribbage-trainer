@@ -8,7 +8,7 @@ import {
 } from "./MistakeQueueDialog";
 import {
   cardsRow,
-  previousDiscard as previousDiscardClass,
+  previousDiscard as discardClass,
   severityGroup as severityGroupClass,
 } from "./MistakeQueueDialog.module.css";
 import {
@@ -32,7 +32,6 @@ const allMasteredTally = createAllMasteredTally();
 const emptyMistakeTally = createEmptyMistakeTally();
 const agedOutTally = createAgedOutTally();
 const twoLossTally = createTwoLossTally();
-
 interface QueueRenderConfig {
   readonly initialQuantileFilter?: MistakeQueueDialogProps["initialQuantileFilter"];
   readonly initialRoleFilter?: MistakeQueueDialogProps["initialRoleFilter"];
@@ -96,7 +95,7 @@ const testFilterSelection = ({
   filterName: RegExp | string;
   presentText: string;
 }): boolean => {
-  const { getByRole, queryByText } = renderQueueDialog({
+  const { getByRole, queryByLabelText } = renderQueueDialog({
     initialStatusFilter: "all",
   });
   const radio = getByRole("radio", { name: filterName });
@@ -104,8 +103,8 @@ const testFilterSelection = ({
 
   return (
     (radio as HTMLInputElement).checked &&
-    queryByText(presentText) !== null &&
-    queryByText(absentText) === null
+    queryByLabelText(presentText) !== null &&
+    queryByLabelText(absentText) === null
   );
 };
 
@@ -124,11 +123,14 @@ describe("mistake queue dialog", () => {
         "Mistake queue",
       );
 
-      expect(rendered.getByText("Total mistakes")).toBeInTheDocument();
-
-      expect(rendered.getByText("Needs practice")).toBeInTheDocument();
-
       expect(rendered.getAllByText("Mastered")).toHaveLength(2);
+      expect(
+        ["Total mistakes", "Needs practice", "Mastered"].map((label) =>
+          rendered
+            .getAllByText(label)[0]!
+            .nextElementSibling!.getAttribute("role"),
+        ),
+      ).toStrictEqual([null, null, null]);
     });
 
     it("renders default radio filter selections", () => {
@@ -141,20 +143,17 @@ describe("mistake queue dialog", () => {
       expect(getAllByText("Dealer")).toHaveLength(2);
     });
 
-    it("renders previous discard choice when recorded", () => {
-      const { queryByText } = renderQueueDialog({ initialStatusFilter: "all" });
-
-      expect(queryByText("2.50 pts lost")).not.toBeNull();
-      expect(queryByText("1.20 pts lost")).not.toBeNull();
-    });
-
-    it("renders fallback when previous discard choice is not recorded", () => {
+    it("renders recorded costs and the missing-discard fallback", () => {
       const rendered = renderQueueDialog({ initialStatusFilter: "all" });
 
       expect(
         rendered.getByText("Previous choice not recorded"),
       ).toBeInTheDocument();
-      expect(rendered.getByText("0.40 pts lost")).toBeInTheDocument();
+      expect(
+        ["2.50", "1.20", "0.40"].map((cost) =>
+          rendered.getByLabelText(`Recorded cost: ${cost} points`),
+        ),
+      ).toHaveLength(3);
     });
 
     it("switches sort order when selected", () => {
@@ -167,13 +166,11 @@ describe("mistake queue dialog", () => {
       expect(highestLossRadio).toBeChecked();
 
       const mostRecentRadio = getByRole("radio", { name: "Most recent" });
-
       fireEvent.click(mostRecentRadio);
 
       expect(mostRecentRadio).toBeChecked();
 
       const priorityRadio = getByRole("radio", { name: "Priority" });
-
       fireEvent.click(priorityRadio);
 
       expect(priorityRadio).toBeChecked();
@@ -182,9 +179,9 @@ describe("mistake queue dialog", () => {
 
   describe("filtering, pagination, and dismissal", () => {
     it("filters by status Active and Mastered", () => {
-      const { getByRole, queryByText } = renderQueueDialog();
+      const { getByRole, queryByLabelText: queryCost } = renderQueueDialog();
 
-      expect(queryByText("0.40 pts lost")).not.toBeInTheDocument();
+      expect(queryCost("Recorded cost: 0.40 points")).not.toBeInTheDocument();
 
       const masteredRadio = getByRole("radio", { name: "Mastered" });
 
@@ -192,42 +189,42 @@ describe("mistake queue dialog", () => {
 
       expect(masteredRadio).toBeChecked();
 
-      expect(queryByText("0.40 pts lost")).toBeInTheDocument();
+      expect(queryCost("Recorded cost: 0.40 points")).toBeInTheDocument();
 
-      expect(queryByText("2.50 pts lost")).not.toBeInTheDocument();
+      expect(queryCost("Recorded cost: 2.50 points")).not.toBeInTheDocument();
     });
 
     it("filters by status All", () => {
       const view = renderQueueDialog({ initialStatusFilter: "all" });
 
-      expect(view.getAllByText(/pts lost/u)).toHaveLength(3);
+      expect(view.getAllByText(/Recorded cost:/u)).toHaveLength(3);
     });
 
     it.each([
       {
-        absentText: "2.50 pts lost",
+        absentText: "Recorded cost: 2.50 points",
         filterName: "Pone",
-        presentText: "1.20 pts lost",
+        presentText: "Recorded cost: 1.20 points",
       },
       {
-        absentText: "1.20 pts lost",
+        absentText: "Recorded cost: 1.20 points",
         filterName: "Dealer",
-        presentText: "2.50 pts lost",
+        presentText: "Recorded cost: 2.50 points",
       },
       {
-        absentText: "1.20 pts lost",
+        absentText: "Recorded cost: 1.20 points",
         filterName: /^High severity/u,
-        presentText: "2.50 pts lost",
+        presentText: "Recorded cost: 2.50 points",
       },
       {
-        absentText: "2.50 pts lost",
+        absentText: "Recorded cost: 2.50 points",
         filterName: /^Medium severity/u,
-        presentText: "1.20 pts lost",
+        presentText: "Recorded cost: 1.20 points",
       },
       {
-        absentText: "2.50 pts lost",
+        absentText: "Recorded cost: 2.50 points",
         filterName: /^Low severity/u,
-        presentText: "0.40 pts lost",
+        presentText: "Recorded cost: 0.40 points",
       },
     ])("filters by $filterName", ({ absentText, filterName, presentText }) => {
       expect(testFilterSelection({ absentText, filterName, presentText })).toBe(
@@ -290,8 +287,12 @@ describe("mistake queue dialog", () => {
         rendered.queryByText("medium"),
         rendered.queryByText("high"),
       ]).toStrictEqual([null, null, null]);
-      expect(rendered.getByText("2.00 pts lost")).toBeInTheDocument();
-      expect(rendered.getByText("1.50 pts lost")).toBeInTheDocument();
+      expect(
+        rendered.getByLabelText("Recorded cost: 2.00 points"),
+      ).toBeInTheDocument();
+      expect(
+        rendered.getByLabelText("Recorded cost: 1.50 points"),
+      ).toBeInTheDocument();
     });
 
     it("scopes severityGroup class only to the loss severity filter group", () => {
@@ -379,7 +380,7 @@ describe("mistake queue dialog", () => {
       expect(handleClose).toHaveBeenCalledTimes(1);
     });
 
-    it("renders using readTallyForDisplay fallback when tally prop is omitted", () => {
+    it("reads stored tally when prop is omitted", () => {
       const fallbackView = renderQueueDialog({ useStorageFallback: true });
 
       expect(
@@ -408,13 +409,13 @@ describe("mistake queue dialog", () => {
         expect(container.querySelector(`.${cardsRow}`)).toHaveTextContent(
           expectedCards,
         );
-        expect(
-          container.querySelector(`.${previousDiscardClass}`),
-        ).toHaveTextContent(expectedDiscard);
+        expect(container.querySelector(`.${discardClass}`)).toHaveTextContent(
+          expectedDiscard,
+        );
       },
     );
 
-    it("renders using readTallyForDisplay fallback when tally prop is null", () => {
+    it("reads stored tally when prop is null", () => {
       const nullTallyView = render(
         createElement(MistakeQueueDialog, {
           onClose: jest.fn(),
@@ -436,7 +437,7 @@ describe("mistake queue dialog", () => {
     it("renders dominant component badges for mistake cards", async () => {
       clearClassificationCache();
       const { findAllByTitle } = renderQueueDialog();
-      const badges = await findAllByTitle(/driven by/u, {}, { timeout: 5000 });
+      const badges = await findAllByTitle(/comparison/u, {}, { timeout: 5000 });
 
       expect(badges.length).toBeGreaterThan(0);
     });
@@ -449,7 +450,7 @@ describe("mistake queue dialog", () => {
         const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
 
         const badges = await rendered.findAllByTitle(
-          /driven by/u,
+          /comparison/u,
           {},
           { timeout: 5000 },
         );
@@ -463,7 +464,7 @@ describe("mistake queue dialog", () => {
       const badge = await runAsyncTableLoad();
 
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent("Prev: Play gain < Hand, Crib loss");
+      expect(badge).toHaveTextContent(/Play gain < Hand, Crib loss/u);
     });
 
     const runTableLoadFailure = async () => {

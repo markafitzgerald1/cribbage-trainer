@@ -4,10 +4,15 @@ import "@testing-library/jest-dom/jest-globals";
 import * as classes from "./DecisionQualityTrendDialog.module.css";
 import { type StoredTally, discardTallyKey } from "../ui/discardTally";
 import { describe, expect, it, jest } from "@jest/globals";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
+import {
+  storedTallyOf,
+  testDecisionOf,
+} from "../ui/discardQualityTrend.test.common";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import type { DiscardTrendGranularity } from "../ui/discardQualityTrend";
 import dialogFixtures from "./DecisionQualityTrendDialog.test.common";
+import { noiseAdmission } from "../ui/discardTally.test.common";
 /* jscpd:ignore-end */
 
 const sampleTally = dialogFixtures.dialogTally(25);
@@ -69,6 +74,11 @@ const clickMarker = (rendered: Rendered, ordinal: number) =>
     ) as Element,
   );
 
+const practiceButtonFor = (view: Rendered, ordinal: number) => {
+  clickMarker(view, ordinal);
+  return view.queryByRole("button", { name: "Practice this hand" });
+};
+
 const practiceButton = "Practice this hand";
 
 const clickPractice = (rendered: Rendered) =>
@@ -86,7 +96,43 @@ const practiceFromMarker = (ordinal: number, useStoredTally = false) => {
   return onStartDrill;
 };
 
+const seedPracticeHistory = () =>
+  localStorage.setItem(
+    discardTallyKey,
+    JSON.stringify(dialogFixtures.practiceReadyDialogTally()),
+  );
+
 describe("decision quality trend dialog", () => {
+  it.each([
+    {
+      name: "noise-only",
+      tally: storedTallyOf([
+        testDecisionOf({ recordedAdmission: noiseAdmission }),
+      ]),
+    },
+    {
+      name: "skip-only",
+      tally: storedTallyOf([], [{ at: 1_700_000_000_000 }]),
+    },
+  ])(
+    "shows unavailable Best choice summary and row values for $name history",
+    ({ tally }) => {
+      const view = renderDialog({ tally });
+      const table = view.getByRole("table", {
+        name: "Recorded decision history",
+      });
+      const rows = within(table).getAllByRole("row").slice(1);
+
+      expect(
+        view.getByText("Best choice", { selector: "span" }).parentElement,
+      ).toHaveTextContent("Best choice—");
+      expect(
+        rows.map((row) => within(row).getAllByRole("cell")[3]?.textContent),
+      ).toStrictEqual(["—"]);
+      expect(view.container).not.toHaveTextContent("NaN%");
+    },
+  );
+
   it("renders nothing when closed", () => {
     const closedView = renderDialog({ show: false });
 
@@ -170,20 +216,40 @@ describe("decision quality trend dialog", () => {
   });
 
   it("renders cleanly with empty tally", () => {
-    const { getByText } = renderDialog({ tally: emptyTally });
+    const { getAllByRole, getByRole, getByText } = renderDialog({
+      tally: emptyTally,
+    });
 
     expect(
       getByText("No discard decisions recorded yet for this view."),
     ).toBeInTheDocument();
+    expect(getAllByRole("note")).toHaveLength(1);
+    expect(
+      getByRole("note", { name: "Recorded loss overall unavailable" })
+        .textContent,
+    ).toBe("—");
   });
 
   it("renders periods with skipped hands and no decisions in day view", () => {
-    const { getAllByText } = renderDialog({
+    const { getAllByRole, getByRole } = renderDialog({
       initialGranularity: "day",
       tally: tallyWithSkipOnlyPeriod,
     });
 
-    expect(getAllByText("—").length).toBeGreaterThan(0);
+    expect(getAllByRole("note")).toHaveLength(3);
+    expect(
+      getByRole("note", {
+        name: "Recorded loss overall: 0.50 points per discard",
+      }),
+    ).toHaveTextContent("0.50");
+    expect(
+      getByRole("note", {
+        name: /^Recorded loss for .+: 0\.50 points per discard$/u,
+      }),
+    ).toHaveTextContent("0.50");
+    expect(
+      getByRole("note", { name: /^Recorded loss for .+ unavailable$/u }),
+    ).toHaveTextContent("—");
   });
 
   it("reads from storage helper when tally prop is omitted", () => {
@@ -224,11 +290,6 @@ describe("decision quality trend dialog", () => {
     );
   });
 
-  it("does nothing when the tapped mistake is not in the queue", () => {
-    // Ordinal 3 is the zero-loss non-optimal record the queue excludes.
-    expect(practiceFromMarker(3)).not.toHaveBeenCalled();
-  });
-
   it("omits the chart practice button when onStartDrill is left to default", () => {
     // Rendered directly, bypassing renderDialog's explicit null prop.
     // The component's own onStartDrill default is what hides the button here.
@@ -240,16 +301,27 @@ describe("decision quality trend dialog", () => {
       />,
     );
 
-    clickMarker(rendered, 1);
+    expect(practiceButtonFor(rendered, 1)).toBeNull();
+  });
 
-    expect(rendered.queryByRole("button", { name: practiceButton })).toBeNull();
+  it("does not resurrect an evicted practice item after the detail opens", () => {
+    seedPracticeHistory();
+    const onStartDrill = jest.fn();
+    const view = renderDialog({ onStartDrill, useStoredTally: true });
+    clickMarker(view, 1);
+
+    expect(
+      view.getByRole("button", { name: practiceButton }),
+    ).toBeInTheDocument();
+
+    localStorage.clear();
+    clickPractice(view);
+
+    expect(onStartDrill).not.toHaveBeenCalled();
   });
 
   it("resolves the practice hand from stored history when no tally prop", () => {
-    localStorage.setItem(
-      discardTallyKey,
-      JSON.stringify(dialogFixtures.practiceReadyDialogTally()),
-    );
+    seedPracticeHistory();
     const onStartDrill = practiceFromMarker(1, true);
     localStorage.clear();
 

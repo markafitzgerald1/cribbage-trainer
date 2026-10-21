@@ -3,8 +3,8 @@ import type {
   DiscardPeriodBucket,
   DiscardTrendGranularity,
 } from "../ui/discardQualityTrend";
+import { type RenderResult, render } from "@testing-library/react";
 import { DecisionQualityChart } from "./DecisionQualityChart";
-import { render } from "@testing-library/react";
 
 export const makeBucket = (
   key: string,
@@ -13,6 +13,7 @@ export const makeBucket = (
 ): DiscardPeriodBucket => ({
   decisions,
   endTime: 1700003600000,
+  judgedDecisions: decisions,
   key,
   label: `Period ${key}`,
   meanExpectedPointsLoss: loss,
@@ -25,7 +26,7 @@ export const renderChart = (
   buckets: readonly DiscardPeriodBucket[],
   granularity: DiscardTrendGranularity,
   decisionPoints?: readonly DiscardDecisionPoint[],
-) =>
+): RenderResult =>
   render(
     <DecisionQualityChart
       buckets={buckets}
@@ -49,10 +50,13 @@ export const makeDecisionPoint = (
   handKey: HAND_KEY,
   isMastered: false,
   isOptimal: expectedPointsLoss === 0,
+  isPracticeEligible: expectedPointsLoss > 0,
   isRetained: false,
+  isWithinNoise: false,
   ordinal,
   recencyAt: 1_700_000_500_000 + ordinal,
   rollingMeanLoss,
+  tableIdentity: null,
   timestamp: 1700000000000 + ordinal * 1000,
 });
 

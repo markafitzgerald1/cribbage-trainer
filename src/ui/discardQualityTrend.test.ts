@@ -26,10 +26,6 @@ import {
   recordSkippedHand,
 } from "./discardTally";
 import {
-  buildContinuousDecisionPoints,
-  countRollingSkips,
-} from "./discardQualityTrendRolling";
-import {
   computeDiscardQualityTrend,
   readDiscardQualityTrend,
 } from "./discardQualityTrend";
@@ -92,18 +88,23 @@ describe("discard quality trend computation", () => {
     expect(trend.buckets[1]?.decisions).toBe(20);
   });
 
-  it("computes continuous decision points with trailing moving average", () => {
+  it("keeps pending decisions judged with their trailing moving average", () => {
     const records = [
       testDecisionOf({
         expectedPointsLoss: 0,
         handKey: "c-1",
         isOptimal: true,
       }),
-      testDecisionOf({ expectedPointsLoss: 0.4, handKey: "c-2" }),
+      testDecisionOf({
+        expectedPointsLoss: 0.4,
+        handKey: "c-2",
+        recordedAdmission: "pending",
+      }),
       testDecisionOf({ expectedPointsLoss: 0.2, handKey: "c-3" }),
     ];
     const trend = runTrend(records, { granularity: "rolling20" });
 
+    expect(trend.buckets[0]?.judgedDecisions).toBe(3);
     expect(trend.decisionPoints).toHaveLength(3);
     expect(trend.decisionPoints[0]).toMatchObject({
       expectedPointsLoss: 0,
@@ -120,11 +121,6 @@ describe("discard quality trend computation", () => {
       rollingMeanLoss: 0.2,
     });
     expect(trend.decisionPoints[2]?.rollingMeanLoss).toBeCloseTo(0.2);
-  });
-
-  it("handles empty arrays for continuous decision points and rolling skips", () => {
-    expect(buildContinuousDecisionPoints([], 20)).toStrictEqual([]);
-    expect(countRollingSkips([], 20, [{ at: 1000 }])).toStrictEqual([]);
   });
 
   it("labels rolling batches as retained history after decision truncation", () => {

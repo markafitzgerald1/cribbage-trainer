@@ -10,10 +10,25 @@ import {
   expectChipsShareARow,
 } from "./chipContainment";
 import {
+  measureRetryCard,
+  openRetryMistakeQueue,
+} from "./mistakeQueueCardSetup";
+import {
   phoneLandscapeViewport,
   phonePortraitViewport,
 } from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
+
+const NARROW_PHONE_WIDTH = 375;
+const WIDE_PHONE_WIDTH = 430;
+const DEFAULT_ROOT_FONT_PX = 16;
+const LARGE_ROOT_FONT_PX = 28;
+const TWO = 2;
+const TABLET_VIEWPORT = { height: 1024, width: 768 };
+const DESKTOP_VIEWPORT = { height: 900, width: 1440 };
+
+const centerY = (box: { y: number; height: number } | null) =>
+  (box?.y ?? Number.NaN) + (box?.height ?? 0) / TWO;
 
 const SORT_BY_CHIP_COUNT = 3;
 const LOSS_SEVERITY_CHIP_COUNT = 4;
@@ -28,6 +43,67 @@ test.describe("mistake queue layout", () => {
   test.beforeEach(async ({ page }) => {
     await openSeededTrainer(page);
   });
+
+  for (const viewport of [
+    { ...phonePortraitViewport, width: NARROW_PHONE_WIDTH },
+    phonePortraitViewport,
+    { ...phonePortraitViewport, width: WIDE_PHONE_WIDTH },
+    {
+      ...phoneLandscapeViewport,
+      height: phoneLandscapeViewport.height - REAL_CHROME_HEIGHT_PX,
+    },
+    TABLET_VIEWPORT,
+    DESKTOP_VIEWPORT,
+  ]) {
+    const { width } = viewport;
+    for (const rootFont of [DEFAULT_ROOT_FONT_PX, LARGE_ROOT_FONT_PX]) {
+      test(`keeps card badge rows and point units together at ${width}px and ${rootFont}px root`, async ({
+        page,
+      }, testInfo) => {
+        await page.setViewportSize(viewport);
+        await page.addStyleTag({
+          content: `html { font-size: ${rootFont}px; }`,
+        });
+        const card = await openRetryMistakeQueue(page);
+        await expect(
+          card.getByRole("note", { name: /^Current-table comparison:/u }),
+        ).toBeVisible();
+        const measurements = await measureRetryCard(card, testInfo);
+        const { cost, quantile, role } = measurements;
+        expect.soft(role).not.toBeNull();
+        expect
+          .soft(Math.abs(centerY(quantile) - centerY(role)))
+          .toBeLessThanOrEqual(1);
+        if (width >= phoneLandscapeViewport.width) {
+          expect
+            .soft(Math.abs(centerY(cost) - centerY(role)))
+            .toBeLessThanOrEqual(1);
+        }
+        for (const lines of [
+          measurements.recordedLines,
+          measurements.averageLines,
+        ]) {
+          expect
+            .soft(Math.max(...lines) - Math.min(...lines))
+            .toBeLessThanOrEqual(1);
+        }
+        expect.soft(measurements.overflow).toBe(0);
+        expect.soft(measurements.pageOverflow).toBe(0);
+        expect.soft(measurements.badgeWhiteSpace).toBe("nowrap");
+        const row = measurements.badgeRow;
+        expect.soft(cost?.x ?? Number.NaN).toBeGreaterThanOrEqual(row?.x ?? 0);
+        expect
+          .soft((cost?.x ?? 0) + (cost?.width ?? Number.NaN))
+          .toBeLessThanOrEqual((row?.x ?? 0) + (row?.width ?? 0));
+        expect
+          .soft((row?.x ?? 0) + (row?.width ?? Number.NaN))
+          .toBeLessThanOrEqual(width);
+        expect
+          .soft(measurements.pointsWhiteSpace)
+          .toEqual(["nowrap", "nowrap"]);
+      });
+    }
+  }
 
   const openMistakeQueueAtLargeFont = async (page: Page) => {
     await page.setViewportSize(phonePortraitViewport);
@@ -105,7 +181,7 @@ test.describe("mistake queue layout", () => {
     });
     await page.getByRole("button", { name: "Mistake queue" }).click();
 
-    const lossBadge = page.getByText(/pts lost/u).first();
+    const lossBadge = page.getByText(/Recorded cost:/u).first();
     await expect(lossBadge).toBeVisible();
     const box = await lossBadge.boundingBox();
     expect(box).not.toBeNull();

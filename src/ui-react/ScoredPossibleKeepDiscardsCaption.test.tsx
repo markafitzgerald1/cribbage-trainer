@@ -1,11 +1,12 @@
 /* jscpd:ignore-start */
-import { act, waitFor } from "@testing-library/react";
+import { act, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import {
   findCaption,
   noUncertainty,
   renderHand,
   renderScoredPossibleKeepDiscards,
+  reportedWith,
   scoredElement,
   waitForAnalysis,
 } from "./ScoredPossibleKeepDiscards.test.common";
@@ -14,6 +15,7 @@ import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
 import { type Uncertainty } from "../game/uncertaintySidecar";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { parseHand } from "../game/Card";
+import { shippedTableIdentity } from "../game/tableIdentity";
 import { toDealtCards } from "../game/toDealtCards";
 import { uniformUncertainty } from "../game/uncertaintySidecar.test.common";
 /* jscpd:ignore-end */
@@ -51,6 +53,25 @@ const renderNearMiss = (
     onStatusChange,
     playUncertaintySource: play,
   });
+
+const renderSettledNearMiss = async () => {
+  const { container } = renderNearMiss(settledWith(1), settledWith(1));
+  return { caption: await findCaption(container), container };
+};
+
+const findExplanation = (caption: HTMLElement) =>
+  caption.querySelector<HTMLElement>("[class*='noiseExplanation']");
+
+const figureIn = (element: Element | null): string | undefined =>
+  /\d+\.\d{2}/u.exec(element?.textContent ?? "")?.[0];
+
+const renderNearMissBadge = async () => {
+  const { caption } = await renderSettledNearMiss();
+  return {
+    badge: within(caption).getByRole("button", { name: /^Within noise/u }),
+    caption,
+  };
+};
 
 // Runs out the settle wait on fake timers, then delivers a document to the held crib load.
 const waitOutThenRelease = async (
@@ -216,9 +237,68 @@ describe("scored possible keep discards caption", () => {
   });
 
   describe("simulation-noise verdict (#774)", () => {
+    it("judges at the deadline from whichever sidecars have arrived by then", async () => {
+      const onAnalysisRendered = jest.fn();
+      const releases: Release[] = [];
+      let arrived: Uncertainty | null = null;
+      const lateSource: UncertaintySource = {
+        ...heldSource(releases),
+        getUncertaintySync: () => arrived,
+      };
+      renderHand(NEAR_MISS_HAND, NEAR_MISS_DISCARD, {
+        cribUncertaintySource: lateSource,
+        onAnalysisRendered,
+        playUncertaintySource: lateSource,
+      });
+      await waitFor(() => {
+        expect(onAnalysisRendered).toHaveBeenCalledWith(
+          ...reportedWith("pending"),
+        );
+      }, waitForAnalysis);
+      const judgeAtDeadline = onAnalysisRendered.mock.calls.at(-1)?.[3] as
+        (() => unknown) | undefined;
+
+      expect(judgeAtDeadline?.()).toStrictEqual({
+        basis: "exact-fallback-v1",
+        eligible: true,
+      });
+
+      arrived = uniformUncertainty(1);
+
+      expect(judgeAtDeadline?.()).toStrictEqual({
+        basis: "sampling-noise-v1",
+        eligible: false,
+      });
+    });
+
+    it("reports the original pending admission then its settled noise exclusion beside the positive exact loss", async () => {
+      const onAnalysisRendered = jest.fn();
+      const source = settledWith(1);
+      const { container } = renderHand(NEAR_MISS_HAND, NEAR_MISS_DISCARD, {
+        cribUncertaintySource: source,
+        onAnalysisRendered,
+        playUncertaintySource: source,
+      });
+      await findCaption(container);
+
+      expect(
+        onAnalysisRendered.mock.calls.map((call) => call[2]),
+      ).toStrictEqual([
+        "pending",
+        { basis: "sampling-noise-v1", eligible: false },
+      ]);
+      expect(onAnalysisRendered).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          quality: { expectedPointsLoss: 0.085633, isOptimal: false },
+        }),
+        shippedTableIdentity,
+        { basis: "sampling-noise-v1", eligible: false },
+        expect.any(Function),
+      );
+    });
+
     it("calls a loss inside the noise threshold within noise, never sub-optimal or optimal", async () => {
-      const { container } = renderNearMiss(settledWith(1), settledWith(1));
-      const caption = await findCaption(container);
+      const { caption, container } = await renderSettledNearMiss();
 
       expect(caption.textContent).toMatch(/^Within noise: 0\.09 pts lost/u);
       expect(caption.getAttribute("aria-label")).toMatch(
@@ -227,13 +307,44 @@ describe("scored possible keep discards caption", () => {
       expect(
         container.querySelector("[class*='noiseBadge']")?.getAttribute("title"),
       ).toMatch(
-        /^Within noise: at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u,
+        /^Within noise: at or below the approximate \d+\.\d{2} point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u,
       );
       expect(
         container
           .querySelector("tr[data-highlight-tier='chosen']")
           ?.getAttribute("title"),
       ).toMatch(/within simulation noise, approximate/u);
+    });
+
+    it("reveals the approximate threshold in visible text only after the within-noise badge is tapped", async () => {
+      const { badge, caption } = await renderNearMissBadge();
+
+      expect(badge.getAttribute("aria-expanded")).toBe("false");
+      expect(findExplanation(caption)?.hidden).toBe(true);
+
+      fireEvent.click(badge);
+
+      expect(badge.getAttribute("aria-expanded")).toBe("true");
+      expect(findExplanation(caption)?.hidden).toBe(false);
+
+      fireEvent.click(badge);
+
+      expect(findExplanation(caption)?.hidden).toBe(true);
+    });
+
+    it("discloses the same threshold figure its tooltip states, wired through aria-controls", async () => {
+      const { badge, caption } = await renderNearMissBadge();
+      const explanation =
+        /^Approximate threshold \d+\.\d{2} pts: a conservative bound on the simulation's reported sampling error, not a calibrated interval\.$/u;
+
+      fireEvent.click(badge);
+      const shown = findExplanation(caption);
+
+      expect(badge.getAttribute("aria-controls")).toBe(shown?.id);
+      expect(shown?.textContent).toMatch(explanation);
+      expect(badge.getAttribute("title")).toContain(
+        `approximate ${figureIn(shown)} point`,
+      );
     });
 
     it.each([

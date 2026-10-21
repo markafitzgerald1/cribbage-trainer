@@ -11,6 +11,7 @@ import {
   formatNetLoss,
 } from "../analysis/classifyMistake";
 import { CribRole } from "../game/expectedCribPoints";
+import { RecordedTableProvenance } from "./RecordedTableProvenance";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { renderRoleLossPairText } from "./RoleLossPairText";
@@ -111,6 +112,20 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
     </span>
   );
 
+// The sort key is this average, which mixes the recorded cost with every wrong retry.
+const renderAverageLoss = (item: MistakeQueueItem): React.JSX.Element | null =>
+  item.wrong > 1 ? (
+    <span
+      aria-label={`Average over ${item.wrong} wrong attempts: ${formatAccessibleNetLoss(item.lossIfWrong)} points`}
+      role="note"
+    >
+      Average over {item.wrong} wrong attempts:{" "}
+      <span className={classes.pointsValue}>
+        {formatNetLoss(item.lossIfWrong)} points
+      </span>
+    </span>
+  ) : null;
+
 export function MistakeQueueItemCard({
   classification = null,
   item,
@@ -134,9 +149,6 @@ export function MistakeQueueItemCard({
       <div className={classes.itemHeader}>
         <div className={classes.itemBadges}>
           <span className={classes.roleBadge}>{roleLabel}</span>
-          <span className={classes.lossBadge}>
-            {formatNetLoss(item.lossIfWrong)} pts lost
-          </span>
           {item.lossQuantile === null ? null : (
             <span
               className={`${classes.quantileBadge} ${getQuantileBadgeClass(item.lossQuantile)}`}
@@ -144,14 +156,24 @@ export function MistakeQueueItemCard({
               {item.lossQuantile}
             </span>
           )}
+          <span
+            aria-label={`Recorded cost: ${formatAccessibleNetLoss(item.previousDiscardLoss)} points`}
+            className={classes.lossBadge}
+            role="note"
+          >
+            Recorded cost:{" "}
+            <span className={classes.pointsValue}>
+              {formatNetLoss(item.previousDiscardLoss)} points
+            </span>
+          </span>
           {effectiveReason === null ? null : (
             <span
-              aria-label={`Previous discard driven by ${effectiveReason}`}
+              aria-label={`Current-table comparison: ${effectiveReason}`}
               className={classes.componentBadge}
               role="note"
-              title={`Previous discard (${formatAccessibleNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
+              title={`Current-table comparison (${formatAccessibleNetLoss(effectiveLoss)} pts lost): ${effectiveReason}`}
             >
-              Prev: {effectiveShortReason}
+              Current-table comparison: {effectiveShortReason}
             </span>
           )}
           {renderRoleLossPairBadge(item)}
@@ -159,14 +181,19 @@ export function MistakeQueueItemCard({
         <div>{renderStatusBadge(item)}</div>
       </div>
 
+      <RecordedTableProvenance identity={item.tableIdentity ?? null} />
       {renderCardsList(item.cards, sortOrder)}
 
       <div className={classes.itemFooter}>
         {renderPreviousDiscard(item.previousDiscard, sortOrder)}
         <div className={classes.itemStats}>
+          {renderAverageLoss(item)}
           <span>Attempts: {item.attempts}</span>
           <span>Error rate: {errorRatePercent}%</span>
-          <span>Priority: {item.priority.toFixed(DECIMAL_DIGITS)}</span>
+          <span>
+            Priority from recorded attempts:{" "}
+            {item.priority.toFixed(DECIMAL_DIGITS)}
+          </span>
         </div>
         {handlePractice === null ? null : (
           <button

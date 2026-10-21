@@ -1,16 +1,21 @@
 import {
   type DiscardDecisionRecord,
-  latestDecisionRecencyAt,
   normalizeStoredRecords,
 } from "./discardDecisionRecord";
 import {
   type PracticeAttempt,
   type PracticeRecord,
   isStoredPracticeRecord,
-  updatePracticeRecords,
 } from "./practiceLedger";
+import {
+  type PracticeAttemptEntry,
+  normalizeAttemptLog,
+} from "./practiceAttemptLog";
+import { extendDecisionTally, extendPracticeTally } from "./tallyUpdates";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
+import { encodeTableIdentities } from "./tableIdentityCodec";
 import { isObject } from "./isObject";
+import { isRecordedWithinNoise } from "./recordedAdmission";
 import { withoutStrayDrillRecords } from "./strayDrillRecords";
 export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
@@ -35,14 +40,14 @@ export const discardTallyKey = `${DISCARD_TALLY_KEY_PREFIX}${import.meta.env.BAS
  * 7 adds DiscardDecisionRecord.sortOrder (#872). No rewrite of existing
  * rows; absent means unknown, never a default order.
  */
-const CURRENT_VERSION = 7;
+// 8 interns decision means identities; absent provenance remains unknown.
+const CURRENT_VERSION = 8;
 /*
  * Records are what #719 draws a trend from, so they cannot be replaced by the
  * counters below. They cannot grow without limit either: this shares an origin
- * quota with everything else the app stores. At roughly 135 serialized characters
- * each, ten thousand records occupies ~1.35MB (well below standard 5MB browser
- * quotas), providing roughly five years of active play history within storage
- * budgets at zero operational cost.
+ * quota with everything else the app stores. Table identities are interned rather
+ * than repeated per row; the quota fallback below preserves this session when
+ * a deployment shares its origin with enough other data to exhaust storage.
  */
 export const MAX_RECORDS = 10_000;
 export interface DiscardTallySummary {
@@ -56,6 +61,14 @@ export interface DiscardTallySummary {
   readonly todaySkippedHands: number;
   // Hands dealt and abandoned without a discard; counted so averages stay honest about omissions.
   readonly skippedHands: number;
+  /*
+   * Retained decisions recorded as within simulation noise (#774), which
+   * Best choice counts neither way. Only retained records can say so: one
+   * that ages out of the record cap stays in the lifetime counters as a
+   * decision that was not the best choice.
+   */
+  readonly todayWithinNoiseDecisions: number;
+  readonly withinNoiseDecisions: number;
 }
 interface LifetimeTotals {
   readonly decisions: number;
@@ -67,6 +80,8 @@ export interface SkippedHand {
   readonly at: number;
 }
 export interface StoredTally {
+  readonly attemptLog?: readonly PracticeAttemptEntry[];
+  readonly tableIdentities?: readonly unknown[];
   readonly lifetime: LifetimeTotals;
   readonly practice: readonly PracticeRecord[];
   readonly records: readonly DiscardDecisionRecord[];
@@ -104,6 +119,8 @@ const emptyTally: StoredTally = {
  * gates disagree forever. Declaring the fields settles it in the type.
  */
 interface MaybeTally {
+  readonly tableIdentities?: unknown;
+  readonly attemptLog?: unknown;
   readonly lifetime?: unknown;
   readonly practice?: unknown;
   readonly records?: unknown;
@@ -185,6 +202,19 @@ const readStoredTally = (): StoredTally | null => {
     ? candidate.practice.filter(isStoredPracticeRecord)
     : [];
   return {
+    ...(Array.isArray(candidate.attemptLog)
+      ? {
+          attemptLog: normalizeAttemptLog(
+            candidate.attemptLog,
+            Array.isArray(candidate.tableIdentities)
+              ? candidate.tableIdentities
+              : [],
+          ),
+        }
+      : {}),
+    ...(Array.isArray(candidate.tableIdentities)
+      ? { tableIdentities: candidate.tableIdentities }
+      : {}),
     lifetime: parseLifetime(candidate.lifetime),
     practice,
     /*
@@ -200,7 +230,14 @@ const readStoredTally = (): StoredTally | null => {
      * `basisFor` would drop other tabs' unsaved hands.
      */
     records: withoutStrayDrillRecords(
-      Array.isArray(records) ? normalizeStoredRecords(records) : [],
+      Array.isArray(records)
+        ? normalizeStoredRecords(
+            records,
+            Array.isArray(candidate.tableIdentities)
+              ? candidate.tableIdentities
+              : [],
+          )
+        : [],
       practice,
     ),
     // Absent in a tally written before revisions were kept, which simply starts the count.
@@ -243,6 +280,15 @@ const summarize = (
     todayOptimalDecisions: today.filter((record) => record.isOptimal).length,
     todaySkippedHands: skipped.filter((hand) => isSameLocalDay(hand.at, now))
       .length,
+    todayWithinNoiseDecisions: today.filter(isRecordedWithinNoise).length,
+    // Capped at the lifetime's non-best decisions, since malformed counters can lag the records and would turn Best choice negative.
+    withinNoiseDecisions: Math.max(
+      0,
+      Math.min(
+        records.filter(isRecordedWithinNoise).length,
+        lifetime.decisions - lifetime.optimalDecisions,
+      ),
+    ),
   };
 };
 
@@ -302,21 +348,6 @@ export const readDiscardTally = (now: number): DiscardTallySummary =>
  * quietly change at that moment; keeping counters means trimming costs the
  * trend its oldest detail and never costs the headline its meaning.
  */
-const addToLifetime = (
-  lifetime: LifetimeTotals,
-  decision: DiscardDecisionRecord,
-): LifetimeTotals =>
-  decision.isPractice
-    ? lifetime
-    : {
-        ...lifetime,
-        decisions: lifetime.decisions + 1,
-        expectedPointsLossTotal:
-          lifetime.expectedPointsLossTotal + decision.expectedPointsLoss,
-        optimalDecisions:
-          lifetime.optimalDecisions + (decision.isOptimal ? 1 : 0),
-      };
-
 /*
  * Every write goes through here: read what is there, refuse if a newer build
  * wrote it, extend it, and persist. Returning the tally unchanged means there
@@ -350,7 +381,10 @@ const extendStoredTally = (
   // Every write advances the revision, which is what lets another tab's write be noticed at all.
   const next: StoredTally = { ...extended, revision: extended.revision + 1 };
   try {
-    localStorage.setItem(discardTallyKey, JSON.stringify(next));
+    localStorage.setItem(
+      discardTallyKey,
+      JSON.stringify(encodeTableIdentities(next)),
+    );
     forgetUnsaved();
   } catch {
     /*
@@ -365,34 +399,6 @@ const extendStoredTally = (
   }
   return summarize(next, at);
 };
-
-/*
- * Which stored record, if any, this decision is a repeat of. Idempotency is
- * by hand rather than by call: collapsing repeats here rather than in the
- * caller is what makes a reload safe, since a completed discard restored
- * from its own URL renders exactly as a fresh one does and no amount of care
- * in a component can tell the two apart.
- *
- * Directional on purpose, and both directions are load-bearing. A practice
- * record must not absorb an authentic decision: practice covers manually
- * entered, seeded, deep-linked and history-restored hands as well as retained
- * drill rows, and any of them owning a hand's key would drop a later
- * authentic deal of those six cards in that order and role — silently, since
- * the loss is a decision that was never counted and no figure afterwards
- * looks wrong (#830). An authentic record must still absorb a practice
- * decision, because that is how a drill's attempt folds into the record of
- * the hand it stands in for instead of appending a row naming cards the
- * player never met (#809).
- */
-const repeatOf = (
-  records: readonly DiscardDecisionRecord[],
-  decision: DiscardDecisionRecord,
-): DiscardDecisionRecord | undefined =>
-  records.find(
-    (record) =>
-      record.handKey === decision.handKey &&
-      (!record.isPractice || decision.isPractice),
-  );
 
 export const recordDiscardDecision = (
   decision: DiscardDecisionRecord,
@@ -415,21 +421,9 @@ export const recordDiscardDecision = (
   ) {
     return readDiscardTally(Date.now());
   }
-  return extendStoredTally(decision.at, (tally) => {
-    if (repeatOf(tally.records, decision)) {
-      return tally;
-    }
-    const recencyAt = tally.practice.reduce(
-      (latestAt, record) => Math.max(latestAt, record.lastAttemptAt + 1),
-      latestDecisionRecencyAt(tally.records, decision.at - 1) + 1,
-    );
-    const recordedDecision = { ...decision, recencyAt };
-    return {
-      ...tally,
-      lifetime: addToLifetime(tally.lifetime, recordedDecision),
-      records: [...tally.records, recordedDecision].slice(-MAX_RECORDS),
-    };
-  });
+  return extendStoredTally(decision.at, (tally) =>
+    extendDecisionTally(tally, decision, MAX_RECORDS),
+  );
 };
 
 export const recordPracticeAttempt = (
@@ -442,23 +436,9 @@ export const recordPracticeAttempt = (
   ) {
     return readDiscardTally(Date.now());
   }
-  return extendStoredTally(attempt.at, (tally) => {
-    const latestDecisionAt = latestDecisionRecencyAt(
-      tally.records,
-      attempt.at - 1,
-    );
-    const nextPractice = updatePracticeRecords(tally.practice, attempt, {
-      latestDecisionAt,
-      maxRecords: MAX_RECORDS,
-    });
-    if (nextPractice === tally.practice) {
-      return tally;
-    }
-    return {
-      ...tally,
-      practice: nextPractice,
-    };
-  });
+  return extendStoredTally(attempt.at, (tally) =>
+    extendPracticeTally(tally, attempt, MAX_RECORDS),
+  );
 };
 
 /*

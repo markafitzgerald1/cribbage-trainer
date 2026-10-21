@@ -17,6 +17,7 @@ import { describe, expect, it } from "@jest/globals";
 import { readDiscardTally, recordDiscardDecision } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DiscardTally } from "./useDiscardTally";
+import { EMPTY } from "../ui/discardTally.test.common";
 import { act } from "@testing-library/react";
 
 type MutableCardsHarness = ReturnType<typeof renderTallyWithMutableCards>;
@@ -405,16 +406,7 @@ describe("discard tally hook", () => {
     const { result } = renderTally(HAND);
     reportScore(result.current, { cribRole: CribRole.Dealer, quality: null });
 
-    expect(readDiscardTally(Date.now())).toStrictEqual({
-      decisions: 0,
-      meanExpectedPointsLoss: null,
-      optimalDecisions: 0,
-      skippedHands: 0,
-      todayDecisions: 0,
-      todayMeanExpectedPointsLoss: null,
-      todayOptimalDecisions: 0,
-      todaySkippedHands: 0,
-    });
+    expect(readDiscardTally(Date.now())).toStrictEqual(EMPTY);
   });
 
   it("averages what the counted decisions cost", () => {

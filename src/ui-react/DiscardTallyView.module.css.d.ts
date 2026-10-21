@@ -7,3 +7,5 @@ export const share: string;
 export const tally: string;
 export const trendButton: string;
 export const withToday: string;
+
+export const historyHelp: string;

@@ -3,11 +3,10 @@ import {
   type DiscardTelemetryProps,
   type HandReplacementCause,
   type HistoryHandScope,
-  type RenderedAnalysis,
   useDiscardTelemetry,
 } from "./useDiscardTelemetry";
 import {
-  type DisplayedHandRelabeling,
+  type ReportAnalysisRendered,
   useDiscardTally,
 } from "./useDiscardTally";
 import type { CribRole } from "../game/expectedCribPoints";
@@ -66,10 +65,7 @@ export type ReportHistoryNavigation = (
  * has to keep: the value never reaches the type telemetry consumes. Null
  * from every caller showing the cards it means.
  */
-export type ReportAnalysisRendered = (
-  analysis: RenderedAnalysis,
-  displayedAs: DisplayedHandRelabeling | null,
-) => void;
+export type { ReportAnalysisRendered } from "./useDiscardTally";
 
 export interface AnalysisReporting extends Omit<
   DiscardTelemetry,
@@ -126,9 +122,10 @@ export const useAnalysisReporting = (
   } = tally;
 
   const reportAnalysisRendered: ReportAnalysisRendered = useCallback(
-    (analysis, displayedAs) => {
+    (...args) => {
+      const [analysis] = args;
       reportAnalysisToTelemetry(analysis);
-      addAnalysisToTally(analysis, displayedAs);
+      addAnalysisToTally(...args);
     },
     [addAnalysisToTally, reportAnalysisToTelemetry],
   );

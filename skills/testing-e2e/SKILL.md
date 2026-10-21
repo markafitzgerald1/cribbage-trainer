@@ -89,6 +89,10 @@ baselines so CI agrees with what was generated locally.
   not `tests-e2e/**/*.spec.ts`, so e2e helpers that wrap `expect` need no
   `assertFunctionNames` registration (other rules such as `no-undefined`
   still apply there).
+- Playwright wire-format fixture properties use the same `camelcase`
+  `properties: "never"` exception as unit tests and stories. Published fields
+  such as `means_sha256` retain their schema names; this exception does not
+  relax variable or function names.
 - To reproduce device font-scaling bugs (e.g. Android Chrome's font-size
   accessibility setting, which scales rem), inject
   `page.addStyleTag({ content: "html { font-size: 28px; }" })` after `goto`
@@ -114,6 +118,15 @@ baselines so CI agrees with what was generated locally.
 - When Playwright snapshot diffs are acceptable:
   - Regenerate screenshots in Docker:
     `npm run docker:build-and-test-all -- -- --update-snapshots`.
+  - For a focused update, supply the snapshot mode before a spec filename.
+    Playwright's `--update-snapshots` takes an optional mode; without one it
+    consumes the filename as that mode and rejects the command:
+
+    ```bash
+    npm run docker:update-screenshots -- all \
+      tests-e2e/index.screenshots.spec.ts
+    ```
+
   - In PRs, explicitly note the screenshot updates and ensure expected images
     are updated to match the current actuals (these will be human reviewed).
   - `npm run docker:update-screenshots` expands to
@@ -237,9 +250,25 @@ baselines so CI agrees with what was generated locally.
   that the content renders, so the later absence has one explanation left.
   Sabotage until **every** project fails: a single-project failure among
   passes is the signature of a race, not of a guard.
+- **"Best choice" is no longer a decision counter.** Since #774 a decision
+  recorded as within simulation noise leaves both sides of that ratio while
+  its record is retained, and a random deal's discard can be one, so a spec
+  that reads the ratio to count decisions flakes at the rate such deals
+  occur. `discardTally.spec.ts`
+  refuses the sidecar chunks with `blockUncertaintySidecars`, so no
+  admission settles as `sampling-noise-v1`: an optimal discard settles as
+  `exact-v1` and any other as `exact-fallback-v1`. A spec that wants the noise
+  verdict seeds a `recordedAdmission` instead: the tally reads what was
+  recorded and never re-judges a stored hand, so a seeded hand's verdict
+  under today's tables says nothing about how it is counted.
 - `expectChipsFullyVisible` in `mistakeQueueLayout.spec.ts` is the shape to copy
   for chip rows: it asserts each chip is whole inside its group and the group
   inside the viewport, and says nothing about how many rows that takes. An
   earlier version asserted a single row, which a `nowrap` + `overflow-x: auto`
   strip satisfied while cropping a label — the row assertion was what the
   cropping mechanism existed to satisfy.
+
+- Normalize ancestor scroll positions before paired layout measurements.
+  Trial clicks can scroll the outer layout even when the measured panel has
+  `scrollTop === 0`, changing how many analysis rows fit in the viewport
+  without changing the table's scroll-area height.

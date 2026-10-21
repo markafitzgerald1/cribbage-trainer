@@ -202,7 +202,7 @@
 
 /*
  * A floor wide enough for all five columns, so a phone-width dialog scrolls
- * the table sideways to reach Optimal and Skipped rather than clipping them.
+ * the table sideways to reach Best choice and Skipped rather than clipping them.
  */
 .table {
   border-collapse: collapse;

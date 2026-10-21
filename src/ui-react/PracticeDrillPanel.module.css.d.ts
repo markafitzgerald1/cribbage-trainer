@@ -12,11 +12,13 @@ declare const classes: {
   readonly panel: string;
   readonly primary: string;
   readonly prompt: string;
+  readonly provenanceNote: string;
   readonly secondary: string;
   readonly suitNote: string;
   readonly verdict: string;
   readonly verdictLabel: string;
   readonly verdictLoss: string;
   readonly verdictRow: string;
+  readonly verdictValues: string;
 };
 export = classes;

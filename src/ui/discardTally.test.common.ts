@@ -1,13 +1,42 @@
 import {
   type DiscardDecisionRecord,
   type DiscardTallySummary,
+  type PracticeAttempt,
   clearDiscardTally,
   discardTallyKey,
+  readTallyForDisplay,
 } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import { jest } from "@jest/globals";
 
 export const AT = 1_700_000_000_000;
+
+export const noiseAdmission = {
+  basis: "sampling-noise-v1",
+  eligible: false,
+} as const;
+
+export const firstStoredAdmission = () =>
+  readTallyForDisplay().records[0]?.recordedAdmission;
+
+// A drill retry judged a success by the noise rule; the two losses differ only where a case needs them to contradict.
+export const noiseJudgedSuccess = (
+  expectedPointsLoss: number,
+  detailLoss = expectedPointsLoss,
+): PracticeAttempt => ({
+  at: AT,
+  detail: {
+    basis: "sampling-noise-v1",
+    discardKey: "AH,2H",
+    expectedPointsLoss: detailLoss,
+    isOptimal: false,
+    outcome: "success",
+    tableIdentity: null,
+  },
+  expectedPointsLoss,
+  handKey: "AH,2H,3H,4H,5H,6H|Dealer",
+  isOptimal: false,
+});
 
 /*
  * Every decision these tests record carries AT, so whatever counts toward the
@@ -26,6 +55,8 @@ export const summaryOf = (
   todayMeanExpectedPointsLoss: meanExpectedPointsLoss,
   todayOptimalDecisions: optimalDecisions,
   todaySkippedHands: 0,
+  todayWithinNoiseDecisions: 0,
+  withinNoiseDecisions: 0,
 });
 
 // For the cases where today and the lifetime figures genuinely differ.
@@ -67,6 +98,7 @@ export const decisionOf = (
   handKey: "AH,2H,3H,4H,5H,6H",
   isOptimal: false,
   isPractice: false,
+  tableIdentity: null,
   ...overrides,
 });
 
