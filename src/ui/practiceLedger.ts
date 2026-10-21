@@ -199,6 +199,7 @@ export const updatePracticeRecords = (
   );
   const nextRecord: PracticeRecord = existing
     ? {
+        ...existing,
         attempts: existing.attempts + 1,
         consecutiveSuccesses,
         handKey: attempt.handKey,
