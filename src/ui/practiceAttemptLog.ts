@@ -1,11 +1,14 @@
 import { type Card, parseHand, serializeHand } from "../game/Card";
 import { type JudgmentBasis, isJudgmentBasis } from "./recordedAdmission";
+import {
+  type UnreadableTableIdentity,
+  resolveStoredReference,
+} from "./tableIdentityCodec";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import type { TableIdentity } from "../game/tableIdentity";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHandKey } from "./handKey";
-import { resolveTableIdentity } from "./tableIdentityCodec";
 
 // Full-cap stress storage in Chromium measures 5,147,904 bytes with 1,000
 // Retries, reloads exactly, and leaves 94,955 ASCII characters of headroom.
@@ -29,7 +32,8 @@ export interface PracticeAttemptDetail {
 interface StoredAttemptDetail extends Omit<PracticeAttemptDetail, "basis"> {
   readonly basis: string;
 }
-export interface PracticeAttemptEntry extends StoredAttemptDetail {
+export interface PracticeAttemptEntry
+  extends StoredAttemptDetail, UnreadableTableIdentity {
   readonly at: number;
   readonly handKey: string;
   readonly order: number;
@@ -138,7 +142,7 @@ export const normalizeAttemptLog = (
           at,
           handKey,
           order,
-          tableIdentity: resolveTableIdentity(item.tableIdentity, identities),
+          ...resolveStoredReference(item.tableIdentity, identities),
         });
       }
     }

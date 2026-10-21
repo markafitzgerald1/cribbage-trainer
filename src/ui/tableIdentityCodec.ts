@@ -15,30 +15,69 @@ export const resolveTableIdentity = (
       : value,
   );
 
+/*
+ * A reference this build cannot resolve is a later build's, not an absent one.
+ * It is carried beside the typed (null) identity so the next write can put the
+ * stored value back, while every consumer keeps reading the identity as unavailable.
+ */
+export interface UnreadableTableIdentity {
+  readonly unreadableTableIdentity?: unknown;
+}
+
+export const resolveStoredReference = (
+  value: unknown,
+  identities: readonly unknown[],
+): UnreadableTableIdentity & {
+  readonly tableIdentity: TableIdentity | null;
+} => {
+  const tableIdentity = resolveTableIdentity(value, identities);
+  return tableIdentity === null &&
+    value !== null &&
+    typeof value !== "undefined"
+    ? { tableIdentity, unreadableTableIdentity: value }
+    : { tableIdentity };
+};
+
+const ATTEMPT_FIELDS: readonly string[] = [
+  "handKey",
+  "discardKey",
+  "at",
+  "order",
+  "tableIdentity",
+  "expectedPointsLoss",
+  "isOptimal",
+  "outcome",
+  "basis",
+];
+
 // Only the transport interns identities; callers always see the complete digest pair.
 export const encodeTableIdentities = (tally: StoredTally): unknown => {
   const tableIdentities = [...(tally.tableIdentities ?? [])];
-  function encode<T extends { readonly tableIdentity?: TableIdentity | null }>(
-    record: T,
-  ) {
+  function encode<
+    T extends {
+      readonly tableIdentity?: TableIdentity | null;
+    } & UnreadableTableIdentity,
+  >({ unreadableTableIdentity, ...record }: T) {
     const identity = normalizeTableIdentity(record.tableIdentity);
-    let reference: string | null = null;
-    if (identity !== null) {
-      let index = tableIdentities.findIndex(
-        (known) =>
-          normalizeTableIdentity(known) !== null &&
-          sameTableIdentity(known as TableIdentity, identity),
-      );
-      if (index < 0) {
-        index = tableIdentities.push(identity) - 1;
-      }
-      reference = String(index);
+    if (identity === null) {
+      return { ...record, tableIdentity: unreadableTableIdentity ?? null };
     }
-    return { ...record, tableIdentity: reference };
+    let index = tableIdentities.findIndex(
+      (known) =>
+        normalizeTableIdentity(known) !== null &&
+        sameTableIdentity(known as TableIdentity, identity),
+    );
+    if (index < 0) {
+      index = tableIdentities.push(identity) - 1;
+    }
+    return { ...record, tableIdentity: String(index) };
   }
   const records = tally.records.map(encode);
   const attemptLog = tally.attemptLog?.map((entry) => {
     const encoded = encode(entry);
+    if (Object.keys(encoded).some((key) => !ATTEMPT_FIELDS.includes(key))) {
+      return encoded;
+    }
     return [
       encoded.handKey,
       encoded.discardKey,
