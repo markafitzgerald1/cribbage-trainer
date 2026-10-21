@@ -23,7 +23,9 @@ test("counts a reload of the app's own undecided hand as a resumed hand", async 
   await selectTwoDiscards(page);
   await waitForAnalysis(page);
 
-  await expect(page.getByText("Lost per discard")).toBeVisible();
+  await expect(
+    page.getByText("Avg recorded loss", { exact: true }),
+  ).toBeVisible();
 });
 
 test("counts a skip when a reloaded own hand is left", async ({ page }) => {
@@ -47,5 +49,7 @@ test("leaves a foreign deep link out of the tally", async ({ page }) => {
   await selectTwoDiscards(page);
   await waitForAnalysis(page);
 
-  await expect(page.getByText("Lost per discard")).toBeHidden();
+  await expect(
+    page.getByText("Avg recorded loss", { exact: true }),
+  ).toBeHidden();
 });

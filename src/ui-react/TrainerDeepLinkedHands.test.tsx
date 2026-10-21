@@ -48,7 +48,7 @@ describe("trainer deep-linked and reloaded hands", () => {
 
     await playDiscards(resumedHandProps(String(storedKey)));
 
-    expect(screen.queryByText("Lost per discard")).toBeInTheDocument();
+    expect(screen.queryByText("Avg recorded loss")).toBeInTheDocument();
   });
 
   it("treats hand as deep-linked when localStorage throws", async () => {
@@ -61,7 +61,7 @@ describe("trainer deep-linked and reloaded hands", () => {
     });
     getItemSpy.mockRestore();
 
-    expect(screen.queryByText("Lost per discard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Avg recorded loss")).not.toBeInTheDocument();
   });
 
   it("does not double count a reloaded already-decided own hand, clears ownHandKey, and records no skip on deal", async () => {
@@ -74,7 +74,7 @@ describe("trainer deep-linked and reloaded hands", () => {
 
     await completeDiscardsAndWait(initialView.getAllByRole, user);
 
-    expect(screen.queryByText("Lost per discard")).toBeInTheDocument();
+    expect(screen.queryByText("Avg recorded loss")).toBeInTheDocument();
 
     initialView.unmount();
     const reloadProps = resumedHandProps(storedKey);
@@ -127,6 +127,6 @@ describe("trainer deep-linked and reloaded hands", () => {
       initialCribRole: CribRole.Pone,
     });
 
-    expect(screen.queryByText("Lost per discard")).not.toBeInTheDocument();
+    expect(screen.queryByText("Avg recorded loss")).not.toBeInTheDocument();
   });
 });
