@@ -76,6 +76,7 @@ type InitialTrainerProps = Partial<
     | "initialCards"
     | "initialCribRole"
     | "initialDiscards"
+    | "initialOwnHandId"
     | "initialScoreSortKey"
     | "initialSortOrder"
     | "isSeededSession"
@@ -88,6 +89,7 @@ export const renderTrainerWithInitialProps = ({
   initialCards = null,
   initialCribRole = null,
   initialDiscards,
+  initialOwnHandId = null,
   initialScoreSortKey = null,
   initialSortOrder = null,
   isSeededSession = false,
@@ -99,6 +101,7 @@ export const renderTrainerWithInitialProps = ({
       initialCards={initialCards}
       initialCribRole={initialCribRole}
       initialDiscards={initialDiscards ?? null}
+      initialOwnHandId={initialOwnHandId}
       initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
       isSeededSession={isSeededSession}

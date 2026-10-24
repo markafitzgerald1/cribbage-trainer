@@ -5,6 +5,7 @@ import type {
 import {
   type DiscardDecisionRecord,
   type DiscardTallySummary,
+  hasRecordedAuthenticDecision,
   readDiscardTally,
   recordSkippedHand,
 } from "../ui/discardTally";
@@ -14,6 +15,7 @@ import type {
   RenderedAnalysis,
 } from "./useDiscardTelemetry";
 import { type Suit, serializeHand } from "../game/Card";
+import { formatOwnHand, ownHandKey, readOwnHandId } from "../ui/ownHandKey";
 import {
   invertSuitPermutation,
   permuteCardSuits,
@@ -23,8 +25,8 @@ import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { SortOrder } from "../ui/SortOrder";
 import type { TableIdentity } from "../game/tableIdentity";
+import { claimSkip } from "../ui/skippedHandKeys";
 import { discardIsComplete } from "../game/discardIsComplete";
-import { ownHandKey } from "../ui/ownHandKey";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
 import { useAdmissionRecording } from "./useAdmissionRecording";
@@ -225,7 +227,10 @@ export const useDiscardTally = ({
     hasRecordedInitialHand.current = true;
     try {
       if (!isSeededSession && !wasDeepLinked) {
-        localStorage.setItem(ownHandKey, toHandKey(dealtCards, cribRole));
+        localStorage.setItem(
+          ownHandKey,
+          formatOwnHand(crypto.randomUUID(), toHandKey(dealtCards, cribRole)),
+        );
       } else if (!isResumedOwnHand) {
         localStorage.removeItem(ownHandKey);
       }
@@ -288,12 +293,8 @@ export const useDiscardTally = ({
     if (discardIsComplete(dealtCards) && openHand.current !== null) {
       decidedHands.current.add(openHand.current.handId ?? openHand.current.key);
       // A decided hand must not reopen after a card is withdrawn and the page reloads.
-      try {
-        if (localStorage.getItem(ownHandKey) === openHand.current.key) {
-          localStorage.removeItem(ownHandKey);
-        }
-      } catch {
-        // Storage errors are swallowed.
+      if (readOwnHandId(openHand.current.key) !== null) {
+        localStorage.removeItem(ownHandKey);
       }
     }
   }, [dealtCards]);
@@ -339,7 +340,11 @@ export const useDiscardTally = ({
          */
         cause !== "manual" &&
         !decidedHands.current.has(abandoned.handId ?? abandoned.key) &&
-        practiceByHand.current.get(abandoned.key) === false
+        // Another tab on the same hand may already have decided it.
+        !hasRecordedAuthenticDecision(abandoned.key) &&
+        practiceByHand.current.get(abandoned.key) === false &&
+        // Another tab on the same hand may already have charged its skip.
+        claimSkip(abandoned.key)
       ) {
         setSummary(recordSkippedHand(Date.now()));
       }
@@ -353,7 +358,10 @@ export const useDiscardTally = ({
         if (isPractice) {
           localStorage.removeItem(ownHandKey);
         } else {
-          localStorage.setItem(ownHandKey, key);
+          localStorage.setItem(
+            ownHandKey,
+            formatOwnHand(crypto.randomUUID(), key),
+          );
         }
       } catch {
         // Storage errors are swallowed.

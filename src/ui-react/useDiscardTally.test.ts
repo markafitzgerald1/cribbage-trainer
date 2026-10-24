@@ -1,3 +1,5 @@
+/* jscpd:ignore-start */
+import { EMPTY, recordAuthenticDecision } from "../ui/discardTally.test.common";
 import {
   HAND,
   OTHER_HAND,
@@ -14,11 +16,13 @@ import {
   startWithUnknownOrigin,
 } from "./useDiscardTally.test.common";
 import { describe, expect, it } from "@jest/globals";
-import { readDiscardTally, recordDiscardDecision } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DiscardTally } from "./useDiscardTally";
-import { EMPTY } from "../ui/discardTally.test.common";
 import { act } from "@testing-library/react";
+import { claimSkip } from "../ui/skippedHandKeys";
+import { readDiscardTally } from "../ui/discardTally";
+import { toHandKey } from "../ui/handKey";
+/* jscpd:ignore-end */
 
 type MutableCardsHarness = ReturnType<typeof renderTallyWithMutableCards>;
 
@@ -217,6 +221,24 @@ describe("discard tally hook", () => {
       start: { discarded: false },
     },
     {
+      name: "a hand another tab already decided",
+      play: () => {
+        recordAuthenticDecision(
+          toHandKey(handOf(HAND, false), CribRole.Dealer),
+        );
+      },
+      skipped: 0,
+      start: { discarded: false },
+    },
+    {
+      name: "a hand another tab already charged a skip",
+      play: () => {
+        claimSkip(toHandKey(handOf(HAND, false), CribRole.Dealer));
+      },
+      skipped: 0,
+      start: { discarded: false },
+    },
+    {
       name: "the hand a seeded session starts with",
       play: () => {
         // Nothing: the seeded start is the hand walked away from.
@@ -270,15 +292,7 @@ describe("discard tally hook", () => {
     { decisions: 0, name: "it stays hidden", state: "hidden" },
   ])("refreshes when $name", ({ decisions, state }) => {
     const { result } = renderTally(HAND);
-    recordDiscardDecision({
-      at: Date.now(),
-      cribRole: CribRole.Dealer,
-      discardKey: "AH,2H",
-      expectedPointsLoss: 1,
-      handKey: "written-elsewhere",
-      isOptimal: false,
-      isPractice: false,
-    });
+    recordAuthenticDecision("written-elsewhere");
     act(() => {
       Object.defineProperty(document, "visibilityState", {
         configurable: true,

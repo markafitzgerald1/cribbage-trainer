@@ -16,6 +16,7 @@ export const DISCARD_PARAM = "discard";
 export const SORT_PARAM = "sort";
 export const ANALYSIS_SORT_PARAM = "analysis-sort";
 export const SEED_PARAM = "seed";
+export const OWN_HAND_PARAM = "own";
 
 export interface UrlAnalysisState {
   readonly cards: Card[] | null;
@@ -137,6 +138,7 @@ export const parseUrlAnalysisState = (search: string): UrlAnalysisState => {
 export interface SerializableAnalysisState {
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
+  readonly ownHandId?: string | null;
   readonly scoreSortKey: ScoredKeepDiscardSortKey;
   readonly sortOrder: SortOrder;
 }
@@ -157,7 +159,13 @@ const decodeCardListCommas = (query: string): string =>
 
 export const serializeUrlAnalysisState = (
   search: string,
-  { cribRole, dealtCards, scoreSortKey, sortOrder }: SerializableAnalysisState,
+  {
+    cribRole,
+    dealtCards,
+    ownHandId = null,
+    scoreSortKey,
+    sortOrder,
+  }: SerializableAnalysisState,
 ): string => {
   const params = new URLSearchParams(search);
   const cardsInDealOrder = [...dealtCards].sort(
@@ -170,6 +178,11 @@ export const serializeUrlAnalysisState = (
     params.set(DISCARD_PARAM, serializeHand(discards));
   } else {
     params.delete(DISCARD_PARAM);
+  }
+  if (ownHandId === null) {
+    params.delete(OWN_HAND_PARAM);
+  } else {
+    params.set(OWN_HAND_PARAM, ownHandId);
   }
   params.set(SORT_PARAM, sortUrlValue(sortOrder));
   params.set(ANALYSIS_SORT_PARAM, analysisSortUrlValue(scoreSortKey));

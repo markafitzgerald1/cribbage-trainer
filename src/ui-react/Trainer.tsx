@@ -32,7 +32,7 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
-import { ownHandKey } from "../ui/ownHandKey";
+import { readOwnHandId } from "../ui/ownHandKey";
 import { toDealtCards } from "../game/toDealtCards";
 import { toHandKey } from "../ui/handKey";
 import { useAnalysisReporting } from "./useAnalysisReporting";
@@ -48,6 +48,7 @@ export interface TrainerProps {
   readonly initialCards?: Card[] | null;
   readonly initialCribRole?: CribRole | null;
   readonly initialDiscards?: Card[] | null;
+  readonly initialOwnHandId?: string | null;
   readonly initialScoreSortKey?: ScoredKeepDiscardSortKey | null;
   readonly initialSortOrder?: SortOrder | null;
   readonly isSeededSession?: boolean;
@@ -161,20 +162,21 @@ const useEnterCardsDialog = (
   return { handleClose, handleOpen, handleSubmit, show };
 };
 
-const checkIsResumedOwnHand = (
-  initialCards: readonly Card[] | null,
-  dealtCards: readonly DealtCard[],
-  cribRole: CribRole,
-): boolean => {
-  if (initialCards === null || discardIsComplete(dealtCards)) {
-    return false;
-  }
-  try {
-    return localStorage.getItem(ownHandKey) === toHandKey(dealtCards, cribRole);
-  } catch {
-    return false;
-  }
-};
+const checkIsResumedOwnHand = ({
+  cribRole,
+  dealtCards,
+  initialCards,
+  initialOwnHandId,
+}: {
+  readonly cribRole: CribRole;
+  readonly dealtCards: readonly DealtCard[];
+  readonly initialCards: readonly Card[] | null;
+  readonly initialOwnHandId: string | null;
+}): boolean =>
+  initialCards !== null &&
+  initialOwnHandId !== null &&
+  !discardIsComplete(dealtCards) &&
+  readOwnHandId(toHandKey(dealtCards, cribRole)) === initialOwnHandId;
 
 export function Trainer({
   generateRandomNumber: generator,
@@ -183,6 +185,7 @@ export function Trainer({
   initialCards = null,
   initialCribRole = null,
   initialDiscards = null,
+  initialOwnHandId = null,
   initialScoreSortKey = null,
   initialSortOrder = null,
   isSeededSession = false,
@@ -198,7 +201,12 @@ export function Trainer({
   });
   const { cribRole, dealtCards } = dealState;
   const [isResumedOwnHand, setIsResumedOwnHand] = useState(() =>
-    checkIsResumedOwnHand(initialCards, dealtCards, cribRole),
+    checkIsResumedOwnHand({
+      cribRole,
+      dealtCards,
+      initialCards,
+      initialOwnHandId,
+    }),
   );
   const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
     initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
@@ -278,6 +286,7 @@ export function Trainer({
     const url = serializeUrlAnalysisState(window.location.search, {
       cribRole,
       dealtCards,
+      ownHandId: readOwnHandId(toHandKey(dealtCards, cribRole)),
       scoreSortKey,
       sortOrder,
     });
@@ -494,6 +503,7 @@ Trainer.defaultProps = {
   initialCards: null,
   initialCribRole: null,
   initialDiscards: null,
+  initialOwnHandId: null,
   initialScoreSortKey: null,
   initialSortOrder: null,
   isSeededSession: false,

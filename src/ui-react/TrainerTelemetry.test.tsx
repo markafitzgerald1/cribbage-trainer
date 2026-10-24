@@ -12,9 +12,9 @@ import {
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
+import { formatOwnHand, ownHandKey } from "../ui/ownHandKey";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
-import { ownHandKey } from "../ui/ownHandKey";
 import { parseHand } from "../game/Card";
 import { toHandKey } from "../ui/handKey";
 /* jscpd:ignore-end */
@@ -249,7 +249,10 @@ describe("trainer telemetry wiring", () => {
       prepare: () => {
         localStorage.setItem(
           ownHandKey,
-          toHandKey(parseHand(SIX_HEARTS_HAND), CribRole.Dealer),
+          formatOwnHand(
+            "own-hand-id",
+            toHandKey(parseHand(SIX_HEARTS_HAND), CribRole.Dealer),
+          ),
         );
       },
     },

@@ -9,12 +9,13 @@ import {
   setAnalysisTables,
 } from "./Trainer.test.common";
 import { describe, expect, it } from "@jest/globals";
-import { parseHandKey, toHandKey } from "../ui/handKey";
+import { formatOwnHand, ownHandKey } from "../ui/ownHandKey";
 import { screen, waitFor } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
-import { ownHandKey } from "../ui/ownHandKey";
+import { getInitialProps } from "../ui/getInitialProps";
 import { parseHand } from "../game/Card";
 import { readDiscardTally } from "../ui/discardTally";
+import { toHandKey } from "../ui/handKey";
 import userEvent from "@testing-library/user-event";
 
 const playDiscards = async (
@@ -35,24 +36,31 @@ const expectPracticePlay = async (
   expect(screen.queryByText("Avg recorded loss")).not.toBeInTheDocument();
 };
 
-const resumedHandProps = (key: string) => {
-  const parsed = parseHandKey(key)!;
-  return {
+const reloadFromUrl = () => {
+  const { initialCards, initialCribRole, initialDiscards, initialOwnHandId } =
+    getInitialProps(window.location.search);
+  return renderTrainerWithInitialProps({
     generateRandomNumber: () => 0,
-    initialCards: parsed.cards,
-    initialCribRole: parsed.cribRole,
-  };
+    initialCards,
+    initialCribRole,
+    initialDiscards,
+    initialOwnHandId,
+  });
+};
+
+const startWithNoHistory = () => {
+  setAnalysisTables();
+  localStorage.clear();
+  window.history.replaceState(null, "", "/");
 };
 
 const decideFreshDeal = async (beforeDecide: () => void = () => null) => {
-  setAnalysisTables();
-  localStorage.clear();
+  startWithNoHistory();
   const user = userEvent.setup();
   const view = renderTrainerWithGenerator(() => 0);
-  const storedKey = String(localStorage.getItem(ownHandKey));
   beforeDecide();
   await completeDiscardsAndWait(view.getAllByRole, user);
-  return { storedKey, user, view };
+  return { user, view };
 };
 
 const dealAwayAndCount = async (user: ReturnType<typeof userEvent.setup>) => {
@@ -60,29 +68,18 @@ const dealAwayAndCount = async (user: ReturnType<typeof userEvent.setup>) => {
   return readDiscardTally(Date.now());
 };
 
-const reloadOwnHand = (storedKey: string, withDiscards: boolean) => {
-  const reloadProps = resumedHandProps(storedKey);
-  renderTrainerWithInitialProps({
-    ...reloadProps,
-    initialDiscards: withDiscards
-      ? [reloadProps.initialCards[0]!, reloadProps.initialCards[1]!]
-      : null,
-  });
-};
+const SPADES_DEALER_KEY = toHandKey(
+  parseHand(SIX_SPADES_HAND),
+  CribRole.Dealer,
+);
 
 describe("trainer deep-linked and reloaded hands", () => {
   it("counts a reloaded own hand as an authentic decision, not practice", async () => {
-    setAnalysisTables();
-    localStorage.clear();
+    startWithNoHistory();
 
-    const initialView = renderTrainerWithGenerator(() => 0);
-    const storedKey = localStorage.getItem(ownHandKey);
-
-    expect(storedKey).not.toBeNull();
-
-    initialView.unmount();
-
-    await playDiscards(resumedHandProps(String(storedKey)));
+    renderTrainerWithGenerator(() => 0).unmount();
+    const reloaded = reloadFromUrl();
+    await completeDiscardsAndWait(reloaded.getAllByRole, userEvent.setup());
 
     expect(screen.queryByText("Avg recorded loss")).toBeInTheDocument();
   });
@@ -95,18 +92,19 @@ describe("trainer deep-linked and reloaded hands", () => {
       {
         initialCards: parseHand(SIX_SPADES_HAND),
         initialCribRole: CribRole.Dealer,
+        initialOwnHandId: "any-id",
       },
       () => getItemSpy.mockRestore(),
     );
   });
 
   it("does not double count a reloaded already-decided own hand, clears ownHandKey, and records no skip on deal", async () => {
-    const { storedKey, user, view } = await decideFreshDeal();
+    const { user, view } = await decideFreshDeal();
 
     expect(screen.queryByText("Avg recorded loss")).toBeInTheDocument();
 
     view.unmount();
-    reloadOwnHand(storedKey, true);
+    reloadFromUrl();
     await waitFor(() =>
       expect(screen.getByRole("status")).not.toHaveTextContent(""),
     );
@@ -133,39 +131,54 @@ describe("trainer deep-linked and reloaded hands", () => {
     expect(localStorage.getItem(ownHandKey)).toBeNull();
   });
 
-  it("treats the same cards under the opposite role as a shared link", async () => {
-    setAnalysisTables();
-    localStorage.clear();
-    localStorage.setItem(
-      ownHandKey,
-      toHandKey(parseHand(SIX_SPADES_HAND), CribRole.Dealer),
-    );
+  it.each([
+    {
+      description: "the same cards under the opposite role",
+      id: "mine",
+      role: CribRole.Pone,
+    },
+    {
+      description: "a link to the identical hand and role carrying another id",
+      id: "another-deal",
+      role: CribRole.Dealer,
+    },
+    {
+      description: "a link to the identical hand and role carrying no id",
+      id: null,
+      role: CribRole.Dealer,
+    },
+  ])("treats $description as a shared link", async ({ id, role }) => {
+    startWithNoHistory();
+    localStorage.setItem(ownHandKey, formatOwnHand("mine", SPADES_DEALER_KEY));
 
     await expectPracticePlay({
       generateRandomNumber: () => 0,
       initialCards: parseHand(SIX_SPADES_HAND),
-      initialCribRole: CribRole.Pone,
+      initialCribRole: role,
+      initialOwnHandId: id,
     });
   });
 
   it("retires the own-hand marker once the hand is decided, so withdrawing a card and reloading records no skip", async () => {
-    const { storedKey, user, view } = await decideFreshDeal();
+    const { user, view } = await decideFreshDeal();
     await user.click(view.getAllByRole("checkbox")[0]!);
 
     expect(localStorage.getItem(ownHandKey)).toBeNull();
 
     view.unmount();
-    reloadOwnHand(storedKey, false);
+    reloadFromUrl();
     const tally = await dealAwayAndCount(user);
 
     expect(tally).toMatchObject({ decisions: 1, skippedHands: 0 });
   });
 
   it("leaves another tab's own-hand marker alone when this tab decides its hand", async () => {
-    const otherTabsKey = toHandKey(parseHand(SIX_SPADES_HAND), CribRole.Pone);
+    const otherTabsMarker = formatOwnHand("tab-b", SPADES_DEALER_KEY);
 
-    await decideFreshDeal(() => localStorage.setItem(ownHandKey, otherTabsKey));
+    await decideFreshDeal(() =>
+      localStorage.setItem(ownHandKey, otherTabsMarker),
+    );
 
-    expect(localStorage.getItem(ownHandKey)).toBe(otherTabsKey);
+    expect(localStorage.getItem(ownHandKey)).toBe(otherTabsMarker);
   });
 });
