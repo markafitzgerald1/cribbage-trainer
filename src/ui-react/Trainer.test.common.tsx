@@ -4,6 +4,7 @@ import {
   type RenderResult,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import { Trainer, type TrainerProps } from "./Trainer";
 import {
@@ -75,6 +76,7 @@ type InitialTrainerProps = Partial<
     | "initialCards"
     | "initialCribRole"
     | "initialDiscards"
+    | "initialOwnHandId"
     | "initialScoreSortKey"
     | "initialSortOrder"
     | "isSeededSession"
@@ -87,6 +89,7 @@ export const renderTrainerWithInitialProps = ({
   initialCards = null,
   initialCribRole = null,
   initialDiscards,
+  initialOwnHandId = null,
   initialScoreSortKey = null,
   initialSortOrder = null,
   isSeededSession = false,
@@ -98,6 +101,7 @@ export const renderTrainerWithInitialProps = ({
       initialCards={initialCards}
       initialCribRole={initialCribRole}
       initialDiscards={initialDiscards ?? null}
+      initialOwnHandId={initialOwnHandId}
       initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
       isSeededSession={isSeededSession}
@@ -179,3 +183,26 @@ export const lastEventParams = (
   trackEvent: TelemetryCapture,
   eventName: TrainerEventName,
 ) => eventCalls(trackEvent, eventName).at(-1)?.[2];
+
+export const completeDiscardsAndWait = async (
+  getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],
+  user: UserEvent,
+) => {
+  const checkboxes = getAllByRole("checkbox");
+  await user.click(checkboxes[0]!);
+  await user.click(checkboxes[1]!);
+  await waitFor(() => {
+    expect(screen.getByRole("status").textContent).not.toBe("");
+  });
+};
+
+const throwingStorageSpy =
+  (method: "getItem" | "removeItem") => (keyToThrow: string) =>
+    jest.spyOn(Storage.prototype, method).mockImplementation((key) => {
+      if (key === keyToThrow) throw new Error("Access denied");
+      return null;
+    });
+
+export const mockThrowingStorage = throwingStorageSpy("getItem");
+
+export const mockThrowingRemoval = throwingStorageSpy("removeItem");

@@ -5,11 +5,27 @@ import {
   clearDiscardTally,
   discardTallyKey,
   readTallyForDisplay,
+  recordDiscardDecision,
 } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import { jest } from "@jest/globals";
 
 export const AT = 1_700_000_000_000;
+
+export const recordAuthenticDecision = (
+  handKey: string,
+  expectedPointsLoss = 1,
+) => {
+  recordDiscardDecision({
+    at: Date.now(),
+    cribRole: CribRole.Dealer,
+    discardKey: "AH,2H",
+    expectedPointsLoss,
+    handKey,
+    isOptimal: false,
+    isPractice: false,
+  });
+};
 
 export const noiseAdmission = {
   basis: "sampling-noise-v1",

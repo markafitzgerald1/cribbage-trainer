@@ -1,3 +1,4 @@
+/* jscpd:ignore-start */
 import type { DiscardTally, DisplayedHandRelabeling } from "./useDiscardTally";
 import {
   HAND,
@@ -7,11 +8,13 @@ import {
 } from "./useDiscardTally.test.common";
 import { Suit, parseHand } from "../game/Card";
 import { describe, expect, it } from "@jest/globals";
-import { readTallyForDisplay, recordDiscardDecision } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { permuteCardSuits } from "../game/suitPermutation";
+import { readTallyForDisplay } from "../ui/discardTally";
+import { recordAuthenticDecision } from "../ui/discardTally.test.common";
 import { toDealtCards } from "../game/toDealtCards";
+/* jscpd:ignore-end */
 
 /*
  * What a practice drill does to a stored mistake before putting it on screen:
@@ -42,15 +45,7 @@ const scoredAnalysis = (): RenderedAnalysis => ({
 });
 
 const seedAuthenticDecision = () => {
-  recordDiscardDecision({
-    at: Date.now(),
-    cribRole: CribRole.Dealer,
-    discardKey: DISCARD,
-    expectedPointsLoss: 1.5,
-    handKey: HAND_KEY,
-    isOptimal: false,
-    isPractice: false,
-  });
+  recordAuthenticDecision(HAND_KEY, 1.5);
 };
 
 const practiceFlags = () => storedRecords().map((record) => record.isPractice);
