@@ -3,6 +3,7 @@ import {
   SIX_SPADES_HAND,
   clickDeal,
   completeDiscardsAndWait,
+  mockThrowingRemoval,
   mockThrowingStorage,
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
@@ -170,6 +171,17 @@ describe("trainer deep-linked and reloaded hands", () => {
     const tally = await dealAwayAndCount(user);
 
     expect(tally).toMatchObject({ decisions: 1, skippedHands: 0 });
+  });
+
+  it("keeps counting a decision when storage rejects retiring the marker", async () => {
+    const removeItemSpy = mockThrowingRemoval(ownHandKey);
+    try {
+      await decideFreshDeal();
+    } finally {
+      removeItemSpy.mockRestore();
+    }
+
+    expect(readDiscardTally(Date.now()).decisions).toBe(1);
   });
 
   it("leaves another tab's own-hand marker alone when this tab decides its hand", async () => {

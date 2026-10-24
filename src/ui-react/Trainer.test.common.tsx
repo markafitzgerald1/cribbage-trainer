@@ -196,8 +196,13 @@ export const completeDiscardsAndWait = async (
   });
 };
 
-export const mockThrowingStorage = (keyToThrow: string) =>
-  jest.spyOn(Storage.prototype, "getItem").mockImplementation((key) => {
-    if (key === keyToThrow) throw new Error("Access denied");
-    return null;
-  });
+const throwingStorageSpy =
+  (method: "getItem" | "removeItem") => (keyToThrow: string) =>
+    jest.spyOn(Storage.prototype, method).mockImplementation((key) => {
+      if (key === keyToThrow) throw new Error("Access denied");
+      return null;
+    });
+
+export const mockThrowingStorage = throwingStorageSpy("getItem");
+
+export const mockThrowingRemoval = throwingStorageSpy("removeItem");
