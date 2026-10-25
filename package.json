@@ -59,7 +59,7 @@
     "@playwright/test": "^1.63.0",
     "@storybook/addon-docs": "^10.6.0",
     "@storybook/addon-links": "^10.6.0",
-    "@storybook/addon-vitest": "^10.6.1",
+    "@storybook/addon-vitest": "^10.6.3",
     "@storybook/react-vite": "^10.6.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@testing-library/jest-dom": "^7.0.1",
