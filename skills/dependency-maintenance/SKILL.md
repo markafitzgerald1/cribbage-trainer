@@ -134,3 +134,29 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   pin freezes a package at whatever was patched when it was written, so a
   later advisory wave on the same package cannot be cleared by
   `npm audit fix` until the pin becomes a caret (`^1.20.0`).
+- **An ERESOLVE on an in-range patched version can be npm failing to update
+  existing lock entries, not a real conflict; re-resolve the family from
+  scratch before reaching for an override or a waiver.** On 2026-10-23 thirteen
+  advisories turned `lint:audit` red on a clean `origin/main`. Plain
+  `npm audit fix` cleared seven (fast-uri, zod, addon-vitest) and left six in
+  storybook (fixed in 10.6.2) and the vitest family (fixed in 5.0.3 to 5.0.5),
+  even though both patched lines sat inside the existing carets. `npm update`
+  left the lock at storybook 10.6.0 and vitest 5.0.2, and forcing the versions
+  failed with an ERESOLVE that blamed storybook's optional peer `vite-plus`,
+  whose own optional peer is `@vitest/browser-playwright@4.1.10`. That reads
+  as a genuine major-version conflict and is not one: `vite-plus` is not
+  installed, and every override tried made things worse (one form ran npm out
+  of memory, another failed `EOVERRIDE` against the direct dependency, another
+  failed `ERESOLVE` against the existing lock). What worked was deleting every
+  `packages` entry matching
+  `^node_modules/(vitest|@vitest/[^/]+|storybook|@storybook/[^/]+)(/|$)` from
+  `package-lock.json` (35 entries), then
+  `npm install --package-lock-only --ignore-scripts` and
+  `npm audit fix --package-lock-only --ignore-scripts`. Re-resolving from
+  nothing picked storybook 10.6.3 and vitest 5.0.5 and left `vite-plus` out of
+  the tree. Raise the direct dependencies' `package.json` floors to the patched
+  versions in the same change, so the lock cannot drift back below them, and
+  drop any `.nsprc` entry that `better-npm-audit` reports as matching nothing.
+  Expect the next `npm update` or `audit fix` on these families to hit the same
+  ERESOLVE until the lock entries are rebuilt this way; a Dependabot group may
+  fail identically.
