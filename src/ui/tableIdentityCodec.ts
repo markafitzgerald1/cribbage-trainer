@@ -75,10 +75,12 @@ export const encodeTableIdentities = (tally: StoredTally): unknown => {
     if (identity === null) {
       return { ...record, tableIdentity: unreadableTableIdentity ?? null };
     }
+    // Equal hashes with different metadata are different entries: a later build may give that metadata meaning.
     let index = tableIdentities.findIndex(
       (known) =>
         normalizeTableIdentity(known) !== null &&
-        sameTableIdentity(known as TableIdentity, identity),
+        sameTableIdentity(known as TableIdentity, identity) &&
+        JSON.stringify(known) === JSON.stringify(identity),
     );
     if (index < 0) {
       index = tableIdentities.push(identity) - 1;

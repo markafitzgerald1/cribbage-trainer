@@ -185,4 +185,22 @@ describe("a later build's stored fields through this build's write", () => {
       }),
     ).toMatchObject([{ tableIdentity: null }]);
   });
+
+  it("keeps two identities with equal hashes but different metadata distinct", () => {
+    const withMetadata = { ...readable, futureNote: "second" };
+    const written = writeUnrelatedAndReadStored(
+      storedTallyWith({
+        records: [
+          { ...validRecord, tableIdentity: "0" },
+          { ...validRecord, tableIdentity: "1" },
+        ],
+        tableIdentities: [readable, withMetadata],
+      }),
+    );
+
+    expect(written).toMatchObject({
+      records: [{ tableIdentity: "0" }, { tableIdentity: "1" }],
+      tableIdentities: [readable, withMetadata],
+    });
+  });
 });
