@@ -14,6 +14,7 @@ import {
 import { extendDecisionTally, extendPracticeTally } from "./tallyUpdates";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 import { encodeTableIdentities } from "./tableIdentityCodec";
+import { forgetSkippedHandKeys } from "./skippedHandKeys";
 import { isObject } from "./isObject";
 import { isRecordedWithinNoise } from "./recordedAdmission";
 import { withoutStrayDrillRecords } from "./strayDrillRecords";
@@ -358,6 +359,11 @@ export const readTallyForDisplay = (): StoredTally => {
   return persisted === null ? emptyTally : basisFor(persisted);
 };
 
+export const hasRecordedAuthenticDecision = (handKey: string): boolean =>
+  readTallyForDisplay().records.some(
+    (record) => record.handKey === handKey && !record.isPractice,
+  );
+
 export const readDiscardTally = (now: number): DiscardTallySummary =>
   summarize(readTallyForDisplay(), now);
 
@@ -486,6 +492,7 @@ export const hasTallyToShow = (summary: DiscardTallySummary): boolean =>
 
 // Exported for the specs and stories that need a browser with no history.
 export const clearDiscardTally = () => {
+  forgetSkippedHandKeys();
   forgetUnsaved();
   localStorage.removeItem(discardTallyKey);
 };

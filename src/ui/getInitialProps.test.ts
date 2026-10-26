@@ -41,6 +41,16 @@ describe("getInitialProps", () => {
     expect(props.initialCards).toBeNull();
   });
 
+  it("reads the own-hand id when present and null when absent", () => {
+    expect(
+      getInitialProps("?hand=AH,2H,3H,4H,5H,6H&own=first-deal")
+        .initialOwnHandId,
+    ).toBe("first-deal");
+    expect(
+      getInitialProps("?hand=AH,2H,3H,4H,5H,6H").initialOwnHandId,
+    ).toBeNull();
+  });
+
   it("returns null seed when no seed param is present", () => {
     const props = getInitialProps("");
 

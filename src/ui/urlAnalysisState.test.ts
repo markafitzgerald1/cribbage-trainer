@@ -160,6 +160,32 @@ describe("serializeUrlAnalysisState", () => {
     },
   );
 
+  it.each([
+    { expected: "own=first-deal", name: "writes", search: "?seed=1" },
+    {
+      expected: "own=first-deal",
+      name: "replaces a stale",
+      search: "?own=old",
+    },
+  ])("$name the own-hand id", ({ expected, search }) => {
+    const url = serializeUrlAnalysisState(search, {
+      ...dealerStateDiscardingSixFive(SortOrder.Descending),
+      ownHandId: "first-deal",
+    });
+
+    expect(url).toContain(expected);
+    expect(url).not.toContain("own=old");
+  });
+
+  it("removes a stale own-hand id when the hand is not the player's own", () => {
+    const url = serializeUrlAnalysisState(
+      "?own=old",
+      dealerStateDiscardingSixFive(SortOrder.Descending),
+    );
+
+    expect(url).not.toContain("own=");
+  });
+
   it("keeps encoded commas in unrelated params while decoding card lists", () => {
     const url = serializeUrlAnalysisState(
       "?note=a%2Cb",

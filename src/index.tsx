@@ -10,6 +10,7 @@ const {
   initialCards,
   initialCribRole,
   initialDiscards,
+  initialOwnHandId,
   initialScoreSortKey,
   initialSortOrder,
   seed,
@@ -23,6 +24,7 @@ ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
       initialCards={initialCards}
       initialCribRole={initialCribRole}
       initialDiscards={initialDiscards}
+      initialOwnHandId={initialOwnHandId}
       initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
       isSeededSession={isSeededSession(seed)}

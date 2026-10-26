@@ -537,9 +537,16 @@ they bind any PR that makes a claim about a phone or ships a guard.
 
 - `src/ui/urlAnalysisState.ts` is the single source of truth for the
   URL-parameter contract (`hand`, `role`, `discard`, `sort`, `analysis-sort`,
-  `seed`). Its parse functions validate strictly but fail soft (return
-  `null`, never throw), and serialization writes normalized card text (rank
-  label + suit letter) in deal order — never generated object identity or
+  `seed`, `own`). `own` is a random id the app writes for a hand it dealt and
+  also stores in `localStorage` (`src/ui/ownHandKey.ts`); a reload counts as the
+  player's own resumed hand only when the URL's id matches the stored one and
+  the stored marker names that hand, so a pasted link to the identical hand
+  does not. A duplicated tab shares the URL and so still counts as the
+  player's own, but the hand is charged one skip between the tabs
+  (`src/ui/skippedHandKeys.ts`) and none once any tab has decided it. The
+  parse functions validate strictly but fail soft (return `null`, never
+  throw), and serialization writes normalized card text (rank label + suit
+  letter) in deal order — never generated object identity or
   sort-dependent keys.
 - URL param values are a public compatibility surface: shared links must keep
   working. Change them only additively and keep parsing backward compatible.
