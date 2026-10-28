@@ -1,1 +1,7 @@
-{}
+{
+  "1243505": {
+    "active": true,
+    "expiry": "2026-11-03",
+    "notes": "deepmerge mergeObject() allows prototype poisoning of returned objects (GHSA-gcqx-w48m-w2h4), low severity. Every published release from 4.2.0 through the latest 4.3.1 is affected, so no patched release exists. Reaches the tree only through dev tooling (jest -> @jest/core -> jest-config -> deepmerge): npm ls deepmerge --omit=dev is empty, so nothing is shipped in the production bundle."
+  }
+}
