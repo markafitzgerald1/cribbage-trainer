@@ -18,3 +18,19 @@ export const readOwnHandId = (handKey: string): string | null => {
     return null;
   }
 };
+
+// Marks the hand now on screen as the player's own, or clears the marker when the app did not deal it.
+export const writeOwnHand = (ownHandKeyOrNull: string | null): void => {
+  try {
+    if (ownHandKeyOrNull === null) {
+      localStorage.removeItem(ownHandKey);
+    } else {
+      localStorage.setItem(
+        ownHandKey,
+        formatOwnHand(crypto.randomUUID(), ownHandKeyOrNull),
+      );
+    }
+  } catch {
+    // Storage errors are swallowed.
+  }
+};

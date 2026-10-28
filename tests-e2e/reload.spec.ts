@@ -69,3 +69,42 @@ test("leaves a link to the player's own hand out of the tally once its id is gon
     page.getByText("Avg recorded loss", { exact: true }),
   ).toBeHidden();
 });
+
+const notCountedNote = (page: Page) => page.getByText(/^Not counted:/u);
+
+test("says a foreign link is not counted, and stops once Deal is pressed", async ({
+  page,
+}) => {
+  await blockGoogleAnalytics(page);
+  await page.goto("/?hand=AS,2S,3S,4S,5S,6S&role=dealer");
+
+  await expect(notCountedNote(page)).toHaveText(
+    "Not counted: this hand came from a link, not a deal.",
+  );
+
+  await page.getByRole("button", { exact: true, name: "Deal" }).click();
+
+  await expect(notCountedNote(page)).toBeHidden();
+});
+
+test("says a seeded link is not counted", async ({ page }) => {
+  await blockGoogleAnalytics(page);
+  await page.goto("/?hand=AS,2S,3S,4S,5S,6S&role=dealer&seed=e2e");
+
+  await expect(notCountedNote(page)).toHaveText(
+    "Not counted: hands from a seeded link are practice.",
+  );
+});
+
+test("says nothing on a hand the app dealt, before or after a reload", async ({
+  page,
+}) => {
+  await startOwnUndecidedHand(page);
+
+  await expect(notCountedNote(page)).toBeHidden();
+
+  await page.reload();
+
+  await expect(page.getByRole("checkbox").first()).toBeVisible();
+  await expect(notCountedNote(page)).toBeHidden();
+});

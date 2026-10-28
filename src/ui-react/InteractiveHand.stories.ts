@@ -68,3 +68,13 @@ export const WithPracticeDrillChoosing = drillStory(
 export const WithPracticeDrillVerdict = drillStory(
   basePanelArgs({ phase: "revealed", verdict: sampleVerdict() }),
 );
+
+const uncountedStory = (
+  uncountedReason: "entered" | "linked" | "seeded",
+): Story => ({
+  args: { ...createStory(SortOrder.DealOrder).args, uncountedReason },
+});
+
+export const NotCountedLinkedHand = uncountedStory("linked");
+export const NotCountedSeededHand = uncountedStory("seeded");
+export const NotCountedEnteredHand = uncountedStory("entered");

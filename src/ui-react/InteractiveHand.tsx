@@ -12,8 +12,18 @@ import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
+import type { UncountedReason } from "./useUncountedReason";
 
 export type InteractiveHandDrill = Omit<PracticeDrillPanelProps, "sortOrder">;
+
+const UNCOUNTED_NOTE_TEXT: Readonly<Record<UncountedReason, string>> = {
+  entered: "Not counted: you entered these cards.",
+  linked: "Not counted: this hand came from a link, not a deal.",
+  seeded: "Not counted: hands from a seeded link are practice.",
+};
+
+const uncountedNoteText = (reason: UncountedReason): string =>
+  Reflect.get(UNCOUNTED_NOTE_TEXT, reason);
 
 const renderDrillPanel = (
   {
@@ -51,6 +61,8 @@ interface InteractiveHandProps {
   readonly onDeal: () => void;
   readonly onEnterCards: () => void;
   readonly practiceDrill?: InteractiveHandDrill | null;
+  // Why this hand is left out of the tally; null when it counts.
+  readonly uncountedReason?: UncountedReason | null;
   // Briefly true after "Exit drill" so the board can say it dealt a fresh hand.
   readonly showFreshHandNotice?: boolean;
 }
@@ -66,6 +78,7 @@ export function InteractiveHand({
   onEnterCards,
   practiceDrill,
   showFreshHandNotice,
+  uncountedReason = null,
 }: InteractiveHandProps) {
   const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const roleContext =
@@ -102,6 +115,14 @@ export function InteractiveHand({
         onChange={onCardChange}
         sortOrder={sortOrder}
       />
+      {uncountedReason !== null && !practiceDrill ? (
+        <p
+          className={classes.uncountedNote}
+          role="note"
+        >
+          {uncountedNoteText(uncountedReason)}
+        </p>
+      ) : null}
       {practiceDrill ? renderDrillPanel(practiceDrill, sortOrder) : null}
       {showFreshHandNotice && !practiceDrill ? (
         <p
@@ -119,4 +140,5 @@ InteractiveHand.defaultProps = {
   handId: null,
   practiceDrill: null,
   showFreshHandNotice: false,
+  uncountedReason: null,
 };

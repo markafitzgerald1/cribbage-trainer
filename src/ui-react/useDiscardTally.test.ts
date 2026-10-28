@@ -46,6 +46,7 @@ describe("discard tally hook", () => {
     {
       counted: 1,
       name: "a hand dealt in an ordinary session",
+      reason: null,
       reports: 1,
       start: () => renderTally(HAND),
     },
@@ -53,24 +54,28 @@ describe("discard tally hook", () => {
     {
       counted: 1,
       name: "one hand however often its score arrives",
+      reason: null,
       reports: 4,
       start: () => renderTally(HAND),
     },
     {
       counted: 0,
       name: "the hand a seeded session starts with",
+      reason: "seeded",
       reports: 1,
       start: () => renderTally(HAND, { isSeededSession: true }),
     },
     {
       counted: 0,
       name: "the hand a deep link starts with",
+      reason: "linked",
       reports: 1,
       start: () => renderTally(HAND, { wasDeepLinked: true }),
     },
     {
       counted: 1,
       name: "a reloaded own hand",
+      reason: null,
       reports: 1,
       start: () =>
         renderTally(HAND, { isResumedOwnHand: true, wasDeepLinked: true }),
@@ -78,18 +83,21 @@ describe("discard tally hook", () => {
     {
       counted: 0,
       name: "a hand entered by hand",
+      reason: "entered",
       reports: 1,
       start: () => replacedBy(OTHER_HAND, "manual"),
     },
     {
       counted: 0,
       name: "a deal inside a seeded session",
+      reason: "seeded",
       reports: 1,
       start: () => replacedBy(HAND, "deal", { isSeededSession: true }),
     },
     {
       counted: 1,
       name: "a hand dealt after a manual one",
+      reason: null,
       reports: 1,
       start: () => replacedBy(OTHER_HAND, "deal"),
     },
@@ -101,14 +109,38 @@ describe("discard tally hook", () => {
     {
       counted: 0,
       name: "a hand of unknown origin",
+      reason: null,
       reports: 1,
       start: startWithUnknownOrigin,
     },
-  ])("counts $counted decisions for $name", ({ counted, reports, start }) => {
-    const { result } = start();
-    reportScoreTimes(result.current, reports);
+  ])(
+    "counts $counted decisions for $name and says why it does not",
+    ({ counted, reason, reports, start }) => {
+      const { result } = start();
+      reportScoreTimes(result.current, reports);
 
-    expect(readDiscardTally(Date.now()).decisions).toBe(counted);
+      expect(readDiscardTally(Date.now()).decisions).toBe(counted);
+      expect(result.current.uncountedReason).toBe(reason);
+    },
+  );
+
+  it("names no reason for a restored hand it never filed", () => {
+    const { result } = startWithUnknownOrigin();
+    noteRestore(result.current, OTHER_HAND);
+
+    expect(result.current.uncountedReason).toBeNull();
+  });
+
+  it("drops the reason on Deal and gives it back on Back", () => {
+    const { result } = renderTally(HAND, { wasDeepLinked: true });
+    noteOrigin(result.current, OTHER_HAND, "deal");
+    const afterDeal = result.current.uncountedReason;
+    noteRestore(result.current, HAND);
+
+    expect([afterDeal, result.current.uncountedReason]).toStrictEqual([
+      null,
+      "linked",
+    ]);
   });
 
   /*

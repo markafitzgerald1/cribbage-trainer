@@ -13,6 +13,7 @@ import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import type { SortOrder } from "../ui/SortOrder";
+import type { UncountedReason } from "./useUncountedReason";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*
@@ -76,6 +77,7 @@ export interface AnalysisReporting extends Omit<
   readonly reportHandReplaced: ReportHandReplaced;
   readonly reportHistoryNavigation: ReportHistoryNavigation;
   readonly tallySummary: DiscardTallySummary;
+  readonly uncountedReason: UncountedReason | null;
 }
 
 /*
@@ -119,6 +121,7 @@ export const useAnalysisReporting = (
     reportHandOrigin,
     reportHandRestored,
     summary: tallySummary,
+    uncountedReason,
   } = tally;
 
   const reportAnalysisRendered: ReportAnalysisRendered = useCallback(
@@ -168,5 +171,6 @@ export const useAnalysisReporting = (
     reportHandReplaced,
     reportHistoryNavigation,
     tallySummary,
+    uncountedReason,
   };
 };

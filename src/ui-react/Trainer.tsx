@@ -237,6 +237,7 @@ export function Trainer({
     reportHandReplaced,
     reportHistoryNavigation,
     tallySummary,
+    uncountedReason,
   } = useAnalysisReporting({
     consented: choice.consented,
     cribRole,
@@ -451,6 +452,7 @@ export function Trainer({
           }
           showFreshHandNotice={freshHandNoticeShown}
           sortOrder={sortOrder}
+          uncountedReason={uncountedReason}
         />
         <EnterCardsDialog
           initialCards={dealtCards}
