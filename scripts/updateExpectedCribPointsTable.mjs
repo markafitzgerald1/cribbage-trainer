@@ -7,6 +7,6 @@ import {
 
 const [, , meansUrl, uncertaintyUrl] = process.argv;
 
-downloadMeansAndUncertainty(CRIB_ASSETS, meansUrl, uncertaintyUrl)
+downloadMeansAndUncertainty(CRIB_ASSETS, { meansUrl, uncertaintyUrl })
   .then(writeTablesAtomically)
   .catch(reportFailure);

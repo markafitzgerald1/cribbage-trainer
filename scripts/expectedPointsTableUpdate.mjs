@@ -2,6 +2,7 @@ import {
   CRIB_UNCERTAINTY_CONTRACT,
   PLAY_UNCERTAINTY_CONTRACT,
   assertMeansDigest,
+  sha256,
   validateUncertainty,
 } from "./uncertaintySidecar.mjs";
 import { rename, writeFile } from "node:fs/promises";
@@ -27,6 +28,8 @@ export const CRIB_UNCERTAINTY_ASSET_URL = `${RELEASE_DOWNLOAD}/expected-crib-poi
 export const PLAY_ASSET_URL = `${RELEASE_DOWNLOAD}/expected-play-points/expected_play_points.client.json`;
 export const PLAY_UNCERTAINTY_ASSET_URL = `${RELEASE_DOWNLOAD}/expected-play-points/expected_play_points.uncertainty.json`;
 
+export const PLAY_LINES_URL = `${RELEASE_DOWNLOAD}/expected-play-points/expected_play_points.lines.json`;
+
 export const CRIB_OUTPUT_PATH = path.join(
   GAME_DIRECTORY,
   "expectedCribPointsTable.json",
@@ -42,6 +45,11 @@ export const PLAY_OUTPUT_PATH = path.join(
 export const PLAY_UNCERTAINTY_OUTPUT_PATH = path.join(
   GAME_DIRECTORY,
   "expectedPlayPointsUncertainty.json",
+);
+
+export const PLAY_LINES_OUTPUT_PATH = path.join(
+  GAME_DIRECTORY,
+  "expectedPlayPointsLines.json",
 );
 
 const assertObject = (value, message) => {
@@ -110,6 +118,42 @@ export const validatePlayTable = (table) => {
   }
 };
 
+const PLAY_LINES_SCHEMA = "expected-play-lines.v1";
+
+/*
+ * Only the header and the one-line shape (at most a final newline) are checked
+ * here; the full contract is the browser reader's, whose specs run it against
+ * the vendored bytes. One line matters because the size gate counts every one.
+ */
+export const validatePlayLines = (lines, raw) => {
+  assertObject(lines, "Downloaded play lines file is not an object");
+  if (lines.schema !== PLAY_LINES_SCHEMA) {
+    throw new Error(
+      `Downloaded play lines file declares schema ` +
+        `${JSON.stringify(lines.schema)}; expected ${PLAY_LINES_SCHEMA}`,
+    );
+  }
+  if (!/^[^\r\n]*\n?$/u.test(raw)) {
+    throw new Error("Downloaded play lines file is not minified onto one line");
+  }
+};
+
+/*
+ * Same pairing rule as the sidecar's, for the same reason: the companion
+ * names the exact means bytes it was exported against, and a rolling release
+ * replaced between downloads would otherwise vendor a mismatched pair.
+ */
+export const assertLinesDigest = (lines, meansBody) => {
+  const digest = sha256(meansBody);
+  if (lines.means_sha256 !== digest) {
+    throw new Error(
+      `The play lines file was exported against means ${lines.means_sha256} ` +
+        `but the downloaded means hash to ${digest}. ` +
+        "The rolling release changed between the downloads; rerun the update.",
+    );
+  }
+};
+
 /*
  * Everything one rolling release publishes and this repository vendors: the
  * client means, its uncertainty sidecar, and where each is written. The two
@@ -127,6 +171,8 @@ export const CRIB_ASSETS = {
 
 export const PLAY_ASSETS = {
   contract: PLAY_UNCERTAINTY_CONTRACT,
+  linesOutputPath: PLAY_LINES_OUTPUT_PATH,
+  linesUrl: PLAY_LINES_URL,
   meansOutputPath: PLAY_OUTPUT_PATH,
   meansUrl: PLAY_ASSET_URL,
   uncertaintyOutputPath: PLAY_UNCERTAINTY_OUTPUT_PATH,
@@ -147,7 +193,7 @@ const downloadAsset = async (assetUrl) => {
 export const downloadTable = async (assetUrl, validate) => {
   const raw = await downloadAsset(assetUrl);
   const parsed = JSON.parse(raw);
-  validate(parsed);
+  validate(parsed, raw);
   return { body: raw.endsWith("\n") ? raw : `${raw}\n`, parsed, raw };
 };
 
@@ -161,16 +207,18 @@ export const downloadTable = async (assetUrl, validate) => {
  */
 const toMinifiedBody = (value) => `${JSON.stringify(value)}\n`;
 
-export const downloadMeansAndUncertainty = async (
-  assets,
-  meansUrl = assets.meansUrl,
-  uncertaintyUrl = assets.uncertaintyUrl,
-) => {
-  const [means, uncertainty] = await Promise.all([
+export const downloadMeansAndUncertainty = async (assets, urls = {}) => {
+  const {
+    meansUrl = assets.meansUrl,
+    uncertaintyUrl = assets.uncertaintyUrl,
+    linesUrl = assets.linesUrl ?? null,
+  } = urls;
+  const [means, uncertainty, lines] = await Promise.all([
     downloadTable(meansUrl, assets.validateMeans),
     downloadTable(uncertaintyUrl, (sidecar) =>
       validateUncertainty(sidecar, assets.contract),
     ),
+    linesUrl === null ? null : downloadTable(linesUrl, validatePlayLines),
   ]);
   /*
    * The exact published bytes rather than the newline-normalized `body`: the
@@ -182,13 +230,18 @@ export const downloadMeansAndUncertainty = async (
    */
   const meansBody = means.raw;
   assertMeansDigest(uncertainty.parsed, meansBody, assets.contract);
-  return [
+  const files = [
     { body: meansBody, outputPath: assets.meansOutputPath },
     {
       body: toMinifiedBody(uncertainty.parsed),
       outputPath: assets.uncertaintyOutputPath,
     },
   ];
+  if (lines === null) {
+    return files;
+  }
+  assertLinesDigest(lines.parsed, meansBody);
+  return [...files, { body: lines.raw, outputPath: assets.linesOutputPath }];
 };
 
 const temporaryPathFor = (outputPath) => `${outputPath}.tmp-${process.pid}`;
