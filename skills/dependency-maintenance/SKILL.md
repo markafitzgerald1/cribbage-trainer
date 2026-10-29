@@ -11,11 +11,18 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
 
 **Learnings:**
 
-- Dependabot intentionally ignores ESLint 10.0.0 through 10.11.0 because the
-  latest `eslint-plugin-jsx-a11y` release (6.10.2) declares peer support only
-  through ESLint 9. Before changing that range, verify both packages' current
-  registry metadata; do not bypass the peer conflict with
-  `--legacy-peer-deps`.
+- Dependabot intentionally ignores ESLint 10.0.0 through 10.13.0 because the
+  latest `eslint-plugin-jsx-a11y` (6.10.2) and `eslint-plugin-react` (7.37.5)
+  releases declare peer support only through ESLint 9. Before changing that
+  range, verify those packages' current registry metadata; do not bypass the
+  peer conflict with `--legacy-peer-deps`. The range is bounded on purpose,
+  so once ESLint publishes past it the next `npm-all` group takes the major
+  and `build-and-test` dies within a minute at the Dockerfile's
+  `npm clean-install` with an `ERESOLVE` naming `eslint-plugin-jsx-a11y`
+  (#942, at 10.13.0). That is the re-check firing, not a broken lockfile:
+  if the plugins still cap at 9, set `eslint` back to `^9` on the group
+  branch, re-resolve with `npm install --package-lock-only --ignore-scripts`,
+  and raise the ignore's upper bound to the version it just proposed.
 - `lint:audit` is `node scripts/lintAudit.mjs`, not `better-npm-audit`
   directly. When npm.org's `security/advisories/bulk` endpoint is degraded
   it returns "audit endpoint returned an error" / "Unable to process the
