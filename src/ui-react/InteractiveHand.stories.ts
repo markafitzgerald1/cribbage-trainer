@@ -12,6 +12,7 @@ import { basePanelArgs, sampleVerdict } from "./PracticeDrillPanel.test.common";
 import { CARDS } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import { InteractiveHand } from "./InteractiveHand";
+import type { UncountedReason } from "./uncountedReason";
 
 const meta = {
   argTypes: createArgTypes("sortOrder", SORT_ORDER_NAMES),
@@ -69,12 +70,13 @@ export const WithPracticeDrillVerdict = drillStory(
   basePanelArgs({ phase: "revealed", verdict: sampleVerdict() }),
 );
 
-const uncountedStory = (
-  uncountedReason: "entered" | "linked" | "seeded",
-): Story => ({
+const uncountedStory = (uncountedReason: UncountedReason): Story => ({
   args: { ...createStory(SortOrder.DealOrder).args, uncountedReason },
 });
 
 export const NotCountedLinkedHand = uncountedStory("linked");
 export const NotCountedSeededHand = uncountedStory("seeded");
 export const NotCountedEnteredHand = uncountedStory("entered");
+export const NotCountedRestoredHand = uncountedStory("restored");
+export const NotCountedDecidedHand = uncountedStory("decided");
+export const NotCountedDrillHand = uncountedStory("drill");

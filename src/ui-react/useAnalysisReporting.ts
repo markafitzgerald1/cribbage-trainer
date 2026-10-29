@@ -38,7 +38,7 @@ export interface AnalysisReportingProps extends DiscardTelemetryProps {
  */
 export type ReportHandReplaced = (
   cards: readonly DealtCard[],
-  cause: HandReplacementCause,
+  cause: HandReplacementCause | "drill",
   cribRole: CribRole,
 ) => void;
 
@@ -137,10 +137,13 @@ export const useAnalysisReporting = (
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {
       resetResumedOwnHand?.(false);
-      reportHandToTelemetry(cards, cause);
-      reportHandOrigin(cards, cause, {
+      // Telemetry's hand sources stay deal and manual: a drill load is a manual replacement there, and only the tally's note tells the two apart.
+      const telemetryCause = cause === "drill" ? "manual" : cause;
+      reportHandToTelemetry(cards, telemetryCause);
+      reportHandOrigin(cards, telemetryCause, {
         cribRole: role,
         handId: currentHandScope().handId,
+        isDrillLoad: cause === "drill",
       });
     },
     [

@@ -13,7 +13,9 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { SortOrder } from "../ui/SortOrder";
 import { parseHand } from "../game/Card";
+import { recordAuthenticDecision } from "../ui/discardTally.test.common";
 import { toDealtCards } from "../game/toDealtCards";
+import { toHandKey } from "../ui/handKey";
 
 // Matches useSortOrder's own default.
 export const DEFAULT_SORT_ORDER = SortOrder.Descending;
@@ -58,12 +60,17 @@ export const scopeFor = (hand: string) => `${hand}-scope`;
 const noteOriginWith = (
   tally: DiscardTally,
   cause: HandReplacementCause,
-  { cards, handId }: { cards: readonly DealtCard[]; handId: string },
+  {
+    cards,
+    handId,
+    isDrillLoad = false,
+  }: { cards: readonly DealtCard[]; handId: string; isDrillLoad?: boolean },
 ) => {
   act(() => {
     tally.reportHandOrigin(cards, cause, {
       cribRole: CribRole.Dealer,
       handId,
+      isDrillLoad,
     });
   });
 };
@@ -74,6 +81,14 @@ export const noteOrigin = (
   cause: HandReplacementCause,
 ) => {
   noteOriginWith(tally, cause, { cards: handOf(hand), handId: scopeFor(hand) });
+};
+
+export const noteDrillLoad = (tally: DiscardTally, hand: string) => {
+  noteOriginWith(tally, "manual", {
+    cards: handOf(hand),
+    handId: scopeFor(hand),
+    isDrillLoad: true,
+  });
 };
 
 // The same, for a board whose cards no hand string describes — a drill's relabeled stand-in.
@@ -157,6 +172,7 @@ export const renderTallyWithMutableCards = (
 
 interface RenderTallyOptions {
   readonly discarded?: boolean;
+  readonly hasDecidedBefore?: boolean;
   readonly isResumedOwnHand?: boolean;
   readonly isSeededSession?: boolean;
   readonly sortOrder?: SortOrder;
@@ -167,6 +183,7 @@ export const renderTally = (
   hand: string,
   {
     discarded = true,
+    hasDecidedBefore = false,
     isResumedOwnHand = false,
     isSeededSession = false,
     sortOrder = DEFAULT_SORT_ORDER,
@@ -174,6 +191,9 @@ export const renderTally = (
   }: RenderTallyOptions = {},
 ) => {
   clearDiscardTally();
+  if (hasDecidedBefore) {
+    recordAuthenticDecision(toHandKey(handOf(hand), CribRole.Dealer));
+  }
   return renderHook(() =>
     useDiscardTally({
       cribRole: CribRole.Dealer,
@@ -224,4 +244,13 @@ export const reportScoreTimes = (tally: DiscardTally, times: number) => {
 export const decisionsAndSkips = () => {
   const summary = readDiscardTally(Date.now());
   return [summary.decisions, summary.skippedHands];
+};
+
+export const dealAwayThenRestore = (
+  tally: DiscardTally,
+  restored: string,
+  handId: string | null = null,
+) => {
+  noteOrigin(tally, OTHER_HAND, "deal");
+  noteRestore(tally, restored, handId === null ? {} : { handId });
 };

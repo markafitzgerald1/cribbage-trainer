@@ -31,16 +31,21 @@ const renderNote = (
 describe("uncounted hand note", () => {
   it.each([
     ["entered", "Not counted: you entered these cards."],
-    [
-      "linked",
-      "Not counted: this hand was opened from a link, not dealt here.",
-    ],
+    ["linked", "Not counted: this hand was opened from its web address."],
     ["restored", "Not counted: this hand was restored from history."],
     ["seeded", "Not counted: hands from a seeded link are practice."],
   ] as const)("says %s hands are not counted", (reason, text) => {
     renderNote(reason);
 
     expect(screen.getByRole("note").textContent).toBe(text);
+  });
+
+  it("sits in a polite live region so a change is announced", () => {
+    const { container } = renderNote("entered");
+
+    expect(container.querySelector("[aria-live='polite']")?.textContent).toBe(
+      "Not counted: you entered these cards.",
+    );
   });
 
   it("shows nothing for a hand that counts", () => {

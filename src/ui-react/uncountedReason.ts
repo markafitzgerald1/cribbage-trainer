@@ -1,22 +1,32 @@
 import type { HandReplacementCause } from "./useDiscardTelemetry";
 
-// Why the tally leaves the hand on screen out; the note is shown exactly when the tally's own practice flag is set, and this says which of the observed causes it was.
-export type UncountedReason = "entered" | "linked" | "restored" | "seeded";
+// Which observed cause the tally filed the hand on screen under. The note is set wherever the tally's practice flag is set; this chooses its wording.
+export type UncountedReason =
+  "decided" | "drill" | "entered" | "linked" | "restored" | "seeded";
 
+// The page was opened on this hand: a link and a reload of a decided own hand look the same, so only a stored decision of the hand tells them apart.
 export const initialUncountedReason = (
   isSeededSession: boolean,
   isPracticeInitialHand: boolean,
+  hasDecidedHand: () => boolean,
 ): UncountedReason | null => {
   if (isSeededSession) {
     return "seeded";
   }
-  return isPracticeInitialHand ? "linked" : null;
+  if (!isPracticeInitialHand) {
+    return null;
+  }
+  return hasDecidedHand() ? "decided" : "linked";
 };
 
 export const replacementReason = (
   cause: HandReplacementCause,
   isSeededSession: boolean,
+  isDrillLoad: boolean,
 ): UncountedReason | null => {
+  if (isDrillLoad) {
+    return "drill";
+  }
   if (cause === "manual") {
     return "entered";
   }

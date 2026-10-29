@@ -17,8 +17,10 @@ import type { UncountedReason } from "./uncountedReason";
 export type InteractiveHandDrill = Omit<PracticeDrillPanelProps, "sortOrder">;
 
 const UNCOUNTED_NOTE_TEXT: Readonly<Record<UncountedReason, string>> = {
+  decided: "Not counted: you already decided this hand.",
+  drill: "Not counted: this hand is from your practice queue.",
   entered: "Not counted: you entered these cards.",
-  linked: "Not counted: this hand was opened from a link, not dealt here.",
+  linked: "Not counted: this hand was opened from its web address.",
   restored: "Not counted: this hand was restored from history.",
   seeded: "Not counted: hands from a seeded link are practice.",
 };

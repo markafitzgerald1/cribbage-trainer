@@ -97,7 +97,7 @@ interface UsePracticeDrillArgs {
   readonly dealtCards: readonly DealtCard[];
   readonly generateRandomNumber: () => number;
   // The manual hand-load path, so the loaded hand is flagged practice and never enters the headline averages.
-  readonly loadHand: (hand: PracticeDrillHand) => void;
+  readonly loadHand: (hand: PracticeDrillHand, cause: "drill") => void;
   readonly onAnalysisRendered: ReportAnalysisRendered;
 }
 
@@ -333,7 +333,7 @@ export const usePracticeDrill = ({
       setPhase("choosing");
       setVerdict(null);
       setHasNextHand(activeHandsExist());
-      loadHand(toDrillHand(item, viewIndex));
+      loadHand(toDrillHand(item, viewIndex), "drill");
     },
     [loadHand, pendingGrade],
   );

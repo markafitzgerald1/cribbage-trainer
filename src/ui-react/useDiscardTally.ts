@@ -73,6 +73,8 @@ interface UseDiscardTallyProps {
 interface HandIdentity {
   readonly cribRole: CribRole;
   readonly handId: string;
+  // A practice drill loads its hands through the same replacement as Enter cards, which would otherwise read as the player's own entry.
+  readonly isDrillLoad?: boolean;
 }
 
 /*
@@ -162,9 +164,10 @@ export const useDiscardTally = ({
   /*
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
-   * is also what makes history navigation exact: a hand returned to by Back
-   * keeps the origin it was dealt with, rather than being reclassified by
-   * whatever the app happens to be doing when it reappears.
+   * is also what makes history navigation well-defined: a hand returned to
+   * by Back is filed as practice, since its answers were already revealed,
+   * rather than being reclassified by whatever the app happens to be doing
+   * when it reappears.
    */
   /*
    * The hand currently on screen, and whether its decision has been counted.
@@ -316,7 +319,9 @@ export const useDiscardTally = ({
 
   const [uncountedReason, setUncountedReason] =
     useState<UncountedReason | null>(
-      initialUncountedReason(isSeededSession, isPracticeInitialHand),
+      initialUncountedReason(isSeededSession, isPracticeInitialHand, () =>
+        hasRecordedAuthenticDecision(toHandKey(dealtCards, cribRole)),
+      ),
     );
   const notePractice = useCallback(
     (handKey: string, reason: UncountedReason | null) => {
@@ -327,7 +332,7 @@ export const useDiscardTally = ({
   );
 
   const reportHandOrigin: ReportHandOrigin = useCallback(
-    (cards, cause, { cribRole: role, handId }) => {
+    (cards, cause, { cribRole: role, handId, isDrillLoad = false }) => {
       /*
        * The hand being replaced is abandoned unless it was scored. Only a
        * hand the player asked for counts: the one a page load deals was
@@ -361,7 +366,7 @@ export const useDiscardTally = ({
       }
       const key = toHandKey(cards, role);
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
-      const reason = replacementReason(cause, isSeededSession);
+      const reason = replacementReason(cause, isSeededSession, isDrillLoad);
       notePractice(key, reason);
       openHand.current = { handId, key };
       writeOwnHand(reason === null ? key : null);
