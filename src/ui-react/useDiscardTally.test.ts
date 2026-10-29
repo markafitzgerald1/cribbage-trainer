@@ -117,6 +117,14 @@ describe("discard tally hook", () => {
     },
     {
       counted: 0,
+      name: "a link to a hand only ever practiced here",
+      reason: "linked",
+      reports: 1,
+      start: () =>
+        renderTally(HAND, { hasPracticedBefore: true, wasDeepLinked: true }),
+    },
+    {
+      counted: 0,
       name: "a deal inside a seeded session",
       reason: "seeded",
       reports: 1,

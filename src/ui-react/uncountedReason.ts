@@ -4,7 +4,7 @@ import type { HandReplacementCause } from "./useDiscardTelemetry";
 export type UncountedReason =
   "decided" | "drill" | "entered" | "linked" | "restored" | "seeded";
 
-// The page was opened on this hand: a link and a reload of a decided own hand look the same, so only a stored decision of the hand tells them apart.
+// The page was opened on this hand: a link and a reload look the same, so the wording is only what is true of both; "decided" is keyed on cards and role among this device's stored decisions.
 export const initialUncountedReason = (
   isSeededSession: boolean,
   isPracticeInitialHand: boolean,

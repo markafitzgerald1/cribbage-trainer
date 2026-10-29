@@ -165,9 +165,9 @@ export const useDiscardTally = ({
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
    * is also what makes history navigation well-defined: a hand returned to
-   * by Back is filed as practice, since its answers were already revealed,
-   * rather than being reclassified by whatever the app happens to be doing
-   * when it reappears.
+   * by Back is filed as practice, whether or not its answers were ever
+   * shown, rather than being reclassified by whatever the app happens to be
+   * doing when it reappears.
    */
   /*
    * The hand currently on screen, and whether its decision has been counted.
@@ -318,7 +318,7 @@ export const useDiscardTally = ({
   }, []);
 
   const [uncountedReason, setUncountedReason] =
-    useState<UncountedReason | null>(
+    useState<UncountedReason | null>(() =>
       initialUncountedReason(isSeededSession, isPracticeInitialHand, () =>
         hasRecordedAuthenticDecision(toHandKey(dealtCards, cribRole)),
       ),

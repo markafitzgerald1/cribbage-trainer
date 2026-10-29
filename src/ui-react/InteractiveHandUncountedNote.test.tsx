@@ -30,6 +30,8 @@ const renderNote = (
 
 describe("uncounted hand note", () => {
   it.each([
+    ["decided", "Not counted: you already decided this hand."],
+    ["drill", "Not counted: this hand is from your practice queue."],
     ["entered", "Not counted: you entered these cards."],
     ["linked", "Not counted: this hand was opened from its web address."],
     ["restored", "Not counted: this hand was restored from history."],

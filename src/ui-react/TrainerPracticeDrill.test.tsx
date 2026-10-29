@@ -6,6 +6,7 @@ import {
   createRoleRandomValues,
   createSequenceGenerator,
   getHandText,
+  lastEventParams,
   renderTrainerWithInitialProps,
   setAnalysisTables,
 } from "./Trainer.test.common";
@@ -17,6 +18,7 @@ import {
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
+import type { TrainerProps } from "./Trainer";
 import { parseHand } from "../game/Card";
 import userEvent from "@testing-library/user-event";
 /* jscpd:ignore-end */
@@ -65,7 +67,9 @@ const clickDrillButton = (
   name: string,
 ) => user.click(view.getByRole("button", { name }));
 
-const openDrillFromQueue = async () => {
+const openDrillFromQueue = async (
+  trackEvent: TrainerProps["trackEvent"] = jest.fn(),
+) => {
   seedMistakeHand();
   const user = userEvent.setup();
   const view = renderTrainerWithInitialProps({
@@ -75,6 +79,7 @@ const openDrillFromQueue = async () => {
     initialCards: parseHand(MISTAKE_HAND),
     initialCribRole: CribRole.Dealer,
     initialDiscards: parseHand("5H,6H"),
+    trackEvent,
   });
 
   /*
@@ -206,6 +211,30 @@ describe("trainer practice drill", () => {
 
     expect(screen.queryByLabelText("Practice drill")).toBeNull();
     await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
+  });
+
+  it("names the practice queue as why the drilled hand is not counted, and keeps telemetry on manual", async () => {
+    const trackEvent = jest.fn<TrainerProps["trackEvent"]>();
+    const { user, view } = await openDrillFromQueue(trackEvent);
+
+    await commitDrillChoice(view, user);
+    await findAnalysisTable(view);
+
+    expect(screen.queryByText(/Not counted/u)).toBeNull();
+
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `?hand=${MISTAKE_HAND}&role=dealer&discard=5H,6H`,
+    );
+    fireEvent.popState(window);
+
+    expect(screen.getByText(/Not counted/u).textContent).toBe(
+      "Not counted: this hand is from your practice queue.",
+    );
+    expect(lastEventParams(trackEvent, "discard_scored")?.handStartSource).toBe(
+      "manual",
+    );
   });
 
   it("marks earlier choice row distinctly from chosen row in drill review", async () => {

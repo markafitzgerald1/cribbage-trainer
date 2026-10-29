@@ -173,6 +173,7 @@ export const renderTallyWithMutableCards = (
 interface RenderTallyOptions {
   readonly discarded?: boolean;
   readonly hasDecidedBefore?: boolean;
+  readonly hasPracticedBefore?: boolean;
   readonly isResumedOwnHand?: boolean;
   readonly isSeededSession?: boolean;
   readonly sortOrder?: SortOrder;
@@ -184,6 +185,7 @@ export const renderTally = (
   {
     discarded = true,
     hasDecidedBefore = false,
+    hasPracticedBefore = false,
     isResumedOwnHand = false,
     isSeededSession = false,
     sortOrder = DEFAULT_SORT_ORDER,
@@ -191,8 +193,12 @@ export const renderTally = (
   }: RenderTallyOptions = {},
 ) => {
   clearDiscardTally();
-  if (hasDecidedBefore) {
-    recordAuthenticDecision(toHandKey(handOf(hand), CribRole.Dealer));
+  if (hasDecidedBefore || hasPracticedBefore) {
+    recordAuthenticDecision(
+      toHandKey(handOf(hand), CribRole.Dealer),
+      1,
+      hasPracticedBefore,
+    );
   }
   return renderHook(() =>
     useDiscardTally({
