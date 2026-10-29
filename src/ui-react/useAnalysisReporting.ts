@@ -13,7 +13,7 @@ import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import type { SortOrder } from "../ui/SortOrder";
-import type { UncountedReason } from "./useUncountedReason";
+import type { UncountedReason } from "./uncountedReason";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*

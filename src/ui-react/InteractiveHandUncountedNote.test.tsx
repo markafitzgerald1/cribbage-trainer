@@ -4,7 +4,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
-import type { UncountedReason } from "./useUncountedReason";
+import type { UncountedReason } from "./uncountedReason";
 import { basePanelArgs } from "./PracticeDrillPanel.test.common";
 import { createGenerator } from "../game/randomNumberGenerator";
 import { dealHand } from "../game/dealHand";
@@ -31,7 +31,11 @@ const renderNote = (
 describe("uncounted hand note", () => {
   it.each([
     ["entered", "Not counted: you entered these cards."],
-    ["linked", "Not counted: this hand came from a link, not a deal."],
+    [
+      "linked",
+      "Not counted: this hand was opened from a link, not dealt here.",
+    ],
+    ["restored", "Not counted: this hand was restored from history."],
     ["seeded", "Not counted: hands from a seeded link are practice."],
   ] as const)("says %s hands are not counted", (reason, text) => {
     renderNote(reason);

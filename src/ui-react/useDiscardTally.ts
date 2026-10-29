@@ -19,8 +19,7 @@ import {
   type UncountedReason,
   initialUncountedReason,
   replacementReason,
-  useUncountedReason,
-} from "./useUncountedReason";
+} from "./uncountedReason";
 import {
   invertSuitPermutation,
   permuteCardSuits,
@@ -315,16 +314,16 @@ export const useDiscardTally = ({
     };
   }, []);
 
-  const { noteReason, reasonFor, uncountedReason } = useUncountedReason(
-    toHandKey(dealtCards, cribRole),
-    initialUncountedReason(isSeededSession, isPracticeInitialHand),
-  );
+  const [uncountedReason, setUncountedReason] =
+    useState<UncountedReason | null>(
+      initialUncountedReason(isSeededSession, isPracticeInitialHand),
+    );
   const notePractice = useCallback(
     (handKey: string, reason: UncountedReason | null) => {
       practiceByHand.current.set(handKey, reason !== null);
-      noteReason(handKey, reason);
+      setUncountedReason(reason);
     },
-    [noteReason],
+    [],
   );
 
   const reportHandOrigin: ReportHandOrigin = useCallback(
@@ -405,10 +404,10 @@ export const useDiscardTally = ({
         const key = toHandKey(cards, role);
         practiceByHand.current.set(key, true);
         openHand.current = { handId, key };
+        setUncountedReason("restored");
       }
-      noteReason(null, reasonFor(toHandKey(cards, role)));
     },
-    [noteReason, reasonFor],
+    [],
   );
 
   const reportAnalysisRendered = useCallback(

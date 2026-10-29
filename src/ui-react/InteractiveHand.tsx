@@ -12,13 +12,14 @@ import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
-import type { UncountedReason } from "./useUncountedReason";
+import type { UncountedReason } from "./uncountedReason";
 
 export type InteractiveHandDrill = Omit<PracticeDrillPanelProps, "sortOrder">;
 
 const UNCOUNTED_NOTE_TEXT: Readonly<Record<UncountedReason, string>> = {
   entered: "Not counted: you entered these cards.",
-  linked: "Not counted: this hand came from a link, not a deal.",
+  linked: "Not counted: this hand was opened from a link, not dealt here.",
+  restored: "Not counted: this hand was restored from history.",
   seeded: "Not counted: hands from a seeded link are practice.",
 };
 
@@ -61,7 +62,7 @@ interface InteractiveHandProps {
   readonly onDeal: () => void;
   readonly onEnterCards: () => void;
   readonly practiceDrill?: InteractiveHandDrill | null;
-  // Why this hand is left out of the tally; null when it counts.
+  // Why the tally leaves this hand out; null on a hand that is counted.
   readonly uncountedReason?: UncountedReason | null;
   // Briefly true after "Exit drill" so the board can say it dealt a fresh hand.
   readonly showFreshHandNotice?: boolean;
@@ -115,14 +116,16 @@ export function InteractiveHand({
         onChange={onCardChange}
         sortOrder={sortOrder}
       />
-      {uncountedReason !== null && !practiceDrill ? (
-        <p
-          className={classes.uncountedNote}
-          role="note"
-        >
-          {uncountedNoteText(uncountedReason)}
-        </p>
-      ) : null}
+      <div aria-live="polite">
+        {uncountedReason !== null && !practiceDrill ? (
+          <p
+            className={classes.uncountedNote}
+            role="note"
+          >
+            {uncountedNoteText(uncountedReason)}
+          </p>
+        ) : null}
+      </div>
       {practiceDrill ? renderDrillPanel(practiceDrill, sortOrder) : null}
       {showFreshHandNotice && !practiceDrill ? (
         <p

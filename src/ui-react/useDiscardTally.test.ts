@@ -35,6 +35,15 @@ const completeHandUnder = (
   harness.rerender({ dealtCards: handOf(HAND, true) });
 };
 
+const dealAwayThenRestore = (
+  tally: DiscardTally,
+  restored: string,
+  handId: string | null = null,
+) => {
+  noteOrigin(tally, OTHER_HAND, "deal");
+  noteRestore(tally, restored, handId === null ? {} : { handId });
+};
+
 describe("discard tally hook", () => {
   /*
    * One table because every case is the same question — does this decision
@@ -89,6 +98,13 @@ describe("discard tally hook", () => {
     },
     {
       counted: 0,
+      name: "cards entered inside a seeded session",
+      reason: "entered",
+      reports: 1,
+      start: () => replacedBy(OTHER_HAND, "manual", { isSeededSession: true }),
+    },
+    {
+      counted: 0,
       name: "a deal inside a seeded session",
       reason: "seeded",
       reports: 1,
@@ -124,23 +140,55 @@ describe("discard tally hook", () => {
     },
   );
 
-  it("names no reason for a restored hand it never filed", () => {
-    const { result } = startWithUnknownOrigin();
-    noteRestore(result.current, OTHER_HAND);
+  it.each([
+    {
+      name: "a restored hand whose first reason was a link",
+      reason: "restored",
+      start: () => renderTally(HAND, { wasDeepLinked: true }),
+      steps: (tally: DiscardTally) => {
+        noteRestore(tally, OTHER_HAND, { handId: "never-filed-scope" });
+      },
+    },
+    {
+      name: "a dealt hand reached by Back",
+      reason: "restored",
+      start: () => renderTally(HAND, { discarded: false }),
+      steps: (tally: DiscardTally) => {
+        dealAwayThenRestore(tally, HAND, "earlier-scope");
+      },
+    },
+    {
+      name: "the same cards re-entered, then the original occurrence restored",
+      reason: "restored",
+      start: () => renderTally(HAND),
+      steps: (tally: DiscardTally) => {
+        noteOrigin(tally, OTHER_HAND, "deal");
+        noteOrigin(tally, HAND, "manual");
+        noteOrigin(tally, OTHER_HAND, "deal");
+        noteRestore(tally, HAND, { handId: scopeFor("original") });
+      },
+    },
+    {
+      name: "a counting hand whose sort alone is restored",
+      reason: null,
+      start: () => renderTally(HAND),
+      steps: (tally: DiscardTally) => {
+        dealAwayThenRestore(tally, OTHER_HAND, scopeFor(OTHER_HAND));
+      },
+    },
+    {
+      name: "a deal after entered cards",
+      reason: null,
+      start: () => replacedBy(OTHER_HAND, "manual"),
+      steps: (tally: DiscardTally) => {
+        noteOrigin(tally, HAND, "deal");
+      },
+    },
+  ])("names $reason for $name", ({ reason, start, steps }) => {
+    const { result } = start();
+    steps(result.current);
 
-    expect(result.current.uncountedReason).toBeNull();
-  });
-
-  it("drops the reason on Deal and gives it back on Back", () => {
-    const { result } = renderTally(HAND, { wasDeepLinked: true });
-    noteOrigin(result.current, OTHER_HAND, "deal");
-    const afterDeal = result.current.uncountedReason;
-    noteRestore(result.current, HAND);
-
-    expect([afterDeal, result.current.uncountedReason]).toStrictEqual([
-      null,
-      "linked",
-    ]);
+    expect(result.current.uncountedReason).toBe(reason);
   });
 
   /*
@@ -364,8 +412,7 @@ describe("discard tally hook", () => {
    */
   it("excludes a decision reached after its hand was restored from history", () => {
     const { result } = renderTally(HAND, { discarded: false });
-    noteOrigin(result.current, OTHER_HAND, "deal");
-    noteRestore(result.current, HAND);
+    dealAwayThenRestore(result.current, HAND);
     reportScore(result.current);
 
     expect(decisionsAndSkips()).toStrictEqual([0, 1]);

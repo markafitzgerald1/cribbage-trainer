@@ -79,7 +79,7 @@ test("says a foreign link is not counted, and stops once Deal is pressed", async
   await page.goto("/?hand=AS,2S,3S,4S,5S,6S&role=dealer");
 
   await expect(notCountedNote(page)).toHaveText(
-    "Not counted: this hand came from a link, not a deal.",
+    "Not counted: this hand was opened from a link, not dealt here.",
   );
 
   await page.getByRole("button", { exact: true, name: "Deal" }).click();
