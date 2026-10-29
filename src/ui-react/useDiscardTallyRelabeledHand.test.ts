@@ -12,7 +12,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { permuteCardSuits } from "../game/suitPermutation";
 import { readTallyForDisplay } from "../ui/discardTally";
-import { recordAuthenticDecision } from "../ui/discardTally.test.common";
+import { recordStoredDecision } from "../ui/discardTally.test.common";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
 
@@ -45,7 +45,7 @@ const scoredAnalysis = (): RenderedAnalysis => ({
 });
 
 const seedAuthenticDecision = () => {
-  recordAuthenticDecision(HAND_KEY, 1.5);
+  recordStoredDecision(HAND_KEY, 1.5);
 };
 
 const practiceFlags = () => storedRecords().map((record) => record.isPractice);

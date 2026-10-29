@@ -237,6 +237,7 @@ export function Trainer({
     reportHandReplaced,
     reportHistoryNavigation,
     tallySummary,
+    uncountedReason,
   } = useAnalysisReporting({
     consented: choice.consented,
     cribRole,
@@ -250,10 +251,10 @@ export function Trainer({
     wasDeepLinked: initialCards !== null,
   });
   const applyManualHand = useCallback(
-    (state: DealState) => {
+    (state: DealState, cause: "drill" | "manual" = "manual") => {
       // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
       markHistoryUpdate();
-      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
+      reportHandReplaced(state.dealtCards, cause, state.cribRole);
       setDealState(state);
     },
     [markHistoryUpdate, reportHandReplaced],
@@ -451,6 +452,7 @@ export function Trainer({
           }
           showFreshHandNotice={freshHandNoticeShown}
           sortOrder={sortOrder}
+          uncountedReason={uncountedReason}
         />
         <EnterCardsDialog
           initialCards={dealtCards}

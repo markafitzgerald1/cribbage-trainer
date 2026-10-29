@@ -7,5 +7,6 @@ declare const classes: {
   readonly roleContext: string;
   readonly roleLabel: string;
   readonly roleName: string;
+  readonly uncountedNote: string;
 };
 export = classes;

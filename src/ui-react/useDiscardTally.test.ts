@@ -1,10 +1,12 @@
 /* jscpd:ignore-start */
-import { EMPTY, recordAuthenticDecision } from "../ui/discardTally.test.common";
+import { EMPTY, recordStoredDecision } from "../ui/discardTally.test.common";
 import {
   HAND,
   OTHER_HAND,
+  dealAwayThenRestore,
   decisionsAndSkips,
   handOf,
+  noteDrillLoad,
   noteOrigin,
   noteRestore,
   renderTally,
@@ -35,6 +37,11 @@ const completeHandUnder = (
   harness.rerender({ dealtCards: handOf(HAND, true) });
 };
 
+// What another tab writes against the undecided HAND this tab is showing.
+const byAnotherTab = (write: (handKey: string) => unknown) => () => {
+  write(toHandKey(handOf(HAND, false), CribRole.Dealer));
+};
+
 describe("discard tally hook", () => {
   /*
    * One table because every case is the same question — does this decision
@@ -46,6 +53,7 @@ describe("discard tally hook", () => {
     {
       counted: 1,
       name: "a hand dealt in an ordinary session",
+      reason: null,
       reports: 1,
       start: () => renderTally(HAND),
     },
@@ -53,24 +61,28 @@ describe("discard tally hook", () => {
     {
       counted: 1,
       name: "one hand however often its score arrives",
+      reason: null,
       reports: 4,
       start: () => renderTally(HAND),
     },
     {
       counted: 0,
       name: "the hand a seeded session starts with",
+      reason: "seeded",
       reports: 1,
       start: () => renderTally(HAND, { isSeededSession: true }),
     },
     {
       counted: 0,
       name: "the hand a deep link starts with",
+      reason: "linked",
       reports: 1,
       start: () => renderTally(HAND, { wasDeepLinked: true }),
     },
     {
       counted: 1,
       name: "a reloaded own hand",
+      reason: null,
       reports: 1,
       start: () =>
         renderTally(HAND, { isResumedOwnHand: true, wasDeepLinked: true }),
@@ -78,18 +90,55 @@ describe("discard tally hook", () => {
     {
       counted: 0,
       name: "a hand entered by hand",
+      reason: "entered",
       reports: 1,
       start: () => replacedBy(OTHER_HAND, "manual"),
     },
     {
       counted: 0,
+      name: "cards entered inside a seeded session",
+      reason: "entered",
+      reports: 1,
+      start: () => replacedBy(OTHER_HAND, "manual", { isSeededSession: true }),
+    },
+    {
+      counted: 0,
+      name: "a hand a practice drill loaded",
+      reason: "drill",
+      reports: 1,
+      start: () => {
+        const rendered = renderTally(OTHER_HAND);
+        noteDrillLoad(rendered.result.current, OTHER_HAND);
+        return rendered;
+      },
+    },
+    {
+      counted: 1,
+      name: "a link to a hand already decided here",
+      reason: "decided",
+      reports: 1,
+      start: () =>
+        renderTally(HAND, { hasDecidedBefore: true, wasDeepLinked: true }),
+    },
+    {
+      counted: 0,
+      name: "a link to a hand only ever practiced here",
+      reason: "linked",
+      reports: 1,
+      start: () =>
+        renderTally(HAND, { hasPracticedBefore: true, wasDeepLinked: true }),
+    },
+    {
+      counted: 0,
       name: "a deal inside a seeded session",
+      reason: "seeded",
       reports: 1,
       start: () => replacedBy(HAND, "deal", { isSeededSession: true }),
     },
     {
       counted: 1,
       name: "a hand dealt after a manual one",
+      reason: null,
       reports: 1,
       start: () => replacedBy(OTHER_HAND, "deal"),
     },
@@ -101,15 +150,20 @@ describe("discard tally hook", () => {
     {
       counted: 0,
       name: "a hand of unknown origin",
+      reason: null,
       reports: 1,
       start: startWithUnknownOrigin,
     },
-  ])("counts $counted decisions for $name", ({ counted, reports, start }) => {
-    const { result } = start();
-    reportScoreTimes(result.current, reports);
+  ])(
+    "counts $counted decisions for $name and says why it does not",
+    ({ counted, reason, reports, start }) => {
+      const { result } = start();
+      reportScoreTimes(result.current, reports);
 
-    expect(readDiscardTally(Date.now()).decisions).toBe(counted);
-  });
+      expect(readDiscardTally(Date.now()).decisions).toBe(counted);
+      expect(result.current.uncountedReason).toBe(reason);
+    },
+  );
 
   /*
    * What a re-entry or a restore does to the provenance of the hand being
@@ -222,19 +276,13 @@ describe("discard tally hook", () => {
     },
     {
       name: "a hand another tab already decided",
-      play: () => {
-        recordAuthenticDecision(
-          toHandKey(handOf(HAND, false), CribRole.Dealer),
-        );
-      },
+      play: byAnotherTab(recordStoredDecision),
       skipped: 0,
       start: { discarded: false },
     },
     {
       name: "a hand another tab already charged a skip",
-      play: () => {
-        claimSkip(toHandKey(handOf(HAND, false), CribRole.Dealer));
-      },
+      play: byAnotherTab(claimSkip),
       skipped: 0,
       start: { discarded: false },
     },
@@ -292,7 +340,7 @@ describe("discard tally hook", () => {
     { decisions: 0, name: "it stays hidden", state: "hidden" },
   ])("refreshes when $name", ({ decisions, state }) => {
     const { result } = renderTally(HAND);
-    recordAuthenticDecision("written-elsewhere");
+    recordStoredDecision("written-elsewhere");
     act(() => {
       Object.defineProperty(document, "visibilityState", {
         configurable: true,
@@ -332,8 +380,7 @@ describe("discard tally hook", () => {
    */
   it("excludes a decision reached after its hand was restored from history", () => {
     const { result } = renderTally(HAND, { discarded: false });
-    noteOrigin(result.current, OTHER_HAND, "deal");
-    noteRestore(result.current, HAND);
+    dealAwayThenRestore(result.current, HAND);
     reportScore(result.current);
 
     expect(decisionsAndSkips()).toStrictEqual([0, 1]);

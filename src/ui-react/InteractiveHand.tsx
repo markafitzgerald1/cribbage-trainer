@@ -12,8 +12,21 @@ import type { DealtCard } from "../game/DealtCard";
 import { Hand } from "./Hand";
 import { SortOrder } from "../ui/SortOrder";
 import { SortOrderInput } from "./SortOrderInput";
+import type { UncountedReason } from "./uncountedReason";
 
 export type InteractiveHandDrill = Omit<PracticeDrillPanelProps, "sortOrder">;
+
+const UNCOUNTED_NOTE_TEXT: Readonly<Record<UncountedReason, string>> = {
+  decided: "Not counted: you already decided this hand.",
+  drill: "Not counted: this hand is from your practice queue.",
+  entered: "Not counted: you entered these cards.",
+  linked: "Not counted: this hand was opened from its web address.",
+  restored: "Not counted: this hand was restored from history.",
+  seeded: "Not counted: hands from a seeded link are practice.",
+};
+
+const uncountedNoteText = (reason: UncountedReason): string =>
+  Reflect.get(UNCOUNTED_NOTE_TEXT, reason);
 
 const renderDrillPanel = (
   {
@@ -51,6 +64,8 @@ interface InteractiveHandProps {
   readonly onDeal: () => void;
   readonly onEnterCards: () => void;
   readonly practiceDrill?: InteractiveHandDrill | null;
+  // Why the tally leaves this hand out; null on a hand that is counted.
+  readonly uncountedReason?: UncountedReason | null;
   // Briefly true after "Exit drill" so the board can say it dealt a fresh hand.
   readonly showFreshHandNotice?: boolean;
 }
@@ -66,6 +81,7 @@ export function InteractiveHand({
   onEnterCards,
   practiceDrill,
   showFreshHandNotice,
+  uncountedReason = null,
 }: InteractiveHandProps) {
   const roleName = cribRole === CribRole.Dealer ? "Dealer" : "Pone";
   const roleContext =
@@ -102,6 +118,16 @@ export function InteractiveHand({
         onChange={onCardChange}
         sortOrder={sortOrder}
       />
+      <div aria-live="polite">
+        {uncountedReason !== null && !practiceDrill ? (
+          <p
+            className={classes.uncountedNote}
+            role="note"
+          >
+            {uncountedNoteText(uncountedReason)}
+          </p>
+        ) : null}
+      </div>
       {practiceDrill ? renderDrillPanel(practiceDrill, sortOrder) : null}
       {showFreshHandNotice && !practiceDrill ? (
         <p
@@ -119,4 +145,5 @@ InteractiveHand.defaultProps = {
   handId: null,
   practiceDrill: null,
   showFreshHandNotice: false,
+  uncountedReason: null,
 };

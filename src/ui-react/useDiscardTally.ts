@@ -15,11 +15,16 @@ import type {
   RenderedAnalysis,
 } from "./useDiscardTelemetry";
 import { type Suit, serializeHand } from "../game/Card";
-import { formatOwnHand, ownHandKey, readOwnHandId } from "../ui/ownHandKey";
+import {
+  type UncountedReason,
+  initialUncountedReason,
+  replacementReason,
+} from "./uncountedReason";
 import {
   invertSuitPermutation,
   permuteCardSuits,
 } from "../game/suitPermutation";
+import { ownHandKey, readOwnHandId, writeOwnHand } from "../ui/ownHandKey";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
@@ -68,6 +73,8 @@ interface UseDiscardTallyProps {
 interface HandIdentity {
   readonly cribRole: CribRole;
   readonly handId: string;
+  // A practice drill loads its hands through the same replacement as Enter cards, which would otherwise read as the player's own entry.
+  readonly isDrillLoad?: boolean;
 }
 
 /*
@@ -112,6 +119,7 @@ export interface DiscardTally {
   readonly reportHandOrigin: ReportHandOrigin;
   readonly reportHandRestored: ReportHandRestored;
   readonly summary: DiscardTallySummary;
+  readonly uncountedReason: UncountedReason | null;
 }
 
 /*
@@ -156,9 +164,10 @@ export const useDiscardTally = ({
   /*
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
-   * is also what makes history navigation exact: a hand returned to by Back
-   * keeps the origin it was dealt with, rather than being reclassified by
-   * whatever the app happens to be doing when it reappears.
+   * is also what makes history navigation well-defined: a hand returned to
+   * by Back is filed as practice, whether or not its answers were ever
+   * shown, rather than being reclassified by whatever the app happens to be
+   * doing when it reappears.
    */
   /*
    * The hand currently on screen, and whether its decision has been counted.
@@ -225,17 +234,10 @@ export const useDiscardTally = ({
       return;
     }
     hasRecordedInitialHand.current = true;
-    try {
-      if (!isSeededSession && !wasDeepLinked) {
-        localStorage.setItem(
-          ownHandKey,
-          formatOwnHand(crypto.randomUUID(), toHandKey(dealtCards, cribRole)),
-        );
-      } else if (!isResumedOwnHand) {
-        localStorage.removeItem(ownHandKey);
-      }
-    } catch {
-      // Storage errors are swallowed.
+    if (!isSeededSession && !wasDeepLinked) {
+      writeOwnHand(toHandKey(dealtCards, cribRole));
+    } else if (!isResumedOwnHand) {
+      writeOwnHand(null);
     }
   }, [cribRole, dealtCards, isResumedOwnHand, isSeededSession, wasDeepLinked]);
 
@@ -315,12 +317,22 @@ export const useDiscardTally = ({
     };
   }, []);
 
-  const notePractice = useCallback((handKey: string, isPractice: boolean) => {
-    practiceByHand.current.set(handKey, isPractice);
-  }, []);
+  const [uncountedReason, setUncountedReason] =
+    useState<UncountedReason | null>(() =>
+      initialUncountedReason(isSeededSession, isPracticeInitialHand, () =>
+        hasRecordedAuthenticDecision(toHandKey(dealtCards, cribRole)),
+      ),
+    );
+  const notePractice = useCallback(
+    (handKey: string, reason: UncountedReason | null) => {
+      practiceByHand.current.set(handKey, reason !== null);
+      setUncountedReason(reason);
+    },
+    [],
+  );
 
   const reportHandOrigin: ReportHandOrigin = useCallback(
-    (cards, cause, { cribRole: role, handId }) => {
+    (cards, cause, { cribRole: role, handId, isDrillLoad = false }) => {
       /*
        * The hand being replaced is abandoned unless it was scored. Only a
        * hand the player asked for counts: the one a page load deals was
@@ -352,24 +364,12 @@ export const useDiscardTally = ({
       ) {
         setSummary(recordSkippedHand(Date.now()));
       }
-      const isPractice = cause === "manual" || isSeededSession;
       const key = toHandKey(cards, role);
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
-      notePractice(key, isPractice);
+      const reason = replacementReason(cause, isSeededSession, isDrillLoad);
+      notePractice(key, reason);
       openHand.current = { handId, key };
-
-      try {
-        if (isPractice) {
-          localStorage.removeItem(ownHandKey);
-        } else {
-          localStorage.setItem(
-            ownHandKey,
-            formatOwnHand(crypto.randomUUID(), key),
-          );
-        }
-      } catch {
-        // Storage errors are swallowed.
-      }
+      writeOwnHand(reason === null ? key : null);
     },
     [isSeededSession, notePractice],
   );
@@ -377,11 +377,10 @@ export const useDiscardTally = ({
   /*
    * A hand history navigation restores is never first instinct, matching the
    * population rule telemetry already applies (see the filtering contract in
-   * skills/analytics-telemetry/SKILL.md): its ranked answers were already
-   * revealed, either by whichever visit first completed it or by the answer
-   * key a reload of its own URL shows immediately. Marking it here, rather
-   * than only checking at score time, also stops a second walk-away from
-   * charging a skip the first walk-away already recorded.
+   * skills/analytics-telemetry/SKILL.md), and a second visit may follow
+   * answers a first visit revealed. Marking it here, rather than only
+   * checking at score time, also stops a second walk-away from charging a
+   * skip the first walk-away already recorded.
    *
    * Guarded on telemetry's own scope rather than the record key: the same
    * cards under the same role can name two different occurrences — a hand
@@ -407,11 +406,11 @@ export const useDiscardTally = ({
       }
       if (handId === null || handId !== openHand.current?.handId) {
         const key = toHandKey(cards, role);
-        practiceByHand.current.set(key, true);
+        notePractice(key, "restored");
         openHand.current = { handId, key };
       }
     },
-    [],
+    [notePractice],
   );
 
   const reportAnalysisRendered = useCallback(
@@ -509,5 +508,6 @@ export const useDiscardTally = ({
     reportHandOrigin,
     reportHandRestored,
     summary,
+    uncountedReason,
   };
 };
