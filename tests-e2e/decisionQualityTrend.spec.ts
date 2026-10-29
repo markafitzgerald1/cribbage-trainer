@@ -121,7 +121,9 @@ test.describe("decision quality over time trend dialog", () => {
     await selectTrendRadio(page, "Day");
     await selectTrendRadio(page, "Week");
     await selectTrendRadio(page, "Month");
-    await expect(page.getByRole("cell", { name: "Aug 2026" })).toBeVisible();
+    await expect(
+      page.getByRole("cell", { exact: true, name: "Aug 2026" }),
+    ).toBeVisible();
 
     await selectTrendRadio(page, "Rolling 50");
     await expect(

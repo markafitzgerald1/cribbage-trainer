@@ -1,7 +1,12 @@
+import type {
+  DeadlineJudgment,
+  RecordedAdmission,
+} from "../ui/recordedAdmission";
 import {
+  type DiscardDecisionRecord,
   type DiscardTallySummary,
+  hasRecordedAuthenticDecision,
   readDiscardTally,
-  recordDiscardDecision,
   recordSkippedHand,
 } from "../ui/discardTally";
 /* jscpd:ignore-start */
@@ -11,17 +16,25 @@ import type {
 } from "./useDiscardTelemetry";
 import { type Suit, serializeHand } from "../game/Card";
 import {
+  type UncountedReason,
+  initialUncountedReason,
+  replacementReason,
+} from "./uncountedReason";
+import {
   invertSuitPermutation,
   permuteCardSuits,
 } from "../game/suitPermutation";
+import { ownHandKey, readOwnHandId, writeOwnHand } from "../ui/ownHandKey";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { SortOrder } from "../ui/SortOrder";
 import type { TableIdentity } from "../game/tableIdentity";
+import { claimSkip } from "../ui/skippedHandKeys";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { sortUrlValue } from "../ui/urlAnalysisState";
 import { toHandKey } from "../ui/handKey";
+import { useAdmissionRecording } from "./useAdmissionRecording";
 /* jscpd:ignore-end */
 
 /*
@@ -44,6 +57,7 @@ interface UseDiscardTallyProps {
   readonly dealtCards: readonly DealtCard[];
   // Telemetry's identifier for the hand on screen now; a second identity kept here would drift from the one Trainer stamps onto history entries.
   readonly handId: string;
+  readonly isResumedOwnHand?: boolean;
   readonly isSeededSession: boolean;
   // The sort order on screen right now (see `capture` below).
   readonly sortOrder: SortOrder;
@@ -59,6 +73,8 @@ interface UseDiscardTallyProps {
 interface HandIdentity {
   readonly cribRole: CribRole;
   readonly handId: string;
+  // A practice drill loads its hands through the same replacement as Enter cards, which would otherwise read as the player's own entry.
+  readonly isDrillLoad?: boolean;
 }
 
 /*
@@ -87,9 +103,13 @@ export type ReportHandRestored = (
 ) => void;
 
 export type ReportAnalysisRendered = (
-  analysis: RenderedAnalysis,
-  displayedAs: DisplayedHandRelabeling | null,
-  tableIdentity?: TableIdentity | null,
+  ...args: [
+    analysis: RenderedAnalysis,
+    displayedAs: DisplayedHandRelabeling | null,
+    tableIdentity?: TableIdentity | null,
+    admission?: RecordedAdmission | null,
+    judgeAtDeadline?: DeadlineJudgment | null,
+  ]
 ) => void;
 
 export interface DiscardTally {
@@ -99,6 +119,7 @@ export interface DiscardTally {
   readonly reportHandOrigin: ReportHandOrigin;
   readonly reportHandRestored: ReportHandRestored;
   readonly summary: DiscardTallySummary;
+  readonly uncountedReason: UncountedReason | null;
 }
 
 /*
@@ -131,6 +152,7 @@ export const useDiscardTally = ({
   cribRole,
   dealtCards,
   handId: boardHandId,
+  isResumedOwnHand = false,
   isSeededSession,
   sortOrder,
   wasDeepLinked,
@@ -138,12 +160,14 @@ export const useDiscardTally = ({
   const [summary, setSummary] = useState<DiscardTallySummary>(() =>
     readDiscardTally(Date.now()),
   );
+  const recordDecision = useAdmissionRecording(setSummary);
   /*
    * Provenance belongs to the hand, not to the moment a score arrives, and
    * the cards on screen never say where they came from. Holding it per hand
-   * is also what makes history navigation exact: a hand returned to by Back
-   * keeps the origin it was dealt with, rather than being reclassified by
-   * whatever the app happens to be doing when it reappears.
+   * is also what makes history navigation well-defined: a hand returned to
+   * by Back is filed as practice, whether or not its answers were ever
+   * shown, rather than being reclassified by whatever the app happens to be
+   * doing when it reappears.
    */
   /*
    * The hand currently on screen, and whether its decision has been counted.
@@ -151,6 +175,8 @@ export const useDiscardTally = ({
    * has to happen at the moment of replacement rather than later: once the
    * cards change there is nothing left to notice was abandoned.
    */
+  const isPracticeInitialHand =
+    isSeededSession || (wasDeepLinked && !isResumedOwnHand);
   const openHand = useRef<OpenHand | null>(
     /*
      * The hand a page load starts with is open like any other. Exempting it
@@ -158,15 +184,14 @@ export const useDiscardTally = ({
      * deliberate abandonment, and leaving it uncounted made the first hand of
      * every session free to walk away from.
      *
-     * Practice starts stay closed: a seeded or deep-linked hand is study, and
-     * study is outside these figures entirely.
+     * Practice starts stay closed: a seeded or foreign deep-linked hand is
+     * study, and study is outside these figures entirely.
      *
-     * One gap remains and cannot be closed from here: reloading the page
-     * abandons the open hand without replacing it, so nothing observes the
-     * departure. Catching that needs the open hand to outlive the session in
-     * storage, which is more machinery than a loophole this visible earns.
+     * Reloading the page restores an authentic in-progress hand as open via
+     * ownHandKey in localStorage (#877), so pressing Deal after a reload counts
+     * the skip. An already decided hand (with complete discards) stays closed.
      */
-    isSeededSession || wasDeepLinked
+    isPracticeInitialHand
       ? null
       : { handId: boardHandId, key: toHandKey(dealtCards, cribRole) },
   );
@@ -199,9 +224,22 @@ export const useDiscardTally = ({
      * would mislabel exactly the decision it was meant to describe.
      */
     new Map<string, boolean>([
-      [toHandKey(dealtCards, cribRole), isSeededSession || wasDeepLinked],
+      [toHandKey(dealtCards, cribRole), isPracticeInitialHand],
     ]),
   );
+
+  const hasRecordedInitialHand = useRef(false);
+  useEffect(() => {
+    if (hasRecordedInitialHand.current) {
+      return;
+    }
+    hasRecordedInitialHand.current = true;
+    if (!isSeededSession && !wasDeepLinked) {
+      writeOwnHand(toHandKey(dealtCards, cribRole));
+    } else if (!isResumedOwnHand) {
+      writeOwnHand(null);
+    }
+  }, [cribRole, dealtCards, isResumedOwnHand, isSeededSession, wasDeepLinked]);
 
   /*
    * The sort order on screen when the discard now on the board arrived:
@@ -256,6 +294,14 @@ export const useDiscardTally = ({
   useEffect(() => {
     if (discardIsComplete(dealtCards) && openHand.current !== null) {
       decidedHands.current.add(openHand.current.handId ?? openHand.current.key);
+      // A decided hand must not reopen after a card is withdrawn and the page reloads.
+      try {
+        if (readOwnHandId(openHand.current.key) !== null) {
+          localStorage.removeItem(ownHandKey);
+        }
+      } catch {
+        // Storage errors are swallowed.
+      }
     }
   }, [dealtCards]);
 
@@ -271,12 +317,22 @@ export const useDiscardTally = ({
     };
   }, []);
 
-  const notePractice = useCallback((handKey: string, isPractice: boolean) => {
-    practiceByHand.current.set(handKey, isPractice);
-  }, []);
+  const [uncountedReason, setUncountedReason] =
+    useState<UncountedReason | null>(() =>
+      initialUncountedReason(isSeededSession, isPracticeInitialHand, () =>
+        hasRecordedAuthenticDecision(toHandKey(dealtCards, cribRole)),
+      ),
+    );
+  const notePractice = useCallback(
+    (handKey: string, reason: UncountedReason | null) => {
+      practiceByHand.current.set(handKey, reason !== null);
+      setUncountedReason(reason);
+    },
+    [],
+  );
 
   const reportHandOrigin: ReportHandOrigin = useCallback(
-    (cards, cause, { cribRole: role, handId }) => {
+    (cards, cause, { cribRole: role, handId, isDrillLoad = false }) => {
       /*
        * The hand being replaced is abandoned unless it was scored. Only a
        * hand the player asked for counts: the one a page load deals was
@@ -300,15 +356,20 @@ export const useDiscardTally = ({
          */
         cause !== "manual" &&
         !decidedHands.current.has(abandoned.handId ?? abandoned.key) &&
-        practiceByHand.current.get(abandoned.key) === false
+        // Another tab on the same hand may already have decided it.
+        !hasRecordedAuthenticDecision(abandoned.key) &&
+        practiceByHand.current.get(abandoned.key) === false &&
+        // Another tab on the same hand may already have charged its skip.
+        claimSkip(abandoned.key)
       ) {
         setSummary(recordSkippedHand(Date.now()));
       }
-      const isPractice = cause === "manual" || isSeededSession;
       const key = toHandKey(cards, role);
       // A deal inside a seeded session is still study: the hand was chosen by the seed rather than met blind.
-      notePractice(key, isPractice);
+      const reason = replacementReason(cause, isSeededSession, isDrillLoad);
+      notePractice(key, reason);
       openHand.current = { handId, key };
+      writeOwnHand(reason === null ? key : null);
     },
     [isSeededSession, notePractice],
   );
@@ -316,11 +377,10 @@ export const useDiscardTally = ({
   /*
    * A hand history navigation restores is never first instinct, matching the
    * population rule telemetry already applies (see the filtering contract in
-   * skills/analytics-telemetry/SKILL.md): its ranked answers were already
-   * revealed, either by whichever visit first completed it or by the answer
-   * key a reload of its own URL shows immediately. Marking it here, rather
-   * than only checking at score time, also stops a second walk-away from
-   * charging a skip the first walk-away already recorded.
+   * skills/analytics-telemetry/SKILL.md), and a second visit may follow
+   * answers a first visit revealed. Marking it here, rather than only
+   * checking at score time, also stops a second walk-away from charging a
+   * skip the first walk-away already recorded.
    *
    * Guarded on telemetry's own scope rather than the record key: the same
    * cards under the same role can name two different occurrences — a hand
@@ -346,23 +406,22 @@ export const useDiscardTally = ({
       }
       if (handId === null || handId !== openHand.current?.handId) {
         const key = toHandKey(cards, role);
-        practiceByHand.current.set(key, true);
+        notePractice(key, "restored");
         openHand.current = { handId, key };
       }
     },
-    [],
+    [notePractice],
   );
 
   const reportAnalysisRendered = useCallback(
-    (
-      {
-        cribRole: scoredRole,
-        oppositeRoleExpectedPointsLoss,
-        quality,
-      }: RenderedAnalysis,
-      displayedAs: DisplayedHandRelabeling | null,
-      tableIdentity: TableIdentity | null = null,
-    ) => {
+    (...args: Parameters<ReportAnalysisRendered>) => {
+      const [
+        { cribRole: scoredRole, oppositeRoleExpectedPointsLoss, quality },
+        displayedAs,
+        tableIdentity = null,
+        admission = null,
+        judgeAtDeadline = null,
+      ] = args;
       if (quality === null) {
         return;
       }
@@ -393,8 +452,10 @@ export const useDiscardTally = ({
         `${boardHandId}|${completionKeyFor(dealtCards, scoredRole)}`
           ? capture.sortOrder
           : null;
+      const recordJudged = (decision: DiscardDecisionRecord) =>
+        recordDecision(decision, judgeAtDeadline);
       setSummary(
-        recordDiscardDecision({
+        recordJudged({
           at: Date.now(),
           cribRole: scoredRole,
           discardKey,
@@ -433,11 +494,12 @@ export const useDiscardTally = ({
           ...(typeof capturedSortOrder === "number"
             ? { sortOrder: sortUrlValue(capturedSortOrder) }
             : {}),
+          ...(admission === null ? {} : { recordedAdmission: admission }),
           tableIdentity,
         }),
       );
     },
-    [boardHandId, capture, dealtCards],
+    [boardHandId, capture, dealtCards, recordDecision],
   );
 
   return {
@@ -446,5 +508,6 @@ export const useDiscardTally = ({
     reportHandOrigin,
     reportHandRestored,
     summary,
+    uncountedReason,
   };
 };

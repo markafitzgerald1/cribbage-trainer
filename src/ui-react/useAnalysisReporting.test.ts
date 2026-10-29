@@ -145,17 +145,14 @@ const resortTwiceMoveAndScore = (
   return readTallyForDisplay().records[0]?.sortOrder;
 };
 
-// A cross-hand Back makes telemetry open a fresh scope that Trainer stamps over the restored entry.
-const restoredFromAnotherHand = () => {
-  const reporting = startReporting({
-    dealtCards: handOf(HAND, false),
-    sortOrder: SortOrder.Descending,
-  });
-  const firstHandEntry = stampedEntry(reporting);
+const replaceWithOtherHand = (
+  reporting: Reporting,
+  cause: "deal" | "drill",
+) => {
   act(() => {
     reporting.result.current.reportHandReplaced(
       handOf(OTHER_HAND, false),
-      "deal",
+      cause,
       CribRole.Dealer,
     );
     reporting.rerender({
@@ -163,6 +160,19 @@ const restoredFromAnotherHand = () => {
       sortOrder: SortOrder.Descending,
     });
   });
+};
+
+const startOnFirstHand = () =>
+  startReporting({
+    dealtCards: handOf(HAND, false),
+    sortOrder: SortOrder.Descending,
+  });
+
+// A cross-hand Back makes telemetry open a fresh scope that Trainer stamps over the restored entry.
+const restoredFromAnotherHand = () => {
+  const reporting = startOnFirstHand();
+  const firstHandEntry = stampedEntry(reporting);
+  replaceWithOtherHand(reporting, "deal");
   navigateHistory(reporting, firstHandEntry, {
     dealtCards: handOf(HAND, true),
     sortOrder: SortOrder.Descending,
@@ -203,4 +213,13 @@ describe("the hand identity telemetry and the tally share", () => {
       expect(resortTwiceMoveAndScore(start(), move)).toBe(wanted);
     },
   );
+});
+
+describe("the note for a hand a practice drill loaded", () => {
+  it("says the hand is from the practice queue", () => {
+    const reporting = startOnFirstHand();
+    replaceWithOtherHand(reporting, "drill");
+
+    expect(reporting.result.current.uncountedReason).toBe("drill");
+  });
 });

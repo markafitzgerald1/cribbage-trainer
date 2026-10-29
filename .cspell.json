@@ -21,6 +21,7 @@
     "COUNTIF",
     "ENOENT",
     "ENOSPC",
+    "EOVERRIDE",
     "ERESOLVE",
     "IFNULL",
     "Idents",

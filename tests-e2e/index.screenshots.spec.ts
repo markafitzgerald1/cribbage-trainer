@@ -163,7 +163,7 @@ const nearSquareLandscapeViewportSize = {
 };
 
 const testDiscardTallyScreenshot = () =>
-  test("discard tally still visually the same", async ({ page }) => {
+  test("recorded discard tally", async ({ page }) => {
     await page.addInitScript(
       /*
        * The key is built in the browser, because it carries the deployment's
@@ -211,7 +211,9 @@ const testDiscardTallyScreenshot = () =>
      * row and failed on a difference that says nothing about this feature.
      * Where it sits is asserted in discardTally.spec.ts instead.
      */
-    const tally = page.getByText("Lost per discard").locator("..");
+    const tally = page
+      .getByText("Avg recorded loss", { exact: true })
+      .locator("..");
     await expect(tally).toHaveScreenshot();
   });
 
@@ -232,7 +234,7 @@ const testScreenshots = () => {
     await openSeededTrainer(page);
     const card = await openRetryMistakeQueue(page);
     await expect(
-      card.getByRole("note", { name: /^Previous discard driven by/u }),
+      card.getByRole("note", { name: /^Current-table comparison:/u }),
     ).toBeVisible();
     await expect(card).toHaveScreenshot();
   });
@@ -242,7 +244,7 @@ const testScreenshots = () => {
     await openSeededTrainer(page);
     const card = await openRetryMistakeQueue(page, DIFFERENT_TABLE_IDENTITY);
     await expect(
-      card.getByRole("note", { name: /^Previous discard driven by/u }),
+      card.getByRole("note", { name: /^Current-table comparison:/u }),
     ).toBeVisible();
     await card
       .getByText("Judged with different tables", { exact: true })

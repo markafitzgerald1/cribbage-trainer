@@ -123,11 +123,14 @@ describe("mistake queue dialog", () => {
         "Mistake queue",
       );
 
-      expect(rendered.getByText("Total mistakes")).toBeInTheDocument();
-
-      expect(rendered.getByText("Needs practice")).toBeInTheDocument();
-
       expect(rendered.getAllByText("Mastered")).toHaveLength(2);
+      expect(
+        ["Total mistakes", "Needs practice", "Mastered"].map((label) =>
+          rendered
+            .getAllByText(label)[0]!
+            .nextElementSibling!.getAttribute("role"),
+        ),
+      ).toStrictEqual([null, null, null]);
     });
 
     it("renders default radio filter selections", () => {
@@ -434,7 +437,7 @@ describe("mistake queue dialog", () => {
     it("renders dominant component badges for mistake cards", async () => {
       clearClassificationCache();
       const { findAllByTitle } = renderQueueDialog();
-      const badges = await findAllByTitle(/driven by/u, {}, { timeout: 5000 });
+      const badges = await findAllByTitle(/comparison/u, {}, { timeout: 5000 });
 
       expect(badges.length).toBeGreaterThan(0);
     });
@@ -447,7 +450,7 @@ describe("mistake queue dialog", () => {
         const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
 
         const badges = await rendered.findAllByTitle(
-          /driven by/u,
+          /comparison/u,
           {},
           { timeout: 5000 },
         );
@@ -461,7 +464,7 @@ describe("mistake queue dialog", () => {
       const badge = await runAsyncTableLoad();
 
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent("Prev: Play gain < Hand, Crib loss");
+      expect(badge).toHaveTextContent(/Play gain < Hand, Crib loss/u);
     });
 
     const runTableLoadFailure = async () => {

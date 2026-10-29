@@ -162,12 +162,12 @@ describe("mistakeQueueItemCard", () => {
       lossReason: "Crib",
     });
 
-    expect(getByText("Prev: Crib")).toBeInTheDocument();
+    expect(getByText("Current-table comparison: Crib")).toBeInTheDocument();
     expect(
-      getByRole("note", { name: "Previous discard driven by Crib" }),
+      getByRole("note", { name: "Current-table comparison: Crib" }),
     ).toBeInTheDocument();
     expect(
-      getByTitle("Previous discard (1.00 pts lost) driven by Crib"),
+      getByTitle("Current-table comparison (1.00 pts lost): Crib"),
     ).toBeInTheDocument();
   });
 
@@ -177,15 +177,17 @@ describe("mistakeQueueItemCard", () => {
       onPractice: null,
     });
 
-    expect(getByText("Prev: Crib gain < Hand loss")).toBeInTheDocument();
+    expect(
+      getByText("Current-table comparison: Crib gain < Hand loss"),
+    ).toBeInTheDocument();
     expect(
       getByRole("note", {
-        name: "Previous discard driven by 1.30 Crib gain does not cover 1.40 Hand loss",
+        name: "Current-table comparison: 1.30 Crib gain does not cover 1.40 Hand loss",
       }),
     ).toBeInTheDocument();
     expect(
       getByTitle(
-        "Previous discard (0.10 pts lost) driven by 1.30 Crib gain does not cover 1.40 Hand loss",
+        "Current-table comparison (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
       ),
     ).toBeInTheDocument();
   });
@@ -249,7 +251,9 @@ describe("mistakeQueueItemCard", () => {
       expect(badge).toHaveTextContent(expectedLabel);
       expect(badge).toHaveAttribute("title", expectedName);
       expect(getByText(expectedOppositeCost).className).toBe(expectedMarkClass);
-      expect(getByText("Prev: Crib gain < Hand loss")).toBeInTheDocument();
+      expect(
+        getByText("Current-table comparison: Crib gain < Hand loss"),
+      ).toBeInTheDocument();
     },
   );
 
@@ -345,7 +349,7 @@ describe("mistakeQueueItemCard", () => {
         role,
         quantile,
         "Recorded cost: 1.00 points",
-        "Prev: Crib gain < Hand loss",
+        "Current-table comparison: Crib gain < Hand loss",
         roleCosts,
       ]);
     },

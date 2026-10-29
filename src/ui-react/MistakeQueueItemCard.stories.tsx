@@ -68,7 +68,10 @@ export const WithLossReason: Story = {
     lossReason: "Crib",
   },
   play: async ({ canvasElement }) => {
-    await expectStoryTextVisible(canvasElement, "Prev: Crib");
+    await expectStoryTextVisible(
+      canvasElement,
+      "Current-table comparison: Crib",
+    );
   },
 };
 
@@ -86,7 +89,9 @@ export const WithRoleLossPair: Story = {
 
     await expect(pair).toBeVisible();
     await expect(pair).toHaveTextContent("1.00 dealer, 0.00 pone");
-    await expect(canvas.getByText("Prev: Crib gain < Hand loss")).toBeVisible();
+    await expect(
+      canvas.getByText("Current-table comparison: Crib gain < Hand loss"),
+    ).toBeVisible();
     await expect(
       Array.from(
         pair.parentElement?.children ?? [],
@@ -96,7 +101,7 @@ export const WithRoleLossPair: Story = {
       "Dealer",
       "medium",
       "Recorded cost: 1.00 points",
-      "Prev: Crib gain < Hand loss",
+      "Current-table comparison: Crib gain < Hand loss",
       "1.00 dealer, 0.00 pone",
     ]);
   },
@@ -108,14 +113,16 @@ export const WithClassification: Story = {
   },
   play: async ({ canvasElement }) => {
     const badge = within(canvasElement).getByRole("note", {
-      name: "Previous discard driven by 1.30 Crib gain does not cover 1.40 Hand loss",
+      name: "Current-table comparison: 1.30 Crib gain does not cover 1.40 Hand loss",
     });
 
     await expect(badge).toBeVisible();
-    await expect(badge).toHaveTextContent("Prev: Crib gain < Hand loss");
+    await expect(badge).toHaveTextContent(
+      "Current-table comparison: Crib gain < Hand loss",
+    );
     await expect(badge).toHaveAttribute(
       "title",
-      "Previous discard (0.10 pts lost) driven by 1.30 Crib gain does not cover 1.40 Hand loss",
+      "Current-table comparison (0.10 pts lost): 1.30 Crib gain does not cover 1.40 Hand loss",
     );
   },
 };

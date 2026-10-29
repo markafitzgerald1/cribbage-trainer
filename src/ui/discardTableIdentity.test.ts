@@ -41,13 +41,27 @@ describe("decision table provenance", () => {
   });
 
   it("preserves reserved attempt/admission data and their registry references on ordinary writes", () => {
-    const attemptLog = [{ handKey: "reserved", tableIdentity: "1" }];
+    const entry = {
+      at: 1,
+      basis: "exact-v1",
+      discardKey: "AH,2H",
+      expectedPointsLoss: 0,
+      handKey: "AH,2H,3H,4H,5H,6H|Dealer",
+      isOptimal: true,
+      order: 1,
+      outcome: "success",
+      tableIdentity: identity,
+    };
+    const attemptLog = [{ ...entry, tableIdentity: "1" }];
     storeRaw(
       JSON.stringify(
         storedWith({
           attemptLog,
           records: [
-            { ...decisionOf(), recordedAdmission: { verdict: "reserved" } },
+            {
+              ...decisionOf(),
+              recordedAdmission: { basis: "exact-fallback-v1", eligible: true },
+            },
           ],
           tableIdentities: [null, identity],
           version: 8,
@@ -60,10 +74,11 @@ describe("decision table provenance", () => {
     });
     const decoded = readTallyForDisplay();
 
-    expect(decoded.attemptLog).toStrictEqual(attemptLog);
+    expect(decoded.attemptLog).toStrictEqual([entry]);
     expect(decoded.tableIdentities).toStrictEqual([null, identity]);
     expect(decoded.records[0]?.recordedAdmission).toStrictEqual({
-      verdict: "reserved",
+      basis: "exact-fallback-v1",
+      eligible: true,
     });
     expect(decoded.records[1]?.tableIdentity).toStrictEqual(identity);
   });

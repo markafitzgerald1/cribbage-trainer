@@ -10,8 +10,8 @@ import {
   formatAccessibleNetLoss,
   formatNetLoss,
 } from "../analysis/classifyMistake";
-import { sameTableIdentity, shippedTableIdentity } from "../game/tableIdentity";
 import { CribRole } from "../game/expectedCribPoints";
+import { RecordedTableProvenance } from "./RecordedTableProvenance";
 import { SortOrder } from "../ui/SortOrder";
 import { SortedCardLabels } from "./SortedCardLabels";
 import { renderRoleLossPairText } from "./RoleLossPairText";
@@ -20,7 +20,6 @@ import { useMemo } from "react";
 
 const PERCENT_MULTIPLIER = 100;
 const DECIMAL_DIGITS = 2;
-const FINGERPRINT_PREVIEW_LENGTH = 12;
 
 export interface MistakeQueueItemCardProps {
   readonly classification?: MistakeClassification | null;
@@ -113,38 +112,6 @@ const renderStatusBadge = (item: MistakeQueueItem): React.JSX.Element =>
     </span>
   );
 
-const renderTableFingerprint = (
-  role: "Crib" | "Play",
-  digest: string,
-): React.JSX.Element => {
-  const preview = digest.slice(0, FINGERPRINT_PREVIEW_LENGTH);
-  return (
-    <div
-      aria-label={`${role} table fingerprint ${preview}`}
-      role="note"
-      title={digest}
-    >
-      {role}: {preview}…
-    </div>
-  );
-};
-
-const renderOriginalTables = (item: MistakeQueueItem): React.JSX.Element => {
-  const identity = item.tableIdentity;
-  if (!identity) return <span>Original tables unknown</span>;
-  const label = sameTableIdentity(identity, shippedTableIdentity)
-    ? "Judged with current tables"
-    : "Judged with different tables";
-  return (
-    <details className={classes.tableProvenance}>
-      <summary>{label}</summary>
-      <div>Table fingerprints (for bug reports)</div>
-      {renderTableFingerprint("Crib", identity.crib.means_sha256)}
-      {renderTableFingerprint("Play", identity.play.means_sha256)}
-    </details>
-  );
-};
-
 // The sort key is this average, which mixes the recorded cost with every wrong retry.
 const renderAverageLoss = (item: MistakeQueueItem): React.JSX.Element | null =>
   item.wrong > 1 ? (
@@ -201,12 +168,12 @@ export function MistakeQueueItemCard({
           </span>
           {effectiveReason === null ? null : (
             <span
-              aria-label={`Previous discard driven by ${effectiveReason}`}
+              aria-label={`Current-table comparison: ${effectiveReason}`}
               className={classes.componentBadge}
               role="note"
-              title={`Previous discard (${formatAccessibleNetLoss(effectiveLoss)} pts lost) driven by ${effectiveReason}`}
+              title={`Current-table comparison (${formatAccessibleNetLoss(effectiveLoss)} pts lost): ${effectiveReason}`}
             >
-              Prev: {effectiveShortReason}
+              Current-table comparison: {effectiveShortReason}
             </span>
           )}
           {renderRoleLossPairBadge(item)}
@@ -214,7 +181,7 @@ export function MistakeQueueItemCard({
         <div>{renderStatusBadge(item)}</div>
       </div>
 
-      {renderOriginalTables(item)}
+      <RecordedTableProvenance identity={item.tableIdentity ?? null} />
       {renderCardsList(item.cards, sortOrder)}
 
       <div className={classes.itemFooter}>
@@ -223,7 +190,10 @@ export function MistakeQueueItemCard({
           {renderAverageLoss(item)}
           <span>Attempts: {item.attempts}</span>
           <span>Error rate: {errorRatePercent}%</span>
-          <span>Priority: {item.priority.toFixed(DECIMAL_DIGITS)}</span>
+          <span>
+            Priority from recorded attempts:{" "}
+            {item.priority.toFixed(DECIMAL_DIGITS)}
+          </span>
         </div>
         {handlePractice === null ? null : (
           <button

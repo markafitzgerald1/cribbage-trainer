@@ -19,6 +19,16 @@ thumb. Both humans and AI agents need to understand and respect this constraint.
 Expected values must always be derived from simulation, enumeration, or
 probability, rather than hard-coded heuristics or subjective weighting.
 
+Practice retains the latest 1,000 committed retries globally. Aggregate counters
+and streaks, rather than the surviving attempt log, remain the mastery authority.
+The Chromium storage stress fixture with 10,000 decisions, 10,000 aggregates and
+1,000 attempts stores and reloads exactly at 5,147,904 bytes, leaving 94,955 ASCII
+characters of headroom; 2,000 attempts exceed quota. Full decision/aggregate caps
+already need about 5 MB before any attempts in that fixture. Larger legal tallies
+or other origin data can still exhaust storage; failed writes retain session
+progress but cannot guarantee durability across reload. Decision/aggregate codec
+compaction is a separate follow-up, with both 10,000-row caps kept here.
+
 ## Continuous deployment
 
 Code in `main` is automatically built on `git push` and deployed to the [GitHub

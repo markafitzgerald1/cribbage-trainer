@@ -1,8 +1,10 @@
 import {
   type ByRoleMatcher,
   type ByRoleOptions,
+  type RenderResult,
   render,
   screen,
+  waitFor,
 } from "@testing-library/react";
 import { Trainer, type TrainerProps } from "./Trainer";
 import {
@@ -52,7 +54,7 @@ export const setAnalysisTables = () => {
 export const renderTrainerWithGenerator = (
   generateRandomNumber: () => number,
   trackEvent: TrainerProps["trackEvent"] = jest.fn(),
-) => {
+): RenderResult => {
   setAnalysisTables();
 
   return render(
@@ -64,7 +66,8 @@ export const renderTrainerWithGenerator = (
   );
 };
 
-export const renderTrainer = () => renderTrainerWithGenerator(mathRandom);
+export const renderTrainer = (): RenderResult =>
+  renderTrainerWithGenerator(mathRandom);
 
 type InitialTrainerProps = Partial<
   Pick<
@@ -73,6 +76,7 @@ type InitialTrainerProps = Partial<
     | "initialCards"
     | "initialCribRole"
     | "initialDiscards"
+    | "initialOwnHandId"
     | "initialScoreSortKey"
     | "initialSortOrder"
     | "isSeededSession"
@@ -85,17 +89,19 @@ export const renderTrainerWithInitialProps = ({
   initialCards = null,
   initialCribRole = null,
   initialDiscards,
+  initialOwnHandId = null,
   initialScoreSortKey = null,
   initialSortOrder = null,
   isSeededSession = false,
   trackEvent = jest.fn(),
-}: InitialTrainerProps) =>
+}: InitialTrainerProps): RenderResult =>
   render(
     <Trainer
       generateRandomNumber={generateRandomNumber}
       initialCards={initialCards}
       initialCribRole={initialCribRole}
       initialDiscards={initialDiscards ?? null}
+      initialOwnHandId={initialOwnHandId}
       initialScoreSortKey={initialScoreSortKey}
       initialSortOrder={initialSortOrder}
       isSeededSession={isSeededSession}
@@ -116,7 +122,7 @@ export const createRoleRandomValues = (roleValues: readonly number[]) =>
     roleValue,
   ]);
 
-export const renderTrainerShowingDealerRole = () =>
+export const renderTrainerShowingDealerRole = (): RenderResult =>
   renderTrainerWithGenerator(
     createSequenceGenerator(createRoleRandomValues([DEALER_RANDOM_VALUE])),
   );
@@ -177,3 +183,26 @@ export const lastEventParams = (
   trackEvent: TelemetryCapture,
   eventName: TrainerEventName,
 ) => eventCalls(trackEvent, eventName).at(-1)?.[2];
+
+export const completeDiscardsAndWait = async (
+  getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],
+  user: UserEvent,
+) => {
+  const checkboxes = getAllByRole("checkbox");
+  await user.click(checkboxes[0]!);
+  await user.click(checkboxes[1]!);
+  await waitFor(() => {
+    expect(screen.getByRole("status").textContent).not.toBe("");
+  });
+};
+
+const throwingStorageSpy =
+  (method: "getItem" | "removeItem") => (keyToThrow: string) =>
+    jest.spyOn(Storage.prototype, method).mockImplementation((key) => {
+      if (key === keyToThrow) throw new Error("Access denied");
+      return null;
+    });
+
+export const mockThrowingStorage = throwingStorageSpy("getItem");
+
+export const mockThrowingRemoval = throwingStorageSpy("removeItem");

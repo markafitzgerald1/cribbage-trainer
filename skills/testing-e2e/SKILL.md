@@ -250,9 +250,25 @@ baselines so CI agrees with what was generated locally.
   that the content renders, so the later absence has one explanation left.
   Sabotage until **every** project fails: a single-project failure among
   passes is the signature of a race, not of a guard.
+- **"Best choice" is no longer a decision counter.** Since #774 a decision
+  recorded as within simulation noise leaves both sides of that ratio while
+  its record is retained, and a random deal's discard can be one, so a spec
+  that reads the ratio to count decisions flakes at the rate such deals
+  occur. `discardTally.spec.ts`
+  refuses the sidecar chunks with `blockUncertaintySidecars`, so no
+  admission settles as `sampling-noise-v1`: an optimal discard settles as
+  `exact-v1` and any other as `exact-fallback-v1`. A spec that wants the noise
+  verdict seeds a `recordedAdmission` instead: the tally reads what was
+  recorded and never re-judges a stored hand, so a seeded hand's verdict
+  under today's tables says nothing about how it is counted.
 - `expectChipsFullyVisible` in `mistakeQueueLayout.spec.ts` is the shape to copy
   for chip rows: it asserts each chip is whole inside its group and the group
   inside the viewport, and says nothing about how many rows that takes. An
   earlier version asserted a single row, which a `nowrap` + `overflow-x: auto`
   strip satisfied while cropping a label — the row assertion was what the
   cropping mechanism existed to satisfy.
+
+- Normalize ancestor scroll positions before paired layout measurements.
+  Trial clicks can scroll the outer layout even when the measured panel has
+  `scrollTop === 0`, changing how many analysis rows fit in the viewport
+  without changing the table's scroll-area height.

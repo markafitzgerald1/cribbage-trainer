@@ -18,6 +18,7 @@ export const diagnosticCaption: string;
 export const optimalBadge: string;
 export const subOptimalBadge: string;
 export const noiseBadge: string;
+export const noiseExplanation: string;
 export const diagnosticReason: string;
 export const diagnosticSide: string;
 export const inDrill: string;

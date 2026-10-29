@@ -673,6 +673,20 @@ once you are already editing layout or interaction code.
   and the reason sits below it at a desktop and a phone-portrait width. The
   `practiceDrill.spec.ts` caption-height budget (65px) held unchanged.
 
+- **History stays as recorded across a table change.** Tally, trend and
+  chart figures use recorded results; show the visible average as
+  "Avg recorded loss" (accessible names say "Recorded loss … per discard")
+  and costs as "Recorded cost", and keep current-table comparisons separate
+  and explicitly labeled. Announce positive sub-cent values with the
+  accessible formatter, not the visible one. Unavailable is unknown, never
+  zero, and today's component costs cannot explain an earlier recorded total.
+  Never recompute admission or denominators with current tables: a current
+  verdict cannot remove a grandfathered item or add an old best choice.
+  Historical figures can span models, so they are not a controlled measure
+  of improvement. Keep the collapsed tally explanation in its existing header
+  row: an extra row takes height from the analysis and breaks the per-browser
+  practice table budgets.
+
 - A recorded table identity must travel beside the analysis produced by that
   loaded means pair. Reading a global digest later can stamp the wrong pair;
   injected means must explicitly supply their identity or remain unknown.
@@ -680,3 +694,14 @@ once you are already editing layout or interaction code.
   indices when writing decisions: reserved attempt data can already refer
   to an entry that no retained decision uses. Rebuilding the registry from
   decisions alone corrupts those references.
+- A pending admission's deadline belongs to its recorded choice, not to the
+  analysis component's lifetime. Finalizing exact fallback in effect cleanup
+  can preempt a valid noise settlement: StrictMode replays that cleanup even
+  without navigation. Keep the bounded timer alive across navigation and
+  unmount, carrying the original choice and loaded pair; a stale report for
+  another choice must neither settle that record nor cancel its timer.
+- Check a capped drill panel's actions against its own clipping box, as well
+  as the viewport. A button can have an on-screen rectangle and still sit
+  below the panel's visible edge. Check the adjacent analysis rows before
+  scrolling to provenance text: `scrollIntoViewIfNeeded` can also scroll the
+  outer layout and make an uncapped panel pass a rows-in-viewport assertion.

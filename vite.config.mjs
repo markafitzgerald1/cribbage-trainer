@@ -61,17 +61,15 @@ export default {
        * red on noise. The margin absorbs that variance while staying well
        * above what a real regression would cost.
        *
-       * Set for #880 from the lowest of observed Docker runs (local runs
-       * 91.56 / 81.80 / 93.32 / 91.40 and 91.56 / 81.74 / 93.32 / 91.40, and
-       * CI Docker run 91.49 / 81.74 / 93.21 / 91.33). Pinned with a quarter-point
-       * margin under the lowest totals (statements 91.24 -> 91.2, branches
-       * 81.49 -> 81.4, functions 92.96 -> 92.9, lines 91.08 -> 91.0).
+       * Recorded-history integration: Docker measured 91.78% statements,
+       * 83.23% branches, 93.07% functions and 91.64% lines. A quarter-point
+       * margin absorbs the measured run-to-run variation.
        */
       thresholds: {
-        branches: 81.4,
-        functions: 92.9,
-        lines: 91.0,
-        statements: 91.2,
+        branches: 82.98,
+        functions: 92.82,
+        lines: 91.39,
+        statements: 91.53,
       },
     },
     projects: [
