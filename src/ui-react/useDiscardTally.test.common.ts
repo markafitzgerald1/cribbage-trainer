@@ -13,7 +13,7 @@ import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import { SortOrder } from "../ui/SortOrder";
 import { parseHand } from "../game/Card";
-import { recordAuthenticDecision } from "../ui/discardTally.test.common";
+import { recordStoredDecision } from "../ui/discardTally.test.common";
 import { toDealtCards } from "../game/toDealtCards";
 import { toHandKey } from "../ui/handKey";
 
@@ -194,7 +194,7 @@ export const renderTally = (
 ) => {
   clearDiscardTally();
   if (hasDecidedBefore || hasPracticedBefore) {
-    recordAuthenticDecision(
+    recordStoredDecision(
       toHandKey(handOf(hand), CribRole.Dealer),
       1,
       hasPracticedBefore,

@@ -1,10 +1,10 @@
 import type { HandReplacementCause } from "./useDiscardTelemetry";
 
-// Which observed cause the tally filed the hand on screen under. The note is set wherever the tally's practice flag is set; this chooses its wording.
+// Which observed cause the tally filed the hand on screen under. The note is set with the tally's practice flag; this chooses its wording for a page load or a replaced hand.
 export type UncountedReason =
   "decided" | "drill" | "entered" | "linked" | "restored" | "seeded";
 
-// The page was opened on this hand: a link and a reload look the same, so the wording is only what is true of both; "decided" is keyed on cards and role among this device's stored decisions.
+// When the page was opened on a hand that is not the player's own undecided one, a link and a reload look the same, so the wording is only what is true of both; "decided" is keyed on cards and role among this device's stored decisions.
 export const initialUncountedReason = (
   isSeededSession: boolean,
   isPracticeInitialHand: boolean,

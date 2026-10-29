@@ -19,7 +19,7 @@ export const readOwnHandId = (handKey: string): string | null => {
   }
 };
 
-// Marks the hand now on screen as the player's own, or clears the marker when the app did not deal it.
+// Marks the hand now on screen as the player's own, or clears the marker when it is not: entered, linked, drilled or seeded.
 export const writeOwnHand = (ownHandKeyOrNull: string | null): void => {
   try {
     if (ownHandKeyOrNull === null) {

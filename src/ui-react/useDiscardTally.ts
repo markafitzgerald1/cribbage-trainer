@@ -377,11 +377,10 @@ export const useDiscardTally = ({
   /*
    * A hand history navigation restores is never first instinct, matching the
    * population rule telemetry already applies (see the filtering contract in
-   * skills/analytics-telemetry/SKILL.md): its ranked answers were already
-   * revealed, either by whichever visit first completed it or by the answer
-   * key a reload of its own URL shows immediately. Marking it here, rather
-   * than only checking at score time, also stops a second walk-away from
-   * charging a skip the first walk-away already recorded.
+   * skills/analytics-telemetry/SKILL.md), and a second visit may follow
+   * answers a first visit revealed. Marking it here, rather than only
+   * checking at score time, also stops a second walk-away from charging a
+   * skip the first walk-away already recorded.
    *
    * Guarded on telemetry's own scope rather than the record key: the same
    * cards under the same role can name two different occurrences — a hand
@@ -407,12 +406,11 @@ export const useDiscardTally = ({
       }
       if (handId === null || handId !== openHand.current?.handId) {
         const key = toHandKey(cards, role);
-        practiceByHand.current.set(key, true);
+        notePractice(key, "restored");
         openHand.current = { handId, key };
-        setUncountedReason("restored");
       }
     },
-    [],
+    [notePractice],
   );
 
   const reportAnalysisRendered = useCallback(

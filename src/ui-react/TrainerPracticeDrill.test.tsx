@@ -199,18 +199,12 @@ describe("trainer practice drill", () => {
   });
 
   it("ends a choosing-phase drill when Back restores the same hand", async () => {
-    const { view } = await openDrillFromQueue();
+    await openDrillFromQueue();
 
-    // Back onto the completed state that preceded the drill: same six cards and role, its original discard restored.
-    window.history.replaceState(
-      null,
-      "",
-      `?hand=${MISTAKE_HAND}&role=dealer&discard=5H,6H`,
-    );
+    // Back onto the drill board's own entry: the same displayed cards and role, so only the history move can end the drill.
     fireEvent.popState(window);
 
     expect(screen.queryByLabelText("Practice drill")).toBeNull();
-    await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
   });
 
   it("names the practice queue as why the drilled hand is not counted, and keeps telemetry on manual", async () => {
@@ -222,11 +216,7 @@ describe("trainer practice drill", () => {
 
     expect(screen.queryByText(/Not counted/u)).toBeNull();
 
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `?hand=${MISTAKE_HAND}&role=dealer&discard=5H,6H`,
-    );
+    // The drill's own board and history entry, so only exiting the drill can end it.
     fireEvent.popState(window);
 
     expect(screen.getByText(/Not counted/u).textContent).toBe(

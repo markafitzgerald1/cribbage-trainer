@@ -12,7 +12,7 @@ import { jest } from "@jest/globals";
 
 export const AT = 1_700_000_000_000;
 
-export const recordAuthenticDecision = (
+export const recordStoredDecision = (
   handKey: string,
   expectedPointsLoss = 1,
   isPractice = false,

@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { EMPTY, recordAuthenticDecision } from "../ui/discardTally.test.common";
+import { EMPTY, recordStoredDecision } from "../ui/discardTally.test.common";
 import {
   HAND,
   OTHER_HAND,
@@ -35,6 +35,11 @@ const completeHandUnder = (
 ) => {
   act(perform);
   harness.rerender({ dealtCards: handOf(HAND, true) });
+};
+
+// What another tab writes against the undecided HAND this tab is showing.
+const byAnotherTab = (write: (handKey: string) => unknown) => () => {
+  write(toHandKey(handOf(HAND, false), CribRole.Dealer));
 };
 
 describe("discard tally hook", () => {
@@ -271,19 +276,13 @@ describe("discard tally hook", () => {
     },
     {
       name: "a hand another tab already decided",
-      play: () => {
-        recordAuthenticDecision(
-          toHandKey(handOf(HAND, false), CribRole.Dealer),
-        );
-      },
+      play: byAnotherTab(recordStoredDecision),
       skipped: 0,
       start: { discarded: false },
     },
     {
       name: "a hand another tab already charged a skip",
-      play: () => {
-        claimSkip(toHandKey(handOf(HAND, false), CribRole.Dealer));
-      },
+      play: byAnotherTab(claimSkip),
       skipped: 0,
       start: { discarded: false },
     },
@@ -341,7 +340,7 @@ describe("discard tally hook", () => {
     { decisions: 0, name: "it stays hidden", state: "hidden" },
   ])("refreshes when $name", ({ decisions, state }) => {
     const { result } = renderTally(HAND);
-    recordAuthenticDecision("written-elsewhere");
+    recordStoredDecision("written-elsewhere");
     act(() => {
       Object.defineProperty(document, "visibilityState", {
         configurable: true,

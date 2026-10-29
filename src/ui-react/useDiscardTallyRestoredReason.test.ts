@@ -14,7 +14,7 @@ import type { DiscardTally } from "./useDiscardTally";
 describe("uncounted reason across history", () => {
   it.each([
     {
-      name: "a restored hand whose first reason was a link",
+      name: "another hand restored after a page opened by link",
       reason: "restored",
       start: () => renderTally(HAND, { wasDeepLinked: true }),
       steps: (tally: DiscardTally) => {
