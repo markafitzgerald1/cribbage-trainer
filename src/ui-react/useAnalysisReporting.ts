@@ -13,6 +13,7 @@ import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import type { SortOrder } from "../ui/SortOrder";
+import type { UncountedReason } from "./uncountedReason";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*
@@ -37,7 +38,7 @@ export interface AnalysisReportingProps extends DiscardTelemetryProps {
  */
 export type ReportHandReplaced = (
   cards: readonly DealtCard[],
-  cause: HandReplacementCause,
+  cause: HandReplacementCause | "drill",
   cribRole: CribRole,
 ) => void;
 
@@ -76,6 +77,7 @@ export interface AnalysisReporting extends Omit<
   readonly reportHandReplaced: ReportHandReplaced;
   readonly reportHistoryNavigation: ReportHistoryNavigation;
   readonly tallySummary: DiscardTallySummary;
+  readonly uncountedReason: UncountedReason | null;
 }
 
 /*
@@ -119,6 +121,7 @@ export const useAnalysisReporting = (
     reportHandOrigin,
     reportHandRestored,
     summary: tallySummary,
+    uncountedReason,
   } = tally;
 
   const reportAnalysisRendered: ReportAnalysisRendered = useCallback(
@@ -134,10 +137,13 @@ export const useAnalysisReporting = (
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {
       resetResumedOwnHand?.(false);
-      reportHandToTelemetry(cards, cause);
-      reportHandOrigin(cards, cause, {
+      // Telemetry's hand sources stay deal and manual: a drill load is a manual replacement there, and only the tally's note tells the two apart.
+      const telemetryCause = cause === "drill" ? "manual" : cause;
+      reportHandToTelemetry(cards, telemetryCause);
+      reportHandOrigin(cards, telemetryCause, {
         cribRole: role,
         handId: currentHandScope().handId,
+        isDrillLoad: cause === "drill",
       });
     },
     [
@@ -168,5 +174,6 @@ export const useAnalysisReporting = (
     reportHandReplaced,
     reportHistoryNavigation,
     tallySummary,
+    uncountedReason,
   };
 };
