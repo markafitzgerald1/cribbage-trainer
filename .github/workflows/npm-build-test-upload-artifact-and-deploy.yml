@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  docker-gate:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,35 +75,156 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      # No load: e2e runs in the shard jobs below, so nothing here needs the
+      # image in the daemon, and exporting it cost ~95 s per run. The gha
+      # cache export is what later runs reuse, and it stays.
       - name: Build Docker Test Image (unit tests, lint, Storybook tests)
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
           push: false
-          load: true
           tags: cribbage-trainer-integration-tests:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run E2E Tests in Docker
-        run: npm run docker:run-e2e-only
+  e2e-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: github.event_name == 'pull_request'
+    outputs:
+      image: ${{ steps.from.outputs.image }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Screenshot baselines are rendered in the Dockerfile's base image, so
+      # the shards must run in exactly that image. Dependabot's
+      # playwright-sync group bumps the Dockerfile but not this workflow, so
+      # the tag is read from the Dockerfile rather than repeated here.
+      - id: from
+        name: Read the Playwright base image from the Dockerfile
+        run: |
+          IMAGE=$(awk '$1 == "FROM" { print $2; exit }' Dockerfile)
+          case "$IMAGE" in
+            mcr.microsoft.com/playwright:*) ;;
+            *)
+              echo "Unexpected base image: '$IMAGE'" >&2
+              exit 1
+              ;;
+          esac
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: e2e-image
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    container:
+      image: ${{ needs.e2e-image.outputs.image }}
+      # Playwright's CI guidance: Firefox refuses to run as root under a HOME
+      # owned by another user, and the runner mounts HOME as uid 1001.
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Report runner CPU count
+        run: nproc
+
+      - name: Cache npm downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-e2e-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-npm-
+
+      - name: Install dependencies
+        run: npm clean-install
+
+      - name: Run E2E shard ${{ matrix.shard }} of 4
+        run: npx playwright test --shard=${{ matrix.shard }}/4 --reporter=blob
+
+      - name: Upload blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 1
+          if-no-files-found: ignore
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-${{ matrix.shard }}
+          path: test-results
+          if-no-files-found: ignore
+
+  merge-e2e-reports:
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js and cache npm dependencies
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm clean-install
+
+      - name: Download shard blob reports
+        uses: actions/download-artifact@v6
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      - name: Merge into one HTML report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
 
       - name: Upload Playwright report
-        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: playwright-report
           if-no-files-found: ignore
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: test-results
-          path: test-results
-          if-no-files-found: ignore
+  # The required check. It only aggregates, so the context branch protection
+  # keys on keeps its name. Two traps: a job skipped because a dependency
+  # failed reports success to branch protection, so every result is checked
+  # explicitly; and !cancelled() rather than always(), so a run superseded by
+  # a newer push leaves no check behind (#786). The report merge is left out
+  # on purpose: reporting must not decide the gate.
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: [docker-gate, e2e-image, e2e]
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    permissions: {}
+    steps:
+      - name: Require every gate job to have succeeded
+        env:
+          DOCKER_GATE: ${{ needs.docker-gate.result }}
+          E2E_IMAGE: ${{ needs.e2e-image.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: |
+          echo "docker-gate=$DOCKER_GATE e2e-image=$E2E_IMAGE e2e=$E2E"
+          [ "$DOCKER_GATE" = success ] && [ "$E2E_IMAGE" = success ] && [ "$E2E" = success ]
 
   build-upload-and-deploy:
     runs-on: ubuntu-latest
@@ -286,7 +407,7 @@ jobs:
           PAGES_BASE_PATH: /cribbage-trainer/pr/${{ needs.resolve-preview-pr.outputs.number }}
           VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
 
-      # The eligibility check ran before the ~6-minute build-and-test gate;
+      # The eligibility check ran before the several-minute build-and-test gate;
       # if the PR closed in that window, publishing would recreate a preview
       # that the cleanup workflow already removed (or is about to remove).
       - id: recheck
