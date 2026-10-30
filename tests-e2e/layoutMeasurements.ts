@@ -13,10 +13,12 @@ export const phoneLandscapeViewport = { height: 390, width: 844 };
 
 /*
  * Playwright 1.64's mobile WebKit leaves the layout viewport at its old height
- * when the first size change after a load makes the page taller: `innerHeight`
- * follows, `documentElement.clientHeight` and `100%` heights do not. Every
- * later change lands correctly, so settling one pixel short first makes the
- * target size a second change in every engine and version.
+ * when the first `setViewportSize` call after a load grows it well past the
+ * preset height (664 to 844; one pixel lands): `innerHeight` follows,
+ * `documentElement.clientHeight` and `100%` heights do not. Every later call
+ * lands correctly, and a first call that leaves the size unchanged still
+ * counts as the first, so requesting one pixel short of the target first
+ * keeps the target off that first call whatever the current size.
  */
 export const applyViewportSize = async (
   page: Page,
