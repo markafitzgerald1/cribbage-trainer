@@ -6,6 +6,11 @@ import {
 } from "./practiceDrillSetup";
 import { type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
+  phoneLandscapeViewport,
+  phonePortraitViewport,
+} from "./layoutMeasurements";
+import {
   expectChipsFullyVisible,
   expectChipsShareARow,
 } from "./chipContainment";
@@ -13,10 +18,6 @@ import {
   measureRetryCard,
   openRetryMistakeQueue,
 } from "./mistakeQueueCardSetup";
-import {
-  phoneLandscapeViewport,
-  phonePortraitViewport,
-} from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 
 const NARROW_PHONE_WIDTH = 375;
@@ -60,7 +61,7 @@ test.describe("mistake queue layout", () => {
       test(`keeps card badge rows and point units together at ${width}px and ${rootFont}px root`, async ({
         page,
       }, testInfo) => {
-        await page.setViewportSize(viewport);
+        await applyViewportSize(page, viewport);
         await page.addStyleTag({
           content: `html { font-size: ${rootFont}px; }`,
         });
@@ -106,7 +107,7 @@ test.describe("mistake queue layout", () => {
   }
 
   const openMistakeQueueAtLargeFont = async (page: Page) => {
-    await page.setViewportSize(phonePortraitViewport);
+    await applyViewportSize(page, phonePortraitViewport);
     await page.getByRole("button", { name: "Mistake queue" }).click();
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
   };
@@ -114,7 +115,7 @@ test.describe("mistake queue layout", () => {
   test("mistake queue actions are visible without scrolling on a phone", async ({
     page,
   }) => {
-    await page.setViewportSize(phonePortraitViewport);
+    await applyViewportSize(page, phonePortraitViewport);
     await page.getByRole("button", { name: "Mistake queue" }).click();
 
     await expectActionWithinViewport(
@@ -175,7 +176,7 @@ test.describe("mistake queue layout", () => {
      * without that block the badge sits below the viewport here.
      */
     const shortHeight = phoneLandscapeViewport.height - REAL_CHROME_HEIGHT_PX;
-    await page.setViewportSize({
+    await applyViewportSize(page, {
       height: shortHeight,
       width: phoneLandscapeViewport.width,
     });
@@ -196,7 +197,7 @@ test.describe("mistake queue layout", () => {
   test("scrolls the mistake-queue filters away in landscape, keeping the action bar", async ({
     page,
   }) => {
-    await page.setViewportSize(phoneLandscapeViewport);
+    await applyViewportSize(page, phoneLandscapeViewport);
     await page.getByRole("button", { name: "Mistake queue" }).click();
 
     /*

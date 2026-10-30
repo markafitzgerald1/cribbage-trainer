@@ -42,6 +42,23 @@ baselines so CI agrees with what was generated locally.
 - When fixing a rendering bug, add a Playwright guard for it and negative-check
   the guard: stash the fix, confirm the new test fails against the broken CSS,
   then restore. A guard that was never seen failing proves nothing.
+- **Change a page's viewport only through `applyViewportSize` in
+  `tests-e2e/layoutMeasurements.ts`; `no-restricted-properties` rejects a
+  bare `setViewportSize`.** Playwright 1.64's mobile WebKit (still so in
+  1.64.1) drops the first `setViewportSize` call after a load when it grows
+  the page from 664 to 844: `innerHeight` reads 844 while
+  `documentElement.clientHeight`, `visualViewport` and every `100%` height
+  stay at 664, the iPhone 12 preset's height. Shrinking, any later call, and
+  a reload all land correctly, and 1.63 had no such gap. On #902 that put
+  content past y 664 at an in-viewport ratio of 0 and failed four Mobile
+  Safari layout specs, while Chromium measured the same page correctly. The
+  rows a broken resize removes look exactly like a CSS regression, so check
+  `documentElement.clientHeight` against the requested height before
+  debugging the stylesheet. What breaks is the first `setViewportSize` call,
+  not the first change of size: a call repeating the current size absorbs
+  the bug, and a first call growing one pixel lands (both measured in the
+  1.64.0 image; the threshold in between was not). So the helper requests
+  one pixel short of the target first, and the target is never that call.
 - No Playwright project reproduces a phone browser's box model: the `webkit`
   and `Mobile Safari` projects both run the desktop WebKit build, which
   differs from iOS Safari. When a bug is engine-specific and no headless

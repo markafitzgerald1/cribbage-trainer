@@ -10,6 +10,7 @@ import {
 } from "./practiceDrillSetup";
 import { type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   phoneLandscapeViewport,
   phonePortraitViewport,
   requireBoundingBox,
@@ -102,7 +103,7 @@ test.describe("practice drill", () => {
      * Exit stay visible while the Then / Retry comparison can be scrolled.
      */
     await startDrillOnFirstMistake(page);
-    await page.setViewportSize(phoneLandscapeViewport);
+    await applyViewportSize(page, phoneLandscapeViewport);
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
 
     await expectActionWithinViewport(
@@ -159,13 +160,13 @@ test.describe("practice drill", () => {
   test("shows the suit-reshuffled note in portrait, hides it in landscape", async ({
     page,
   }) => {
-    await page.setViewportSize(phonePortraitViewport);
+    await applyViewportSize(page, phonePortraitViewport);
     await startDrillOnFirstMistake(page);
 
     const suitNote = page.getByText("Suits reshuffled for this drill.");
     await expect(suitNote).toBeVisible();
 
-    await page.setViewportSize(phoneLandscapeViewport);
+    await applyViewportSize(page, phoneLandscapeViewport);
 
     await expect(suitNote).toBeHidden();
   });
@@ -173,7 +174,7 @@ test.describe("practice drill", () => {
   test("the quality trend table can be scrolled to its rightmost column", async ({
     page,
   }) => {
-    await page.setViewportSize(phonePortraitViewport);
+    await applyViewportSize(page, phonePortraitViewport);
     await page.getByRole("button", { name: "Quality trend" }).click();
 
     const skippedHeader = page.getByRole("columnheader", {
@@ -187,7 +188,7 @@ test.describe("practice drill", () => {
   test("the quality trend table stays reachable below the chart on a short screen", async ({
     page,
   }) => {
-    await page.setViewportSize(phoneLandscapeViewport);
+    await applyViewportSize(page, phoneLandscapeViewport);
     await page.getByRole("button", { name: "Quality trend" }).click();
 
     const table = page.getByRole("table");

@@ -1,5 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   phoneLandscapeViewport,
   phonePortraitViewport,
   poneHandQuery,
@@ -22,7 +23,7 @@ const expectSpacingMatchesStylesheet = async (
   page: Page,
   viewport: { height: number; width: number },
 ) => {
-  await page.setViewportSize(viewport);
+  await applyViewportSize(page, viewport);
   await page.goto(poneHandQuery);
 
   const sortControls = page.getByRole("group", { name: "Sort" });

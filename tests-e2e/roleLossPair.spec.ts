@@ -1,8 +1,9 @@
-import { expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   phonePortraitViewport,
   requireBoundingBox,
 } from "./layoutMeasurements";
+import { expect, test } from "@playwright/test";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
 const FIRST_DEALT_INDEX = 0;
@@ -142,7 +143,7 @@ test.describe("diagnostic caption rows", () => {
     test(`keeps the verdict on one line with the reason on its own row at ${name}`, async ({
       page,
     }) => {
-      await page.setViewportSize(viewport);
+      await applyViewportSize(page, viewport);
       await renderThenSelectTwoDiscards(page, CAPTION_ROW_HAND_QUERY, {
         discardIndices: CAPTION_ROW_DISCARD_INDICES,
       });

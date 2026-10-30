@@ -1,5 +1,6 @@
 import { type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   constantHandQuery,
   phoneLandscapeViewport,
   phonePortraitViewport,
@@ -169,7 +170,7 @@ const expectTallyLabelsUnwrapped = async (page: Page) => {
 test("keeps the tally labels on one line at a large device font", async ({
   page,
 }) => {
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await expectTallyLabelsUnwrapped(page);
 });
 
@@ -194,7 +195,7 @@ const UNCAPPED_EM_PX = 16;
 test("caps the stacked tally's em lengths and drops the share so its figures fit", async ({
   page,
 }) => {
-  await page.setViewportSize({
+  await applyViewportSize(page, {
     height: phonePortraitViewport.height,
     width: 360,
   });
@@ -233,7 +234,7 @@ test("caps the stacked tally's em lengths and drops the share so its figures fit
 test("keeps the tally labels on one line in landscape at a large device font", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await expectTallyLabelsUnwrapped(page);
 });
 
@@ -255,7 +256,7 @@ const SHORT_LANDSCAPE_HEIGHT = 320;
 test("gives the landscape dynamic-ui its own scroll when an analysis overflows it", async ({
   page,
 }) => {
-  await page.setViewportSize({
+  await applyViewportSize(page, {
     height: SHORT_LANDSCAPE_HEIGHT,
     width: phoneLandscapeViewport.width,
   });

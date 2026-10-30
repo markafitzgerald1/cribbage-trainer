@@ -5,6 +5,7 @@ import {
   answeredPolicyVersionKey,
 } from "../src/ui/analyticsConsent";
 import {
+  applyViewportSize,
   phonePortraitViewport,
   requireBoundingBox,
 } from "./layoutMeasurements";
@@ -197,7 +198,7 @@ export const expectChangedPanelReachable = async (page: Page) => {
 export const reviewAtLargePortrait = async (page: Page) => {
   await openEarlierTableTrainer(page);
   await startDrillOnFirstMistake(page);
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.addStyleTag({ content: LARGE_ROOT_FONT });
   await expectPanelActionReachable(page, "Check discard");
   await expectPanelActionReachable(page, "Exit drill");

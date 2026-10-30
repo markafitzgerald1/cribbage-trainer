@@ -7,6 +7,7 @@ import {
 } from "./uncertainty";
 import { type Locator, type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   constantHandQuery,
   exactTextMatch,
   phoneLandscapeViewport,
@@ -118,7 +119,7 @@ const expectDealButtonWithinPortraitViewport = async (
   page: Page,
   rootFontSize?: string,
 ) => {
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.goto(poneHandQuery);
   if (typeof rootFontSize === "string") {
     await page.addStyleTag({
@@ -148,7 +149,7 @@ const cardMetricsAt = async (
   page: Page,
   viewport: { height: number; width: number },
 ) => {
-  await page.setViewportSize(viewport);
+  await applyViewportSize(page, viewport);
   const firstCard = page.locator("ul").first().locator("label").first();
   const cardBounds = await requireBoundingBox(firstCard);
   const rankBounds = await requireBoundingBox(
@@ -209,7 +210,7 @@ test("card shape and fill survive rotation into side-by-side mode", async ({
 test("landscape Pone Deal button right edge aligns with the last hand card", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.goto(poneHandQuery);
 
   const dealBounds = await requireDealButtonBounds(page);
@@ -424,7 +425,7 @@ test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
   page,
 }) => {
   const sixFifthsBoundaryViewport = { height: 1000, width: 1200 };
-  await page.setViewportSize(sixFifthsBoundaryViewport);
+  await applyViewportSize(page, sixFifthsBoundaryViewport);
   await renderThenSelectTwoDiscards(page, constantHandQuery);
 
   const handBounds = await requireBoundingBox(page.locator("figure").first());
