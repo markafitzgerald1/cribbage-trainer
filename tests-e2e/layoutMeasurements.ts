@@ -11,6 +11,21 @@ export const phonePortraitViewport = { height: 844, width: 390 };
 
 export const phoneLandscapeViewport = { height: 390, width: 844 };
 
+/*
+ * Playwright 1.64's mobile WebKit leaves the layout viewport at its old height
+ * when the first size change after a load makes the page taller: `innerHeight`
+ * follows, `documentElement.clientHeight` and `100%` heights do not. Every
+ * later change lands correctly, so settling one pixel short first makes the
+ * target size a second change in every engine and version.
+ */
+export const applyViewportSize = async (
+  page: Page,
+  size: { height: number; width: number },
+) => {
+  await page.setViewportSize({ ...size, height: size.height - 1 });
+  await page.setViewportSize(size);
+};
+
 export const requireBoundingBox = async (locator: Locator) => {
   const bounds = await locator.boundingBox();
   if (bounds === null) {

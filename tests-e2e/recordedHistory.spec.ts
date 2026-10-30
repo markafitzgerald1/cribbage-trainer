@@ -5,6 +5,7 @@ import {
 } from "./practiceDrillSetup";
 import { type Locator, type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   phoneLandscapeViewport,
   phonePortraitViewport,
   requireBoundingBox,
@@ -134,7 +135,7 @@ const rereadHistory = async (
 ) => {
   // A fresh page has no fixture init script, so it reads the retry's actual persisted tally.
   const restored = await page.context().newPage();
-  await restored.setViewportSize(viewport);
+  await applyViewportSize(restored, viewport);
   await restored.goto("/");
   if (fontSize === ENLARGED_FONT_SIZE)
     await restored.addStyleTag({ content: LARGE_ROOT_FONT });
@@ -152,7 +153,7 @@ for (const [mode, viewport] of [
     test(`recorded history and practice stay reachable in ${mode} at ${fontSize}px root`, async ({
       page,
     }) => {
-      await page.setViewportSize(viewport);
+      await applyViewportSize(page, viewport);
       await openSeededTrainer(page, OLD_BEST_NOW);
       if (fontSize === ENLARGED_FONT_SIZE)
         await page.addStyleTag({ content: LARGE_ROOT_FONT });

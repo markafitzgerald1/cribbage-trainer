@@ -3,11 +3,12 @@ import {
   openRetryMistakeQueue,
 } from "./mistakeQueueCardSetup";
 import { LARGE_ROOT_FONT, openSeededTrainer } from "./practiceDrillSetup";
-import { expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   phoneLandscapeViewport,
   phonePortraitViewport,
 } from "./layoutMeasurements";
+import { expect, test } from "@playwright/test";
 import cribSidecar from "../src/game/expectedCribPointsUncertainty.json";
 import playSidecar from "../src/game/expectedPlayPointsUncertainty.json";
 
@@ -38,7 +39,7 @@ for (const { identity, summary } of [
     test(`shows shortened fingerprints for ${summary} at ${viewport.width}px with a large root`, async ({
       page,
     }) => {
-      await page.setViewportSize(viewport);
+      await applyViewportSize(page, viewport);
       await openSeededTrainer(page);
       await page.addStyleTag({ content: LARGE_ROOT_FONT });
       const card = await openRetryMistakeQueue(page, identity);

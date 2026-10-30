@@ -5,6 +5,7 @@ import {
 } from "../src/ui/analyticsConsent";
 import { type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   constantHandQuery,
   exactTextMatch,
   phoneLandscapeViewport,
@@ -26,7 +27,7 @@ const consentActionBottom = async (page: Page, name: string) => {
 test("first-run consent controls stay within the phone-landscape viewport", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.goto("/");
 
   expect(await consentActionBottom(page, "Accept")).toBeLessThanOrEqual(
@@ -45,7 +46,7 @@ test("first-run consent controls stay within the phone-landscape viewport", asyn
 test("policy update controls stay within the phone-landscape viewport", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.addInitScript((key) => {
     window.localStorage.setItem(key, "true");
   }, analyticsConsentKey);
@@ -71,7 +72,7 @@ test("policy update controls stay within the phone-landscape viewport", async ({
 test("the policy update fits the phone-landscape viewport at an enlarged root font", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.addInitScript((key) => {
     window.localStorage.setItem(key, "true");
   }, analyticsConsentKey);
@@ -91,7 +92,7 @@ test("the policy update fits the phone-landscape viewport at an enlarged root fo
 test("analytics settings actions stay within the phone-landscape viewport", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.addInitScript(
     ([consentKey, answeredKey, version]) => {
       window.localStorage.setItem(String(consentKey), "true");
@@ -124,7 +125,7 @@ const shortStackedViewport = { height: 350, width: 380 };
 test("gives dynamic-ui its own scroll when analytics settings overflow in stacked mode", async ({
   page,
 }) => {
-  await page.setViewportSize(shortStackedViewport);
+  await applyViewportSize(page, shortStackedViewport);
   await page.addInitScript(
     ([consentKey, answeredKey, version]) => {
       window.localStorage.setItem(String(consentKey), "true");
@@ -171,7 +172,7 @@ test("gives dynamic-ui its own scroll when analytics settings overflow in stacke
 test("preserves usable analysis table height when controls overflow in stacked mode", async ({
   page,
 }) => {
-  await page.setViewportSize(shortStackedViewport);
+  await applyViewportSize(page, shortStackedViewport);
   await page.addInitScript(
     (stored: {
       readonly answeredKey: string;
@@ -254,7 +255,7 @@ const privacyPolicyFontSizePx = async (
   page: Page,
   viewport: { height: number; width: number },
 ) => {
-  await page.setViewportSize(viewport);
+  await applyViewportSize(page, viewport);
   await page.goto(`/${constantHandQuery}`);
   const panel = await openPrivacyPolicyModalPanel(page);
   const fontSize = await panel.evaluate(
@@ -291,7 +292,7 @@ test("side-by-side privacy policy text scales with the viewport, not the compact
 test("the close button stays visible and clickable throughout the privacy policy scroll range", async ({
   page,
 }) => {
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.goto(`/${constantHandQuery}`);
   const panel = await openPrivacyPolicyModalPanel(page);
 
@@ -330,7 +331,7 @@ test("the close button stays visible and clickable throughout the privacy policy
 test("the close button stays visible and clickable throughout the privacy policy scroll range at an enlarged root font", async ({
   page,
 }) => {
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.goto(`/${constantHandQuery}`);
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
   const panel = await openPrivacyPolicyModalPanel(page);
@@ -393,7 +394,7 @@ test("the privacy policy modal can be closed via the Escape key", async ({
 test("the policy update fits beside a tally at an enlarged root font", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.addInitScript(
     /*
      * The tally key is built in the browser, because it carries the
@@ -447,7 +448,7 @@ test("the policy update fits beside a tally at an enlarged root font", async ({
 test("first-run consent controls stay in view once a tally exists", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.goto("/");
   const checkboxes = page.getByRole("checkbox");
   await checkboxes.nth(0).click();

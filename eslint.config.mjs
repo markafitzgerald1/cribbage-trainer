@@ -284,6 +284,20 @@ export default [
     rules: {
       // Wire-format fixture properties retain the generated document's names.
       camelcase: ["error", { properties: "never" }],
+      "no-restricted-properties": [
+        "error",
+        {
+          message:
+            "Use applyViewportSize from ./layoutMeasurements: a bare first size change can leave mobile WebKit's layout viewport at its old height.",
+          property: "setViewportSize",
+        },
+      ],
+    },
+  },
+  {
+    files: ["tests-e2e/layoutMeasurements.ts"],
+    rules: {
+      "no-restricted-properties": ["off"],
     },
   },
   {

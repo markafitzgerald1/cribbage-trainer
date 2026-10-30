@@ -7,6 +7,7 @@ import {
   selectTwoDiscards,
   startDrillOnFirstMistake,
 } from "./practiceDrillSetup";
+import { applyViewportSize } from "./layoutMeasurements";
 import { practiceTableBaselines } from "./practiceTableBaselines";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
@@ -171,7 +172,7 @@ const revealPractice = async (
 ) => {
   await openEarlierTableTrainer(page);
   await startDrillOnFirstMistake(page);
-  await page.setViewportSize({
+  await applyViewportSize(page, {
     height: setting.height,
     width: setting.width,
   });

@@ -1,5 +1,9 @@
 import { type Page, expect, test } from "@playwright/test";
-import { constantHandQuery, phonePortraitViewport } from "./layoutMeasurements";
+import {
+  applyViewportSize,
+  constantHandQuery,
+  phonePortraitViewport,
+} from "./layoutMeasurements";
 import { DISCARD_TALLY_KEY_PREFIX } from "../src/ui/discardTallyKeyPrefix";
 import { LARGE_ROOT_FONT } from "./practiceDrillSetup";
 import { expectChipsFullyVisible } from "./chipContainment";
@@ -156,7 +160,7 @@ test.describe("decision quality over time trend dialog", () => {
   test("keeps the trend filter chips reachable at a large device font", async ({
     page,
   }) => {
-    await page.setViewportSize(phonePortraitViewport);
+    await applyViewportSize(page, phonePortraitViewport);
     await page.getByRole("button", { name: "Quality trend" }).click();
     await page.addStyleTag({ content: LARGE_ROOT_FONT });
 
