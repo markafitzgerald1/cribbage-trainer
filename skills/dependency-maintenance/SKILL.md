@@ -1,6 +1,6 @@
 ---
 name: dependency-maintenance
-description: Use before bumping dependencies, taking a major upgrade, adding or changing a `uses:` pin in a workflow, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, the gate-shifting effects of formatter and duplicate-detector majors, and how to verify an action's runtime and annotations.
+description: Use before bumping dependencies, taking a major upgrade, adding or changing a `uses:` pin in a workflow or composite action, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, the gate-shifting effects of formatter and duplicate-detector majors, and how to verify an action's runtime and annotations.
 compatibility: Requires npm and network access to the registry.
 ---
 
@@ -177,8 +177,10 @@ the pins off Node 20; these are the traps that work met.
 **Learnings:**
 
 - **Read the runtime from the action's own `action.yml` at the candidate
-  tag, never from its release notes.** `runs.using` is what the runner
-  executes. `actions/upload-artifact` v5.0.0's release notes say it supports
+  tag, never from its release notes.** `runs.using` is the runtime the
+  action declares, which is what the deprecation warning is raised on; the
+  runner may force it onto a newer Node anyway. `actions/upload-artifact`
+  v5.0.0's release notes say it supports
   Node 24, while its `action.yml` still declares `node20`; v6.0.0 is the
   release that declares `node24`. Rerun this rather than trusting a list of
   actions written down earlier:
@@ -193,15 +195,24 @@ the pins off Node 20; these are the traps that work met.
   done
   ```
 
-  It prints one line per pin it matches and is not a complete inventory. It
-  never matches a quoted value, a sub-path action (`owner/repo/path@ref`), a
-  reusable workflow, a `docker://` reference or a local action, and it
-  silently drops each, so compare its count against
-  `grep --recursive 'uses:' .github`. It also matches inside comments and
-  `run:` strings, which yield false entries. A pin that prints no line, or a
-  `404` on stderr, is not a clean result: the cause is a tag that does not
-  exist, an `action.yaml` file name, or an authentication or rate-limit
-  error.
+  It prints one line per distinct pin it matches and is not a complete
+  inventory. It never matches a quoted value, a sub-path action
+  (`owner/repo/path@ref`), a reusable workflow, a `docker://` reference or a
+  local action, and it silently drops each. Counts cannot show what it
+  dropped, since the listing is deduplicated and `uses:` lines are not, so
+  print the lines it cannot match instead; an empty result means nothing was
+  dropped:
+
+  ```bash
+  grep --recursive --line-number 'uses:' .github | grep --invert-match \
+    --extended-regexp 'uses: ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[^ ]+|\./)'
+  ```
+
+  The listing also matches inside comments and `run:` strings, which yield
+  false entries. A pin that prints no line, or a `404` on stderr, is not a
+  clean result. Causes include a tag that does not exist, an `action.yaml`
+  file name, an authentication or rate-limit error, and a repository or path
+  that holds no action metadata at all, as a false entry from a comment does.
 
 - **A composite action has no runtime of its own; it inherits whatever it
   wraps.** `runs.using: composite` tells you nothing, so read the `uses:`
@@ -239,7 +250,9 @@ the pins off Node 20; these are the traps that work met.
   `build-upload-and-deploy` runs only on a push to main, so the check is the
   first push-to-main run after the merge. The preview job exercises the same
   `publish-pages-content` composite, so the Pages actions are covered before
-  merge but the production job's own steps are not.
+  merge only on a pull request that job actually ran for: it skips fork and
+  Dependabot pull requests, so check the job, not just the green check. The
+  production job's own steps are not covered either way.
   `pages-preview-cleanup.yml` skips merged pull requests and no-ops without a
   `pages-content` branch, so it runs for real only when a pull request from
   this repository closes unmerged. Say in the pull request which jobs are
