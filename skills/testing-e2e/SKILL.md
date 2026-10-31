@@ -124,8 +124,9 @@ baselines so CI agrees with what was generated locally.
   test timeout, the default 30s timeout intermittently aborts initial
   `page.goto` calls (e.g. `has title`). Keep an explicit 60s `timeout` in
   `playwright.config.ts`, keep CI at 2 workers per runner (each standard
-  GitHub Actions runner has 4 vCPUs, and 4 workers measured every test about
-  1.8x slower; see AGENTS.md, CI workflow notes), and point `webServer.url`
+  GitHub Actions runner has 4 vCPUs, but 4 workers raised total test time
+  1.8x for little gain; see AGENTS.md, CI workflow notes), and point
+  `webServer.url`
   at the actual served route rather than a redirect.
 
 **Visual regression updates:**

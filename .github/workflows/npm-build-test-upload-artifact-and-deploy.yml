@@ -206,15 +206,17 @@ jobs:
           if-no-files-found: ignore
 
   # The required check. It only aggregates, so the context branch protection
-  # keys on keeps its name. Two traps: a job skipped because a dependency
-  # failed reports success to branch protection, so every result is checked
-  # explicitly; and !cancelled() rather than always(), so a run superseded by
-  # a newer push leaves no check behind (#786). The report merge is left out
-  # on purpose: reporting must not decide the gate.
+  # keys on keeps its name. A required check that is skipped counts as
+  # passing, so this job must never be skipped on a pull request: always(),
+  # not !cancelled(), or cancelling a head's run would leave it green. Every
+  # result is then checked explicitly, so a cancelled or skipped gate job
+  # fails it. A run cancelled by a newer push fails only on the superseded
+  # SHA, which nothing merges. The report merge is left out on purpose:
+  # reporting must not decide the gate.
   build-and-test:
     runs-on: ubuntu-latest
     needs: [docker-gate, e2e-image, e2e]
-    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    if: ${{ always() && github.event_name == 'pull_request' }}
     permissions: {}
     steps:
       - name: Require every gate job to have succeeded
@@ -226,10 +228,11 @@ jobs:
           echo "docker-gate=$DOCKER_GATE e2e-image=$E2E_IMAGE e2e=$E2E"
           [ "$DOCKER_GATE" = success ] && [ "$E2E_IMAGE" = success ] && [ "$E2E" = success ]
 
-  # A pull request can read the Actions cache of its own branch and of main,
-  # and nothing else. Without this job main never writes the Docker layers,
-  # so every pull request's first run built from nothing and spent ~166 s
-  # exporting them. Its result decides nothing; deploy does not wait on it.
+  # A pull request can read only its own cache and its base branch's (main
+  # for every pull request here). Without this job main never writes the
+  # Docker layers, so every pull request's first run built from nothing and
+  # spent ~166 s exporting them. Its result decides nothing; deploy does not
+  # wait on it.
   warm-docker-cache:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

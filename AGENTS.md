@@ -1346,12 +1346,14 @@ they bind any PR that makes a claim about a phone or ships a guard.
   open the PR (the flow already says to, right after the first push) and it
   all runs.
 - **`build-and-test` is only an aggregator, and the required check.** It
-  `needs` the gate jobs and fails unless each reports `success`, because a
-  job skipped after a failed dependency reports success to branch
-  protection. It runs on `!cancelled()`, never `always()`, so a superseded
-  run leaves no check behind (#786). Keeping that name is what lets the
-  gate split into jobs without editing branch protection; a new gate job
-  joins its `needs` and its result check, or it gates nothing.
+  `needs` the gate jobs and fails unless each reports `success`. It runs on
+  `always()`, never `!cancelled()`: a required check that is skipped counts
+  as passing, so with `!cancelled()` cancelling the current head's run
+  would leave it green with e2e never run. A run cancelled by a newer push then
+  fails on the superseded SHA only, which nothing merges (the #786
+  reasoning). Keeping that name is what lets the gate split into jobs
+  without editing branch protection; a new gate job joins its `needs` and
+  its result check, or it gates nothing.
 - **The e2e shards do not run in the Dockerfile's image, only in its base.**
   Each shard is a job `container:` of the image the Dockerfile names on its
   `FROM` line, read from there by `e2e-image` because Dependabot's
@@ -1360,13 +1362,16 @@ they bind any PR that makes a claim about a phone or ships a guard.
   they render as before. Locally, `npm run docker:build-and-test-all` still
   runs the whole suite in the built image, in one run.
 - **More shards, not more workers, when e2e grows.** Each runner has 4
-  vCPUs, and 2 Playwright workers already saturate them: 4 workers made
-  every test about 1.8x slower (834 against 1,519 test-seconds, runs
-  41054714255 and 41057248111) and moved the slowest shard by seconds.
-  Extra shards each get their own runner and cost nothing on a public
-  repository. #748's 60-second timeout and 2-worker cap stay.
-- A pull request reads only its own branch's and main's Actions cache, so
-  `warm-docker-cache` builds the Docker image on every push to main. Without
+  vCPUs, yet going from 2 to 4 workers per shard raised total test time
+  1.8x (834 to 1,519 test-seconds) and moved the slowest shard only from
+  2.5 to 2.3 minutes (runs 41054714255 and 41057248111, four shards each).
+  That is one pair of runs, not a per-test or CPU profile, so it shows the
+  trade did not pay rather than why. Extra shards each get their own runner
+  and cost nothing on a public repository. #748's 60-second timeout and
+  2-worker cap stay.
+- A pull request reads only its own Actions cache and its base branch's
+  (main, for every pull request here), so `warm-docker-cache` builds the
+  Docker image on every push to main. Without
   it each PR's first run built every layer and spent about three minutes
   exporting them. Its result gates nothing.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
