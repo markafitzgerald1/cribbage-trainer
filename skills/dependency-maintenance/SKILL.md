@@ -180,10 +180,9 @@ the pins off Node 20; these are the traps that work met.
   tag, never from its release notes.** `runs.using` is the runtime the
   action declares, which is what the deprecation warning is raised on; the
   runner may force it onto a newer Node anyway. `actions/upload-artifact`
-  v5.0.0's release notes say it supports
-  Node 24, while its `action.yml` still declares `node20`; v6.0.0 is the
-  release that declares `node24`. Rerun this rather than trusting a list of
-  actions written down earlier:
+  v5.0.0's release notes say it supports Node 24, while its `action.yml`
+  still declares `node20`; v6.0.0 is the release that declares `node24`.
+  Rerun this rather than trusting a list of actions written down earlier:
 
   ```bash
   grep --recursive --no-filename --only-matching --extended-regexp \
@@ -200,8 +199,11 @@ the pins off Node 20; these are the traps that work met.
   (`owner/repo/path@ref`), a reusable workflow, a `docker://` reference or a
   local action, and it silently drops each. Counts cannot show what it
   dropped, since the listing is deduplicated and `uses:` lines are not, so
-  print the lines it cannot match instead; an empty result means nothing was
-  dropped:
+  print the lines it cannot match instead. This command excludes local
+  `./` references on purpose: their own `uses:` lines are read only when the
+  action lives under `.github`, as `publish-pages-content` does, so a local
+  action kept elsewhere is not scanned by either command. Read each line it
+  prints, since a comment that contains `uses:` appears too:
 
   ```bash
   grep --recursive --line-number 'uses:' .github | grep --invert-match \
@@ -212,7 +214,8 @@ the pins off Node 20; these are the traps that work met.
   false entries. A pin that prints no line, or a `404` on stderr, is not a
   clean result. Causes include a tag that does not exist, an `action.yaml`
   file name, an authentication or rate-limit error, and a repository or path
-  that holds no action metadata at all, as a false entry from a comment does.
+  that holds no action metadata at all, as some false entries do. Others
+  resolve to a real action and print a normal-looking line.
 
 - **A composite action has no runtime of its own; it inherits whatever it
   wraps.** `runs.using: composite` tells you nothing, so read the `uses:`
@@ -223,9 +226,10 @@ the pins off Node 20; these are the traps that work met.
   only when bumping.** `actions/download-artifact@v6` declares `node20` and
   entered the workflow with the `merge-e2e-reports` job (#945), after #812 had
   cleared the others; on run 41162101510 that job's check run carries the
-  "Node.js 20 is deprecated" annotation. Nothing fails, and
-  `.github/dependabot.yml` configures no `github-actions` ecosystem, so only
-  the annotation or the listing above shows it and pins move only by hand.
+  "Node.js 20 is deprecated" annotation, and #958 later moved the pin to v8.
+  Nothing failed in between, and `.github/dependabot.yml` configures no
+  `github-actions` ecosystem, so only the annotation or the listing above
+  shows it and pins move only by hand.
 - **Prove a deprecation annotation is gone against a same-day control, not
   by its absence alone.** Read a job's annotations through the REST API,
   taking job ids from the run, and filter on the message:
@@ -250,9 +254,11 @@ the pins off Node 20; these are the traps that work met.
   `build-upload-and-deploy` runs only on a push to main, so the check is the
   first push-to-main run after the merge. The preview job exercises the same
   `publish-pages-content` composite, so the Pages actions are covered before
-  merge only on a pull request that job actually ran for: it skips fork and
-  Dependabot pull requests, so check the job, not just the green check. The
-  production job's own steps are not covered either way.
+  merge only when that job ran and its "Publish preview content and deploy"
+  step was not skipped. The job skips fork and Dependabot pull requests, and
+  the step skips when the pull request is no longer open by then, as when it
+  merges while the gate is still running; either way the job can still show
+  green. The production job's own steps are not covered either way.
   `pages-preview-cleanup.yml` skips merged pull requests and no-ops without a
   `pages-content` branch, so it runs for real only when a pull request from
   this repository closes unmerged. Say in the pull request which jobs are
