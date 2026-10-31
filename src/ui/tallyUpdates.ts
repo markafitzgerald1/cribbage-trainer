@@ -84,7 +84,7 @@ export const extendDecisionTally = (
   const existing = repeatOf(tally.records, decision);
   const admission = decisionAdmission(decision);
   if (existing) {
-    // Settlement is one-time only against the tally this write read; another tab's racing write can still be lost (#903).
+    // Settlement is one-time against the tally this write read; a write that finds storage moved re-reads and asks again (#903).
     if (
       existing.recordedAdmission !== "pending" ||
       admission === null ||

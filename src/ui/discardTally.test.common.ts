@@ -90,20 +90,24 @@ export const withToday = (
 export const EMPTY = summaryOf(0, null, 0);
 
 // The spy is restored by this wrapper rather than by the test, so the test can still end on its assertion.
-export const withFailingWrite = (
+export const withRefused = (
+  method: "getItem" | "setItem",
   run: () => DiscardTallySummary,
 ): DiscardTallySummary => {
-  const setItem = jest
-    .spyOn(Storage.prototype, "setItem")
+  const refused = jest
+    .spyOn(Storage.prototype, method)
     .mockImplementation(() => {
-      throw new Error("quota");
+      throw new Error("refused");
     });
   try {
     return run();
   } finally {
-    setItem.mockRestore();
+    refused.mockRestore();
   }
 };
+
+export const withFailingWrite = (run: () => DiscardTallySummary) =>
+  withRefused("setItem", run);
 
 export const decisionOf = (
   overrides: Partial<DiscardDecisionRecord> = {},
