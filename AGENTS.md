@@ -131,8 +131,9 @@
     `skills/make-it-green/SKILL.md`.
   - Before adding or changing Storybook stories or interaction coverage, read
     `skills/testing-storybook/SKILL.md`.
-  - Before bumping dependencies, taking a major upgrade, or fixing an
-    `npm run lint:audit` advisory, read
+  - Before bumping dependencies, taking a major upgrade, fixing an
+    `npm run lint:audit` advisory, or adding or changing a `uses:` pin in a
+    workflow or composite action, read
     `skills/dependency-maintenance/SKILL.md`.
   - Before writing or debugging a Playwright spec, regenerating screenshot
     baselines, or diagnosing a rendered-layout bug in the browser, read

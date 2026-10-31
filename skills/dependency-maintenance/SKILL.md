@@ -1,6 +1,6 @@
 ---
 name: dependency-maintenance
-description: Use before bumping dependencies, taking a major upgrade, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, and the gate-shifting effects of formatter and duplicate-detector majors.
+description: Use before bumping dependencies, taking a major upgrade, adding or changing a `uses:` pin in a workflow or composite action, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, the gate-shifting effects of formatter and duplicate-detector majors, and how to verify an action's runtime and annotations.
 compatibility: Requires npm and network access to the registry.
 ---
 
@@ -181,3 +181,99 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   Expect the next `npm update` or `audit fix` on these families to hit the same
   ERESOLVE until the lock entries are rebuilt this way; a Dependabot group may
   fail identically.
+
+## Bumping GitHub Actions pins
+
+**Description:** How to tell whether an action pin runs on a deprecated Node
+runtime, and how to prove a bump cleared the warning. #812 (issue #677) moved
+the pins off Node 20; these are the traps that work met.
+
+**Learnings:**
+
+- **Read the runtime from the action's own `action.yml` at the candidate
+  tag, never from its release notes.** `runs.using` is the runtime the
+  action declares, which is what the deprecation warning is raised on; the
+  runner may force it onto a newer Node anyway. `actions/upload-artifact`
+  v5.0.0's release notes say it supports Node 24, while its `action.yml`
+  still declares `node20`; v6.0.0 is the release that declares `node24`.
+  Rerun this rather than trusting a list of actions written down earlier:
+
+  ```bash
+  grep --recursive --no-filename --only-matching --extended-regexp \
+    'uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[^ ]+' .github \
+    | sed 's/^uses: //' | sort --unique | while IFS=@ read -r repo ref; do
+    gh api "repos/$repo/contents/action.yml?ref=$ref" --jq .content \
+      | base64 --decode | grep --extended-regexp 'using:' \
+      | sed "s|^ *|$repo@$ref |"
+  done
+  ```
+
+  It prints one line per distinct pin it matches and is not a complete
+  inventory. It never matches a quoted value, a sub-path action
+  (`owner/repo/path@ref`), a reusable workflow, a `docker://` reference or a
+  local action, and it silently drops each. Counts cannot show what it
+  dropped, since the listing is deduplicated and `uses:` lines are not, so
+  print the lines it cannot match instead. This command excludes local
+  `./` references on purpose: their own `uses:` lines are read only when the
+  action lives under `.github`, as `publish-pages-content` does, so a local
+  action kept elsewhere is not scanned by either command. Read each line it
+  prints, since a comment that contains `uses:` appears too:
+
+  ```bash
+  grep --recursive --line-number 'uses:' .github | grep --invert-match \
+    --extended-regexp 'uses: ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[^ ]+|\./)'
+  ```
+
+  The listing also matches inside comments and `run:` strings, which yield
+  false entries. A pin that prints no line, or a `404` on stderr, is not a
+  clean result. Causes include a tag that does not exist, an `action.yaml`
+  file name, an authentication or rate-limit error, and a repository or path
+  that holds no action metadata at all, as some false entries do. Others
+  resolve to a real action and print a normal-looking line.
+
+- **A composite action has no runtime of its own; it inherits whatever it
+  wraps.** `runs.using: composite` tells you nothing, so read the `uses:`
+  lines inside it. `actions/upload-pages-artifact` v4.0.0 wraps
+  `upload-artifact` v4.6.2 (`node20`), and v5.0.0 wraps v7.0.0 (`node24`), so
+  the pages action's own version is what decides which runtime you get.
+- **Re-check the pins when a job is added or a `uses:` line changes, not
+  only when bumping.** `actions/download-artifact@v6` declares `node20` and
+  entered the workflow with the `merge-e2e-reports` job (#945), after #812 had
+  cleared the others; on run 41162101510 that job's check run carries the
+  "Node.js 20 is deprecated" annotation, and #958 later moved the pin to v8.
+  Nothing failed in between, and `.github/dependabot.yml` configures no
+  `github-actions` ecosystem, so only the annotation or the listing above
+  shows it and pins move only by hand.
+- **Prove a deprecation annotation is gone against a same-day control, not
+  by its absence alone.** Read a job's annotations through the REST API,
+  taking job ids from the run, and filter on the message:
+
+  ```bash
+  gh api repos/<owner>/<repo>/actions/runs/<run-id>/jobs
+  gh api repos/<owner>/<repo>/check-runs/<job-id>/annotations \
+    --jq '[.[] | select(.message | test("Node.js 20"))]'
+  ```
+
+  Filter because the unfiltered list is rarely empty: on runs since October
+  2026 every job that ran also carries the `ubuntu-latest` migration notice,
+  so a non-empty list does not mean the warning is still there. A job skipped
+  by its `if:` returns an empty list (`build-upload-and-deploy` on a pull
+  request), and that says nothing about the pins. A filtered `[]` from the
+  fixed run proves nothing until the same job on an old-pin run is shown to
+  match, so pair the two.
+  Pick a job that runs `uses:` steps: the current `build-and-test` is an
+  aggregator with none, so it never carries the warning.
+
+- **A production-only job cannot be verified by any pull request.**
+  `build-upload-and-deploy` runs only on a push to main, so the check is the
+  first push-to-main run after the merge. The preview job exercises the same
+  `publish-pages-content` composite, so the Pages actions are covered before
+  merge only when that job ran and its "Publish preview content and deploy"
+  step was not skipped. The job skips fork and Dependabot pull requests, and
+  the step skips when the pull request is no longer open by then, as when it
+  merges while the gate is still running; either way the job can still show
+  green. The production job's own steps are not covered either way.
+  `pages-preview-cleanup.yml` skips merged pull requests and no-ops without a
+  `pages-content` branch, so it runs for real only when a pull request from
+  this repository closes unmerged. Say in the pull request which jobs are
+  left to that later observation instead of reporting them verified.
