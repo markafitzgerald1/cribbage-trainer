@@ -1373,7 +1373,17 @@ they bind any PR that makes a claim about a phone or ships a guard.
   (main, for every pull request here), so `warm-docker-cache` builds the
   Docker image on every push to main. Without
   it each PR's first run built every layer and spent about three minutes
-  exporting them. Its result gates nothing.
+  exporting them. Its result gates nothing. `warm-e2e-npm-cache` does the
+  same for the e2e shards' `~/.npm` (#953), and must keep the `e2e` job's
+  container, `--user 1001`, path and key, or it saves an entry the shards
+  cannot restore.
+- **A warmed main entry survives only while something reads it.** The
+  repository's Actions cache sat at 10.78 GB against its 10 GB limit on
+  2026-10-31, about 9 GB of it Docker layers, so GitHub was already
+  evicting least-recently-read entries: the oldest survivor had last been
+  read about 30 hours earlier, well inside the documented 7-day idle
+  expiry. Check `gh api repos/<owner>/<repo>/actions/cache/usage` before
+  blaming a cold PR run on a broken key.
 - **On #954 a pull request's Docker build reused only layers main also
   had.** Across seven `docker-gate` attempts on two PRs, the gha import
   never hit a layer the PR itself had exported, not even on a rerun of the
