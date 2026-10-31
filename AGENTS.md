@@ -1369,6 +1369,14 @@ they bind any PR that makes a claim about a phone or ships a guard.
   trade did not pay rather than why. Extra shards each get their own runner
   and cost nothing on a public repository. #748's 60-second timeout and
   2-worker cap stay.
+- **Shard weights are measured counts, and they drift.** Playwright cuts
+  shards as contiguous blocks of a project-ordered list, and `--shuffle`
+  reorders only after that cut, so `PWTEST_SHARD_WEIGHTS` on the e2e step is
+  the lever. Its values are tests per shard fitted to per-test durations from
+  blob reports (#949). Changing a count moves the boundaries, so it changes
+  which tests a shard runs, not only how many. Re-fit from fresh blob reports
+  when the slowest shard drifts well past the average; dropping the variable
+  only restores equal blocks, so it can never lose a test.
 - A pull request reads only its own Actions cache and its base branch's
   (main, for every pull request here), so `warm-docker-cache` builds the
   Docker image on every push to main. Without

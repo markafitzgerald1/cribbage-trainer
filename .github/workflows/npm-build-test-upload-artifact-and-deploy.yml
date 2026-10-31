@@ -149,7 +149,15 @@ jobs:
       - name: Install dependencies
         run: npm clean-install
 
+      # Shards are contiguous blocks of a list ordered by project, and a
+      # WebKit test costs about 2.5x a Chromium one, so equal counts left the
+      # Mobile Safari shard twice as slow as the average. These are test
+      # counts per shard fitted to measured durations (#949). They only move
+      # block boundaries, so every test still runs exactly once, new tests
+      # included; an ignored variable falls back to equal blocks.
       - name: Run E2E shard ${{ matrix.shard }} of 8
+        env:
+          PWTEST_SHARD_WEIGHTS: "146:99:57:64:108:95:58:40"
         run: npx playwright test --shard=${{ matrix.shard }}/8 --reporter=blob
 
       - name: Upload blob report
