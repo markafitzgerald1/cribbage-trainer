@@ -123,9 +123,11 @@ baselines so CI agrees with what was generated locally.
   bundle chunks can cause extreme cold-start CPU contention. Without an explicit
   test timeout, the default 30s timeout intermittently aborts initial
   `page.goto` calls (e.g. `has title`). Keep an explicit 60s `timeout` in
-  `playwright.config.ts`, cap CI workers (e.g. 2 on standard GitHub Actions
-  runners), and point `webServer.url` at the actual served route rather than a
-  redirect.
+  `playwright.config.ts`, keep CI at 2 workers per runner (each standard
+  GitHub Actions runner has 4 vCPUs, but 4 workers raised total test time
+  1.8x for little gain; see AGENTS.md, CI workflow notes), and point
+  `webServer.url`
+  at the actual served route rather than a redirect.
 
 **Visual regression updates:**
 

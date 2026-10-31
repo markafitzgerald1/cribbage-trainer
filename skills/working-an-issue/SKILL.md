@@ -163,8 +163,10 @@ agreed, the pull request says what actually happened.
   error. Read the Status field and its option
   ids with `gh project field-list 1 --owner <owner> --format json` (Paused,
   Discovery & Design, Todo, In Progress, Done), find the item id with
-  `gh project item-list 1 --owner <owner> --limit 400 --format json` — the
-  board holds close to 300 items, so the default limit hides most of them —
+  `gh project item-list 1 --owner <owner> --limit 1000 --format json` — the
+  board passed 400 items in October 2026, so the default limit hides most of
+  them and any fixed limit eventually does too: check that the returned
+  count equals `.totalCount` —
   then set it with `gh project item-edit`, passing the item, project, field,
   and In Progress option ids.
 - The Status column has a meaning that was agreed 2026-09-06 and is written
@@ -233,7 +235,7 @@ agreed, the pull request says what actually happened.
   ```
 
 - **Order is project-wide, and a column's rank is that order filtered by
-  Status.** `gh project item-list 1 --owner <owner> --limit 400 --format json`
+  Status.** `gh project item-list 1 --owner <owner> --limit 1000 --format json`
   returns items in board order (its first hundred matched a GraphQL
   `items(first: 100)` read id for id on 2026-10-18), so a column's ranking is
   `.items` filtered on `.status`. Nothing groups the columns inside the
@@ -276,7 +278,7 @@ agreed, the pull request says what actually happened.
   and number together, `(content.repository, content.number)`, never
   `content.number` alone.
   Project 1 tracks `cribbage-trainer` and its sibling
-  `simulate-cribbage-games` together — close to 300 items — and #22, #23,
+  `simulate-cribbage-games` together — over 400 items — and #22, #23,
   #101, and #102 each exist in both. Keying on the number alone silently
   merges them: one pass reported trainer #22 and #23 as "open but marked
   Done" when they were Todo and the Done rows belonged to the simulator,
@@ -286,7 +288,7 @@ agreed, the pull request says what actually happened.
   wrong-but-well-formed answers in a row. GraphQL `items(first: 100)`
   truncated that board with no error — the first page held every Todo item
   but one, so the column looked complete while an issue hid at its tail. Use
-  `gh project item-list 1 --owner <owner> --limit 400`, the limit trap the
+  `gh project item-list 1 --owner <owner> --limit 1000`, the limit trap the
   In Progress bullet already flags for the CLI default, and pass an explicit
   `--limit` to every `gh issue list` too — it defaults to 30, so a repo with
   more matching issues drops the overflow while the totals still reconcile.
