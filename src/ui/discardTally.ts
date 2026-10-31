@@ -2,6 +2,7 @@ import {
   type DiscardDecisionRecord,
   normalizeStoredRecords,
 } from "./discardDecisionRecord";
+import { type PlannedWrite, commitUnlessMoved } from "./tallyCommit";
 import {
   type PracticeAttempt,
   type PracticeRecord,
@@ -202,8 +203,7 @@ const readableTally = (parsed: unknown): MaybeTally | null => {
  * Returning empty for both is what let the next completed discard erase a
  * richer history; returning null for both would brick the tally instead.
  */
-const readStoredTally = (): StoredTally | null => {
-  const stored = localStorage.getItem(discardTallyKey);
+const readStoredTally = (stored: string | null): StoredTally | null => {
   if (stored === null) {
     return emptyTally;
   }
@@ -346,16 +346,24 @@ const basisFor = (persisted: StoredTally): StoredTally => {
   return persisted;
 };
 
-const readTallyOrNull = (): StoredTally | null => {
+const readRaw = (): string | null => {
   try {
-    return readStoredTally();
+    return localStorage.getItem(discardTallyKey);
+  } catch {
+    return null;
+  }
+};
+
+const readTallyOrNull = (raw: string | null): StoredTally | null => {
+  try {
+    return readStoredTally(raw);
   } catch {
     return emptyTally;
   }
 };
 
 export const readTallyForDisplay = (): StoredTally => {
-  const persisted = readTallyOrNull();
+  const persisted = readTallyOrNull(readRaw());
   return persisted === null ? emptyTally : basisFor(persisted);
 };
 
@@ -379,6 +387,36 @@ export const readDiscardTally = (now: number): DiscardTallySummary =>
  * was nothing to record, and skips the write rather than rewriting identical
  * bytes.
  */
+interface TallyWrite extends PlannedWrite {
+  readonly next: StoredTally;
+  readonly persisted: StoredTally | null;
+}
+
+const planWrite = (
+  persisted: StoredTally | null,
+  extend: (tally: StoredTally) => StoredTally,
+): TallyWrite => {
+  const stored = persisted === null ? null : basisFor(persisted);
+  /*
+   * A tally this build cannot read is left as it is: recording over it would
+   * trade a richer history for one hand, and the tab that can read it writes it.
+   */
+  if (stored === null) {
+    return { next: emptyTally, persisted, serialized: null };
+  }
+  const extended = extend(stored);
+  if (extended === stored) {
+    return { next: stored, persisted, serialized: null };
+  }
+  // Every write advances the revision, which is what lets another tab's write be noticed at all.
+  const next: StoredTally = { ...extended, revision: extended.revision + 1 };
+  return {
+    next,
+    persisted,
+    serialized: JSON.stringify(encodeTableIdentities(next)),
+  };
+};
+
 const extendStoredTally = (
   at: number,
   extend: (tally: StoredTally) => StoredTally,
@@ -389,39 +427,21 @@ const extendStoredTally = (
    * schema since. Trusting the in-memory copy alone would let this build
    * flush its own history over that one the moment writing worked again.
    */
-  const persisted = readTallyOrNull();
-  const stored = persisted === null ? null : basisFor(persisted);
-  /*
-   * A tally this build cannot read is left exactly as it is. Recording over
-   * it would discard a richer history for the sake of one hand, and the tab
-   * that can read it is the one that should keep writing it.
-   */
-  if (stored === null) {
-    return summarize(emptyTally, at);
-  }
-  const extended = extend(stored);
-  if (extended === stored) {
-    return summarize(stored, at);
-  }
-  // Every write advances the revision, which is what lets another tab's write be noticed at all.
-  const next: StoredTally = { ...extended, revision: extended.revision + 1 };
-  try {
-    localStorage.setItem(
-      discardTallyKey,
-      JSON.stringify(encodeTableIdentities(next)),
-    );
-    forgetUnsaved();
-  } catch {
-    /*
-     * A quota or a storage-disabled browser must not break the deal. The
-     * summary still reflects this hand, and the tally it could not persist is
-     * kept so the rest of the session accumulates onto it rather than onto
-     * the unchanged stored value.
-     */
-    unsavedTally = next;
-    // The first failure's basis is kept through a run of them, so a later success still compares against what storage held before any of this.
-    unsavedBase ??= persisted;
-  }
+  const { next } = commitUnlessMoved<TallyWrite>({
+    plan: (raw) => planWrite(readTallyOrNull(raw), extend),
+    read: readRaw,
+    write: ({ next: planned, persisted }, serialized) => {
+      try {
+        localStorage.setItem(discardTallyKey, serialized);
+        forgetUnsaved();
+      } catch {
+        // A refused write must not break the deal; the session accumulates onto the unsaved tally instead.
+        unsavedTally = planned;
+        // The first failure's basis is kept through a run of them, so a later success still compares against what storage held before any of this.
+        unsavedBase ??= persisted;
+      }
+    },
+  });
   return summarize(next, at);
 };
 

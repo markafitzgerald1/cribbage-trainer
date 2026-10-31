@@ -298,6 +298,17 @@
   re-implements the logic it tests: it would then agree with a wrong
   implementation. Coverage cannot tell these apart, because a vacuous test
   executes the same lines as a good one.
+- **Assert which rows survived, not how many.** On #903 the exhaustion test
+  first expected five decisions, and a mutation that dropped this tab's write
+  entirely still passed, because the other tab's five records made the same
+  count. Name the surviving records instead.
+- A cross-tab race on `localStorage` can be tested deterministically in Jest,
+  because another tab can only act between two storage calls. Spy on
+  `Storage.prototype.getItem` and commit the other tab's value with a `setItem`
+  captured before any spy, right after the read you want it to follow;
+  `src/ui/discardTallyRace.test.ts` does this. A two-tab Playwright run
+  cannot place a write inside one synchronous call, so it passes against the
+  unfixed code.
 - Never judge a validation run by piping through `| tail` or `| grep`: the
   pipe masks the command's exit code and a "61 passed" line can sit directly
   below a failed-tests list. Redirect to a log file, echo `$?`, and read the
