@@ -153,11 +153,14 @@ jobs:
         run: npm clean-install
 
       # Shards are contiguous blocks of a list ordered by project, and a
-      # WebKit test costs about 2.5x a Chromium one, so equal counts left the
-      # Mobile Safari shard twice as slow as the average. These are test
-      # counts per shard fitted to measured durations (#949). They only move
-      # block boundaries, so every test still runs exactly once, new tests
-      # included; an ignored variable falls back to equal blocks.
+      # WebKit test costs about 2.7x a Chromium one, so equal counts left the
+      # WebKit and Mobile Safari shards up to twice as slow as the average.
+      # These relative weights were fitted to measured durations (#949); they
+      # sum to the 667 tests of the time, so each is that shard's count. They
+      # only move block boundaries, so every test, new ones included, falls in
+      # exactly one shard; an unset variable falls back to equal blocks.
+      # There must be one weight per shard: changing the matrix without
+      # changing this list fails every shard.
       - name: Run E2E shard ${{ matrix.shard }} of 8
         env:
           PWTEST_SHARD_WEIGHTS: "146:99:57:64:108:95:58:40"
