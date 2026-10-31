@@ -1,5 +1,6 @@
 import {
   AT,
+  EMPTY,
   asJson,
   decisionOf,
   firstStoredAdmission,
@@ -13,6 +14,7 @@ import {
   type DiscardTallySummary,
   clearDiscardTally,
   discardTallyKey,
+  readDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
   recordPracticeAttempt,
@@ -48,10 +50,11 @@ const otherTabCommits = (
 /*
  * Another tab can only act between two storage calls, so its commit is placed
  * right after one of this tab's reads of the tally: the first commit follows
- * the first read, the second the second, and so on.
+ * the first read, the second the second, and so on. An Error refuses that read
+ * instead, and null lets it through untouched.
  */
 const raceAgainst = (
-  commits: readonly string[],
+  commits: readonly (string | Error | null)[],
   write: () => DiscardTallySummary,
 ): { readonly reads: number; readonly summary: DiscardTallySummary } => {
   let reads = 0;
@@ -62,6 +65,9 @@ const raceAgainst = (
       if (key === discardTallyKey) {
         const commit = commits.at(reads);
         reads += 1;
+        if (commit instanceof Error) {
+          throw commit;
+        }
         if (typeof commit === "string") {
           realSet(key, commit);
         }
@@ -84,6 +90,9 @@ const counts = () => {
     skipped: skipped.length,
   };
 };
+
+const storedHandKeys = () =>
+  readTallyForDisplay().records.map(({ handKey }) => handKey);
 
 const recordMine = () => recordDiscardDecision(decisionOf({ handKey: "mine" }));
 const recordTheirs =
@@ -113,9 +122,41 @@ describe("two tabs writing the tally at once", () => {
     },
   ])("keeps both writes for $name", ({ expected, theirs, write }) => {
     clearDiscardTally();
-    raceAgainst(otherTabCommits(null, [theirs]), write);
+    const { summary } = raceAgainst(otherTabCommits(null, [theirs]), write);
 
-    expect(counts()).toStrictEqual(expected);
+    expect({
+      shown: [summary.decisions, summary.skippedHands],
+      stored: counts(),
+    }).toStrictEqual({
+      shown: [expected.decisions, expected.skipped],
+      stored: expected,
+    });
+  });
+
+  it("notices a write by a build that keeps no revision count", () => {
+    clearDiscardTally();
+    recordTheirs("base")();
+    const base = storedNow() as string;
+    const [theirs] = otherTabCommits(base, [recordTheirs()]);
+    const uncounted = asJson({
+      ...(JSON.parse(theirs as string) as object),
+      revision: (JSON.parse(base) as { revision: number }).revision,
+    });
+    raceAgainst([uncounted], recordMine);
+
+    expect(storedHandKeys()).toStrictEqual(["base", "theirs", "mine"]);
+  });
+
+  it("keeps a refused write's hand when the re-read is refused too", () => {
+    clearDiscardTally();
+    recordTheirs("saved")();
+    withFailingWrite(recordTheirs("unsaved"));
+    const { summary } = raceAgainst([null, new Error("refused")], recordMine);
+
+    expect({
+      handKeys: storedHandKeys(),
+      shown: summary.decisions,
+    }).toStrictEqual({ handKeys: ["saved", "unsaved", "mine"], shown: 3 });
   });
 
   it("keeps the other tab's settlement rather than settling it again", () => {
@@ -157,7 +198,7 @@ describe("two tabs writing the tally at once", () => {
     const { reads } = raceAgainst(commits, recordMine);
 
     expect({
-      handKeys: readTallyForDisplay().records.map(({ handKey }) => handKey),
+      handKeys: storedHandKeys(),
       reads,
     }).toStrictEqual({
       handKeys: ["one", "two", "three", "four", "mine"],
@@ -177,5 +218,14 @@ describe("two tabs writing the tally at once", () => {
     clearDiscardTally();
 
     expect(withRefused("getItem", recordMine).decisions).toBe(1);
+  });
+
+  it("reads as empty when storage refuses to be read", () => {
+    clearDiscardTally();
+    recordMine();
+
+    expect(withRefused("getItem", () => readDiscardTally(AT))).toStrictEqual(
+      EMPTY,
+    );
   });
 });

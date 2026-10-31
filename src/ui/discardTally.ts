@@ -2,7 +2,7 @@ import {
   type DiscardDecisionRecord,
   normalizeStoredRecords,
 } from "./discardDecisionRecord";
-import { type PlannedWrite, commitUnlessMoved } from "./tallyCommit";
+import { type PlannedWrite, commitUnlessMoved, readOr } from "./tallyCommit";
 import {
   type PracticeAttempt,
   type PracticeRecord,
@@ -88,8 +88,8 @@ export interface StoredTally {
   readonly practice: readonly PracticeRecord[];
   readonly records: readonly DiscardDecisionRecord[];
   /*
-   * Incremented on every write, and the only thing compared when deciding
-   * whether storage has moved. Counting rows cannot answer that: at the
+   * Incremented on every write, and what tells the unsaved copy whether
+   * storage moved beneath it. Counting rows cannot answer that: at the
    * record cap another tab can add a practice decision without changing a
    * single count, because practice leaves the lifetime totals alone and the
    * cap holds the length steady.
@@ -346,13 +346,9 @@ const basisFor = (persisted: StoredTally): StoredTally => {
   return persisted;
 };
 
-const readRaw = (): string | null => {
-  try {
-    return localStorage.getItem(discardTallyKey);
-  } catch {
-    return null;
-  }
-};
+const getRawTally = () => localStorage.getItem(discardTallyKey);
+
+const readRaw = () => readOr(getRawTally, null);
 
 const readTallyOrNull = (raw: string | null): StoredTally | null => {
   try {
@@ -408,7 +404,7 @@ const planWrite = (
   if (extended === stored) {
     return { next: stored, persisted, serialized: null };
   }
-  // Every write advances the revision, which is what lets another tab's write be noticed at all.
+  // Every write advances the revision, which is what lets the unsaved copy notice storage moved.
   const next: StoredTally = { ...extended, revision: extended.revision + 1 };
   return {
     next,
@@ -429,7 +425,7 @@ const extendStoredTally = (
    */
   const { next } = commitUnlessMoved<TallyWrite>({
     plan: (raw) => planWrite(readTallyOrNull(raw), extend),
-    read: readRaw,
+    read: getRawTally,
     write: ({ next: planned, persisted }, serialized) => {
       try {
         localStorage.setItem(discardTallyKey, serialized);

@@ -12,9 +12,21 @@ export interface PlannedWrite {
 
 export interface CommitSteps<Plan extends PlannedWrite> {
   readonly plan: (raw: string | null) => Plan;
+  // May throw: a refused first read counts as an empty store, and a refused re-read as unmoved.
   readonly read: () => string | null;
   readonly write: (planned: Plan, serialized: string) => void;
 }
+
+export const readOr = (
+  read: () => string | null,
+  fallback: string | null,
+): string | null => {
+  try {
+    return read();
+  } catch {
+    return fallback;
+  }
+};
 
 function commitFrom<Plan extends PlannedWrite>(
   raw: string | null,
@@ -31,7 +43,8 @@ function commitFrom<Plan extends PlannedWrite>(
    * rather than closing it; closing it needs a cross-tab lock (#903).
    */
   if (attempt < MAX_COMMIT_ATTEMPTS) {
-    const current = steps.read();
+    // A refused re-read says nothing about another tab, so it counts as unmoved rather than as an empty store.
+    const current = readOr(steps.read, raw);
     if (current !== raw) {
       return commitFrom(current, attempt + 1, steps);
     }
@@ -49,5 +62,5 @@ function commitFrom<Plan extends PlannedWrite>(
 export function commitUnlessMoved<Plan extends PlannedWrite>(
   steps: CommitSteps<Plan>,
 ): Plan {
-  return commitFrom(steps.read(), 1, steps);
+  return commitFrom(readOr(steps.read, null), 1, steps);
 }
