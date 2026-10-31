@@ -133,7 +133,7 @@ export const runAuditOnce = ({ spawn = spawnSync } = {}) => {
  * `runOnce` and `wait` are injectable so the retry/classification behavior
  * is unit-testable without a real audit call. Returns the process exit code.
  * `timedOutBefore` carries across attempts because an outage reported after
- * a timeout does not explain the timeout, so it must not soften the run.
+ * an unexplained timeout does not explain it, so it must not soften the run.
  */
 export const runAuditWithResilience = async (
   { runOnce = runAuditOnce, wait = sleep } = {},
