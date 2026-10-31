@@ -1,5 +1,6 @@
 import {
   ATTEMPT_TIMEOUT_MS,
+  MAX_ATTEMPTS,
   classifyAuditOutcome,
   runAuditOnce,
   runAuditWithResilience,
@@ -84,11 +85,12 @@ test("runAuditOnce reports a killed child as a non-zero status", () => {
   strictEqual(runAuditOnce({ spawn: stub.spawn }).status, 1);
 });
 
-test("a timeout explaining nothing fails the build", () => {
+test("a timeout explaining nothing is retryable but never transient", () => {
+  // "transient" is the outcome that softens to a pass once retries run out.
   const stub = spawnStub({ ...TIMED_OUT, stdout: "" });
   strictEqual(
     classifyAuditOutcome(runAuditOnce({ spawn: stub.spawn })),
-    "fail",
+    "timeout",
   );
 });
 
@@ -167,4 +169,96 @@ test("runAuditWithResilience: real findings fail on the first attempt", async ()
 
   strictEqual(code, 1);
   strictEqual(calls, 1);
+});
+
+// Replays prepared attempt results in order, counting how many ran.
+const attemptSequence = (results) => {
+  let calls = 0;
+  const runOnce = () => {
+    const result = results.at(Math.min(calls, results.length - 1));
+    calls += 1;
+    return result;
+  };
+  return { calls: () => calls, runOnce };
+};
+
+const SILENT_TIMEOUT = { output: "", status: 1, timedOut: true };
+const PASSED = { output: "", status: 0 };
+const OUTAGE = { output: ENDPOINT_OUTAGE, status: 1 };
+const noWait = () => Promise.resolve();
+
+test("runAuditOnce marks a killed child as timed out", () => {
+  const stub = spawnStub({ ...TIMED_OUT, stdout: "" });
+  strictEqual(runAuditOnce({ spawn: stub.spawn }).timedOut, true);
+});
+
+test("runAuditOnce does not mark a completed child as timed out", () => {
+  const stub = spawnStub({ status: 1, stderr: "", stdout: "" });
+  strictEqual(runAuditOnce({ spawn: stub.spawn }).timedOut, false);
+});
+
+test("classifyAuditOutcome: a silent timeout is its own outcome", () => {
+  strictEqual(classifyAuditOutcome(SILENT_TIMEOUT), "timeout");
+});
+
+test("classifyAuditOutcome: a silent non-zero exit without a timeout still fails", () => {
+  strictEqual(
+    classifyAuditOutcome({ output: "", status: 1, timedOut: false }),
+    "fail",
+  );
+});
+
+test("runAuditWithResilience: a timed-out attempt is retried and a completed retry passes", async () => {
+  const sequence = attemptSequence([SILENT_TIMEOUT, PASSED]);
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: noWait,
+  });
+
+  strictEqual(code, 0);
+  strictEqual(sequence.calls(), 2);
+});
+
+test("runAuditWithResilience: every attempt timing out fails after MAX_ATTEMPTS", async () => {
+  const sequence = attemptSequence([SILENT_TIMEOUT]);
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: noWait,
+  });
+
+  strictEqual(code, 1);
+  strictEqual(sequence.calls(), MAX_ATTEMPTS);
+});
+
+// A run that ever timed out has an attempt nobody can explain, so a later
+// endpoint outage must not soften it into a pass the way a pure outage is.
+for (const [name, results] of [
+  ["a timeout then outages", [SILENT_TIMEOUT, OUTAGE]],
+  ["an outage then timeouts", [OUTAGE, SILENT_TIMEOUT]],
+  ["outages ending in a timeout", [OUTAGE, OUTAGE, SILENT_TIMEOUT]],
+]) {
+  test(`runAuditWithResilience: ${name} fails rather than softening`, async () => {
+    const sequence = attemptSequence(results);
+    const code = await runAuditWithResilience({
+      runOnce: sequence.runOnce,
+      wait: noWait,
+    });
+
+    strictEqual(code, 1);
+    strictEqual(sequence.calls(), MAX_ATTEMPTS);
+  });
+}
+
+test("runAuditWithResilience: real findings after a timeout still fail at once", async () => {
+  const sequence = attemptSequence([
+    SILENT_TIMEOUT,
+    { output: REAL_FINDINGS, status: 1 },
+  ]);
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: noWait,
+  });
+
+  strictEqual(code, 1);
+  strictEqual(sequence.calls(), 2);
 });
