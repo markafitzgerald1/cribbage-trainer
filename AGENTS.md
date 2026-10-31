@@ -130,8 +130,9 @@
     `skills/make-it-green/SKILL.md`.
   - Before adding or changing Storybook stories or interaction coverage, read
     `skills/testing-storybook/SKILL.md`.
-  - Before bumping dependencies, taking a major upgrade, or fixing an
-    `npm run lint:audit` advisory, read
+  - Before bumping dependencies, taking a major upgrade, fixing an
+    `npm run lint:audit` advisory, or adding or changing a `uses:` pin in a
+    workflow or composite action, read
     `skills/dependency-maintenance/SKILL.md`.
   - Before writing or debugging a Playwright spec, regenerating screenshot
     baselines, or diagnosing a rendered-layout bug in the browser, read
@@ -1382,12 +1383,15 @@ they bind any PR that makes a claim about a phone or ships a guard.
   workflow, Markdown, skill and lint-config files out of the copies before
   `RUN npm test`; a docs-only PR then skips Jest and Storybook.
 - **Running lint, Jest and Storybook coverage at once in one build did not
-  pay.** #954 tried them as parallel Dockerfile stages. On the 4-vCPU
-  runner, lint stretched from 43-52 s to 80 s and Jest from 29-38 s to
-  73 s, so the overlap saved less than the run-to-run noise. The three
-  together also ran out of memory in a local Docker Desktop VM limited to
-  4 GB, so `npm run docker:build-and-test-all` could fail on a machine
-  whose Docker memory is set that low.
+  pay.** #954 tried them as parallel Dockerfile stages on two CI runs. On
+  the 4-vCPU runner each stage slowed two- to fourfold against nine serial
+  runs: Jest took 73 and 96 s against 22-40 s, Storybook coverage 54 and
+  64 s against 16-28 s, and lint 80 s against 32-57 s. The parallel
+  critical path therefore fell inside the 75-134 s the serial sequence
+  took, so the overlap bought nothing measurable. Two runs are a small
+  sample, and a runner with more cores could change the answer. One local
+  attempt also failed in Storybook coverage with `cannot allocate memory`
+  in a Docker Desktop VM limited to 4 GB.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages. Pinned to
   `github.event_name == 'push'`, and `push` is main-only, so only a push to
