@@ -1374,6 +1374,20 @@ they bind any PR that makes a claim about a phone or ships a guard.
   Docker image on every push to main. Without
   it each PR's first run built every layer and spent about three minutes
   exporting them. Its result gates nothing.
+- **A pull request's Docker build hits only layers main also has.** On
+  #954, `docker-gate`'s gha import never reused a layer the PR itself had
+  exported, not even on a rerun of the same head with an identical build
+  context, so `docker-gate` exports no cache. What that makes the
+  `Dockerfile`'s copy order worth is main's layers: a test layer stays
+  cached on a PR only if every file copied before it matches main. Keep
+  workflow, Markdown, skill and lint-config files out of the copies before
+  `RUN npm test`; a docs-only PR then skips Jest and Storybook.
+- **Do not run lint, Jest and Storybook coverage at once in one build.**
+  #954 tried them as parallel Dockerfile stages. On the 4-vCPU runner lint
+  stretched from 43-52 s to 80 s and `lint:audit` from 10-15 s to 28-32 s,
+  past its 30 s timeout, failing the gate. The three together also ran out
+  of memory under Docker Desktop's default 4 GB. Their overlap saved less
+  than the run-to-run noise.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages. Pinned to
   `github.event_name == 'push'`, and `push` is main-only, so only a push to

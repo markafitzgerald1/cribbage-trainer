@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.64.0-noble AS dependencies
+FROM mcr.microsoft.com/playwright:v1.64.0-noble
 
 WORKDIR /usr/src/app
 
@@ -16,36 +16,25 @@ COPY babel.config.json jest.config.json styles.d.ts tsconfig.json vite.config.mj
 COPY src/ ./src/
 COPY scripts/expectedTableIdentity.mjs scripts/uncertaintySidecar.mjs scripts/tableIdentityBabel.mjs scripts/tableIdentityCacheKey.mjs scripts/tableIdentityJest.mjs scripts/tableIdentityJest.test.mjs ./scripts/
 
-# Jest, Storybook coverage and lint read nothing the others write, so each is
-# its own stage and BuildKit runs them at once. The final stage copies a
-# marker out of each, which is what makes a plain `docker build` wait for,
-# and fail on, all three.
-FROM dependencies AS unit-tests
-RUN npm test && touch /unit-tests-passed
+RUN npm test
 
-FROM dependencies AS app-build
 COPY .storybook/ ./.storybook/
 # Running `build` prior to `lint` as some TypeScript ESLint issues are only
 # found by ESLint when a `dist/` directory containing build output exists for
 # some unknown reason.
 RUN npm run build
-RUN npm run storybook:build
 
-FROM app-build AS storybook-tests
-RUN npm run storybook:test:coverage && touch /storybook-tests-passed
+RUN npm run storybook:build
+RUN npm run storybook:test:coverage
 
 # Every linter here globs, so any file the image never received matches
 # nothing and its task still reports success: the allowlist above silently
 # excused tests-e2e/ and playwright.config.ts from all ten of them. Copy the
 # whole context instead of extending that allowlist, so the linted file set
-# equals the working tree's by construction. Only this stage sees the copy,
-# so it invalidates nothing but lint itself.
-FROM app-build AS lint
+# equals the working tree's by construction. Lint runs after the Storybook
+# steps so this copy invalidates nothing but the lint layer itself.
 COPY . .
-RUN npm run lint
 
-FROM lint
-COPY --from=unit-tests /unit-tests-passed /
-COPY --from=storybook-tests /storybook-tests-passed /
+RUN npm run lint
 
 CMD [ "sh", "-c", "npm run test-e2e" ]
