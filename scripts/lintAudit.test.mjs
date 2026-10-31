@@ -8,6 +8,7 @@ import {
 } from "./lintAudit.mjs";
 import { deepStrictEqual, strictEqual } from "node:assert/strict";
 import { test } from "node:test";
+import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 
 // A trimmed sample of the real better-npm-audit output when npm.org's
 // advisories/bulk endpoint is degraded — the failure this wrapper exists for.
@@ -245,8 +246,8 @@ test("runAuditWithResilience: every attempt timing out backs off between attempt
   deepStrictEqual(backoff.waits, [BACKOFF_MS, BACKOFF_MS]);
 });
 
-// A run that ever timed out has an attempt nobody can explain, so a later
-// endpoint outage must not soften it into a pass the way a pure outage is.
+// A run with an unexplained timeout has an attempt nobody can explain, so a
+// later endpoint outage must not soften it into a pass the way an outage is.
 for (const [name, results] of [
   ["a timeout then outages", [SILENT_TIMEOUT, OUTAGE]],
   ["an outage then timeouts", [OUTAGE, SILENT_TIMEOUT]],
@@ -276,4 +277,36 @@ test("runAuditWithResilience: real findings after a timeout still fail at once",
 
   strictEqual(code, 1);
   strictEqual(sequence.calls(), 2);
+});
+
+test("runAuditWithResilience: findings printed before the kill fail at once", async () => {
+  const sequence = attemptSequence([
+    { output: REAL_FINDINGS, status: 1, timedOut: true },
+    PASSED,
+  ]);
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: noWait,
+  });
+
+  strictEqual(code, 1);
+  strictEqual(sequence.calls(), 1);
+});
+
+test("runAuditWithResilience: a timeout retry waits for its backoff to finish", async () => {
+  const sequence = attemptSequence([SILENT_TIMEOUT, PASSED]);
+  let releaseBackoff = noWait;
+  const run = runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: () =>
+      new Promise((resolve) => {
+        releaseBackoff = resolve;
+      }),
+  });
+  await yieldToEventLoop();
+  const callsDuringBackoff = sequence.calls();
+  releaseBackoff();
+
+  strictEqual(await run, 0);
+  strictEqual(callsDuringBackoff, 1);
 });
