@@ -31,7 +31,21 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   infrastructure — it happened three times in a row on #768 while npm was
   down. The wrapper retries an unambiguous endpoint outage and, only if it
   never clears, passes with a loud warning; a real findings table or any
-  other non-zero exit still fails. `scripts/lintAudit.test.mjs`
+  other non-zero exit still fails. An attempt killed at
+  `ATTEMPT_TIMEOUT_MS` (30 s) with no cause in its output is retried on the
+  same schedule but **never softened**: a run that saw such a timeout
+  passes only if a later attempt completes the audit with exit 0, and
+  fails otherwise, even if a later attempt reports an endpoint outage.
+  That retry earns its place on measurement, not on analogy with the
+  outage case. Across 75 CI jobs that ran the audit from 2026-10-18 to
+  2026-10-31, it timed out three times, all within 30 minutes on the
+  evening of 2026-10-30 (ET), every one with no output at all. Audits that
+  completed in that window took 12 to 14 s against a 7.6 s median overall,
+  and a rerun four minutes later passed. That is consistent with a slow
+  registry and supports retrying, though it does not prove why any one
+  child stalled. The 30 s ceiling is also tighter than it looks: two audits
+  that completed with real findings on 2026-10-24 took 23 and 26 s.
+  `scripts/lintAudit.test.mjs`
   (`npm run test:lint-audit`, its own CI step next to `test:skill-paths`)
   pins the classifier. If you genuinely need the raw tool — to confirm a
   fix cleared an advisory — run `npx better-npm-audit audit` yourself; do
