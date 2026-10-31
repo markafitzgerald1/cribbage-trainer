@@ -12,6 +12,6 @@
   "1244013": {
     "active": true,
     "expiry": "2026-11-13",
-    "notes": "glob AbortSignal cancellation bypass (GHSA-3g3m-2fjr-6pw4), moderate, published 2026-10-30. Range is 9.0.0 through 14.0.1 with 14.0.2 the only patched release; the tree holds 10.5.0 and 13.0.6 through jest, rimraf and Storybook's docgen plugin, and legacy-v10 is 10.5.0, so no patched release exists on those lines. npm ls glob --omit=dev is empty, so nothing ships. The expiry forces a re-check for backports."
+    "notes": "glob AbortSignal cancellation bypass (GHSA-3g3m-2fjr-6pw4), moderate, published 2026-10-30. Range is 9.0.0 through 14.0.1, first patched in 14.0.2 on the 14 line only; the tree holds 10.5.0 and 13.0.6 through jest, rimraf and Storybook's docgen plugin, and legacy-v10 is 10.5.0, so no patched release exists on those lines. npm ls glob --omit=dev is empty, so nothing ships. The expiry forces a re-check for backports."
   }
 }
