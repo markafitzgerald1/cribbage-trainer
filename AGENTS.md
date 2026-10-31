@@ -1382,12 +1382,12 @@ they bind any PR that makes a claim about a phone or ships a guard.
   cached on a PR only if every file copied before it matches main. Keep
   workflow, Markdown, skill and lint-config files out of the copies before
   `RUN npm test`; a docs-only PR then skips Jest and Storybook.
-- **Do not run lint, Jest and Storybook coverage at once in one build.**
-  #954 tried them as parallel Dockerfile stages. On the 4-vCPU runner lint
-  stretched from 43-52 s to 80 s and `lint:audit` from 10-15 s to 28-32 s,
-  past its 30 s timeout, failing the gate. The three together also ran out
-  of memory under Docker Desktop's default 4 GB. Their overlap saved less
-  than the run-to-run noise.
+- **Running lint, Jest and Storybook coverage at once in one build did not
+  pay.** #954 tried them as parallel Dockerfile stages. On the 4-vCPU
+  runner, lint stretched from 43-52 s to 80 s and Jest from 29-38 s to
+  73 s, so the overlap saved less than the run-to-run noise. The three
+  together also ran out of memory under Docker Desktop's default 4 GB,
+  which `npm run docker:build-and-test-all` would hit locally.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages. Pinned to
   `github.event_name == 'push'`, and `push` is main-only, so only a push to
