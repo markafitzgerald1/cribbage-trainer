@@ -130,7 +130,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -149,8 +149,8 @@ jobs:
       - name: Install dependencies
         run: npm clean-install
 
-      - name: Run E2E shard ${{ matrix.shard }} of 4
-        run: npx playwright test --shard=${{ matrix.shard }}/4 --reporter=blob
+      - name: Run E2E shard ${{ matrix.shard }} of 8
+        run: npx playwright test --shard=${{ matrix.shard }}/8 --reporter=blob
 
       - name: Upload blob report
         if: ${{ !cancelled() }}
@@ -225,6 +225,31 @@ jobs:
         run: |
           echo "docker-gate=$DOCKER_GATE e2e-image=$E2E_IMAGE e2e=$E2E"
           [ "$DOCKER_GATE" = success ] && [ "$E2E_IMAGE" = success ] && [ "$E2E" = success ]
+
+  # A pull request can read the Actions cache of its own branch and of main,
+  # and nothing else. Without this job main never writes the Docker layers,
+  # so every pull request's first run built from nothing and spent ~166 s
+  # exporting them. Its result decides nothing; deploy does not wait on it.
+  warm-docker-cache:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build Docker Test Image into the cache
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   build-upload-and-deploy:
     runs-on: ubuntu-latest

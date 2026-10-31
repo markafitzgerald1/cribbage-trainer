@@ -28,6 +28,7 @@ export default [
       "storybook-static/",
       ".claude/",
       "playwright-report/",
+      "blob-report/",
       "test-results/",
     ],
   },
