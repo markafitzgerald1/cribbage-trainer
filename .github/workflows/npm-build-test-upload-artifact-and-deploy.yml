@@ -77,9 +77,9 @@ jobs:
 
       # No load: e2e runs in the shard jobs below, so nothing here needs the
       # image in the daemon, and exporting it cost ~95 s per run. No cache-to
-      # either: a pull request's import has only ever hit layers main also
-      # has, never its own earlier export, even on a rerun of the same head
-      # (#954). Exporting cost 14-18 s per run and filled the repository's
+      # either: on #954 a pull request's import hit only layers main also
+      # had, never its own earlier export, even on a rerun of the same head.
+      # Exporting cost 14-18 s per run and filled the repository's
       # 10 GB cache, which evicts the main layers warm-docker-cache writes.
       - name: Build Docker Test Image (unit tests, lint, Storybook tests)
         uses: docker/build-push-action@v7
