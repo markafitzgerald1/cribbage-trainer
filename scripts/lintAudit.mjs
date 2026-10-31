@@ -12,8 +12,9 @@
  * recognized cause — still fail the build, so the gate keeps its teeth.
  * Only an unambiguous endpoint outage is retried and, if it never clears,
  * allowed to pass with a loud warning; a later run re-checks advisories.
- * An attempt killed at the timeout is retried too, but never softened: a
- * run that ever timed out passes only when a later attempt completes clean.
+ * An attempt killed at the timeout whose output names no such outage is
+ * retried too, but never softened: once one occurs, the run passes only
+ * when a later attempt completes clean.
  */
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";

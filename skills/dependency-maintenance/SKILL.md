@@ -41,8 +41,9 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   2026-10-31, it timed out three times, all within 30 minutes on the
   evening of 2026-10-30 (ET), every one with no output at all. Audits that
   completed in that window took 12 to 14 s against a 7.6 s median overall,
-  and a rerun four minutes later passed. That is a slow registry, not a
-  hung child. The 30 s ceiling is also tighter than it looks: two audits
+  and a rerun four minutes later passed. That is consistent with a slow
+  registry and supports retrying, though it does not prove why any one
+  child stalled. The 30 s ceiling is also tighter than it looks: two audits
   that completed with real findings on 2026-10-24 took 23 and 26 s.
   `scripts/lintAudit.test.mjs`
   (`npm run test:lint-audit`, its own CI step next to `test:skill-paths`)

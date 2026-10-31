@@ -1,11 +1,12 @@
 import {
   ATTEMPT_TIMEOUT_MS,
+  BACKOFF_MS,
   MAX_ATTEMPTS,
   classifyAuditOutcome,
   runAuditOnce,
   runAuditWithResilience,
 } from "./lintAudit.mjs";
-import { strictEqual } from "node:assert/strict";
+import { deepStrictEqual, strictEqual } from "node:assert/strict";
 import { test } from "node:test";
 
 // A trimmed sample of the real better-npm-audit output when npm.org's
@@ -208,26 +209,40 @@ test("classifyAuditOutcome: a silent non-zero exit without a timeout still fails
   );
 });
 
-test("runAuditWithResilience: a timed-out attempt is retried and a completed retry passes", async () => {
+// Records each backoff so a retry that skips its wait is caught.
+const recordedWaits = () => {
+  const waits = [];
+  const wait = (ms) => {
+    waits.push(ms);
+    return Promise.resolve();
+  };
+  return { wait, waits };
+};
+
+test("runAuditWithResilience: a timed-out attempt is retried after a backoff and a completed retry passes", async () => {
   const sequence = attemptSequence([SILENT_TIMEOUT, PASSED]);
+  const backoff = recordedWaits();
   const code = await runAuditWithResilience({
     runOnce: sequence.runOnce,
-    wait: noWait,
+    wait: backoff.wait,
   });
 
   strictEqual(code, 0);
   strictEqual(sequence.calls(), 2);
+  deepStrictEqual(backoff.waits, [BACKOFF_MS]);
 });
 
-test("runAuditWithResilience: every attempt timing out fails after MAX_ATTEMPTS", async () => {
+test("runAuditWithResilience: every attempt timing out backs off between attempts and fails after MAX_ATTEMPTS", async () => {
   const sequence = attemptSequence([SILENT_TIMEOUT]);
+  const backoff = recordedWaits();
   const code = await runAuditWithResilience({
     runOnce: sequence.runOnce,
-    wait: noWait,
+    wait: backoff.wait,
   });
 
   strictEqual(code, 1);
   strictEqual(sequence.calls(), MAX_ATTEMPTS);
+  deepStrictEqual(backoff.waits, [BACKOFF_MS, BACKOFF_MS]);
 });
 
 // A run that ever timed out has an attempt nobody can explain, so a later
