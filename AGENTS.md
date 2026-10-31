@@ -106,9 +106,8 @@
   will not catch a broken symlink. Those symlinks sit at `skills/` as a
   whole, so **adding a skill adds no symlink**: a new directory's only new
   surface is its `SKILL.md` and the frontmatter `name` matching it, and the
-  Dockerfile already carries both `COPY skills/ ./skills/` and the
-  whole-context `COPY . .` before lint, so it needs no copy-surface change
-  either.
+  Dockerfile's whole-context `COPY . .` before lint already delivers
+  `skills/`, so it needs no copy-surface change either.
 - This file keeps only what an agent can violate _without knowing it is in
   that domain_ — build-wide invariants, contribution rules, and the shape of
   the project. Guidance whose trigger is self-evident from the task lives in
@@ -1375,6 +1374,27 @@ they bind any PR that makes a claim about a phone or ships a guard.
   Docker image on every push to main. Without
   it each PR's first run built every layer and spent about three minutes
   exporting them. Its result gates nothing.
+- **On #954 a pull request's Docker build reused only layers main also
+  had.** Across seven `docker-gate` attempts on two PRs, the gha import
+  never hit a layer the PR itself had exported, not even on a rerun of the
+  same head with an identical build context, so `docker-gate` now exports
+  no cache. That is an observed result, not a guarantee of the backend:
+  BuildKit does read the PR's own cache scope, and why it missed was not
+  established. Recheck it before relying on a PR's own export. Until then
+  the copy order pays through main's layers, so a test layer stays cached
+  on a PR only if every file copied before it matches main. Keep workflow,
+  Markdown, skill and lint-config files out of the copies before
+  `RUN npm test`; a docs-only PR then skips Jest and Storybook.
+- **Running lint, Jest and Storybook coverage at once in one build did not
+  pay.** #954 tried them as parallel Dockerfile stages on two CI runs. On
+  the 4-vCPU runner, against nine serial runs, Jest took 73 and 96 s
+  against 22-40 s, Storybook coverage 54 and 64 s against 16-28 s, and
+  lint 80 s against 32-57 s. The parallel
+  critical path therefore fell inside the 75-134 s the serial sequence
+  took, so the overlap bought nothing measurable. Two runs are a small
+  sample, and a runner with more cores could change the answer. One local
+  attempt also failed in Storybook coverage with `cannot allocate memory`
+  in a Docker Desktop VM limited to 4 GB.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages. Pinned to
   `github.event_name == 'push'`, and `push` is main-only, so only a push to
