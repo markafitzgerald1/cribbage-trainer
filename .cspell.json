@@ -11,6 +11,7 @@
     "/dist/",
     "/node_modules/",
     "/playwright-report/",
+    "/blob-report/",
     "/storybook-static/",
     "/test-results/",
     "/tsconfig.tsbuildinfo"
