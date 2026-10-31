@@ -92,7 +92,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    if: github.event_name == 'pull_request'
+    # Main needs it too, for warm-e2e-npm-cache.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     outputs:
       image: ${{ steps.from.outputs.image }}
     steps:
@@ -253,6 +254,37 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # The npm cache counterpart of warm-docker-cache: the e2e shards run only
+  # on pull requests, so without this main never writes their ~/.npm entry
+  # and every pull request's first run installs cold. The container, user,
+  # path and key must match the e2e job exactly, or the entry it saves is
+  # one the shards cannot restore. Its result decides nothing.
+  warm-e2e-npm-cache:
+    runs-on: ubuntu-latest
+    needs: e2e-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    container:
+      image: ${{ needs.e2e-image.outputs.image }}
+      options: --user 1001
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - id: cache
+        name: Cache npm downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-e2e-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-npm-
+
+      - name: Install dependencies into the cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm clean-install
 
   build-upload-and-deploy:
     runs-on: ubuntu-latest
