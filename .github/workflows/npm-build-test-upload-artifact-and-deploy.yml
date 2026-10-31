@@ -72,12 +72,6 @@ jobs:
       - name: Run PWA manifest tests
         run: npm run test:pwa-manifest
 
-      - name: TEMPORARY list build context metadata
-        run: |
-          find . -path ./node_modules -prune -o -path ./.git -prune -o -printf '%M %U %G %s %l %p\n' | sort -k6 | sha256sum
-          find .github __mocks__ src .storybook -printf '%M %U %G %s %l %p\n' | sort -k6 | head -40
-          id; umask
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
