@@ -106,9 +106,8 @@
   will not catch a broken symlink. Those symlinks sit at `skills/` as a
   whole, so **adding a skill adds no symlink**: a new directory's only new
   surface is its `SKILL.md` and the frontmatter `name` matching it, and the
-  Dockerfile already carries both `COPY skills/ ./skills/` and the
-  whole-context `COPY . .` before lint, so it needs no copy-surface change
-  either.
+  Dockerfile's whole-context `COPY . .` before lint already delivers
+  `skills/`, so it needs no copy-surface change either.
 - This file keeps only what an agent can violate _without knowing it is in
   that domain_ — build-wide invariants, contribution rules, and the shape of
   the project. Guidance whose trigger is self-evident from the task lives in
@@ -1386,8 +1385,9 @@ they bind any PR that makes a claim about a phone or ships a guard.
   pay.** #954 tried them as parallel Dockerfile stages. On the 4-vCPU
   runner, lint stretched from 43-52 s to 80 s and Jest from 29-38 s to
   73 s, so the overlap saved less than the run-to-run noise. The three
-  together also ran out of memory under Docker Desktop's default 4 GB,
-  which `npm run docker:build-and-test-all` would hit locally.
+  together also ran out of memory in a local Docker Desktop VM limited to
+  4 GB, so `npm run docker:build-and-test-all` could fail on a machine
+  whose Docker memory is set that low.
 - On main: installs deps from `.nvmrc`, builds app and Storybook, uploads Pages
   artifact, deploys to GitHub Pages. Pinned to
   `github.event_name == 'push'`, and `push` is main-only, so only a push to
