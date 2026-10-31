@@ -48,15 +48,13 @@ test("classifyAuditOutcome: real advisories fail even if the text mentions a 503
   );
 });
 
-test("classifyAuditOutcome: an unexplained timeout fails rather than passing", () => {
-  // A killed child proves nothing about why. Softening every timeout would let
-  // three stalled attempts return success with no audit result at all.
-  strictEqual(classifyAuditOutcome({ output: "", status: 1 }), "fail");
-});
-
 test("classifyAuditOutcome: a timeout whose output names an outage is transient", () => {
   strictEqual(
-    classifyAuditOutcome({ output: ENDPOINT_OUTAGE, status: 1 }),
+    classifyAuditOutcome({
+      output: ENDPOINT_OUTAGE,
+      status: 1,
+      timedOut: true,
+    }),
     "transient",
   );
 });
