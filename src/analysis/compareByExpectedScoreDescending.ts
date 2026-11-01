@@ -2,6 +2,7 @@ import { type Card, SUITS } from "../game/Card";
 
 export const ScoredKeepDiscardSortKey = {
   ExpectedCribPoints: "signedExpectedCribPoints",
+  ExpectedHandAndCribPoints: "expectedHandAndCribPoints",
   ExpectedHandPoints: "expectedHandPoints",
   ExpectedNetPoints: "expectedNetPoints",
   ExpectedPlayPoints: "expectedPlayPoints.delta",
@@ -17,6 +18,13 @@ interface ComparableScoredKeepDiscard {
   readonly keep: readonly Card[];
   readonly signedExpectedCribPoints: number;
 }
+
+// The pegging term is omitted rather than estimated, so a skeptic can check the recommendation without the pegging table.
+export const expectedHandAndCribPoints = (discardKeep: {
+  readonly expectedHandPoints: number;
+  readonly signedExpectedCribPoints: number;
+}): number =>
+  discardKeep.expectedHandPoints + discardKeep.signedExpectedCribPoints;
 
 const compareByKeepRankDescending = (
   discardKeep1: {
@@ -57,6 +65,8 @@ const getScore = (
   switch (sortKey) {
     case ScoredKeepDiscardSortKey.ExpectedCribPoints:
       return discardKeep.signedExpectedCribPoints;
+    case ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints:
+      return expectedHandAndCribPoints(discardKeep);
     case ScoredKeepDiscardSortKey.ExpectedHandPoints:
       return discardKeep.expectedHandPoints;
     case ScoredKeepDiscardSortKey.ExpectedNetPoints:

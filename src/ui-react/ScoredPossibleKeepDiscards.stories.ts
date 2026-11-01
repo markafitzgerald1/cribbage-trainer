@@ -122,6 +122,23 @@ export const SortedByHandPoints: Story = {
   },
 };
 
+export const SortedByHandAndCribPoints: Story = {
+  ...JackSixFiveFourKingQueenSortedAscending,
+  args: {
+    ...JackSixFiveFourKingQueenSortedAscending.args,
+    scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      await within(canvasElement).findByText(
+        "Ranked without pegging. Verdict still uses Net.",
+        {},
+        { timeout: SIDECAR_SETTLE_TIMEOUT_MS },
+      ),
+    ).toBeVisible();
+  },
+};
+
 /*
  * Waits out the table load and states what the caption then reads, which is
  * where both role-cost stories start; jscpd counts the second spelling of

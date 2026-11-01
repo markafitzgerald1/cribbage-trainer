@@ -427,7 +427,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
 
   return (
     <tr className={classes.expandedRow}>
-      <td colSpan={5}>
+      <td colSpan={6}>
         <div className={classes.breakdownContainer}>
           {renderHeader()}
           {renderBreakdownRow({

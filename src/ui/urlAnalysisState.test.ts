@@ -106,6 +106,7 @@ describe("parseUrlAnalysisState", () => {
   it.each([
     ["hand", ScoredKeepDiscardSortKey.ExpectedHandPoints],
     ["crib", ScoredKeepDiscardSortKey.ExpectedCribPoints],
+    ["Show", ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints],
     ["play", ScoredKeepDiscardSortKey.ExpectedPlayPoints],
     ["NET", ScoredKeepDiscardSortKey.ExpectedNetPoints],
   ])(
@@ -146,6 +147,7 @@ describe("serializeUrlAnalysisState", () => {
   it.each([
     [ScoredKeepDiscardSortKey.ExpectedHandPoints, "hand"],
     [ScoredKeepDiscardSortKey.ExpectedCribPoints, "crib"],
+    [ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints, "show"],
     [ScoredKeepDiscardSortKey.ExpectedPlayPoints, "play"],
     [ScoredKeepDiscardSortKey.ExpectedNetPoints, "net"],
   ])(

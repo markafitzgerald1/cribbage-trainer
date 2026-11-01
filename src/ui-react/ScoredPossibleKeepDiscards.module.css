@@ -111,6 +111,11 @@
   padding: 3px 8px;
 }
 
+.sort-note {
+  flex-shrink: 0;
+  margin: 0;
+}
+
 .diagnostic-side {
   display: inline-block;
   max-width: 100%;
@@ -163,19 +168,19 @@
 }
 
 .hand-column {
-  width: 40%;
+  width: 38%;
 }
 
 .score-column {
-  width: 15%;
+  width: 12.4%;
 }
 
 .play-score-column {
-  width: 15%;
+  width: 12.4%;
 }
 
 .net-score-column {
-  width: 15%;
+  width: 12.4%;
 }
 
 .scored-possible-keep-discards tbody tr.odd-row {
@@ -214,15 +219,15 @@
   }
 
   .score-column {
-    width: 14.5%;
+    width: 11.6%;
   }
 
   .play-score-column {
-    width: 14.5%;
+    width: 11.6%;
   }
 
   .net-score-column {
-    width: 14.5%;
+    width: 11.6%;
   }
 }
 
@@ -278,7 +283,8 @@
     font-size: var(--medium-text-font-size-portrait);
   }
 
-  .scored-possible-keep-discards th {
+  .scored-possible-keep-discards th,
+  .sort-note {
     font-size: calc(var(--medium-text-font-size-portrait) * 0.74);
   }
 }
@@ -288,7 +294,8 @@
     font-size: var(--medium-text-font-size-landscape);
   }
 
-  .scored-possible-keep-discards th {
+  .scored-possible-keep-discards th,
+  .sort-note {
     font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
   }
 }
