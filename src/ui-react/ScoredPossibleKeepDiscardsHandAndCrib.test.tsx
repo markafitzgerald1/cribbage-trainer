@@ -1,11 +1,17 @@
+import {
+  deferredUncertainty,
+  uniformUncertainty,
+} from "../game/uncertaintySidecar.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import {
   findCaption,
+  noUncertainty,
   renderHand,
   scoredElement,
 } from "./ScoredPossibleKeepDiscards.test.common";
 import type { AnalysisRenderedHandler } from "./ScoredPossibleKeepDiscards";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
+import type { UncertaintySource } from "../game/uncertaintyLoader";
 import { parseHand } from "../game/Card";
 import { screen } from "@testing-library/react";
 import { toDealtCards } from "../game/toDealtCards";
@@ -40,12 +46,17 @@ const tiersByDiscard = (
     ),
   );
 
-const renderVerdict = async (scoreSortKey: ScoredKeepDiscardSortKey) => {
+const renderVerdict = async (
+  scoreSortKey: ScoredKeepDiscardSortKey,
+  uncertainty: UncertaintySource,
+) => {
   const onAnalysisRendered = jest.fn<AnalysisRenderedHandler>();
   const onStatusChange = jest.fn<(statusText: string) => void>();
   const { container, unmount } = renderHand(HAND, HAND_AND_CRIB_BEST_DISCARD, {
+    cribUncertaintySource: uncertainty,
     onAnalysisRendered,
     onStatusChange,
+    playUncertaintySource: uncertainty,
     scoreSortKey,
   });
   const caption = await findCaption(container);
@@ -67,26 +78,44 @@ const renderVerdict = async (scoreSortKey: ScoredKeepDiscardSortKey) => {
   return verdict;
 };
 
-const renderBothSorts = async () => ({
+const renderBothSorts = async (uncertainty = noUncertainty) => ({
   byHandAndCrib: await renderVerdict(
     ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+    uncertainty,
   ),
-  byNet: await renderVerdict(ScoredKeepDiscardSortKey.ExpectedNetPoints),
+  byNet: await renderVerdict(
+    ScoredKeepDiscardSortKey.ExpectedNetPoints,
+    uncertainty,
+  ),
 });
 
 describe("ranking by hand plus crib", () => {
-  it("leaves the verdict, tiers, admission and announcement on net", async () => {
-    const { byHandAndCrib, byNet } = await renderBothSorts();
+  it.each([
+    {
+      name: "without uncertainty sidecars",
+      uncertainty: noUncertainty,
+      verdict: /^Sub-optimal/u,
+    },
+    {
+      name: "with both sidecars loaded",
+      uncertainty: deferredUncertainty(uniformUncertainty(1)),
+      verdict: /simulation noise/iu,
+    },
+  ])(
+    "leaves the verdict, tiers, admission and announcement on net $name",
+    async ({ uncertainty, verdict }) => {
+      const { byHandAndCrib, byNet } = await renderBothSorts(uncertainty);
 
-    expect(byHandAndCrib.captionLabel).toMatch(/^Sub-optimal/u);
-    expect(byHandAndCrib.spokenVerdict).toBe(byHandAndCrib.captionLabel);
-    expect(byHandAndCrib.tiers[HAND_AND_CRIB_BEST_LABEL]).toBe("chosen");
-    expect(byHandAndCrib.tiers[NET_BEST_LABEL]).toBe("equal-best");
-    expect({ ...byHandAndCrib, hasNote: null }).toStrictEqual({
-      ...byNet,
-      hasNote: null,
-    });
-  });
+      expect(byHandAndCrib.captionLabel).toMatch(verdict);
+      expect(byHandAndCrib.spokenVerdict).toBe(byHandAndCrib.captionLabel);
+      expect(byHandAndCrib.tiers[HAND_AND_CRIB_BEST_LABEL]).toBe("chosen");
+      expect(byHandAndCrib.tiers[NET_BEST_LABEL]).toBe("equal-best");
+      expect({ ...byHandAndCrib, hasNote: null }).toStrictEqual({
+        ...byNet,
+        hasNote: null,
+      });
+    },
+  );
 
   it("says the verdict still uses net only while ranked by hand plus crib", async () => {
     const { byHandAndCrib, byNet } = await renderBothSorts();
