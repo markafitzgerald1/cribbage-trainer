@@ -40,4 +40,20 @@ describe("the H+C sort in a Trainer", () => {
 
     expect(readTallyForDisplay()).toStrictEqual(tallyBefore);
   });
+
+  it("writes the H+C sort to the URL and restores it on Back", async () => {
+    const user = await decideUnder(null);
+    const handAndCribHeader = () =>
+      screen.getByRole("columnheader", { name: /H\+C/u });
+
+    await user.click(screen.getByRole("button", { name: /^H\+C:/u }));
+    const urlRankedByHandAndCrib = window.location.search;
+    await user.click(screen.getByRole("button", { name: /^Net:/u }));
+    window.history.back();
+    await waitFor(() => {
+      expect(handAndCribHeader().getAttribute("aria-sort")).toBe("descending");
+    }, waitUnderLoad);
+
+    expect(urlRankedByHandAndCrib).toContain("analysis-sort=show");
+  });
 });
