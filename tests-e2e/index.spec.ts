@@ -305,9 +305,7 @@ test("deep link hydrates hand, role, discards, sort order, and analysis sort", a
   ).toHaveAttribute("aria-sort", "descending");
 });
 
-test("deep link ranks by hand plus crib and keeps the verdict on net", async ({
-  page,
-}) => {
+test("deep link ranks by hand plus crib", async ({ page }) => {
   await page.goto(
     `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&analysis-sort=show`,
   );
@@ -316,9 +314,6 @@ test("deep link ranks by hand plus crib and keeps the verdict on net", async ({
   await expect(
     page.getByRole("columnheader", { name: /H\+C/u }),
   ).toHaveAttribute("aria-sort", "descending");
-  await expect(
-    page.getByText("Ranked without pegging. Verdict still uses Net."),
-  ).toBeVisible();
 });
 
 const constantHandText = "K♥Q♠10♦9♣6♠5♥";

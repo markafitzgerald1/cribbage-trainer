@@ -413,11 +413,6 @@ export function ScoredPossibleKeepDiscards({
       }`}
     >
       {renderCaption()}
-      {scoreSortKey === ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints ? (
-        <p className={classes.sortNote}>
-          Ranked without pegging. Verdict still uses Net.
-        </p>
-      ) : null}
       <div className={classes.tableContainer}>
         <table>
           <colgroup>

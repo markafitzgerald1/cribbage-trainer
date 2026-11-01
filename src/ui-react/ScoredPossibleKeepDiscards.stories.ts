@@ -128,15 +128,6 @@ export const SortedByHandAndCribPoints: Story = {
     ...JackSixFiveFourKingQueenSortedAscending.args,
     scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
   },
-  play: async ({ canvasElement }) => {
-    await expect(
-      await within(canvasElement).findByText(
-        "Ranked without pegging. Verdict still uses Net.",
-        {},
-        { timeout: SIDECAR_SETTLE_TIMEOUT_MS },
-      ),
-    ).toBeVisible();
-  },
 };
 
 /*

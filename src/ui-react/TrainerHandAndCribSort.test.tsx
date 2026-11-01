@@ -11,7 +11,13 @@ import { readTallyForDisplay } from "../ui/discardTally";
 
 // Testing Library's one-second default is not governed by jest's testTimeout, and scoring a hand can overrun it on a loaded machine.
 const waitUnderLoad = { timeout: 8000 };
-const SORT_NOTE = "Ranked without pegging. Verdict still uses Net.";
+const handAndCribSortState = () =>
+  screen.getByRole("columnheader", { name: /H\+C/u }).getAttribute("aria-sort");
+
+const untilRankedByHandAndCrib = () =>
+  waitFor(() => {
+    expect(handAndCribSortState()).toBe("descending");
+  }, waitUnderLoad);
 
 const decideUnder = async (
   initialScoreSortKey: ScoredKeepDiscardSortKey | null,
@@ -28,7 +34,7 @@ describe("the H+C sort in a Trainer", () => {
   it("records a decision made while ranked by hand plus crib", async () => {
     await decideUnder(ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints);
 
-    expect(screen.getByText(SORT_NOTE)).toBeTruthy();
+    expect(handAndCribSortState()).toBe("descending");
   });
 
   it("leaves the recorded tally alone when the sort switches to hand plus crib", async () => {
@@ -36,23 +42,18 @@ describe("the H+C sort in a Trainer", () => {
     const tallyBefore = readTallyForDisplay();
 
     await user.click(screen.getByRole("button", { name: /^H\+C:/u }));
-    await screen.findByText(SORT_NOTE, {}, waitUnderLoad);
+    await untilRankedByHandAndCrib();
 
     expect(readTallyForDisplay()).toStrictEqual(tallyBefore);
   });
 
   it("writes the H+C sort to the URL and restores it on Back", async () => {
     const user = await decideUnder(null);
-    const handAndCribHeader = () =>
-      screen.getByRole("columnheader", { name: /H\+C/u });
-
     await user.click(screen.getByRole("button", { name: /^H\+C:/u }));
     const urlRankedByHandAndCrib = window.location.search;
     await user.click(screen.getByRole("button", { name: /^Net:/u }));
     window.history.back();
-    await waitFor(() => {
-      expect(handAndCribHeader().getAttribute("aria-sort")).toBe("descending");
-    }, waitUnderLoad);
+    await untilRankedByHandAndCrib();
 
     expect(urlRankedByHandAndCrib).toContain("analysis-sort=show");
   });

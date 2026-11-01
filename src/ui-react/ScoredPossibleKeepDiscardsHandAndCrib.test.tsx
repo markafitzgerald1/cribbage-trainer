@@ -25,7 +25,6 @@ const HAND = "AD,10C,5D,9H,KC,AS";
 const HAND_AND_CRIB_BEST_DISCARD = "AD,AS";
 const HAND_AND_CRIB_BEST_LABEL = "A♦ A♠";
 const NET_BEST_LABEL = "K♣ 10♣";
-const SORT_NOTE = "Ranked without pegging. Verdict still uses Net.";
 const EXPAND_PREFIX = "Expand analysis for discard ";
 
 const rowDiscardLabels = (container: HTMLElement): string[] =>
@@ -90,7 +89,6 @@ const renderVerdict = async (
   const verdict = {
     // React's generated ids differ per mount and say nothing about the verdict.
     caption: caption.outerHTML.replace(/_r_\w+_/gu, "_id_"),
-    hasNote: screen.queryByText(SORT_NOTE) !== null,
     reported: [analysis, tableIdentity, admission, judgeAtDeadline?.()],
     rows: rowValueByDiscard(container, rowVerdict),
     spokenVerdict: onStatusChange.mock.calls
@@ -162,18 +160,9 @@ describe("ranking by hand plus crib", () => {
       expect(byHandAndCrib.spokenVerdict).toBe(byHandAndCrib.captionLabel);
       expect(byHandAndCrib.tiers[HAND_AND_CRIB_BEST_LABEL]).toBe("chosen");
       expect(byHandAndCrib.reported[1]).toBe(shippedTableIdentity);
-      expect({ ...byHandAndCrib, hasNote: null }).toStrictEqual({
-        ...byNet,
-        hasNote: null,
-      });
+      expect(byHandAndCrib).toStrictEqual(byNet);
     },
   );
-
-  it("says the verdict still uses net only while ranked by hand plus crib", async () => {
-    const { byHandAndCrib, byNet } = await renderBothSorts();
-
-    expect([byNet.hasNote, byHandAndCrib.hasNote]).toStrictEqual([false, true]);
-  });
 
   it("re-ranks the same hand when the sort changes after mount", async () => {
     const dealtCards = toDealtCards(

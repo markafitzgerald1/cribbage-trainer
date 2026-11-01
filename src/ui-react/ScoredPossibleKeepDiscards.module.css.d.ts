@@ -21,6 +21,5 @@ export const noiseBadge: string;
 export const noiseExplanation: string;
 export const diagnosticReason: string;
 export const diagnosticSide: string;
-export const sortNote: string;
 export const inDrill: string;
 export const visuallyHiddenDescriptions: string;
