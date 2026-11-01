@@ -298,6 +298,15 @@
   re-implements the logic it tests: it would then agree with a wrong
   implementation. Coverage cannot tell these apart, because a vacuous test
   executes the same lines as a good one.
+- **A Jest test of a cross-tab `localStorage` race proves nothing about a
+  browser.** jsdom shares one store in memory, so another tab's write shows up
+  between any two storage calls. Chromium, Firefox and WebKit show it only in a
+  later task: a page looping synchronously for 3 seconds never saw a write
+  another page made 0.8 seconds in. PR #960's compare-and-retry for #903 passed
+  eleven deterministic Jest race tests, yet a re-read inside one synchronous
+  write can never differ from the first read, so the retry never runs in a
+  browser. It was closed unmerged; #903 has the experiment. Check a
+  concurrency fix in real engines before trusting a jsdom test of it.
 - Never judge a validation run by piping through `| tail` or `| grep`: the
   pipe masks the command's exit code and a "61 passed" line can sit directly
   below a failed-tests list. Redirect to a log file, echo `$?`, and read the
