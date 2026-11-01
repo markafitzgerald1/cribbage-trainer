@@ -294,9 +294,13 @@
     font-size: var(--medium-text-font-size-landscape);
   }
 
-  .scored-possible-keep-discards th,
-  .sort-note {
+  .scored-possible-keep-discards th {
     font-size: clamp(1rem, 4.6cqw, var(--medium-text-font-size-landscape));
+  }
+
+  /* Viewport-only, like the caption badges beside it, so an enlarged device font cannot push the table down. */
+  .sort-note {
+    font-size: calc(var(--medium-text-font-size-landscape) * 0.82);
   }
 }
 
