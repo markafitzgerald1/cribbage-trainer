@@ -54,30 +54,44 @@ const rowDescription = (row: HTMLTableRowElement): string | null => {
     : (document.getElementById(descriptionId)?.textContent ?? null);
 };
 
+// Everything a row says about the verdict, leaving out only its stripe, which follows its displayed position.
+const rowVerdict = (row: HTMLTableRowElement): string =>
+  JSON.stringify([
+    row.getAttribute("aria-label"),
+    row.getAttribute("data-highlight-tier"),
+    row.getAttribute("data-is-earlier-choice"),
+    row.getAttribute("title"),
+    rowDescription(row),
+  ]);
+
+interface VerdictCase {
+  readonly drillPreviousDiscard: string | null;
+  readonly uncertainty: UncertaintySource;
+}
+
 const renderVerdict = async (
   scoreSortKey: ScoredKeepDiscardSortKey,
-  uncertainty: UncertaintySource,
+  { drillPreviousDiscard, uncertainty }: VerdictCase,
 ) => {
   const onAnalysisRendered = jest.fn<AnalysisRenderedHandler>();
   const onStatusChange = jest.fn<(statusText: string) => void>();
   const { container, unmount } = renderHand(HAND, HAND_AND_CRIB_BEST_DISCARD, {
     cribUncertaintySource: uncertainty,
+    drillPreviousDiscard,
     onAnalysisRendered,
     onStatusChange,
     playUncertaintySource: uncertainty,
     scoreSortKey,
   });
   const caption = await findCaption(container);
-  const [analysis, , admission, judgeAtDeadline] =
+  const [analysis, tableIdentity, admission, judgeAtDeadline] =
     onAnalysisRendered.mock.lastCall ?? [];
   const verdict = {
-    admission,
-    analysis,
-    captionLabel: caption.getAttribute("aria-label"),
+    // React's generated ids differ per mount and say nothing about the verdict.
+    caption: caption.outerHTML.replace(/_r_\w+_/gu, "_id_"),
     hasNote: screen.queryByText(SORT_NOTE) !== null,
-    judgment: judgeAtDeadline?.() ?? null,
-    rowDescriptions: rowValueByDiscard(container, rowDescription),
-    rowTitles: rowValueByDiscard(container, (row) => row.getAttribute("title")),
+    reported: [analysis, tableIdentity, admission, judgeAtDeadline?.()],
+    rows: rowValueByDiscard(container, rowVerdict),
     spokenVerdict: onStatusChange.mock.calls
       .map(([statusText]) => statusText)
       .filter(Boolean)
@@ -87,41 +101,56 @@ const renderVerdict = async (
     ),
   };
   unmount();
-  return verdict;
+  return { ...verdict, captionLabel: caption.getAttribute("aria-label") };
 };
 
-const renderBothSorts = async (uncertainty = noUncertainty) => ({
+const NO_DRILL_NO_SIDECARS: VerdictCase = {
+  drillPreviousDiscard: null,
+  uncertainty: noUncertainty,
+};
+
+const renderBothSorts = async (verdictCase = NO_DRILL_NO_SIDECARS) => ({
   byHandAndCrib: await renderVerdict(
     ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
-    uncertainty,
+    verdictCase,
   ),
   byNet: await renderVerdict(
     ScoredKeepDiscardSortKey.ExpectedNetPoints,
-    uncertainty,
+    verdictCase,
   ),
 });
 
 describe("ranking by hand plus crib", () => {
   it.each([
     {
+      ...NO_DRILL_NO_SIDECARS,
       name: "without uncertainty sidecars",
-      uncertainty: noUncertainty,
       verdict: /^Sub-optimal/u,
     },
     {
+      drillPreviousDiscard: null,
       name: "with both sidecars loaded",
       uncertainty: deferredUncertainty(uniformUncertainty(1)),
       verdict: /simulation noise/iu,
     },
+    {
+      drillPreviousDiscard: "KC,10C",
+      name: "in a drill whose earlier discard was the net best",
+      uncertainty: noUncertainty,
+      verdict: /^Sub-optimal/u,
+    },
   ])(
-    "leaves the verdict, tiers, admission and announcement on net $name",
-    async ({ uncertainty, verdict }) => {
-      const { byHandAndCrib, byNet } = await renderBothSorts(uncertainty);
+    "leaves everything the table says about the verdict on net $name",
+    async ({ drillPreviousDiscard, uncertainty, verdict }) => {
+      const { byHandAndCrib, byNet } = await renderBothSorts({
+        drillPreviousDiscard,
+        uncertainty,
+      });
 
       expect(byHandAndCrib.captionLabel).toMatch(verdict);
       expect(byHandAndCrib.spokenVerdict).toBe(byHandAndCrib.captionLabel);
       expect(byHandAndCrib.tiers[HAND_AND_CRIB_BEST_LABEL]).toBe("chosen");
-      expect(byHandAndCrib.tiers[NET_BEST_LABEL]).toBe("equal-best");
+      expect(byHandAndCrib.reported[1]).not.toBeNull();
       expect({ ...byHandAndCrib, hasNote: null }).toStrictEqual({
         ...byNet,
         hasNote: null,
