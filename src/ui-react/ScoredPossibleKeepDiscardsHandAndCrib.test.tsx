@@ -34,17 +34,25 @@ const rowDiscardLabels = (container: HTMLElement): string[] =>
     String(button.getAttribute("aria-label")).replace(EXPAND_PREFIX, ""),
   );
 
-const tiersByDiscard = (
+const rowValueByDiscard = (
   container: HTMLElement,
+  readRow: (row: HTMLTableRowElement) => string | null,
 ): Record<string, string | null> =>
   Object.fromEntries(
     Array.from(container.querySelectorAll<HTMLTableRowElement>("tbody tr")).map(
       (row, index): [string, string | null] => [
         String(rowDiscardLabels(container)[index]),
-        row.getAttribute("data-highlight-tier"),
+        readRow(row),
       ],
     ),
   );
+
+const rowDescription = (row: HTMLTableRowElement): string | null => {
+  const descriptionId = row.getAttribute("aria-describedby");
+  return descriptionId === null
+    ? null
+    : (document.getElementById(descriptionId)?.textContent ?? null);
+};
 
 const renderVerdict = async (
   scoreSortKey: ScoredKeepDiscardSortKey,
@@ -68,11 +76,15 @@ const renderVerdict = async (
     captionLabel: caption.getAttribute("aria-label"),
     hasNote: screen.queryByText(SORT_NOTE) !== null,
     judgment: judgeAtDeadline?.() ?? null,
+    rowDescriptions: rowValueByDiscard(container, rowDescription),
+    rowTitles: rowValueByDiscard(container, (row) => row.getAttribute("title")),
     spokenVerdict: onStatusChange.mock.calls
       .map(([statusText]) => statusText)
       .filter(Boolean)
       .at(-1),
-    tiers: tiersByDiscard(container),
+    tiers: rowValueByDiscard(container, (row) =>
+      row.getAttribute("data-highlight-tier"),
+    ),
   };
   unmount();
   return verdict;
