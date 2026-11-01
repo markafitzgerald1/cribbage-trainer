@@ -12,6 +12,7 @@ import {
   storeAnalyticsChoice,
 } from "../ui/analyticsConsent";
 import { expect, jest } from "@jest/globals";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import {
   validCribDocument,
   validPlayDocument,
@@ -20,7 +21,7 @@ import { CARDS_PER_DEALT_HAND } from "../game/facts";
 import { type ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import type { TrainerEventName } from "../ui/trackEvent";
-import type { UserEvent } from "@testing-library/user-event";
+import { clearDiscardTally } from "../ui/discardTally";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
 import expectedPlayPointsTableData from "../game/expectedPlayPointsTable.json";
 import { setTableSync as setCribTableSync } from "../game/expectedCribPointsTableLoader";
@@ -128,6 +129,16 @@ export const renderTrainerShowingDealerRole = (): RenderResult =>
   );
 
 export const calculationsHeaderName = "Hand";
+
+// A fresh page with the tables loaded and an empty tally, so a spec reads only the decisions it makes.
+export const startTrainerWithEmptyTally = (props: InitialTrainerProps) => {
+  window.history.replaceState(null, "", "/");
+  setAnalysisTables();
+  clearDiscardTally();
+  const user = userEvent.setup();
+  const view = renderTrainerWithInitialProps(props);
+  return { user, view };
+};
 
 export const clickIndices = (
   getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions) => HTMLElement[],

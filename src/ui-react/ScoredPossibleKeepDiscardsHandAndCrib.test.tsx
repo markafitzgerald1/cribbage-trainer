@@ -9,11 +9,12 @@ import {
   renderHand,
   scoredElement,
 } from "./ScoredPossibleKeepDiscards.test.common";
+import { fireEvent, screen } from "@testing-library/react";
 import type { AnalysisRenderedHandler } from "./ScoredPossibleKeepDiscards";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import type { UncertaintySource } from "../game/uncertaintyLoader";
 import { parseHand } from "../game/Card";
-import { screen } from "@testing-library/react";
+import { shippedTableIdentity } from "../game/tableIdentity";
 import { toDealtCards } from "../game/toDealtCards";
 
 /*
@@ -100,8 +101,18 @@ const renderVerdict = async (
       row.getAttribute("data-highlight-tier"),
     ),
   };
+  const chosenExpandButton = screen.getByRole("button", {
+    name: `${EXPAND_PREFIX}${HAND_AND_CRIB_BEST_LABEL}`,
+  });
+  fireEvent.click(chosenExpandButton);
+  const expandedChosenRow =
+    chosenExpandButton.closest("tr")?.nextElementSibling?.textContent;
   unmount();
-  return { ...verdict, captionLabel: caption.getAttribute("aria-label") };
+  return {
+    ...verdict,
+    captionLabel: caption.getAttribute("aria-label"),
+    expandedChosenRow,
+  };
 };
 
 const NO_DRILL_NO_SIDECARS: VerdictCase = {
@@ -150,7 +161,7 @@ describe("ranking by hand plus crib", () => {
       expect(byHandAndCrib.captionLabel).toMatch(verdict);
       expect(byHandAndCrib.spokenVerdict).toBe(byHandAndCrib.captionLabel);
       expect(byHandAndCrib.tiers[HAND_AND_CRIB_BEST_LABEL]).toBe("chosen");
-      expect(byHandAndCrib.reported[1]).not.toBeNull();
+      expect(byHandAndCrib.reported[1]).toBe(shippedTableIdentity);
       expect({ ...byHandAndCrib, hasNote: null }).toStrictEqual({
         ...byNet,
         hasNote: null,

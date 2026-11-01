@@ -1,17 +1,16 @@
 /* jscpd:ignore-start */
 import * as cribLoader from "../game/expectedCribPointsTableLoader";
-import { clearDiscardTally, readTallyForDisplay } from "../ui/discardTally";
 import {
   clickIndices,
-  renderTrainerWithInitialProps,
   setAnalysisTables,
+  startTrainerWithEmptyTally,
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import { screen, waitFor } from "@testing-library/react";
 import type { ExpectedCribPointsTable } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import expectedCribPointsTableData from "../game/expectedCribPointsTable.json";
-import userEvent from "@testing-library/user-event";
+import { readTallyForDisplay } from "../ui/discardTally";
 /* jscpd:ignore-end */
 
 // Testing Library's one-second default is not governed by jest's testTimeout, and scoring a hand overran it on a loaded machine.
@@ -19,14 +18,8 @@ const waitUnderLoad = { timeout: 8000 };
 
 const recordedSortOrder = () => readTallyForDisplay().records[0]?.sortOrder;
 
-const startTrainer = (initialSortOrder: SortOrder) => {
-  window.history.replaceState(null, "", "/");
-  setAnalysisTables();
-  clearDiscardTally();
-  const user = userEvent.setup();
-  const view = renderTrainerWithInitialProps({ initialSortOrder });
-  return { user, view };
-};
+const startTrainer = (initialSortOrder: SortOrder) =>
+  startTrainerWithEmptyTally({ initialSortOrder });
 
 // Holds the crib table back while the interaction runs, then releases it and returns the sort order the recorded decision carries.
 const recordedWithTablesLoadingDuring = async (
