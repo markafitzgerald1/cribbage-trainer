@@ -151,7 +151,7 @@ export const SortedByHandAndCribPoints: Story = {
     await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
       unmarked,
       unmarked,
-      { arrow: '"↓ " / ""', underline: "underline" },
+      { arrow: '"↓" / ""', underline: "underline" },
       unmarked,
       unmarked,
     ]);

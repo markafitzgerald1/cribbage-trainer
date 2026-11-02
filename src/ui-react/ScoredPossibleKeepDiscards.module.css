@@ -286,12 +286,21 @@
 
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit {
   opacity: 1;
+  position: relative;
 }
 
+/*
+ * Out of flow, so the larger glyph cannot grow the header row: a zero line
+ * height kept it out of the line box in Chromium but not in Firefox or WebKit.
+ */
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
-  content: "↓ " / "";
+  bottom: 0;
+  content: "↓" / "";
   font-size: 1.6em;
-  line-height: 0;
+  line-height: 1;
+  padding-right: 0.1em;
+  position: absolute;
+  right: 100%;
 }
 
 @media (aspect-ratio < 6 / 5) {
