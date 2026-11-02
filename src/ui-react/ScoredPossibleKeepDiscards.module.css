@@ -293,11 +293,14 @@
  * Drawn from two boxes, a stem and a border triangle, rather than a font glyph,
  * because where a glyph's ink sits in its line box differs by engine and font.
  * Not a mask either: in Chromium a mask re-rasterized the whole analysis
- * figure's text. Out of flow, so it cannot grow the header row.
+ * figure's text. Out of flow, so it cannot grow the header row. Exempt from
+ * forced colors, which can paint the stem's background as Canvas and the
+ * triangle's transparent sides as text, leaving no arrow and a solid block.
  */
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before,
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
   content: "";
+  forced-color-adjust: none;
   position: absolute;
 }
 

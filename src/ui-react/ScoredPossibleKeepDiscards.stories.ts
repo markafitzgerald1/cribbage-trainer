@@ -131,10 +131,18 @@ const underlineOf = (label: Element) => {
   return `${textDecorationLine} ${thickness}`;
 };
 
-const arrowOf = (unit: Element) =>
-  getComputedStyle(unit, "::after").borderTopStyle === "solid"
-    ? "drawn"
-    : "none";
+// Content is read because without it neither part renders, whatever its border says.
+const arrowOf = (unit: Element) => {
+  const stem = getComputedStyle(unit, "::before");
+  const head = getComputedStyle(unit, "::after");
+  return [
+    stem.content,
+    head.content,
+    head.borderTopStyle,
+    stem.forcedColorAdjust,
+    head.forcedColorAdjust,
+  ].join(" ");
+};
 
 const sortMarkerOf = (header: HTMLElement) => {
   const [label, unit] = header.querySelectorAll("button > span");
@@ -159,12 +167,18 @@ export const SortedByHandAndCribPoints: Story = {
   },
   play: async ({ canvasElement }) => {
     const scoreHeaders = await scoreHeadersAfterLoad(canvasElement);
-    const unmarked = { arrow: "none", underline: "none auto" };
+    const unmarked = {
+      arrow: "none none none auto auto",
+      underline: "none auto",
+    };
 
     await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
       unmarked,
       unmarked,
-      { arrow: "drawn", underline: "underline set" },
+      {
+        arrow: '"" "" solid none none',
+        underline: "underline set",
+      },
       unmarked,
       unmarked,
     ]);

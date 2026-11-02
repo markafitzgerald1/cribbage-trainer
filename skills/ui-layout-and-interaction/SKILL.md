@@ -178,10 +178,11 @@ once you are already editing layout or interaction code.
   for cards + parens + arrow; verify with
   `cell.scrollWidth - cell.clientWidth === 0`.
 - The active sort column's marker (#651) is CSS keyed on the header's
-  `aria-sort`, and its arrow is an absolutely positioned `::before` on the
-  unit line. Keep any decorative glyph in a header out of flow. A larger
-  glyph given `line-height: 0` stayed out of the line box in Chromium only:
-  Firefox and WebKit grew the header about 6px, which failed
+  `aria-sort`, and its arrow is two absolutely positioned pseudo-elements on
+  the unit line: a `::before` stem and an `::after` border triangle. Keep
+  any decorative glyph in a header out of flow. A larger glyph given
+  `line-height: 0` stayed out of the line box in Chromium only: Firefox and
+  WebKit grew the header about 6px, which failed
   `consentLayout.spec.ts`'s header-plus-one-row floor in those three projects
   while every Chromium measurement looked clean. Measure the header in all
   engines, not just the one the browser pane runs.
@@ -195,8 +196,11 @@ once you are already editing layout or interaction code.
   re-rasterized the text of the whole analysis figure, failing ten Mobile
   Chrome screenshots by about 3,100 pixels each, mostly far from the arrow.
   A pseudo-element has no measurable box, so check its clearance by
-  appending a span with the same computed position and size and reading
-  that span's rectangle.
+  appending a span with the same computed position, size and borders for
+  each part, and reading those spans' rectangles. Exempt such shapes with
+  `forced-color-adjust: none`: forced colors can repaint a background as
+  `Canvas` and a transparent border as text, which erases a stem and squares
+  off a triangle.
 - Signed expected-points columns rely on the U+2212 minus (digit-width under
   tabular-nums) so positives and negatives right-align. Do not try to pad
   positives with a figure space (U+2007) — it is narrower than U+2212 and
