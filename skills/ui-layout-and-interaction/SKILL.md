@@ -185,12 +185,18 @@ once you are already editing layout or interaction code.
   `consentLayout.spec.ts`'s header-plus-one-row floor in those three projects
   while every Chromium measurement looked clean. Measure the header in all
   engines, not just the one the browser pane runs.
-  Anchor such a glyph by `top`, not `bottom`. Anchored to the bottom, a 1.6em
-  arrow's ink rose about 3px into the label's underline in desktop Chrome and
-  Safari while Firefox left a gap, because how far the ink reaches upward
-  depends on the font's ascent. A pseudo-element has no measurable box, so
-  check clearance by appending a span with the same computed styles and
-  reading the ink box from canvas `measureText`.
+  Do not place a text glyph to the pixel. Where a glyph's ink sits in its
+  line box depends on the engine and the fallback font: anchored to the
+  bottom, a "↓" rose into the label's underline in desktop Chrome and Safari;
+  re-anchored to the top, the same glyph sat low in Firefox and Android
+  Chrome, and each fix measured clean in the browser pane. The arrow is now
+  a stem and a border triangle, boxes whose edges are the arrow's edges in
+  every engine. A CSS `mask` would also be font-free, but in Chromium it
+  re-rasterized the text of the whole analysis figure, failing ten Mobile
+  Chrome screenshots by about 3,100 pixels each, mostly far from the arrow.
+  A pseudo-element has no measurable box, so check its clearance by
+  appending a span with the same computed position and size and reading
+  that span's rectangle.
 - Signed expected-points columns rely on the U+2212 minus (digit-width under
   tabular-nums) so positives and negatives right-align. Do not try to pad
   positives with a figure space (U+2007) — it is narrower than U+2212 and

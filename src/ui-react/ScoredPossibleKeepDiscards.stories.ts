@@ -131,10 +131,15 @@ const underlineOf = (label: Element) => {
   return `${textDecorationLine} ${thickness}`;
 };
 
+const arrowOf = (unit: Element) =>
+  getComputedStyle(unit, "::after").borderTopStyle === "solid"
+    ? "drawn"
+    : "none";
+
 const sortMarkerOf = (header: HTMLElement) => {
   const [label, unit] = header.querySelectorAll("button > span");
   return {
-    arrow: unit ? getComputedStyle(unit, "::before").content : "",
+    arrow: unit ? arrowOf(unit) : "",
     underline: label ? underlineOf(label) : "",
   };
 };
@@ -159,7 +164,7 @@ export const SortedByHandAndCribPoints: Story = {
     await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
       unmarked,
       unmarked,
-      { arrow: '"↓"', underline: "underline set" },
+      { arrow: "drawn", underline: "underline set" },
       unmarked,
       unmarked,
     ]);

@@ -290,18 +290,31 @@
 }
 
 /*
- * Out of flow, so the larger glyph cannot grow the header row in any engine.
- * Anchored to the top of the unit line rather than its bottom, so the stem
- * clears the underline above it however tall the glyph renders.
+ * Drawn from two boxes, a stem and a border triangle, rather than a font glyph,
+ * because where a glyph's ink sits in its line box differs by engine and font.
+ * Not a mask either: in Chromium a mask re-rasterized the whole analysis
+ * figure's text. Out of flow, so it cannot grow the header row.
  */
-.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
-  content: "↓";
-  font-size: 1.2em;
-  line-height: 1;
-  padding-right: 0.1em;
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before,
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
+  content: "";
   position: absolute;
-  right: 100%;
-  top: 0.2em;
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
+  background-color: currentcolor;
+  height: 0.6em;
+  right: calc(100% + 0.35em);
+  top: 0.25em;
+  width: max(0.1em, 1px);
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
+  border-left: 0.3em solid transparent;
+  border-right: 0.3em solid transparent;
+  border-top: 0.4em solid currentcolor;
+  right: calc(100% + 0.1em);
+  top: 0.8em;
 }
 
 @media (aspect-ratio < 6 / 5) {
