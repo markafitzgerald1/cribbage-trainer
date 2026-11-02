@@ -290,12 +290,13 @@
 }
 
 /*
- * Out of flow, so the larger glyph cannot grow the header row: a zero line
- * height kept it out of the line box in Chromium but not in Firefox or WebKit.
+ * Out of flow, so the larger glyph cannot grow the header row in any engine.
+ * It sits a little below the unit line so its stem stays clear of the
+ * underline above it.
  */
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
-  bottom: 0;
-  content: "↓" / "";
+  bottom: -0.2em;
+  content: "↓";
   font-size: 1.6em;
   line-height: 1;
   padding-right: 0.1em;

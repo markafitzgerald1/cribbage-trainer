@@ -123,11 +123,19 @@ export const SortedByHandPoints: Story = {
 };
 
 // Read from computed styles because the marker is CSS keyed on aria-sort, which jsdom cannot evaluate.
+// The thickness is reported as "set" rather than in pixels, which vary with the viewport's font size.
+const underlineOf = (label: Element) => {
+  const { textDecorationLine, textDecorationThickness } =
+    getComputedStyle(label);
+  const thickness = textDecorationThickness === "auto" ? "auto" : "set";
+  return `${textDecorationLine} ${thickness}`;
+};
+
 const sortMarkerOf = (header: HTMLElement) => {
   const [label, unit] = header.querySelectorAll("button > span");
   return {
     arrow: unit ? getComputedStyle(unit, "::before").content : "",
-    underline: label ? getComputedStyle(label).textDecorationLine : "",
+    underline: label ? underlineOf(label) : "",
   };
 };
 
@@ -146,12 +154,12 @@ export const SortedByHandAndCribPoints: Story = {
   },
   play: async ({ canvasElement }) => {
     const scoreHeaders = await scoreHeadersAfterLoad(canvasElement);
-    const unmarked = { arrow: "none", underline: "none" };
+    const unmarked = { arrow: "none", underline: "none auto" };
 
     await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
       unmarked,
       unmarked,
-      { arrow: '"↓" / ""', underline: "underline" },
+      { arrow: '"↓"', underline: "underline set" },
       unmarked,
       unmarked,
     ]);
