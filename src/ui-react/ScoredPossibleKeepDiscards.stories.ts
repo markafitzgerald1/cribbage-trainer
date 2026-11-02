@@ -122,11 +122,39 @@ export const SortedByHandPoints: Story = {
   },
 };
 
+// Read from computed styles because the marker is CSS keyed on aria-sort, which jsdom cannot evaluate.
+const sortMarkerOf = (header: HTMLElement) => {
+  const [label, unit] = header.querySelectorAll("button > span");
+  return {
+    arrow: unit ? getComputedStyle(unit, "::before").content : "",
+    underline: label ? getComputedStyle(label).textDecorationLine : "",
+  };
+};
+
+const scoreHeadersAfterLoad = async (canvasElement: HTMLElement) => {
+  await waitForLoadingToDisappear(within(canvasElement));
+  return within(canvasElement)
+    .getAllByRole("columnheader")
+    .filter((header) => header.querySelector("button") !== null);
+};
+
 export const SortedByHandAndCribPoints: Story = {
   ...JackSixFiveFourKingQueenSortedAscending,
   args: {
     ...JackSixFiveFourKingQueenSortedAscending.args,
     scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+  },
+  play: async ({ canvasElement }) => {
+    const scoreHeaders = await scoreHeadersAfterLoad(canvasElement);
+    const unmarked = { arrow: "none", underline: "none" };
+
+    await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
+      unmarked,
+      unmarked,
+      { arrow: '"↓ " / ""', underline: "underline" },
+      unmarked,
+      unmarked,
+    ]);
   },
 };
 

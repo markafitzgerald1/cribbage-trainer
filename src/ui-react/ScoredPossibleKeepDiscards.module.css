@@ -273,6 +273,27 @@
   color: #fff;
 }
 
+/*
+ * Keyed on aria-sort so the visible marker cannot disagree with what assistive
+ * technology announces. The arrow sits on the unit line, which every column
+ * leaves room on, rather than beside the label, which the portrait columns do not.
+ */
+.scored-possible-keep-discards th[aria-sort="descending"] .header-main {
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.2em;
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit {
+  opacity: 1;
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
+  content: "↓ " / "";
+  font-size: 1.6em;
+  line-height: 0;
+}
+
 @media (aspect-ratio < 6 / 5) {
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-portrait);
