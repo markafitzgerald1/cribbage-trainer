@@ -135,6 +135,11 @@ button.expand-indicator {
   .scored-possible-keep-discard td:first-child {
     font-size: 1.1em;
   }
+
+  /* The row's 1rem floor would push five score columns past the table at an enlarged device font, and the table must not scroll sideways. */
+  .scored-possible-keep-discard td:nth-child(n + 2) {
+    font-size: min(1em, 4.6cqw);
+  }
 }
 
 @media (aspect-ratio < 6 / 5) {
@@ -146,7 +151,10 @@ button.expand-indicator {
     font-size: 0.92em;
   }
 
+  /* Five score columns share what four used to, so the scores and their gutter shrink until "+2.97" fits beside the arrow. */
   .scored-possible-keep-discard td:nth-child(n + 2) {
-    font-size: 0.78em;
+    font-size: 0.66em;
+    padding-left: 0.08em;
+    padding-right: 0.3em;
   }
 }

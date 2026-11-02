@@ -163,19 +163,19 @@
 }
 
 .hand-column {
-  width: 40%;
+  width: 38%;
 }
 
 .score-column {
-  width: 15%;
+  width: 12.4%;
 }
 
 .play-score-column {
-  width: 15%;
+  width: 12.4%;
 }
 
 .net-score-column {
-  width: 15%;
+  width: 12.4%;
 }
 
 .scored-possible-keep-discards tbody tr.odd-row {
@@ -214,15 +214,15 @@
   }
 
   .score-column {
-    width: 14.5%;
+    width: 11.6%;
   }
 
   .play-score-column {
-    width: 14.5%;
+    width: 11.6%;
   }
 
   .net-score-column {
-    width: 14.5%;
+    width: 11.6%;
   }
 }
 

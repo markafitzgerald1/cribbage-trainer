@@ -99,6 +99,8 @@ const parseAnalysisSortParam = (
       return ScoredKeepDiscardSortKey.ExpectedHandPoints;
     case "crib":
       return ScoredKeepDiscardSortKey.ExpectedCribPoints;
+    case "show":
+      return ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints;
     case "play":
       return ScoredKeepDiscardSortKey.ExpectedPlayPoints;
     case "net":
@@ -116,6 +118,8 @@ const analysisSortUrlValue = (
       return "hand";
     case ScoredKeepDiscardSortKey.ExpectedCribPoints:
       return "crib";
+    case ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints:
+      return "show";
     case ScoredKeepDiscardSortKey.ExpectedPlayPoints:
       return "play";
     default:

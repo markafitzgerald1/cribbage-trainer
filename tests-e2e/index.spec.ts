@@ -278,6 +278,7 @@ test("pre-cut hand points show after select of two discards", async ({
 
   await expect(page.getByRole("button", { name: "Hand" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Crib" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "H+C" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Net" })).toBeVisible();
 });
@@ -301,6 +302,17 @@ test("deep link hydrates hand, role, discards, sort order, and analysis sort", a
   await expect(page.getByRole("radio", { name: "Ascending" })).toBeChecked();
   await expect(
     page.getByRole("columnheader", { name: /Hand/u }),
+  ).toHaveAttribute("aria-sort", "descending");
+});
+
+test("deep link ranks by hand plus crib", async ({ page }) => {
+  await page.goto(
+    `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&analysis-sort=show`,
+  );
+  await waitForAnalysis(page);
+
+  await expect(
+    page.getByRole("columnheader", { name: /H\+C/u }),
   ).toHaveAttribute("aria-sort", "descending");
 });
 

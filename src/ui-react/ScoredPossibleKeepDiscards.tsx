@@ -97,6 +97,11 @@ const getScoringHeaders = () =>
       title: "Sort by signed expected crib points",
     },
     {
+      key: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+      label: "H+C",
+      title: "Sort by expected show points, pegging left out",
+    },
+    {
       key: ScoredKeepDiscardSortKey.ExpectedPlayPoints,
       label: "Play",
       title: "Sort by expected pegging-point difference",

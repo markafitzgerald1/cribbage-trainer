@@ -131,8 +131,12 @@ describe("scored possible keep discards component", () => {
   it.each([
     { cellIndex: 1, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints },
     { cellIndex: 2, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedCribPoints },
-    { cellIndex: 3, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedPlayPoints },
-    { cellIndex: 4, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints },
+    {
+      cellIndex: 3,
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+    },
+    { cellIndex: 4, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedPlayPoints },
+    { cellIndex: 5, scoreSortKey: ScoredKeepDiscardSortKey.ExpectedNetPoints },
   ])(
     "sorts rows by the $scoreSortKey score sort key prop",
     ({ cellIndex, scoreSortKey }) => {
@@ -159,6 +163,10 @@ describe("scored possible keep discards component", () => {
     {
       headerName: /^Crib:/u,
       scoreSortKey: ScoredKeepDiscardSortKey.ExpectedCribPoints,
+    },
+    {
+      headerName: /^H\+C:/u,
+      scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
     },
     {
       headerName: /^Play:/u,

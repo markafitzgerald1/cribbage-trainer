@@ -122,6 +122,14 @@ export const SortedByHandPoints: Story = {
   },
 };
 
+export const SortedByHandAndCribPoints: Story = {
+  ...JackSixFiveFourKingQueenSortedAscending,
+  args: {
+    ...JackSixFiveFourKingQueenSortedAscending.args,
+    scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+  },
+};
+
 /*
  * Waits out the table load and states what the caption then reads, which is
  * where both role-cost stories start; jscpd counts the second spelling of
