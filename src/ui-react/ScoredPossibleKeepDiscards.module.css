@@ -291,17 +291,17 @@
 
 /*
  * Out of flow, so the larger glyph cannot grow the header row in any engine.
- * It sits a little below the unit line so its stem stays clear of the
- * underline above it.
+ * Anchored to the top of the unit line rather than its bottom, so the stem
+ * clears the underline above it however tall the glyph renders.
  */
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
-  bottom: -0.2em;
   content: "↓";
-  font-size: 1.6em;
+  font-size: 1.2em;
   line-height: 1;
   padding-right: 0.1em;
   position: absolute;
   right: 100%;
+  top: 0.2em;
 }
 
 @media (aspect-ratio < 6 / 5) {
