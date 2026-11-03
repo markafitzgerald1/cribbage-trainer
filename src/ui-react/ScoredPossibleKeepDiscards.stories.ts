@@ -122,11 +122,66 @@ export const SortedByHandPoints: Story = {
   },
 };
 
+// Read from computed styles because the marker is CSS keyed on aria-sort, which jsdom cannot evaluate.
+// The thickness is reported as "set" rather than in pixels, which vary with the viewport's font size.
+const underlineOf = (label: Element) => {
+  const { textDecorationLine, textDecorationThickness } =
+    getComputedStyle(label);
+  const thickness = textDecorationThickness === "auto" ? "auto" : "set";
+  return `${textDecorationLine} ${thickness}`;
+};
+
+// Content is read because without it neither part renders, whatever its border says.
+const arrowOf = (unit: Element) => {
+  const stem = getComputedStyle(unit, "::before");
+  const head = getComputedStyle(unit, "::after");
+  return [
+    stem.content,
+    head.content,
+    head.borderTopStyle,
+    stem.forcedColorAdjust,
+    head.forcedColorAdjust,
+  ].join(" ");
+};
+
+const sortMarkerOf = (header: HTMLElement) => {
+  const [label, unit] = header.querySelectorAll("button > span");
+  return {
+    arrow: unit ? arrowOf(unit) : "",
+    underline: label ? underlineOf(label) : "",
+  };
+};
+
+const scoreHeadersAfterLoad = async (canvasElement: HTMLElement) => {
+  await waitForLoadingToDisappear(within(canvasElement));
+  return within(canvasElement)
+    .getAllByRole("columnheader")
+    .filter((header) => header.querySelector("button") !== null);
+};
+
 export const SortedByHandAndCribPoints: Story = {
   ...JackSixFiveFourKingQueenSortedAscending,
   args: {
     ...JackSixFiveFourKingQueenSortedAscending.args,
     scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+  },
+  play: async ({ canvasElement }) => {
+    const scoreHeaders = await scoreHeadersAfterLoad(canvasElement);
+    const unmarked = {
+      arrow: "none none none auto auto",
+      underline: "none auto",
+    };
+
+    await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
+      unmarked,
+      unmarked,
+      {
+        arrow: '"" "" solid none none',
+        underline: "underline set",
+      },
+      unmarked,
+      unmarked,
+    ]);
   },
 };
 
