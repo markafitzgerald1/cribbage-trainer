@@ -98,3 +98,17 @@ export const compareByExpectedNetScoreThenRankDescending =
   compareByExpectedScoreThenRankDescending(
     ScoredKeepDiscardSortKey.ExpectedNetPoints,
   );
+
+// Reverse the entire comparison, including rank and suit ties, so the list flips exactly.
+export const compareByExpectedScoreThenRank = (
+  sortKey: ScoredKeepDiscardSortKey,
+  ascending: boolean,
+) => {
+  const descending = compareByExpectedScoreThenRankDescending(sortKey);
+  return ascending
+    ? (
+        first: ComparableScoredKeepDiscard,
+        second: ComparableScoredKeepDiscard,
+      ) => descending(second, first)
+    : descending;
+};

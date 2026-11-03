@@ -59,9 +59,10 @@ describe("getInitialProps", () => {
 
   it("returns parsed role, discards, and sort orders when present", () => {
     const props = getInitialProps(
-      "?hand=AH,2H,3H,4H,5H,6H&role=dealer&discard=AH&sort=deal-order&analysis-sort=crib",
+      "?hand=AH,2H,3H,4H,5H,6H&role=dealer&discard=AH&sort=deal-order&analysis-sort=crib&analysis-order=ascending",
     );
 
+    expect(props.initialAnalysisOrder).toBe("ascending");
     expect(props.initialCribRole).toBe(CribRole.Dealer);
     expect(props.initialDiscards?.[0]?.rankLabel).toBe("A");
     expect(props.initialScoreSortKey).toBe(
@@ -73,6 +74,7 @@ describe("getInitialProps", () => {
   it("returns null role, discards, and sort orders when absent", () => {
     const props = getInitialProps("?hand=AH,2H,3H,4H,5H,6H");
 
+    expect(props.initialAnalysisOrder).toBeNull();
     expect(props.initialCribRole).toBeNull();
     expect(props.initialDiscards).toBeNull();
     expect(props.initialScoreSortKey).toBeNull();

@@ -12,8 +12,9 @@ import type {
 import { type MouseEvent, useCallback, useEffect, useMemo } from "react";
 import {
   ScoredKeepDiscardSortKey,
-  compareByExpectedScoreThenRankDescending,
+  compareByExpectedScoreThenRank,
 } from "../analysis/compareByExpectedScoreDescending";
+import type { AnalysisOrder } from "../ui/urlAnalysisState";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
 import { NoiseVerdictBadge } from "./NoiseVerdictBadge";
@@ -41,6 +42,7 @@ export type AnalysisRenderedHandler = (
 ) => void;
 
 export interface ScoredPossibleKeepDiscardsProps {
+  readonly analysisOrder?: AnalysisOrder;
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
   readonly drillPreviousDiscard?: string | null;
@@ -124,6 +126,7 @@ const scoreColumnClass = (key: ScoredKeepDiscardSortKey): string => {
 };
 
 export function ScoredPossibleKeepDiscards({
+  analysisOrder = "descending",
   cribRole,
   dealtCards,
   drillPreviousDiscard = null,
@@ -221,9 +224,12 @@ export function ScoredPossibleKeepDiscards({
   const scoredKeepDiscards = useMemo(
     () =>
       [...scoredKeepDiscardsByNetScore].sort(
-        compareByExpectedScoreThenRankDescending(scoreSortKey),
+        compareByExpectedScoreThenRank(
+          scoreSortKey,
+          analysisOrder === "ascending",
+        ),
       ),
-    [scoredKeepDiscardsByNetScore, scoreSortKey],
+    [analysisOrder, scoredKeepDiscardsByNetScore, scoreSortKey],
   );
   const scoredKeepDiscardsWithTiers = useScoredKeepDiscardRows({
     chosenClassification,
@@ -275,7 +281,7 @@ export function ScoredPossibleKeepDiscards({
     header: ReturnType<typeof getScoringHeaders>[number],
   ) => (
     <th
-      aria-sort={scoreSortKey === header.key ? "descending" : "none"}
+      aria-sort={scoreSortKey === header.key ? analysisOrder : "none"}
       key={header.key}
       title={header.title}
     >
@@ -434,6 +440,7 @@ export function ScoredPossibleKeepDiscards({
 }
 
 ScoredPossibleKeepDiscards.defaultProps = {
+  analysisOrder: "descending",
   cribUncertaintySource: shippedCribUncertainty,
   drillPreviousDiscard: null,
   isPracticeDrill: false,
