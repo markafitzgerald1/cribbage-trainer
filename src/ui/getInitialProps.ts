@@ -5,10 +5,11 @@ import {
 } from "./urlAnalysisState";
 
 export const getInitialProps = (search: string) => {
-  const { cards, cribRole, discards, scoreSortKey, sortOrder } =
+  const { analysisOrder, cards, cribRole, discards, scoreSortKey, sortOrder } =
     parseUrlAnalysisState(search);
   const params = new URLSearchParams(search);
   return {
+    initialAnalysisOrder: analysisOrder,
     initialCards: cards,
     initialCribRole: cribRole,
     initialDiscards: discards,

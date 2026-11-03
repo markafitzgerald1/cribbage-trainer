@@ -73,6 +73,7 @@ export const renderTrainer = (): RenderResult =>
 type InitialTrainerProps = Partial<
   Pick<
     TrainerProps,
+    | "initialAnalysisOrder"
     | "generateRandomNumber"
     | "initialCards"
     | "initialCribRole"
@@ -86,6 +87,7 @@ type InitialTrainerProps = Partial<
 >;
 
 export const renderTrainerWithInitialProps = ({
+  initialAnalysisOrder = null,
   generateRandomNumber = mathRandom,
   initialCards = null,
   initialCribRole = null,
@@ -99,6 +101,7 @@ export const renderTrainerWithInitialProps = ({
   render(
     <Trainer
       generateRandomNumber={generateRandomNumber}
+      initialAnalysisOrder={initialAnalysisOrder}
       initialCards={initialCards}
       initialCribRole={initialCribRole}
       initialDiscards={initialDiscards ?? null}
