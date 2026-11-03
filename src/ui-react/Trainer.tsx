@@ -1,5 +1,12 @@
 import * as classes from "./Trainer.module.css";
 import {
+  type AnalysisOrder,
+  parseSortParam,
+  parseUrlAnalysisState,
+  serializeUrlAnalysisState,
+  sortUrlValue,
+} from "../ui/urlAnalysisState";
+import {
   type AnalyticsChoice,
   DECISION_QUALITY_MEASUREMENT,
   readAnalyticsChoice,
@@ -9,12 +16,6 @@ import {
 } from "../ui/analyticsConsent";
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
-import {
-  parseSortParam,
-  parseUrlAnalysisState,
-  serializeUrlAnalysisState,
-  sortUrlValue,
-} from "../ui/urlAnalysisState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
@@ -23,7 +24,7 @@ import { DiscardTallyView } from "./DiscardTallyView";
 import { EnterCardsDialog } from "./EnterCardsDialog";
 import type { HistoryHandScope } from "./useDiscardTelemetry";
 import { InteractiveHand } from "./InteractiveHand";
-import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
+import type { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import type { TrackEvent } from "../ui/trackEvent";
@@ -36,6 +37,7 @@ import { readOwnHandId } from "../ui/ownHandKey";
 import { toDealtCards } from "../game/toDealtCards";
 import { toHandKey } from "../ui/handKey";
 import { useAnalysisReporting } from "./useAnalysisReporting";
+import { useAnalysisSort } from "./useAnalysisSort";
 import { useDealHand } from "./useDealHand";
 import { useDiscardLiveRegion } from "./useDiscardLiveRegion";
 import { usePracticeDrill } from "./usePracticeDrill";
@@ -45,6 +47,7 @@ export interface TrainerProps {
   readonly generateRandomNumber: () => number;
   readonly loadGoogleAnalytics: (consented: boolean | null) => void;
   readonly trackEvent: TrackEvent;
+  readonly initialAnalysisOrder?: AnalysisOrder | null;
   readonly initialCards?: Card[] | null;
   readonly initialCribRole?: CribRole | null;
   readonly initialDiscards?: Card[] | null;
@@ -182,6 +185,7 @@ export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
   trackEvent,
+  initialAnalysisOrder = null,
   initialCards = null,
   initialCribRole = null,
   initialDiscards = null,
@@ -208,9 +212,6 @@ export function Trainer({
       initialOwnHandId,
     }),
   );
-  const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
-    initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
-  );
   const {
     allowDecisionQuality,
     choice,
@@ -225,6 +226,16 @@ export function Trainer({
   const markHistoryUpdate = useCallback(() => {
     historyFlags.current.shouldPush = isStableDiscardState(dealtCards);
   }, [dealtCards]);
+  const {
+    analysisOrder,
+    changeScoreSortKey,
+    restoreAnalysisSort,
+    scoreSortKey,
+  } = useAnalysisSort(
+    initialScoreSortKey,
+    initialAnalysisOrder,
+    markHistoryUpdate,
+  );
   const { changeSortOrder, setSortOrder, sortOrder } = useSortOrder(
     initialSortOrder,
     markHistoryUpdate,
@@ -285,6 +296,7 @@ export function Trainer({
 
   useEffect(() => {
     const url = serializeUrlAnalysisState(window.location.search, {
+      analysisOrder,
       cribRole,
       dealtCards,
       ownHandId: readOwnHandId(toHandKey(dealtCards, cribRole)),
@@ -323,6 +335,7 @@ export function Trainer({
     }
     historyFlags.current.shouldPush = false;
   }, [
+    analysisOrder,
     completionSortOrder,
     cribRole,
     currentHandScope,
@@ -368,15 +381,13 @@ export function Trainer({
       if (urlState.sortOrder !== null) {
         setSortOrder(urlState.sortOrder);
       }
-      if (urlState.scoreSortKey !== null) {
-        setScoreSortKey(urlState.scoreSortKey);
-      }
+      restoreAnalysisSort(urlState);
     };
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [exitDrill, reportHistoryNavigation, setSortOrder]);
+  }, [exitDrill, reportHistoryNavigation, restoreAnalysisSort, setSortOrder]);
 
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
@@ -400,14 +411,6 @@ export function Trainer({
       });
     },
     [cribRole, dealtCards, markHistoryUpdate, reportCardToggled],
-  );
-
-  const changeScoreSortKey = useCallback(
-    (newScoreSortKey: ScoredKeepDiscardSortKey) => {
-      markHistoryUpdate();
-      setScoreSortKey(newScoreSortKey);
-    },
-    [markHistoryUpdate],
   );
 
   return (
@@ -465,6 +468,7 @@ export function Trainer({
         />
         {isAnalysisVisible ? (
           <ScoredPossibleKeepDiscards
+            analysisOrder={analysisOrder}
             cribRole={cribRole}
             dealtCards={dealtCards}
             drillPreviousDiscard={
@@ -502,6 +506,7 @@ export function Trainer({
 }
 
 Trainer.defaultProps = {
+  initialAnalysisOrder: null,
   initialCards: null,
   initialCribRole: null,
   initialDiscards: null,

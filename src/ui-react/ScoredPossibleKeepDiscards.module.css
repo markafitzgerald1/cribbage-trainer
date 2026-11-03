@@ -269,7 +269,9 @@
 }
 
 .header-button:hover,
-.scored-possible-keep-discards th[aria-sort="descending"] .header-button {
+.scored-possible-keep-discards
+  th:is([aria-sort="ascending"], [aria-sort="descending"])
+  .header-button {
   color: #fff;
 }
 
@@ -278,13 +280,17 @@
  * technology announces. The arrow sits on the unit line, which every column
  * leaves room on, rather than beside the label, which the portrait columns do not.
  */
-.scored-possible-keep-discards th[aria-sort="descending"] .header-main {
+.scored-possible-keep-discards
+  th:is([aria-sort="ascending"], [aria-sort="descending"])
+  .header-main {
   text-decoration: underline;
   text-decoration-thickness: 0.12em;
   text-underline-offset: 0.2em;
 }
 
-.scored-possible-keep-discards th[aria-sort="descending"] .header-unit {
+.scored-possible-keep-discards
+  th:is([aria-sort="ascending"], [aria-sort="descending"])
+  .header-unit {
   opacity: 1;
   position: relative;
 }
@@ -297,14 +303,20 @@
  * forced colors, which can paint the stem's background as Canvas and the
  * triangle's transparent sides as text, leaving no arrow and a solid block.
  */
-.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before,
-.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
+.scored-possible-keep-discards
+  th:is([aria-sort="ascending"], [aria-sort="descending"])
+  .header-unit::before,
+.scored-possible-keep-discards
+  th:is([aria-sort="ascending"], [aria-sort="descending"])
+  .header-unit::after {
   content: "";
   forced-color-adjust: none;
   position: absolute;
 }
 
-.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
+.scored-possible-keep-discards
+  th:is([aria-sort="ascending"], [aria-sort="descending"])
+  .header-unit::before {
   background-color: currentcolor;
   height: 0.6em;
   right: calc(100% + 0.35em);
@@ -312,12 +324,26 @@
   width: max(0.1em, 1px);
 }
 
-.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
+.scored-possible-keep-discards
+  th:is([aria-sort="ascending"], [aria-sort="descending"])
+  .header-unit::after {
   border-left: 0.3em solid transparent;
   border-right: 0.3em solid transparent;
-  border-top: 0.4em solid currentcolor;
   right: calc(100% + 0.1em);
   top: 0.8em;
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
+  border-top: 0.4em solid currentcolor;
+}
+
+.scored-possible-keep-discards th[aria-sort="ascending"] .header-unit::before {
+  top: 0.6em;
+}
+
+.scored-possible-keep-discards th[aria-sort="ascending"] .header-unit::after {
+  border-bottom: 0.4em solid currentcolor;
+  top: 0.25em;
 }
 
 @media (aspect-ratio < 6 / 5) {

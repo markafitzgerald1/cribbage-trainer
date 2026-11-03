@@ -139,6 +139,7 @@ const arrowOf = (unit: Element) => {
     stem.content,
     head.content,
     head.borderTopStyle,
+    head.borderBottomStyle,
     stem.forcedColorAdjust,
     head.forcedColorAdjust,
   ].join(" ");
@@ -159,30 +160,61 @@ const scoreHeadersAfterLoad = async (canvasElement: HTMLElement) => {
     .filter((header) => header.querySelector("button") !== null);
 };
 
+const arrowOffsets = (header: HTMLElement) => {
+  const unit = header.querySelector("button > span:last-child") as Element;
+  const topInEm = (pseudo: string) => {
+    const style = getComputedStyle(unit, pseudo);
+    return (
+      Math.round((100 * parseFloat(style.top)) / parseFloat(style.fontSize)) /
+      100
+    );
+  };
+  return [topInEm("::before"), topInEm("::after")];
+};
+
+const assertHandAndCribMarker = async (
+  canvasElement: HTMLElement,
+  direction: "ascending" | "descending",
+) => {
+  const scoreHeaders = await scoreHeadersAfterLoad(canvasElement);
+  const unmarked = {
+    arrow: "none none none none auto auto",
+    underline: "none auto",
+  };
+
+  const activeHeader = scoreHeaders[2] as HTMLElement;
+
+  await expect(activeHeader).toHaveAttribute("aria-sort", direction);
+  await expect(arrowOffsets(activeHeader)).toStrictEqual(
+    direction === "ascending" ? [0.6, 0.25] : [0.25, 0.8],
+  );
+  await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
+    unmarked,
+    unmarked,
+    {
+      arrow: `"" "" ${direction === "ascending" ? "none solid" : "solid none"} none none`,
+      underline: "underline set",
+    },
+    unmarked,
+    unmarked,
+  ]);
+};
+
 export const SortedByHandAndCribPoints: Story = {
   ...JackSixFiveFourKingQueenSortedAscending,
   args: {
     ...JackSixFiveFourKingQueenSortedAscending.args,
     scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
   },
-  play: async ({ canvasElement }) => {
-    const scoreHeaders = await scoreHeadersAfterLoad(canvasElement);
-    const unmarked = {
-      arrow: "none none none auto auto",
-      underline: "none auto",
-    };
+  play: ({ canvasElement }) =>
+    assertHandAndCribMarker(canvasElement, "descending"),
+};
 
-    await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
-      unmarked,
-      unmarked,
-      {
-        arrow: '"" "" solid none none',
-        underline: "underline set",
-      },
-      unmarked,
-      unmarked,
-    ]);
-  },
+export const WorstFirstByHandAndCribPoints: Story = {
+  ...SortedByHandAndCribPoints,
+  args: { ...SortedByHandAndCribPoints.args, analysisOrder: "ascending" },
+  play: ({ canvasElement }) =>
+    assertHandAndCribMarker(canvasElement, "ascending"),
 };
 
 /*

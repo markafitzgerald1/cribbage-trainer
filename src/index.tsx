@@ -7,6 +7,7 @@ import { handleLoadGoogleAnalytics } from "./ui/handleLoadGoogleAnalytics";
 import { trackEvent } from "./ui/trackEvent";
 
 const {
+  initialAnalysisOrder,
   initialCards,
   initialCribRole,
   initialDiscards,
@@ -21,6 +22,7 @@ ReactDOMClient.createRoot(document.querySelector("#trainer")!).render(
   <StrictMode>
     <Trainer
       generateRandomNumber={createGenerator(seed)}
+      initialAnalysisOrder={initialAnalysisOrder}
       initialCards={initialCards}
       initialCribRole={initialCribRole}
       initialDiscards={initialDiscards}
