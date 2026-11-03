@@ -296,6 +296,8 @@
  * figure's text. Out of flow, so it cannot grow the header row. Exempt from
  * forced colors, which can paint the stem's background as Canvas and the
  * triangle's transparent sides as text, leaving no arrow and a solid block.
+ * The exemption also keeps the authored white, so forced colors get the
+ * palette's text color explicitly.
  */
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before,
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
@@ -310,6 +312,17 @@
   right: calc(100% + 0.35em);
   top: 0.25em;
   width: max(0.1em, 1px);
+}
+
+@media (forced-colors: active) {
+  .scored-possible-keep-discards
+    th[aria-sort="descending"]
+    .header-unit::before,
+  .scored-possible-keep-discards
+    th[aria-sort="descending"]
+    .header-unit::after {
+    color: CanvasText;
+  }
 }
 
 .scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
