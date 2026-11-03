@@ -273,6 +273,66 @@
   color: #fff;
 }
 
+/*
+ * Keyed on aria-sort so the visible marker cannot disagree with what assistive
+ * technology announces. The arrow sits on the unit line, which every column
+ * leaves room on, rather than beside the label, which the portrait columns do not.
+ */
+.scored-possible-keep-discards th[aria-sort="descending"] .header-main {
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.2em;
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit {
+  opacity: 1;
+  position: relative;
+}
+
+/*
+ * Drawn from two boxes, a stem and a border triangle, rather than a font glyph,
+ * because where a glyph's ink sits in its line box differs by engine and font.
+ * Not a mask either: in Chromium a mask re-rasterized the whole analysis
+ * figure's text. Out of flow, so it cannot grow the header row. Exempt from
+ * forced colors, which can paint the stem's background as Canvas and the
+ * triangle's transparent sides as text, leaving no arrow and a solid block.
+ * The exemption also keeps the authored white, so forced colors get the
+ * palette's text color explicitly.
+ */
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before,
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
+  content: "";
+  forced-color-adjust: none;
+  position: absolute;
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::before {
+  background-color: currentcolor;
+  height: 0.6em;
+  right: calc(100% + 0.35em);
+  top: 0.25em;
+  width: max(0.1em, 1px);
+}
+
+@media (forced-colors: active) {
+  .scored-possible-keep-discards
+    th[aria-sort="descending"]
+    .header-unit::before,
+  .scored-possible-keep-discards
+    th[aria-sort="descending"]
+    .header-unit::after {
+    color: CanvasText;
+  }
+}
+
+.scored-possible-keep-discards th[aria-sort="descending"] .header-unit::after {
+  border-left: 0.3em solid transparent;
+  border-right: 0.3em solid transparent;
+  border-top: 0.4em solid currentcolor;
+  right: calc(100% + 0.1em);
+  top: 0.8em;
+}
+
 @media (aspect-ratio < 6 / 5) {
   .scored-possible-keep-discards figcaption {
     font-size: var(--medium-text-font-size-portrait);
