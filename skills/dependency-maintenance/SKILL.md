@@ -118,6 +118,15 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   release at all, pin what can be pinned and record the remainder as a
   `.nsprc` exception with an `expiry`, so the waiver ages out and forces a
   re-check the way the dependabot `ignore` entries do.
+- Size a waiver's `expiry` by what a re-check could change, not by habit.
+  Every lapse fails `lint:audit` on every open branch at once, so each one
+  costs a fix and a cherry-pick per pull request. Where a patched release
+  is plausible soon, such as a backport to an older line, two weeks is
+  right. Where no fix exists for any line and the package only reaches dev
+  tooling, a re-check can only confirm the note and Dependabot surfaces a
+  fixed release regardless, so give it months. The deepmerge waiver
+  (1243505) went from a one-week expiry to one month by reflex before this
+  was worked out.
 - Before concluding that an older major line has no patched release, check
   its maintenance dist-tag. `npm view <package> version` reports only
   `latest`, which hides backports: brace-expansion publishes them as
