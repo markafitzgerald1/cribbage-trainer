@@ -146,6 +146,15 @@ agreed, the pull request says what actually happened.
   other `@codex` mention in the PR text, since any such mention triggers the
   bot. Record usage before and after each round in the review table when the
   plan shows it.
+- **An interrupted mutation run leaves its mutation in the tree.** A script
+  that edits a file, runs a test, and restores the file in a `finally` restores
+  nothing when its process is killed: the `finally` never runs. On #651's
+  PR 2, Codex hit its usage limit during the ninth of eleven mutations, and the
+  working tree it handed back still carried that mutation. Three of the new
+  tests then failed with what read as a real Back-navigation bug. After any
+  agent run that mutates code, confirm that every mutation was restored before
+  trusting the tree: diff it against the run's own list of mutations, or rerun
+  the suite. Better, mutate a copy of the tree rather than the working tree.
 - Move an issue to **In Progress** on the `Cribbage Trainer` project board when
   you start work on it; merging a PR whose body closes the issue moves it to
   Done on its own. A board reading Todo while a branch and PR exist misreports
