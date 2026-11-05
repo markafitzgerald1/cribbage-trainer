@@ -9,6 +9,7 @@ import {
   validateUncertainty,
 } from "./uncertaintySidecar.mjs";
 import { deepStrictEqual, ok, strictEqual, throws } from "node:assert/strict";
+import { parseArtifactJson } from "./artifactJson.mjs";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
@@ -23,7 +24,7 @@ import { test } from "node:test";
 const readVendored = (outputPath) => readFileSync(outputPath, "utf8");
 
 const sidecarOf = (assets) =>
-  JSON.parse(readVendored(assets.uncertaintyOutputPath));
+  parseArtifactJson(readVendored(assets.uncertaintyOutputPath));
 
 const PAIRS = [
   { assets: CRIB_ASSETS, validateMeans: validateCribTable },

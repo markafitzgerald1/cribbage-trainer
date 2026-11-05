@@ -14,7 +14,7 @@ RUN npm clean-install
 COPY __mocks__/ ./__mocks__/
 COPY babel.config.json jest.config.json styles.d.ts tsconfig.json vite.config.mjs ./
 COPY src/ ./src/
-COPY scripts/expectedTableIdentity.mjs scripts/uncertaintySidecar.mjs scripts/tableIdentityBabel.mjs scripts/tableIdentityCacheKey.mjs scripts/tableIdentityJest.mjs scripts/tableIdentityJest.test.mjs ./scripts/
+COPY scripts/artifactJson.mjs scripts/expectedTableIdentity.mjs scripts/uncertaintySidecar.mjs scripts/tableIdentityBabel.mjs scripts/tableIdentityCacheKey.mjs scripts/tableIdentityJest.mjs scripts/tableIdentityJest.test.mjs ./scripts/
 
 RUN npm test
 

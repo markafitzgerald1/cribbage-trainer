@@ -1,3 +1,12 @@
+import {
+  CRIB_V2_SAMPLE_UNIT,
+  CRIB_V2_SCHEMA,
+  CRIB_V4_METHOD,
+  validCribV2Header,
+  validCribV2Identity,
+  validCribV2Record,
+} from "../src/game/cribUncertaintyV2.mjs";
+import { artifactNumber, parseArtifactJson } from "./artifactJson.mjs";
 import { createHash } from "node:crypto";
 
 /*
@@ -7,7 +16,8 @@ import { createHash } from "node:crypto";
  * removes every figure from the next build.
  *
  * The browser's reader is TypeScript (src/game/uncertaintySidecar.ts) and
- * this is a plain Node script, so the two cannot share an implementation.
+ * this entrypoint also checks exact means bytes and client metadata. Both
+ * readers share the v2 semantic validator.
  * `scripts/vendoredTables.test.mjs` runs this one against the vendored files
  * and the reader's own specs run the other against the same bytes, so a
  * document only one of them accepts fails a gate rather than shipping.
@@ -167,7 +177,8 @@ const readVocabulary = (sidecar, contract) => {
 
 const assertProvenance = (sidecar, contract) => {
   for (const field of DIGEST_FIELDS) {
-    if (!SHA256_DIGEST.test(sidecar[field] ?? "")) {
+    const value = sidecar[field];
+    if (typeof value !== "string" || !SHA256_DIGEST.test(value)) {
       throw new Error(`${describe(contract)} names no usable ${field}`);
     }
   }
@@ -220,7 +231,7 @@ const assertQualifications = (sidecar, contract) => {
   }
 };
 
-const assertRecord = ({ contract, identity, record, vocabulary }) => {
+const assertRecord = ({ contract, identity, record, vocabulary, isCribV2 }) => {
   const parts = identity.split("/");
   if (
     parts.length !== vocabulary.length ||
@@ -234,6 +245,14 @@ const assertRecord = ({ contract, identity, record, vocabulary }) => {
     record,
     `Missing ${contract.table} uncertainty record for ${identity}`,
   );
+  if (isCribV2) {
+    if (!validCribV2Record(record) || !validCribV2Identity(identity)) {
+      throw new Error(
+        `${describe(contract)} has unusable statistics for ${identity}`,
+      );
+    }
+    return;
+  }
   const finite = (value) => typeof value === "number" && Number.isFinite(value);
   const weightsAreUsable = contract.weightFields.every(
     (field) => finite(record[field]) && record[field] >= 0,
@@ -257,19 +276,39 @@ const assertRecord = ({ contract, identity, record, vocabulary }) => {
  * frozen number here would reject a legitimate refresh. The header's own
  * `record_count` is what a truncated download contradicts.
  */
+const assertSchemaQualifications = (sidecar, contract, isCribV2) => {
+  if (isCribV2) {
+    if (!validCribV2Header(sidecar)) {
+      throw new Error(
+        `${describe(contract)} has invalid v2 provenance or scope`,
+      );
+    }
+  } else {
+    assertQualifications(sidecar, contract);
+    if (
+      contract.table === "crib" &&
+      sidecar.provenance.generation_method === CRIB_V4_METHOD
+    ) {
+      throw new Error("Version 4 crib provenance requires the v2 sidecar");
+    }
+  }
+};
+
 export const validateUncertainty = (sidecar, contract) => {
   assertObject(sidecar, `${describe(contract)} is not an object`);
+  const isCribV2 =
+    contract.table === "crib" && sidecar.schema === CRIB_V2_SCHEMA;
   const header = [
-    ["schema", UNCERTAINTY_SCHEMA],
+    ["schema", isCribV2 ? CRIB_V2_SCHEMA : UNCERTAINTY_SCHEMA],
     ["table", contract.table],
     ["statistic", UNCERTAINTY_STATISTIC],
-    ["n_semantics", contract.nSemantics],
+    ["n_semantics", isCribV2 ? CRIB_V2_SAMPLE_UNIT : contract.nSemantics],
   ];
   for (const expectation of header) {
     assertHeaderValue(sidecar, contract, expectation);
   }
   assertProvenance(sidecar, contract);
-  assertQualifications(sidecar, contract);
+  assertSchemaQualifications(sidecar, contract, isCribV2);
   const vocabulary = readVocabulary(sidecar, contract);
 
   const totals = sidecar.record_groups?.totals;
@@ -289,7 +328,83 @@ export const validateUncertainty = (sidecar, contract) => {
     throw new Error(`${describe(contract)} carries no records`);
   }
   for (const [identity, record] of entries) {
-    assertRecord({ contract, identity, record, vocabulary });
+    assertRecord({ contract, identity, isCribV2, record, vocabulary });
+  }
+};
+
+// toFixed rounds exact halfway cases away from zero. A binary64 value
+// exactly halfway at four places is an odd multiple of 1/32.
+const roundCribMean = (mean) => {
+  if (typeof mean === "bigint") return mean;
+  if (Number.isSafeInteger(mean * 32) && Math.abs((mean * 32) % 2) === 1) {
+    // The integer numerator preserves ties even where scaling a double loses bits.
+    const lower = (BigInt(Math.abs(mean * 32)) * 625n) / 2n;
+    const rounded = lower + (lower % 2n);
+    const sign = mean < 0 ? "-" : "";
+    const fraction = (rounded % 10000n).toString().padStart(4, "0");
+    return Number(`${sign}${rounded / 10000n}.${fraction}`);
+  }
+  return Number(mean.toFixed(4));
+};
+
+// Python compares integers and floats by value without rounding the integer.
+const comparableMean = (mean) => (Number.isInteger(mean) ? BigInt(mean) : mean);
+
+const assertCribV2Buckets = (key, table) => {
+  if (Object.keys(table ?? {}).length !== CANONICAL_ROLES.length) {
+    throw new Error(`Invalid v4 crib roles for ${key}`);
+  }
+  for (const role of CANONICAL_ROLES) {
+    const cuts = Reflect.get(table, role);
+    if (Object.keys(cuts ?? {}).length !== CANONICAL_RANKS.length) {
+      throw new Error(`Invalid v4 starter ranks for ${key}/${role}`);
+    }
+    for (const rank of CANONICAL_RANKS) {
+      const root = Reflect.get(cuts, rank);
+      if (root && Object.hasOwn(root, "starter_suit_relation")) {
+        assertObject(
+          root.starter_suit_relation,
+          `Invalid v4 suit relations for ${key}/${role}/${rank}`,
+        );
+      }
+      const relations = Object.entries(root?.starter_suit_relation ?? {});
+      if (
+        !Number.isFinite(root?.mu) ||
+        relations.some(
+          ([slot, bucket]) =>
+            slot === "total" ||
+            !validCribV2Identity(`${key}/${role}/${rank}/${slot}`) ||
+            !Number.isFinite(bucket?.mu),
+        )
+      ) {
+        throw new Error(`Invalid v4 crib means for ${key}/${role}/${rank}`);
+      }
+    }
+  }
+};
+
+const assertV2Means = (sidecar, means) => {
+  if (
+    Object.keys(means).length !== CANONICAL_DISCARD_KEYS.length + 1 ||
+    !CANONICAL_DISCARD_KEYS.every((key) => Object.hasOwn(means, key))
+  ) {
+    throw new Error("Version 4 crib means lack the canonical discard keys");
+  }
+  for (const key of CANONICAL_DISCARD_KEYS) {
+    assertCribV2Buckets(key, Reflect.get(means, key));
+  }
+  const { records } = sidecar.record_groups.totals;
+  for (const [identity, record] of Object.entries(records)) {
+    const [key, role, rank, slot] = identity.split("/");
+    const root = means[key]?.[role]?.[rank];
+    const bucket =
+      slot === "total" ? root : root?.starter_suit_relation?.[slot];
+    if (
+      comparableMean(artifactNumber(bucket, "mu")) !==
+      comparableMean(roundCribMean(artifactNumber(record, "mu")))
+    ) {
+      throw new Error(`Crib uncertainty mean differs for ${identity}`);
+    }
   }
 };
 
@@ -311,5 +426,24 @@ export const assertMeansDigest = (sidecar, meansBody, contract) => {
         `${sidecar.means_sha256} but the downloaded means hash to ${digest}. ` +
         "The rolling release changed between the two downloads; rerun the update.",
     );
+  }
+  const means = parseArtifactJson(meansBody);
+  if (contract.table === "crib") {
+    const metadata = Reflect.get(means, "__metadata__");
+    const isCribV2 = sidecar.schema === CRIB_V2_SCHEMA;
+    if (
+      isCribV2 !== (metadata?.generation_method === CRIB_V4_METHOD) ||
+      (isCribV2 &&
+        ["seed", "generation"].some(
+          (field) => metadata[field] !== sidecar.provenance[field],
+        ))
+    ) {
+      throw new Error(
+        "Crib means and uncertainty versions or provenance differ",
+      );
+    }
+    if (isCribV2) {
+      assertV2Means(sidecar, means);
+    }
   }
 };

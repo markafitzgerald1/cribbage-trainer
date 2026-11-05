@@ -2,9 +2,11 @@
   "collectCoverage": true,
   "collectCoverageFrom": [
     "src/**/*.{ts,tsx}",
+    "src/game/cribUncertaintyV2.mjs",
     "!src/**/*.d.ts",
     "!src/game/parseCards.common.ts",
     "!src/game/uncertaintySidecar.test.common.ts",
+    "!src/game/cribUncertaintyV2.test.common.ts",
     "!src/analysis/analysis.test.common.ts",
     "!src/ui/discardQualityTrend.test.common.ts",
     "!src/ui/discardTally.test.common.ts",
@@ -44,6 +46,7 @@
   ],
   "testTimeout": 15000,
   "transform": {
+    "cribUncertaintyV2\\.mjs$": "<rootDir>/scripts/tableIdentityJest.mjs",
     "^.+\\.tsx?$": "<rootDir>/scripts/tableIdentityJest.mjs"
   }
 }

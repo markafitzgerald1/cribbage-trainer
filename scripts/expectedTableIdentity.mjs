@@ -4,6 +4,7 @@ import {
   assertMeansDigest,
 } from "./uncertaintySidecar.mjs";
 import { URL, fileURLToPath } from "node:url";
+import { parseArtifactJson } from "./artifactJson.mjs";
 import { readFileSync } from "node:fs";
 
 const pairs = [CRIB_UNCERTAINTY_CONTRACT, PLAY_UNCERTAINTY_CONTRACT];
@@ -21,7 +22,9 @@ export const readTableIdentity = (read = readFileSync) =>
   Object.fromEntries(
     pairs.map((contract, index) => {
       const means = read(identityPaths.at(index * 2), "utf8");
-      const sidecar = JSON.parse(read(identityPaths.at(index * 2 + 1), "utf8"));
+      const sidecar = parseArtifactJson(
+        read(identityPaths.at(index * 2 + 1), "utf8"),
+      );
       assertMeansDigest(sidecar, means, contract);
       return [contract.table, { means_sha256: sidecar.means_sha256 }];
     }),
