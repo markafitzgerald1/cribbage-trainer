@@ -4,11 +4,6 @@
     "expiry": "2027-02-03",
     "notes": "deepmerge mergeObject() allows prototype poisoning of returned objects (GHSA-gcqx-w48m-w2h4), low severity. Every published release from 4.2.0 through the latest 4.3.1 is affected, so no patched release exists; re-checked 2026-11-02, when 4.3.1 was still the latest and jest-config 30.5.2 still required ^4.3.1. Reaches the tree only through dev tooling (jest -> @jest/core -> jest-config -> deepmerge): npm ls deepmerge --omit=dev is empty, so nothing is shipped in the production bundle. Three months because a re-check cannot change anything until upstream publishes a fix, which Dependabot would propose anyway."
   },
-  "1244012": {
-    "active": true,
-    "expiry": "2026-11-13",
-    "notes": "minimatch globparts amplification denial of service (GHSA-g3hv-75wg-m249), moderate, published 2026-10-30. Range is every release below 11.0.1; the tree holds 3.1.5, 9.0.9 and 10.2.6 through eslint, jest, typescript-eslint and markdownlint-cli, and every legacy-v* backport tag predates the advisory, so no patched release exists on those lines. npm ls minimatch --omit=dev is empty, so nothing ships. The expiry forces a re-check for backports."
-  },
   "1244013": {
     "active": true,
     "expiry": "2026-11-13",
