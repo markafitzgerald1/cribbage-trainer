@@ -2,17 +2,34 @@ import {
   CRIB_V2_SCHEMA,
   CRIB_V4_METHOD,
 } from "../src/game/cribUncertaintyV2.mjs";
+import { TextDecoder } from "node:util";
 
 const numericTokens = new WeakMap();
+const parsedObjects = new WeakSet();
 const integerToken = /^-?\d+$/u;
+
+export const assertArtifactJson = (value) => {
+  if (!parsedObjects.has(value)) {
+    throw new Error("Expected an object produced by parseArtifactJson");
+  }
+};
+
+export const artifactText = (body) =>
+  typeof body === "string"
+    ? body
+    : new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(body);
 
 // Python keeps integer operands exact, including beyond binary64 precision.
 export const artifactNumber = (object, field) => {
+  assertArtifactJson(object);
   const source = numericTokens.get(object)?.get(field);
   return source && integerToken.test(source) ? BigInt(source) : object?.[field];
 };
 
 export const stringifyArtifactJson = (value) => {
+  assertArtifactJson(value);
+  // Contract sidecar keys are not integer-like; unknown fields may reorder.
+  // Minified bytes are not an identity: only embedded digests bind artifacts.
   /** @this {object} */
   function preserveToken(key, item) {
     const source = numericTokens.get(this)?.get(key);
@@ -42,9 +59,13 @@ const assertUniqueNames = (body) => {
   }
 };
 
-export const parseArtifactJson = (body) => {
+export const parseArtifactJson = (input) => {
+  const body = artifactText(input);
   /** @this {object} */
   function readToken(key, item, context) {
+    if (typeof item === "object" && item !== null) {
+      parsedObjects.add(item);
+    }
     if (typeof item === "number") {
       const tokens = numericTokens.get(this) ?? new Map();
       tokens.set(key, context.source);
@@ -77,8 +98,9 @@ export const parseArtifactJson = (body) => {
     }
   }
   if (
-    Reflect.get(value ?? {}, "__metadata__")?.generation_method ===
-    CRIB_V4_METHOD
+    typeof value === "object" &&
+    value !== null &&
+    Reflect.get(value, "__metadata__")?.generation_method === CRIB_V4_METHOD
   ) {
     assertIntegers(Reflect.get(value, "__metadata__"), ["seed", "generation"]);
   }

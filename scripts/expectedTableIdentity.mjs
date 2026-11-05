@@ -21,10 +21,8 @@ export const identityPaths = pairs.flatMap(({ table }) => {
 export const readTableIdentity = (read = readFileSync) =>
   Object.fromEntries(
     pairs.map((contract, index) => {
-      const means = read(identityPaths.at(index * 2), "utf8");
-      const sidecar = parseArtifactJson(
-        read(identityPaths.at(index * 2 + 1), "utf8"),
-      );
+      const means = read(identityPaths.at(index * 2));
+      const sidecar = parseArtifactJson(read(identityPaths.at(index * 2 + 1)));
       assertMeansDigest(sidecar, means, contract);
       return [contract.table, { means_sha256: sidecar.means_sha256 }];
     }),

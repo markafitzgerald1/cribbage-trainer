@@ -6,7 +6,11 @@ import {
   validCribV2Identity,
   validCribV2Record,
 } from "../src/game/cribUncertaintyV2.mjs";
-import { artifactNumber, parseArtifactJson } from "./artifactJson.mjs";
+import {
+  artifactNumber,
+  assertArtifactJson,
+  parseArtifactJson,
+} from "./artifactJson.mjs";
 import { createHash } from "node:crypto";
 
 /*
@@ -298,6 +302,7 @@ export const validateUncertainty = (sidecar, contract) => {
   assertObject(sidecar, `${describe(contract)} is not an object`);
   const isCribV2 =
     contract.table === "crib" && sidecar.schema === CRIB_V2_SCHEMA;
+  if (isCribV2) assertArtifactJson(sidecar);
   const header = [
     ["schema", isCribV2 ? CRIB_V2_SCHEMA : UNCERTAINTY_SCHEMA],
     ["table", contract.table],
@@ -419,6 +424,7 @@ const sha256 = (body) =>
  * settles it before anything is written.
  */
 export const assertMeansDigest = (sidecar, meansBody, contract) => {
+  assertArtifactJson(sidecar);
   const digest = sha256(meansBody);
   if (sidecar.means_sha256 !== digest) {
     throw new Error(

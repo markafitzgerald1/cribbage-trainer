@@ -4,7 +4,11 @@ import {
   assertMeansDigest,
   validateUncertainty,
 } from "./uncertaintySidecar.mjs";
-import { parseArtifactJson, stringifyArtifactJson } from "./artifactJson.mjs";
+import {
+  artifactText,
+  parseArtifactJson,
+  stringifyArtifactJson,
+} from "./artifactJson.mjs";
 import { rename, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -142,7 +146,7 @@ const downloadAsset = async (assetUrl) => {
       `Failed to download EV table from ${assetUrl}: ${response.status} ${response.statusText}`,
     );
   }
-  return response.text();
+  return artifactText(await response.arrayBuffer());
 };
 
 export const downloadTable = async (assetUrl, validate) => {

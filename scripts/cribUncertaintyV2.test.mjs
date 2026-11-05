@@ -15,6 +15,11 @@ import {
   v2Document,
 } from "../src/game/cribUncertaintyV2.test.common.ts";
 import {
+  artifactNumber,
+  parseArtifactJson,
+  stringifyArtifactJson,
+} from "./artifactJson.mjs";
+import {
   doesNotReject,
   doesNotThrow,
   notEqual,
@@ -23,13 +28,13 @@ import {
   throws,
 } from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { parseArtifactJson } from "./artifactJson.mjs";
 import { readFileSync } from "node:fs";
 import { readTableIdentity } from "./expectedTableIdentity.mjs";
 import { test } from "node:test";
 
 const contract = CRIB_UNCERTAINTY_CONTRACT;
-const fixture = () => v2Document(contract.vocabulary);
+const fixture = () =>
+  parseArtifactJson(JSON.stringify(v2Document(contract.vocabulary)));
 const hash = (body) => createHash("sha256").update(body).digest("hex");
 const bind = (sidecar, meansBody) => {
   sidecar.means_sha256 = hash(meansBody);
@@ -60,8 +65,9 @@ const pair = () => {
 const checkPair = ({ sidecar, means }) => {
   const body = JSON.stringify(means);
   bind(sidecar, body);
-  validateUncertainty(sidecar, contract);
-  assertMeansDigest(sidecar, body, contract);
+  const parsed = parseArtifactJson(JSON.stringify(sidecar));
+  validateUncertainty(parsed, contract);
+  assertMeansDigest(parsed, body, contract);
 };
 
 test("v2 root zero and relation records pass both Node checks", () => {
@@ -161,14 +167,14 @@ const replaceChecked = (body, from, to) => {
   return changed;
 };
 const readWireIdentity = (wire) =>
-  readTableIdentity((file) => {
+  readTableIdentity((file, encoding) => {
     if (file.pathname.endsWith("expectedCribPointsTable.json")) {
-      return wire.meansBody;
+      return encoding ? wire.meansBody.toString(encoding) : wire.meansBody;
     }
     if (file.pathname.endsWith("expectedCribPointsUncertainty.json")) {
-      return wire.sidecarBody;
+      return encoding ? wire.sidecarBody.toString(encoding) : wire.sidecarBody;
     }
-    return readFileSync(file, "utf8");
+    return readFileSync(file, encoding);
   });
 test("the build identity gate accepts a valid v2 matched pair", () => {
   const wire = wirePair();
@@ -176,11 +182,11 @@ test("the build identity gate accepts a valid v2 matched pair", () => {
 });
 const downloadWire = (context, wire) => {
   context.mock.method(globalThis, "fetch", (url) =>
-    Promise.resolve({
-      ok: true,
-      text: () =>
-        Promise.resolve(url === "means" ? wire.meansBody : wire.sidecarBody),
-    }),
+    Promise.resolve(
+      new globalThis.Response(
+        url === "means" ? wire.meansBody : wire.sidecarBody,
+      ),
+    ),
   );
   return downloadMeansAndUncertainty(CRIB_ASSETS, "means", "sidecar");
 };
@@ -311,3 +317,78 @@ test("unknown v1 fields and groups remain permitted; duplicate names there do no
     /Duplicate/u,
   );
 });
+
+for (const [name, read] of [
+  ["numeric lookup", (value) => artifactNumber(value, "mu")],
+  ["minification", stringifyArtifactJson],
+]) {
+  test(`${name} refuses objects without artifact parse provenance`, () => {
+    const raw = '{"mu":9007199254740993}';
+    doesNotThrow(() => read(parseArtifactJson(raw)));
+    throws(() => read(JSON.parse(raw)), /parseArtifactJson/u);
+  });
+}
+for (const suffix of ["", ".0", "e0"]) {
+  test(`v2 validation refuses plain JSON.parse with n spelled 4${suffix}`, () => {
+    const raw = wirePair().sidecarBody.replace('"n":4', `"n":4${suffix}`);
+    throws(
+      () => validateUncertainty(JSON.parse(raw), contract),
+      /parseArtifactJson/u,
+    );
+  });
+}
+test("mean binding refuses a plain JSON.parse sidecar with a rounded-away integer mismatch", () => {
+  const { sidecarBody, meansBody } = wireMeans(
+    "9007199254740992",
+    "9007199254740993",
+  );
+  throws(
+    () => assertMeansDigest(JSON.parse(sidecarBody), meansBody, contract),
+    /parseArtifactJson/u,
+  );
+});
+for (const raw of ["5", '"x"', "true"]) {
+  test(`primitive ${raw} reaches the validator's not-an-object error`, () => {
+    throws(() => validateUncertainty(parseArtifactJson(raw), contract), {
+      message: "Downloaded crib uncertainty sidecar is not an object",
+    });
+  });
+}
+const malformedBytes = (body, encoding) =>
+  encoding === "BOM"
+    ? Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(body)])
+    : Buffer.from(body.replace("BAD_BYTE", "\xff"), "latin1");
+for (const target of ["meansBody", "sidecarBody"]) {
+  for (const encoding of ["invalid UTF-8", "BOM"]) {
+    for (const boundary of encoding === "BOM"
+      ? ["updater"]
+      : ["updater", "on-disk identity gate"]) {
+      test(`${boundary} rejects ${encoding} in ${target}`, async (context) => {
+        const wire = wirePair();
+        wire.meansBody = replaceChecked(
+          wire.meansBody,
+          '"__metadata__":{',
+          '"__metadata__":{"wire_note":"BAD_BYTE",',
+        );
+        wire.sidecarBody = replaceChecked(
+          wire.sidecarBody,
+          "Conditional sampling",
+          "BAD_BYTE",
+        );
+        wire[target] = malformedBytes(wire[target], encoding);
+        const sidecar = JSON.parse(
+          wire.sidecarBody.toString().replace(/^\uFEFF/u, ""),
+        );
+        sidecar.means_sha256 = hash(wire.meansBody);
+        if (target === "meansBody") wire.sidecarBody = JSON.stringify(sidecar);
+        const expected =
+          encoding === "BOM" ? /Unexpected token/u : /encoded data/u;
+        if (boundary === "updater") {
+          await rejects(downloadWire(context, wire), expected);
+        } else {
+          throws(() => readWireIdentity(wire), expected);
+        }
+      });
+    }
+  }
+}
