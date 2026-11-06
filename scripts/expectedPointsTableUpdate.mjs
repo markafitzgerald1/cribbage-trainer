@@ -4,6 +4,11 @@ import {
   assertMeansDigest,
   validateUncertainty,
 } from "./uncertaintySidecar.mjs";
+import {
+  artifactText,
+  parseArtifactJson,
+  stringifyArtifactJson,
+} from "./artifactJson.mjs";
 import { rename, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -141,12 +146,12 @@ const downloadAsset = async (assetUrl) => {
       `Failed to download EV table from ${assetUrl}: ${response.status} ${response.statusText}`,
     );
   }
-  return response.text();
+  return artifactText(await response.arrayBuffer());
 };
 
 export const downloadTable = async (assetUrl, validate) => {
   const raw = await downloadAsset(assetUrl);
-  const parsed = JSON.parse(raw);
+  const parsed = parseArtifactJson(raw);
   validate(parsed);
   return { body: raw.endsWith("\n") ? raw : `${raw}\n`, parsed, raw };
 };
@@ -155,11 +160,10 @@ export const downloadTable = async (assetUrl, validate) => {
  * Stored minified, the way both means tables already are: the published
  * sidecars are pretty-printed across tens of thousands of lines, which no
  * reviewer reads and which the pull request size gate counts in full.
- * Re-serializing changes no value - IEEE 754 doubles round-trip exactly
- * through JSON - and the digests that matter are fields inside the document
- * rather than of it.
+ * Keep numeric tokens so exact integers survive beyond binary64 precision;
+ * the digests that matter are fields inside the document rather than of it.
  */
-const toMinifiedBody = (value) => `${JSON.stringify(value)}\n`;
+const toMinifiedBody = (value) => `${stringifyArtifactJson(value)}\n`;
 
 export const downloadMeansAndUncertainty = async (
   assets,

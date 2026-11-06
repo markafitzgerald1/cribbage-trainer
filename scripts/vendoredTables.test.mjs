@@ -9,6 +9,7 @@ import {
   validateUncertainty,
 } from "./uncertaintySidecar.mjs";
 import { deepStrictEqual, ok, strictEqual, throws } from "node:assert/strict";
+import { parseArtifactJson } from "./artifactJson.mjs";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
@@ -20,10 +21,10 @@ import { test } from "node:test";
  * renders either way - the only symptom would be error bars quoted against a
  * table nobody is looking at. Refreshing one alone reddens this instead.
  */
-const readVendored = (outputPath) => readFileSync(outputPath, "utf8");
+const readVendored = (outputPath) => readFileSync(outputPath);
 
 const sidecarOf = (assets) =>
-  JSON.parse(readVendored(assets.uncertaintyOutputPath));
+  parseArtifactJson(readVendored(assets.uncertaintyOutputPath));
 
 const PAIRS = [
   { assets: CRIB_ASSETS, validateMeans: validateCribTable },
@@ -56,12 +57,26 @@ for (const { assets, validateMeans } of PAIRS) {
     );
   });
 
+  test(`the ${contract.table} digest guard refuses a sidecar cloned without parse provenance`, () => {
+    const sidecar = globalThis.structuredClone(sidecarOf(assets));
+    throws(
+      () =>
+        assertMeansDigest(
+          sidecar,
+          readVendored(assets.meansOutputPath),
+          contract,
+        ),
+      /parseArtifactJson/u,
+    );
+  });
+
   /*
    * The case the guard exists for, which the passing case above cannot show:
    * a rolling release replaced between the two downloads leaves means that no
    * longer hash to what the sidecar names. One byte is enough, and has to be,
    * because a digest that tolerated a byte would not be doing anything.
    */
+
   test(`a ${contract.table} means file of different bytes fails the matched-pair guard`, () => {
     throws(() =>
       assertMeansDigest(

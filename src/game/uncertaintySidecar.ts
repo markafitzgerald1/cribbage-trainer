@@ -1,3 +1,11 @@
+import {
+  CRIB_V2_SAMPLE_UNIT,
+  CRIB_V2_SCHEMA,
+  CRIB_V4_METHOD,
+  validCribV2Header,
+  validCribV2Identity,
+  validCribV2Record,
+} from "./cribUncertaintyV2.mjs";
 import { isFiniteNonNegative } from "../ui/isFiniteNonNegative";
 import { isObject } from "../ui/isObject";
 
@@ -189,11 +197,13 @@ const hasRequiredNulls = (
 const hasExpectedHeader = (
   document: object,
   contract: UncertaintyContract,
+  isCribV2: boolean,
 ): boolean =>
-  readString(document, "schema") === SCHEMA &&
+  readString(document, "schema") === (isCribV2 ? CRIB_V2_SCHEMA : SCHEMA) &&
   readString(document, "table") === contract.table &&
   readString(document, "statistic") === STATISTIC &&
-  readString(document, "n_semantics") === contract.nSemantics &&
+  readString(document, "n_semantics") ===
+    (isCribV2 ? CRIB_V2_SAMPLE_UNIT : contract.nSemantics) &&
   DIGEST_FIELDS.every((field) =>
     SHA256_DIGEST.test(readString(document, field) ?? ""),
   ) &&
@@ -213,6 +223,7 @@ const hasQualifications = (document: object): boolean => {
 };
 
 /*
+ * Trainer readers require the full published vocabulary for either version.
  * Compared against the whole canonical sequence rather than against a shape,
  * which is what rejects a duplicate, a reordering, or an omission - each of
  * which would quietly cost one row its figure. An empty canonical list is a
@@ -314,6 +325,27 @@ const readTotalEntries = (document: object): RecordEntries | null => {
     : null;
 };
 
+const hasSchemaQualifications = (
+  value: object,
+  contract: UncertaintyContract,
+  isCribV2: boolean,
+): boolean => {
+  if (isCribV2) {
+    return validCribV2Header(value);
+  }
+  const provenance = Reflect.get(value, "provenance") as object;
+  return (
+    hasQualifications(value) &&
+    (contract.table !== "crib" ||
+      readString(provenance, "generation_method") !== CRIB_V4_METHOD)
+  );
+};
+
+const readV2StandardError = (record: unknown): number | null =>
+  isObject(record) && validCribV2Record(record)
+    ? recordWeight(record, STATISTIC)
+    : null;
+
 export const parseUncertaintySidecar = (
   value: unknown,
   contract: UncertaintyContract,
@@ -327,10 +359,12 @@ export const parseUncertaintySidecar = (
   if (!isObject(value) || Array.isArray(value)) {
     return null;
   }
-  if (!hasExpectedHeader(value, contract)) {
+  const isCribV2 =
+    contract.table === "crib" && readString(value, "schema") === CRIB_V2_SCHEMA;
+  if (!hasExpectedHeader(value, contract, isCribV2)) {
     return null;
   }
-  if (!hasQualifications(value)) {
+  if (!hasSchemaQualifications(value, contract, isCribV2)) {
     return null;
   }
   const vocabulary = readVocabulary(value, contract);
@@ -344,8 +378,14 @@ export const parseUncertaintySidecar = (
 
   const totals = new Map<string, number>();
   for (const [identity, record] of entries) {
-    const standardError = readRecordStandardError(record, contract);
-    if (standardError === null || !isKnownIdentity(identity, vocabulary)) {
+    const standardError = isCribV2
+      ? readV2StandardError(record)
+      : readRecordStandardError(record, contract);
+    if (
+      standardError === null ||
+      !isKnownIdentity(identity, vocabulary) ||
+      (isCribV2 && !validCribV2Identity(identity))
+    ) {
       return null;
     }
     totals.set(identity, standardError);

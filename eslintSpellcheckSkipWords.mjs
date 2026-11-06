@@ -1,4 +1,6 @@
 export const spellcheckSkipWords = [
+  "rng",
+  "precut",
   "amd64",
   "antialiasing",
   "arm64",
