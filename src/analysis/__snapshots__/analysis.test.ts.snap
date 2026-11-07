@@ -18,7 +18,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 5.74468085106383,
-    "expectedNetPoints": 10.46644255319149,
+    "expectedNetPoints": 10.43401489361702,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -65,7 +65,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 4.72176170212766,
+    "signedExpectedCribPoints": 4.68933404255319,
   },
   {
     "discard": [
@@ -83,7 +83,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 5.36170212765957,
-    "expectedNetPoints": 9.7936085106383,
+    "expectedNetPoints": 9.7710914893617,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -130,7 +130,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 4.43190638297872,
+    "signedExpectedCribPoints": 4.40938936170213,
   },
   {
     "discard": [
@@ -148,7 +148,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1.46808510638298,
-    "expectedNetPoints": 8.39786595744681,
+    "expectedNetPoints": 8.38802340425532,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -195,7 +195,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.92978085106383,
+    "signedExpectedCribPoints": 6.91993829787234,
   },
   {
     "discard": [
@@ -213,7 +213,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1.46808510638298,
-    "expectedNetPoints": 8.0512,
+    "expectedNetPoints": 8.06633617021277,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -260,7 +260,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.58311489361702,
+    "signedExpectedCribPoints": 6.59825106382979,
   },
   {
     "discard": [
@@ -278,7 +278,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1.48936170212766,
-    "expectedNetPoints": 7.86046595744681,
+    "expectedNetPoints": 7.88517872340426,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -325,7 +325,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♥",
       },
     ],
-    "signedExpectedCribPoints": 6.37110425531915,
+    "signedExpectedCribPoints": 6.3958170212766,
   },
   {
     "discard": [
@@ -343,7 +343,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 3.8936170212766,
-    "expectedNetPoints": 7.71304893617021,
+    "expectedNetPoints": 7.69304893617021,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -390,7 +390,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 3.81943191489362,
+    "signedExpectedCribPoints": 3.79943191489362,
   },
   {
     "discard": [
@@ -408,7 +408,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 3.63829787234043,
-    "expectedNetPoints": 7.43697021276596,
+    "expectedNetPoints": 7.41289361702128,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -455,7 +455,72 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.79867234042553,
+    "signedExpectedCribPoints": 3.77459574468085,
+  },
+  {
+    "discard": [
+      {
+        "count": 10,
+        "rank": 9,
+        "rankLabel": "10",
+        "suit": "♦",
+      },
+      {
+        "count": 3,
+        "rank": 2,
+        "rankLabel": "3",
+        "suit": "♥",
+      },
+    ],
+    "expectedHandPoints": 3.8936170212766,
+    "expectedNetPoints": 7.4062,
+    "expectedPlayPoints": {
+      "dealer": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+      "delta": 0,
+      "pone": {
+        "pointBreakdown": {
+          "fifteens": 0,
+          "go": 0,
+          "lastCard": 0,
+          "pairs": 0,
+          "runs": 0,
+          "thirtyOnes": 0,
+        },
+        "total": 0,
+      },
+    },
+    "handPoints": 2,
+    "keep": [
+      {
+        "count": 10,
+        "rank": 10,
+        "rankLabel": "J",
+        "suit": "♥",
+      },
+      {
+        "count": 5,
+        "rank": 4,
+        "rankLabel": "5",
+        "suit": "♣",
+      },
+      {
+        "count": 4,
+        "rank": 3,
+        "rankLabel": "4",
+        "suit": "♠",
+      },
+    ],
+    "signedExpectedCribPoints": 3.5125829787234,
   },
   {
     "discard": [
@@ -473,7 +538,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1.48936170212766,
-    "expectedNetPoints": 7.40132978723404,
+    "expectedNetPoints": 7.39485744680851,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -520,72 +585,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 5.91196808510638,
-  },
-  {
-    "discard": [
-      {
-        "count": 10,
-        "rank": 9,
-        "rankLabel": "10",
-        "suit": "♦",
-      },
-      {
-        "count": 3,
-        "rank": 2,
-        "rankLabel": "3",
-        "suit": "♥",
-      },
-    ],
-    "expectedHandPoints": 3.8936170212766,
-    "expectedNetPoints": 7.39947021276596,
-    "expectedPlayPoints": {
-      "dealer": {
-        "pointBreakdown": {
-          "fifteens": 0,
-          "go": 0,
-          "lastCard": 0,
-          "pairs": 0,
-          "runs": 0,
-          "thirtyOnes": 0,
-        },
-        "total": 0,
-      },
-      "delta": 0,
-      "pone": {
-        "pointBreakdown": {
-          "fifteens": 0,
-          "go": 0,
-          "lastCard": 0,
-          "pairs": 0,
-          "runs": 0,
-          "thirtyOnes": 0,
-        },
-        "total": 0,
-      },
-    },
-    "handPoints": 2,
-    "keep": [
-      {
-        "count": 10,
-        "rank": 10,
-        "rankLabel": "J",
-        "suit": "♥",
-      },
-      {
-        "count": 5,
-        "rank": 4,
-        "rankLabel": "5",
-        "suit": "♣",
-      },
-      {
-        "count": 4,
-        "rank": 3,
-        "rankLabel": "4",
-        "suit": "♠",
-      },
-    ],
-    "signedExpectedCribPoints": 3.50585319148936,
+    "signedExpectedCribPoints": 5.90549574468085,
   },
   {
     "discard": [
@@ -603,7 +603,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 3.63829787234043,
-    "expectedNetPoints": 7.11628510638298,
+    "expectedNetPoints": 7.11269361702128,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -650,7 +650,7 @@ exports[`allScoredKeepDiscardsByScoreDescending five card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.47798723404255,
+    "signedExpectedCribPoints": 3.47439574468085,
   },
 ]
 `;
@@ -673,7 +673,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 0.54166666666667,
-    "expectedNetPoints": 7.16545416666667,
+    "expectedNetPoints": 7.18151458333334,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -714,7 +714,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.6237875,
+    "signedExpectedCribPoints": 6.63984791666667,
   },
   {
     "discard": [
@@ -732,7 +732,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 3,
-    "expectedNetPoints": 6.53771875,
+    "expectedNetPoints": 6.52552083333333,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -773,7 +773,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.53771875,
+    "signedExpectedCribPoints": 3.52552083333333,
   },
   {
     "discard": [
@@ -791,7 +791,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 0.79166666666667,
-    "expectedNetPoints": 6.191075,
+    "expectedNetPoints": 6.18167916666667,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -832,7 +832,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 5.39940833333333,
+    "signedExpectedCribPoints": 5.3900125,
   },
   {
     "discard": [
@@ -850,7 +850,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 0.54166666666667,
-    "expectedNetPoints": 5.95483958333333,
+    "expectedNetPoints": 5.96992916666667,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -891,7 +891,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 5.41317291666667,
+    "signedExpectedCribPoints": 5.4282625,
   },
   {
     "discard": [
@@ -909,7 +909,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1,
-    "expectedNetPoints": 4.7220375,
+    "expectedNetPoints": 4.7433125,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -950,7 +950,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.7220375,
+    "signedExpectedCribPoints": 3.7433125,
   },
   {
     "discard": [
@@ -968,7 +968,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
       },
     ],
     "expectedHandPoints": 1.16666666666667,
-    "expectedNetPoints": 4.62856875,
+    "expectedNetPoints": 4.59961041666667,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1009,7 +1009,7 @@ exports[`allScoredKeepDiscardsByScoreDescending four card deal order deal 1`] = 
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.46190208333333,
+    "signedExpectedCribPoints": 3.43294375,
   },
 ]
 `;
@@ -1032,7 +1032,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.08695652173913,
-    "expectedNetPoints": 19.34048260869565,
+    "expectedNetPoints": 19.32372608695652,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1085,7 +1085,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♥",
       },
     ],
-    "signedExpectedCribPoints": 6.73712608695652,
+    "signedExpectedCribPoints": 6.72036956521739,
   },
   {
     "discard": [
@@ -1103,7 +1103,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.08695652173913,
-    "expectedNetPoints": 19.34048260869565,
+    "expectedNetPoints": 19.32372608695652,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1156,7 +1156,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 6.73712608695652,
+    "signedExpectedCribPoints": 6.72036956521739,
   },
   {
     "discard": [
@@ -1174,7 +1174,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.08695652173913,
-    "expectedNetPoints": 19.26448695652174,
+    "expectedNetPoints": 19.28441739130435,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1227,7 +1227,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 6.66113043478261,
+    "signedExpectedCribPoints": 6.68106086956522,
   },
   {
     "discard": [
@@ -1245,7 +1245,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.08695652173913,
-    "expectedNetPoints": 19.26448695652174,
+    "expectedNetPoints": 19.28441739130435,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1298,7 +1298,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♥",
       },
     ],
-    "signedExpectedCribPoints": 6.66113043478261,
+    "signedExpectedCribPoints": 6.68106086956522,
   },
   {
     "discard": [
@@ -1316,7 +1316,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.95652173913043,
-    "expectedNetPoints": 17.89929130434782,
+    "expectedNetPoints": 17.89793478260869,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1369,7 +1369,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♥",
       },
     ],
-    "signedExpectedCribPoints": 4.11346956521739,
+    "signedExpectedCribPoints": 4.11211304347826,
   },
   {
     "discard": [
@@ -1387,7 +1387,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.95652173913043,
-    "expectedNetPoints": 17.89929130434782,
+    "expectedNetPoints": 17.89793478260869,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1440,7 +1440,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 4.11346956521739,
+    "signedExpectedCribPoints": 4.11211304347826,
   },
   {
     "discard": [
@@ -1458,7 +1458,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.95652173913043,
-    "expectedNetPoints": 17.87102173913044,
+    "expectedNetPoints": 17.86074782608695,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1511,7 +1511,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 4.0852,
+    "signedExpectedCribPoints": 4.07492608695652,
   },
   {
     "discard": [
@@ -1529,7 +1529,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.95652173913043,
-    "expectedNetPoints": 17.87102173913044,
+    "expectedNetPoints": 17.86074782608695,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1582,7 +1582,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♥",
       },
     ],
-    "signedExpectedCribPoints": 4.0852,
+    "signedExpectedCribPoints": 4.07492608695652,
   },
   {
     "discard": [
@@ -1600,7 +1600,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.60869565217391,
-    "expectedNetPoints": 17.25286304347826,
+    "expectedNetPoints": 17.22615,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1653,7 +1653,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 3.87366739130435,
+    "signedExpectedCribPoints": 3.84695434782609,
   },
   {
     "discard": [
@@ -1671,7 +1671,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.60869565217391,
-    "expectedNetPoints": 17.25286304347826,
+    "expectedNetPoints": 17.22615,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1724,7 +1724,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 3.87366739130435,
+    "signedExpectedCribPoints": 3.84695434782609,
   },
   {
     "discard": [
@@ -1742,7 +1742,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.60869565217391,
-    "expectedNetPoints": 17.20038695652174,
+    "expectedNetPoints": 17.19083478260869,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1795,7 +1795,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 3.82119130434783,
+    "signedExpectedCribPoints": 3.81163913043478,
   },
   {
     "discard": [
@@ -1813,7 +1813,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 11.60869565217391,
-    "expectedNetPoints": 17.20038695652174,
+    "expectedNetPoints": 17.19083478260869,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1866,7 +1866,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 3.82119130434783,
+    "signedExpectedCribPoints": 3.81163913043478,
   },
   {
     "discard": [
@@ -1884,7 +1884,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 9.73913043478261,
-    "expectedNetPoints": 17.04598260869565,
+    "expectedNetPoints": 17.0563,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -1937,7 +1937,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 5.13105217391304,
+    "signedExpectedCribPoints": 5.14136956521739,
   },
   {
     "discard": [
@@ -1955,7 +1955,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 6.95652173913044,
-    "expectedNetPoints": 14.0398347826087,
+    "expectedNetPoints": 14.04052173913044,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2008,7 +2008,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 5.37831304347826,
+    "signedExpectedCribPoints": 5.379,
   },
   {
     "discard": [
@@ -2026,7 +2026,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
       },
     ],
     "expectedHandPoints": 6.43478260869565,
-    "expectedNetPoints": 14.02811304347826,
+    "expectedNetPoints": 13.99294782608696,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2079,7 +2079,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card deal with rank ties 1`]
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 5.62343043478261,
+    "signedExpectedCribPoints": 5.58826521739131,
   },
 ]
 `;
@@ -2102,7 +2102,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 9.71739130434783,
-    "expectedNetPoints": 15.96858260869565,
+    "expectedNetPoints": 15.99981304347826,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2155,7 +2155,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 4.69539130434783,
+    "signedExpectedCribPoints": 4.72662173913043,
   },
   {
     "discard": [
@@ -2173,7 +2173,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 11.41304347826087,
-    "expectedNetPoints": 15.61494347826087,
+    "expectedNetPoints": 15.59825217391305,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2226,7 +2226,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.7402,
+    "signedExpectedCribPoints": 3.72350869565217,
   },
   {
     "discard": [
@@ -2244,7 +2244,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 9.71739130434783,
-    "expectedNetPoints": 15.04952391304348,
+    "expectedNetPoints": 15.02793695652174,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2297,7 +2297,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 3.86963260869565,
+    "signedExpectedCribPoints": 3.84804565217391,
   },
   {
     "discard": [
@@ -2315,7 +2315,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 9.97826086956522,
-    "expectedNetPoints": 14.90135652173913,
+    "expectedNetPoints": 14.89481739130435,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2368,7 +2368,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 3.27109565217391,
+    "signedExpectedCribPoints": 3.26455652173913,
   },
   {
     "discard": [
@@ -2386,7 +2386,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 5.3695652173913,
-    "expectedNetPoints": 11.81567173913044,
+    "expectedNetPoints": 11.78610434782609,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2439,7 +2439,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.50040652173913,
+    "signedExpectedCribPoints": 6.47083913043478,
   },
   {
     "discard": [
@@ -2457,7 +2457,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 5.02173913043478,
-    "expectedNetPoints": 11.42328913043478,
+    "expectedNetPoints": 11.44713260869565,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2510,7 +2510,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♦",
       },
     ],
-    "signedExpectedCribPoints": 6.33935,
+    "signedExpectedCribPoints": 6.36319347826087,
   },
   {
     "discard": [
@@ -2528,7 +2528,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 6.30434782608696,
-    "expectedNetPoints": 11.25087391304348,
+    "expectedNetPoints": 11.22635869565217,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2581,7 +2581,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.84952608695652,
+    "signedExpectedCribPoints": 3.82501086956522,
   },
   {
     "discard": [
@@ -2599,7 +2599,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 6.56521739130435,
-    "expectedNetPoints": 11.11996956521739,
+    "expectedNetPoints": 11.12731956521739,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2652,7 +2652,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.56115217391304,
+    "signedExpectedCribPoints": 3.56850217391304,
   },
   {
     "discard": [
@@ -2670,7 +2670,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 6.82608695652174,
-    "expectedNetPoints": 11.0402152173913,
+    "expectedNetPoints": 11.06549347826087,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2723,7 +2723,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.52172826086957,
+    "signedExpectedCribPoints": 3.54700652173913,
   },
   {
     "discard": [
@@ -2741,7 +2741,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 6.73913043478261,
-    "expectedNetPoints": 10.58657391304348,
+    "expectedNetPoints": 10.59712173913044,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2794,7 +2794,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 2.99204347826087,
+    "signedExpectedCribPoints": 3.00259130434783,
   },
   {
     "discard": [
@@ -2812,7 +2812,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 7,
-    "expectedNetPoints": 10.57421956521739,
+    "expectedNetPoints": 10.5877152173913,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2865,7 +2865,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 3.02471956521739,
+    "signedExpectedCribPoints": 3.0382152173913,
   },
   {
     "discard": [
@@ -2883,7 +2883,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 6.47826086956522,
-    "expectedNetPoints": 10.37001956521739,
+    "expectedNetPoints": 10.37548260869565,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -2936,7 +2936,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 3.32495869565217,
+    "signedExpectedCribPoints": 3.33042173913044,
   },
   {
     "discard": [
@@ -2954,7 +2954,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 2.34782608695652,
-    "expectedNetPoints": 9.98537173913043,
+    "expectedNetPoints": 9.9966,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -3007,7 +3007,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.59434565217391,
+    "signedExpectedCribPoints": 6.60557391304348,
   },
   {
     "discard": [
@@ -3025,7 +3025,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 2.08695652173913,
-    "expectedNetPoints": 9.6085347826087,
+    "expectedNetPoints": 9.62178913043478,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -3078,7 +3078,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.55327826086957,
+    "signedExpectedCribPoints": 6.56653260869565,
   },
   {
     "discard": [
@@ -3096,7 +3096,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
       },
     ],
     "expectedHandPoints": 1.82608695652174,
-    "expectedNetPoints": 9.5327652173913,
+    "expectedNetPoints": 9.52232391304348,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -3149,7 +3149,7 @@ exports[`allScoredKeepDiscardsByScoreDescending six card descending rank order d
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.92587826086956,
+    "signedExpectedCribPoints": 6.91543695652174,
   },
 ]
 `;
@@ -3172,7 +3172,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
       },
     ],
     "expectedHandPoints": 0.12244897959184,
-    "expectedNetPoints": 7.06820816326531,
+    "expectedNetPoints": 7.05840816326531,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -3207,7 +3207,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
         "suit": "♠",
       },
     ],
-    "signedExpectedCribPoints": 6.94575918367347,
+    "signedExpectedCribPoints": 6.93595918367347,
   },
   {
     "discard": [
@@ -3225,7 +3225,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
       },
     ],
     "expectedHandPoints": 0.24489795918367,
-    "expectedNetPoints": 6.64604285714286,
+    "expectedNetPoints": 6.67016326530612,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -3260,7 +3260,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
         "suit": "♥",
       },
     ],
-    "signedExpectedCribPoints": 6.40114489795918,
+    "signedExpectedCribPoints": 6.42526530612245,
   },
   {
     "discard": [
@@ -3278,7 +3278,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
       },
     ],
     "expectedHandPoints": 0.73469387755102,
-    "expectedNetPoints": 4.53339387755102,
+    "expectedNetPoints": 4.50926530612245,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -3313,7 +3313,7 @@ exports[`allScoredKeepDiscardsByScoreDescending three card deal order deal 1`] =
         "suit": "♣",
       },
     ],
-    "signedExpectedCribPoints": 3.7987,
+    "signedExpectedCribPoints": 3.77457142857143,
   },
 ]
 `;
@@ -3336,7 +3336,7 @@ exports[`allScoredKeepDiscardsByScoreDescending two card deal order deal 1`] = `
       },
     ],
     "expectedHandPoints": 0,
-    "expectedNetPoints": 4.090686,
+    "expectedNetPoints": 4.08112,
     "expectedPlayPoints": {
       "dealer": {
         "pointBreakdown": {
@@ -3364,7 +3364,7 @@ exports[`allScoredKeepDiscardsByScoreDescending two card deal order deal 1`] = `
     },
     "handPoints": 0,
     "keep": [],
-    "signedExpectedCribPoints": 4.090686,
+    "signedExpectedCribPoints": 4.08112,
   },
 ]
 `;

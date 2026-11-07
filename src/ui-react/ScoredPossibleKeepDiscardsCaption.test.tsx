@@ -20,7 +20,7 @@ import { toDealtCards } from "../game/toDealtCards";
 import { uniformUncertainty } from "../game/uncertaintySidecar.test.common";
 /* jscpd:ignore-end */
 
-// The KH,KC dealer fixture gives up about 0.09 points against the best discard.
+// The KH,KC dealer fixture gives up about 0.06 points against the best discard.
 const NEAR_MISS_HAND = "4H,5D,KH,6H,8C,KC";
 const NEAR_MISS_DISCARD = "KH,KC";
 
@@ -108,9 +108,9 @@ describe("scored possible keep discards caption", () => {
         cards: "5H,5D,6H,7H,8H,9H",
         discards: "5H,5D",
         expectedAriaLabel:
-          "Optimal discard, 4.05 better than the next best discard",
+          "Optimal discard, 4.06 better than the next best discard",
         expectedMarkedTexts: [],
-        expectedText: "Optimal, 4.05 better than next",
+        expectedText: "Optimal, 4.06 better than next",
         name: "optimal discard caption when chosen discard is optimal",
       },
       {
@@ -118,9 +118,9 @@ describe("scored possible keep discards caption", () => {
         cribRole: CribRole.Pone,
         discards: "3S,9C",
         expectedAriaLabel:
-          "Optimal discard, 0.37 better than the next best distinct discard",
+          "Optimal discard, 0.36 better than the next best distinct discard",
         expectedMarkedTexts: [],
-        expectedText: "Optimal, 0.37 better than next distinct",
+        expectedText: "Optimal, 0.36 better than next distinct",
         name: "optimal discard caption when top choices tie",
       },
       {
@@ -128,10 +128,10 @@ describe("scored possible keep discards caption", () => {
         cribRole: CribRole.Dealer,
         discards: "KH,KC",
         expectedAriaLabel:
-          "Sub-optimal: 0.09 points lost. 1.31 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
+          "Sub-optimal: 0.06 points lost. 1.33 Crib and 0.08 Play gain do not cover 1.48 Hand loss",
         expectedMarkedTexts: [],
         expectedText:
-          "Sub-optimal: 0.09 pts lost1.31 Crib + 0.08 Play gain < 1.48 Hand loss",
+          "Sub-optimal: 0.06 pts lost1.33 Crib + 0.08 Play gain < 1.48 Hand loss",
         name: "sub-optimal caption withholding a reversed role that cost more",
       },
       {
@@ -139,10 +139,10 @@ describe("scored possible keep discards caption", () => {
         cribRole: CribRole.Dealer,
         discards: "9D,3S",
         expectedAriaLabel:
-          "Sub-optimal: 3.11 points lost as dealer, 0.00 as pone. 0.64 Play gain does not cover 2.05 Crib and 1.70 Hand loss",
+          "Sub-optimal: 3.13 points lost as dealer, 0.00 as pone. 0.64 Play gain does not cover 2.07 Crib and 1.70 Hand loss",
         expectedMarkedTexts: ["0.00 pone"],
         expectedText:
-          "Sub-optimal: 3.11 dealer, 0.00 pone0.64 Play gain < 2.05 Crib + 1.70 Hand loss",
+          "Sub-optimal: 3.13 dealer, 0.00 pone0.64 Play gain < 2.07 Crib + 1.70 Hand loss",
         name: "a zero cost under the reversed role stated as a figure, not as a diagnosis",
       },
     ])(
@@ -180,14 +180,14 @@ describe("scored possible keep discards caption", () => {
       cards: "4H,5D,KH,6H,8C,KC",
       cribRole: CribRole.Dealer,
       discards: "KH,KC",
-      expectedSides: ["1.31 Crib + 0.08 Play gain", "< 1.48 Hand loss"],
+      expectedSides: ["1.33 Crib + 0.08 Play gain", "< 1.48 Hand loss"],
       name: "gain and loss sides in separate",
     },
     {
       cards: "5H,5D,JC,QH,KS,9D",
       cribRole: CribRole.Pone,
       discards: "5H,5D",
-      expectedSides: ["7.57 Hand + 5.18 Crib + 0.53 Play loss"],
+      expectedSides: ["7.57 Hand + 5.17 Crib + 0.53 Play loss"],
       name: "a single side with no offsetting gains in one",
     },
   ])(
@@ -289,7 +289,7 @@ describe("scored possible keep discards caption", () => {
       ]);
       expect(onAnalysisRendered).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          quality: { expectedPointsLoss: 0.085633, isOptimal: false },
+          quality: { expectedPointsLoss: 0.061465, isOptimal: false },
         }),
         shippedTableIdentity,
         { basis: "sampling-noise-v1", eligible: false },
@@ -300,9 +300,9 @@ describe("scored possible keep discards caption", () => {
     it("calls a loss inside the noise threshold within noise, never sub-optimal or optimal", async () => {
       const { caption, container } = await renderSettledNearMiss();
 
-      expect(caption.textContent).toMatch(/^Within noise: 0\.09 pts lost/u);
+      expect(caption.textContent).toMatch(/^Within noise: 0\.06 pts lost/u);
       expect(caption.getAttribute("aria-label")).toMatch(
-        /^Within simulation noise, 95% one-sided, approximate: 0\.09 points lost, at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\. /u,
+        /^Within simulation noise, 95% one-sided, approximate: 0\.06 points lost, at or below the .+ point threshold, a conservative bound on the simulation's reported sampling error, not a calibrated interval\. /u,
       );
       expect(
         container.querySelector("[class*='noiseBadge']")?.getAttribute("title"),
@@ -367,7 +367,7 @@ describe("scored possible keep discards caption", () => {
       const { container } = renderNearMiss(crib, play);
       const caption = await findCaption(container);
 
-      expect(caption.textContent).toMatch(/^Sub-optimal: 0\.09 pts lost/u);
+      expect(caption.textContent).toMatch(/^Sub-optimal: 0\.06 pts lost/u);
     });
 
     it("withholds a sub-optimal verdict from the live region until both sidecars settle", async () => {
@@ -410,7 +410,7 @@ describe("scored possible keep discards caption", () => {
         const container = await renderPastTheWait(lateDocument);
 
         expect(container.querySelector("figcaption")?.textContent).toMatch(
-          /^Sub-optimal: 0\.09 pts lost/u,
+          /^Sub-optimal: 0\.06 pts lost/u,
         );
       },
     );

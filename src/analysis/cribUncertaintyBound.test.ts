@@ -124,7 +124,7 @@ describe("cribUncertaintyBound", () => {
   });
 
   it("bounds the shipped sidecar's crib average at a few hundredths of a point", () => {
-    expect(boundOf(ROOT_HAND, SHIPPED)).toBeCloseTo(0.0174, 4);
-    expect(boundOf(RELATION_HAND, SHIPPED)).toBeCloseTo(0.0233, 4);
+    expect(boundOf(ROOT_HAND, SHIPPED)).toBeCloseTo(0.0182, 4);
+    expect(boundOf(RELATION_HAND, SHIPPED)).toBeCloseTo(0.0188, 4);
   });
 });

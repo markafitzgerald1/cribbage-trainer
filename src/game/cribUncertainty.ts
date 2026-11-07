@@ -38,10 +38,10 @@ const CANONICAL_DISCARD_KEYS: readonly string[] = STARTER_RANKS.flatMap(
 /*
  * Crib weights are a sum of weights rather than a count of hands, so the
  * exporter omits a record with fewer than two effective observations or a
- * non-positive weighted-variance denominator `n - sum_w2 / n`. Every
- * published record clears both by a wide margin (the smallest `n` is 5,663
- * and the smallest denominator 5,662.98), so this rejects nothing that ships
- * today.
+ * non-positive weighted-variance denominator `n - sum_w2 / n`. This applies
+ * to version 1 documents only. The shipped version 2 sidecar publishes no
+ * `sum_w2`, and each of its 9,076 records has `n` equal to 22,000 row
+ * counts, so it is checked by `validCribV2Record` instead.
  */
 const supportsTheWeightedStatistic = (record: object): boolean => {
   const weight = recordWeight(record, "n");
@@ -55,9 +55,9 @@ export const CRIB_UNCERTAINTY_CONTRACT: UncertaintyContract = {
   identityFields: ["keys", "roles", "ranks", "slots"],
   nSemantics: "sum_weights",
   /*
-   * Crib's qualification is about the weighted estimator rather than a
-   * policy, so it quotes no provenance item and no top-level null. Its own
-   * published provenance carries none of play's.
+   * Crib's version 1 qualification is about the weighted estimator rather
+   * than a policy, so it quotes no provenance item and no top-level null. Its
+   * own published provenance carries none of play's.
    */
   requiredNullFields: [],
   requiredProvenance: [],
