@@ -400,9 +400,12 @@
   legal play sidecar.** Play's `ranks` is published **empty** and its
   identity is three parts (`key/role/delta`) where crib's is four
   (`key/role/rank/slot`); its `n_semantics` is `simulation_count` rather than
-  `sum_weights`; and it carries no `sum_w2`, so crib's weighted-variance
-  denominator has nothing to read and no rule stands in for it. A reader that
-  requires every declared list to be non-empty refuses the play document the
+  `sum_weights` (crib's version 1; its version 2 uses
+  `independent-vector-rows-per-active-stream`); and it carries no `sum_w2`,
+  so crib's weighted-variance denominator has nothing to read and no rule
+  stands in for it. Crib's shipped version 2 document carries no `sum_w2`
+  either; only a version 1 crib document reaches that denominator. A reader
+  that requires every declared list to be non-empty refuses the play document the
   contract specifies. Compare each list against the canonical one instead:
   an empty canonical list then **requires** an empty declared list, which is
   strictly stronger than a non-empty check and still rejects crib's empty
@@ -441,10 +444,11 @@
   requires the two provenance items that make that a statement about the
   document — `joint_policy_converged`
   and `policy_fingerprint` — and requires `policy_uncertainty` to be
-  published as the `null` the contract names. Crib quotes neither and checks
-  neither. The rule that generalizes is the pairing: a caveat the UI asserts
-  has to be a caveat the document substantiates, or it is the app's word
-  dressed as data.
+  published as the `null` the contract names. Crib quotes neither provenance
+  item and checks neither, though its version 2 reader does require
+  `policy_uncertainty` to be `null`. The rule that generalizes is the
+  pairing: a caveat the UI asserts has to be a caveat the document
+  substantiates, or it is the app's word dressed as data.
 - **Check the type of such a field, never its value.** `joint_policy_converged`
   is `false` on every document published so far, so a truthiness test rejects
   exactly the sidecars the reader exists to read — and a converged joint
@@ -463,11 +467,14 @@
   `sidecar.provenance.policy_uncertainty` finds `undefined` and loses the
   qualification silently. Together they say the figure is sampling error
   around a frozen, non-converged policy rather than the total uncertainty of
-  E(ΔP). Crib has
-  no equivalent problem — its policy is trained by iterative best response
-  and its own qualification is about the weighted estimator instead. Any copy
-  that presents the two figures side by side must not imply they qualify the
-  same thing.
+  E(ΔP). Crib's
+  policy is trained by iterative best response, but its shipped version 2
+  sidecar is likewise `uncertainty_scope: fixed-policy-sampling` with
+  `policy_uncertainty: null`, so its figure also leaves out policy uncertainty.
+  The crib copy does not yet say so where the pegging copy does; whether it
+  should is an open wording decision. Any copy that presents the two figures
+  side by side must not imply they are the same quantity: play's is a single
+  record's standard error, crib's is a bound combined from several.
 - Uncertainty for a figure combined from several buckets must consume exactly
   the buckets that figure consumed. Root and relation records are alternative
   representations of one measurement rather than independent observations, so
