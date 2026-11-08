@@ -31,7 +31,8 @@ const RENDERED_FIGURE = /^±\d+\.\d\d$/u;
  */
 export const CRIB_AVERAGE_ROW = {
   name: /Crib avg/u,
-  spoken: /plus or minus \d+\.\d\d, a bound on the combined simulation error/u,
+  spoken:
+    /plus or minus \d+\.\d\d, a bound on the combined simulation error, not counting uncertainty in the simulated discard strategy/u,
 };
 
 export const PEG_DELTA_ROW = {
