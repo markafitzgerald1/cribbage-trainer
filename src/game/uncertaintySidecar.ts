@@ -178,8 +178,8 @@ const hasRequiredProvenance = (
 /*
  * The contract publishes these as `null` and says an incompatible change to
  * an existing field needs a new schema, so a value here is a document this
- * reader should not be reading. It is checked because the play copy now
- * rests on it: saying the figure leaves out pegging-strategy uncertainty
+ * reader should not be reading. It is checked because both figures' copy
+ * rests on it: saying a figure leaves out strategy uncertainty
  * while the document carries a measured one would hide an available
  * quantity.
  * #849 declined to validate these when nothing consumed them, which is no

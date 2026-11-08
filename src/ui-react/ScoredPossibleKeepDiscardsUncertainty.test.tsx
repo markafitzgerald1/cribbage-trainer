@@ -94,9 +94,9 @@ const SIDECARS: readonly SidecarCase[] = [
     renderWith: (source, loadCribTable) =>
       renderAnalysis(source, NO_UNCERTAINTY, loadCribTable),
     spokenSuffix:
-      ", a bound on the combined simulation error, not counting uncertainty in the simulated discard strategy",
+      ", a bound on the combined simulation error, not counting uncertainty in the opponent's simulated discard strategy",
     tooltip:
-      "Bound on the combined simulation error of the buckets this average used; does not count uncertainty in the simulated discard strategy",
+      "Bound on the combined simulation error of the buckets this average used; does not count uncertainty in the opponent's simulated discard strategy",
     totalRowName: /Crib avg/u,
   },
   {
