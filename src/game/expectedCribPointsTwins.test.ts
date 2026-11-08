@@ -50,14 +50,10 @@ const withRoles = (pairs: readonly { high: StarterRank; low: StarterRank }[]) =>
 
 const sameRankPairs = STARTER_RANKS.map((rank) => ({ high: rank, low: rank }));
 
-const flushValues = (
-  key: string,
-  role: Role,
-  starterRanks: readonly StarterRank[],
-): number[] =>
-  starterRanks.map(
-    (starterRank) => bucketAt(key, role, starterRank).points.flushes.mu,
-  );
+const flushAt =
+  (key: string, role: Role) =>
+  (starterRank: StarterRank): number =>
+    bucketAt(key, role, starterRank).points.flushes.mu;
 
 const nonJackPairCases = withRoles(
   distinctRankPairs.filter(({ high, low }) => low !== "J" && high !== "J"),
@@ -65,9 +61,10 @@ const nonJackPairCases = withRoles(
 
 describe("vendored expected crib points suited and unsuited twins", () => {
   /*
-   * Jack pairs are excluded rather than clamped: with 4H JH discarded, a cut
-   * of rank 4 cannot be the 4H, so the discarded Jack's nobs chance differs
-   * from the unsuited twin's and the suited pair can legitimately score less.
+   * Jack pairs are excluded rather than clamped, as #828 decided: a suited
+   * Jack pair leaves one fewer live starter in the Jack's suit for nobs than
+   * its unsuited twin, so it can legitimately score less even averaged over
+   * the starter.
    * There is deliberately no per-cut suited-over-unsuited assertion:
    * simulate-cribbage-games#135 found it false for a faithful estimate, since
    * a starter matching either discarded rank cannot complete a flush and so
@@ -97,28 +94,26 @@ describe("vendored expected crib points suited and unsuited twins", () => {
   it.each(withRoles(distinctRankPairs))(
     "suited flushes score only off the discarded ranks for $name",
     ({ high, low, role }) => {
-      const key = `${low}_${high}_Suited`;
+      const flush = flushAt(`${low}_${high}_Suited`, role);
       const discarded = [low, high];
 
-      expect(flushValues(key, role, discarded)).toStrictEqual([0, 0]);
+      expect(discarded.filter((rank) => flush(rank) !== 0)).toStrictEqual([]);
       expect(
-        flushValues(
-          key,
-          role,
-          STARTER_RANKS.filter((rank) => !discarded.includes(rank)),
-        ).every((flush) => flush > 0),
-      ).toBe(true);
+        STARTER_RANKS.filter((rank) => !discarded.includes(rank)).filter(
+          (rank) => !(flush(rank) > 0),
+        ),
+      ).toStrictEqual([]);
     },
   );
 
   it.each(withRoles([...distinctRankPairs, ...sameRankPairs]))(
     "unsuited flushes never score for $name",
     ({ high, low, role }) => {
-      expect(
-        flushValues(`${low}_${high}_Unsuited`, role, STARTER_RANKS).every(
-          (flush) => flush === 0,
-        ),
-      ).toBe(true);
+      const flush = flushAt(`${low}_${high}_Unsuited`, role);
+
+      expect(STARTER_RANKS.filter((rank) => flush(rank) !== 0)).toStrictEqual(
+        [],
+      );
     },
   );
 });
