@@ -55,11 +55,12 @@ export const CRIB_UNCERTAINTY_CONTRACT: UncertaintyContract = {
   identityFields: ["keys", "roles", "ranks", "slots"],
   nSemantics: "sum_weights",
   /*
-   * Crib's version 1 qualification is about the weighted estimator rather
-   * than a policy, so it quotes no provenance item and no top-level null. Its
-   * own published provenance carries none of play's.
+   * The crib copy says the figure leaves out uncertainty in the simulated
+   * discard strategy, so a document that measured one would make that caveat
+   * hide a quantity. Crib quotes no provenance item: its own published
+   * provenance carries none of play's.
    */
-  requiredNullFields: [],
+  requiredNullFields: ["policy_uncertainty"],
   requiredProvenance: [],
   supportsTheStatistic: supportsTheWeightedStatistic,
   table: "crib",

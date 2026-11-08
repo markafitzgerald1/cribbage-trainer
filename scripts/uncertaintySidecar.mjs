@@ -84,8 +84,8 @@ const CANONICAL_CRIB_SLOTS = [
 export const CRIB_UNCERTAINTY_CONTRACT = {
   identityFields: ["keys", "roles", "ranks", "slots"],
   nSemantics: "sum_weights",
-  // Crib quotes no policy item: its qualification is about the weighted estimator.
-  requiredNullFields: [],
+  // The crib copy's policy caveat rests on this field being published as null.
+  requiredNullFields: ["policy_uncertainty"],
   requiredProvenance: [],
   /*
    * Crib weights are a sum of weights, so the exporter omits a record with
