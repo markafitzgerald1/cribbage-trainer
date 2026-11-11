@@ -1004,6 +1004,45 @@ they bind any PR that makes a claim about a phone or ships a guard.
   thresholds), label each value and align the comparison (a small table or
   `name: old → new` lines); never two bare slash-separated lists.
 
+## Maintainer Time And Agent Routing
+
+The maintainer's own time on this project is budgeted at about five to seven
+hours a week, with no day over ninety minutes and such days rare. Treat that
+time as the scarcest resource in the project, ahead of any agent's usage
+limit.
+
+Only the maintainer merges, approves workflow dispatch, generation or
+publication, makes product and priority calls, and consents to changes in
+repository policy or quality gates. Everything else -- CI triage, review
+replies, pull request text, board upkeep, and fixes from review findings --
+is agent work. Ask the maintainer to decide, not to investigate.
+
+Before every request for the maintainer's attention, estimate the minutes it
+will take, including time to re-orient on work he has not read recently and
+reading technical prose at about 100 words a minute, and state the estimate
+in the request. Batch requests: one message per working session where
+possible, decisions first, each with a recommended default.
+
+Before asking the maintainer to review a pull request, obtain an independent
+review from a different model family than the author, fix its findings, and
+get a follow-up round on the fixes. Open the pull request body with a short
+plain-language "Read this first" block that is itself the read: what
+changed, which decisions are needed with defaults, the minutes estimate, and
+which sections below it are skippable evidence. Aim for a review of fifteen
+minutes or less; split a change that would need more.
+
+Spread work across the agents' usage limits rather than exhausting one. Keep
+a buffer below every agent's weekly limit, and a larger one on whichever
+service the maintainer cannot work without when it runs out. Prefer the
+service with the most unused budget before its reset for work it does well,
+and keep enough of the designated reviewer's budget for the week's reviews
+so that no code merges without a third-party review.
+
+Near the end of this section, observe these boundaries: do not ask the
+maintainer to read anything that is not current for the head under review,
+do not send him investigation that an agent can do, and do not let review
+capacity run out by spending the reviewer's budget on implementation.
+
 ## GitHub PR Reviews
 
 - When resolving GitHub PR feedback, use thread-aware review data instead of
