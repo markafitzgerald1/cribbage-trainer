@@ -137,6 +137,15 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   `>=2.0.0 <2.1.4`, `>=4.0.0 <5.0.9`), which is the version to caret in
   `overrides`. The 2026-07-31 advisory wave looked like it needed an ESLint
   or stylelint major and needed no upgrade at all.
+- An advisory's range can lag a backport, and an advisory can be
+  withdrawn; `gh api /advisories/<GHSA id>` shows each line's
+  `first_patched_version` and any `withdrawn_at`. In November 2026 glob
+  shipped the fix for 1244013 as 13.0.7 under `v13-legacy`, but the
+  advisory still listed `<=14.0.1`: move the lock to the backport anyway
+  (delete the stale lock entry and re-resolve), and keep the waiver until
+  the range catches up. The deepmerge advisory 1243505 was withdrawn on
+  2026-11-16, which is why better-npm-audit then reported its waiver as
+  matching nothing.
 - A `.nsprc` waiver can outlive the gap it covered without anything
   noticing, which is the other reason not to pin exactly. The
   brace-expansion 1.x/2.x waiver was written when 1.1.16 and 2.1.2 were
