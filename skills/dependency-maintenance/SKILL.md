@@ -143,9 +143,9 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   shipped the fix for 1244013 as 13.0.7 under `v13-legacy`, but the
   advisory still listed `<=14.0.1`: move the lock to the backport anyway
   (delete the stale lock entry and re-resolve), and keep the waiver while
-  `npm audit` still reports the advisory against any locked copy. The deepmerge advisory 1243505 was withdrawn on
-  2026-11-16, which is why better-npm-audit then reported its waiver as
-  matching nothing.
+  `npm audit` still reports the advisory against any locked copy. The
+  deepmerge advisory 1243505 was withdrawn on 2026-11-16, which is why
+  better-npm-audit then reported its waiver as matching nothing.
 - A `.nsprc` waiver can outlive the gap it covered without anything
   noticing, which is the other reason not to pin exactly. The
   brace-expansion 1.x/2.x waiver was written when 1.1.16 and 2.1.2 were
