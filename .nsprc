@@ -1,12 +1,7 @@
 {
-  "1243505": {
-    "active": true,
-    "expiry": "2027-02-03",
-    "notes": "deepmerge mergeObject() allows prototype poisoning of returned objects (GHSA-gcqx-w48m-w2h4), low severity. Every published release from 4.2.0 through the latest 4.3.1 is affected, so no patched release exists; re-checked 2026-11-02, when 4.3.1 was still the latest and jest-config 30.5.2 still required ^4.3.1. Reaches the tree only through dev tooling (jest -> @jest/core -> jest-config -> deepmerge): npm ls deepmerge --omit=dev is empty, so nothing is shipped in the production bundle. Three months because a re-check cannot change anything until upstream publishes a fix, which Dependabot would propose anyway."
-  },
   "1244013": {
     "active": true,
-    "expiry": "2026-11-13",
-    "notes": "glob AbortSignal cancellation bypass (GHSA-3g3m-2fjr-6pw4), moderate, published 2026-10-30. Range is 9.0.0 through 14.0.1, first patched in 14.0.2 on the 14 line only; the tree holds 10.5.0 and 13.0.6 through jest, rimraf and Storybook's docgen plugin, and legacy-v10 is 10.5.0, so no patched release exists on those lines. npm ls glob --omit=dev is empty, so nothing ships. The expiry forces a re-check for backports."
+    "expiry": "2027-02-24",
+    "notes": "glob AbortSignal cancellation bypass (GHSA-3g3m-2fjr-6pw4), moderate. The advisory still lists >=9.0.0 <=14.0.1, but the fix was backported to 13.0.7 (dist-tag v13-legacy, 2026-11-06), which the lock now holds; the advisory range has not caught up, so 13.0.7 is still flagged. The remaining unpatched copy is 10.5.0 (legacy-v10, unchanged), reached only through babel-plugin-istanbul -> test-exclude 7.x (babel-jest uses the plugin directly; jest and @jest/globals reach it through @jest/transform), which requires glob ^10.4.1. npm ls glob --omit=dev is empty, so nothing ships. Re-checked 2026-11-23. Three months, as for other dev-only waivers with no fix on a line: a re-check can only confirm the note, and a fix on another line may need a parent update rather than a lock change."
   }
 }
