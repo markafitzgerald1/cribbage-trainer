@@ -23,7 +23,8 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   a broken lockfile: if the plugins still cap at 9, set `eslint` back to
   `^9` on the group branch, re-resolve with
   `npm install --package-lock-only --ignore-scripts`, and raise the
-  ignore's upper bound to the version it just proposed.
+  ignore's upper bound to the latest published release
+  (`npm view eslint version`), which can be newer than the one it proposed.
 - `lint:audit` is `node scripts/lintAudit.mjs`, not `better-npm-audit`
   directly. When npm.org's `security/advisories/bulk` endpoint is degraded
   it returns "audit endpoint returned an error" / "Unable to process the
