@@ -251,6 +251,14 @@
   padding: 2px 0;
 }
 
+.play-assumption {
+  color: rgb(255 255 255 / 72%);
+  font-size: 0.75em;
+  font-style: italic;
+  line-height: 1.15;
+  margin-top: 3px;
+}
+
 .starter-detail-row {
   --card-black-suit-color: var(--starter-detail-color);
   --card-red-suit-color: var(--starter-detail-red-suit-color);

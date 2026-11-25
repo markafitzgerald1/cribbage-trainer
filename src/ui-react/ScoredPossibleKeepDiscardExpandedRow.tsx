@@ -81,6 +81,13 @@ function getCutResultKey(result: CutResult): string {
   ].join(":");
 }
 
+/*
+ * The vendored play table's model (#908): both seats peg with the solved CFR
+ * policy, by rank. vendoredTables.test.mjs fails if a refreshed sidecar says
+ * the table was measured another way, so this line is reviewed with it.
+ */
+const PLAY_ASSUMPTION = "Assumes both players peg near-optimally";
+
 export interface ScoredPossibleKeepDiscardExpandedRowProps {
   /*
    * Null while the deferred sidecar is still in flight, and after one that
@@ -410,8 +417,9 @@ export function ScoredPossibleKeepDiscardExpandedRow({
           onClick: handlePlayExpandedRowClick,
           rowCategories: youOppPlayRow.categories,
         })}
-        {arePlayDetailsExpanded
-          ? perSeatPlayRows.map(({ categories, label }) =>
+        {arePlayDetailsExpanded ? (
+          <>
+            {perSeatPlayRows.map(({ categories, label }) =>
               renderBreakdownRow({
                 className: classes.playBreakdownRow,
                 decimalPlaces: DECIMAL_PLACES,
@@ -419,8 +427,10 @@ export function ScoredPossibleKeepDiscardExpandedRow({
                 label,
                 rowCategories: categories,
               }),
-            )
-          : null}
+            )}
+            <div className={classes.playAssumption}>{PLAY_ASSUMPTION}</div>
+          </>
+        ) : null}
       </div>
     );
   };

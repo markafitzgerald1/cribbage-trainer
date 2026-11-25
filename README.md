@@ -29,6 +29,49 @@ or other origin data can still exhaust storage; failed writes retain session
 progress but cannot guarantee durability across reload. Decision/aggregate codec
 compaction is a separate follow-up, with both 10,000-row caps kept here.
 
+## Evidence
+
+What the pegging advice is built on, and what it is known to be worth. These
+figures compare bots, not people. Each win rate is a percentage, where 50 is
+parity, plus or minus one standard error in percentage points, from 500,000
+pairs of duplicate games with the seats swapped. They are not adjusted for
+multiple comparisons.
+
+- **How close to optimal is the pegging?** An opponent who knew the policy
+  exactly could gain at most 0.00047 points a hand against it. That is an exact
+  average over the two seats and over the pairs of kept hands it was solved on,
+  by card rank: half from uniform random four-card hands, half from six-card
+  deals kept by the simulator's earlier discard rule. It does not bound a single
+  hand, or another mix of hands.
+- **Is this table better than the app's previous one?** 50.287 ± 0.027 when both
+  bots peg with the solved policy; 49.724 ± 0.023 when both peg with the
+  simulator's older heuristic.
+- **What is pegging itself worth?** The solved policy beats that heuristic
+  55.638 ± 0.029, with both bots discarding by the app's previous table.
+
+A table does better in the pegging style it was measured in. This one's
+advantage is established for players who peg like the solved policy, not for
+the heuristic and not for people. The table uses card ranks only, aims for
+points rather than for winning from the current score, and takes opponents'
+discards from a fixed population that was not solved together with the pegging.
+The
+[release notes](https://github.com/markafitzgerald1/simulate-cribbage-games/releases/tag/expected-play-points)
+have the remaining comparisons.
+
+### Table history
+
+Each play table keeps its entry when a newer one takes over. The digest is the
+start of the means file's SHA-256, which the app records with each decision.
+
+- **`4ef452e2`, CFR table, 2026-11-25 (#908):** current. Measured with the solved
+  CFR pegging policy in both seats.
+- **`7420b180`, June 2026 (#636):** replaced by the CFR table. Measured with the
+  trained pegging policy of the time in both seats.
+- **`6ed3a051`, weekly release, 2026-11-22 (#898):** never in the app. Measured
+  with the simulator's heuristic in both seats.
+- **`41ddcbd6`, October 2026 research:** never released. Measured with an earlier
+  CFR pegging policy in both seats.
+
 ## Continuous deployment
 
 Code in `main` is automatically built on `git push` and deployed to the [GitHub

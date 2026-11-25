@@ -449,12 +449,12 @@ describe("mistake queue dialog", () => {
         playLoader.setTableSync(null);
         const rendered = renderQueueDialog({ skipSetAnalysisTables: true });
 
-        const badges = await rendered.findAllByTitle(
-          /comparison/u,
+        // The ace-to-six mistake loses points but gains some pegging, so its badge carries both signs.
+        return await rendered.findByText(
+          /Play gain < Hand, Crib loss/u,
           {},
           { timeout: 5000 },
         );
-        return badges[0]!;
       } finally {
         setAnalysisTables();
       }
@@ -464,7 +464,6 @@ describe("mistake queue dialog", () => {
       const badge = await runAsyncTableLoad();
 
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveTextContent(/Play gain < Hand, Crib loss/u);
     });
 
     const runTableLoadFailure = async () => {

@@ -54,7 +54,7 @@ export const createSampleMistakeTally = (): StoredTally =>
       {
         at: BASE_TIME - 2 * ONE_DAY_MS,
         cribRole: CribRole.Pone,
-        discardKey: "AH,2H",
+        discardKey: "AH,3H",
         expectedPointsLoss: 1.2,
         handKey: "AH,2H,3H,4H,5H,6H|Pone",
         isOptimal: false,
