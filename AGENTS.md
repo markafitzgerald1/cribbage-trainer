@@ -1470,11 +1470,13 @@ they bind any PR that makes a claim about a phone or ships a guard.
   and recoverable. The export canary in `.github/workflows` carries the worked
   example, and four review rounds were spent finding the variants of this one
   bug, each hiding inside the fix for the last.
-- Never retry a failed Pages deploy with a single-job rerun: rerunning a
-  job that already uploaded a `github-pages` artifact adds a second one to
-  the same run, and `actions/deploy-pages` then always fails with
-  "Multiple artifacts named github-pages" — for every attempt on that run.
-  Push a new commit (fresh run) instead.
+- **A Pages deploy job can be re-run, because each attempt names its own
+  artifact.** `actions/deploy-pages` looks its artifact up by name across the
+  whole run and refuses a run holding two, and a re-run uploads into the same
+  run as the attempt it replaces. With one fixed name, every re-run failed
+  with "Multiple artifacts named github-pages", so the publish action names
+  the artifact after `github.run_attempt`. Keep that suffix, or re-runs break
+  again and the only recovery is a new push.
 - Preview eligibility, the shared `pages-content` tree, the two Pages
   environments, and the guard that keeps a bad publish from taking production
   down are in `skills/pages-preview/SKILL.md`; read it before editing either

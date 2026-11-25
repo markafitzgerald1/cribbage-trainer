@@ -30,7 +30,7 @@ inputs:
 outputs:
   page_url:
     description: The root URL of the deployed GitHub Pages site.
-    value: ${{ steps.deploy.outputs.page_url }}
+    value: ${{ steps.deploy.outputs.page_url || steps.deploy-retry.outputs.page_url }}
 runs:
   using: composite
   steps:
@@ -83,13 +83,67 @@ runs:
           git push --force origin HEAD:pages-content
         fi
 
-    - name: Upload GitHub Pages artifact
+    # The name carries the run attempt because deploy-pages refuses a run
+    # holding two artifacts of the name it looks up, and a re-run of this
+    # job uploads into the same run as the attempt it replaces.
+    - id: upload
+      name: Upload GitHub Pages artifact
       uses: actions/upload-pages-artifact@v5
       with:
+        name: github-pages-attempt-${{ github.run_attempt }}
         path: pages-content-checkout/
 
+    # deploy-pages finds the artifact by listing the run's artifacts once,
+    # and has no input that takes the uploaded ID instead. That listing has
+    # come back without an artifact finalized a second earlier, so wait for
+    # the exact upload to be listed rather than for a fixed time.
+    - name: Wait until the uploaded artifact is listed for this run
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        ARTIFACT_ID: ${{ steps.upload.outputs.artifact_id }}
+        ARTIFACT_NAME: github-pages-attempt-${{ github.run_attempt }}
+        RUN_ID: ${{ github.run_id }}
+        TIMEOUT_SECONDS: "180"
+      run: |
+        deadline=$((SECONDS + TIMEOUT_SECONDS))
+        while true; do
+          if listed=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=$ARTIFACT_NAME" \
+            --jq '[.artifacts[].id | tostring] | join(" ")' 2>&1); then
+            if [ "$listed" = "$ARTIFACT_ID" ]; then
+              echo "Artifact $ARTIFACT_NAME (ID $ARTIFACT_ID) is listed for run $RUN_ID."
+              exit 0
+            fi
+          fi
+          if [ "$SECONDS" -ge "$deadline" ]; then
+            echo "::error::Artifact $ARTIFACT_NAME (ID $ARTIFACT_ID) was not listed alone for run $RUN_ID within ${TIMEOUT_SECONDS}s. Last listing: ${listed:-none}"
+            exit 1
+          fi
+          sleep 5
+        done
+
+    # The poll above reads the public REST API, while deploy-pages lists
+    # through the Actions results service, so the poll alone cannot promise
+    # that deploy-pages sees the artifact. One retry covers that gap. It
+    # cannot race the first attempt, because deploy-pages exits only once a
+    # deployment it created has failed or been cancelled by it.
     - id: deploy
       name: Deploy GitHub Pages site
+      continue-on-error: true
       uses: actions/deploy-pages@v5
       with:
         token: ${{ github.token }}
+        artifact_name: github-pages-attempt-${{ github.run_attempt }}
+
+    - name: Wait before retrying the deploy
+      if: steps.deploy.outcome == 'failure'
+      shell: bash
+      run: sleep 30
+
+    - id: deploy-retry
+      name: Retry deploying GitHub Pages site
+      if: steps.deploy.outcome == 'failure'
+      uses: actions/deploy-pages@v5
+      with:
+        token: ${{ github.token }}
+        artifact_name: github-pages-attempt-${{ github.run_attempt }}

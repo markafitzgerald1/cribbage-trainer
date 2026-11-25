@@ -115,3 +115,13 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   failures above return a plausible answer instead of an error, so a
   reviewer following the plan cannot tell a broken feature from a broken
   instruction.
+
+- **`actions/deploy-pages` can miss an artifact uploaded a second earlier.**
+  It lists the run's artifacts once, through the Actions results service,
+  and takes no artifact ID. On #986 it found every artifact in the run but
+  the Pages one, finalized one second before, and failed twice (runs
+  45718721667 and 45721427004). The publish action therefore waits until
+  the REST API lists the exact uploaded ID, then deploys, then retries the
+  deploy once if it still fails. The REST poll alone is not enough, since
+  the two APIs are separate listings; do not drop the retry as redundant.
+  The poll needs `actions: read` on every job that calls the action.
