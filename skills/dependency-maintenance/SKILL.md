@@ -138,8 +138,12 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   `overrides`. The 2026-07-31 advisory wave looked like it needed an ESLint
   or stylelint major and needed no upgrade at all.
 - An advisory's range can lag a backport, and an advisory can be
-  withdrawn; `gh api /advisories/<GHSA id>` shows each line's
-  `first_patched_version` and any `withdrawn_at`. In November 2026 glob
+  withdrawn. `gh api /advisories/<GHSA id>` shows the
+  `first_patched_version` recorded for each listed range and any
+  `withdrawn_at`. One range can span several majors and name only the
+  newest fix, so it can miss a backport: look for one in the
+  package's maintenance dist-tags (`npm view <package> dist-tags`) and its
+  upstream commits. In November 2026 glob
   shipped the fix for 1244013 as 13.0.7 under `v13-legacy`, but the
   advisory still listed `<=14.0.1`: move the lock to the backport anyway
   (delete the stale lock entry and re-resolve), and keep the waiver while
