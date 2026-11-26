@@ -13,9 +13,11 @@ import { isObject } from "../ui/isObject";
  * exactly 0 is a real value this reader keeps.
  *
  * The means digest is checked for shape only. Vite hands this module a parsed
- * document, so there are no published bytes to hash; the pairing is
- * established by `npm run test:vendored-tables`, which hashes the vendored
- * files themselves.
+ * document, so there are no published bytes to hash and no numeric tokens:
+ * a negative zero survives parsing and is rejected here, but a token parsing
+ * rounded (`13000.0000000000001` read as `13000`) cannot be seen. The updater
+ * checks both the pairing and the tokens before writing, and runs this reader
+ * too, and `npm run test:vendored-tables` re-checks the vendored files.
  */
 
 const SCHEMA = "expected-play-lines.v1";
@@ -153,6 +155,10 @@ const readPolicyConverged = (document: object): boolean | null => {
     : null;
 };
 
+// The contract publishes rounded zeros with a positive sign.
+const isSignedMoment = (value: unknown): boolean =>
+  Number.isFinite(value) && !Object.is(value, -0);
+
 const hasSupportedMoments = (
   count: number,
   mean: unknown,
@@ -160,7 +166,9 @@ const hasSupportedMoments = (
 ): boolean =>
   count < MINIMUM_OBSERVATIONS
     ? mean === null && standardError === null
-    : Number.isFinite(mean) && isFiniteNonNegative(standardError);
+    : isSignedMoment(mean) &&
+      isSignedMoment(standardError) &&
+      isFiniteNonNegative(standardError);
 
 const isRankInHand = (rank: number, handRanks: readonly string[]): boolean =>
   handRanks.includes(RANKS.charAt(rank));
@@ -179,6 +187,10 @@ const leadRowOf = (row: readonly unknown[]): PegLeadRow | null => {
     : null;
 };
 
+/*
+ * Dealer always has a legal first reply, one of the hand's distinct ranks, so
+ * by pigeonhole the modal reply is seen at least count / distinct ranks times.
+ */
 const dealerRowOf = (
   row: readonly unknown[],
   handRanks: readonly string[],
@@ -188,7 +200,11 @@ const dealerRowOf = (
   return base !== null &&
     isIntegerBetween(response, 0, LAST_RANK_INDEX) &&
     isRankInHand(response, handRanks) &&
-    isIntegerBetween(responseCount, 1, base.count)
+    isIntegerBetween(
+      responseCount,
+      Math.ceil(base.count / new Set(handRanks).size),
+      base.count,
+    )
     ? { ...base, response, responseCount }
     : null;
 };
@@ -295,7 +311,7 @@ function usableRows<Row>(rows: readonly Row[]): readonly Row[] | null {
   return rows.length === 0 ? null : rows;
 }
 
-export const parsePegLines = (document: unknown): PegLines | null => {
+const readPegLines = (document: unknown): PegLines | null => {
   if (!isObject(document) || !hasExpectedHeader(document)) {
     return null;
   }
@@ -311,4 +327,17 @@ export const parsePegLines = (document: unknown): PegLines | null => {
     poneRows: (handKey) => usableRows(hands.get(handKey)?.pone ?? []),
     qualifications,
   };
+};
+
+/*
+ * The entry point takes `unknown`, and a runtime object can carry a getter
+ * or a replaced array method that throws; rejecting is the contract's answer
+ * for any document it does not describe, so a throw is caught as one.
+ */
+export const parsePegLines = (document: unknown): PegLines | null => {
+  try {
+    return readPegLines(document);
+  } catch {
+    return null;
+  }
 };

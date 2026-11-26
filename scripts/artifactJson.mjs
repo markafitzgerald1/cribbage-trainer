@@ -59,6 +59,54 @@ const assertUniqueNames = (body) => {
   }
 };
 
+export const assertIntegerLexemes = (object, fields) => {
+  for (const field of fields) {
+    const source = numericTokens.get(object)?.get(field);
+    if (source && !integerToken.test(source)) {
+      throw new Error(`Expected JSON integer lexeme: ${field}`);
+    }
+  }
+};
+
+// One spelling per decimal value: sign, significant digits, power of ten.
+const canonicalDecimal = (text) => {
+  const [mantissa, exponent = "0"] = text.toLowerCase().split("e");
+  const sign = mantissa.startsWith("-") ? "-" : "";
+  const [whole, fraction = ""] = mantissa.slice(sign.length).split(".");
+  const digits = `${whole}${fraction}`.replace(/^0+/u, "");
+  const significant = digits.replace(/0+$/u, "");
+  const scale =
+    BigInt(exponent) -
+    BigInt(fraction.length) +
+    BigInt(digits.length - significant.length);
+  return significant === "" ? `${sign}0` : `${sign}${significant}e${scale}`;
+};
+
+const numberText = (value) => (Object.is(value, -0) ? "-0" : String(value));
+
+/*
+ * JSON parsing rounds a token to the nearest double, so `-1e-400` reads as
+ * `-0` and `13000.0000000000001` as `13000` with nothing left to show it.
+ * The shortest spelling of the parsed double must therefore name the same
+ * decimal as the token did; a token that needs more digits lost them.
+ */
+export const assertExactNumbers = (value) => {
+  assertArtifactJson(value);
+  for (const [key, item] of Object.entries(value)) {
+    const source = numericTokens.get(value)?.get(key);
+    if (typeof item === "object" && item !== null) {
+      assertExactNumbers(item);
+    } else if (
+      typeof item === "number" &&
+      canonicalDecimal(source) !== canonicalDecimal(numberText(item))
+    ) {
+      throw new Error(
+        `JSON number ${source} does not survive JSON parsing exactly`,
+      );
+    }
+  }
+};
+
 export const parseArtifactJson = (input) => {
   const body = artifactText(input);
   /** @this {object} */
@@ -75,16 +123,8 @@ export const parseArtifactJson = (input) => {
   }
   assertUniqueNames(body);
   const value = JSON.parse(body, readToken);
-  const assertIntegers = (object, fields) => {
-    for (const field of fields) {
-      const source = numericTokens.get(object)?.get(field);
-      if (source && !integerToken.test(source)) {
-        throw new Error(`Expected JSON integer lexeme: ${field}`);
-      }
-    }
-  };
   if (value?.schema === CRIB_V2_SCHEMA) {
-    assertIntegers(value.provenance, [
+    assertIntegerLexemes(value.provenance, [
       "seed",
       "generation",
       "precut_resolved_positive",
@@ -92,9 +132,9 @@ export const parseArtifactJson = (input) => {
       "precut_unresolved",
     ]);
     const totals = value.record_groups?.totals;
-    assertIntegers(totals, ["record_count"]);
+    assertIntegerLexemes(totals, ["record_count"]);
     for (const record of Object.values(totals?.records ?? {})) {
-      assertIntegers(record, ["n"]);
+      assertIntegerLexemes(record, ["n"]);
     }
   }
   if (
@@ -102,7 +142,10 @@ export const parseArtifactJson = (input) => {
     value !== null &&
     Reflect.get(value, "__metadata__")?.generation_method === CRIB_V4_METHOD
   ) {
-    assertIntegers(Reflect.get(value, "__metadata__"), ["seed", "generation"]);
+    assertIntegerLexemes(Reflect.get(value, "__metadata__"), [
+      "seed",
+      "generation",
+    ]);
   }
   return value;
 };

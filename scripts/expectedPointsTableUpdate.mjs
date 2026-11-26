@@ -7,12 +7,15 @@ import {
 } from "./uncertaintySidecar.mjs";
 import {
   artifactText,
+  assertExactNumbers,
+  assertIntegerLexemes,
   parseArtifactJson,
   stringifyArtifactJson,
 } from "./artifactJson.mjs";
 import { rename, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { runnerImport } from "vite";
 
 const SCRIPT_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const GAME_DIRECTORY = path.join(SCRIPT_DIRECTORY, "..", "src", "game");
@@ -124,13 +127,46 @@ export const validatePlayTable = (table) => {
 };
 
 const PLAY_LINES_SCHEMA = "expected-play-lines.v1";
+const PLAY_LINES_INTEGER_COLUMNS = [
+  ["0", "1"],
+  ["0", "1", "4", "5"],
+];
 
 /*
- * Only the header and the one-line shape (at most a final newline) are checked
- * here; the full contract is the browser reader's, whose specs run it against
- * the vendored bytes. One line matters because the size gate counts every one.
+ * The browser reader itself, loaded through Vite as the app loads it, so the
+ * updater cannot write a file the app would then refuse: a second copy of the
+ * contract here would drift from that one.
  */
-export const validatePlayLines = (lines, raw) => {
+let pegLinesReader = null;
+const readPegLines = async (lines) => {
+  pegLinesReader ??= runnerImport(path.join(GAME_DIRECTORY, "pegLines.ts"));
+  const { module } = await pegLinesReader;
+  return module.parsePegLines(lines);
+};
+
+/*
+ * What only the published tokens show, after the reader has passed the
+ * structure: a whole count spelled `13000.0` or `1.3e4` parses to the same
+ * double as `13000`, but the contract's counts are JSON integers.
+ */
+const assertLinesIntegers = (lines) => {
+  assertIntegerLexemes(lines.provenance, ["seed"]);
+  assertIntegerLexemes(lines.precision, Object.keys(lines.precision));
+  for (const roles of lines.entries) {
+    roles.forEach((rows, role) => {
+      for (const row of rows) {
+        assertIntegerLexemes(row, PLAY_LINES_INTEGER_COLUMNS.at(role));
+      }
+    });
+  }
+};
+
+/*
+ * One line matters because the size gate counts every one. The reader is
+ * handed a parsed object, as Vite hands it to the app, so the tokens are
+ * checked here: nothing after parsing can see what parsing rounded.
+ */
+export const validatePlayLines = async (lines, raw) => {
   assertObject(lines, "Downloaded play lines file is not an object");
   if (lines.schema !== PLAY_LINES_SCHEMA) {
     throw new Error(
@@ -141,6 +177,13 @@ export const validatePlayLines = (lines, raw) => {
   if (!/^[^\r\n]*\n?$/u.test(raw)) {
     throw new Error("Downloaded play lines file is not minified onto one line");
   }
+  assertExactNumbers(lines);
+  if ((await readPegLines(lines)) === null) {
+    throw new Error(
+      "Downloaded play lines file fails the browser reader, src/game/pegLines.ts",
+    );
+  }
+  assertLinesIntegers(lines);
 };
 
 /*
@@ -198,7 +241,7 @@ const downloadAsset = async (assetUrl) => {
 export const downloadTable = async (assetUrl, validate) => {
   const raw = await downloadAsset(assetUrl);
   const parsed = parseArtifactJson(raw);
-  validate(parsed, raw);
+  await validate(parsed, raw);
   return { body: raw.endsWith("\n") ? raw : `${raw}\n`, parsed, raw };
 };
 
@@ -211,12 +254,16 @@ export const downloadTable = async (assetUrl, validate) => {
  */
 const toMinifiedBody = (value) => `${stringifyArtifactJson(value)}\n`;
 
+/*
+ * Whether lines are paired is the assets' to say, never the caller's: an
+ * override replaces a URL, and a null one falls back rather than skipping.
+ */
 export const downloadMeansAndUncertainty = async (assets, urls = {}) => {
-  const {
-    meansUrl = assets.meansUrl,
-    uncertaintyUrl = assets.uncertaintyUrl,
-    linesUrl = assets.linesUrl ?? null,
-  } = urls;
+  const meansUrl = urls.meansUrl ?? assets.meansUrl;
+  const uncertaintyUrl = urls.uncertaintyUrl ?? assets.uncertaintyUrl;
+  const linesUrl = Object.hasOwn(assets, "linesUrl")
+    ? (urls.linesUrl ?? assets.linesUrl)
+    : null;
   const [means, uncertainty, lines] = await Promise.all([
     downloadTable(meansUrl, assets.validateMeans),
     downloadTable(uncertaintyUrl, (sidecar) =>
