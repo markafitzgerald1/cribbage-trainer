@@ -3,9 +3,9 @@ import { SEED_TALLY, openSeededTrainer } from "./practiceDrillSetup";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 /*
- * One best choice and one pone discard of the ace and two from A-6 of
- * clubs, whose verdict the tally reads from the admission recorded with it
- * (#774, #894). That hand loses 0.06 under the shipped tables, inside its
+ * One best choice and one dealer discard of both diamonds from
+ * Q-9-6-6-2-A, whose verdict the tally reads from the admission recorded with
+ * it (#774, #894). That hand loses 0.02 under the shipped tables, inside its
  * noise threshold today, so the recorded-mistake case also guards against
  * re-judging stored history with the installed tables and sidecars.
  */
@@ -28,10 +28,9 @@ const tallyRecording = (eligible: boolean) => ({
     {
       ...OPTIMAL,
       at: OPTIMAL.at + 1,
-      cribRole: "Pone",
-      discardKey: "AC,2C",
-      expectedPointsLoss: 0.055_813,
-      handKey: "AC,2C,3C,4C,5C,6C|Pone",
+      discardKey: "QD,2D",
+      expectedPointsLoss: 0.016_191,
+      handKey: "QD,9S,6S,6H,2D,AH|Dealer",
       isOptimal: false,
       recordedAdmission: { basis: "sampling-noise-v1", eligible },
     },
@@ -58,12 +57,12 @@ test("keeps a recorded mistake that today's tables would call noise", async ({
 }) => {
   await openSeededTrainer(page, tallyRecording(true));
   // A study hand exercises analysis without adding an authentic decision to the seeded ratio.
-  await page.goto("/?hand=AC,2C,3C,4C,5C,6C&role=pone&seed=e2e");
+  await page.goto("/?hand=QD,9S,6S,6H,2D,AH&role=dealer&seed=e2e");
   const sidecars = [
     /CribPointsUncertainty-[\w-]+\.js$/u,
     /PlayPointsUncertainty-[\w-]+\.js$/u,
   ].map((pattern) => page.waitForResponse(pattern));
-  await page.getByRole("checkbox", { name: /^Keep A/u }).click();
+  await page.getByRole("checkbox", { name: /^Keep Q/u }).click();
   await page.getByRole("checkbox", { name: /^Keep 2/u }).click();
   await waitForAnalysis(page);
   await Promise.all(sidecars);

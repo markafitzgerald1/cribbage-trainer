@@ -25,7 +25,7 @@ const meta = {
 
 export default meta;
 
-// Dealer hand whose best discard is within noise of QD 2D: loss about 0.04 against a threshold near 0.08.
+// Dealer hand whose best discard is within noise of QD 2D: loss about 0.02 against a threshold near 0.07.
 const WITHIN_NOISE_HAND_KEY = "QD,9S,6S,6H,2D,AH|Dealer";
 const LARGE_TEXT_ROOT_FONT_SIZE = "125%";
 const WITHIN_NOISE_OUTCOME =

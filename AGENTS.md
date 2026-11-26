@@ -346,6 +346,18 @@
   `npm run table:update:play` for only the pegging artifact.
 - The browser may look up and combine the shipped means, but must not perform
   pegging Monte Carlo, game-tree search, or policy improvement.
+- The expanded row says the pegging figures assume both players peg
+  near-optimally. `vendoredTables.test.mjs` ties that line to how the sidecar
+  says the table was measured and to the certified policy's manifest digest, so
+  a refresh with another measurement or policy fails until the wording is
+  reviewed with that policy's own certificate.
+- **A refresh can change what a fixture means, not only its numbers.** In #908
+  a discard that tests used as a small mistake became the best one, so the test
+  had nothing left to check. For each failing expectation, first ask whether
+  the hand still shows the case it was chosen for, then update the number or
+  replace the hand.
+- Add a row to the README's table history with each new table, and refresh its
+  Evidence section from the table's own release notes.
 - Shared expected-points table loaders use `null` to represent absence. Do not
   use truthiness checks for cached or injected tables, because generic loader
   callers may validly load falsy values such as `0`, `""`, or `false`.

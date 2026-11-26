@@ -105,6 +105,24 @@ test("the vendored play sidecar keys cover the vendored play table exactly", () 
 });
 
 /*
+ * The expanded row says the pegging figures assume both players peg
+ * near-optimally (#908). That rests on the exact certificate of one solved
+ * policy, so the pinned manifest names it: a table measured with any other
+ * policy, or by the simulator's older generator, has to revisit the wording
+ * and the README's Evidence with that policy's own certificate.
+ */
+test("the vendored play table was measured with the solved policy the app describes", () => {
+  const { provenance } = sidecarOf(PLAY_ASSETS);
+
+  strictEqual(provenance.measurement_backend, "python-v3-fixed-policy");
+  strictEqual(provenance.measured_policy, "trained");
+  strictEqual(
+    provenance.policy_manifest_sha256,
+    "bc096b75f956c2091c3be73cfe2d9eec0157c87bc30ef6e11e0b283e1007171b",
+  );
+});
+
+/*
  * The browser's reader (`src/game/uncertaintySidecar.ts`) and this updater
  * check the same version-1 contract in two languages, so they can drift.
  * These cases are the shapes the reader's own specs assert it rejects;
