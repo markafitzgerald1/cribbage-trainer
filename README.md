@@ -37,28 +37,34 @@ parity, plus or minus one standard error in percentage points, from 500,000
 pairs of duplicate games with the seats swapped. They are not adjusted for
 multiple comparisons.
 
-In short: how well a player pegs matters far more than whether they follow this
-table or the app's previous one. This table's advice is a small gain for players who peg
-near-optimally and a small loss for players who peg like the simulator's older
-heuristic, because advice built from pegging values fits the pegging it
-assumes.
+**Bottom line:** how well a player pegs matters far more than whether they
+follow this table or the app's previous one. This table's advice is a small
+gain for players who peg near-optimally and a small loss for players who peg
+like the simulator's older heuristic, because advice built from pegging values
+fits the pegging it assumes. That is why the app says "Assumes both players peg
+near-optimally". The larger gain is in pegging play itself, which the app does
+not teach yet.
 
-- **How close to optimal is the pegging?** An opponent who knew the policy
-  exactly could gain at most 0.00047 points a hand against it. That is an exact
-  average over the two seats and over the pairs of kept hands it was solved on,
-  by card rank: half from uniform random four-card hands, half from six-card
-  deals kept by the simulator's earlier discard rule. It does not bound a single
-  hand, or another mix of hands.
-- **Is this table better than the app's previous one?** A bot that discards by
-  this table plays a bot that discards by the previous one. When both peg with
-  the solved policy, the new discard table's bot wins 50.287% ± 0.027 of games,
-  0.287 percentage points above an even split. When both peg with the
-  simulator's older heuristic, the new discard table's bot wins 49.724% ± 0.023,
-  0.276 points below even.
-- **What is pegging itself worth?** Both bots discard by the app's previous
-  table, so only their pegging differs: one pegs with the solved policy, the
-  other with the older heuristic. The solved-policy pegger wins 55.638% ± 0.029
-  of games, 5.638 percentage points above even.
+1. **Pegging well is worth about 5.6 points of win rate.** Two bots discard by
+   the app's previous table, so only their pegging differs. The one that pegs
+   with the solved policy wins 55.638% ± 0.029 of games against the one that
+   pegs with the older heuristic.
+2. **This discard table helps near-optimal pegging a little.** A bot that
+   discards by this table plays one that discards by the previous table, both
+   pegging with the solved policy. The new discard table's bot wins
+   50.287% ± 0.027, 0.287 points above an even split.
+3. **It hurts heuristic pegging a little.** Same match, but both bots peg with
+   the older heuristic: the new discard table's bot wins 49.724% ± 0.023, 0.276
+   points below even.
+4. **The solved pegging is close to optimal.** An opponent who knew the policy
+   exactly could gain at most 0.00047 points a hand against it. That is an exact
+   average over the two seats and over the pairs of kept hands it was solved on,
+   by card rank: half from uniform random four-card hands, half from six-card
+   deals kept by the simulator's earlier discard rule. It does not bound a
+   single hand, or another mix of hands.
+
+How people actually peg is not measured, so it is not known whether this table
+makes people win more.
 
 A table does better in the pegging style it was measured in. This one's
 advantage is established for players who peg like the solved policy, not for
