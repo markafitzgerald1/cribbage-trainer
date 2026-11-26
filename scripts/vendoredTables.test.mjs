@@ -18,7 +18,7 @@ import {
   strictEqual,
   throws,
 } from "node:assert/strict";
-import { parseArtifactJson } from "./artifactJson.mjs";
+import { artifactText, parseArtifactJson } from "./artifactJson.mjs";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
@@ -32,7 +32,7 @@ import { test } from "node:test";
  */
 const readVendored = (outputPath) => readFileSync(outputPath);
 
-const readVendoredText = (outputPath) => readFileSync(outputPath, "utf8");
+const readVendoredText = (outputPath) => artifactText(readFileSync(outputPath));
 
 const sidecarOf = (assets) =>
   parseArtifactJson(readVendored(assets.uncertaintyOutputPath));
@@ -316,7 +316,9 @@ test("a whitespace-only change to the means is a different pairing", () => {
 test("the vendored play lines keys cover the vendored play table exactly", () => {
   deepStrictEqual(
     [...linesOf().keys].sort(),
-    Object.keys(JSON.parse(readVendoredText(PLAY_ASSETS.meansOutputPath))).sort(),
+    Object.keys(
+      JSON.parse(readVendoredText(PLAY_ASSETS.meansOutputPath)),
+    ).sort(),
   );
 });
 
@@ -327,12 +329,12 @@ test("the vendored play lines keys cover the vendored play table exactly", () =>
  */
 const stubRelease = (context, replacements = []) => {
   const bodies = new Map([
-    [PLAY_ASSETS.meansUrl, readVendoredText(PLAY_ASSETS.meansOutputPath)],
+    [PLAY_ASSETS.meansUrl, readVendored(PLAY_ASSETS.meansOutputPath)],
     [
       PLAY_ASSETS.uncertaintyUrl,
-      readVendoredText(PLAY_ASSETS.uncertaintyOutputPath),
+      readVendored(PLAY_ASSETS.uncertaintyOutputPath),
     ],
-    [PLAY_ASSETS.linesUrl, readVendoredText(PLAY_ASSETS.linesOutputPath)],
+    [PLAY_ASSETS.linesUrl, readVendored(PLAY_ASSETS.linesOutputPath)],
     ...replacements,
   ]);
   context.mock.method(globalThis, "fetch", (url) =>
@@ -344,6 +346,17 @@ const refusesLines = (context, linesBody, message) => {
   stubRelease(context, [[PLAY_ASSETS.linesUrl, linesBody]]);
   return rejects(downloadMeansAndUncertainty(PLAY_ASSETS), message);
 };
+
+test("the updater refuses lines that are not valid UTF-8", (context) => {
+  const published = readVendored(PLAY_ASSETS.linesOutputPath);
+  const invalid = Buffer.concat([
+    published.subarray(0, 1),
+    Buffer.from([0xff]),
+    published.subarray(1),
+  ]);
+
+  return refusesLines(context, invalid, /not valid/u);
+});
 
 test("the updater writes the lines from the exact published bytes", async (context) => {
   stubRelease(context);

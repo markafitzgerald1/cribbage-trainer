@@ -384,10 +384,12 @@
   **exact downloaded bytes**, never a newline-normalized copy — the digest
   checked has to be the digest of what is written.
 - Both are stored minified on one line, like both means tables, rather than
-  as the published pretty-printed form. `JSON.stringify(JSON.parse(body))`
-  round-trips IEEE 754 doubles exactly, so the reformatting changes no value —
-  and the published forms are 45,607 and 16,425 lines, which the pull request
-  size gate counts in full.
+  as the published pretty-printed form. The updater re-serializes through
+  `stringifyArtifactJson`, which keeps each number's published token, because
+  a plain `JSON.stringify(JSON.parse(body))` round trip changes integers beyond
+  binary64 precision; so the reformatting changes no value — and the published
+  forms are 45,607 and 16,425 lines, which the pull request size gate counts in
+  full.
 - **A missing or rejected sidecar is an unavailable capability, never a
   measured zero**, and a measured standard error of exactly 0 is a real
   value. Guard both with explicit `!== null` checks rather than truthiness,
