@@ -126,11 +126,7 @@ const clickBreakdownLabel = async (
 
 export const playToggle = async (
   { canvasElement }: { readonly canvasElement: HTMLElement },
-  {
-    toggleCribDetails = false,
-    togglePlayDetails = false,
-    toggleStarterDetails = false,
-  } = {},
+  { toggleCribDetails = false, toggleStarterDetails = false } = {},
 ) => {
   const canvas = within(canvasElement);
   await waitForLoadingToDisappear(canvas);
@@ -157,10 +153,6 @@ export const playToggle = async (
 
   if (toggleCribDetails) {
     await clickBreakdownLabel(canvas, /Crib avg/u, "Points");
-  }
-
-  if (togglePlayDetails) {
-    await clickBreakdownLabel(canvas, /You - Opp/u, /You - Opp/u);
   }
 };
 

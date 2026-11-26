@@ -231,7 +231,6 @@ export const DoubleExpandedRow: Story = {
   play: (context) =>
     playToggle(context, {
       toggleCribDetails: true,
-      togglePlayDetails: true,
       toggleStarterDetails: true,
     }),
 };
