@@ -49,7 +49,11 @@ export const FIXTURE_LINES: PegLines = {
 export const sourceOf = (
   load: () => Promise<PegLines | null>,
   known: PegLines | null = null,
-): PegLinesSource => ({ getPegLinesSync: () => known, loadPegLines: load });
+): PegLinesSource => ({
+  getPegLinesSync: () => known,
+  loadPegLines: load,
+  subscribe: () => () => null,
+});
 
 export const resolvingSource = (lines: PegLines | null): PegLinesSource =>
   sourceOf(async () => Promise.resolve(lines));

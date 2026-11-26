@@ -20,7 +20,7 @@ const response = (status: number) =>
  */
 const importShippedLoader = async (statuses: readonly number[]) => {
   const remaining = [...statuses];
-  const fetchSpy = jest.fn(async () =>
+  const fetchSpy = jest.fn<typeof fetch>(async () =>
     Promise.resolve(response(remaining.shift() ?? OFFLINE)),
   );
   globalThis.fetch = fetchSpy;
@@ -54,11 +54,31 @@ describe("shippedPegLines", () => {
 
     await expect(load()).resolves.toBeNull();
     await expect(load()).resolves.not.toBeNull();
-    expect(retried.fetchSpy).toHaveBeenCalledTimes(2);
+    // Pages caches a 404 for ten minutes, so only the retry may bypass the HTTP cache.
+    expect(retried.fetchSpy.mock.calls.map(([, init]) => init)).toStrictEqual([
+      {},
+      { cache: "reload" },
+    ]);
   }, 30_000);
 });
 
 describe("createPegLinesLoader", () => {
+  it("tells current subscribers, and only them, about a loaded file", async () => {
+    expect.hasAssertions();
+
+    const loader = createPegLinesLoader(async () =>
+      Promise.resolve(linesDocument),
+    );
+    const [kept, dropped] = [jest.fn(), jest.fn()];
+    loader.subscribe(kept);
+    loader.subscribe(dropped)();
+
+    const lines = await loader.loadPegLines();
+
+    expect(kept.mock.calls).toStrictEqual([[lines]]);
+    expect(dropped).not.toHaveBeenCalled();
+  });
+
   it("does not fetch again after the reader rejected the document", async () => {
     expect.hasAssertions();
 

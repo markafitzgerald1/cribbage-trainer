@@ -1,7 +1,7 @@
 import * as classes from "./ScoredPossibleKeepDiscardExpandedRow.module.css";
 import { type OpeningPlayItem, openingPlayItems } from "./openingPlaysText";
 import { type PegLinesSource, shippedPegLines } from "../game/pegLinesLoader";
-import { type ReactNode, useCallback, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
 import { type PegLines } from "../game/pegLines";
@@ -60,15 +60,11 @@ export function OpeningPlays({
   const [lines, setLines] = useState(source.getPegLinesSync);
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => source.subscribe(setLines), [source]);
+
   const handleToggle = useCallback(() => {
     setIsExpanded(!isExpanded);
     if (isExpanded || lines !== null || isLoading) {
-      return;
-    }
-    // Another row may already have loaded the file since this one mounted.
-    const known = source.getPegLinesSync();
-    if (known !== null) {
-      setLines(known);
       return;
     }
     setIsLoading(true);

@@ -6,6 +6,7 @@ import {
   resolvingSource,
   sourceOf,
 } from "./openingPlays.test.common";
+import { act, fireEvent, isInaccessible, screen } from "@testing-library/react";
 import { describe, expect, it, jest } from "@jest/globals";
 import {
   findFooter,
@@ -14,7 +15,6 @@ import {
   renderWithLoadSpy,
   reopen,
 } from "./OpeningPlays.test.common";
-import { fireEvent, isInaccessible, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { OPENING_PLAYS_UNAVAILABLE } from "./OpeningPlays";
 import type { PegLines } from "../game/pegLines";
@@ -132,21 +132,27 @@ describe("openingPlays", () => {
     },
   );
 
-  it("uses lines another row already loaded without loading again", () => {
+  it("recovers a failed row once another row loads the file", async () => {
     expect.hasAssertions();
 
-    const load = loadSpy(FIXTURE_LINES);
-    const known: { lines: PegLines | null } = { lines: null };
-    const toggle = renderOpeningPlays(
-      { getPegLinesSync: () => known.lines, loadPegLines: load },
-      { isOpened: false },
-    );
-    known.lines = FIXTURE_LINES;
+    const shared: { notify: (lines: PegLines) => void } = { notify: jest.fn() };
+    renderOpeningPlays({
+      ...sourceOf(loadSpy(null)),
+      subscribe: (listener) => {
+        shared.notify = listener;
+        return jest.fn();
+      },
+    });
 
-    fireEvent.click(toggle);
+    await expect(
+      screen.findByText(OPENING_PLAYS_UNAVAILABLE),
+    ).resolves.toBeInTheDocument();
+
+    act(() => {
+      shared.notify(FIXTURE_LINES);
+    });
 
     expect(screen.getByText(PONE_THREE)).toBeInTheDocument();
-    expect(load).not.toHaveBeenCalled();
   });
 
   it("loads once across closing and reopening", async () => {
