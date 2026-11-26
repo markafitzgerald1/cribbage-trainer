@@ -122,31 +122,38 @@ const testExpandedRowScreenshot = () =>
     await expect(page).toHaveScreenshot();
   });
 
-const testDoubleExpandedScreenshot = () =>
-  test("starter details show after double expansion still visually the same", async ({
-    page,
-  }) => {
+const testBreakdownExpandedScreenshot = (
+  title: string,
+  breakdown: string | RegExp,
+) =>
+  test(title, async ({ page }) => {
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
 
     await page.locator("tbody tr").first().click();
     await waitForUncertainties(page);
-    await page.getByRole("button", { name: "+Cut avg" }).click();
+    await page.getByRole("button", { name: breakdown }).click();
 
     await expect(page).toHaveScreenshot();
   });
+
+const testDoubleExpandedScreenshot = () =>
+  testBreakdownExpandedScreenshot(
+    "starter details show after double expansion still visually the same",
+    "+Cut avg",
+  );
 
 const testCribExpandedScreenshot = () =>
-  test("crib starter details show after crib avg expansion still visually the same", async ({
-    page,
-  }) => {
-    await renderThenSelectTwoDiscards(page, constantHandQuery, true);
+  testBreakdownExpandedScreenshot(
+    "crib starter details show after crib avg expansion still visually the same",
+    "Crib avg",
+  );
 
-    await page.locator("tbody tr").first().click();
-    await waitForUncertainties(page);
-    await page.getByRole("button", { name: "Crib avg" }).click();
-
-    await expect(page).toHaveScreenshot();
-  });
+// The pegging breakdown starts closed (#805), so only this view shows it open.
+const testPlayExpandedScreenshot = () =>
+  testBreakdownExpandedScreenshot(
+    "pegging details show after you minus opp expansion still visually the same",
+    /You - Opp/u,
+  );
 
 testInitialRenderScreenshot();
 
@@ -227,6 +234,7 @@ const testScreenshots = () => {
   testExpandedRowScreenshot();
   testDoubleExpandedScreenshot();
   testCribExpandedScreenshot();
+  testPlayExpandedScreenshot();
   testDiscardTallyScreenshot();
   test("mistake queue retry card keeps badge rows and point units together", async ({
     page,
