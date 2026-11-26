@@ -58,7 +58,6 @@ export function OpeningPlays({
 }: OpeningPlaysProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [lines, setLines] = useState(source.getPegLinesSync);
-  const [hasFailed, setHasFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleToggle = useCallback(() => {
@@ -75,7 +74,6 @@ export function OpeningPlays({
     setIsLoading(true);
     const settle = (loaded: PegLines | null): void => {
       setIsLoading(false);
-      setHasFailed(loaded === null);
       setLines(loaded);
     };
     source.loadPegLines().then(settle, () => {
@@ -92,11 +90,8 @@ export function OpeningPlays({
     if (items !== null) {
       return renderItems(items, isPone);
     }
-    return (
-      <div>
-        {lines === null && !hasFailed ? "Loading" : OPENING_PLAYS_UNAVAILABLE}
-      </div>
-    );
+    // A load in flight outranks an earlier failure, so a retry never reads as unavailable.
+    return <div>{isLoading ? "Loading" : OPENING_PLAYS_UNAVAILABLE}</div>;
   };
 
   return (

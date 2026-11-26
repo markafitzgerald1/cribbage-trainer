@@ -85,7 +85,10 @@ describe("openingPlayItems", () => {
     const dealer = sentences(FIXTURE_LINES, false);
 
     expect(dealer).toContain(
-      "They lead 4 in 19% of hands, and you reply 7 every time",
+      "They lead 4 in 19% of hands, and you reply 7 in more than 99% of those",
+    );
+    expect(dealer).toContain(
+      "They lead 3 in 13% of hands, and you reply 3 every time",
     );
     expect(dealer).toContain(
       "They lead J in 10% of hands, and you reply 3 in 95% of those",

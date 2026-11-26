@@ -1,5 +1,5 @@
-import { MINIMUM_SHOWN_COUNT, foldOpenings, replyShare } from "./openingPlays";
 import { describe, expect, it } from "@jest/globals";
+import { foldOpenings, replyShare } from "./openingPlays";
 
 const row = (lead: number, count: number) => ({
   count,
@@ -54,12 +54,10 @@ describe("foldOpenings", () => {
   it("folds a play seen fewer than 200 times however large its share", () => {
     expect.hasAssertions();
 
-    const rows = [row(0, MINIMUM_SHOWN_COUNT - 1), row(1, MINIMUM_SHOWN_COUNT)];
+    const rows = [row(0, 199), row(1, 200)];
 
     expect(shownRanks(rows)).toStrictEqual([1]);
-    expect(foldOpenings(rows).otherShare).toBe(
-      (MINIMUM_SHOWN_COUNT - 1) / (2 * MINIMUM_SHOWN_COUNT - 1),
-    );
+    expect(foldOpenings(rows).otherShare).toBe(199 / 399);
   });
 });
 

@@ -37,7 +37,8 @@
     }
   },
   "moduleNameMapper": {
-    "\\.module\\.css$": "<rootDir>/__mocks__/styleMock.ts"
+    "\\.module\\.css$": "<rootDir>/__mocks__/styleMock.ts",
+    "\\?url$": "<rootDir>/__mocks__/urlMock.ts"
   },
   "testEnvironment": "jsdom",
   "testPathIgnorePatterns": [

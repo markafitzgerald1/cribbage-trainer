@@ -46,7 +46,9 @@ const poneItem = ({ row, share }: ShownOpening<PegLeadRow>) => ({
 
 const dealerItem = ({ row, share }: ShownOpening<PegDealerRow>) => {
   const reply = replyShare(row);
+  // The visible "always" rounds up from 99.5% (Mark's call); the spoken sentence keeps "every time" for literal truth.
   const isAlways = reply >= ALWAYS_SHARE;
+  const isEveryTime = row.responseCount === row.count;
   return {
     cells: [
       ["lead", rankText(row.lead)],
@@ -55,7 +57,7 @@ const dealerItem = ({ row, share }: ShownOpening<PegDealerRow>) => {
       ["replyShare", isAlways ? "always" : formatShare(reply)],
     ] as const,
     key: rankText(row.lead),
-    sentence: `They lead ${rankText(row.lead)} ${spoken(share)} of hands, and you reply ${rankText(row.response)} ${isAlways ? "every time" : `${spoken(reply)} of those`}`,
+    sentence: `They lead ${rankText(row.lead)} ${spoken(share)} of hands, and you reply ${rankText(row.response)} ${isEveryTime ? "every time" : `${spoken(reply)} of those`}`,
   };
 };
 

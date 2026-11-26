@@ -1,8 +1,5 @@
 import { type PegLines, parsePegLines } from "./pegLines";
-
-interface ImportedLines {
-  readonly default: unknown;
-}
+import linesUrl from "./expectedPlayPointsLines.json?url";
 
 export interface PegLinesSource {
   readonly getPegLinesSync: () => PegLines | null;
@@ -10,20 +7,21 @@ export interface PegLinesSource {
 }
 
 /*
- * Imported only when someone first opens "Opening plays", so the 721 KB file
- * costs nothing on a page load that never asks for it. A failed import clears
- * the pending promise, so a later opening retries rather than staying
- * unavailable for the rest of the session; a document the reader rejects is
- * remembered, since importing the same bytes again cannot change the verdict.
+ * Fetched only when someone first opens "Opening plays", so the 721 KB file
+ * costs nothing on a page load that never asks for it. A fetch rather than a
+ * dynamic import because browsers cache a failed module load for the page's
+ * life, so an import could never retry after a dropped connection. A failed
+ * fetch clears the pending promise so a later opening retries; a document the
+ * reader rejects is remembered, since the same bytes cannot change verdict.
  */
 export const createPegLinesLoader = (
-  importLines: () => Promise<ImportedLines>,
+  fetchDocument: () => Promise<unknown>,
 ): PegLinesSource => {
   let lines: PegLines | null = null;
   let pending: Promise<PegLines | null> | null = null;
 
-  const remember = (module: ImportedLines): PegLines | null => {
-    lines = parsePegLines(module.default);
+  const remember = (document: unknown): PegLines | null => {
+    lines = parsePegLines(document);
     return lines;
   };
 
@@ -33,7 +31,7 @@ export const createPegLinesLoader = (
   };
 
   const loadPegLines = (): Promise<PegLines | null> => {
-    pending ??= importLines().then(remember, forget);
+    pending ??= fetchDocument().then(remember, forget);
     return pending;
   };
 
@@ -41,5 +39,11 @@ export const createPegLinesLoader = (
 };
 
 export const shippedPegLines: PegLinesSource = createPegLinesLoader(
-  () => import("./expectedPlayPointsLines.json"),
+  async () => {
+    const response = await fetch(linesUrl);
+    if (!response.ok) {
+      throw new Error(`Pegging lines fetch failed: ${response.status}`);
+    }
+    return response.json() as Promise<unknown>;
+  },
 );

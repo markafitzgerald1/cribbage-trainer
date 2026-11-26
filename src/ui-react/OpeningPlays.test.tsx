@@ -14,7 +14,7 @@ import {
   renderWithLoadSpy,
   reopen,
 } from "./OpeningPlays.test.common";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, isInaccessible, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import { OPENING_PLAYS_UNAVAILABLE } from "./OpeningPlays";
 import type { PegLines } from "../game/pegLines";
@@ -82,7 +82,7 @@ describe("openingPlays", () => {
 
     await expect(
       screen.findByText(
-        "They lead 4 in 19% of hands, and you reply 7 every time",
+        "They lead 4 in 19% of hands, and you reply 7 in more than 99% of those",
       ),
     ).resolves.toBeInTheDocument();
     expect(
@@ -167,13 +167,46 @@ describe("openingPlays", () => {
     expect(screen.getByText(PONE_THREE)).toBeVisible();
   });
 
-  it("tries again on reopening after a failed load", async () => {
+  it.each([
+    { cribRole: CribRole.Pone, sentence: PONE_THREE },
+    {
+      cribRole: CribRole.Dealer,
+      sentence: "They lead 3 in 13% of hands, and you reply 3 every time",
+    },
+    {
+      cribRole: CribRole.Dealer,
+      sentence: "They lead J in 10% of hands, and you reply 3 in 95% of those",
+    },
+    {
+      cribRole: CribRole.Dealer,
+      sentence: "They lead another rank in 8% of hands",
+    },
+  ])(
+    "leaves $sentence in the accessibility tree",
+    async ({ cribRole, sentence }) => {
+      expect.hasAssertions();
+
+      renderOpeningPlays(resolvingSource(FIXTURE_LINES), { cribRole });
+
+      await expect(screen.findByText(sentence)).resolves.toBeInTheDocument();
+      expect(isInaccessible(screen.getByText(sentence))).toBe(false);
+    },
+  );
+
+  it("retries on reopening after a failed load, showing loading meanwhile", async () => {
     expect.hasAssertions();
 
+    const retry: { deliver: (lines: PegLines) => void } = {
+      deliver: jest.fn(),
+    };
     const load = jest
       .fn<() => Promise<PegLines | null>>()
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(FIXTURE_LINES);
+      .mockReturnValueOnce(
+        new Promise<PegLines | null>((resolve) => {
+          retry.deliver = resolve;
+        }),
+      );
     const toggle = renderOpeningPlays(sourceOf(load));
 
     await expect(
@@ -181,6 +214,13 @@ describe("openingPlays", () => {
     ).resolves.toBeInTheDocument();
 
     reopen(toggle);
+
+    expect(
+      screen.queryByText(OPENING_PLAYS_UNAVAILABLE),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Loading")).toBeInTheDocument();
+
+    retry.deliver(FIXTURE_LINES);
 
     await expect(screen.findByText(PONE_THREE)).resolves.toBeInTheDocument();
     expect(load).toHaveBeenCalledTimes(2);
