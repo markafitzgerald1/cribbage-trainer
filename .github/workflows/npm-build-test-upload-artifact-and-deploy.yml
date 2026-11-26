@@ -317,6 +317,7 @@ jobs:
     permissions:
       contents: write # to push the pages-content state branch
       pages: write # to deploy to Pages
+      actions: read # to confirm the Pages artifact is listed before deploying
       id-token: write # to verify the deployment originates from an appropriate source
       pull-requests: read # to list open PRs when pruning stale previews
 
@@ -452,6 +453,7 @@ jobs:
     permissions:
       contents: write # to push the pages-content state branch
       pages: write # to deploy to Pages
+      actions: read # to confirm the Pages artifact is listed before deploying
       id-token: write # to verify the deployment originates from an appropriate source
       pull-requests: read # to recheck the PR is still open before publishing
 
