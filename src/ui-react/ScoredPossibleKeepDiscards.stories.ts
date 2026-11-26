@@ -403,14 +403,21 @@ export const PlayAssumption: Story = {
   ...Expanded,
   play: async (context) => {
     const canvas = await expandedCanvas(context);
+    const toggle = () =>
+      fireEvent.click(canvas.getByRole("button", { name: /You - Opp/u }));
+    const note = () => canvas.queryByText(/near-optimally/u);
 
-    await expect(canvas.queryByText(/near-optimally/u)).toBeNull();
+    await expect(note()).toBeNull();
 
-    await fireEvent.click(canvas.getByRole("button", { name: /You - Opp/u }));
+    await toggle();
 
     await expect(
       await canvas.findByText("Assumes both players peg near-optimally"),
     ).toBeVisible();
+
+    await toggle();
+
+    await expect(note()).toBeNull();
   },
 };
 
