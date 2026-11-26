@@ -11,6 +11,8 @@ export const expandIndicatorExpanded: string;
 export const expandedRow: string;
 export const muted: string;
 export const notApplicable: string;
+export const openingDealer: string;
+export const openingPone: string;
 export const playAssumption: string;
 export const playBreakdown: string;
 export const playBreakdownHeader: string;

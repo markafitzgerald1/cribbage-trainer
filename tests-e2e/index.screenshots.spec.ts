@@ -155,6 +155,31 @@ const testPlayExpandedScreenshot = () =>
     /You - Opp/u,
   );
 
+/*
+ * The expanded row alone, with "Opening plays" open, once per seat. The row
+ * rather than the page so the shot does not depend on how many analysis rows
+ * the clipped table fits above it.
+ */
+const testOpeningPlaysScreenshot = (role: "dealer" | "pone") =>
+  test(`opening plays as ${role} still visually the same`, async ({ page }) => {
+    await renderThenSelectTwoDiscards(
+      page,
+      `?hand=KH,QS,10D,9C,6S,5H&role=${role}&seed=e2e`,
+      true,
+    );
+
+    await page.locator("tbody tr").first().click();
+    await waitForUncertainties(page);
+    await page
+      .getByRole("button", { exact: true, name: "Opening plays" })
+      .click();
+    await expect(
+      page.getByText("Mixing leads is deliberate.", { exact: false }),
+    ).toBeVisible();
+
+    await expect(page.locator("tbody tr").nth(1)).toHaveScreenshot();
+  });
+
 testInitialRenderScreenshot();
 
 const typicalPhoneViewportSize = {
@@ -275,6 +300,8 @@ test.describe("portrait", () => {
   });
 
   testScreenshots();
+  testOpeningPlaysScreenshot("pone");
+  testOpeningPlaysScreenshot("dealer");
 });
 
 test.describe("landscape", () => {

@@ -50,6 +50,7 @@ export default {
         "src/**/*.test.common.tsx",
         "src/game/expectedCribPointsTable.json",
         "src/game/expectedCribPointsUncertainty.json",
+        "src/game/expectedPlayPointsLines.json",
         "src/game/expectedPlayPointsTable.json",
         "src/game/expectedPlayPointsUncertainty.json",
       ],
