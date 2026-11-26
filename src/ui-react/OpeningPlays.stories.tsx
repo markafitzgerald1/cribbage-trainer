@@ -1,8 +1,4 @@
-import {
-  FIXTURE_KEEP,
-  FIXTURE_LINES,
-  resolvingSource,
-} from "./openingPlays.test.common";
+import { FIXTURE_KEEP, resolvingSource } from "./openingPlays.test.common";
 import { type Meta, type StoryObj } from "@storybook/react-vite";
 import {
   OPENING_PLAYS_FOOTER,
@@ -12,6 +8,7 @@ import {
 import { expect, userEvent, within } from "storybook/test";
 import { CribRole } from "../game/expectedCribPoints";
 
+const LOAD_TIMEOUT_MS = 10_000;
 const ROW_BACKGROUND = { backgroundColor: "#0f5132", padding: "8px" };
 
 const openAndExpect = async (root: HTMLElement, text: string) => {
@@ -23,11 +20,14 @@ const openAndExpect = async (root: HTMLElement, text: string) => {
   await userEvent.click(toggle);
 
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(await canvas.findByText(text)).toBeInTheDocument();
+  // The real file is parsed on first opening, which can take seconds on a cold browser.
+  await expect(
+    await canvas.findByText(text, {}, { timeout: LOAD_TIMEOUT_MS }),
+  ).toBeInTheDocument();
 };
 
 const meta = {
-  args: { keep: FIXTURE_KEEP, source: resolvingSource(FIXTURE_LINES) },
+  args: { keep: FIXTURE_KEEP },
   component: OpeningPlays,
   decorators: [
     (Story) => (
