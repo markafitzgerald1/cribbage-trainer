@@ -1,7 +1,8 @@
+import { LEGACY_HEURISTIC_FINGERPRINT, parsePegLines } from "./pegLines";
 import { describe, expect, it } from "@jest/globals";
 import { CANONICAL_PLAY_HAND_KEYS } from "./playUncertainty";
+import { createHash } from "node:crypto";
 import { expectedPlayPointsTable } from "../analysis/analysis.test.common";
-import { parsePegLines } from "./pegLines";
 import shippedLines from "./expectedPlayPointsLines.json";
 
 interface LinesDocument {
@@ -184,7 +185,24 @@ const HEADER_REJECTIONS: RejectionCase[] = [
   ),
 ];
 
+const HEURISTIC_SEATS = `${LEGACY_HEURISTIC_FINGERPRINT}:${LEGACY_HEURISTIC_FINGERPRINT}`;
+
+const measuredBy =
+  (measured: unknown, seats = "fingerprint", discards: unknown = "d"): Edit =>
+  (document) => {
+    Object.assign(document.provenance, {
+      discard_policy_fingerprint: discards,
+      measured_policy: measured,
+      policy_fingerprint: seats,
+    });
+  };
+
 const METADATA_REJECTIONS: RejectionCase[] = [
+  ["a measured policy the contract does not name", measuredBy("bogus")],
+  ["trained seats called the heuristic", measuredBy("legacy-heuristic")],
+  ["heuristic seats called trained", measuredBy("trained", HEURISTIC_SEATS)],
+  ["an empty discard fingerprint", measuredBy("trained", "fingerprint", "")],
+  ["a null discard fingerprint", measuredBy("trained", "fingerprint", null)],
   ...caseTable("provenance", [null, "frozen"], setTop("provenance")),
   ...caseTable("qualifications", [null, "quote me"], setTop("qualifications")),
   ...caseTable(
@@ -279,7 +297,6 @@ const CELL_REJECTIONS: RejectionCase[] = [
   ...caseTable("reply", [5, 13, 0.5, "A"], setCell(DEALER, 0, RESPONSE)),
   ...caseTable("reply count", [0, 4, 1.5], setCell(DEALER, 0, RESPONSE_COUNT)),
   ["a negative-zero mean", setCell(PONE, 0, MEAN)(-0)],
-  ["a negative-zero standard error", setCell(DEALER, 1, STANDARD_ERROR)(-0)],
   [
     "a modal reply rarer than one rank in hand allows",
     setDealerRows("K_K_K_K", [[0, 4, 1.0, 0.5, 12, 3]]),
@@ -353,6 +370,27 @@ describe("parsePegLines", () => {
       );
     },
   );
+
+  it.each([
+    ["trained seats", "trained", "fingerprint"],
+    ["heuristic seats", "legacy-heuristic", HEURISTIC_SEATS],
+  ])("accepts a measured policy that names %s", (_name, measured, seats) => {
+    expect(parsePegLines(mutated(measuredBy(measured, seats)))).not.toBeNull();
+  });
+
+  it("derives the heuristic fingerprint the contract publishes", () => {
+    expect(LEGACY_HEURISTIC_FINGERPRINT).toBe(
+      createHash("sha256").update("('legacy-heuristic-v1',)").digest("hex"),
+    );
+  });
+
+  it("keeps a negative-zero standard error, which the producer can emit", () => {
+    const lines = parsePegLines(
+      mutated(setCell(DEALER, 1, STANDARD_ERROR)(-0)),
+    );
+
+    expect(lines?.dealerRows("A_2_3_4")?.at(1)?.standardError).toBe(-0);
+  });
 
   it("reads Pone's leads with thin cells as null and measured zeros as zero", () => {
     const lines = parsePegLines(validDocument());

@@ -12,10 +12,11 @@ import {
   parseArtifactJson,
   stringifyArtifactJson,
 } from "./artifactJson.mjs";
-import { rename, writeFile } from "node:fs/promises";
+import { mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { runnerImport } from "vite";
+import { tmpdir } from "node:os";
 
 const SCRIPT_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const GAME_DIRECTORY = path.join(SCRIPT_DIRECTORY, "..", "src", "game");
@@ -133,15 +134,29 @@ const PLAY_LINES_INTEGER_COLUMNS = [
 ];
 
 /*
- * The browser reader itself, loaded through Vite as the app loads it, so the
- * updater cannot write a file the app would then refuse: a second copy of the
- * contract here would drift from that one.
+ * The browser reader itself on the browser's own decoding, both loaded
+ * through Vite as the app loads them, so the updater cannot write a file the
+ * app would refuse. Vite's JSON parser is not Node's: it rejects a lone
+ * surrogate escape that `JSON.parse` accepts, so the published bytes go
+ * through it rather than through the object already parsed here.
  */
-let pegLinesReader = null;
-const readPegLines = async (lines) => {
-  pegLinesReader ??= runnerImport(path.join(GAME_DIRECTORY, "pegLines.ts"));
-  const { module } = await pegLinesReader;
-  return module.parsePegLines(lines);
+const readPegLinesAsBrowser = async (raw) => {
+  const directory = await mkdtemp(path.join(tmpdir(), "peg-lines-"));
+  try {
+    const linesPath = path.join(directory, "lines.json");
+    await writeFile(linesPath, raw);
+    const decoded = await runnerImport(linesPath).catch((error) => {
+      throw new Error(
+        `Downloaded play lines file fails the browser's JSON import: ${error.message}`,
+      );
+    });
+    const { module } = await runnerImport(
+      path.join(GAME_DIRECTORY, "pegLines.ts"),
+    );
+    return module.parsePegLines(decoded.module.default);
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
 };
 
 /*
@@ -151,7 +166,6 @@ const readPegLines = async (lines) => {
  */
 const assertLinesIntegers = (lines) => {
   assertIntegerLexemes(lines.provenance, ["seed"]);
-  assertIntegerLexemes(lines.precision, Object.keys(lines.precision));
   for (const roles of lines.entries) {
     roles.forEach((rows, role) => {
       for (const row of rows) {
@@ -178,7 +192,7 @@ export const validatePlayLines = async (lines, raw) => {
     throw new Error("Downloaded play lines file is not minified onto one line");
   }
   assertExactNumbers(lines);
-  if ((await readPegLines(lines)) === null) {
+  if ((await readPegLinesAsBrowser(raw)) === null) {
     throw new Error(
       "Downloaded play lines file fails the browser reader, src/game/pegLines.ts",
     );
@@ -255,15 +269,21 @@ export const downloadTable = async (assetUrl, validate) => {
 const toMinifiedBody = (value) => `${stringifyArtifactJson(value)}\n`;
 
 /*
- * Whether lines are paired is the assets' to say, never the caller's: an
- * override replaces a URL, and a null one falls back rather than skipping.
+ * Every play refresh pairs the lines, whatever the caller passes: an
+ * override replaces a URL, a null one falls back, and a play descriptor
+ * that names no lines to pair is refused rather than written unpaired.
  */
 export const downloadMeansAndUncertainty = async (assets, urls = {}) => {
   const meansUrl = urls.meansUrl ?? assets.meansUrl;
   const uncertaintyUrl = urls.uncertaintyUrl ?? assets.uncertaintyUrl;
-  const linesUrl = Object.hasOwn(assets, "linesUrl")
-    ? (urls.linesUrl ?? assets.linesUrl)
-    : null;
+  const pairsLines = assets.contract === PLAY_UNCERTAINTY_CONTRACT;
+  const linesUrl = pairsLines ? (urls.linesUrl ?? assets.linesUrl) : null;
+  if (
+    pairsLines &&
+    (typeof linesUrl !== "string" || typeof assets.linesOutputPath !== "string")
+  ) {
+    throw new Error("A play refresh must pair the lines file with the means");
+  }
   const [means, uncertainty, lines] = await Promise.all([
     downloadTable(meansUrl, assets.validateMeans),
     downloadTable(uncertaintyUrl, (sidecar) =>

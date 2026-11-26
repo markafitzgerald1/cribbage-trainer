@@ -84,6 +84,13 @@ const canonicalDecimal = (text) => {
 
 const numberText = (value) => (Object.is(value, -0) ? "-0" : String(value));
 
+// An integer token is exact only as the integer itself, since Python keeps
+// `1000000000000000100` exact where a double holds 1000000000000000128.
+const isExactToken = (source, value) =>
+  integerToken.test(source)
+    ? Number.isFinite(value) && BigInt(source) === BigInt(value)
+    : canonicalDecimal(source) === canonicalDecimal(numberText(value));
+
 /*
  * JSON parsing rounds a token to the nearest double, so `-1e-400` reads as
  * `-0` and `13000.0000000000001` as `13000` with nothing left to show it.
@@ -96,10 +103,7 @@ export const assertExactNumbers = (value) => {
     const source = numericTokens.get(value)?.get(key);
     if (typeof item === "object" && item !== null) {
       assertExactNumbers(item);
-    } else if (
-      typeof item === "number" &&
-      canonicalDecimal(source) !== canonicalDecimal(numberText(item))
-    ) {
+    } else if (typeof item === "number" && !isExactToken(source, item)) {
       throw new Error(
         `JSON number ${source} does not survive JSON parsing exactly`,
       );

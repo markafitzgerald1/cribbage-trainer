@@ -4,14 +4,20 @@ import {
   downloadMeansAndUncertainty,
   validatePlayLines,
 } from "./expectedPointsTableUpdate.mjs";
-import { artifactText, parseArtifactJson } from "./artifactJson.mjs";
+import {
+  artifactText,
+  assertExactNumbers,
+  parseArtifactJson,
+} from "./artifactJson.mjs";
 import {
   deepStrictEqual,
+  doesNotThrow,
   rejects,
   strictEqual,
   throws,
 } from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { sha256 } from "./uncertaintySidecar.mjs";
 import { test } from "node:test";
 
 const readVendored = (outputPath) => readFileSync(outputPath);
@@ -199,6 +205,18 @@ for (const [name, original, replacement, message] of [
     INEXACT,
   ],
   [
+    "an integer standard error a double cannot hold",
+    FIRST_PONE_ROW,
+    "[[[[0,13000,-1.491,1000000000000000100]]",
+    INEXACT,
+  ],
+  [
+    "a lone surrogate escape, which Vite's JSON import refuses",
+    '"missing":"',
+    '"missing":"\\ud800',
+    /fails the browser's JSON import/u,
+  ],
+  [
     "a whole count written as a fraction",
     FIRST_PONE_ROW,
     "[[[[0,13000.0,-1.491,0.018]]",
@@ -258,4 +276,53 @@ test("the updater hashes the means exactly as published, final newline included"
     downloadMeansAndUncertainty(PLAY_ASSETS),
     /sidecar was exported against means/u,
   );
+});
+
+test("an integer token is exact only when the double holds that integer", () => {
+  doesNotThrow(() =>
+    assertExactNumbers(parseArtifactJson('{"x":1000000000000000128}')),
+  );
+  throws(
+    () => assertExactNumbers(parseArtifactJson('{"x":1000000000000000100}')),
+    INEXACT,
+  );
+});
+
+test("a descriptor inheriting the play assets still pairs the lines", (context) => {
+  const otherMeans = { ...linesOf(), means_sha256: "0".repeat(64) };
+
+  stubRelease(context, [
+    [PLAY_ASSETS.linesUrl, `${JSON.stringify(otherMeans)}\n`],
+  ]);
+  return rejects(
+    downloadMeansAndUncertainty(Object.create(PLAY_ASSETS)),
+    /play lines file was exported against means/u,
+  );
+});
+
+test("a play descriptor naming no lines is refused rather than written unpaired", () =>
+  rejects(
+    downloadMeansAndUncertainty({ ...PLAY_ASSETS, linesUrl: null }),
+    /must pair the lines file/u,
+  ));
+
+test("means without a final newline pair when both companions name those bytes", async (context) => {
+  const published = readVendoredText(PLAY_ASSETS.meansOutputPath).trimEnd();
+  const pairedWith = (outputPath) =>
+    readVendoredText(outputPath).replaceAll(
+      linesOf().means_sha256,
+      sha256(published),
+    );
+  const lines = pairedWith(PLAY_ASSETS.linesOutputPath);
+
+  stubRelease(context, [
+    [PLAY_ASSETS.meansUrl, published],
+    [PLAY_ASSETS.uncertaintyUrl, pairedWith(PLAY_ASSETS.uncertaintyOutputPath)],
+    [PLAY_ASSETS.linesUrl, lines],
+  ]);
+  const bodies = (await downloadMeansAndUncertainty(PLAY_ASSETS)).map(
+    ({ body }) => body,
+  );
+
+  deepStrictEqual([bodies.at(0), bodies.at(-1)], [published, lines]);
 });

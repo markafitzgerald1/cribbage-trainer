@@ -524,18 +524,23 @@
   with `!== null`. Its canonical key order is derived from the contract
   (`CANONICAL_PLAY_HAND_KEYS`), never from the means table, for the reason the
   sidecar section gives. `joint_policy_converged` is checked for type only.
-- **The updater runs this reader, and checks the tokens the reader cannot
-  see.** Vite hands the reader a parsed object, and parsing rounds: `-1e-400`
-  reads as `-0` and `13000.0000000000001` as `13000`. So the updater refuses
-  any token parsing rounded (`assertExactNumbers` in
-  `scripts/artifactJson.mjs`), then loads `pegLines.ts` itself through Vite's
-  `runnerImport`, so it cannot write a file the app would refuse and there is
-  no second copy of the contract to drift, then requires JSON integer lexemes
-  for counts, ranks, seed and precision, as `decode_lines` does. Negative zero
-  is the one rounding the reader can see, and it rejects it for both moments
-  because the contract publishes rounded zeros positive. `runnerImport` loads
-  the module in about 60 ms with no build step, an alternative to the `.mjs`
-  plus `.d.mts` pair `cribUncertaintyV2.mjs` uses.
+- **The updater runs this reader on Vite's own decoding, and checks the
+  tokens neither can see.** Vite hands the reader a parsed object, and
+  parsing rounds: `-1e-400` reads as `-0` and `13000.0000000000001` as
+  `13000`. So the updater first refuses a token whose decimal is not the
+  shortest spelling of its parsed double, or, for an integer token, not
+  that double's exact integer (`assertExactNumbers` in
+  `scripts/artifactJson.mjs`). It then imports the published bytes as JSON
+  and `pegLines.ts` itself, both through Vite's `runnerImport`, so it cannot
+  write a file the app would refuse and there is no second copy of the
+  contract to drift. Vite's JSON parser is not Node's: it refuses a lone
+  surrogate escape that `JSON.parse` accepts. Last, counts, ranks and the
+  seed must be JSON integer lexemes, as `decode_lines` requires (it accepts
+  `3.0` for precision, so the updater does too). Negative zero is the one
+  rounding the reader can see; the contract publishes rounded mean zeros
+  positive, so it rejects a `-0` mean but keeps a `-0` standard error, which
+  the producer can emit. Because of `runnerImport`, the table tests need
+  `npm clean-install`, so CI runs them in their own `vendored-tables` job.
 - **A validator must not coerce or normalize what it validates.** Review
   found `String(value)` before a digest regex (a one-element array holding a
   digest passes) and `trimEnd()` before a one-line check (blank trailing lines

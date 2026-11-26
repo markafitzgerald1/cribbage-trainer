@@ -14,10 +14,11 @@ import { isObject } from "../ui/isObject";
  *
  * The means digest is checked for shape only. Vite hands this module a parsed
  * document, so there are no published bytes to hash and no numeric tokens:
- * a negative zero survives parsing and is rejected here, but a token parsing
- * rounded (`13000.0000000000001` read as `13000`) cannot be seen. The updater
- * checks both the pairing and the tokens before writing, and runs this reader
- * too, and `npm run test:vendored-tables` re-checks the vendored files.
+ * a negative-zero mean survives parsing and is rejected here, but a token
+ * that parsing rounded (`13000.0000000000001` read as `13000`) cannot be
+ * seen. The updater checks the pairing and the tokens before writing, runs
+ * this reader on Vite's own decoding of the bytes, and
+ * `npm run test:vendored-tables` re-checks the vendored files.
  */
 
 const SCHEMA = "expected-play-lines.v1";
@@ -25,6 +26,9 @@ const RANKS = "A23456789TJQK";
 const SHA256_DIGEST = /^[0-9a-f]{64}$/u;
 const QUALIFICATION_KEYS = ["policy", "statistics", "missing"] as const;
 const PROVENANCE_STRING_KEYS = ["generation_method", "policy_fingerprint"];
+// SHA-256 of `('legacy-heuristic-v1',)`, the contract's heuristic payload.
+export const LEGACY_HEURISTIC_FINGERPRINT =
+  "0990840fad19dc81a53cdeb45cb02ecb257934309ab81457a5191ab9a2411bb5";
 const HEADER_ROLES = ["Pone", "Dealer"];
 const PONE_COLUMNS = ["lead", "n", "mu", "se"];
 const DEALER_COLUMNS = [...PONE_COLUMNS, "response", "response_n"];
@@ -136,6 +140,25 @@ const readQualifications = (document: object): PegQualifications | null => {
  * reader exists to read, and a converged policy would legitimately publish
  * `true` inside version 1 - an upstream improvement, not a malformation.
  */
+/*
+ * Optional, but a present `measured_policy` must name the policy whose
+ * fingerprint the document carries and identify the measured discards.
+ */
+const hasConsistentMeasuredPolicy = (provenance: object): boolean => {
+  if (!Object.hasOwn(provenance, "measured_policy")) {
+    return true;
+  }
+  const heuristic = `${LEGACY_HEURISTIC_FINGERPRINT}:${LEGACY_HEURISTIC_FINGERPRINT}`;
+  const expected =
+    readField(provenance, "policy_fingerprint") === heuristic
+      ? "legacy-heuristic"
+      : "trained";
+  return (
+    readField(provenance, "measured_policy") === expected &&
+    isNonEmptyString(readField(provenance, "discard_policy_fingerprint"))
+  );
+};
+
 const readPolicyConverged = (document: object): boolean | null => {
   const provenance = readField(document, "provenance");
   if (!isObject(provenance)) {
@@ -143,6 +166,7 @@ const readPolicyConverged = (document: object): boolean | null => {
   }
   const converged = readField(provenance, "joint_policy_converged");
   return typeof converged === "boolean" &&
+    hasConsistentMeasuredPolicy(provenance) &&
     isIntegerBetween(
       readField(provenance, "seed"),
       Number.MIN_SAFE_INTEGER,
@@ -155,8 +179,8 @@ const readPolicyConverged = (document: object): boolean | null => {
     : null;
 };
 
-// The contract publishes rounded zeros with a positive sign.
-const isSignedMoment = (value: unknown): boolean =>
+// The contract publishes rounded mean zeros with a positive sign.
+const isPublishedMean = (value: unknown): boolean =>
   Number.isFinite(value) && !Object.is(value, -0);
 
 const hasSupportedMoments = (
@@ -166,9 +190,7 @@ const hasSupportedMoments = (
 ): boolean =>
   count < MINIMUM_OBSERVATIONS
     ? mean === null && standardError === null
-    : isSignedMoment(mean) &&
-      isSignedMoment(standardError) &&
-      isFiniteNonNegative(standardError);
+    : isPublishedMean(mean) && isFiniteNonNegative(standardError);
 
 const isRankInHand = (rank: number, handRanks: readonly string[]): boolean =>
   handRanks.includes(RANKS.charAt(rank));
