@@ -276,7 +276,7 @@ const toMinifiedBody = (value) => `${stringifyArtifactJson(value)}\n`;
 export const downloadMeansAndUncertainty = async (assets, urls = {}) => {
   const meansUrl = urls.meansUrl ?? assets.meansUrl;
   const uncertaintyUrl = urls.uncertaintyUrl ?? assets.uncertaintyUrl;
-  const pairsLines = assets.contract === PLAY_UNCERTAINTY_CONTRACT;
+  const pairsLines = assets.contract?.table === PLAY_UNCERTAINTY_CONTRACT.table;
   const linesUrl = pairsLines ? (urls.linesUrl ?? assets.linesUrl) : null;
   if (
     pairsLines &&

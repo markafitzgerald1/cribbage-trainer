@@ -326,3 +326,18 @@ test("means without a final newline pair when both companions name those bytes",
 
   deepStrictEqual([bodies.at(0), bodies.at(-1)], [published, lines]);
 });
+
+test("a descriptor with a cloned play contract still pairs the lines", (context) => {
+  const otherMeans = { ...linesOf(), means_sha256: "0".repeat(64) };
+
+  stubRelease(context, [
+    [PLAY_ASSETS.linesUrl, `${JSON.stringify(otherMeans)}\n`],
+  ]);
+  return rejects(
+    downloadMeansAndUncertainty({
+      ...PLAY_ASSETS,
+      contract: { ...PLAY_ASSETS.contract },
+    }),
+    /play lines file was exported against means/u,
+  );
+});
