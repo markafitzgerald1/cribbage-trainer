@@ -43,11 +43,14 @@ multiple comparisons.
   by card rank: half from uniform random four-card hands, half from six-card
   deals kept by the simulator's earlier discard rule. It does not bound a single
   hand, or another mix of hands.
-- **Is this table better than the app's previous one?** 50.287 ± 0.027 when both
-  bots peg with the solved policy; 49.724 ± 0.023 when both peg with the
-  simulator's older heuristic.
-- **What is pegging itself worth?** The solved policy beats that heuristic
-  55.638 ± 0.029, with both bots discarding by the app's previous table.
+- **Is this table better than the app's previous one?** A bot that discards by
+  this table plays a bot that discards by the previous one. When both peg with
+  the solved policy, the new table's bot wins 50.287% ± 0.027 of games, 0.287
+  percentage points above an even split. When both peg with the simulator's
+  older heuristic, it wins 49.724% ± 0.023, 0.276 points below even.
+- **What is pegging itself worth?** With both bots discarding by the app's
+  previous table, the bot that pegs with the solved policy wins 55.638% ± 0.029
+  of games against the bot that pegs with that heuristic.
 
 A table does better in the pegging style it was measured in. This one's
 advantage is established for players who peg like the solved policy, not for
