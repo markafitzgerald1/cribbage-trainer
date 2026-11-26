@@ -37,6 +37,12 @@ parity, plus or minus one standard error in percentage points, from 500,000
 pairs of duplicate games with the seats swapped. They are not adjusted for
 multiple comparisons.
 
+In short: how well a player pegs matters far more than whether they follow this
+table or the app's previous one. This table's advice is a small gain for players who peg
+near-optimally and a small loss for players who peg like the simulator's older
+heuristic, because advice built from pegging values fits the pegging it
+assumes.
+
 - **How close to optimal is the pegging?** An opponent who knew the policy
   exactly could gain at most 0.00047 points a hand against it. That is an exact
   average over the two seats and over the pairs of kept hands it was solved on,
