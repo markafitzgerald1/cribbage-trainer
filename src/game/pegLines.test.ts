@@ -195,9 +195,10 @@ const measuredBy =
       measured_policy: measured,
       policy_fingerprint: seats,
     });
-    // The heuristic picks a lead from Pone's cards alone, so one per hand.
+    // The heuristic leads one fixed card per hand: the 4 here, and the jack.
     if (seats === HEURISTIC_SEATS) {
-      document.entries.forEach((entry) => entry.at(PONE)?.splice(1));
+      document.entries.at(FIRST_HAND)?.splice(PONE, 1, [[3, 3, 2.0, 2.3]]);
+      document.entries.at(SECOND_HAND)?.splice(PONE, 1, [[10, 5, 1.5, 0.1]]);
     }
   };
 
