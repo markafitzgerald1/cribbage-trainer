@@ -1,7 +1,8 @@
+import { LEGACY_HEURISTIC_FINGERPRINT, parsePegLines } from "./pegLines";
 import { describe, expect, it } from "@jest/globals";
 import { CANONICAL_PLAY_HAND_KEYS } from "./playUncertainty";
+import { createHash } from "node:crypto";
 import { expectedPlayPointsTable } from "../analysis/analysis.test.common";
-import { parsePegLines } from "./pegLines";
 import shippedLines from "./expectedPlayPointsLines.json";
 
 interface LinesDocument {
@@ -32,6 +33,8 @@ const RESPONSE = 4;
 const RESPONSE_COUNT = 5;
 const SHIPPED_HAND_COUNT = 1820;
 const UNSAFE_COUNT = Number.MAX_SAFE_INTEGER + 1;
+const PONE_HEADER = ["lead", "n", "mu", "se"];
+const DEALER_HEADER = [...PONE_HEADER, "response", "response_n"];
 
 /*
  * Three kept hands: two with rows (a thin Pone cell, a measured zero, and
@@ -39,10 +42,7 @@ const UNSAFE_COUNT = Number.MAX_SAFE_INTEGER + 1;
  * arrays are empty, which the contract calls unavailable.
  */
 const validDocument = (): LinesDocument => ({
-  columns: [
-    ["lead", "n", "mu", "se"],
-    ["lead", "n", "mu", "se", "response", "response_n"],
-  ],
+  columns: [PONE_HEADER, DEALER_HEADER],
   entries: [
     [
       [
@@ -109,6 +109,26 @@ const setKeyAt = (index: number) => assign((document) => document.keys, index);
 const setEntryAt = (index: number) =>
   assign((document) => document.entries, index);
 
+const setDealerRows =
+  (handKey: string, rows: unknown[][]): Edit =>
+  (document) => {
+    const entry = document.entries.at(document.keys.indexOf(handKey));
+    entry?.splice(DEALER, 1, rows);
+  };
+
+const withThrowing = (
+  locate: (document: LinesDocument) => unknown,
+  field: string,
+): unknown => {
+  const document = validDocument();
+  Object.defineProperty(locate(document), field, {
+    get: () => {
+      throw new TypeError(field);
+    },
+  });
+  return document;
+};
+
 const keepHands =
   (count: number): Edit =>
   (document) => {
@@ -152,9 +172,9 @@ const HEADER_REJECTIONS: RejectionCase[] = [
     "columns",
     [
       null,
-      [["lead", "n", "mu", "se"]],
-      [SWAPPED_STATISTICS, ["lead"]],
-      [["lead", "n", "mu", "se"], RENAMED_REPLY],
+      [PONE_HEADER],
+      [SWAPPED_STATISTICS, DEALER_HEADER],
+      [PONE_HEADER, RENAMED_REPLY],
     ],
     setTop("columns"),
   ),
@@ -165,7 +185,29 @@ const HEADER_REJECTIONS: RejectionCase[] = [
   ),
 ];
 
+const HEURISTIC_SEATS = `${LEGACY_HEURISTIC_FINGERPRINT}:${LEGACY_HEURISTIC_FINGERPRINT}`;
+
+const measuredBy =
+  (measured: unknown, seats = "fingerprint", discards: unknown = "d"): Edit =>
+  (document) => {
+    Object.assign(document.provenance, {
+      discard_policy_fingerprint: discards,
+      measured_policy: measured,
+      policy_fingerprint: seats,
+    });
+    // The heuristic leads one fixed card per hand: the 4 here, and the jack.
+    if (seats === HEURISTIC_SEATS) {
+      document.entries.at(FIRST_HAND)?.splice(PONE, 1, [[3, 3, 2.0, 2.3]]);
+      document.entries.at(SECOND_HAND)?.splice(PONE, 1, [[10, 5, 1.5, 0.1]]);
+    }
+  };
+
 const METADATA_REJECTIONS: RejectionCase[] = [
+  ["a measured policy the contract does not name", measuredBy("bogus")],
+  ["trained seats called the heuristic", measuredBy("legacy-heuristic")],
+  ["heuristic seats called trained", measuredBy("trained", HEURISTIC_SEATS)],
+  ["an empty discard fingerprint", measuredBy("trained", "fingerprint", "")],
+  ["a null discard fingerprint", measuredBy("trained", "fingerprint", null)],
   ...caseTable("provenance", [null, "frozen"], setTop("provenance")),
   ...caseTable("qualifications", [null, "quote me"], setTop("qualifications")),
   ...caseTable(
@@ -205,7 +247,17 @@ const KEY_REJECTIONS: RejectionCase[] = [
     [7, "2_A_3_4", "A_2_3", "A_2_3_4_5", "A_2_3_Z"],
     setKeyAt(FIRST_HAND),
   ),
-  ...caseTable("second key", ["A_2_3_4"], setKeyAt(SECOND_HAND)),
+  [
+    "a repeated key whose rows are valid for it",
+    (document) => {
+      document.keys.splice(SECOND_HAND, 1, "A_2_3_4");
+      document.entries.splice(
+        SECOND_HAND,
+        1,
+        ...validDocument().entries.slice(FIRST_HAND, SECOND_HAND),
+      );
+    },
+  ],
   ...caseTable(
     "first entry",
     [null, [[], [], []], [null, []], [[], null]],
@@ -249,6 +301,15 @@ const CELL_REJECTIONS: RejectionCase[] = [
   ...caseTable("error at n of one", [0.5], setCell(PONE, 1, STANDARD_ERROR)),
   ...caseTable("reply", [5, 13, 0.5, "A"], setCell(DEALER, 0, RESPONSE)),
   ...caseTable("reply count", [0, 4, 1.5], setCell(DEALER, 0, RESPONSE_COUNT)),
+  ["a negative-zero mean", setCell(PONE, 0, MEAN)(-0)],
+  [
+    "a modal reply rarer than one rank in hand allows",
+    setDealerRows("K_K_K_K", [[0, 4, 1.0, 0.5, 12, 3]]),
+  ],
+  [
+    "a modal reply rarer than two ranks in hand allow",
+    setDealerRows("5_5_5_J", [[12, 5, 0.25, 0.5, 10, 2]]),
+  ],
   [
     "a Pone row that is not a list",
     (document) => {
@@ -288,12 +349,53 @@ describe("parsePegLines", () => {
     expect(parsePegLines(mutated(edit))).toBeNull();
   });
 
-  it.each([null, "lines", 7])(
-    "treats %p as unavailable rather than throwing",
-    (document) => {
-      expect(parsePegLines(document)).toBeNull();
+  it.each([
+    ["null", null],
+    ["a string", "lines"],
+    ["a number", 7],
+    [
+      "a replaced array method",
+      withThrowing((document) => document.roles, "at"),
+    ],
+    ["a getter that throws", withThrowing((document) => document, "keys")],
+  ])("treats %s as unavailable rather than throwing", (_name, document) => {
+    expect(parsePegLines(document)).toBeNull();
+  });
+
+  it.each([
+    ["one rank in hand", "K_K_K_K", [[0, 4, 1.0, 0.5, 12, 4]]],
+    ["two ranks in hand", "5_5_5_J", [[12, 5, 0.25, 0.5, 10, 3]]],
+  ])(
+    "accepts the rarest modal reply that %s allows",
+    (_name, handKey, rows) => {
+      const lines = parsePegLines(mutated(setDealerRows(handKey, rows)));
+
+      expect(lines?.dealerRows(handKey)?.at(0)?.responseCount).toBe(
+        rows.at(0)?.at(RESPONSE_COUNT),
+      );
     },
   );
+
+  it.each([
+    ["trained seats", "trained", "fingerprint"],
+    ["heuristic seats", "legacy-heuristic", HEURISTIC_SEATS],
+  ])("accepts a measured policy that names %s", (_name, measured, seats) => {
+    expect(parsePegLines(mutated(measuredBy(measured, seats)))).not.toBeNull();
+  });
+
+  it("derives the heuristic fingerprint the contract publishes", () => {
+    expect(LEGACY_HEURISTIC_FINGERPRINT).toBe(
+      createHash("sha256").update("('legacy-heuristic-v1',)").digest("hex"),
+    );
+  });
+
+  it("keeps a negative-zero standard error, which the producer can emit", () => {
+    const lines = parsePegLines(
+      mutated(setCell(DEALER, 1, STANDARD_ERROR)(-0)),
+    );
+
+    expect(lines?.dealerRows("A_2_3_4")?.at(1)?.standardError).toBe(-0);
+  });
 
   it("reads Pone's leads with thin cells as null and measured zeros as zero", () => {
     const lines = parsePegLines(validDocument());
@@ -364,7 +466,10 @@ describe("parsePegLines", () => {
   it("accepts a bounded run that covers only some hands", () => {
     const lines = parsePegLines(mutated(keepHands(SECOND_HAND)));
 
-    expect(lines?.poneRows("A_2_3_4")).not.toBeNull();
+    expect([
+      lines?.poneRows("A_2_3_4")?.length,
+      lines?.poneRows("5_5_5_J"),
+    ]).toStrictEqual([3, null]);
   });
 
   it("accepts no hands at all, with every lookup unavailable", () => {
