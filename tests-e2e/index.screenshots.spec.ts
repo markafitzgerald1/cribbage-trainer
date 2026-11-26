@@ -176,6 +176,7 @@ const testOpeningPlaysScreenshot = (role: "dealer" | "pone") =>
     await expect(
       page.getByText("Mixing leads is deliberate.", { exact: false }),
     ).toBeVisible();
+    await page.mouse.move(0, 0);
 
     await expect(page.locator("tbody tr").nth(1)).toHaveScreenshot();
   });
@@ -300,6 +301,12 @@ test.describe("portrait", () => {
   });
 
   testScreenshots();
+});
+
+// Taller than a phone so the dealer's ten rows and the footer fit inside the clipped analysis table.
+test.describe("opening plays", () => {
+  test.use({ viewport: { height: 1100, width: 390 } });
+
   testOpeningPlaysScreenshot("pone");
   testOpeningPlaysScreenshot("dealer");
 });
