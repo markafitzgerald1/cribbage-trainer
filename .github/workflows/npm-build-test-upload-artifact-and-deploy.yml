@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  docker-gate:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -75,35 +75,229 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
+      # No load: e2e runs in the shard jobs below, so nothing here needs the
+      # image in the daemon, and exporting it cost ~95 s per run. No cache-to
+      # either: on #954 a pull request's import hit only layers main also
+      # had, never its own earlier export, even on a rerun of the same head.
+      # Exporting cost 14-18 s per run and filled the repository's
+      # 10 GB cache, which evicts the main layers warm-docker-cache writes.
       - name: Build Docker Test Image (unit tests, lint, Storybook tests)
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
           push: false
-          load: true
           tags: cribbage-trainer-integration-tests:latest
           cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-      - name: Run E2E Tests in Docker
-        run: npm run docker:run-e2e-only
+  e2e-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Main needs it too, for warm-e2e-npm-cache.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    outputs:
+      image: ${{ steps.from.outputs.image }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      # Screenshot baselines are rendered in the Dockerfile's base image, so
+      # the shards must run in exactly that image. Dependabot's
+      # playwright-sync group bumps the Dockerfile but not this workflow, so
+      # the tag is read from the Dockerfile rather than repeated here.
+      - id: from
+        name: Read the Playwright base image from the Dockerfile
+        run: |
+          IMAGE=$(awk '$1 == "FROM" { print $2; exit }' Dockerfile)
+          case "$IMAGE" in
+            mcr.microsoft.com/playwright:*) ;;
+            *)
+              echo "Unexpected base image: '$IMAGE'" >&2
+              exit 1
+              ;;
+          esac
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: e2e-image
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    container:
+      image: ${{ needs.e2e-image.outputs.image }}
+      # Playwright's CI guidance: Firefox refuses to run as root under a HOME
+      # owned by another user, and the runner mounts HOME as uid 1001.
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Report runner CPU count
+        run: nproc
+
+      - name: Cache npm downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-e2e-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-npm-
+
+      - name: Install dependencies
+        run: npm clean-install
+
+      # Shards are contiguous blocks of a list ordered by project, and a
+      # WebKit test costs about 2.7x a Chromium one, so equal counts left the
+      # WebKit and Mobile Safari shards up to twice as slow as the average.
+      # These relative weights were fitted to measured durations (#949); they
+      # sum to the 667 tests of the time, so each is that shard's count. They
+      # only move block boundaries, so every test, new ones included, falls in
+      # exactly one shard; an unset variable falls back to equal blocks.
+      # There must be one weight per shard: changing the matrix without
+      # changing this list fails every shard.
+      - name: Run E2E shard ${{ matrix.shard }} of 8
+        env:
+          PWTEST_SHARD_WEIGHTS: "146:99:57:64:108:95:58:40"
+        run: npx playwright test --shard=${{ matrix.shard }}/8 --reporter=blob
+
+      - name: Upload blob report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: blob-report
+          retention-days: 1
+          if-no-files-found: ignore
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-results-${{ matrix.shard }}
+          path: test-results
+          if-no-files-found: ignore
+
+  merge-e2e-reports:
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js and cache npm dependencies
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm clean-install
+
+      - name: Download shard blob reports
+        uses: actions/download-artifact@v8
+        with:
+          pattern: blob-report-*
+          path: all-blob-reports
+          merge-multiple: true
+
+      - name: Merge into one HTML report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
 
       - name: Upload Playwright report
-        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: playwright-report
           if-no-files-found: ignore
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v6
+  # The required check. It only aggregates, so the context branch protection
+  # keys on keeps its name. A required check that is skipped counts as
+  # passing, so this job must never be skipped on a pull request: always(),
+  # not !cancelled(), or cancelling a head's run would leave it green. Every
+  # result is then checked explicitly, so a cancelled or skipped gate job
+  # fails it. A run cancelled by a newer push fails only on the superseded
+  # SHA, which nothing merges. The report merge is left out on purpose:
+  # reporting must not decide the gate.
+  build-and-test:
+    runs-on: ubuntu-latest
+    needs: [docker-gate, e2e-image, e2e]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    permissions: {}
+    steps:
+      - name: Require every gate job to have succeeded
+        env:
+          DOCKER_GATE: ${{ needs.docker-gate.result }}
+          E2E_IMAGE: ${{ needs.e2e-image.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: |
+          echo "docker-gate=$DOCKER_GATE e2e-image=$E2E_IMAGE e2e=$E2E"
+          [ "$DOCKER_GATE" = success ] && [ "$E2E_IMAGE" = success ] && [ "$E2E" = success ]
+
+  # A pull request can read only its own cache and its base branch's (main
+  # for every pull request here). Without this job main never writes the
+  # Docker layers, so every pull request's first run built from nothing and
+  # spent ~166 s exporting them. Its result decides nothing; deploy does not
+  # wait on it.
+  warm-docker-cache:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build Docker Test Image into the cache
+        uses: docker/build-push-action@v7
         with:
-          name: test-results
-          path: test-results
-          if-no-files-found: ignore
+          context: .
+          file: ./Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # The npm cache counterpart of warm-docker-cache: the e2e shards run only
+  # on pull requests, so without this main never writes their ~/.npm entry
+  # and every pull request's first run installs cold. The container, user,
+  # path and key must match the e2e job exactly, or the entry it saves is
+  # one the shards cannot restore. Its result decides nothing.
+  warm-e2e-npm-cache:
+    runs-on: ubuntu-latest
+    needs: e2e-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    container:
+      image: ${{ needs.e2e-image.outputs.image }}
+      options: --user 1001
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - id: cache
+        name: Cache npm downloads
+        uses: actions/cache@v5
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-e2e-npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-npm-
+
+      - name: Install dependencies into the cache
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm clean-install
 
   build-upload-and-deploy:
     runs-on: ubuntu-latest
@@ -123,6 +317,7 @@ jobs:
     permissions:
       contents: write # to push the pages-content state branch
       pages: write # to deploy to Pages
+      actions: read # to confirm the Pages artifact is listed before deploying
       id-token: write # to verify the deployment originates from an appropriate source
       pull-requests: read # to list open PRs when pruning stale previews
 
@@ -258,6 +453,7 @@ jobs:
     permissions:
       contents: write # to push the pages-content state branch
       pages: write # to deploy to Pages
+      actions: read # to confirm the Pages artifact is listed before deploying
       id-token: write # to verify the deployment originates from an appropriate source
       pull-requests: read # to recheck the PR is still open before publishing
 
@@ -286,7 +482,7 @@ jobs:
           PAGES_BASE_PATH: /cribbage-trainer/pr/${{ needs.resolve-preview-pr.outputs.number }}
           VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID: ${{ vars.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID }}
 
-      # The eligibility check ran before the ~6-minute build-and-test gate;
+      # The eligibility check ran before the several-minute build-and-test gate;
       # if the PR closed in that window, publishing would recreate a preview
       # that the cleanup workflow already removed (or is about to remove).
       - id: recheck

@@ -6,6 +6,7 @@ import {
 } from "./playUncertainty";
 import {
   PLAY_IDENTITY,
+  POLICY_UNCERTAINTY_REJECTIONS,
   type RejectionCase,
   mutatedDocument,
   parsedOrThrow,
@@ -73,16 +74,7 @@ const PLAY_REJECTIONS: readonly RejectionCase[] = [
     }),
     name: "a convergence flag that is not a boolean",
   },
-  {
-    mutate: setHeader("policy_uncertainty", 0.01),
-    name: "a measured policy uncertainty where the contract publishes none",
-  },
-  {
-    mutate: (document) => {
-      Reflect.deleteProperty(document, "policy_uncertainty");
-    },
-    name: "no policy uncertainty field at all",
-  },
+  ...POLICY_UNCERTAINTY_REJECTIONS,
 ];
 
 const shippedPlayUncertainty = () =>

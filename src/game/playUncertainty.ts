@@ -70,8 +70,8 @@ export const PLAY_UNCERTAINTY_CONTRACT: UncertaintyContract = {
   /*
    * The contract states that play provenance retains its policy fingerprint
    * and `joint_policy_converged`, and the pegging figure's copy rests on the
-   * second of them. Crib requires neither; its own published provenance
-   * carries neither, and its qualification is about the weighted estimator.
+   * second of them. Crib requires neither: its copy's policy caveat rests on
+   * the `policy_uncertainty` null alone, which every crib reader requires.
    *
    * The type is checked and the value deliberately is not. A converged joint
    * policy would publish `true` here inside version 1, which is an upstream

@@ -12,6 +12,7 @@ import { PossibleHand } from "./PossibleHand";
 import type { ScoredKeepDiscard } from "../analysis/analysis";
 import { ScoredPossibleKeepDiscardExpandedRow } from "./ScoredPossibleKeepDiscardExpandedRow";
 import { SortOrder } from "../ui/SortOrder";
+import { expectedHandAndCribPoints } from "../analysis/compareByExpectedScoreDescending";
 
 export type DiscardHighlightTier = "chosen" | "equal-best" | "none";
 
@@ -176,6 +177,9 @@ export function ScoredPossibleKeepDiscard({
   const cribExpectedTotal = formatSignedExpectedPoints(
     signedExpectedCribPoints,
   );
+  const handAndCribExpectedTotal = toAlignedFixed(
+    expectedHandAndCribPoints(scoredKeepDiscard),
+  );
   const playExpectedTotal = formatSignedExpectedPoints(
     expectedPlayPoints.delta,
   );
@@ -239,6 +243,7 @@ export function ScoredPossibleKeepDiscard({
       <td>{renderHandDiscardCell()}</td>
       <td className={classes.scoreCell}>{handExpectedTotal}</td>
       <td className={classes.scoreCell}>{cribExpectedTotal}</td>
+      <td className={classes.scoreCell}>{handAndCribExpectedTotal}</td>
       <td className={classes.scoreCell}>{playExpectedTotal}</td>
       <td className={classes.netScoreCell}>{netExpectedTotal}</td>
     </>

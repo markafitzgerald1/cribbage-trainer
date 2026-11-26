@@ -2,5 +2,6 @@
 /coverage/
 /storybook-static/
 /playwright-report/
+/blob-report/
 /test-results/
 .claude/

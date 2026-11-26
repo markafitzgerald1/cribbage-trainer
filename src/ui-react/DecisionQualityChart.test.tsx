@@ -231,7 +231,7 @@ describe("decision quality chart", () => {
   });
 
   it("handles empty points array in getLatestLoss", () => {
-    expect(getLatestLoss([])).toBe("0.00");
+    expect(getLatestLoss([])).toBe(0);
   });
 
   it("describes the latest scored period when the most recent period is skip-only", () => {
@@ -240,7 +240,7 @@ describe("decision quality chart", () => {
     const desc = container.querySelector("desc");
 
     expect(desc).toHaveTextContent(
-      "Trend chart with 2 periods. Latest scored period (Period b1) average expected loss is 0.40 points.",
+      "Trend chart with 2 periods. Latest scored period (Period b1) recorded loss is 0.40 points per discard.",
     );
   });
 });
@@ -295,7 +295,7 @@ describe("decision quality chart rolling mode and points", () => {
       expectChartRendered(getByRole);
 
       expect(container.querySelector("desc")).toHaveTextContent(
-        `Trend chart with 1 decisions (${windowSize}-decision rolling average). Latest average expected loss is ${expectedLoss} points.`,
+        `Trend chart with 1 decisions (${windowSize}-decision rolling average). Latest recorded loss is ${expectedLoss} points per discard.`,
       );
     },
   );
@@ -311,11 +311,13 @@ describe("decision quality chart rolling mode and points", () => {
     );
 
     expect(
-      getByText("Latest 20-decision rolling average: 0.20 points loss"),
+      getByText(
+        "Latest 20-decision rolling average: 0.20 points recorded loss per discard",
+      ),
     ).toBeInTheDocument();
 
     expect(container.querySelector("desc")).toHaveTextContent(
-      "Trend chart with 25 decisions (20-decision rolling average). Latest average expected loss is 0.20 points.",
+      "Trend chart with 25 decisions (20-decision rolling average). Latest recorded loss is 0.20 points per discard.",
     );
   });
 
@@ -331,11 +333,13 @@ describe("decision quality chart rolling mode and points", () => {
     );
 
     expect(
-      getByText("Retained decision #1: 0.00 points loss (optimal)"),
+      getByText(
+        "Retained decision #1, recorded cost 0.00 points (best choice then)",
+      ),
     ).toBeInTheDocument();
 
     expect(
-      getByText("Retained decision #2: 0.45 points loss"),
+      getByText("Retained decision #2, recorded cost 0.45 points"),
     ).toBeInTheDocument();
 
     const xLabels = container.querySelectorAll(`.${classes.xLabel}`);
@@ -358,7 +362,7 @@ describe("decision quality chart rolling mode and points", () => {
     );
 
     expect(container.querySelector("desc")).toHaveTextContent(
-      "Trend chart with the most recent 100 of 125 decisions (20-decision rolling average). Latest average expected loss is 0.25 points.",
+      "Trend chart with the most recent 100 of 125 decisions (20-decision rolling average). Latest recorded loss is 0.25 points per discard.",
     );
   });
 

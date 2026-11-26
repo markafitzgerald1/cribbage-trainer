@@ -1,0 +1,7 @@
+.provenance {
+  overflow-wrap: anywhere;
+}
+
+.provenance > summary {
+  cursor: pointer;
+}

@@ -9,12 +9,16 @@ import type {
   StartAutoDrillHandler,
   StartDrillHandler,
 } from "./usePracticeDrill";
+import {
+  formatAccessibleNetLoss,
+  formatNetLoss,
+} from "../analysis/classifyMistake";
 import { DecisionQualityTrendDialog } from "./DecisionQualityTrendDialog";
 import { MistakeQueueDialog } from "./MistakeQueueDialog";
 import type { MistakeQueueItem } from "../ui/mistakeQueue";
 import { SortOrder } from "../ui/SortOrder";
+import { TALLY_HISTORY_HELP } from "../ui/recordedHistory";
 
-const LOSS_FRACTION_DIGITS = 2;
 const SHARE_FRACTION_DIGITS = 1;
 const PER_CENT = 100;
 
@@ -60,6 +64,18 @@ const renderMeasure = (
     {today === null ? null : <span className={classes.figure}>{today}</span>}
     <span className={classes.figure}>{allTime}</span>
   </>
+);
+
+const recordedLossFigure = (
+  period: "all time" | "today",
+  loss: number,
+): ReactNode => (
+  <span
+    aria-label={`Recorded loss ${period}: ${formatAccessibleNetLoss(loss)} points per discard`}
+    role="note"
+  >
+    {formatNetLoss(loss)}
+  </span>
 );
 
 /*
@@ -147,10 +163,18 @@ export function DiscardTallyView({
   const facedToday = summary.todayDecisions + summary.todaySkippedHands;
   const hasToday = facedToday > 0;
   const columns = hasToday ? classes.withToday : classes.allTimeOnly;
-  const hasMistakes = summary.decisions > summary.optimalDecisions;
+  // Recorded noise cannot establish whether the choice was best, so it must not change the share.
+  const judged = summary.decisions - summary.withinNoiseDecisions;
+  const judgedToday =
+    summary.todayDecisions - summary.todayWithinNoiseDecisions;
+  const hasMistakes = judged > summary.optimalDecisions;
 
   return (
     <div className={`${classes.tally} ${columns}`}>
+      <details className={classes.historyHelp}>
+        <summary>As recorded</summary>
+        <p>{TALLY_HISTORY_HELP}</p>
+      </details>
       <span />
       {hasToday ? <span className={classes.period}>today</span> : null}
       <span className={classes.period}>all time</span>
@@ -163,26 +187,23 @@ export function DiscardTallyView({
       {summary.meanExpectedPointsLoss === null
         ? null
         : renderMeasure(
-            // "Points lost per discard" wraps mid-phrase on a phone, worst where the device font is set large; this keeps the per-discard sense, which a bare "points lost" would read as a total.
-            "Lost per discard",
+            "Avg recorded loss",
             summary.todayMeanExpectedPointsLoss === null
               ? blankWhen(hasToday)
-              : summary.todayMeanExpectedPointsLoss.toFixed(
-                  LOSS_FRACTION_DIGITS,
+              : recordedLossFigure(
+                  "today",
+                  summary.todayMeanExpectedPointsLoss,
                 ),
-            summary.meanExpectedPointsLoss.toFixed(LOSS_FRACTION_DIGITS),
+            recordedLossFigure("all time", summary.meanExpectedPointsLoss),
           )}
-      {summary.decisions === 0
+      {judged === 0
         ? null
         : renderMeasure(
             "Best choice",
-            summary.todayDecisions === 0
+            judgedToday === 0
               ? blankWhen(hasToday)
-              : countAndShare(
-                  summary.todayOptimalDecisions,
-                  summary.todayDecisions,
-                ),
-            countAndShare(summary.optimalDecisions, summary.decisions),
+              : countAndShare(summary.todayOptimalDecisions, judgedToday),
+            countAndShare(summary.optimalDecisions, judged),
           )}
       {/*
        * Only once a hand has been abandoned, so an untouched row never implies

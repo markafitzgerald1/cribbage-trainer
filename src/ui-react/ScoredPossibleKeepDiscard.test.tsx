@@ -27,7 +27,7 @@ import { mockTradeOffClassification } from "../ui/mistakeQueue.test.common";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
 /* jscpd:ignore-end */
 
-const EXPECTED_CELL_COUNT = 5;
+const EXPECTED_CELL_COUNT = 6;
 const EXPECTED_CRIB_POINTS = 1.25;
 const EXPECTED_PLAY_POINTS = 0.75;
 const TINY_NEGATIVE_EXPECTED_PLAY_POINTS = -0.0047;
@@ -37,7 +37,8 @@ const TINY_NEGATIVE_EXPECTED_PLAY_POINTS = -0.0047;
  * the rounded value.
  */
 const TINY_POSITIVE_EXPECTED_PLAY_POINTS = 0.0017;
-const PLAY_POINTS_CELL_INDEX = 3;
+const HAND_AND_CRIB_POINTS_CELL_INDEX = 3;
+const PLAY_POINTS_CELL_INDEX = 4;
 const ROUNDING_TO_ZERO_CASES = [
   { expectedPlayPoints: TINY_NEGATIVE_EXPECTED_PLAY_POINTS, name: "negative" },
   { expectedPlayPoints: TINY_POSITIVE_EXPECTED_PLAY_POINTS, name: "positive" },
@@ -217,6 +218,9 @@ describe("calculation component", () => {
         ),
         scenario.expectedPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
         `+${EXPECTED_CRIB_POINTS.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
+        (scenario.expectedPoints + EXPECTED_CRIB_POINTS).toFixed(
+          EXPECTED_POINTS_FRACTION_DIGITS,
+        ),
         `+${EXPECTED_PLAY_POINTS.toFixed(EXPECTED_POINTS_FRACTION_DIGITS)}`,
         scenario.expectedNetPoints.toFixed(EXPECTED_POINTS_FRACTION_DIGITS),
       ]);
@@ -386,6 +390,27 @@ describe("calculation component", () => {
       const cells = screen.getAllByRole("cell");
 
       expect(String(cells[PLAY_POINTS_CELL_INDEX]?.textContent)).toBe("0.00");
+    },
+  );
+
+  it.each([
+    { expectedText: "0.00", name: "a tiny positive", offset: 0.004 },
+    { expectedText: "0.00", name: "a tiny negative", offset: -0.004 },
+    { expectedText: "−1.25", name: "a negative", offset: -1.25 },
+  ])(
+    "renders $name hand plus crib total as $expectedText",
+    ({ expectedText, offset }) => {
+      const scenario = setupScenario("Ascending");
+
+      renderComponentWithScenario(scenario, {
+        signedExpectedCribPoints: offset - scenario.expectedPoints,
+      });
+
+      const cells = screen.getAllByRole("cell");
+
+      expect(String(cells[HAND_AND_CRIB_POINTS_CELL_INDEX]?.textContent)).toBe(
+        expectedText,
+      );
     },
   );
 

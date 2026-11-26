@@ -3,17 +3,17 @@ import {
   type DiscardTelemetryProps,
   type HandReplacementCause,
   type HistoryHandScope,
-  type RenderedAnalysis,
   useDiscardTelemetry,
 } from "./useDiscardTelemetry";
 import {
-  type DisplayedHandRelabeling,
+  type ReportAnalysisRendered,
   useDiscardTally,
 } from "./useDiscardTally";
 import type { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
 import type { DiscardTallySummary } from "../ui/discardTally";
 import type { SortOrder } from "../ui/SortOrder";
+import type { UncountedReason } from "./uncountedReason";
 import { useCallback } from "react";
 // Extends rather than restates the telemetry surface, so a change there cannot leave this one describing a shape that no longer exists.
 /*
@@ -24,6 +24,8 @@ import { useCallback } from "react";
 // Extends rather than restates, so a change to the telemetry props cannot leave this describing a shape that no longer exists.
 export interface AnalysisReportingProps extends DiscardTelemetryProps {
   readonly cribRole: CribRole;
+  readonly isResumedOwnHand?: boolean;
+  readonly resetResumedOwnHand?: (resumed: boolean) => void;
   // The sort order on screen right now, for the tally's capture.
   readonly sortOrder: SortOrder;
 }
@@ -36,7 +38,7 @@ export interface AnalysisReportingProps extends DiscardTelemetryProps {
  */
 export type ReportHandReplaced = (
   cards: readonly DealtCard[],
-  cause: HandReplacementCause,
+  cause: HandReplacementCause | "drill",
   cribRole: CribRole,
 ) => void;
 
@@ -64,10 +66,7 @@ export type ReportHistoryNavigation = (
  * has to keep: the value never reaches the type telemetry consumes. Null
  * from every caller showing the cards it means.
  */
-export type ReportAnalysisRendered = (
-  analysis: RenderedAnalysis,
-  displayedAs: DisplayedHandRelabeling | null,
-) => void;
+export type { ReportAnalysisRendered } from "./useDiscardTally";
 
 export interface AnalysisReporting extends Omit<
   DiscardTelemetry,
@@ -78,6 +77,7 @@ export interface AnalysisReporting extends Omit<
   readonly reportHandReplaced: ReportHandReplaced;
   readonly reportHistoryNavigation: ReportHistoryNavigation;
   readonly tallySummary: DiscardTallySummary;
+  readonly uncountedReason: UncountedReason | null;
 }
 
 /*
@@ -91,13 +91,21 @@ export const useAnalysisReporting = (
   props: AnalysisReportingProps,
 ): AnalysisReporting => {
   const telemetry = useDiscardTelemetry(props);
-  const { cribRole, dealtCards, isSeededSession, sortOrder, wasDeepLinked } =
-    props;
+  const {
+    cribRole,
+    dealtCards,
+    isResumedOwnHand = false,
+    isSeededSession,
+    resetResumedOwnHand,
+    sortOrder,
+    wasDeepLinked,
+  } = props;
   const { currentHandScope } = telemetry;
   const tally = useDiscardTally({
     cribRole,
     dealtCards,
     handId: currentHandScope().handId,
+    isResumedOwnHand,
     isSeededSession,
     sortOrder,
     wasDeepLinked,
@@ -113,12 +121,14 @@ export const useAnalysisReporting = (
     reportHandOrigin,
     reportHandRestored,
     summary: tallySummary,
+    uncountedReason,
   } = tally;
 
   const reportAnalysisRendered: ReportAnalysisRendered = useCallback(
-    (analysis, displayedAs) => {
+    (...args) => {
+      const [analysis] = args;
       reportAnalysisToTelemetry(analysis);
-      addAnalysisToTally(analysis, displayedAs);
+      addAnalysisToTally(...args);
     },
     [addAnalysisToTally, reportAnalysisToTelemetry],
   );
@@ -126,13 +136,22 @@ export const useAnalysisReporting = (
   // Both reports hand the tally telemetry's scope as it stands after telemetry has handled the transition, since that fresh scope is what Trainer stamps onto the history entry.
   const reportHandReplaced: ReportHandReplaced = useCallback(
     (cards, cause, role) => {
-      reportHandToTelemetry(cards, cause);
-      reportHandOrigin(cards, cause, {
+      resetResumedOwnHand?.(false);
+      // Telemetry's hand sources stay deal and manual: a drill load is a manual replacement there, and only the tally's note tells the two apart.
+      const telemetryCause = cause === "drill" ? "manual" : cause;
+      reportHandToTelemetry(cards, telemetryCause);
+      reportHandOrigin(cards, telemetryCause, {
         cribRole: role,
         handId: currentHandScope().handId,
+        isDrillLoad: cause === "drill",
       });
     },
-    [currentHandScope, reportHandOrigin, reportHandToTelemetry],
+    [
+      currentHandScope,
+      reportHandOrigin,
+      reportHandToTelemetry,
+      resetResumedOwnHand,
+    ],
   );
 
   const reportHistoryNavigation: ReportHistoryNavigation = useCallback(
@@ -155,5 +174,6 @@ export const useAnalysisReporting = (
     reportHandReplaced,
     reportHistoryNavigation,
     tallySummary,
+    uncountedReason,
   };
 };

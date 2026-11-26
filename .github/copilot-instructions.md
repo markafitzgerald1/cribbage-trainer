@@ -31,9 +31,11 @@ repeating them.
 `npm install`-only checks, concurrently, in ~20 seconds. It is a filter, not
 the gate — `npm run docker:build-and-test-all` is the authoritative gate, and
 required CI runs it against your pull request's head (a branch pushed with no
-open PR runs no CI). Do not request a fresh review until that gate is green
-for the commit under review. `AGENTS.md` carries the details (what the hook
-omits and why, `npm run verify:gap`, the one-gate-per-head rule).
+open PR runs no CI). Local CLI and agent reviews run in parallel with CI; do
+not request a GitHub review until required CI is green for that commit, unless
+`npm run verify:fast` and the Docker gate have already passed locally on that
+exact head. `AGENTS.md` carries the details (what the hook omits and why,
+`npm run verify:gap`, the one-gate-per-head rule).
 
 ## Review focus (enforced — see AGENTS.md/CONTRIBUTING.md for rationale)
 

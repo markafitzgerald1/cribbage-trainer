@@ -34,6 +34,7 @@ jobs:
     permissions:
       contents: write # to push the pages-content state branch
       pages: write # to deploy to Pages
+      actions: read # to confirm the Pages artifact is listed before deploying
       id-token: write # to verify the deployment originates from an appropriate source
 
     environment:

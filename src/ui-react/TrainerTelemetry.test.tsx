@@ -12,8 +12,11 @@ import {
 } from "./Trainer.test.common";
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
+import { formatOwnHand, ownHandKey } from "../ui/ownHandKey";
 import { CARDS_PER_DEALT_HAND } from "../game/facts";
+import { CribRole } from "../game/expectedCribPoints";
 import { parseHand } from "../game/Card";
+import { toHandKey } from "../ui/handKey";
 /* jscpd:ignore-end */
 
 const setupInitialPropsTrainer = (
@@ -233,9 +236,31 @@ describe("trainer telemetry wiring", () => {
     });
   });
 
-  it("reports a deep-linked discard with a deeplink source", () => {
+  it.each([
+    {
+      description: "reports a deep-linked discard with a deeplink source",
+      prepare: () => {
+        // No setup needed.
+      },
+    },
+    {
+      description:
+        "does not report an own hand reloaded with a complete discard as interactive first instinct",
+      prepare: () => {
+        localStorage.setItem(
+          ownHandKey,
+          formatOwnHand(
+            "own-hand-id",
+            toHandKey(parseHand(SIX_HEARTS_HAND), CribRole.Dealer),
+          ),
+        );
+      },
+    },
+  ])("$description", ({ prepare }) => {
+    prepare();
     const trackEvent = setupInitialPropsTrainer({
       initialCards: parseHand(SIX_HEARTS_HAND),
+      initialCribRole: CribRole.Dealer,
       initialDiscards: parseHand("AH,2H"),
     });
 

@@ -18,6 +18,7 @@ import {
   strictEqual,
   throws,
 } from "node:assert/strict";
+import { parseArtifactJson } from "./artifactJson.mjs";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
@@ -29,10 +30,12 @@ import { test } from "node:test";
  * renders either way - the only symptom would be error bars quoted against a
  * table nobody is looking at. Refreshing one alone reddens this instead.
  */
-const readVendored = (outputPath) => readFileSync(outputPath, "utf8");
+const readVendored = (outputPath) => readFileSync(outputPath);
+
+const readVendoredText = (outputPath) => readFileSync(outputPath, "utf8");
 
 const sidecarOf = (assets) =>
-  JSON.parse(readVendored(assets.uncertaintyOutputPath));
+  parseArtifactJson(readVendored(assets.uncertaintyOutputPath));
 
 const PAIRS = [
   { assets: CRIB_ASSETS, validateMeans: validateCribTable },
@@ -65,12 +68,26 @@ for (const { assets, validateMeans } of PAIRS) {
     );
   });
 
+  test(`the ${contract.table} digest guard refuses a sidecar cloned without parse provenance`, () => {
+    const sidecar = globalThis.structuredClone(sidecarOf(assets));
+    throws(
+      () =>
+        assertMeansDigest(
+          sidecar,
+          readVendored(assets.meansOutputPath),
+          contract,
+        ),
+      /parseArtifactJson/u,
+    );
+  });
+
   /*
    * The case the guard exists for, which the passing case above cannot show:
    * a rolling release replaced between the two downloads leaves means that no
    * longer hash to what the sidecar names. One byte is enough, and has to be,
    * because a digest that tolerated a byte would not be doing anything.
    */
+
   test(`a ${contract.table} means file of different bytes fails the matched-pair guard`, () => {
     throws(() =>
       assertMeansDigest(
@@ -96,6 +113,24 @@ test("the vendored play sidecar keys cover the vendored play table exactly", () 
   ).sort();
 
   deepStrictEqual(sidecarKeys, tableKeys);
+});
+
+/*
+ * The expanded row says the pegging figures assume both players peg
+ * near-optimally (#908). That rests on the exact certificate of one solved
+ * policy, so the pinned manifest names it: a table measured with any other
+ * policy, or by the simulator's older generator, has to revisit the wording
+ * and the README's Evidence with that policy's own certificate.
+ */
+test("the vendored play table was measured with the solved policy the app describes", () => {
+  const { provenance } = sidecarOf(PLAY_ASSETS);
+
+  strictEqual(provenance.measurement_backend, "python-v3-fixed-policy");
+  strictEqual(provenance.measured_policy, "trained");
+  strictEqual(
+    provenance.policy_manifest_sha256,
+    "bc096b75f956c2091c3be73cfe2d9eec0157c87bc30ef6e11e0b283e1007171b",
+  );
 });
 
 /*
@@ -251,14 +286,14 @@ for (const { assets, cases } of REJECTION_CASES) {
  * across both on-disk artifacts, since Vite hands the reader one parsed
  * document rather than two files.
  */
-const linesOf = () => JSON.parse(readVendored(PLAY_ASSETS.linesOutputPath));
+const linesOf = () => JSON.parse(readVendoredText(PLAY_ASSETS.linesOutputPath));
 
 test("the vendored play lines still satisfy the updater's checks", () => {
-  validatePlayLines(linesOf(), readVendored(PLAY_ASSETS.linesOutputPath));
+  validatePlayLines(linesOf(), readVendoredText(PLAY_ASSETS.linesOutputPath));
 });
 
 test("the vendored play lines were exported against the vendored means", () => {
-  assertLinesDigest(linesOf(), readVendored(PLAY_ASSETS.meansOutputPath));
+  assertLinesDigest(linesOf(), readVendoredText(PLAY_ASSETS.meansOutputPath));
 });
 
 test("a play means file of different bytes fails the lines pairing guard", () => {
@@ -266,14 +301,14 @@ test("a play means file of different bytes fails the lines pairing guard", () =>
     () =>
       assertLinesDigest(
         linesOf(),
-        `${readVendored(PLAY_ASSETS.meansOutputPath)} `,
+        `${readVendoredText(PLAY_ASSETS.meansOutputPath)} `,
       ),
     /play lines file was exported against means/u,
   );
 });
 
 test("a whitespace-only change to the means is a different pairing", () => {
-  const meansBody = readVendored(PLAY_ASSETS.meansOutputPath);
+  const meansBody = readVendoredText(PLAY_ASSETS.meansOutputPath);
 
   throws(() => assertLinesDigest(linesOf(), meansBody.replace(/\{/gu, "{ ")));
 });
@@ -281,7 +316,7 @@ test("a whitespace-only change to the means is a different pairing", () => {
 test("the vendored play lines keys cover the vendored play table exactly", () => {
   deepStrictEqual(
     [...linesOf().keys].sort(),
-    Object.keys(JSON.parse(readVendored(PLAY_ASSETS.meansOutputPath))).sort(),
+    Object.keys(JSON.parse(readVendoredText(PLAY_ASSETS.meansOutputPath))).sort(),
   );
 });
 
@@ -292,16 +327,16 @@ test("the vendored play lines keys cover the vendored play table exactly", () =>
  */
 const stubRelease = (context, replacements = []) => {
   const bodies = new Map([
-    [PLAY_ASSETS.meansUrl, readVendored(PLAY_ASSETS.meansOutputPath)],
+    [PLAY_ASSETS.meansUrl, readVendoredText(PLAY_ASSETS.meansOutputPath)],
     [
       PLAY_ASSETS.uncertaintyUrl,
-      readVendored(PLAY_ASSETS.uncertaintyOutputPath),
+      readVendoredText(PLAY_ASSETS.uncertaintyOutputPath),
     ],
-    [PLAY_ASSETS.linesUrl, readVendored(PLAY_ASSETS.linesOutputPath)],
+    [PLAY_ASSETS.linesUrl, readVendoredText(PLAY_ASSETS.linesOutputPath)],
     ...replacements,
   ]);
   context.mock.method(globalThis, "fetch", (url) =>
-    Promise.resolve({ ok: true, text: () => Promise.resolve(bodies.get(url)) }),
+    Promise.resolve(new globalThis.Response(bodies.get(url))),
   );
 };
 
@@ -318,11 +353,11 @@ test("the updater writes the lines from the exact published bytes", async (conte
   );
 
   strictEqual(files.length, 3);
-  strictEqual(lines.body, readVendored(PLAY_ASSETS.linesOutputPath));
+  strictEqual(lines.body, readVendoredText(PLAY_ASSETS.linesOutputPath));
 });
 
 test("the updater does not add a newline the published lines lack", async (context) => {
-  const published = readVendored(PLAY_ASSETS.linesOutputPath).trimEnd();
+  const published = readVendoredText(PLAY_ASSETS.linesOutputPath).trimEnd();
 
   stubRelease(context, [[PLAY_ASSETS.linesUrl, published]]);
   const files = await downloadMeansAndUncertainty(PLAY_ASSETS);

@@ -1,5 +1,12 @@
 import * as classes from "./Trainer.module.css";
 import {
+  type AnalysisOrder,
+  parseSortParam,
+  parseUrlAnalysisState,
+  serializeUrlAnalysisState,
+  sortUrlValue,
+} from "../ui/urlAnalysisState";
+import {
   type AnalyticsChoice,
   DECISION_QUALITY_MEASUREMENT,
   readAnalyticsChoice,
@@ -9,12 +16,6 @@ import {
 } from "../ui/analyticsConsent";
 import { type Card, serializeHand } from "../game/Card";
 import { type CribRole, randomCribRole } from "../game/expectedCribPoints";
-import {
-  parseSortParam,
-  parseUrlAnalysisState,
-  serializeUrlAnalysisState,
-  sortUrlValue,
-} from "../ui/urlAnalysisState";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";
@@ -23,7 +24,7 @@ import { DiscardTallyView } from "./DiscardTallyView";
 import { EnterCardsDialog } from "./EnterCardsDialog";
 import type { HistoryHandScope } from "./useDiscardTelemetry";
 import { InteractiveHand } from "./InteractiveHand";
-import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
+import type { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
 import { SortOrder } from "../ui/SortOrder";
 import type { TrackEvent } from "../ui/trackEvent";
@@ -32,8 +33,11 @@ import { dealHand } from "../game/dealHand";
 import { discardIsComplete } from "../game/discardIsComplete";
 import { hasTallyToShow } from "../ui/discardTally";
 import { isStableDiscardState } from "../game/isStableDiscardState";
+import { readOwnHandId } from "../ui/ownHandKey";
 import { toDealtCards } from "../game/toDealtCards";
+import { toHandKey } from "../ui/handKey";
 import { useAnalysisReporting } from "./useAnalysisReporting";
+import { useAnalysisSort } from "./useAnalysisSort";
 import { useDealHand } from "./useDealHand";
 import { useDiscardLiveRegion } from "./useDiscardLiveRegion";
 import { usePracticeDrill } from "./usePracticeDrill";
@@ -43,9 +47,11 @@ export interface TrainerProps {
   readonly generateRandomNumber: () => number;
   readonly loadGoogleAnalytics: (consented: boolean | null) => void;
   readonly trackEvent: TrackEvent;
+  readonly initialAnalysisOrder?: AnalysisOrder | null;
   readonly initialCards?: Card[] | null;
   readonly initialCribRole?: CribRole | null;
   readonly initialDiscards?: Card[] | null;
+  readonly initialOwnHandId?: string | null;
   readonly initialScoreSortKey?: ScoredKeepDiscardSortKey | null;
   readonly initialSortOrder?: SortOrder | null;
   readonly isSeededSession?: boolean;
@@ -159,13 +165,31 @@ const useEnterCardsDialog = (
   return { handleClose, handleOpen, handleSubmit, show };
 };
 
+const checkIsResumedOwnHand = ({
+  cribRole,
+  dealtCards,
+  initialCards,
+  initialOwnHandId,
+}: {
+  readonly cribRole: CribRole;
+  readonly dealtCards: readonly DealtCard[];
+  readonly initialCards: readonly Card[] | null;
+  readonly initialOwnHandId: string | null;
+}): boolean =>
+  initialCards !== null &&
+  initialOwnHandId !== null &&
+  !discardIsComplete(dealtCards) &&
+  readOwnHandId(toHandKey(dealtCards, cribRole)) === initialOwnHandId;
+
 export function Trainer({
   generateRandomNumber: generator,
   loadGoogleAnalytics,
   trackEvent,
+  initialAnalysisOrder = null,
   initialCards = null,
   initialCribRole = null,
   initialDiscards = null,
+  initialOwnHandId = null,
   initialScoreSortKey = null,
   initialSortOrder = null,
   isSeededSession = false,
@@ -180,8 +204,13 @@ export function Trainer({
     };
   });
   const { cribRole, dealtCards } = dealState;
-  const [scoreSortKey, setScoreSortKey] = useState<ScoredKeepDiscardSortKey>(
-    initialScoreSortKey ?? ScoredKeepDiscardSortKey.ExpectedNetPoints,
+  const [isResumedOwnHand, setIsResumedOwnHand] = useState(() =>
+    checkIsResumedOwnHand({
+      cribRole,
+      dealtCards,
+      initialCards,
+      initialOwnHandId,
+    }),
   );
   const {
     allowDecisionQuality,
@@ -197,6 +226,16 @@ export function Trainer({
   const markHistoryUpdate = useCallback(() => {
     historyFlags.current.shouldPush = isStableDiscardState(dealtCards);
   }, [dealtCards]);
+  const {
+    analysisOrder,
+    changeScoreSortKey,
+    restoreAnalysisSort,
+    scoreSortKey,
+  } = useAnalysisSort(
+    initialScoreSortKey,
+    initialAnalysisOrder,
+    markHistoryUpdate,
+  );
   const { changeSortOrder, setSortOrder, sortOrder } = useSortOrder(
     initialSortOrder,
     markHistoryUpdate,
@@ -209,21 +248,24 @@ export function Trainer({
     reportHandReplaced,
     reportHistoryNavigation,
     tallySummary,
+    uncountedReason,
   } = useAnalysisReporting({
     consented: choice.consented,
     cribRole,
     dealtCards,
     decisionQualityConsented: choice.decisionQualityConsented,
+    isResumedOwnHand,
     isSeededSession,
+    resetResumedOwnHand: setIsResumedOwnHand,
     sortOrder,
     trackEvent,
     wasDeepLinked: initialCards !== null,
   });
   const applyManualHand = useCallback(
-    (state: DealState) => {
+    (state: DealState, cause: "drill" | "manual" = "manual") => {
       // Push history when the pre-change state is stable, so Back returns to the prior hand rather than skipping it.
       markHistoryUpdate();
-      reportHandReplaced(state.dealtCards, "manual", state.cribRole);
+      reportHandReplaced(state.dealtCards, cause, state.cribRole);
       setDealState(state);
     },
     [markHistoryUpdate, reportHandReplaced],
@@ -254,8 +296,10 @@ export function Trainer({
 
   useEffect(() => {
     const url = serializeUrlAnalysisState(window.location.search, {
+      analysisOrder,
       cribRole,
       dealtCards,
+      ownHandId: readOwnHandId(toHandKey(dealtCards, cribRole)),
       scoreSortKey,
       sortOrder,
     });
@@ -291,6 +335,7 @@ export function Trainer({
     }
     historyFlags.current.shouldPush = false;
   }, [
+    analysisOrder,
     completionSortOrder,
     cribRole,
     currentHandScope,
@@ -336,15 +381,13 @@ export function Trainer({
       if (urlState.sortOrder !== null) {
         setSortOrder(urlState.sortOrder);
       }
-      if (urlState.scoreSortKey !== null) {
-        setScoreSortKey(urlState.scoreSortKey);
-      }
+      restoreAnalysisSort(urlState);
     };
     window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [exitDrill, reportHistoryNavigation, setSortOrder]);
+  }, [exitDrill, reportHistoryNavigation, restoreAnalysisSort, setSortOrder]);
 
   const enterCardsDialog = useEnterCardsDialog(
     dealState,
@@ -368,14 +411,6 @@ export function Trainer({
       });
     },
     [cribRole, dealtCards, markHistoryUpdate, reportCardToggled],
-  );
-
-  const changeScoreSortKey = useCallback(
-    (newScoreSortKey: ScoredKeepDiscardSortKey) => {
-      markHistoryUpdate();
-      setScoreSortKey(newScoreSortKey);
-    },
-    [markHistoryUpdate],
   );
 
   return (
@@ -420,6 +455,7 @@ export function Trainer({
           }
           showFreshHandNotice={freshHandNoticeShown}
           sortOrder={sortOrder}
+          uncountedReason={uncountedReason}
         />
         <EnterCardsDialog
           initialCards={dealtCards}
@@ -432,6 +468,7 @@ export function Trainer({
         />
         {isAnalysisVisible ? (
           <ScoredPossibleKeepDiscards
+            analysisOrder={analysisOrder}
             cribRole={cribRole}
             dealtCards={dealtCards}
             drillPreviousDiscard={
@@ -469,9 +506,11 @@ export function Trainer({
 }
 
 Trainer.defaultProps = {
+  initialAnalysisOrder: null,
   initialCards: null,
   initialCribRole: null,
   initialDiscards: null,
+  initialOwnHandId: null,
   initialScoreSortKey: null,
   initialSortOrder: null,
   isSeededSession: false,

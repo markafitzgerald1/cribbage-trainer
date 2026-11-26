@@ -25,13 +25,14 @@ const RENDERED_FIGURE = /^±\d+\.\d\d$/u;
  * column has room for nothing else, so the spoken text is the only place the
  * distinction lives: crib's figure is a dependence bound over the buckets its
  * weighted average consumed, play's is one published record's own standard
- * error and omits a policy term of unpublished size. A shared phrase would
+ * error. Both omit a policy term with no published size. A shared phrase would
  * announce them as the same quantity, so these are pinned separately and
  * asserted against the row they belong to.
  */
 export const CRIB_AVERAGE_ROW = {
   name: /Crib avg/u,
-  spoken: /plus or minus \d+\.\d\d, a bound on the combined simulation error/u,
+  spoken:
+    /plus or minus \d+\.\d\d, a bound on the combined simulation error, not counting uncertainty in the opponent's simulated discard strategy/u,
 };
 
 export const PEG_DELTA_ROW = {

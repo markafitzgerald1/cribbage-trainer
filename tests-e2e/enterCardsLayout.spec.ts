@@ -1,9 +1,10 @@
-import { expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   phonePortraitViewport,
   requireBoundingBox,
   rightEdge,
 } from "./layoutMeasurements";
+import { expect, test } from "@playwright/test";
 import { openCardEntryDialog } from "./openCardEntryDialog";
 
 /*
@@ -26,7 +27,7 @@ test("entered-hand role chips stay on screen at a large device font", async ({
   page,
 }) => {
   await openCardEntryDialog(page);
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   const roleGroup = page.getByRole("group", { name: "Your role" });
@@ -52,7 +53,7 @@ test("the close button and card tiles stay usable once the picker scrolls", asyn
   page,
 }) => {
   await openCardEntryDialog(page);
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
 
   const closeButton = page.getByRole("button", { name: "Close modal" });
   const beforeScroll = await requireBoundingBox(closeButton);
@@ -98,7 +99,7 @@ test("every suit column stays on screen at a large device font", async ({
   page,
 }) => {
   await openCardEntryDialog(page);
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   /*
@@ -131,7 +132,7 @@ test("card labels stay inside their tiles at a large device font", async ({
   page,
 }) => {
   await openCardEntryDialog(page);
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.addStyleTag({ content: "html { font-size: 36px; }" });
 
   const worstOverflow = await page

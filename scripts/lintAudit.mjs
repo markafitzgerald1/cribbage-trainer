@@ -12,6 +12,9 @@
  * recognized cause — still fail the build, so the gate keeps its teeth.
  * Only an unambiguous endpoint outage is retried and, if it never clears,
  * allowed to pass with a loud warning; a later run re-checks advisories.
+ * An attempt killed at the timeout whose output names no such outage is
+ * retried too, but never softened: once one occurs, the run passes only
+ * when a later attempt completes clean.
  */
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -73,15 +76,19 @@ const includesAny = (haystack, needles) => {
  * "pass"      — audit succeeded, nothing to do.
  * "fail"      — real findings, or a non-zero exit with no recognized cause.
  * "transient" — the audit endpoint looks unreachable; safe to retry / soften.
+ * "timeout"   — killed at the ceiling with no cause named; safe to retry only.
  */
-export const classifyAuditOutcome = ({ status, output }) => {
+export const classifyAuditOutcome = ({ status, output, timedOut = false }) => {
   if (status === 0) {
     return "pass";
   }
   if (includesAny(output, FINDINGS_MARKERS)) {
     return "fail";
   }
-  return includesAny(output, TRANSIENT_MARKERS) ? "transient" : "fail";
+  if (includesAny(output, TRANSIENT_MARKERS)) {
+    return "transient";
+  }
+  return timedOut ? "timeout" : "fail";
 };
 
 const note = (message) => process.stderr.write(`\nlintAudit: ${message}\n`);
@@ -105,30 +112,36 @@ export const runAuditOnce = ({ spawn = spawnSync } = {}) => {
    * is safe to soften, so the timeout is announced without being written into
    * the output the classifier reads: a partial transcript naming a network
    * failure still classifies as transient, while a timeout that explains
-   * nothing keeps its unrecognized-failure status and fails the build. The
+   * nothing is retried and, if no attempt completes, fails the build. The
    * alternative — treating every timeout as an outage — lets three stalled
    * attempts return success with no audit result at all.
    */
-  if (result.error?.code === "ETIMEDOUT") {
+  const timedOut = result.error?.code === "ETIMEDOUT";
+  if (timedOut) {
     note(
-      `attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms. Softened only if the output ` +
-        "above names a network or endpoint failure; an unexplained timeout " +
-        "fails the build rather than passing an audit that never ran.",
+      `attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms. Retried, and softened only ` +
+        "if the output above names a network or endpoint failure; an " +
+        "unexplained timeout fails the build rather than passing an audit " +
+        "that never ran.",
     );
   }
-  return { output, status: result.status ?? 1 };
+  return { output, status: result.status ?? 1, timedOut };
 };
 
 /*
  * Recursive rather than a loop so there is no await inside a loop body.
  * `runOnce` and `wait` are injectable so the retry/classification behavior
  * is unit-testable without a real audit call. Returns the process exit code.
+ * `timedOutBefore` carries across attempts because an outage reported after
+ * an unexplained timeout does not explain it, so it must not soften the run.
  */
 export const runAuditWithResilience = async (
   { runOnce = runAuditOnce, wait = sleep } = {},
   attempt = 1,
+  timedOutBefore = false,
 ) => {
   const outcome = classifyAuditOutcome(runOnce());
+  const timedOut = timedOutBefore || outcome === "timeout";
 
   if (outcome === "pass") {
     return 0;
@@ -136,6 +149,14 @@ export const runAuditWithResilience = async (
   if (outcome === "fail") {
     note(
       "advisories reported, or an unrecognized failure — failing the build.",
+    );
+    return 1;
+  }
+  if (attempt >= MAX_ATTEMPTS && timedOut) {
+    note(
+      `an attempt exceeded ${ATTEMPT_TIMEOUT_MS}ms and none of ` +
+        `${MAX_ATTEMPTS} attempts completed an audit — failing the build, ` +
+        "since an audit that never ran cannot pass.",
     );
     return 1;
   }
@@ -149,11 +170,11 @@ export const runAuditWithResilience = async (
   }
 
   note(
-    `audit endpoint looks unreachable (attempt ${attempt}/${MAX_ATTEMPTS}); ` +
-      `retrying in ${BACKOFF_MS / 1000}s.`,
+    `${outcome === "timeout" ? "audit attempt timed out" : "audit endpoint looks unreachable"} ` +
+      `(attempt ${attempt}/${MAX_ATTEMPTS}); retrying in ${BACKOFF_MS / 1000}s.`,
   );
   await wait(BACKOFF_MS);
-  return runAuditWithResilience({ runOnce, wait }, attempt + 1);
+  return runAuditWithResilience({ runOnce, wait }, attempt + 1, timedOut);
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

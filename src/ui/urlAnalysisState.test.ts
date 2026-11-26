@@ -42,6 +42,7 @@ describe("parseUrlAnalysisState", () => {
 
   it("returns all nulls for an empty search string", () => {
     expect(parseUrlAnalysisState("")).toStrictEqual({
+      analysisOrder: null,
       cards: null,
       cribRole: null,
       discards: null,
@@ -106,6 +107,7 @@ describe("parseUrlAnalysisState", () => {
   it.each([
     ["hand", ScoredKeepDiscardSortKey.ExpectedHandPoints],
     ["crib", ScoredKeepDiscardSortKey.ExpectedCribPoints],
+    ["Show", ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints],
     ["play", ScoredKeepDiscardSortKey.ExpectedPlayPoints],
     ["NET", ScoredKeepDiscardSortKey.ExpectedNetPoints],
   ])(
@@ -146,6 +148,7 @@ describe("serializeUrlAnalysisState", () => {
   it.each([
     [ScoredKeepDiscardSortKey.ExpectedHandPoints, "hand"],
     [ScoredKeepDiscardSortKey.ExpectedCribPoints, "crib"],
+    [ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints, "show"],
     [ScoredKeepDiscardSortKey.ExpectedPlayPoints, "play"],
     [ScoredKeepDiscardSortKey.ExpectedNetPoints, "net"],
   ])(
@@ -159,6 +162,32 @@ describe("serializeUrlAnalysisState", () => {
       expect(url).toContain(`analysis-sort=${expectedAnalysisSort}`);
     },
   );
+
+  it.each([
+    { expected: "own=first-deal", name: "writes", search: "?seed=1" },
+    {
+      expected: "own=first-deal",
+      name: "replaces a stale",
+      search: "?own=old",
+    },
+  ])("$name the own-hand id", ({ expected, search }) => {
+    const url = serializeUrlAnalysisState(search, {
+      ...dealerStateDiscardingSixFive(SortOrder.Descending),
+      ownHandId: "first-deal",
+    });
+
+    expect(url).toContain(expected);
+    expect(url).not.toContain("own=old");
+  });
+
+  it("removes a stale own-hand id when the hand is not the player's own", () => {
+    const url = serializeUrlAnalysisState(
+      "?own=old",
+      dealerStateDiscardingSixFive(SortOrder.Descending),
+    );
+
+    expect(url).not.toContain("own=");
+  });
 
   it("keeps encoded commas in unrelated params while decoding card lists", () => {
     const url = serializeUrlAnalysisState(
@@ -212,4 +241,47 @@ describe("serializeUrlAnalysisState", () => {
       ScoredKeepDiscardSortKey.ExpectedCribPoints,
     );
   });
+});
+
+describe("analysis direction compatibility", () => {
+  it.each(["", "descending", "Ascending", "random", "ascending "])(
+    "rejects absent or invalid analysis-order %p",
+    (value) => {
+      expect(
+        parseUrlAnalysisState(`?analysis-order=${value}`).analysisOrder,
+      ).toBeNull();
+    },
+  );
+
+  it("round-trips worst first without changing the column or other state", () => {
+    const url = serializeUrlAnalysisState("?seed=123", {
+      ...dealerStateDiscardingSixFive(SortOrder.DealOrder),
+      analysisOrder: "ascending",
+    });
+
+    expect(url).toContain("analysis-order=ascending");
+    expect(parseUrlAnalysisState(url)).toStrictEqual({
+      ...parseUrlAnalysisState(url.replace("&analysis-order=ascending", "")),
+      analysisOrder: "ascending",
+    });
+  });
+
+  it.each([{}, { analysisOrder: "descending" as const }])(
+    "omits best first and removes stale direction for %p",
+    (direction) => {
+      const url = serializeUrlAnalysisState(
+        "?analysis-order=ascending&analysis-sort=hand",
+        {
+          ...dealerStateDiscardingSixFive(SortOrder.DealOrder),
+          scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandPoints,
+          ...direction,
+        },
+      );
+
+      expect(url).not.toContain("analysis-order");
+      expect(parseUrlAnalysisState(url).scoreSortKey).toBe(
+        ScoredKeepDiscardSortKey.ExpectedHandPoints,
+      );
+    },
+  );
 });

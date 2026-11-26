@@ -1,10 +1,12 @@
 import { type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   constantHandQuery,
   phoneLandscapeViewport,
   phonePortraitViewport,
 } from "./layoutMeasurements";
 import { blockGoogleAnalytics } from "./blockGoogleAnalytics";
+import { blockUncertaintySidecars } from "./blockUncertaintySidecars";
 import { waitForAnalysis } from "./renderThenSelectTwoDiscards";
 
 /*
@@ -47,6 +49,7 @@ const selectTwoDiscards = async (page: Page) => {
 // An ordinary deal: no seed and no hand parameter, so the decision is authentic.
 const playOneAuthenticHand = async (page: Page) => {
   await blockGoogleAnalytics(page);
+  await blockUncertaintySidecars(page);
   await page.goto("/");
   await selectTwoDiscards(page);
 };
@@ -103,7 +106,9 @@ test("leaves a seeded deep link out of the tally", async ({ page }) => {
   await page.goto(`/${constantHandQuery}`);
   await selectTwoDiscards(page);
 
-  await expect(page.getByText("Lost per discard")).toBeHidden();
+  await expect(
+    page.getByText("Avg recorded loss", { exact: true }),
+  ).toBeHidden();
 });
 
 /*
@@ -116,7 +121,9 @@ test("renders the tally between the analysis and the privacy links", async ({
 }) => {
   await playOneAuthenticHand(page);
 
-  const tally = await page.getByText("Lost per discard").boundingBox();
+  const tally = await page
+    .getByText("Avg recorded loss", { exact: true })
+    .boundingBox();
   const table = await page.getByRole("table").boundingBox();
   const privacy = await page
     .getByRole("button", { name: "Privacy Policy" })
@@ -132,7 +139,7 @@ const SINGLE_LINE_HEIGHT_RATIO = 1.7;
 /*
  * The tally labels are em-sized and share their row with the today and
  * all-time figure columns, which take their width first. A device font-size
- * setting above the default used to grow the labels until "Lost per discard"
+ * setting above the default used to grow the labels until "Avg recorded loss"
  * and "Best choice" wrapped into ragged multi-line cells; each mode's cap
  * keeps them on one line. A wrapped label is ~3x its font size tall, well
  * past the 1.7x bound, so this fails against the uncapped stylesheet.
@@ -142,7 +149,7 @@ const expectTallyLabelsUnwrapped = async (page: Page) => {
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   const labelMetrics = await Promise.all(
-    ["Lost per discard", "Best choice"].map(async (label) => {
+    ["As recorded", "Avg recorded loss", "Best choice"].map(async (label) => {
       const locator = page.getByText(label, { exact: true });
       const box = await locator.boundingBox();
       const fontSize = await locator.evaluate((element) =>
@@ -155,12 +162,15 @@ const expectTallyLabelsUnwrapped = async (page: Page) => {
   for (const { fontSize, height } of labelMetrics) {
     expect(height).toBeLessThan(fontSize * SINGLE_LINE_HEIGHT_RATIO);
   }
+  const help = page.getByText("As recorded", { exact: true });
+  await expect(help).toHaveCSS("white-space", "nowrap");
+  await expect(help).toHaveCSS("cursor", "pointer");
 };
 
 test("keeps the tally labels on one line at a large device font", async ({
   page,
 }) => {
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await expectTallyLabelsUnwrapped(page);
 });
 
@@ -185,7 +195,7 @@ const UNCAPPED_EM_PX = 16;
 test("caps the stacked tally's em lengths and drops the share so its figures fit", async ({
   page,
 }) => {
-  await page.setViewportSize({
+  await applyViewportSize(page, {
     height: phonePortraitViewport.height,
     width: 360,
   });
@@ -193,7 +203,7 @@ test("caps the stacked tally's em lengths and drops the share so its figures fit
   await page.addStyleTag({ content: "html { font-size: 28px; }" });
 
   const metrics = await page
-    .getByText("Lost per discard", { exact: true })
+    .getByText("Avg recorded loss", { exact: true })
     .evaluate((label) => {
       const grid = label.parentElement as HTMLElement;
       const dynamicUi = grid.closest("[class*='dynamic-ui']") as HTMLElement;
@@ -224,7 +234,7 @@ test("caps the stacked tally's em lengths and drops the share so its figures fit
 test("keeps the tally labels on one line in landscape at a large device font", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await expectTallyLabelsUnwrapped(page);
 });
 
@@ -246,7 +256,7 @@ const SHORT_LANDSCAPE_HEIGHT = 320;
 test("gives the landscape dynamic-ui its own scroll when an analysis overflows it", async ({
   page,
 }) => {
-  await page.setViewportSize({
+  await applyViewportSize(page, {
     height: SHORT_LANDSCAPE_HEIGHT,
     width: phoneLandscapeViewport.width,
   });

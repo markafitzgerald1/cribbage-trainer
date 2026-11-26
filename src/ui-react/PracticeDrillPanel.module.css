@@ -7,6 +7,13 @@
  * above it and never widens the column into the analysis table's share.
  */
 .panel {
+  /* Side padding keeps the cue clear of text; local covers hide it at each resting edge. */
+  background:
+    linear-gradient(#1f6536 50%, transparent) right 2px top / 4px 12px local,
+    linear-gradient(transparent, #1f6536 50%) right 2px bottom / 4px 12px local,
+    linear-gradient(#a7c7ad, transparent) right 2px top / 4px 6px scroll,
+    linear-gradient(transparent, #a7c7ad) right 2px bottom / 4px 6px scroll;
+  background-repeat: no-repeat;
   border: 1.5px solid #43a047;
   border-radius: 10px;
   box-sizing: border-box;
@@ -14,15 +21,31 @@
   display: flex;
   flex-direction: column;
   font-family: var(--text-font-family);
-  gap: 0.25rem;
+  gap: min(0.25rem, 0.5vh);
   margin-top: 0.35rem;
+  max-height: 24dvh;
+  overflow-y: auto;
+  scrollbar-color: #a7c7ad #143b18;
   min-width: 0;
-  padding: 0.35rem 0.5rem;
+  padding: min(0.1rem, 0.25vh) 0.35rem;
   width: 100%;
 }
 
+.panel::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panel::-webkit-scrollbar-track {
+  background-color: #143b18;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background-color: #a7c7ad;
+  border-radius: 4px;
+}
+
 .badge {
-  align-self: flex-start;
+  align-self: center;
   background-color: #2f7d3a;
   border-radius: 4px;
   color: #fff;
@@ -37,7 +60,7 @@
 .verdict {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: min(0.05rem, 0.125vh);
   min-width: 0;
 }
 
@@ -56,6 +79,7 @@
  * dimming on `--text-color` drops contrast to roughly 3.1:1. Italics carry
  * the "secondary" styling here instead.
  */
+.provenance-note,
 .suit-note {
   font-size: 0.75rem;
   font-style: italic;
@@ -63,20 +87,33 @@
   overflow-wrap: anywhere;
 }
 
+.provenance-note {
+  line-height: 1.15;
+}
+
 .verdict-row {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: min(0.1rem, 0.25vh);
   min-width: 0;
 }
 
 .verdict-label {
+  flex: 0 0 auto;
   font-size: 0.8rem;
   font-weight: 700;
-  min-width: 3.1rem;
+  max-width: 100%;
+  min-width: 0;
   opacity: 0.85;
   text-transform: uppercase;
+}
+
+.verdict-values {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: inherit;
 }
 
 /*
@@ -157,9 +194,10 @@
 .outcome-miss {
   font-size: 0.95rem;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.15;
   margin: 0;
   overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
 .outcome-good,
@@ -174,7 +212,7 @@
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: min(0.15rem, 0.4vh);
 }
 
 .primary,
@@ -184,7 +222,7 @@
   font-family: var(--text-font-family);
   font-size: 0.95rem;
   font-weight: 700;
-  padding: 0.25em 0.6em;
+  padding: 0.25em 0.45em;
   transition:
     background-color var(--transition-duration) var(--transition-timing),
     border-color var(--transition-duration) var(--transition-timing);
@@ -256,19 +294,22 @@
  */
 @media (aspect-ratio >= 6 / 5) {
   .panel {
-    gap: min(0.4rem, 0.9vw);
+    gap: min(0.25rem, 0.4vh);
 
     /*
-     * Cap the panel's height and let it scroll so the revealed Now / Before
-     * comparison and the outcome line stay reachable, not clipped by
-     * Trainer's fixed-height, non-scrolling left column at a large device
-     * font. The dvh term only bites on a short phone-landscape viewport; a
-     * desktop landscape resolves the rem term and the panel never scrolls.
+     * Cap the panel's height and let it scroll so the revealed Then / Retry
+     * comparison stays reachable without displacing the verdict and actions in
+     * Trainer's fixed-height left column at a large device font.
      */
     margin-top: min(0.5rem, 1vw);
     max-height: min(16rem, 34dvh);
     overflow-y: auto;
-    padding: min(0.5rem, 1vw) min(0.6rem, 1.2vw);
+    padding: min(0.35rem, 1vh) min(0.6rem, 1.2vw);
+  }
+
+  /* The spanning analysis grid takes height from this column, so shrinking it can also shrink the table. */
+  .panel:has(.verdict) {
+    min-height: min(16rem, 34dvh);
   }
 
   .badge {
@@ -277,7 +318,7 @@
 
   .choosing,
   .verdict {
-    gap: min(0.4rem, 0.9vw);
+    gap: min(0.25rem, 0.4vh);
   }
 
   .prompt,
@@ -291,11 +332,17 @@
   }
 
   /*
-   * A capped font here would shrink well below a readable size at a large
-   * device font on a narrow phone (see AGENTS.md's rem-floor traps), and
-   * unlike the score text around it this note carries no figure the player
-   * needs — so it drops entirely in landscape rather than shrinking.
+   * Plain rem, unlike the capped sizes around it: a vw cap renders this
+   * note near 9px on a phone landscape, and unlike the suit note it carries
+   * the table provenance the verdict depends on, so it cannot simply drop.
+   * The panel scrolls, so the height a large device font adds stays
+   * reachable (skills/ui-layout-and-interaction/SKILL.md, capping spacing
+   * rather than font size).
    */
+  .provenance-note {
+    font-size: 0.75rem;
+  }
+
   .suit-note {
     display: none;
   }
@@ -311,7 +358,6 @@
 
   .verdict-label {
     font-size: min(0.85rem, 1.45vw);
-    min-width: min(3.4rem, 6.1vw);
   }
 
   .not-recorded {
@@ -319,20 +365,6 @@
   }
 
   .actions {
-    gap: min(0.4rem, 0.9vw);
-  }
-
-  /*
-   * Short-screen pattern (AGENTS.md): in the revealed state the actions ride
-   * above the verdict, so Draw another / Exit stay on screen when a large
-   * device font makes the two rows plus the outcome line tall. The panel
-   * then caps its own height and scrolls, so the Now / Before comparison
-   * and the outcome stay reachable rather than clipped by Trainer's
-   * fixed-height, non-scrolling left column. The dvh term only bites on a
-   * short phone-landscape viewport; a desktop landscape resolves the rem
-   * term and the panel never scrolls there.
-   */
-  .verdict .actions {
-    order: -1;
+    gap: min(0.25rem, 0.4vh);
   }
 }

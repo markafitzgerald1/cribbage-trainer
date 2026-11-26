@@ -316,7 +316,7 @@
   color: #eef8ef;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.15rem 0.4rem;
+  padding: 0.15rem min(0.4rem, 1.8vw);
   text-transform: uppercase;
 }
 
@@ -354,13 +354,18 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
+  white-space: nowrap;
+}
+
+.points-value {
+  white-space: nowrap;
 }
 
 .quantile-badge {
   border-radius: 4px;
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 0.15rem 0.4rem;
+  padding: 0.15rem min(0.4rem, 1.8vw);
   text-transform: uppercase;
 }
 
@@ -658,6 +663,10 @@
 
   .summary-cards {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .loss-badge {
+    font-size: min(0.8rem, 3.5vw);
   }
 
   .item-footer {

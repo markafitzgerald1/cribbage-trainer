@@ -1,6 +1,7 @@
 /* jscpd:ignore-start */
 import {
   CRIB_IDENTITY,
+  POLICY_UNCERTAINTY_REJECTIONS,
   type RejectionCase,
   mutatedDocument,
   parsedOrThrow,
@@ -27,7 +28,7 @@ const SHIPPED_IDENTITY = cribRecordIdentity({
   slot: "total",
   starterRank: "A",
 });
-const SHIPPED_STANDARD_ERROR = 0.0236;
+const SHIPPED_STANDARD_ERROR = 0.0195;
 
 /*
  * What version 1 pins for crib alone. Everything the two sidecars share is
@@ -61,6 +62,7 @@ const CRIB_REJECTIONS: readonly RejectionCase[] = [
     }),
     name: "a weighted-variance denominator that is not positive",
   },
+  ...POLICY_UNCERTAINTY_REJECTIONS,
 ];
 
 describe("the crib uncertainty contract", () => {

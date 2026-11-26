@@ -1,5 +1,6 @@
 /.VSCodeCounter/
 /node_modules/
 playwright-report/
+blob-report/
 test-results/
 .claude/

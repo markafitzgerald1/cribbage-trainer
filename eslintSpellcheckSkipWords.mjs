@@ -1,4 +1,6 @@
 export const spellcheckSkipWords = [
+  "rng",
+  "precut",
   "amd64",
   "antialiasing",
   "arm64",
@@ -67,6 +69,7 @@ export const spellcheckSkipWords = [
   "Mobx",
   "mousedown",
   "msedge",
+  "nowrap",
   "os",
   "pathname",
   "personalization",

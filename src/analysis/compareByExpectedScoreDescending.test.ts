@@ -1,8 +1,9 @@
-import { CARDS, type Card } from "../game/Card";
+import { CARDS, type Card, parseHand, serializeHand } from "../game/Card";
 import { type ScoredKeepDiscard, ZERO_EXPECTED_PLAY_POINTS } from "./analysis";
 import {
   ScoredKeepDiscardSortKey,
   compareByExpectedNetScoreThenRankDescending,
+  compareByExpectedScoreThenRank,
   compareByExpectedScoreThenRankDescending,
 } from "./compareByExpectedScoreDescending";
 import { describe, expect, it } from "@jest/globals";
@@ -145,4 +146,32 @@ describe("compareByExpectedScoreDescending", () => {
       )(lowNetHand, highNetHand),
     ).toBeGreaterThan(0);
   });
+});
+
+describe("directional comparison", () => {
+  it.each(Object.values(ScoredKeepDiscardSortKey))(
+    "flips score, rank and suit ties exactly for %s",
+    (key) => {
+      const option = (cards: string, score: number) => ({
+        expectedHandPoints: score,
+        expectedNetPoints: score,
+        expectedPlayPoints: { delta: score },
+        keep: parseHand(cards),
+        signedExpectedCribPoints: score,
+      });
+      const options = [
+        option("AS", 1),
+        option("KH", 2),
+        option("KS", 2),
+        option("QS", 2),
+      ];
+      const labels = (ascending: boolean) =>
+        [...options]
+          .sort(compareByExpectedScoreThenRank(key, ascending))
+          .map(({ keep }) => serializeHand(keep));
+
+      expect(labels(false)).toStrictEqual(["KS", "KH", "QS", "AS"]);
+      expect(labels(true)).toStrictEqual(["AS", "QS", "KH", "KS"]);
+    },
+  );
 });

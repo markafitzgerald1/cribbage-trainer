@@ -12,13 +12,18 @@ const mockSummaryClasses = {
 };
 
 describe("dialogSummaryCards", () => {
-  it("renders metric labels and values", () => {
-    const { getByText } = render(
+  it("renders metric labels and values and exposes notes for supplied accessible values", () => {
+    const { getByRole, getByText } = render(
       <DialogSummaryCards
         classes={mockSummaryClasses}
         metrics={[
           { label: "Metric One", value: 42 },
-          { label: "Metric Two", value: "85%" },
+          { accessibleValue: null, label: "Metric Three", value: "unnamed" },
+          {
+            accessibleValue: "Metric Two: 85 percent",
+            label: "Metric Two",
+            value: "85%",
+          },
         ]}
       />,
     );
@@ -26,6 +31,11 @@ describe("dialogSummaryCards", () => {
     expect(getByText("Metric One").textContent).toBe("Metric One");
     expect(getByText("42").textContent).toBe("42");
     expect(getByText("Metric Two").textContent).toBe("Metric Two");
-    expect(getByText("85%").textContent).toBe("85%");
+    expect(
+      ["42", "unnamed"].map((value) => getByText(value).getAttribute("role")),
+    ).toStrictEqual([null, null]);
+    expect(
+      getByRole("note", { name: "Metric Two: 85 percent" }).textContent,
+    ).toBe("85%");
   });
 });

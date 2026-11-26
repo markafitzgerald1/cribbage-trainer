@@ -1,6 +1,6 @@
 ---
 name: dependency-maintenance
-description: Use before bumping dependencies, taking a major upgrade, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, and the gate-shifting effects of formatter and duplicate-detector majors.
+description: Use before bumping dependencies, taking a major upgrade, adding or changing a `uses:` pin in a workflow or composite action, or whenever `npm run lint:audit` fails on an advisory — covers caret `overrides`, `.nsprc` waivers, maintenance dist-tags, the gate-shifting effects of formatter and duplicate-detector majors, and how to verify an action's runtime and annotations.
 compatibility: Requires npm and network access to the registry.
 ---
 
@@ -11,11 +11,20 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
 
 **Learnings:**
 
-- Dependabot intentionally ignores ESLint 10.0.0 through 10.11.0 because the
-  latest `eslint-plugin-jsx-a11y` release (6.10.2) declares peer support only
-  through ESLint 9. Before changing that range, verify both packages' current
-  registry metadata; do not bypass the peer conflict with
-  `--legacy-peer-deps`.
+- Dependabot intentionally ignores ESLint 10.0.0 through 10.15.0 because the
+  latest `eslint-plugin-jsx-a11y` (6.10.2) and `eslint-plugin-react` (7.37.5)
+  releases declare peer support only through ESLint 9. Before changing that
+  range, verify those packages' current registry metadata; do not bypass the
+  peer conflict with `--legacy-peer-deps`. The range is bounded on purpose,
+  so once ESLint publishes past it the next `npm-all` group takes the major
+  and `build-and-test` dies within a minute at the Dockerfile's
+  `npm clean-install` with an `ERESOLVE` naming `eslint-plugin-jsx-a11y`
+  (#942, at 10.13.0; #982, at 10.15.0). That is the re-check firing, not
+  a broken lockfile: if the plugins still cap at 9, set `eslint` back to
+  `^9` on the group branch, re-resolve with
+  `npm install --package-lock-only --ignore-scripts`, and raise the
+  ignore's upper bound to the latest published release
+  (`npm view eslint version`), which can be newer than the one it proposed.
 - `lint:audit` is `node scripts/lintAudit.mjs`, not `better-npm-audit`
   directly. When npm.org's `security/advisories/bulk` endpoint is degraded
   it returns "audit endpoint returned an error" / "Unable to process the
@@ -24,7 +33,21 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   infrastructure — it happened three times in a row on #768 while npm was
   down. The wrapper retries an unambiguous endpoint outage and, only if it
   never clears, passes with a loud warning; a real findings table or any
-  other non-zero exit still fails. `scripts/lintAudit.test.mjs`
+  other non-zero exit still fails. An attempt killed at
+  `ATTEMPT_TIMEOUT_MS` (30 s) with no cause in its output is retried on the
+  same schedule but **never softened**: a run that saw such a timeout
+  passes only if a later attempt completes the audit with exit 0, and
+  fails otherwise, even if a later attempt reports an endpoint outage.
+  That retry earns its place on measurement, not on analogy with the
+  outage case. Across 75 CI jobs that ran the audit from 2026-10-18 to
+  2026-10-31, it timed out three times, all within 30 minutes on the
+  evening of 2026-10-30 (ET), every one with no output at all. Audits that
+  completed in that window took 12 to 14 s against a 7.6 s median overall,
+  and a rerun four minutes later passed. That is consistent with a slow
+  registry and supports retrying, though it does not prove why any one
+  child stalled. The 30 s ceiling is also tighter than it looks: two audits
+  that completed with real findings on 2026-10-24 took 23 and 26 s.
+  `scripts/lintAudit.test.mjs`
   (`npm run test:lint-audit`, its own CI step next to `test:skill-paths`)
   pins the classifier. If you genuinely need the raw tool — to confirm a
   fix cleared an advisory — run `npx better-npm-audit audit` yourself; do
@@ -97,6 +120,15 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   release at all, pin what can be pinned and record the remainder as a
   `.nsprc` exception with an `expiry`, so the waiver ages out and forces a
   re-check the way the dependabot `ignore` entries do.
+- Size a waiver's `expiry` by what a re-check could change, not by habit.
+  Every lapse fails `lint:audit` on every open branch at once, so each one
+  costs a fix and a cherry-pick per pull request. Where a patched release
+  is plausible soon, such as a backport to an older line, two weeks is
+  right. Where no fix exists for any line and the package only reaches dev
+  tooling, a re-check can only confirm the note and Dependabot surfaces a
+  fixed release regardless, so give it months. The deepmerge waiver
+  (1243505) went from a one-week expiry to one month by reflex before this
+  was worked out.
 - Before concluding that an older major line has no patched release, check
   its maintenance dist-tag. `npm view <package> version` reports only
   `latest`, which hides backports: brace-expansion publishes them as
@@ -107,6 +139,19 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   `>=2.0.0 <2.1.4`, `>=4.0.0 <5.0.9`), which is the version to caret in
   `overrides`. The 2026-07-31 advisory wave looked like it needed an ESLint
   or stylelint major and needed no upgrade at all.
+- An advisory's range can lag a backport, and an advisory can be
+  withdrawn. `gh api /advisories/<GHSA id>` shows the
+  `first_patched_version` recorded for each listed range and any
+  `withdrawn_at`. One range can span several majors and name only the
+  newest fix, so it can miss a backport: look for one in the
+  package's maintenance dist-tags (`npm view <package> dist-tags`) and its
+  upstream commits. In November 2026 glob
+  shipped the fix for 1244013 as 13.0.7 under `v13-legacy`, but the
+  advisory still listed `<=14.0.1`: move the lock to the backport anyway
+  (delete the stale lock entry and re-resolve), and keep the waiver while
+  `npm audit` still reports the advisory against any locked copy. The
+  deepmerge advisory 1243505 was withdrawn on 2026-11-16, which is why
+  better-npm-audit then reported its waiver as matching nothing.
 - A `.nsprc` waiver can outlive the gap it covered without anything
   noticing, which is the other reason not to pin exactly. The
   brace-expansion 1.x/2.x waiver was written when 1.1.16 and 2.1.2 were
@@ -134,3 +179,125 @@ to clear `better-npm-audit` advisories without breaking the quality gates.
   pin freezes a package at whatever was patched when it was written, so a
   later advisory wave on the same package cannot be cleared by
   `npm audit fix` until the pin becomes a caret (`^1.20.0`).
+- **An ERESOLVE on an in-range patched version can be npm failing to update
+  existing lock entries, not a real conflict; re-resolve the family from
+  scratch before reaching for an override or a waiver.** On 2026-10-23 thirteen
+  advisories turned `lint:audit` red on a clean `origin/main`. Plain
+  `npm audit fix` cleared seven (fast-uri, zod, addon-vitest) and left six in
+  storybook (fixed in 10.6.2) and the vitest family (fixed in 5.0.3 to 5.0.5),
+  even though both patched lines sat inside the existing carets. `npm update`
+  left the lock at storybook 10.6.0 and vitest 5.0.2, and forcing the versions
+  failed with an ERESOLVE that blamed storybook's optional peer `vite-plus`,
+  whose own optional peer is `@vitest/browser-playwright@4.1.10`. That reads
+  as a genuine major-version conflict and is not one: `vite-plus` is not
+  installed, and every override tried made things worse (one form ran npm out
+  of memory, another failed `EOVERRIDE` against the direct dependency, another
+  failed `ERESOLVE` against the existing lock). What worked was deleting every
+  `packages` entry matching
+  `^node_modules/(vitest|@vitest/[^/]+|storybook|@storybook/[^/]+)(/|$)` from
+  `package-lock.json` (35 entries), then
+  `npm install --package-lock-only --ignore-scripts` and
+  `npm audit fix --package-lock-only --ignore-scripts`. Re-resolving from
+  nothing picked storybook 10.6.3 and vitest 5.0.5 and left `vite-plus` out of
+  the tree. Raise the direct dependencies' `package.json` floors to the patched
+  versions in the same change, so the lock cannot drift back below them, and
+  drop any `.nsprc` entry that `better-npm-audit` reports as matching nothing.
+  Expect the next `npm update` or `audit fix` on these families to hit the same
+  ERESOLVE until the lock entries are rebuilt this way; a Dependabot group may
+  fail identically.
+
+## Bumping GitHub Actions pins
+
+**Description:** How to tell whether an action pin runs on a deprecated Node
+runtime, and how to prove a bump cleared the warning. #812 (issue #677) moved
+the pins off Node 20; these are the traps that work met.
+
+**Learnings:**
+
+- **Read the runtime from the action's own `action.yml` at the candidate
+  tag, never from its release notes.** `runs.using` is the runtime the
+  action declares, which is what the deprecation warning is raised on; the
+  runner may force it onto a newer Node anyway. `actions/upload-artifact`
+  v5.0.0's release notes say it supports Node 24, while its `action.yml`
+  still declares `node20`; v6.0.0 is the release that declares `node24`.
+  Rerun this rather than trusting a list of actions written down earlier:
+
+  ```bash
+  grep --recursive --no-filename --only-matching --extended-regexp \
+    'uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[^ ]+' .github \
+    | sed 's/^uses: //' | sort --unique | while IFS=@ read -r repo ref; do
+    gh api "repos/$repo/contents/action.yml?ref=$ref" --jq .content \
+      | base64 --decode | grep --extended-regexp 'using:' \
+      | sed "s|^ *|$repo@$ref |"
+  done
+  ```
+
+  It prints one line per distinct pin it matches and is not a complete
+  inventory. It never matches a quoted value, a sub-path action
+  (`owner/repo/path@ref`), a reusable workflow, a `docker://` reference or a
+  local action, and it silently drops each. Counts cannot show what it
+  dropped, since the listing is deduplicated and `uses:` lines are not, so
+  print the lines it cannot match instead. This command excludes local
+  `./` references on purpose: their own `uses:` lines are read only when the
+  action lives under `.github`, as `publish-pages-content` does, so a local
+  action kept elsewhere is not scanned by either command. Read each line it
+  prints, since a comment that contains `uses:` appears too:
+
+  ```bash
+  grep --recursive --line-number 'uses:' .github | grep --invert-match \
+    --extended-regexp 'uses: ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[^ ]+|\./)'
+  ```
+
+  The listing also matches inside comments and `run:` strings, which yield
+  false entries. A pin that prints no line, or a `404` on stderr, is not a
+  clean result. Causes include a tag that does not exist, an `action.yaml`
+  file name, an authentication or rate-limit error, and a repository or path
+  that holds no action metadata at all, as some false entries do. Others
+  resolve to a real action and print a normal-looking line.
+
+- **A composite action has no runtime of its own; it inherits whatever it
+  wraps.** `runs.using: composite` tells you nothing, so read the `uses:`
+  lines inside it. `actions/upload-pages-artifact` v4.0.0 wraps
+  `upload-artifact` v4.6.2 (`node20`), and v5.0.0 wraps v7.0.0 (`node24`), so
+  the pages action's own version is what decides which runtime you get.
+- **Re-check the pins when a job is added or a `uses:` line changes, not
+  only when bumping.** `actions/download-artifact@v6` declares `node20` and
+  entered the workflow with the `merge-e2e-reports` job (#945), after #812 had
+  cleared the others; on run 41162101510 that job's check run carries the
+  "Node.js 20 is deprecated" annotation, and #958 later moved the pin to v8.
+  Nothing failed in between, and `.github/dependabot.yml` configures no
+  `github-actions` ecosystem, so only the annotation or the listing above
+  shows it and pins move only by hand.
+- **Prove a deprecation annotation is gone against a same-day control, not
+  by its absence alone.** Read a job's annotations through the REST API,
+  taking job ids from the run, and filter on the message:
+
+  ```bash
+  gh api repos/<owner>/<repo>/actions/runs/<run-id>/jobs
+  gh api repos/<owner>/<repo>/check-runs/<job-id>/annotations \
+    --jq '[.[] | select(.message | test("Node.js 20"))]'
+  ```
+
+  Filter because the unfiltered list is rarely empty: on runs since October
+  2026 every job that ran also carries the `ubuntu-latest` migration notice,
+  so a non-empty list does not mean the warning is still there. A job skipped
+  by its `if:` returns an empty list (`build-upload-and-deploy` on a pull
+  request), and that says nothing about the pins. A filtered `[]` from the
+  fixed run proves nothing until the same job on an old-pin run is shown to
+  match, so pair the two.
+  Pick a job that runs `uses:` steps: the current `build-and-test` is an
+  aggregator with none, so it never carries the warning.
+
+- **A production-only job cannot be verified by any pull request.**
+  `build-upload-and-deploy` runs only on a push to main, so the check is the
+  first push-to-main run after the merge. The preview job exercises the same
+  `publish-pages-content` composite, so the Pages actions are covered before
+  merge only when that job ran and its "Publish preview content and deploy"
+  step was not skipped. The job skips fork and Dependabot pull requests, and
+  the step skips when the pull request is no longer open by then, as when it
+  merges while the gate is still running; either way the job can still show
+  green. The production job's own steps are not covered either way.
+  `pages-preview-cleanup.yml` skips merged pull requests and no-ops without a
+  `pages-content` branch, so it runs for real only when a pull request from
+  this repository closes unmerged. Say in the pull request which jobs are
+  left to that later observation instead of reporting them verified.

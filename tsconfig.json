@@ -23,7 +23,8 @@
     "jsx": "react-jsx",
 
     /* Projects */
-    "composite": true
+    "composite": true,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
   },
   "include": [
     "*.js",

@@ -122,6 +122,101 @@ export const SortedByHandPoints: Story = {
   },
 };
 
+// Read from computed styles because the marker is CSS keyed on aria-sort, which jsdom cannot evaluate.
+// The thickness is reported as "set" rather than in pixels, which vary with the viewport's font size.
+const underlineOf = (label: Element) => {
+  const { textDecorationLine, textDecorationThickness } =
+    getComputedStyle(label);
+  const thickness = textDecorationThickness === "auto" ? "auto" : "set";
+  return `${textDecorationLine} ${thickness}`;
+};
+
+// Content is read because without it neither part renders, whatever its border says.
+const arrowOf = (unit: Element) => {
+  const stem = getComputedStyle(unit, "::before");
+  const head = getComputedStyle(unit, "::after");
+  return [
+    stem.content,
+    head.content,
+    head.borderTopStyle,
+    head.borderBottomStyle,
+    stem.forcedColorAdjust,
+    head.forcedColorAdjust,
+  ].join(" ");
+};
+
+const sortMarkerOf = (header: HTMLElement) => {
+  const [label, unit] = header.querySelectorAll("button > span");
+  return {
+    arrow: unit ? arrowOf(unit) : "",
+    underline: label ? underlineOf(label) : "",
+  };
+};
+
+const scoreHeadersAfterLoad = async (canvasElement: HTMLElement) => {
+  await waitForLoadingToDisappear(within(canvasElement));
+  return within(canvasElement)
+    .getAllByRole("columnheader")
+    .filter((header) => header.querySelector("button") !== null);
+};
+
+const arrowOffsets = (header: HTMLElement) => {
+  const unit = header.querySelector("button > span:last-child") as Element;
+  const topInEm = (pseudo: string) => {
+    const style = getComputedStyle(unit, pseudo);
+    return (
+      Math.round((100 * parseFloat(style.top)) / parseFloat(style.fontSize)) /
+      100
+    );
+  };
+  return [topInEm("::before"), topInEm("::after")];
+};
+
+const assertHandAndCribMarker = async (
+  canvasElement: HTMLElement,
+  direction: "ascending" | "descending",
+) => {
+  const scoreHeaders = await scoreHeadersAfterLoad(canvasElement);
+  const unmarked = {
+    arrow: "none none none none auto auto",
+    underline: "none auto",
+  };
+
+  const activeHeader = scoreHeaders[2] as HTMLElement;
+
+  await expect(activeHeader).toHaveAttribute("aria-sort", direction);
+  await expect(arrowOffsets(activeHeader)).toStrictEqual(
+    direction === "ascending" ? [0.6, 0.25] : [0.25, 0.8],
+  );
+  await expect(scoreHeaders.map(sortMarkerOf)).toStrictEqual([
+    unmarked,
+    unmarked,
+    {
+      arrow: `"" "" ${direction === "ascending" ? "none solid" : "solid none"} none none`,
+      underline: "underline set",
+    },
+    unmarked,
+    unmarked,
+  ]);
+};
+
+export const SortedByHandAndCribPoints: Story = {
+  ...JackSixFiveFourKingQueenSortedAscending,
+  args: {
+    ...JackSixFiveFourKingQueenSortedAscending.args,
+    scoreSortKey: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+  },
+  play: ({ canvasElement }) =>
+    assertHandAndCribMarker(canvasElement, "descending"),
+};
+
+export const WorstFirstByHandAndCribPoints: Story = {
+  ...SortedByHandAndCribPoints,
+  args: { ...SortedByHandAndCribPoints.args, analysisOrder: "ascending" },
+  play: ({ canvasElement }) =>
+    assertHandAndCribMarker(canvasElement, "ascending"),
+};
+
 /*
  * Waits out the table load and states what the caption then reads, which is
  * where both role-cost stories start; jscpd counts the second spelling of
@@ -153,7 +248,7 @@ const captionAfterLoad = async (
 };
 
 /*
- * Discarding the 9 of diamonds and the 3 of spades here costs 3.11 as
+ * Discarding the 9 of diamonds and the 3 of spades here costs 3.37 as
  * dealer and exactly nothing as pone, so the caption shows the #824 pair of
  * role costs beside the component decomposition it does not replace.
  */
@@ -165,7 +260,7 @@ export const RoleLossPair: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Sub-optimal: 3.11 dealer, 0.00 pone",
+      "Sub-optimal: 3.37 dealer, 0.00 pone",
     );
 
     /*
@@ -192,7 +287,7 @@ const roleLossWithheldStory = createStory(
 );
 
 /*
- * The state most hands are in: this discard costs 0.82 as pone and 3.46 as
+ * The state most hands are in: this discard costs 0.58 as pone and 3.17 as
  * dealer, so the reversed figure would say only that the role not held
  * would have been worse. One figure, in the wording this caption carried
  * before #824.
@@ -203,7 +298,7 @@ export const RoleLossWithheld: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Sub-optimal: 0.82 pts lost",
+      "Sub-optimal: 0.58 pts lost",
     );
 
     // The caption is on screen with its single figure, so the reversed-role clause is absent rather than simply not rendered.
@@ -303,6 +398,22 @@ export const PlayUncertainty: Story = figureStory(
   /You - Opp/u,
 );
 
+// The pegging model's assumption is on screen with the per-seat figures and folds away with them.
+export const PlayAssumption: Story = {
+  ...Expanded,
+  play: async (context) => {
+    const canvas = await expandedCanvas(context);
+
+    await expect(
+      await canvas.findByText("Assumes both players peg near-optimally"),
+    ).toBeVisible();
+
+    await fireEvent.click(canvas.getByRole("button", { name: /You - Opp/u }));
+
+    await expect(canvas.queryByText(/near-optimally/u)).toBeNull();
+  },
+};
+
 export const UncertaintyUnavailable: Story = {
   ...Expanded,
   args: {
@@ -318,7 +429,7 @@ export const UncertaintyUnavailable: Story = {
 };
 
 /*
- * A wide, fixed standard error so the 0.09-point loss of discarding both kings
+ * A wide, fixed standard error so the 0.12-point loss of discarding both kings
  * lands inside the #774 noise threshold whatever the shipped sidecars say.
  * Held rather than built per render, for the effect-dependency reason above.
  */
@@ -343,7 +454,7 @@ export const WithinSimulationNoise: Story = {
   play: async ({ canvasElement }) => {
     const canvas = await captionAfterLoad(
       canvasElement,
-      "Within noise: 0.09 pts lost",
+      "Within noise: 0.12 pts lost",
     );
 
     await expect(canvas.queryByText(/Sub-optimal/u)).toBeNull();

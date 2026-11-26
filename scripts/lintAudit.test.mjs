@@ -1,11 +1,14 @@
 import {
   ATTEMPT_TIMEOUT_MS,
+  BACKOFF_MS,
+  MAX_ATTEMPTS,
   classifyAuditOutcome,
   runAuditOnce,
   runAuditWithResilience,
 } from "./lintAudit.mjs";
-import { strictEqual } from "node:assert/strict";
+import { deepStrictEqual, strictEqual } from "node:assert/strict";
 import { test } from "node:test";
+import { setImmediate as yieldToEventLoop } from "node:timers/promises";
 
 // A trimmed sample of the real better-npm-audit output when npm.org's
 // advisories/bulk endpoint is degraded — the failure this wrapper exists for.
@@ -45,15 +48,13 @@ test("classifyAuditOutcome: real advisories fail even if the text mentions a 503
   );
 });
 
-test("classifyAuditOutcome: an unexplained timeout fails rather than passing", () => {
-  // A killed child proves nothing about why. Softening every timeout would let
-  // three stalled attempts return success with no audit result at all.
-  strictEqual(classifyAuditOutcome({ output: "", status: 1 }), "fail");
-});
-
 test("classifyAuditOutcome: a timeout whose output names an outage is transient", () => {
   strictEqual(
-    classifyAuditOutcome({ output: ENDPOINT_OUTAGE, status: 1 }),
+    classifyAuditOutcome({
+      output: ENDPOINT_OUTAGE,
+      status: 1,
+      timedOut: true,
+    }),
     "transient",
   );
 });
@@ -84,11 +85,12 @@ test("runAuditOnce reports a killed child as a non-zero status", () => {
   strictEqual(runAuditOnce({ spawn: stub.spawn }).status, 1);
 });
 
-test("a timeout explaining nothing fails the build", () => {
+test("a timeout explaining nothing is retryable but never transient", () => {
+  // "transient" is the outcome that softens to a pass once retries run out.
   const stub = spawnStub({ ...TIMED_OUT, stdout: "" });
   strictEqual(
     classifyAuditOutcome(runAuditOnce({ spawn: stub.spawn })),
-    "fail",
+    "timeout",
   );
 });
 
@@ -167,4 +169,142 @@ test("runAuditWithResilience: real findings fail on the first attempt", async ()
 
   strictEqual(code, 1);
   strictEqual(calls, 1);
+});
+
+// Replays prepared attempt results in order, counting how many ran.
+const attemptSequence = (results) => {
+  let calls = 0;
+  const runOnce = () => {
+    const result = results.at(Math.min(calls, results.length - 1));
+    calls += 1;
+    return result;
+  };
+  return { calls: () => calls, runOnce };
+};
+
+const SILENT_TIMEOUT = { output: "", status: 1, timedOut: true };
+const PASSED = { output: "", status: 0 };
+const OUTAGE = { output: ENDPOINT_OUTAGE, status: 1 };
+const noWait = () => Promise.resolve();
+
+test("runAuditOnce marks a killed child as timed out", () => {
+  const stub = spawnStub({ ...TIMED_OUT, stdout: "" });
+  strictEqual(runAuditOnce({ spawn: stub.spawn }).timedOut, true);
+});
+
+test("runAuditOnce does not mark a completed child as timed out", () => {
+  const stub = spawnStub({ status: 1, stderr: "", stdout: "" });
+  strictEqual(runAuditOnce({ spawn: stub.spawn }).timedOut, false);
+});
+
+test("classifyAuditOutcome: a silent timeout is its own outcome", () => {
+  strictEqual(classifyAuditOutcome(SILENT_TIMEOUT), "timeout");
+});
+
+test("classifyAuditOutcome: a silent non-zero exit without a timeout still fails", () => {
+  strictEqual(
+    classifyAuditOutcome({ output: "", status: 1, timedOut: false }),
+    "fail",
+  );
+});
+
+// Records each backoff so a retry that skips its wait is caught.
+const recordedWaits = () => {
+  const waits = [];
+  const wait = (ms) => {
+    waits.push(ms);
+    return Promise.resolve();
+  };
+  return { wait, waits };
+};
+
+test("runAuditWithResilience: a timed-out attempt is retried after a backoff and a completed retry passes", async () => {
+  const sequence = attemptSequence([SILENT_TIMEOUT, PASSED]);
+  const backoff = recordedWaits();
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: backoff.wait,
+  });
+
+  strictEqual(code, 0);
+  strictEqual(sequence.calls(), 2);
+  deepStrictEqual(backoff.waits, [BACKOFF_MS]);
+});
+
+test("runAuditWithResilience: every attempt timing out backs off between attempts and fails after MAX_ATTEMPTS", async () => {
+  const sequence = attemptSequence([SILENT_TIMEOUT]);
+  const backoff = recordedWaits();
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: backoff.wait,
+  });
+
+  strictEqual(code, 1);
+  strictEqual(sequence.calls(), MAX_ATTEMPTS);
+  deepStrictEqual(backoff.waits, [BACKOFF_MS, BACKOFF_MS]);
+});
+
+// A run with an unexplained timeout has an attempt nobody can explain, so a
+// later endpoint outage must not soften it into a pass the way an outage is.
+for (const [name, results] of [
+  ["a timeout then outages", [SILENT_TIMEOUT, OUTAGE]],
+  ["an outage then timeouts", [OUTAGE, SILENT_TIMEOUT]],
+  ["outages ending in a timeout", [OUTAGE, OUTAGE, SILENT_TIMEOUT]],
+]) {
+  test(`runAuditWithResilience: ${name} fails rather than softening`, async () => {
+    const sequence = attemptSequence(results);
+    const code = await runAuditWithResilience({
+      runOnce: sequence.runOnce,
+      wait: noWait,
+    });
+
+    strictEqual(code, 1);
+    strictEqual(sequence.calls(), MAX_ATTEMPTS);
+  });
+}
+
+test("runAuditWithResilience: real findings after a timeout still fail at once", async () => {
+  const sequence = attemptSequence([
+    SILENT_TIMEOUT,
+    { output: REAL_FINDINGS, status: 1 },
+  ]);
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: noWait,
+  });
+
+  strictEqual(code, 1);
+  strictEqual(sequence.calls(), 2);
+});
+
+test("runAuditWithResilience: findings printed before the kill fail at once", async () => {
+  const sequence = attemptSequence([
+    { output: REAL_FINDINGS, status: 1, timedOut: true },
+    PASSED,
+  ]);
+  const code = await runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: noWait,
+  });
+
+  strictEqual(code, 1);
+  strictEqual(sequence.calls(), 1);
+});
+
+test("runAuditWithResilience: a timeout retry waits for its backoff to finish", async () => {
+  const sequence = attemptSequence([SILENT_TIMEOUT, PASSED]);
+  let releaseBackoff = noWait;
+  const run = runAuditWithResilience({
+    runOnce: sequence.runOnce,
+    wait: () =>
+      new Promise((resolve) => {
+        releaseBackoff = resolve;
+      }),
+  });
+  await yieldToEventLoop();
+  const callsDuringBackoff = sequence.calls();
+  releaseBackoff();
+
+  strictEqual(await run, 0);
+  strictEqual(callsDuringBackoff, 1);
 });

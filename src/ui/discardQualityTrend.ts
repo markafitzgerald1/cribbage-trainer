@@ -17,6 +17,7 @@ import {
   readTallyForDisplay,
 } from "./discardTally";
 import { CribRole } from "../game/expectedCribPoints";
+import { isRecordedWithinNoise } from "./recordedAdmission";
 
 export { MAX_RECENT_DECISIONS } from "./discardQualityTrendRolling";
 export type { DiscardDecisionPoint } from "./discardQualityTrendRolling";
@@ -30,6 +31,8 @@ export interface DiscardPeriodBucket {
   readonly startTime: number;
   readonly endTime: number;
   readonly decisions: number;
+  // The Best choice share's denominator: `decisions` less those recorded as within simulation noise, as in the tally (#774).
+  readonly judgedDecisions: number;
   readonly meanExpectedPointsLoss: number | null;
   readonly optimalDecisions: number;
   readonly skippedHands: number;
@@ -68,6 +71,9 @@ const meanLossOf = (
   );
   return total / records.length;
 };
+
+const judgedCountOf = (records: readonly DiscardDecisionRecord[]): number =>
+  records.filter((record) => !isRecordedWithinNoise(record)).length;
 
 const padTwo = (value: number): string =>
   value < PAD_THRESHOLD ? `0${value}` : `${value}`;
@@ -289,6 +295,7 @@ const buildCalendarBuckets = ({
   return sorted.map(({ descriptor, records: bucketRecords, skippedCount }) => ({
     decisions: bucketRecords.length,
     endTime: descriptor.endTime,
+    judgedDecisions: judgedCountOf(bucketRecords),
     key: descriptor.key,
     label: descriptor.label,
     meanExpectedPointsLoss: meanLossOf(bucketRecords),
@@ -319,6 +326,7 @@ const buildSkipOnlyRollingBuckets = (
     ({ endIndex, first, last, size, startIndex }) => ({
       decisions: 0,
       endTime: last.at,
+      judgedDecisions: 0,
       key: `skipped-${startIndex}-${endIndex}`,
       label: `${prefix} ${startIndex}–${endIndex}`,
       meanExpectedPointsLoss: null,
@@ -352,6 +360,7 @@ const buildRollingBuckets = ({
     return {
       decisions: item.size,
       endTime: item.last.at,
+      judgedDecisions: judgedCountOf(chunk),
       key: `${item.startIndex}-${item.endIndex}`,
       label: `${prefix} ${item.startIndex}–${item.endIndex}`,
       meanExpectedPointsLoss: meanLossOf(chunk),

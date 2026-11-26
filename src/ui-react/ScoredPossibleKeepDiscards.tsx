@@ -5,16 +5,23 @@ import {
   CribRole,
   type ExpectedCribPointsTable,
 } from "../game/expectedCribPoints";
+import type {
+  DeadlineJudgment,
+  RecordedAdmission,
+} from "../ui/recordedAdmission";
 import { type MouseEvent, useCallback, useEffect, useMemo } from "react";
 import {
   ScoredKeepDiscardSortKey,
-  compareByExpectedScoreThenRankDescending,
+  compareByExpectedScoreThenRank,
 } from "../analysis/compareByExpectedScoreDescending";
+import type { AnalysisOrder } from "../ui/urlAnalysisState";
 import type { DealtCard } from "../game/DealtCard";
 import { type ExpectedPlayPointsTable } from "../game/expectedPlayPoints";
+import { NoiseVerdictBadge } from "./NoiseVerdictBadge";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredPossibleKeepDiscard } from "./ScoredPossibleKeepDiscard";
 import { SortOrder } from "../ui/SortOrder";
+import type { TableIdentity } from "../game/tableIdentity";
 import { type UncertaintySource } from "../game/uncertaintyLoader";
 import { allScoredKeepDiscardsByExpectedNetScoreDescending } from "../analysis/analysis";
 import { renderRoleLossPairText } from "./RoleLossPairText";
@@ -24,7 +31,18 @@ import { useChosenDiagnosticInfo } from "./useChosenDiagnosticInfo";
 import { useExpectedTables } from "./useExpectedTables";
 import { useScoredKeepDiscardRows } from "./useScoredKeepDiscardRows";
 
+// A rest tuple rather than four parameters, the same shape as the tally's ReportAnalysisRendered.
+export type AnalysisRenderedHandler = (
+  ...args: [
+    analysis: RenderedAnalysis,
+    tableIdentity?: TableIdentity | null,
+    admission?: RecordedAdmission | null,
+    judgeAtDeadline?: DeadlineJudgment | null,
+  ]
+) => void;
+
 export interface ScoredPossibleKeepDiscardsProps {
+  readonly analysisOrder?: AnalysisOrder;
   readonly cribRole: CribRole;
   readonly dealtCards: readonly DealtCard[];
   readonly drillPreviousDiscard?: string | null;
@@ -44,6 +62,7 @@ export interface ScoredPossibleKeepDiscardsProps {
    * since they are effect dependencies.
    */
   readonly cribUncertaintySource?: UncertaintySource;
+  readonly tableIdentity?: TableIdentity | null;
   readonly loadPlayTable?: () => Promise<ExpectedPlayPointsTable>;
   readonly playUncertaintySource?: UncertaintySource;
 
@@ -53,7 +72,7 @@ export interface ScoredPossibleKeepDiscardsProps {
    * carries what those results say about the discard the user chose, since
    * nothing outside this component has scored them.
    */
-  readonly onAnalysisRendered: (analysis: RenderedAnalysis) => void;
+  readonly onAnalysisRendered: AnalysisRenderedHandler;
   readonly onScoreSortKeyChange: (
     scoreSortKey: ScoredKeepDiscardSortKey,
   ) => void;
@@ -80,6 +99,11 @@ const getScoringHeaders = () =>
       title: "Sort by signed expected crib points",
     },
     {
+      key: ScoredKeepDiscardSortKey.ExpectedHandAndCribPoints,
+      label: "H+C",
+      title: "Sort by expected show points, pegging left out",
+    },
+    {
       key: ScoredKeepDiscardSortKey.ExpectedPlayPoints,
       label: "Play",
       title: "Sort by expected pegging-point difference",
@@ -102,6 +126,7 @@ const scoreColumnClass = (key: ScoredKeepDiscardSortKey): string => {
 };
 
 export function ScoredPossibleKeepDiscards({
+  analysisOrder = "descending",
   cribRole,
   dealtCards,
   drillPreviousDiscard = null,
@@ -109,6 +134,7 @@ export function ScoredPossibleKeepDiscards({
   cribUncertaintySource = shippedCribUncertainty,
   loadCribTable = cribLoader.loadTable,
   loadPlayTable = playLoader.loadTable,
+  tableIdentity = null,
   playUncertaintySource = shippedPlayUncertainty,
   onAnalysisRendered,
   onScoreSortKeyChange,
@@ -119,6 +145,7 @@ export function ScoredPossibleKeepDiscards({
   const { handleRetry, loadError, tables } = useExpectedTables(
     loadCribTable,
     loadPlayTable,
+    tableIdentity,
   );
 
   const scoredKeepDiscardsByNetScore = useMemo(
@@ -133,6 +160,8 @@ export function ScoredPossibleKeepDiscards({
     [cribRole, dealtCards, tables],
   );
   const {
+    admission,
+    judgeAtDeadline,
     captionAriaLabel,
     chosenClassification,
     noiseBadgeTitle,
@@ -161,9 +190,20 @@ export function ScoredPossibleKeepDiscards({
   useEffect(() => {
     // The scored options are a dependency because Back and Forward swap the hand while this component stays mounted.
     if (tables !== null) {
-      onAnalysisRendered(renderedAnalysis);
+      onAnalysisRendered(
+        renderedAnalysis,
+        tables.tableIdentity ?? null,
+        admission,
+        judgeAtDeadline,
+      );
     }
-  }, [onAnalysisRendered, renderedAnalysis, tables]);
+  }, [
+    admission,
+    judgeAtDeadline,
+    onAnalysisRendered,
+    renderedAnalysis,
+    tables,
+  ]);
   /*
    * Separate from the report above: a sub-optimal verdict now arrives after
    * the sidecars settle (#774), and sharing one effect re-sent the analysis
@@ -184,9 +224,12 @@ export function ScoredPossibleKeepDiscards({
   const scoredKeepDiscards = useMemo(
     () =>
       [...scoredKeepDiscardsByNetScore].sort(
-        compareByExpectedScoreThenRankDescending(scoreSortKey),
+        compareByExpectedScoreThenRank(
+          scoreSortKey,
+          analysisOrder === "ascending",
+        ),
       ),
-    [scoredKeepDiscardsByNetScore, scoreSortKey],
+    [analysisOrder, scoredKeepDiscardsByNetScore, scoreSortKey],
   );
   const scoredKeepDiscardsWithTiers = useScoredKeepDiscardRows({
     chosenClassification,
@@ -238,7 +281,7 @@ export function ScoredPossibleKeepDiscards({
     header: ReturnType<typeof getScoringHeaders>[number],
   ) => (
     <th
-      aria-sort={scoreSortKey === header.key ? "descending" : "none"}
+      aria-sort={scoreSortKey === header.key ? analysisOrder : "none"}
       key={header.key}
       title={header.title}
     >
@@ -288,12 +331,11 @@ export function ScoredPossibleKeepDiscards({
                 Sub-optimal: {renderRoleLossPairText(rolePair)}
               </span>
             ) : (
-              <span
-                className={classes.noiseBadge}
+              <NoiseVerdictBadge
+                rolePair={rolePair}
+                threshold={withinNoiseThreshold}
                 title={noiseBadgeTitle}
-              >
-                Within noise: {renderRoleLossPairText(rolePair)}
-              </span>
+              />
             )}
             <span className={classes.diagnosticReason}>
               {chosenClassification.gainPart === null ? (
@@ -398,6 +440,7 @@ export function ScoredPossibleKeepDiscards({
 }
 
 ScoredPossibleKeepDiscards.defaultProps = {
+  analysisOrder: "descending",
   cribUncertaintySource: shippedCribUncertainty,
   drillPreviousDiscard: null,
   isPracticeDrill: false,
@@ -405,4 +448,5 @@ ScoredPossibleKeepDiscards.defaultProps = {
   loadPlayTable: playLoader.loadTable,
   onStatusChange: null,
   playUncertaintySource: shippedPlayUncertainty,
+  tableIdentity: null,
 };

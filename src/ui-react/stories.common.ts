@@ -26,6 +26,16 @@ export const expectStoryTextVisible = async (
   await expect(within(canvasElement).getByText(text)).toBeVisible();
 };
 
+export const expectStoryNote = async (
+  canvasElement: HTMLElement,
+  name: string | RegExp,
+  value: string,
+): Promise<void> => {
+  await expect(
+    within(canvasElement).getByRole("note", { name }),
+  ).toHaveTextContent(value);
+};
+
 export const clickStoryButtonExpectingCall = async (
   canvasElement: HTMLElement,
   buttonName: RegExp | string,

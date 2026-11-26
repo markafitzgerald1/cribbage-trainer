@@ -1,5 +1,11 @@
+/* jscpd:ignore-start */
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
+import { isAdmittedMistake, isRecordedWithinNoise } from "./recordedAdmission";
 import type { DiscardDecisionRecord } from "./discardTally";
+import type { TableIdentity } from "../game/tableIdentity";
+import { parseHandKey } from "./handKey";
+
+/* jscpd:ignore-end */
 
 export const ROLLING_TWENTY = 20;
 export const ROLLING_FIFTY = 50;
@@ -126,7 +132,10 @@ export interface DiscardDecisionPoint {
    */
   readonly isMastered: boolean;
   readonly isOptimal: boolean;
+  readonly isPracticeEligible: boolean;
   readonly isRetained: boolean;
+  // Recorded as within simulation noise (#774): drawn neutral, never a mistake to practice.
+  readonly isWithinNoise: boolean;
   readonly ordinal: number;
   /*
    * The record's monotonic `recencyAt` (strictly increasing across the
@@ -136,6 +145,7 @@ export interface DiscardDecisionPoint {
    */
   readonly recencyAt: number;
   readonly rollingMeanLoss: number;
+  readonly tableIdentity: TableIdentity | null;
   readonly timestamp: number;
 }
 
@@ -190,12 +200,17 @@ export function buildContinuousDecisionPoints(
       discardKey: record.discardKey,
       expectedPointsLoss: record.expectedPointsLoss,
       handKey: record.handKey,
-      isMastered: !record.isOptimal && masteredHandKeys.has(record.handKey),
+      isMastered:
+        isAdmittedMistake(record) && masteredHandKeys.has(record.handKey),
       isOptimal: record.isOptimal,
+      isPracticeEligible:
+        isAdmittedMistake(record) && parseHandKey(record.handKey) !== null,
       isRetained,
+      isWithinNoise: isRecordedWithinNoise(record),
       ordinal: globalIndex + 1,
       recencyAt: record.recencyAt ?? record.at,
       rollingMeanLoss,
+      tableIdentity: record.tableIdentity ?? null,
       timestamp: record.at,
     };
   });

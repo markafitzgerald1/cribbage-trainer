@@ -19,6 +19,76 @@ thumb. Both humans and AI agents need to understand and respect this constraint.
 Expected values must always be derived from simulation, enumeration, or
 probability, rather than hard-coded heuristics or subjective weighting.
 
+Practice retains the latest 1,000 committed retries globally. Aggregate counters
+and streaks, rather than the surviving attempt log, remain the mastery authority.
+The Chromium storage stress fixture with 10,000 decisions, 10,000 aggregates and
+1,000 attempts stores and reloads exactly at 5,147,904 bytes, leaving 94,955 ASCII
+characters of headroom; 2,000 attempts exceed quota. Full decision/aggregate caps
+already need about 5 MB before any attempts in that fixture. Larger legal tallies
+or other origin data can still exhaust storage; failed writes retain session
+progress but cannot guarantee durability across reload. Decision/aggregate codec
+compaction is a separate follow-up, with both 10,000-row caps kept here.
+
+## Evidence
+
+What the pegging advice is built on, and what it is known to be worth. These
+figures compare bots, not people. Each win rate is a percentage, where 50 is
+parity, plus or minus one standard error in percentage points, from 500,000
+pairs of duplicate games with the seats swapped. They are not adjusted for
+multiple comparisons.
+
+**Bottom line:** how well a player pegs matters far more than whether they
+follow this table or the app's previous one. This table's advice is a small
+gain for players who peg near-optimally and a small loss for players who peg
+like the simulator's older heuristic, because advice built from pegging values
+fits the pegging it assumes. That is why the app says "Assumes both players peg
+near-optimally". The larger gain is in pegging play itself, which the app does
+not teach yet.
+
+1. **Pegging well is worth about 5.6 points of win rate.** Two bots discard by
+   the app's previous table, so only their pegging differs. The one that pegs
+   with the solved policy wins 55.638% ± 0.029 of games against the one that
+   pegs with the older heuristic.
+2. **This discard table helps near-optimal pegging a little.** A bot that
+   discards by this table plays one that discards by the previous table, both
+   pegging with the solved policy. The new discard table's bot wins
+   50.287% ± 0.027, 0.287 points above an even split.
+3. **It hurts heuristic pegging a little.** Same match, but both bots peg with
+   the older heuristic: the new discard table's bot wins 49.724% ± 0.023, 0.276
+   points below even.
+4. **The solved pegging is close to optimal.** An opponent who knew the policy
+   exactly could gain at most 0.00047 points a hand against it. That is an exact
+   average over the two seats and over the pairs of kept hands it was solved on,
+   by card rank: half from uniform random four-card hands, half from six-card
+   deals kept by the simulator's earlier discard rule. It does not bound a
+   single hand, or another mix of hands.
+
+How people actually peg is not measured, so it is not known whether this table
+makes people win more.
+
+A table does better in the pegging style it was measured in. This one's
+advantage is established for players who peg like the solved policy, not for
+the heuristic and not for people. The table uses card ranks only, aims for
+points rather than for winning from the current score, and takes opponents'
+discards from a fixed population that was not solved together with the pegging.
+The
+[release notes](https://github.com/markafitzgerald1/simulate-cribbage-games/releases/tag/expected-play-points)
+have the remaining comparisons.
+
+### Table history
+
+Each play table keeps its entry when a newer one takes over. The digest is the
+start of the means file's SHA-256, which the app records with each decision.
+
+- **`4ef452e2`, CFR table, 2026-11-25 (#908):** current. Measured with the solved
+  CFR pegging policy in both seats.
+- **`7420b180`, June 2026 (#636):** replaced by the CFR table. Measured with the
+  trained pegging policy of the time in both seats.
+- **`6ed3a051`, weekly release, 2026-11-22 (#898):** never in the app. Measured
+  with the simulator's heuristic in both seats.
+- **`41ddcbd6`, October 2026 research:** never released. Measured with an earlier
+  CFR pegging policy in both seats.
+
 ## Continuous deployment
 
 Code in `main` is automatically built on `git push` and deployed to the [GitHub
@@ -92,7 +162,8 @@ a real trust decision attached, to remove a single tap.
 - Fast checks, and what `.husky/pre-commit` runs by default on each commit
   (about 20 seconds): `npm run verify:fast`
 - The full gate: `npm run docker:build-and-test-all`. Continuous integration
-  runs this for you against your pull request's head — but only once the PR
+  runs the same checks, split into parallel jobs, against your pull
+  request's head — but only once the PR
   exists: a branch pushed with no open PR triggers no CI. Open the PR right
   after the first commit (the flow below), or run the gate yourself when CI
   cannot serve that purpose — work that will stay unpushed, or a failure

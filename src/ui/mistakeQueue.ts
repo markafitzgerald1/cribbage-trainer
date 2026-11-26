@@ -2,6 +2,8 @@ import { type DiscardDecisionRecord, type StoredTally } from "./discardTally";
 import { type PracticeRecord, SUCCESSES_FOR_MASTERY } from "./practiceLedger";
 import { type Card } from "../game/Card";
 import { CribRole } from "../game/expectedCribPoints";
+import type { TableIdentity } from "../game/tableIdentity";
+import { isAdmittedMistake } from "./recordedAdmission";
 import { parseHandKey } from "./handKey";
 
 export { SUCCESSES_FOR_MASTERY } from "./practiceLedger";
@@ -29,6 +31,7 @@ export interface MistakeQueueQuantileThresholds {
 }
 
 export interface MistakeQueueItem {
+  readonly tableIdentity?: TableIdentity | null;
   readonly attempts: number;
   readonly cards: readonly Card[];
   readonly consecutiveSuccesses: number;
@@ -117,6 +120,7 @@ export const computePriority = (lossIfWrong: number, pWrong: number): number =>
   lossIfWrong * pWrong;
 
 interface HandAggregate {
+  tableIdentity: TableIdentity | null;
   discardKey: string | null;
   expectedPointsLoss: number;
   handKey: string;
@@ -155,9 +159,7 @@ const aggregateMistakeRecords = (
   const map = new Map<string, HandAggregate>();
 
   for (const record of records) {
-    const isMistake =
-      !record.isPractice && !record.isOptimal && record.expectedPointsLoss > 0;
-    if (isMistake) {
+    if (isAdmittedMistake(record)) {
       const existing = map.get(record.handKey);
       const recencyAt = record.recencyAt ?? record.at;
       const originalAt = existing
@@ -174,6 +176,7 @@ const aggregateMistakeRecords = (
                 record.oppositeRoleExpectedPointsLoss ?? null,
               originalAt,
               recencyAt,
+              tableIdentity: record.tableIdentity ?? null,
             }
           : { ...existing, originalAt },
       );
@@ -225,6 +228,7 @@ const createCandidateQueueItem = ({
     previousDiscardLoss: aggregate.expectedPointsLoss,
     previousDiscardOppositeRoleLoss: aggregate.oppositeRoleExpectedPointsLoss,
     priority,
+    tableIdentity: aggregate.tableIdentity,
     wrong,
   };
 };
@@ -338,15 +342,15 @@ const itemAt = (
 ): MistakeQueueItem => items.at(index) as MistakeQueueItem;
 
 /*
- * Draws one active (non-mastered) hand weighted by `priority` — the expected
- * points a single correct drill of that hand recovers, the same quantity the
- * "priority" sort order ranks by, so the browse list and the auto-deal share
- * one function. `random` is a uniform value in [0, 1); callers pass their
- * existing generator. When every active hand still has priority 0 (no wrong
- * attempt has cost anything yet) the draw falls back to uniform so a hand is
- * still dealt. `excludeHandKey` drops the hand just drilled so a run never
- * deals it twice in a row, unless it is the only active hand left. Returns
- * null only when no active hand exists.
+ * Draws one active (non-mastered) hand using the recorded-attempt priority
+ * that also ranks the browse list, so sorting and automatic practice agree
+ * without scoring history under current tables. Priority is the expected
+ * points one correct drill recovers. `random` is a uniform value in [0, 1);
+ * callers pass their existing generator. When every active hand still has
+ * priority 0 (no wrong attempt has cost anything yet), the draw falls back
+ * to uniform so a hand is still dealt. `excludeHandKey` drops the hand just
+ * drilled so a run never deals it twice in a row, unless it is the only
+ * active hand left. Returns null only when no active hand exists.
  */
 export const sampleMistakeQueueByPriority = (
   items: readonly MistakeQueueItem[],

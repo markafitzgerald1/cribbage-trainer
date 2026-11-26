@@ -9,13 +9,13 @@ const ONE_DAY_MS = 86_400_000;
 
 /*
  * Real "cards|role" keys (parseHandKey rejects the "dialog-N" stubs), so a
- * tapped chart mistake resolves to a MistakeQueueItem. The zero-loss
- * non-optimal row is a chart marker the queue deliberately drops.
+ * tapped chart mistake resolves to a MistakeQueueItem. The last row was
+ * excluded as sampling noise when recorded, so it stays outside the queue.
  */
 const PRACTICE_READY_ROWS = [
   { handKey: "5H,6H,7H,8H,9H,10H|Dealer", loss: 1.4, role: CribRole.Dealer },
   { handKey: "AC,2C,3C,4C,5C,6C|Pone", loss: 0.5, role: CribRole.Pone },
-  { handKey: "2D,3D,4D,5D,6D,7D|Dealer", loss: 0, role: CribRole.Dealer },
+  { handKey: "2D,3D,4D,5D,6D,7D|Dealer", loss: 0.2, role: CribRole.Dealer },
 ] as const;
 
 export const dialogTally = (decisionCount: number): StoredTally =>
@@ -85,18 +85,19 @@ export const practiceReadyDialogTally = (): StoredTally =>
   createMockTally({
     lifetime: {
       decisions: 3,
-      expectedPointsLossTotal: 1.9,
-      optimalDecisions: 1,
+      expectedPointsLossTotal: 2.1,
+      optimalDecisions: 0,
       skippedHands: 0,
     },
     records: PRACTICE_READY_ROWS.map((row, index) => ({
       at: TALLY_START + ONE_DAY_MS * index,
       cribRole: row.role,
-      discardKey: "5H,6H",
+      discardKey: row.handKey.split("|")[0]!.split(",").slice(0, 2).join(","),
       expectedPointsLoss: row.loss,
       handKey: row.handKey,
       isOptimal: false,
       isPractice: false,
+      recordedAdmission: { basis: "sampling-noise-v1", eligible: index < 2 },
     })),
   });
 

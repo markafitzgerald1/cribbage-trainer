@@ -1,12 +1,25 @@
+import {
+  type RecordedAdmission,
+  normalizeAdmission,
+} from "./recordedAdmission";
+import {
+  resolveStoredReference,
+  withoutUnreadableReference,
+} from "./tableIdentityCodec";
 import { CARDS_PER_DISCARD } from "../game/facts";
 import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "./SortOrder";
+import { type TableIdentity } from "../game/tableIdentity";
 import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { parseHand } from "../game/Card";
 import { sortUrlValue } from "./urlAnalysisState";
 
 export interface DiscardDecisionRecord {
+  // A later build's table reference this build cannot read, kept so a write can restore it.
+  readonly unreadableTableIdentity?: unknown;
+  readonly tableIdentity?: TableIdentity | null;
+  readonly recordedAdmission?: RecordedAdmission | null;
   readonly at: number;
   readonly cribRole: CribRole;
   // Serialized in deal order; null on records from versions before 3.
@@ -134,6 +147,7 @@ const normalizeRecencyAt = (recencyAt: unknown, at: number): number =>
  */
 export const normalizeStoredRecords = (
   records: readonly unknown[],
+  identities: readonly unknown[],
 ): readonly DiscardDecisionRecord[] => {
   const normalized: DiscardDecisionRecord[] = [];
   for (const record of records) {
@@ -141,13 +155,23 @@ export const normalizeStoredRecords = (
       const previousRecencyAt =
         normalized[normalized.length - 1]?.recencyAt ?? record.at - 1;
       normalized.push({
-        ...record,
+        ...withoutUnreadableReference(record),
         // Absent in a record written before version 3, or invalid, permanently null.
         discardKey: normalizeDiscardKey(record.discardKey),
         recencyAt: Math.max(
           normalizeRecencyAt(record.recencyAt, record.at),
           previousRecencyAt + 1,
         ),
+        ...(typeof record.recordedAdmission === "undefined"
+          ? {}
+          : {
+              // Kept as written rather than as judged, so the next write cannot erase an admission this build cannot read.
+              // Every reader re-normalizes it, so an unreadable shape only ever reads as no admission.
+              recordedAdmission:
+                normalizeAdmission(record.recordedAdmission) ??
+                record.recordedAdmission,
+            }),
+        ...resolveStoredReference(record.tableIdentity, identities),
       });
     }
   }

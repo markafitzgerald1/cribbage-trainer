@@ -1,12 +1,13 @@
 /* jscpd:ignore-start */
+import { type RenderResult, render, waitFor } from "@testing-library/react";
 import { expect, jest } from "@jest/globals";
 import {
   expectedCribPointsTable,
   expectedPlayPointsTable,
 } from "../analysis/analysis.test.common";
-import { render, waitFor } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
+import type { RecordedAdmission } from "../ui/recordedAdmission";
 import type { RenderedAnalysis } from "./useDiscardTelemetry";
 import { ScoredKeepDiscardSortKey } from "../analysis/compareByExpectedScoreDescending";
 import { ScoredPossibleKeepDiscards } from "./ScoredPossibleKeepDiscards";
@@ -16,11 +17,23 @@ import { deferredUncertainty } from "../game/uncertaintySidecar.test.common";
 import { parseHand } from "../game/Card";
 import { setTableSync as setPlayTableSync } from "../game/expectedPlayPointsTableLoader";
 import { setTableSync } from "../game/expectedCribPointsTableLoader";
+import { shippedTableIdentity } from "../game/tableIdentity";
 import { toDealtCards } from "../game/toDealtCards";
 /* jscpd:ignore-end */
 
 // Ranking, sorting and reporting: no bound involved, so state it is absent rather than parse 1.2 MB per case.
 export const noUncertainty = deferredUncertainty(null);
+
+// A report's arguments for any analysis, the shipped means pair, the given admission, and some deadline judgment.
+export const reportedWith = (
+  admission: RecordedAdmission | ReturnType<typeof expect.any> | null,
+) =>
+  [
+    expect.any(Object),
+    shippedTableIdentity,
+    admission,
+    expect.any(Function),
+  ] as const;
 
 // Explicit because findBy/waitFor default to one second and testTimeout does not govern them (AGENTS.md).
 export const waitForAnalysis = { timeout: 8000 };
@@ -74,7 +87,7 @@ export const scoredElement = (
 export const renderScoredPossibleKeepDiscards = (
   dealtCards: DealtCard[],
   { preload = true, ...options }: RenderOptions = {},
-) => {
+): RenderResult => {
   if (preload) {
     setTableSync(expectedCribPointsTable);
     setPlayTableSync(expectedPlayPointsTable);
@@ -87,7 +100,7 @@ export const renderHand = (
   cards: string,
   discards: string,
   options: RenderOptions = {},
-) =>
+): RenderResult =>
   renderScoredPossibleKeepDiscards(
     toDealtCards(parseHand(cards), parseHand(discards)),
     options,

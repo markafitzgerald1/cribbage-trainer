@@ -41,7 +41,10 @@ describe("app entrypoint", () => {
       expect(createRootSpy).toHaveBeenCalledTimes(1);
       expect(createRootSpy.mock.calls[0]?.[0]).toBe(container);
       expect(renderArg.type).toBe(StrictMode);
-      expect(trainerElement.type).toBe(Trainer);
+      expect([
+        trainerElement.type,
+        trainerElement.props.initialAnalysisOrder,
+      ]).toStrictEqual([Trainer, null]);
     } finally {
       jest.resetAllMocks();
     }

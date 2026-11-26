@@ -42,6 +42,23 @@ baselines so CI agrees with what was generated locally.
 - When fixing a rendering bug, add a Playwright guard for it and negative-check
   the guard: stash the fix, confirm the new test fails against the broken CSS,
   then restore. A guard that was never seen failing proves nothing.
+- **Change a page's viewport only through `applyViewportSize` in
+  `tests-e2e/layoutMeasurements.ts`; `no-restricted-properties` rejects a
+  bare `setViewportSize`.** Playwright 1.64's mobile WebKit (still so in
+  1.64.1) drops the first `setViewportSize` call after a load when it grows
+  the page from 664 to 844: `innerHeight` reads 844 while
+  `documentElement.clientHeight`, `visualViewport` and every `100%` height
+  stay at 664, the iPhone 12 preset's height. Shrinking, any later call, and
+  a reload all land correctly, and 1.63 had no such gap. On #902 that put
+  content past y 664 at an in-viewport ratio of 0 and failed four Mobile
+  Safari layout specs, while Chromium measured the same page correctly. The
+  rows a broken resize removes look exactly like a CSS regression, so check
+  `documentElement.clientHeight` against the requested height before
+  debugging the stylesheet. What breaks is the first `setViewportSize` call,
+  not the first change of size: a call repeating the current size absorbs
+  the bug, and a first call growing one pixel lands (both measured in the
+  1.64.0 image; the threshold in between was not). So the helper requests
+  one pixel short of the target first, and the target is never that call.
 - No Playwright project reproduces a phone browser's box model: the `webkit`
   and `Mobile Safari` projects both run the desktop WebKit build, which
   differs from iOS Safari. When a bug is engine-specific and no headless
@@ -89,6 +106,10 @@ baselines so CI agrees with what was generated locally.
   not `tests-e2e/**/*.spec.ts`, so e2e helpers that wrap `expect` need no
   `assertFunctionNames` registration (other rules such as `no-undefined`
   still apply there).
+- Playwright wire-format fixture properties use the same `camelcase`
+  `properties: "never"` exception as unit tests and stories. Published fields
+  such as `means_sha256` retain their schema names; this exception does not
+  relax variable or function names.
 - To reproduce device font-scaling bugs (e.g. Android Chrome's font-size
   accessibility setting, which scales rem), inject
   `page.addStyleTag({ content: "html { font-size: 28px; }" })` after `goto`
@@ -102,9 +123,11 @@ baselines so CI agrees with what was generated locally.
   bundle chunks can cause extreme cold-start CPU contention. Without an explicit
   test timeout, the default 30s timeout intermittently aborts initial
   `page.goto` calls (e.g. `has title`). Keep an explicit 60s `timeout` in
-  `playwright.config.ts`, cap CI workers (e.g. 2 on standard GitHub Actions
-  runners), and point `webServer.url` at the actual served route rather than a
-  redirect.
+  `playwright.config.ts`, keep CI at 2 workers per runner (each standard
+  GitHub Actions runner has 4 vCPUs, but 4 workers raised total test time
+  1.8x for little gain; see AGENTS.md, CI workflow notes), and point
+  `webServer.url`
+  at the actual served route rather than a redirect.
 
 **Visual regression updates:**
 
@@ -114,6 +137,15 @@ baselines so CI agrees with what was generated locally.
 - When Playwright snapshot diffs are acceptable:
   - Regenerate screenshots in Docker:
     `npm run docker:build-and-test-all -- -- --update-snapshots`.
+  - For a focused update, supply the snapshot mode before a spec filename.
+    Playwright's `--update-snapshots` takes an optional mode; without one it
+    consumes the filename as that mode and rejects the command:
+
+    ```bash
+    npm run docker:update-screenshots -- all \
+      tests-e2e/index.screenshots.spec.ts
+    ```
+
   - In PRs, explicitly note the screenshot updates and ensure expected images
     are updated to match the current actuals (these will be human reviewed).
   - `npm run docker:update-screenshots` expands to
@@ -237,9 +269,25 @@ baselines so CI agrees with what was generated locally.
   that the content renders, so the later absence has one explanation left.
   Sabotage until **every** project fails: a single-project failure among
   passes is the signature of a race, not of a guard.
+- **"Best choice" is no longer a decision counter.** Since #774 a decision
+  recorded as within simulation noise leaves both sides of that ratio while
+  its record is retained, and a random deal's discard can be one, so a spec
+  that reads the ratio to count decisions flakes at the rate such deals
+  occur. `discardTally.spec.ts`
+  refuses the sidecar chunks with `blockUncertaintySidecars`, so no
+  admission settles as `sampling-noise-v1`: an optimal discard settles as
+  `exact-v1` and any other as `exact-fallback-v1`. A spec that wants the noise
+  verdict seeds a `recordedAdmission` instead: the tally reads what was
+  recorded and never re-judges a stored hand, so a seeded hand's verdict
+  under today's tables says nothing about how it is counted.
 - `expectChipsFullyVisible` in `mistakeQueueLayout.spec.ts` is the shape to copy
   for chip rows: it asserts each chip is whole inside its group and the group
   inside the viewport, and says nothing about how many rows that takes. An
   earlier version asserted a single row, which a `nowrap` + `overflow-x: auto`
   strip satisfied while cropping a label — the row assertion was what the
   cropping mechanism existed to satisfy.
+
+- Normalize ancestor scroll positions before paired layout measurements.
+  Trial clicks can scroll the outer layout even when the measured panel has
+  `scrollTop === 0`, changing how many analysis rows fit in the viewport
+  without changing the table's scroll-area height.

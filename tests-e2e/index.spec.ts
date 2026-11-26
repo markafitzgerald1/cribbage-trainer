@@ -7,6 +7,7 @@ import {
 } from "./uncertainty";
 import { type Locator, type Page, expect, test } from "@playwright/test";
 import {
+  applyViewportSize,
   constantHandQuery,
   exactTextMatch,
   phoneLandscapeViewport,
@@ -118,7 +119,7 @@ const expectDealButtonWithinPortraitViewport = async (
   page: Page,
   rootFontSize?: string,
 ) => {
-  await page.setViewportSize(phonePortraitViewport);
+  await applyViewportSize(page, phonePortraitViewport);
   await page.goto(poneHandQuery);
   if (typeof rootFontSize === "string") {
     await page.addStyleTag({
@@ -148,7 +149,7 @@ const cardMetricsAt = async (
   page: Page,
   viewport: { height: number; width: number },
 ) => {
-  await page.setViewportSize(viewport);
+  await applyViewportSize(page, viewport);
   const firstCard = page.locator("ul").first().locator("label").first();
   const cardBounds = await requireBoundingBox(firstCard);
   const rankBounds = await requireBoundingBox(
@@ -209,7 +210,7 @@ test("card shape and fill survive rotation into side-by-side mode", async ({
 test("landscape Pone Deal button right edge aligns with the last hand card", async ({
   page,
 }) => {
-  await page.setViewportSize(phoneLandscapeViewport);
+  await applyViewportSize(page, phoneLandscapeViewport);
   await page.goto(poneHandQuery);
 
   const dealBounds = await requireDealButtonBounds(page);
@@ -277,6 +278,7 @@ test("pre-cut hand points show after select of two discards", async ({
 
   await expect(page.getByRole("button", { name: "Hand" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Crib" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "H+C" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Net" })).toBeVisible();
 });
@@ -300,6 +302,17 @@ test("deep link hydrates hand, role, discards, sort order, and analysis sort", a
   await expect(page.getByRole("radio", { name: "Ascending" })).toBeChecked();
   await expect(
     page.getByRole("columnheader", { name: /Hand/u }),
+  ).toHaveAttribute("aria-sort", "descending");
+});
+
+test("deep link ranks by hand plus crib", async ({ page }) => {
+  await page.goto(
+    `/${suitedAnalysisQuery}&role=pone&discard=6S,5S&analysis-sort=show`,
+  );
+  await waitForAnalysis(page);
+
+  await expect(
+    page.getByRole("columnheader", { name: /H\+C/u }),
   ).toHaveAttribute("aria-sort", "descending");
 });
 
@@ -424,7 +437,7 @@ test("exact six-fifths aspect ratio keeps analysis beside the hand", async ({
   page,
 }) => {
   const sixFifthsBoundaryViewport = { height: 1000, width: 1200 };
-  await page.setViewportSize(sixFifthsBoundaryViewport);
+  await applyViewportSize(page, sixFifthsBoundaryViewport);
   await renderThenSelectTwoDiscards(page, constantHandQuery);
 
   const handBounds = await requireBoundingBox(page.locator("figure").first());

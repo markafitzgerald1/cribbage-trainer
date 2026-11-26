@@ -6,6 +6,7 @@ import {
   createRoleRandomValues,
   createSequenceGenerator,
   getHandText,
+  lastEventParams,
   renderTrainerWithInitialProps,
   setAnalysisTables,
 } from "./Trainer.test.common";
@@ -17,6 +18,7 @@ import {
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, screen } from "@testing-library/react";
 import { CribRole } from "../game/expectedCribPoints";
+import type { TrainerProps } from "./Trainer";
 import { parseHand } from "../game/Card";
 import userEvent from "@testing-library/user-event";
 /* jscpd:ignore-end */
@@ -65,7 +67,9 @@ const clickDrillButton = (
   name: string,
 ) => user.click(view.getByRole("button", { name }));
 
-const openDrillFromQueue = async () => {
+const openDrillFromQueue = async (
+  trackEvent: TrainerProps["trackEvent"] = jest.fn(),
+) => {
   seedMistakeHand();
   const user = userEvent.setup();
   const view = renderTrainerWithInitialProps({
@@ -75,6 +79,7 @@ const openDrillFromQueue = async () => {
     initialCards: parseHand(MISTAKE_HAND),
     initialCribRole: CribRole.Dealer,
     initialDiscards: parseHand("5H,6H"),
+    trackEvent,
   });
 
   /*
@@ -194,18 +199,32 @@ describe("trainer practice drill", () => {
   });
 
   it("ends a choosing-phase drill when Back restores the same hand", async () => {
-    const { view } = await openDrillFromQueue();
+    await openDrillFromQueue();
 
-    // Back onto the completed state that preceded the drill: same six cards and role, its original discard restored.
-    window.history.replaceState(
-      null,
-      "",
-      `?hand=${MISTAKE_HAND}&role=dealer&discard=5H,6H`,
-    );
+    // Back onto the drill board's own entry: the same displayed cards and role, so only the history move can end the drill.
     fireEvent.popState(window);
 
     expect(screen.queryByLabelText("Practice drill")).toBeNull();
-    await expect(findAnalysisTable(view)).resolves.toBeInTheDocument();
+  });
+
+  it("names the practice queue as why the drilled hand is not counted, and keeps telemetry on manual", async () => {
+    const trackEvent = jest.fn<TrainerProps["trackEvent"]>();
+    const { user, view } = await openDrillFromQueue(trackEvent);
+
+    await commitDrillChoice(view, user);
+    await findAnalysisTable(view);
+
+    expect(screen.queryByText(/Not counted/u)).toBeNull();
+
+    // The drill's own board and history entry, so only exiting the drill can end it.
+    fireEvent.popState(window);
+
+    expect(screen.getByText(/Not counted/u).textContent).toBe(
+      "Not counted: this hand is from your practice queue.",
+    );
+    expect(lastEventParams(trackEvent, "discard_scored")?.handStartSource).toBe(
+      "manual",
+    );
   });
 
   it("marks earlier choice row distinctly from chosen row in drill review", async () => {

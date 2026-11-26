@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.63.0-noble
+FROM mcr.microsoft.com/playwright:v1.64.1-noble
 
 WORKDIR /usr/src/app
 
@@ -8,12 +8,13 @@ RUN curl -sSL https://github.com/rhysd/actionlint/releases/download/v1.7.7/actio
 COPY package*.json ./
 RUN npm clean-install
 
+# Only what Jest, Vite and Storybook read goes in before the test layers, so
+# a documentation, workflow or lint-config edit leaves them cached. Lint gets
+# everything else from the whole-context copy further down.
 COPY __mocks__/ ./__mocks__/
-COPY .github/ .github/
-COPY .cspell.json .gitignore .jscpd.json .markdownlint.json .markdownlintignore .nsprc .prettierignore .prettierrc.json .stylelintignore .stylelintrc.json babel.config.json eslint.config.mjs eslintSpellcheckSkipWords.mjs jest.config.json package.json package-lock.json styles.d.ts tsconfig.json vite.config.mjs ./
-COPY *.md ./
-COPY skills/ ./skills/
+COPY babel.config.json jest.config.json styles.d.ts tsconfig.json vite.config.mjs ./
 COPY src/ ./src/
+COPY scripts/artifactJson.mjs scripts/expectedTableIdentity.mjs scripts/uncertaintySidecar.mjs scripts/tableIdentityBabel.mjs scripts/tableIdentityCacheKey.mjs scripts/tableIdentityJest.mjs scripts/tableIdentityJest.test.mjs ./scripts/
 
 RUN npm test
 

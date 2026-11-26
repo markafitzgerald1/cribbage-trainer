@@ -261,3 +261,16 @@ export const trackedUnavailableUncertainty = (
 export const uniformUncertainty = (standardError: number): Uncertainty => ({
   totals: { get: () => standardError },
 });
+
+export const POLICY_UNCERTAINTY_REJECTIONS: readonly RejectionCase[] = [
+  {
+    mutate: setHeader("policy_uncertainty", 0.01),
+    name: "a measured policy uncertainty where the contract publishes none",
+  },
+  {
+    mutate: (document) => {
+      Reflect.deleteProperty(document, "policy_uncertainty");
+    },
+    name: "no policy uncertainty field at all",
+  },
+];

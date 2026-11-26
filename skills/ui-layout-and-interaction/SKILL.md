@@ -177,6 +177,30 @@ once you are already editing layout or interaction code.
   arrow even when the cards still appear to fit. Keep the column wide enough
   for cards + parens + arrow; verify with
   `cell.scrollWidth - cell.clientWidth === 0`.
+- The active sort column's marker (#651) is CSS keyed on the header's
+  `aria-sort`, and its arrow is two absolutely positioned pseudo-elements on
+  the unit line: a `::before` stem and an `::after` border triangle. Keep
+  any decorative glyph in a header out of flow. A larger glyph given
+  `line-height: 0` stayed out of the line box in Chromium only: Firefox and
+  WebKit grew the header about 6px, which failed
+  `consentLayout.spec.ts`'s header-plus-one-row floor in those three projects
+  while every Chromium measurement looked clean. Measure the header in all
+  engines, not just the one the browser pane runs.
+  Do not place a text glyph to the pixel. Where a glyph's ink sits in its
+  line box depends on the engine and the fallback font: anchored to the
+  bottom, a "↓" rose into the label's underline in desktop Chrome and Safari;
+  re-anchored to the top, the same glyph sat low in Firefox and Android
+  Chrome, and each fix measured clean in the browser pane. The arrow is now
+  a stem and a border triangle, boxes whose edges are the arrow's edges in
+  every engine. A CSS `mask` would also be font-free, but in Chromium it
+  re-rasterized the text of the whole analysis figure, failing ten Mobile
+  Chrome screenshots by about 3,100 pixels each, mostly far from the arrow.
+  A pseudo-element has no measurable box, so check its clearance by
+  appending a span with the same computed position, size and borders for
+  each part, and reading those spans' rectangles. Exempt such shapes with
+  `forced-color-adjust: none`: forced colors can repaint a background as
+  `Canvas` and a transparent border as text, which erases a stem and squares
+  off a triangle.
 - Signed expected-points columns rely on the U+2212 minus (digit-width under
   tabular-nums) so positives and negatives right-align. Do not try to pad
   positives with a figure space (U+2007) — it is narrower than U+2212 and
@@ -672,3 +696,36 @@ once you are already editing layout or interaction code.
   takes its own row, and `roleLossPair.spec.ts` asserts the verdict is one line
   and the reason sits below it at a desktop and a phone-portrait width. The
   `practiceDrill.spec.ts` caption-height budget (65px) held unchanged.
+
+- **History stays as recorded across a table change.** Tally, trend and
+  chart figures use recorded results; show the visible average as
+  "Avg recorded loss" (accessible names say "Recorded loss … per discard")
+  and costs as "Recorded cost", and keep current-table comparisons separate
+  and explicitly labeled. Announce positive sub-cent values with the
+  accessible formatter, not the visible one. Unavailable is unknown, never
+  zero, and today's component costs cannot explain an earlier recorded total.
+  Never recompute admission or denominators with current tables: a current
+  verdict cannot remove a grandfathered item or add an old best choice.
+  Historical figures can span models, so they are not a controlled measure
+  of improvement. Keep the collapsed tally explanation in its existing header
+  row: an extra row takes height from the analysis and breaks the per-browser
+  practice table budgets.
+
+- A recorded table identity must travel beside the analysis produced by that
+  loaded means pair. Reading a global digest later can stamp the wrong pair;
+  injected means must explicitly supply their identity or remain unknown.
+  The v8 tally interns identities, and its registry must retain existing
+  indices when writing decisions: reserved attempt data can already refer
+  to an entry that no retained decision uses. Rebuilding the registry from
+  decisions alone corrupts those references.
+- A pending admission's deadline belongs to its recorded choice, not to the
+  analysis component's lifetime. Finalizing exact fallback in effect cleanup
+  can preempt a valid noise settlement: StrictMode replays that cleanup even
+  without navigation. Keep the bounded timer alive across navigation and
+  unmount, carrying the original choice and loaded pair; a stale report for
+  another choice must neither settle that record nor cancel its timer.
+- Check a capped drill panel's actions against its own clipping box, as well
+  as the viewport. A button can have an on-screen rectangle and still sit
+  below the panel's visible edge. Check the adjacent analysis rows before
+  scrolling to provenance text: `scrollIntoViewIfNeeded` can also scroll the
+  outer layout and make an uncapped panel pass a rows-in-viewport assertion.
