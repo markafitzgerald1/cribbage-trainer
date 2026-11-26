@@ -259,6 +259,50 @@
   margin-top: 3px;
 }
 
+.opening-pone {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.5em;
+}
+
+.opening-pone > span,
+.opening-dealer > :first-child {
+  color: rgb(255 255 255 / 80%);
+  font-weight: 600;
+}
+
+.opening-pone ul,
+.opening-dealer ul {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0 0.4em;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.opening-pone li + li::before {
+  color: rgb(255 255 255 / 65%);
+  content: "·" / "";
+  margin-right: 0.4em;
+}
+
+.opening-dealer ul {
+  flex-direction: column;
+}
+
+.opening-dealer > :first-child,
+.opening-dealer li {
+  display: grid;
+  font-variant-numeric: tabular-nums;
+  grid-template-columns: 3.2em 3.2em 2em 4em;
+}
+
+.opening-dealer > :first-child > span {
+  grid-column: span 2;
+}
+
 .starter-detail-row {
   --card-black-suit-color: var(--starter-detail-color);
   --card-red-suit-color: var(--starter-detail-red-suit-color);

@@ -552,8 +552,12 @@
   generation method). That is a legitimate refresh needing no snapshots, and
   it is why the digest that matters is `means_sha256`, not the sidecar's
   source digest.
-- Nothing displays or loads the lines yet; the loader and the "how this keep
-  tends to peg" section are #878 part b.
+- Only the expanded row's "Opening plays" line loads it, and only when first
+  opened (`src/game/pegLinesLoader.ts`). It fetches the asset emitted by a
+  `?url` import rather than using a dynamic `import()`: browsers cache a
+  failed module load for the life of the page, so an import could never retry
+  after a dropped connection. `tests-e2e/openingPlays.spec.ts` times the
+  request against the toggle's click, so keep the file off every eager path.
 
 ## Interaction design and visual-state debugging
 
@@ -1356,6 +1360,13 @@ they bind any PR that makes a claim about a phone or ships a guard.
   lasted one review round in the hook for exactly this: the `Dockerfile`
   installs it, `npm install` does not. Confirm a new check's binary is in
   `devDependencies` before adding it.
+- **A `verify:fast` task reported as cancelled is not the failure.**
+  `concurrently --kill-others-on-fail` kills every other task once one fails,
+  and node's test runner reports a killed run as "Promise resolution is still
+  pending but the event loop has already resolved", which reads like a flaky
+  timeout under load. Search the log for the first `exited with code 1`
+  instead: on #878 part (b) that was jscpd, then cspell, then the Storybook
+  build, each time behind the same cancelled `TABLES` output.
 - **Do not write down what the hook omits; run `npm run verify:gap`.** It
   reads the `Dockerfile` and expands nested scripts on both sides, so the
   answer stays correct as the hook and gate drift. A prose list of it was

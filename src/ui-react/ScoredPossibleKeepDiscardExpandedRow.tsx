@@ -19,6 +19,7 @@ import type {
 } from "../analysis/analysis";
 import { CardLabel } from "./CardLabel";
 import { CutResultRow } from "./CutResultRow";
+import { OpeningPlays } from "./OpeningPlays";
 import { SortOrder } from "../ui/SortOrder";
 import { renderUncertaintyFigure } from "./UncertaintyFigureText";
 
@@ -477,6 +478,10 @@ export function ScoredPossibleKeepDiscardExpandedRow({
             </div>
           ) : null}
           {renderPlayBreakdown()}
+          <OpeningPlays
+            cribRole={cribRole}
+            keep={keep}
+          />
         </div>
       </td>
     </tr>
