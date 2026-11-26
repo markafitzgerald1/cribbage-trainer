@@ -58,14 +58,6 @@ jobs:
       - name: Run pull request size gate tests
         run: npm run test:pr-size-gate
 
-      # Each vendored means table and its uncertainty sidecar are a matched
-      # pair: the sidecar names the means bytes it was exported against.
-      # Nothing else notices a mismatch, because both files still parse. Runs
-      # here rather than in the Docker gate, whose COPY allowlist excludes
-      # scripts/ before the test layer.
-      - name: Run vendored expected-points table tests
-        run: npm run test:vendored-tables
-
       # Guards the PWA manifest JSON schema, icon presence, and HTML linkage.
       # Runs here rather than in the Docker gate, whose COPY allowlist
       # excludes scripts/ before the test layer.
@@ -219,6 +211,34 @@ jobs:
           path: playwright-report
           if-no-files-found: ignore
 
+  # Each vendored means table and its uncertainty sidecar are a matched
+  # pair: the sidecar names the means bytes it was exported against. Nothing
+  # else notices a mismatch, because both files still parse. Not in the
+  # Docker gate, whose COPY allowlist excludes scripts/ before the test
+  # layer, and not in docker-gate's steps either: these tests load the
+  # browser's pegging-lines reader through Vite, so they need an install,
+  # which a job of their own keeps off docker-gate's critical path.
+  vendored-tables:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js and cache npm dependencies
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm clean-install
+
+      - name: Run vendored expected-points table tests
+        run: npm run test:vendored-tables
+
   # The required check. It only aggregates, so the context branch protection
   # keys on keeps its name. A required check that is skipped counts as
   # passing, so this job must never be skipped on a pull request: always(),
@@ -229,18 +249,19 @@ jobs:
   # reporting must not decide the gate.
   build-and-test:
     runs-on: ubuntu-latest
-    needs: [docker-gate, e2e-image, e2e]
+    needs: [docker-gate, vendored-tables, e2e-image, e2e]
     if: ${{ always() && github.event_name == 'pull_request' }}
     permissions: {}
     steps:
       - name: Require every gate job to have succeeded
         env:
           DOCKER_GATE: ${{ needs.docker-gate.result }}
+          VENDORED_TABLES: ${{ needs.vendored-tables.result }}
           E2E_IMAGE: ${{ needs.e2e-image.result }}
           E2E: ${{ needs.e2e.result }}
         run: |
-          echo "docker-gate=$DOCKER_GATE e2e-image=$E2E_IMAGE e2e=$E2E"
-          [ "$DOCKER_GATE" = success ] && [ "$E2E_IMAGE" = success ] && [ "$E2E" = success ]
+          echo "docker-gate=$DOCKER_GATE vendored-tables=$VENDORED_TABLES e2e-image=$E2E_IMAGE e2e=$E2E"
+          [ "$DOCKER_GATE" = success ] && [ "$VENDORED_TABLES" = success ] && [ "$E2E_IMAGE" = success ] && [ "$E2E" = success ]
 
   # A pull request can read only its own cache and its base branch's (main
   # for every pull request here). Without this job main never writes the

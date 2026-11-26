@@ -7,12 +7,16 @@ import {
 } from "./uncertaintySidecar.mjs";
 import {
   artifactText,
+  assertExactNumbers,
+  assertIntegerLexemes,
   parseArtifactJson,
   stringifyArtifactJson,
 } from "./artifactJson.mjs";
-import { rename, writeFile } from "node:fs/promises";
+import { mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { runnerImport } from "vite";
+import { tmpdir } from "node:os";
 
 const SCRIPT_DIRECTORY = path.dirname(fileURLToPath(import.meta.url));
 const GAME_DIRECTORY = path.join(SCRIPT_DIRECTORY, "..", "src", "game");
@@ -124,13 +128,59 @@ export const validatePlayTable = (table) => {
 };
 
 const PLAY_LINES_SCHEMA = "expected-play-lines.v1";
+const PLAY_LINES_INTEGER_COLUMNS = [
+  ["0", "1"],
+  ["0", "1", "4", "5"],
+];
 
 /*
- * Only the header and the one-line shape (at most a final newline) are checked
- * here; the full contract is the browser reader's, whose specs run it against
- * the vendored bytes. One line matters because the size gate counts every one.
+ * The browser reader itself on the browser's own decoding, both loaded
+ * through Vite as the app loads them, so the updater cannot write a file the
+ * app would refuse. Vite's JSON parser is not Node's: it rejects a lone
+ * surrogate escape that `JSON.parse` accepts, so the published bytes go
+ * through it rather than through the object already parsed here.
  */
-export const validatePlayLines = (lines, raw) => {
+const readPegLinesAsBrowser = async (raw) => {
+  const directory = await mkdtemp(path.join(tmpdir(), "peg-lines-"));
+  try {
+    const linesPath = path.join(directory, "lines.json");
+    await writeFile(linesPath, raw);
+    const decoded = await runnerImport(linesPath).catch((error) => {
+      throw new Error(
+        `Downloaded play lines file fails the browser's JSON import: ${error.message}`,
+      );
+    });
+    const { module } = await runnerImport(
+      path.join(GAME_DIRECTORY, "pegLines.ts"),
+    );
+    return module.parsePegLines(decoded.module.default);
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+};
+
+/*
+ * What only the published tokens show, after the reader has passed the
+ * structure: a whole count spelled `13000.0` or `1.3e4` parses to the same
+ * double as `13000`, but the contract's counts are JSON integers.
+ */
+const assertLinesIntegers = (lines) => {
+  assertIntegerLexemes(lines.provenance, ["seed"]);
+  for (const roles of lines.entries) {
+    roles.forEach((rows, role) => {
+      for (const row of rows) {
+        assertIntegerLexemes(row, PLAY_LINES_INTEGER_COLUMNS.at(role));
+      }
+    });
+  }
+};
+
+/*
+ * One line matters because the size gate counts every one. The reader is
+ * handed a parsed object, as Vite hands it to the app, so the tokens are
+ * checked here: nothing after parsing can see what parsing rounded.
+ */
+export const validatePlayLines = async (lines, raw) => {
   assertObject(lines, "Downloaded play lines file is not an object");
   if (lines.schema !== PLAY_LINES_SCHEMA) {
     throw new Error(
@@ -141,6 +191,13 @@ export const validatePlayLines = (lines, raw) => {
   if (!/^[^\r\n]*\n?$/u.test(raw)) {
     throw new Error("Downloaded play lines file is not minified onto one line");
   }
+  assertExactNumbers(lines);
+  if ((await readPegLinesAsBrowser(raw)) === null) {
+    throw new Error(
+      "Downloaded play lines file fails the browser reader, src/game/pegLines.ts",
+    );
+  }
+  assertLinesIntegers(lines);
 };
 
 /*
@@ -198,7 +255,7 @@ const downloadAsset = async (assetUrl) => {
 export const downloadTable = async (assetUrl, validate) => {
   const raw = await downloadAsset(assetUrl);
   const parsed = parseArtifactJson(raw);
-  validate(parsed, raw);
+  await validate(parsed, raw);
   return { body: raw.endsWith("\n") ? raw : `${raw}\n`, parsed, raw };
 };
 
@@ -211,12 +268,22 @@ export const downloadTable = async (assetUrl, validate) => {
  */
 const toMinifiedBody = (value) => `${stringifyArtifactJson(value)}\n`;
 
+/*
+ * Every play refresh pairs the lines, whatever the caller passes: an
+ * override replaces a URL, a null one falls back, and a play descriptor
+ * that names no lines to pair is refused rather than written unpaired.
+ */
 export const downloadMeansAndUncertainty = async (assets, urls = {}) => {
-  const {
-    meansUrl = assets.meansUrl,
-    uncertaintyUrl = assets.uncertaintyUrl,
-    linesUrl = assets.linesUrl ?? null,
-  } = urls;
+  const meansUrl = urls.meansUrl ?? assets.meansUrl;
+  const uncertaintyUrl = urls.uncertaintyUrl ?? assets.uncertaintyUrl;
+  const pairsLines = assets.contract?.table === PLAY_UNCERTAINTY_CONTRACT.table;
+  const linesUrl = pairsLines ? (urls.linesUrl ?? assets.linesUrl) : null;
+  if (
+    pairsLines &&
+    (typeof linesUrl !== "string" || typeof assets.linesOutputPath !== "string")
+  ) {
+    throw new Error("A play refresh must pair the lines file with the means");
+  }
   const [means, uncertainty, lines] = await Promise.all([
     downloadTable(meansUrl, assets.validateMeans),
     downloadTable(uncertaintyUrl, (sidecar) =>

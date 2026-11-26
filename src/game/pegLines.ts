@@ -13,9 +13,12 @@ import { isObject } from "../ui/isObject";
  * exactly 0 is a real value this reader keeps.
  *
  * The means digest is checked for shape only. Vite hands this module a parsed
- * document, so there are no published bytes to hash; the pairing is
- * established by `npm run test:vendored-tables`, which hashes the vendored
- * files themselves.
+ * document, so there are no published bytes to hash and no numeric tokens:
+ * a negative-zero mean survives parsing and is rejected here, but a token
+ * that parsing rounded (`13000.0000000000001` read as `13000`) cannot be
+ * seen. The updater checks the pairing and the tokens before writing, runs
+ * this reader on Vite's own decoding of the bytes, and
+ * `npm run test:vendored-tables` re-checks the vendored files.
  */
 
 const SCHEMA = "expected-play-lines.v1";
@@ -23,6 +26,9 @@ const RANKS = "A23456789TJQK";
 const SHA256_DIGEST = /^[0-9a-f]{64}$/u;
 const QUALIFICATION_KEYS = ["policy", "statistics", "missing"] as const;
 const PROVENANCE_STRING_KEYS = ["generation_method", "policy_fingerprint"];
+// SHA-256 of `('legacy-heuristic-v1',)`, the contract's heuristic payload.
+export const LEGACY_HEURISTIC_FINGERPRINT =
+  "0990840fad19dc81a53cdeb45cb02ecb257934309ab81457a5191ab9a2411bb5";
 const HEADER_ROLES = ["Pone", "Dealer"];
 const PONE_COLUMNS = ["lead", "n", "mu", "se"];
 const DEALER_COLUMNS = [...PONE_COLUMNS, "response", "response_n"];
@@ -134,6 +140,25 @@ const readQualifications = (document: object): PegQualifications | null => {
  * reader exists to read, and a converged policy would legitimately publish
  * `true` inside version 1 - an upstream improvement, not a malformation.
  */
+/*
+ * Optional, but a present `measured_policy` must name the policy whose
+ * fingerprint the document carries and identify the measured discards.
+ */
+const hasConsistentMeasuredPolicy = (provenance: object): boolean => {
+  if (!Object.hasOwn(provenance, "measured_policy")) {
+    return true;
+  }
+  const heuristic = `${LEGACY_HEURISTIC_FINGERPRINT}:${LEGACY_HEURISTIC_FINGERPRINT}`;
+  const expected =
+    readField(provenance, "policy_fingerprint") === heuristic
+      ? "legacy-heuristic"
+      : "trained";
+  return (
+    readField(provenance, "measured_policy") === expected &&
+    isNonEmptyString(readField(provenance, "discard_policy_fingerprint"))
+  );
+};
+
 const readPolicyConverged = (document: object): boolean | null => {
   const provenance = readField(document, "provenance");
   if (!isObject(provenance)) {
@@ -141,6 +166,7 @@ const readPolicyConverged = (document: object): boolean | null => {
   }
   const converged = readField(provenance, "joint_policy_converged");
   return typeof converged === "boolean" &&
+    hasConsistentMeasuredPolicy(provenance) &&
     isIntegerBetween(
       readField(provenance, "seed"),
       Number.MIN_SAFE_INTEGER,
@@ -153,6 +179,10 @@ const readPolicyConverged = (document: object): boolean | null => {
     : null;
 };
 
+// The contract publishes rounded mean zeros with a positive sign.
+const isPublishedMean = (value: unknown): boolean =>
+  Number.isFinite(value) && !Object.is(value, -0);
+
 const hasSupportedMoments = (
   count: number,
   mean: unknown,
@@ -160,7 +190,7 @@ const hasSupportedMoments = (
 ): boolean =>
   count < MINIMUM_OBSERVATIONS
     ? mean === null && standardError === null
-    : Number.isFinite(mean) && isFiniteNonNegative(standardError);
+    : isPublishedMean(mean) && isFiniteNonNegative(standardError);
 
 const isRankInHand = (rank: number, handRanks: readonly string[]): boolean =>
   handRanks.includes(RANKS.charAt(rank));
@@ -179,6 +209,10 @@ const leadRowOf = (row: readonly unknown[]): PegLeadRow | null => {
     : null;
 };
 
+/*
+ * Dealer always has a legal first reply, one of the hand's distinct ranks, so
+ * by pigeonhole the modal reply is seen at least count / distinct ranks times.
+ */
 const dealerRowOf = (
   row: readonly unknown[],
   handRanks: readonly string[],
@@ -188,7 +222,11 @@ const dealerRowOf = (
   return base !== null &&
     isIntegerBetween(response, 0, LAST_RANK_INDEX) &&
     isRankInHand(response, handRanks) &&
-    isIntegerBetween(responseCount, 1, base.count)
+    isIntegerBetween(
+      responseCount,
+      Math.ceil(base.count / new Set(handRanks).size),
+      base.count,
+    )
     ? { ...base, response, responseCount }
     : null;
 };
@@ -295,7 +333,7 @@ function usableRows<Row>(rows: readonly Row[]): readonly Row[] | null {
   return rows.length === 0 ? null : rows;
 }
 
-export const parsePegLines = (document: unknown): PegLines | null => {
+const readPegLines = (document: unknown): PegLines | null => {
   if (!isObject(document) || !hasExpectedHeader(document)) {
     return null;
   }
@@ -311,4 +349,17 @@ export const parsePegLines = (document: unknown): PegLines | null => {
     poneRows: (handKey) => usableRows(hands.get(handKey)?.pone ?? []),
     qualifications,
   };
+};
+
+/*
+ * The entry point takes `unknown`, and a runtime object can carry a getter
+ * or a replaced array method that throws; rejecting is the contract's answer
+ * for any document it does not describe, so a throw is caught as one.
+ */
+export const parsePegLines = (document: unknown): PegLines | null => {
+  try {
+    return readPegLines(document);
+  } catch {
+    return null;
+  }
 };
