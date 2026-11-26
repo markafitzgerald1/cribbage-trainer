@@ -7,6 +7,7 @@ import {
   validatePlayLines,
   validatePlayTable,
 } from "./expectedPointsTableUpdate.mjs";
+import { artifactText, parseArtifactJson } from "./artifactJson.mjs";
 import {
   assertMeansDigest,
   validateUncertainty,
@@ -18,7 +19,6 @@ import {
   strictEqual,
   throws,
 } from "node:assert/strict";
-import { artifactText, parseArtifactJson } from "./artifactJson.mjs";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
