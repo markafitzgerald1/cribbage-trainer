@@ -45,12 +45,14 @@ multiple comparisons.
   hand, or another mix of hands.
 - **Is this table better than the app's previous one?** A bot that discards by
   this table plays a bot that discards by the previous one. When both peg with
-  the solved policy, the new table's bot wins 50.287% ± 0.027 of games, 0.287
-  percentage points above an even split. When both peg with the simulator's
-  older heuristic, it wins 49.724% ± 0.023, 0.276 points below even.
-- **What is pegging itself worth?** With both bots discarding by the app's
-  previous table, the bot that pegs with the solved policy wins 55.638% ± 0.029
-  of games against the bot that pegs with that heuristic.
+  the solved policy, the new discard table's bot wins 50.287% ± 0.027 of games,
+  0.287 percentage points above an even split. When both peg with the
+  simulator's older heuristic, the new discard table's bot wins 49.724% ± 0.023,
+  0.276 points below even.
+- **What is pegging itself worth?** Both bots discard by the app's previous
+  table, so only their pegging differs: one pegs with the solved policy, the
+  other with the older heuristic. The solved-policy pegger wins 55.638% ± 0.029
+  of games, 5.638 percentage points above even.
 
 A table does better in the pegging style it was measured in. This one's
 advantage is established for players who peg like the solved policy, not for
