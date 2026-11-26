@@ -398,19 +398,26 @@ export const PlayUncertainty: Story = figureStory(
   /You - Opp/u,
 );
 
-// The pegging model's assumption is on screen with the per-seat figures and folds away with them.
+// The pegging model's assumption opens and closes with the per-seat figures, which start closed.
 export const PlayAssumption: Story = {
   ...Expanded,
   play: async (context) => {
     const canvas = await expandedCanvas(context);
+    const toggle = () =>
+      fireEvent.click(canvas.getByRole("button", { name: /You - Opp/u }));
+    const note = () => canvas.queryByText(/near-optimally/u);
+
+    await expect(note()).toBeNull();
+
+    await toggle();
 
     await expect(
       await canvas.findByText("Assumes both players peg near-optimally"),
     ).toBeVisible();
 
-    await fireEvent.click(canvas.getByRole("button", { name: /You - Opp/u }));
+    await toggle();
 
-    await expect(canvas.queryByText(/near-optimally/u)).toBeNull();
+    await expect(note()).toBeNull();
   },
 };
 

@@ -260,14 +260,14 @@ describe("scoredPossibleKeepDiscardExpandedRow", () => {
         expectedPlayPoints: { ...EXPECTED_PLAY_POINTS, delta },
       });
 
+      expect(screen.queryByText("Pone")).toBeNull();
+
+      clickSummaryTotal(/You - Opp/u);
+
       expect(screen.getByText("Pone")).toBeTruthy();
       expect(screen.getByText("Dealer")).toBeTruthy();
       expect(screen.getByText("You - Opp")).toBeTruthy();
       expect(screen.getByText(expectedDelta)).toBeTruthy();
-
-      clickSummaryTotal(/You - Opp/u);
-
-      expect(screen.queryByText("Pone")).toBeNull();
     },
   );
 

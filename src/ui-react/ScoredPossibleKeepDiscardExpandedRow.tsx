@@ -179,7 +179,7 @@ export function ScoredPossibleKeepDiscardExpandedRow({
   } = scoredKeepDiscard;
   const [areCutDetailsExpanded, setAreCutDetailsExpanded] = useState(false);
   const [areCribDetailsExpanded, setAreCribDetailsExpanded] = useState(false);
-  const [arePlayDetailsExpanded, setArePlayDetailsExpanded] = useState(true);
+  const [arePlayDetailsExpanded, setArePlayDetailsExpanded] = useState(false);
   const cutResults = groupCutsByResults({
     discard,
     fifteens: fifteensContributions,
