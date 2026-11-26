@@ -1476,7 +1476,9 @@ they bind any PR that makes a claim about a phone or ships a guard.
   run as the attempt it replaces. With one fixed name, every re-run failed
   with "Multiple artifacts named github-pages", so the publish action names
   the artifact after `github.run_attempt`. Keep that suffix, or re-runs break
-  again and the only recovery is a new push.
+  again and the only recovery is a new push. Re-run only the newest run for
+  that target: a re-run deploys its own run's commit, so re-running an older
+  main run after a newer one deployed rolls production back.
 - Preview eligibility, the shared `pages-content` tree, the two Pages
   environments, and the guard that keeps a bad publish from taking production
   down are in `skills/pages-preview/SKILL.md`; read it before editing either

@@ -122,6 +122,7 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   the Pages one, finalized one second before, and failed twice (runs
   45718721667 and 45721427004). The publish action therefore waits until
   the REST API lists the exact uploaded ID, then deploys, then retries the
-  deploy once if it still fails. The REST poll alone is not enough, since
-  the two APIs are separate listings; do not drop the retry as redundant.
+  deploy once if it still fails without having created a deployment. The
+  REST poll alone is not enough, since the two APIs are separate listings;
+  do not drop the retry as redundant.
   The poll needs `actions: read` on every job that calls the action.

@@ -108,8 +108,8 @@ runs:
       run: |
         deadline=$((SECONDS + TIMEOUT_SECONDS))
         while true; do
-          if listed=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=$ARTIFACT_NAME" \
-            --jq '[.artifacts[].id | tostring] | join(" ")' 2>&1); then
+          if listed=$(timeout 30 gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=$ARTIFACT_NAME" \
+            --jq '[.artifacts[] | "\(.id)"] | join(" ")' 2>&1); then
             if [ "$listed" = "$ARTIFACT_ID" ]; then
               echo "Artifact $ARTIFACT_NAME (ID $ARTIFACT_ID) is listed for run $RUN_ID."
               exit 0
@@ -124,9 +124,9 @@ runs:
 
     # The poll above reads the public REST API, while deploy-pages lists
     # through the Actions results service, so the poll alone cannot promise
-    # that deploy-pages sees the artifact. One retry covers that gap. It
-    # cannot race the first attempt, because deploy-pages exits only once a
-    # deployment it created has failed or been cancelled by it.
+    # that deploy-pages sees the artifact. One retry covers that gap. It runs
+    # only when no deployment was created, which deploy-pages signals by
+    # leaving page_url empty, so it can never overlap a live deployment.
     - id: deploy
       name: Deploy GitHub Pages site
       continue-on-error: true
@@ -135,14 +135,21 @@ runs:
         token: ${{ github.token }}
         artifact_name: github-pages-attempt-${{ github.run_attempt }}
 
+    - name: Fail when the deployment itself failed
+      if: steps.deploy.outcome == 'failure' && steps.deploy.outputs.page_url != ''
+      shell: bash
+      run: |
+        echo "::error::The Pages deployment was created and then failed; not retrying it."
+        exit 1
+
     - name: Wait before retrying the deploy
-      if: steps.deploy.outcome == 'failure'
+      if: steps.deploy.outcome == 'failure' && steps.deploy.outputs.page_url == ''
       shell: bash
       run: sleep 30
 
     - id: deploy-retry
       name: Retry deploying GitHub Pages site
-      if: steps.deploy.outcome == 'failure'
+      if: steps.deploy.outcome == 'failure' && steps.deploy.outputs.page_url == ''
       uses: actions/deploy-pages@v5
       with:
         token: ${{ github.token }}
