@@ -300,11 +300,13 @@ test("a descriptor inheriting the play assets still pairs the lines", (context) 
   );
 });
 
-test("a play descriptor naming no lines is refused rather than written unpaired", () =>
-  rejects(
+test("a play descriptor naming no lines is refused rather than written unpaired", (context) => {
+  stubRelease(context);
+  return rejects(
     downloadMeansAndUncertainty({ ...PLAY_ASSETS, linesUrl: null }),
     /must pair the lines file/u,
-  ));
+  );
+});
 
 test("means without a final newline pair when both companions name those bytes", async (context) => {
   const published = readVendoredText(PLAY_ASSETS.meansOutputPath).trimEnd();

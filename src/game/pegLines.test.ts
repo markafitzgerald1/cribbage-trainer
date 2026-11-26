@@ -195,6 +195,10 @@ const measuredBy =
       measured_policy: measured,
       policy_fingerprint: seats,
     });
+    // The heuristic picks a lead from Pone's cards alone, so one per hand.
+    if (seats === HEURISTIC_SEATS) {
+      document.entries.forEach((entry) => entry.at(PONE)?.splice(1));
+    }
   };
 
 const METADATA_REJECTIONS: RejectionCase[] = [
