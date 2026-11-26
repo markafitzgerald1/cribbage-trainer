@@ -188,7 +188,10 @@ const downloadWire = (context, wire) => {
       ),
     ),
   );
-  return downloadMeansAndUncertainty(CRIB_ASSETS, "means", "sidecar");
+  return downloadMeansAndUncertainty(CRIB_ASSETS, {
+    meansUrl: "means",
+    uncertaintyUrl: "sidecar",
+  });
 };
 const rejectWire = async (context, wire) => {
   throws(() => checkWire(wire));
