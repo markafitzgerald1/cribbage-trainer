@@ -33,8 +33,8 @@ const COMPARISON_COUNT = 2;
 const MIN_READABLE_FOOTER_FONT_PX = 12;
 const MIN_FOOTER_GAP_PX = 2;
 const FOOTER_GAP_TOLERANCE_PX = 1;
-// Scrolling into view lands on fractional offsets that shave under a pixel off a button.
-const SUBPIXEL_IN_VIEW_RATIO = 0.95;
+// Far enough inside a corner to clear the button's 4px border radius.
+const CORNER_INSET_PX = 2;
 
 const measurePractice = (panel: Locator) =>
   panel.evaluate((element) => {
@@ -81,9 +81,17 @@ const measurePractice = (panel: Locator) =>
       node = node.parentElement
     ) {
       if (getComputedStyle(node).overflowY !== "visible") {
-        const top = node.getBoundingClientRect().top + node.clientTop;
-        clip.top = Math.max(clip.top, top);
-        clip.bottom = Math.min(clip.bottom, top + node.clientHeight);
+        const bounds = node.getBoundingClientRect();
+        const style = getComputedStyle(node);
+        clip.top = Math.max(
+          clip.top,
+          bounds.top + parseFloat(style.borderTopWidth),
+        );
+        clip.bottom = Math.min(
+          clip.bottom,
+          bounds.bottom - parseFloat(style.borderBottomWidth),
+          bounds.top + node.clientTop + node.clientHeight,
+        );
       }
     }
     const figure = table.closest("figure") as HTMLElement;
@@ -178,12 +186,30 @@ const expectPracticeContents = async (
   }
 };
 
+// Scrolls only the container a user can scroll, so a clipped button stays clipped.
 const expectFooterActionsReachable = async (page: Page) => {
+  await page
+    .locator("[class*='dynamic-ui']")
+    .first()
+    .evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
   await ["Quality trend", "Mistake queue"].reduce(async (previous, name) => {
     await previous;
     const action = page.getByRole("button", { exact: true, name });
-    await action.scrollIntoViewIfNeeded();
-    await expect(action).toBeInViewport({ ratio: SUBPIXEL_IN_VIEW_RATIO });
+    const cornersHit = await action.evaluate((element, inset) => {
+      const bounds = element.getBoundingClientRect();
+      const corners = [
+        { across: bounds.left + inset, down: bounds.top + inset },
+        { across: bounds.right - inset, down: bounds.top + inset },
+        { across: bounds.left + inset, down: bounds.bottom - inset },
+        { across: bounds.right - inset, down: bounds.bottom - inset },
+      ];
+      return corners.every(({ across, down }) =>
+        element.contains(document.elementFromPoint(across, down)),
+      );
+    }, CORNER_INSET_PX);
+    expect(cornersHit, name).toBe(true);
     await action.click({ trial: true });
   }, Promise.resolve());
 };
@@ -297,6 +323,7 @@ for (const setting of settings) {
           .toBeLessThanOrEqual(
             parseFloat(measurements.gridGap) + FOOTER_GAP_TOLERANCE_PX,
           );
+        expect.soft(Number.isFinite(measurements.footerFontSize)).toBe(true);
         expect
           .soft(measurements.footerFontSize)
           .toBeGreaterThanOrEqual(MIN_READABLE_FOOTER_FONT_PX);

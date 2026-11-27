@@ -176,9 +176,9 @@ test("keeps focus-ring clearance at both scroll edges in stacked mode", async ({
       parseFloat(root.getPropertyValue("--focus-ring")) +
       parseFloat(root.getPropertyValue("--focus-ring-offset"));
     const edges = () =>
-      [...element.querySelectorAll("button, a[href]")].map((control) =>
-        control.getBoundingClientRect(),
-      );
+      [...element.querySelectorAll("button, a[href], label")]
+        .filter((control) => control.checkVisibility())
+        .map((control) => control.getBoundingClientRect());
     const top = element.getBoundingClientRect().top + element.clientTop;
     element.scrollTop = 0;
     const above = Math.min(...edges().map((edge) => edge.top)) - ring - top;
@@ -191,10 +191,12 @@ test("keeps focus-ring clearance at both scroll edges in stacked mode", async ({
     return {
       above,
       below,
+      controls: edges().length,
       scrolls: element.scrollHeight > element.clientHeight,
     };
   });
   expect(clearance.scrolls).toBe(true);
+  expect(clearance.controls).toBeGreaterThan(0);
   expect(clearance.above).toBeGreaterThanOrEqual(0);
   expect(clearance.below).toBeGreaterThanOrEqual(0);
 });

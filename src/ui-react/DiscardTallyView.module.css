@@ -133,8 +133,8 @@
 @media (aspect-ratio < 6 / 5) {
   .tally {
     /*
-     * A no-op at the default scale (1em resolves below 4.4vw only above a
-     * ~364px width or an above-default root font).
+     * A no-op at the default scale above a ~364px width, where 1em resolves
+     * below 4.4vw; a larger root font raises that width (~636px at 28px).
      */
     font-size: min(1em, 4.4vw);
 
