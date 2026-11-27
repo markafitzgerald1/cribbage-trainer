@@ -94,7 +94,6 @@ export const spellcheckSkipWords = [
   "seedrandom",
   "Serializable",
   "ssl",
-  "subarray",
   "svg",
   "tagline",
   "tbody",

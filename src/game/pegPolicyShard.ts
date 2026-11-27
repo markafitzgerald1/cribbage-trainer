@@ -38,16 +38,9 @@ interface Columns {
 }
 
 // Every event is a token from 1 to 15, so no nibble below the top may be 0.
-const isPackedHistory = (history: number): boolean => {
-  let rest = history;
-  while (rest > 0) {
-    if (rest % NIBBLE === 0) {
-      return false;
-    }
-    rest = Math.floor(rest / NIBBLE);
-  }
-  return true;
-};
+const isPackedHistory = (history: number): boolean =>
+  history === 0 ||
+  (history % NIBBLE !== 0 && isPackedHistory(Math.floor(history / NIBBLE)));
 
 const readHistories = (columns: Columns): Float64Array | null => {
   const histories = new Float64Array(columns.rows);
@@ -179,14 +172,19 @@ export const drawPolicyRank = (
   legal: readonly Rank[],
   draw: number,
 ): Rank => {
+  // Array.from turns a sparse slot into undefined, which every check refuses.
+  const ranks = Array.from(row.ranks);
+  const counts = Array.from(row.counts);
   const sameMenu =
-    row.ranks.length === legal.length &&
-    row.counts.length === legal.length &&
-    row.ranks.every((rank, index) => rank === legal.at(index));
-  const total = row.counts.reduce((sum, count) => sum + count, 0);
+    ranks.length === legal.length &&
+    counts.length === legal.length &&
+    ranks.every((rank, index) => rank === legal.at(index));
+  const wellFormed =
+    counts.every((count) => Number.isInteger(count) && count >= 0) &&
+    counts.reduce((sum, count) => sum + count, 0) === POLICY_DENOMINATOR;
   if (
     !sameMenu ||
-    total !== POLICY_DENOMINATOR ||
+    !wellFormed ||
     !Number.isInteger(draw) ||
     draw < 0 ||
     draw >= POLICY_DENOMINATOR
@@ -194,9 +192,9 @@ export const drawPolicyRank = (
     throw new Error("The stored menu or the draw does not fit this decision");
   }
   let remaining = draw;
-  const index = row.counts.findIndex((count) => {
+  const index = counts.findIndex((count) => {
     remaining -= count;
     return remaining < 0;
   });
-  return row.ranks.at(index) as Rank;
+  return ranks.at(index) as Rank;
 };

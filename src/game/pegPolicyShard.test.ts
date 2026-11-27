@@ -93,8 +93,9 @@ describe("pegging policy shard", () => {
     buffer.set(PINNED, 3);
 
     expect(
-      parsePolicyShard(buffer.subarray(3, 3 + PINNED.length))?.lookup(0x31)
-        ?.ranks,
+      parsePolicyShard(new Uint8Array(buffer.buffer, 3, PINNED.length))?.lookup(
+        0x31,
+      )?.ranks,
     ).toStrictEqual([0, 3, 9]);
   });
 
@@ -172,19 +173,44 @@ describe("pegging policy shard", () => {
     },
   );
 
+  const withHole = (values: number[], hole: number): number[] => {
+    const holey = [...values];
+    Reflect.deleteProperty(holey, hole);
+    return holey;
+  };
+
   it.each([
-    { counts: [250, 0, 0], name: "counts short of 1000" },
-    { counts: [250, 750], name: "fewer counts than ranks" },
-  ])("refuses a hand-built row with $name", ({ counts }) => {
+    {
+      counts: [250, 0, 0, 0],
+      name: "counts short of 1000",
+      ranks: [0, 3, 9, 12],
+    },
+    {
+      counts: [250, 750, 0],
+      name: "fewer counts than ranks",
+      ranks: [0, 3, 9, 12],
+    },
+    {
+      counts: withHole([250, 0, 750, 0], 1),
+      name: "a missing count",
+      ranks: [0, 3, 9, 12],
+    },
+    {
+      counts: [250, -250, 1000, 0],
+      name: "a negative count",
+      ranks: [0, 3, 9, 12],
+    },
+    {
+      counts: [250, 0, 750, 0],
+      name: "a missing rank",
+      ranks: withHole([0, 3, 9, 12], 3),
+    },
+  ])("refuses a hand-built row with $name", ({ counts, ranks }) => {
     expect.hasAssertions();
 
-    const row: PolicyRow = {
-      counts,
-      ranks: asRanks([0, 3, 9]),
-      supported: true,
-    };
+    const row: PolicyRow = { counts, ranks: asRanks(ranks), supported: true };
 
-    expect(() => drawPolicyRank(row, asRanks([0, 3, 9]), 250)).toThrow(
+    expect(() => drawPolicyRank(row, asRanks([0, 3, 9, 12]), 250)).toThrow(
       "does not fit",
     );
   });
