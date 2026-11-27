@@ -30,6 +30,9 @@ const SIDE_BY_SIDE_RATIO = 1.2;
 const SHORT_LANDSCAPE_HEIGHT = 600;
 const ABOVE_COMPARISON_COUNT = 2;
 const COMPARISON_COUNT = 2;
+const MIN_READABLE_FOOTER_FONT_PX = 12;
+const MIN_FOOTER_GAP_PX = 2;
+const FOOTER_GAP_TOLERANCE_PX = 1;
 
 const measurePractice = (panel: Locator) =>
   panel.evaluate((element) => {
@@ -81,6 +84,7 @@ const measurePractice = (panel: Locator) =>
       deviceScaleFactor: devicePixelRatio,
       figure: rectangle(figure),
       footer: rectangle(tally),
+      footerFontSize: parseFloat(getComputedStyle(tally).fontSize),
       footerGap:
         tally.getBoundingClientRect().top -
         figure.getBoundingClientRect().bottom,
@@ -252,6 +256,18 @@ for (const setting of settings) {
           .toBeGreaterThanOrEqual(
             successful ? baseline.successRows : baseline.missRows,
           );
+        expect.soft(measurements.footerMargin).toBe("0px");
+        expect
+          .soft(measurements.footerGap)
+          .toBeGreaterThanOrEqual(MIN_FOOTER_GAP_PX);
+        expect
+          .soft(measurements.footerGap)
+          .toBeLessThanOrEqual(
+            parseFloat(measurements.gridGap) + FOOTER_GAP_TOLERANCE_PX,
+          );
+        expect
+          .soft(measurements.footerFontSize)
+          .toBeGreaterThanOrEqual(MIN_READABLE_FOOTER_FONT_PX);
         expectComparisonLines(measurements);
         await expectPracticeContents(
           panel,

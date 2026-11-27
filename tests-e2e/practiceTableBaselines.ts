@@ -1,4 +1,4 @@
-// Each project retains its measured pre-layout table budget, including device-profile rounding.
+// Each project retains its measured table budget, including post-#905 footer spacing gains.
 export const practiceTableBaselines = new Map([
   [
     "chromium",
@@ -9,7 +9,7 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "desktop XLarge landscape",
-        { missHeight: 532, missRows: 8, successHeight: 568, successRows: 8 },
+        { missHeight: 550, missRows: 8, successHeight: 586, successRows: 9 },
       ],
       [
         "desktop XLarge short landscape",
@@ -17,11 +17,11 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "mobile 125% portrait",
-        { missHeight: 177, missRows: 3, successHeight: 206, successRows: 4 },
+        { missHeight: 219, missRows: 4, successHeight: 248, successRows: 5 },
       ],
       [
         "Pixel 125% portrait",
-        { missHeight: 212, missRows: 4, successHeight: 243, successRows: 4 },
+        { missHeight: 273, missRows: 5, successHeight: 304, successRows: 6 },
       ],
       [
         "mobile 125% short landscape",
@@ -38,7 +38,7 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "desktop XLarge landscape",
-        { missHeight: 511, missRows: 7, successHeight: 549, successRows: 8 },
+        { missHeight: 529, missRows: 8, successHeight: 567, successRows: 8 },
       ],
       [
         "desktop XLarge short landscape",
@@ -46,11 +46,11 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "mobile 125% portrait",
-        { missHeight: 157, missRows: 1, successHeight: 188, successRows: 2 },
+        { missHeight: 197, missRows: 2, successHeight: 228, successRows: 4 },
       ],
       [
         "Pixel 125% portrait",
-        { missHeight: 192, missRows: 2, successHeight: 225, successRows: 4 },
+        { missHeight: 250, missRows: 4, successHeight: 283, successRows: 5 },
       ],
       [
         "mobile 125% short landscape",
@@ -67,7 +67,7 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "desktop XLarge landscape",
-        { missHeight: 508, missRows: 7, successHeight: 547, successRows: 8 },
+        { missHeight: 526, missRows: 7, successHeight: 565, successRows: 8 },
       ],
       [
         "desktop XLarge short landscape",
@@ -75,11 +75,11 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "mobile 125% portrait",
-        { missHeight: 151, missRows: 2, successHeight: 183, successRows: 3 },
+        { missHeight: 189, missRows: 3, successHeight: 221, successRows: 4 },
       ],
       [
         "Pixel 125% portrait",
-        { missHeight: 190, missRows: 3, successHeight: 223, successRows: 4 },
+        { missHeight: 247, missRows: 5, successHeight: 280, successRows: 5 },
       ],
       [
         "mobile 125% short landscape",
@@ -96,7 +96,7 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "desktop XLarge landscape",
-        { missHeight: 532, missRows: 8, successHeight: 568, successRows: 8 },
+        { missHeight: 550, missRows: 8, successHeight: 586, successRows: 9 },
       ],
       [
         "desktop XLarge short landscape",
@@ -104,11 +104,11 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "mobile 125% portrait",
-        { missHeight: 177, missRows: 3, successHeight: 206, successRows: 4 },
+        { missHeight: 219, missRows: 4, successHeight: 248, successRows: 5 },
       ],
       [
         "Pixel 125% portrait",
-        { missHeight: 212, missRows: 4, successHeight: 243, successRows: 4 },
+        { missHeight: 273, missRows: 5, successHeight: 304, successRows: 6 },
       ],
       [
         "mobile 125% short landscape",
@@ -125,7 +125,7 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "desktop XLarge landscape",
-        { missHeight: 508, missRows: 7, successHeight: 547, successRows: 8 },
+        { missHeight: 526, missRows: 8, successHeight: 565, successRows: 8 },
       ],
       [
         "desktop XLarge short landscape",
@@ -133,11 +133,11 @@ export const practiceTableBaselines = new Map([
       ],
       [
         "mobile 125% portrait",
-        { missHeight: 151, missRows: 2, successHeight: 183, successRows: 3 },
+        { missHeight: 190, missRows: 3, successHeight: 222, successRows: 4 },
       ],
       [
         "Pixel 125% portrait",
-        { missHeight: 190, missRows: 3, successHeight: 223, successRows: 4 },
+        { missHeight: 247, missRows: 5, successHeight: 280, successRows: 5 },
       ],
       [
         "mobile 125% short landscape",
