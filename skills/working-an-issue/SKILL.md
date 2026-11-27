@@ -79,8 +79,9 @@ agreed, the pull request says what actually happened.
   links the PR's Pages preview,
   `https://markafitzgerald1.github.io/cribbage-trainer/pr/<n>/`, so a
   reviewer on a phone opens it in one tap. The workflow's
-  `comment-preview-link` job also posts that link as a PR comment and edits
-  it on each deploy, but the comment arrives only after the first deploy, so
+  `comment-preview-link` job also posts that link as a PR comment and
+  normally edits it on each later deploy, but the comment arrives only after
+  the first deploy and can lag behind a failed or skipped comment job, so
   link it in the block anyway. Fork and Dependabot PRs get no preview at all,
   so their block has nothing to link.
 - The review guide is what makes a PR reviewable rather than merely correct: a

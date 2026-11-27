@@ -77,7 +77,8 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   environment URL, but GitHub shows that only as "View deployment" deep in
   the timeline, and its Android app shows it poorly or not at all. So
   `comment-preview-link` posts one comment holding the link and the head SHA
-  it was built from, and later deploys edit that comment in place. It finds
+  it was built from, and each later deploy normally edits that comment in
+  place; the exceptions are the skips described below. It finds
   the comment by a hidden `<!-- pages-preview-link -->` marker **and** the
   REST author `github-actions[bot]`, because the token's write permission
   could otherwise edit a human's comment that quoted the marker. It is a job
