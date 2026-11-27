@@ -67,19 +67,20 @@
     display: grid;
     grid-template-rows: auto 1fr max-content;
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.5em;
+    gap: clamp(2px, 0.75vh, 0.3em);
 
     /*
      * The base `0.7em` inline padding grows with the device font-size
      * setting, and the discard tally's own font is already viewport-capped,
      * so on a phone set well above default the fixed-width tally figures
      * ran off the right edge and `body { overflow-x: hidden }` clipped the
-     * last character or two of "Best choice" / "Hands skipped". Cap the
-     * inline padding so it stops eating the row's width; a no-op at the
-     * default scale (0.7em stays below 3.2vw down to ~350px). The block
-     * padding is left to grow.
+     * last character or two of "Best choice" / "Hands skipped". Cap both
+     * block and inline padding against the viewport so enlarged text neither
+     * clips row widths nor steals vertical height from the analysis table.
+     * The 4px block floor is the focus ring's width plus offset, so a ring
+     * on a control at the scroll edge is not clipped on a short window.
      */
-    padding-inline: min(0.7em, 3.2vw);
+    padding: clamp(4px, 1vh, 0.4em) min(0.7em, 3.2vw);
   }
 
   .dynamic-ui > * {
