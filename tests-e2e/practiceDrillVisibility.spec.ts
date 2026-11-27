@@ -30,6 +30,12 @@ const SIDE_BY_SIDE_RATIO = 1.2;
 const SHORT_LANDSCAPE_HEIGHT = 600;
 const ABOVE_COMPARISON_COUNT = 2;
 const COMPARISON_COUNT = 2;
+const MIN_READABLE_FOOTER_FONT_PX = 12;
+const MIN_FOOTER_GAP_PX = 2;
+const FOOTER_GAP_TOLERANCE_PX = 1;
+// Far enough inside a corner to clear the button's 4px border radius.
+const CORNER_INSET_PX = 2;
+const CENTER_FRACTION = 0.5;
 
 const measurePractice = (panel: Locator) =>
   panel.evaluate((element) => {
@@ -64,12 +70,31 @@ const measurePractice = (panel: Locator) =>
     }));
     const table = document.querySelector("table") as HTMLElement;
     const container = table.parentElement as HTMLElement;
-    const tableBounds = container.getBoundingClientRect();
     const header = table.querySelector("thead") as HTMLElement;
     const headerBottom = header.getBoundingClientRect().bottom;
     const rows = [...table.querySelectorAll("tbody tr")].map((row) =>
       row.getBoundingClientRect(),
     );
+    const clip = { bottom: innerHeight, top: headerBottom };
+    for (
+      let node: HTMLElement | null = container;
+      node;
+      node = node.parentElement
+    ) {
+      if (getComputedStyle(node).overflowY !== "visible") {
+        const bounds = node.getBoundingClientRect();
+        const style = getComputedStyle(node);
+        clip.top = Math.max(
+          clip.top,
+          bounds.top + parseFloat(style.borderTopWidth),
+        );
+        clip.bottom = Math.min(
+          clip.bottom,
+          bounds.bottom - parseFloat(style.borderBottomWidth),
+          bounds.top + node.clientTop + node.clientHeight,
+        );
+      }
+    }
     const figure = table.closest("figure") as HTMLElement;
     const tally = figure.nextElementSibling as HTMLElement;
     return {
@@ -81,6 +106,19 @@ const measurePractice = (panel: Locator) =>
       deviceScaleFactor: devicePixelRatio,
       figure: rectangle(figure),
       footer: rectangle(tally),
+      footerFontSize: Math.min(
+        ...[tally, ...tally.querySelectorAll("*")]
+          .filter(
+            (node) =>
+              node.checkVisibility() &&
+              [...node.childNodes].some(
+                (child) =>
+                  child.nodeType === Node.TEXT_NODE &&
+                  (child.textContent ?? "").trim() !== "",
+              ),
+          )
+          .map((node) => parseFloat(getComputedStyle(node).fontSize)),
+      ),
       footerGap:
         tally.getBoundingClientRect().top -
         figure.getBoundingClientRect().bottom,
@@ -95,9 +133,7 @@ const measurePractice = (panel: Locator) =>
       table: {
         clientHeight: container.clientHeight,
         fullyVisibleRows: rows.filter(
-          (row) =>
-            row.top >= Math.max(tableBounds.top, headerBottom) &&
-            row.bottom <= Math.min(tableBounds.bottom, innerHeight),
+          (row) => row.top >= clip.top && row.bottom <= clip.bottom,
         ).length,
       },
     };
@@ -149,6 +185,44 @@ const expectPracticeContents = async (
       measurements.clientHeight,
     );
   }
+};
+
+// Scrolls only the container a user can scroll, so a clipped button stays clipped.
+const expectFooterActionsReachable = async (page: Page) => {
+  const grid = await page
+    .locator("[class*='dynamic-ui']")
+    .first()
+    .evaluate((element) => {
+      const overflows = element.scrollHeight > element.clientHeight;
+      element.scrollTop = element.scrollHeight;
+      return { overflowY: getComputedStyle(element).overflowY, overflows };
+    });
+  if (grid.overflows) expect(["auto", "scroll"]).toContain(grid.overflowY);
+  await ["Quality trend", "Mistake queue"].reduce(async (previous, name) => {
+    await previous;
+    const action = page.getByRole("button", { exact: true, name });
+    await expect(action).toBeEnabled();
+    const pointsHit = await action.evaluate(
+      (element, { center, inset }) => {
+        const bounds = element.getBoundingClientRect();
+        const points = [
+          { across: bounds.left + inset, down: bounds.top + inset },
+          { across: bounds.right - inset, down: bounds.top + inset },
+          { across: bounds.left + inset, down: bounds.bottom - inset },
+          { across: bounds.right - inset, down: bounds.bottom - inset },
+          {
+            across: bounds.left + bounds.width * center,
+            down: bounds.top + bounds.height * center,
+          },
+        ];
+        return points.every(({ across, down }) =>
+          element.contains(document.elementFromPoint(across, down)),
+        );
+      },
+      { center: CENTER_FRACTION, inset: CORNER_INSET_PX },
+    );
+    expect(pointsHit, name).toBe(true);
+  }, Promise.resolve());
 };
 
 const expectComparisonLines = (
@@ -252,6 +326,18 @@ for (const setting of settings) {
           .toBeGreaterThanOrEqual(
             successful ? baseline.successRows : baseline.missRows,
           );
+        expect
+          .soft(measurements.footerGap)
+          .toBeGreaterThanOrEqual(MIN_FOOTER_GAP_PX);
+        expect
+          .soft(measurements.footerGap)
+          .toBeLessThanOrEqual(
+            parseFloat(measurements.gridGap) + FOOTER_GAP_TOLERANCE_PX,
+          );
+        expect.soft(Number.isFinite(measurements.footerFontSize)).toBe(true);
+        expect
+          .soft(measurements.footerFontSize)
+          .toBeGreaterThanOrEqual(MIN_READABLE_FOOTER_FONT_PX);
         expectComparisonLines(measurements);
         await expectPracticeContents(
           panel,
@@ -261,6 +347,7 @@ for (const setting of settings) {
         );
         await expectPanelActionReachable(page, "Draw another");
         await expectPanelActionReachable(page, "Exit drill");
+        await expectFooterActionsReachable(page);
       });
     }
   });
