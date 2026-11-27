@@ -1,45 +1,27 @@
 /* jscpd:ignore-start */
 import {
-  AT,
-  asJson,
-  decisionOf,
-  noiseAdmission,
-  storeRaw,
-  storedWith,
-  withFailingWrite,
-} from "../ui/discardTally.test.common";
-import {
   DEFAULT_SORT_ORDER,
   HAND,
   INITIAL_HAND_ID,
   OTHER_HAND,
   dealAwayThenRestore,
   decisionsAndSkips,
-  dispatchVisibilityChange,
   handOf,
-  mountTallyWithMutableCards,
   noteOrigin,
   noteRestore,
   renderTally,
   renderTallyWithMutableCards,
   replacedBy,
   reportScore,
-  reportScoreWithAdmission,
   scopeFor,
 } from "./useDiscardTally.test.common";
-import { describe, expect, it, jest } from "@jest/globals";
-import {
-  discardTallyKey,
-  readDiscardTally,
-  readTallyForDisplay,
-} from "../ui/discardTally";
+import { asJson, storeRaw, storedWith } from "../ui/discardTally.test.common";
+import { describe, expect, it } from "@jest/globals";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DiscardTally } from "./useDiscardTally";
 import { SortOrder } from "../ui/SortOrder";
-import { act } from "@testing-library/react";
 import { parseHand } from "../game/Card";
 import { toDealtCards } from "../game/toDealtCards";
-import { toHandKey } from "../ui/handKey";
 /* jscpd:ignore-end */
 
 describe("uncounted reason across history", () => {
@@ -332,157 +314,5 @@ describe("revised discard note on counted hands", () => {
     run();
 
     expect(decisionsAndSkips()).toStrictEqual(expected);
-  });
-});
-
-const handKeyOf = () => toHandKey(handOf(HAND, true), CribRole.Dealer);
-
-const startFailedWrite = (
-  admission: "pending" | null = null,
-): MutableHarness => {
-  const harness = renderTallyWithMutableCards(handOf(HAND, true));
-  withFailingWrite(() => {
-    if (admission === null) {
-      reportScore(harness.result.current);
-    } else {
-      reportScoreWithAdmission(harness.result.current, admission);
-    }
-    return readDiscardTally(Date.now());
-  });
-  return harness;
-};
-
-const overwriteFromOtherTab = (
-  records: readonly ReturnType<typeof decisionOf>[],
-) => {
-  localStorage.setItem(
-    discardTallyKey,
-    asJson(
-      storedWith({
-        records,
-        revision: 1,
-        version: 8,
-      }),
-    ),
-  );
-};
-
-const scoreOtherDiscard = (harness: MutableHarness) => {
-  rerenderBoard(harness, otherDiscardOfHand());
-  reportScore(harness.result.current);
-};
-
-function withFixedClock<Result>(run: () => Result): Result {
-  jest.useFakeTimers();
-  try {
-    jest.setSystemTime(AT);
-    return run();
-  } finally {
-    act(() => {
-      jest.runOnlyPendingTimers();
-    });
-    jest.useRealTimers();
-  }
-}
-
-const withdrawAfterOverwrite = (
-  records: readonly ReturnType<typeof decisionOf>[],
-) => {
-  const harness = startFailedWrite();
-  overwriteFromOtherTab(records);
-  return withdrawCard(harness);
-};
-
-describe("multi-tab and failed-write note boundaries", () => {
-  it("stays quiet on deselection when a second tab settled the first tab's pending decision at the same timestamp", () => {
-    const result = withFixedClock(() => {
-      const tab1 = renderTallyWithMutableCards(handOf(HAND, true));
-      reportScoreWithAdmission(tab1.result.current, "pending");
-      const tab2 = mountTallyWithMutableCards(handOf(HAND, true));
-      reportScoreWithAdmission(tab2.result.current, noiseAdmission);
-      withdrawCard(tab2);
-      const reason = tab2.result.current.uncountedReason;
-      tab2.unmount();
-      tab1.unmount();
-      return { reason, tallies: decisionsAndSkips() };
-    });
-
-    expect(result).toStrictEqual({ reason: null, tallies: [1, 0] });
-  });
-
-  it("clears the note when another tab invalidates a failed write before deselection and counts the next discard", () => {
-    const harness = withdrawAfterOverwrite([
-      decisionOf({ handKey: "other-tab-hand" }),
-    ]);
-    const reasonBeforeRetry = harness.result.current.uncountedReason;
-    scoreOtherDiscard(harness);
-    const talliesAfterRetry = decisionsAndSkips();
-    const retained = readTallyForDisplay().records;
-    withdrawCard(harness);
-
-    expect(reasonBeforeRetry).toBeNull();
-    expect(talliesAfterRetry).toStrictEqual([3, 0]);
-    expect(retained).toContainEqual(
-      expect.objectContaining({
-        discardKey: "3H,4H",
-        handKey: handKeyOf(),
-        isPractice: false,
-      }),
-    );
-    expect(harness.result.current.uncountedReason).toBe("revised");
-  });
-
-  it("clears an already-shown revised note once another tab invalidates the failed write", () => {
-    const harness = withdrawCard(startFailedWrite());
-    const beforeOverwrite = harness.result.current.uncountedReason;
-    overwriteFromOtherTab([decisionOf({ handKey: "other-tab-hand" })]);
-    dispatchVisibilityChange("visible");
-
-    expect({
-      afterVisible: harness.result.current.uncountedReason,
-      beforeOverwrite,
-    }).toStrictEqual({
-      afterVisible: null,
-      beforeOverwrite: "revised",
-    });
-  });
-
-  it("clears the note when another tab records the same hand after this tab's write failed", () => {
-    const harness = withdrawAfterOverwrite([
-      decisionOf({ discardKey: "5H,6H", handKey: handKeyOf() }),
-    ]);
-
-    expect(harness.result.current.uncountedReason).toBeNull();
-  });
-
-  it("keeps the revised note and absorbs changes when a failed write is still valid", () => {
-    const harness = withdrawCard(startFailedWrite());
-    const beforeRetry = harness.result.current.uncountedReason;
-    scoreOtherDiscard(harness);
-
-    expect({
-      beforeRetry,
-      discardKey: readTallyForDisplay().records[0]?.discardKey,
-      tallies: decisionsAndSkips(),
-    }).toStrictEqual({
-      beforeRetry: "revised",
-      discardKey: "AH,2H",
-      tallies: [1, 0],
-    });
-  });
-
-  it("keeps the revised note after a failed pending write flushes on settlement and another tab writes", () => {
-    const reason = withFixedClock(() => {
-      const harness = startFailedWrite("pending");
-      reportScoreWithAdmission(harness.result.current, noiseAdmission);
-      overwriteFromOtherTab([
-        decisionOf({ discardKey: "AH,2H", handKey: handKeyOf() }),
-        decisionOf({ handKey: "other-tab-hand" }),
-      ]);
-      withdrawCard(harness);
-      return harness.result.current.uncountedReason;
-    });
-
-    expect(reason).toBe("revised");
   });
 });

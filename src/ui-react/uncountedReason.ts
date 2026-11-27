@@ -1,7 +1,3 @@
-import {
-  currentUnsavedBatch,
-  isAuthenticDecisionRetained,
-} from "../ui/discardTally";
 import { useCallback, useState } from "react";
 import type { HandReplacementCause } from "./useDiscardTelemetry";
 
@@ -47,9 +43,7 @@ export const replacementReason = (
 interface CountedSelection {
   readonly captureKey: string;
   readonly handId: string;
-  readonly handKey: string;
   readonly revised: boolean;
-  readonly unsavedBatch: number | null;
 }
 
 const nextCountedSelection = (
@@ -58,12 +52,6 @@ const nextCountedSelection = (
   boardCaptureKey: string | null,
 ): CountedSelection | null => {
   if (counted === null || counted.handId !== handId) {
-    return null;
-  }
-  if (
-    (counted.revised || boardCaptureKey !== counted.captureKey) &&
-    !isAuthenticDecisionRetained(counted.handKey, counted.unsavedBatch)
-  ) {
     return null;
   }
   if (!counted.revised && boardCaptureKey !== counted.captureKey) {
@@ -95,14 +83,8 @@ export const useUncountedReason = (
     setCountedSelection(null);
   }, []);
   const markDiscardCounted = useCallback(
-    (handId: string, captureKey: string, handKey: string) => {
-      setCountedSelection({
-        captureKey,
-        handId,
-        handKey,
-        revised: false,
-        unsavedBatch: currentUnsavedBatch(),
-      });
+    (handId: string, captureKey: string) => {
+      setCountedSelection({ captureKey, handId, revised: false });
     },
     [],
   );

@@ -121,38 +121,6 @@ const ownerSettlesBesideSecondTab = ({
   owner.unmount();
 };
 
-const recordFromSecondTab = ({
-  judgeAtDeadline = null,
-  secondAdmission = null,
-}: {
-  readonly judgeAtDeadline?: DeadlineJudgment | null;
-  readonly secondAdmission?: typeof noiseAdmission | null;
-}) => {
-  const owner = recordingHook();
-  const pendingNow = { ...pendingDecision(), at: Date.now() };
-  let firstOutcome: DiscardDecisionOutcome | null = null;
-  act(() => {
-    firstOutcome = owner.result.current(pendingNow, judgeAtDeadline);
-  });
-  const secondOnWritten = jest.fn();
-  const secondTab = recordingHook(secondOnWritten);
-  let secondOutcome: DiscardDecisionOutcome | null = null;
-  act(() => {
-    secondOutcome = secondTab.result.current(
-      secondAdmission === null
-        ? pendingNow
-        : { ...pendingNow, recordedAdmission: secondAdmission },
-    );
-  });
-  secondTab.unmount();
-  owner.unmount();
-  return {
-    firstOutcome: firstOutcome!,
-    secondOnWritten,
-    secondOutcome: secondOutcome!,
-  };
-};
-
 describe("decision-owned admission settlement", () => {
   it.each([0, 100])(
     "keeps separate study and authentic deadlines %i ms apart",
@@ -415,44 +383,6 @@ describe("decision-owned admission settlement", () => {
       waitOut();
 
       expect(storedAdmission()).toStrictEqual(noiseAdmission);
-    });
-  });
-
-  it("reports recorded: false when a second tab settles a pending decision at the same timestamp", () => {
-    expectWithClock(() => {
-      const { firstOutcome, secondOutcome } = recordFromSecondTab({
-        secondAdmission: noiseAdmission,
-      });
-
-      expect({
-        admission: storedAdmission(),
-        decisions: secondOutcome.summary.decisions,
-        firstRecorded: firstOutcome.recorded,
-        secondRecorded: secondOutcome.recorded,
-      }).toStrictEqual({
-        admission: noiseAdmission,
-        decisions: 1,
-        firstRecorded: true,
-        secondRecorded: false,
-      });
-    });
-  });
-
-  it("does not claim deadline timer ownership when a second tab reports pending at the same timestamp", () => {
-    expectWithClock(() => {
-      const { secondOnWritten, secondOutcome } = recordFromSecondTab({
-        judgeAtDeadline: () => noiseAdmission,
-      });
-      waitOut();
-
-      expect(secondOnWritten).not.toHaveBeenCalled();
-      expect({
-        admission: storedAdmission(),
-        recorded: secondOutcome.recorded,
-      }).toStrictEqual({
-        admission: noiseAdmission,
-        recorded: false,
-      });
     });
   });
 

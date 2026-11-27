@@ -11,7 +11,6 @@ import { act, renderHook } from "@testing-library/react";
 import { clearDiscardTally, readDiscardTally } from "../ui/discardTally";
 import { CribRole } from "../game/expectedCribPoints";
 import type { DealtCard } from "../game/DealtCard";
-import type { RecordedAdmission } from "../ui/recordedAdmission";
 import { SortOrder } from "../ui/SortOrder";
 import { parseHand } from "../game/Card";
 import { recordStoredDecision } from "../ui/discardTally.test.common";
@@ -52,15 +51,6 @@ export const reportScore = (
 ) => {
   act(() => {
     tally.reportAnalysisRendered(analysis, displayedAs);
-  });
-};
-
-export const reportScoreWithAdmission = (
-  tally: DiscardTally,
-  admission: RecordedAdmission,
-) => {
-  act(() => {
-    tally.reportAnalysisRendered(scoredAnalysis, null, null, admission);
   });
 };
 
@@ -152,11 +142,12 @@ interface MutableTallyProps {
 }
 
 // Lets a test change the sort order between a discard's completion and its score without dealtCards moving.
-export const mountTallyWithMutableCards = (
+export const renderTallyWithMutableCards = (
   initialDealtCards: ReturnType<typeof handOf>,
   initialSortOrder: SortOrder = DEFAULT_SORT_ORDER,
   wasDeepLinked = false,
 ) => {
+  clearDiscardTally();
   const initialProps: MutableTallyProps = {
     dealtCards: initialDealtCards,
     sortOrder: initialSortOrder,
@@ -177,13 +168,6 @@ export const mountTallyWithMutableCards = (
       }),
     { initialProps },
   );
-};
-
-export const renderTallyWithMutableCards = (
-  ...args: Parameters<typeof mountTallyWithMutableCards>
-) => {
-  clearDiscardTally();
-  return mountTallyWithMutableCards(...args);
 };
 
 interface RenderTallyOptions {
@@ -275,14 +259,4 @@ export const dealAwayThenRestore = (
 ) => {
   noteOrigin(tally, OTHER_HAND, "deal");
   noteRestore(tally, restored, handId === null ? {} : { handId });
-};
-
-export const dispatchVisibilityChange = (state: DocumentVisibilityState) => {
-  act(() => {
-    Object.defineProperty(document, "visibilityState", {
-      configurable: true,
-      value: state,
-    });
-    document.dispatchEvent(new Event("visibilitychange"));
-  });
 };

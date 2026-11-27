@@ -5,7 +5,6 @@ import {
   OTHER_HAND,
   dealAwayThenRestore,
   decisionsAndSkips,
-  dispatchVisibilityChange,
   handOf,
   noteDrillLoad,
   noteOrigin,
@@ -337,16 +336,18 @@ describe("discard tally hook", () => {
    * decision written straight to storage behind the hook's back.
    */
   it.each([
-    {
-      decisions: 1,
-      name: "the tab is visible again",
-      state: "visible" as const,
-    },
-    { decisions: 0, name: "it stays hidden", state: "hidden" as const },
+    { decisions: 1, name: "the tab is visible again", state: "visible" },
+    { decisions: 0, name: "it stays hidden", state: "hidden" },
   ])("refreshes when $name", ({ decisions, state }) => {
     const { result } = renderTally(HAND);
     recordStoredDecision("written-elsewhere");
-    dispatchVisibilityChange(state);
+    act(() => {
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: state,
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
 
     expect(result.current.summary.decisions).toBe(decisions);
   });
