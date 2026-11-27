@@ -178,7 +178,9 @@ export const drawPolicyRank = (
   const sameMenu =
     ranks.length === legal.length &&
     counts.length === legal.length &&
-    ranks.every((rank, index) => rank === legal.at(index));
+    ranks.every(
+      (rank, index) => Number.isInteger(rank) && rank === legal.at(index),
+    );
   const wellFormed =
     counts.every((count) => Number.isInteger(count) && count >= 0) &&
     counts.reduce((sum, count) => sum + count, 0) === POLICY_DENOMINATOR;

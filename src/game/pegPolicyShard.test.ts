@@ -215,6 +215,19 @@ describe("pegging policy shard", () => {
     );
   });
 
+  it("refuses a hole shared by the stored and legal menus", () => {
+    expect.hasAssertions();
+
+    const menu = asRanks(withHole([0, 3, 9, 12], 1));
+    const row: PolicyRow = {
+      counts: [250, 750, 0, 0],
+      ranks: menu,
+      supported: true,
+    };
+
+    expect(() => drawPolicyRank(row, menu, 250)).toThrow("does not fit");
+  });
+
   it.each([
     { draw: 0, legal: asRanks([0, 3]), name: "a menu narrower than stored" },
     { draw: 0, legal: asRanks([0, 3, 8]), name: "a different menu" },
