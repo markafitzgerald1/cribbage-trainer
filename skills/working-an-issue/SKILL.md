@@ -75,6 +75,15 @@ agreed, the pull request says what actually happened.
   attributed in-thread sign-off listing each reviewer, the head it reviewed,
   and the outcome, and only then ask for human review — the human's attention
   is the scarce resource here and comes last, not first.
+- The PR body opens with a short "Read this first" block, and that block
+  links the PR's Pages preview,
+  `https://markafitzgerald1.github.io/cribbage-trainer/pr/<n>/`, so a
+  reviewer on a phone opens it in one tap. The workflow's
+  `comment-preview-link` job also posts that link as a PR comment and
+  normally edits it on each later deploy, but the comment arrives only after
+  the first deploy and can lag behind a failed or skipped comment job, so
+  link it in the block anyway. Fork and Dependabot PRs get no preview at all,
+  so their block has nothing to link.
 - The review guide is what makes a PR reviewable rather than merely correct: a
   suggested file reading order, the design decisions worth challenging rather
   than only the ones that worked, and honest flags for anything a reader would
