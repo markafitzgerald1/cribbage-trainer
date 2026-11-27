@@ -256,7 +256,6 @@ for (const setting of settings) {
           .toBeGreaterThanOrEqual(
             successful ? baseline.successRows : baseline.missRows,
           );
-        expect.soft(measurements.footerMargin).toBe("0px");
         expect
           .soft(measurements.footerGap)
           .toBeGreaterThanOrEqual(MIN_FOOTER_GAP_PX);

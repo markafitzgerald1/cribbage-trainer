@@ -1,4 +1,4 @@
-// Each project retains its measured table budget, including post-#905 footer spacing gains.
+// Each project's measured table budget, including device-profile rounding.
 export const practiceTableBaselines = new Map([
   [
     "chromium",
