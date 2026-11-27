@@ -160,7 +160,8 @@ export const playRank = (state: PeggingState, rank: Rank): PeggingState => {
     hands,
     history: [...state.history, rank],
     lastPlayer: player,
-    next: otherSeat(player),
+    // The solver leaves the turn with the last player once the hand ends.
+    next: finished ? player : otherSeat(player),
     points: addPoints(state.points, player, score),
     sinceReset: [...state.sinceReset, rank],
   };

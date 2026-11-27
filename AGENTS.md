@@ -574,7 +574,7 @@
   differently finds no row and fails silently. Check a change by enumerating
   every feasible opponent keep for a few real shards and comparing the
   decision histories and menus to the shard's rows, as #910 did for six
-  hands including the largest (74,389 rows); unit tests alone cannot see it.
+  hands (dealer `7_T_J_K` alone has 74,389 rows); unit tests cannot see it.
 - `eslint-plugin-spellcheck` splits identifiers at digits, so `Uint8Array`
   is checked as `uint` and `array`; the skip word is `uint`. jsdom has no
   `TextEncoder`, so a module that builds bytes at load time breaks every

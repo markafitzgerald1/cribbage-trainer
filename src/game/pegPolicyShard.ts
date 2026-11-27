@@ -14,6 +14,7 @@ export const POLICY_DENOMINATOR = 1000;
 const HISTORY_KEY_LIMIT = 4_503_599_627_370_496;
 const WORD = 4_294_967_296;
 const HALF = 2;
+const NIBBLE = 16;
 const NOT_FOUND = -1;
 
 export interface PolicyRow {
@@ -36,6 +37,18 @@ interface Columns {
   readonly countsAt: number;
 }
 
+// Every event is a token from 1 to 15, so no nibble below the top may be 0.
+const isPackedHistory = (history: number): boolean => {
+  let rest = history;
+  while (rest > 0) {
+    if (rest % NIBBLE === 0) {
+      return false;
+    }
+    rest = Math.floor(rest / NIBBLE);
+  }
+  return true;
+};
+
 const readHistories = (columns: Columns): Float64Array | null => {
   const histories = new Float64Array(columns.rows);
   let previous = 0;
@@ -45,7 +58,11 @@ const readHistories = (columns: Columns): Float64Array | null => {
       columns.view.getUint32(at, true) +
       columns.view.getUint32(at + HIGH_WORD_OFFSET, true) * WORD;
     const history = previous + delta;
-    if ((row > 0 && delta === 0) || history >= HISTORY_KEY_LIMIT) {
+    if (
+      (row > 0 && delta === 0) ||
+      history >= HISTORY_KEY_LIMIT ||
+      !isPackedHistory(history)
+    ) {
       return null;
     }
     histories.set([history], row);
@@ -164,9 +181,12 @@ export const drawPolicyRank = (
 ): Rank => {
   const sameMenu =
     row.ranks.length === legal.length &&
+    row.counts.length === legal.length &&
     row.ranks.every((rank, index) => rank === legal.at(index));
+  const total = row.counts.reduce((sum, count) => sum + count, 0);
   if (
     !sameMenu ||
+    total !== POLICY_DENOMINATOR ||
     !Number.isInteger(draw) ||
     draw < 0 ||
     draw >= POLICY_DENOMINATOR

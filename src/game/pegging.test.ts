@@ -111,7 +111,7 @@ describe("pegging", () => {
     { expected: 12, played: [5, 5, 5] },
     { expected: 0, played: [5, 2] },
     { expected: 0, played: [] },
-  ])("scores $expected for a five after $played", ({ expected, played }) => {
+  ])("scores $expected for a six after $played", ({ expected, played }) => {
     expect.hasAssertions();
     expect(pairScore(ranks(...played), 5)).toBe(expected);
   });
@@ -122,6 +122,32 @@ describe("pegging", () => {
     const state = after([9, 10, 4, 1], [9, 0, 2, 3], [9, 9, 10, 0]);
 
     expect(afterReset(state)).toStrictEqual(resetFor(PONE, [0, 4]));
+  });
+
+  it("starts a fresh count after a go pair", () => {
+    expect.hasAssertions();
+
+    const afterGoPair = [9, 10, 11, null, null, 11];
+    const queen = after([9, 10, 11, 12], [9, 10, 11, 12], afterGoPair);
+    const newGo = after(
+      [9, 10, 11, 12],
+      [9, 10, 11, 12],
+      [...afterGoPair, 12, 12, null],
+    );
+
+    expect(queen.points).toStrictEqual([4, 0]);
+    expect(newGo.count).toBe(30);
+    expect(newGo.next).toBe(DEALER);
+    expect(newGo.points).toStrictEqual([4, 2]);
+  });
+
+  it("leaves the turn with the player of the last card", () => {
+    expect.hasAssertions();
+
+    const state = after([0, 0, 0, 0], [1, 1, 1, 1], [0, 1, 0, 1, 0, 1, 0, 1]);
+
+    expect(state.finished).toBe(true);
+    expect(state.next).toBe(DEALER);
   });
 
   it("scores one for the last card", () => {

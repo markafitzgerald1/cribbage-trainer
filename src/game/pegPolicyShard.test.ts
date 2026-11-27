@@ -31,7 +31,33 @@ const WIDTHS_AT = 32;
 const SUPPORT_AT = 34;
 const FIRST_DELTA_AT = 8;
 const SECOND_DELTA_AT = 16;
-const HIGH_DELTA_AT = 23;
+
+const uint64 = (value: number): number[] =>
+  Array.from(
+    { length: 8 },
+    (_, index) => Math.floor(value / 256 ** index) % 256,
+  );
+
+const withDeltas = (first: number, second: number): Uint8Array => {
+  const bytes = [...PINNED];
+  bytes.splice(FIRST_DELTA_AT, 8, ...uint64(first));
+  bytes.splice(SECOND_DELTA_AT, 8, ...uint64(second));
+  return payload(bytes);
+};
+
+// Thirteen goes: the longest history a menu holds, well past 32 bits.
+const THIRTEEN_GOES = Array.from(
+  { length: 13 },
+  (_, index) => 14 * 16 ** index,
+).reduce((sum, value) => sum + value);
+
+const WIDTH_FOUR_ROW = [
+  ...PINNED.slice(0, 4),
+  ...[1, 0, 0, 0],
+  ...uint64(0),
+  ...[0, 3, 9, 12, 4, 0],
+  ...[0, 0, 0xfa, 0, 0xee, 0x02, 0, 0],
+];
 
 const asRanks = (values: readonly number[]): readonly Rank[] =>
   values as readonly Rank[];
@@ -63,11 +89,12 @@ describe("pegging policy shard", () => {
   it("reads a slice of a larger buffer at its own offset", () => {
     expect.hasAssertions();
 
-    const buffer = new Uint8Array(PINNED.length + 3);
+    const buffer = new Uint8Array(PINNED.length + 8);
     buffer.set(PINNED, 3);
 
     expect(
-      parsePolicyShard(buffer.subarray(3))?.lookup(0x31)?.ranks,
+      parsePolicyShard(buffer.subarray(3, 3 + PINNED.length))?.lookup(0x31)
+        ?.ranks,
     ).toStrictEqual([0, 3, 9]);
   });
 
@@ -84,10 +111,27 @@ describe("pegging policy shard", () => {
   it("reads the high word of a history delta", () => {
     expect.hasAssertions();
 
-    const shard = parsePolicyShard(withByte(HIGH_DELTA_AT - 2, 1));
+    const shard = parsePolicyShard(withDeltas(0, THIRTEEN_GOES));
 
-    expect(shard?.lookup(0x31 + 2 ** 40)?.ranks).toStrictEqual([0, 3, 9]);
-    expect(parsePolicyShard(withByte(HIGH_DELTA_AT, 1))).toBeNull();
+    expect(shard?.lookup(THIRTEEN_GOES)?.ranks).toStrictEqual([0, 3, 9]);
+  });
+
+  it("reads a row of four legal ranks", () => {
+    expect.hasAssertions();
+
+    expect(parsePolicyShard(payload(WIDTH_FOUR_ROW))?.lookup(0)).toStrictEqual({
+      counts: [0, 250, 750, 0],
+      ranks: [0, 3, 9, 12],
+      supported: false,
+    });
+  });
+
+  it.each([
+    { name: "a history past thirteen events", second: 0x11111111111111 - 1 },
+    { name: "an empty event inside a history", second: 0x100 },
+  ])("refuses $name", ({ second }) => {
+    expect.hasAssertions();
+    expect(parsePolicyShard(withDeltas(1, second))).toBeNull();
   });
 
   it.each([
@@ -112,19 +156,6 @@ describe("pegging policy shard", () => {
     expect(parsePolicyShard(bytes)).toBeNull();
   });
 
-  it("refuses a history past thirteen events", () => {
-    expect.hasAssertions();
-
-    const bytes = [...PINNED];
-    bytes.splice(SECOND_DELTA_AT + 6, 2, 0x10, 0);
-
-    expect(parsePolicyShard(payload(bytes))).toBeNull();
-
-    bytes.splice(SECOND_DELTA_AT + 6, 2, 0x0f, 0);
-
-    expect(parsePolicyShard(payload(bytes))).not.toBeNull();
-  });
-
   it.each([
     { draw: 0, expected: 0 },
     { draw: 249, expected: 0 },
@@ -140,6 +171,23 @@ describe("pegging policy shard", () => {
       );
     },
   );
+
+  it.each([
+    { counts: [250, 0, 0], name: "counts short of 1000" },
+    { counts: [250, 750], name: "fewer counts than ranks" },
+  ])("refuses a hand-built row with $name", ({ counts }) => {
+    expect.hasAssertions();
+
+    const row: PolicyRow = {
+      counts,
+      ranks: asRanks([0, 3, 9]),
+      supported: true,
+    };
+
+    expect(() => drawPolicyRank(row, asRanks([0, 3, 9]), 250)).toThrow(
+      "does not fit",
+    );
+  });
 
   it.each([
     { draw: 0, legal: asRanks([0, 3]), name: "a menu narrower than stored" },
