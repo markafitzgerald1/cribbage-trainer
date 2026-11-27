@@ -33,6 +33,8 @@ const COMPARISON_COUNT = 2;
 const MIN_READABLE_FOOTER_FONT_PX = 12;
 const MIN_FOOTER_GAP_PX = 2;
 const FOOTER_GAP_TOLERANCE_PX = 1;
+// Scrolling into view lands on fractional offsets that shave under a pixel off a button.
+const SUBPIXEL_IN_VIEW_RATIO = 0.95;
 
 const measurePractice = (panel: Locator) =>
   panel.evaluate((element) => {
@@ -67,12 +69,23 @@ const measurePractice = (panel: Locator) =>
     }));
     const table = document.querySelector("table") as HTMLElement;
     const container = table.parentElement as HTMLElement;
-    const tableBounds = container.getBoundingClientRect();
     const header = table.querySelector("thead") as HTMLElement;
     const headerBottom = header.getBoundingClientRect().bottom;
     const rows = [...table.querySelectorAll("tbody tr")].map((row) =>
       row.getBoundingClientRect(),
     );
+    const clip = { bottom: innerHeight, top: headerBottom };
+    for (
+      let node: HTMLElement | null = container;
+      node;
+      node = node.parentElement
+    ) {
+      if (getComputedStyle(node).overflowY !== "visible") {
+        const top = node.getBoundingClientRect().top + node.clientTop;
+        clip.top = Math.max(clip.top, top);
+        clip.bottom = Math.min(clip.bottom, top + node.clientHeight);
+      }
+    }
     const figure = table.closest("figure") as HTMLElement;
     const tally = figure.nextElementSibling as HTMLElement;
     return {
@@ -84,7 +97,19 @@ const measurePractice = (panel: Locator) =>
       deviceScaleFactor: devicePixelRatio,
       figure: rectangle(figure),
       footer: rectangle(tally),
-      footerFontSize: parseFloat(getComputedStyle(tally).fontSize),
+      footerFontSize: Math.min(
+        ...[tally, ...tally.querySelectorAll("*")]
+          .filter(
+            (node) =>
+              node.checkVisibility() &&
+              [...node.childNodes].some(
+                (child) =>
+                  child.nodeType === Node.TEXT_NODE &&
+                  (child.textContent ?? "").trim() !== "",
+              ),
+          )
+          .map((node) => parseFloat(getComputedStyle(node).fontSize)),
+      ),
       footerGap:
         tally.getBoundingClientRect().top -
         figure.getBoundingClientRect().bottom,
@@ -99,9 +124,7 @@ const measurePractice = (panel: Locator) =>
       table: {
         clientHeight: container.clientHeight,
         fullyVisibleRows: rows.filter(
-          (row) =>
-            row.top >= Math.max(tableBounds.top, headerBottom) &&
-            row.bottom <= Math.min(tableBounds.bottom, innerHeight),
+          (row) => row.top >= clip.top && row.bottom <= clip.bottom,
         ).length,
       },
     };
@@ -153,6 +176,16 @@ const expectPracticeContents = async (
       measurements.clientHeight,
     );
   }
+};
+
+const expectFooterActionsReachable = async (page: Page) => {
+  await ["Quality trend", "Mistake queue"].reduce(async (previous, name) => {
+    await previous;
+    const action = page.getByRole("button", { exact: true, name });
+    await action.scrollIntoViewIfNeeded();
+    await expect(action).toBeInViewport({ ratio: SUBPIXEL_IN_VIEW_RATIO });
+    await action.click({ trial: true });
+  }, Promise.resolve());
 };
 
 const expectComparisonLines = (
@@ -276,6 +309,7 @@ for (const setting of settings) {
         );
         await expectPanelActionReachable(page, "Draw another");
         await expectPanelActionReachable(page, "Exit drill");
+        await expectFooterActionsReachable(page);
       });
     }
   });

@@ -163,6 +163,42 @@ test("gives dynamic-ui its own scroll when analytics settings overflow in stacke
   expect(scrolledBottom).toBeLessThanOrEqual(shortStackedViewport.height);
 });
 
+test("keeps focus-ring clearance at both scroll edges in stacked mode", async ({
+  page,
+}) => {
+  await applyViewportSize(page, shortStackedViewport);
+  await page.goto("/");
+  await page.addStyleTag({ content: "html { font-size: 28px; }" });
+  const dynamicUi = page.locator("[class*='dynamic-ui']").first();
+  const clearance = await dynamicUi.evaluate((element) => {
+    const root = getComputedStyle(document.documentElement);
+    const ring =
+      parseFloat(root.getPropertyValue("--focus-ring")) +
+      parseFloat(root.getPropertyValue("--focus-ring-offset"));
+    const edges = () =>
+      [...element.querySelectorAll("button, a[href]")].map((control) =>
+        control.getBoundingClientRect(),
+      );
+    const top = element.getBoundingClientRect().top + element.clientTop;
+    element.scrollTop = 0;
+    const above = Math.min(...edges().map((edge) => edge.top)) - ring - top;
+    element.scrollTop = element.scrollHeight;
+    const below =
+      top +
+      element.clientHeight -
+      Math.max(...edges().map((edge) => edge.bottom)) -
+      ring;
+    return {
+      above,
+      below,
+      scrolls: element.scrollHeight > element.clientHeight,
+    };
+  });
+  expect(clearance.scrolls).toBe(true);
+  expect(clearance.above).toBeGreaterThanOrEqual(0);
+  expect(clearance.below).toBeGreaterThanOrEqual(0);
+});
+
 /*
  * When discards are chosen and both a tally and an open settings panel are
  * present in a short stacked viewport, the analysis table in track 2 must

@@ -67,7 +67,7 @@
     display: grid;
     grid-template-rows: auto 1fr max-content;
     grid-template-columns: minmax(0, 1fr);
-    gap: min(0.3em, 0.75vh);
+    gap: clamp(2px, 0.75vh, 0.3em);
 
     /*
      * The base `0.7em` inline padding grows with the device font-size
@@ -77,8 +77,10 @@
      * last character or two of "Best choice" / "Hands skipped". Cap both
      * block and inline padding against the viewport so enlarged text neither
      * clips row widths nor steals vertical height from the analysis table.
+     * The 4px block floor is the focus ring's width plus offset, so a ring
+     * on a control at the scroll edge is not clipped on a short window.
      */
-    padding: min(0.4em, 1vh) min(0.7em, 3.2vw);
+    padding: clamp(4px, 1vh, 0.4em) min(0.7em, 3.2vw);
   }
 
   .dynamic-ui > * {

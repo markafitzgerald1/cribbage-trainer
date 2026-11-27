@@ -16,9 +16,8 @@
   column-gap: 0.7em;
 
   /*
-   * .dynamic-ui's grid row-gap and padding-block already separate the tally
-   * from the table above and the links or edge below, so margin-block
-   * double-spaced the footer and took height from the analysis table.
+   * No block margin: the parent grid's row gap owns the tally's vertical
+   * separation, and a margin here adds to it out of the table's height.
    */
 
   /*
@@ -135,8 +134,7 @@
   .tally {
     /*
      * A no-op at the default scale (1em resolves below 4.4vw only above a
-     * ~364px width or an above-default root font); the column gap is left
-     * uncapped so the default-scale layout stays byte-identical.
+     * ~364px width or an above-default root font).
      */
     font-size: min(1em, 4.4vw);
 
@@ -184,7 +182,7 @@
 
 /*
  * Side-by-side mode has the same rem/em-floor trap, and worse consequences:
- * the tally sits in the fixed-height left column below the cards, so when a
+ * the tally sits below the analysis in the fixed-height grid, so when a
  * large device font-size wraps the loss label and "Hands skipped" onto
  * two or three lines each, the extra height pushes the "Quality trend" and
  * "Mistake queue" buttons past the bottom of a short phone-landscape
