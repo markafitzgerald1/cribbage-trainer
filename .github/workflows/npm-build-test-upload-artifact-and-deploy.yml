@@ -478,6 +478,9 @@ jobs:
       id-token: write # to verify the deployment originates from an appropriate source
       pull-requests: read # to recheck the PR is still open before publishing
 
+    outputs:
+      published: ${{ steps.recheck.outputs.open }}
+
     # A separate, unprotected environment from github-pages: that
     # environment's branch policy permits deployments only from main.
     environment:
@@ -525,3 +528,53 @@ jobs:
         with:
           merge-args: pr ${{ needs.resolve-preview-pr.outputs.number }} dist
           commit-message: Publish pr/${{ needs.resolve-preview-pr.outputs.number }} preview
+
+  # The environment URL above surfaces only as "View deployment" deep in the
+  # PR timeline, which GitHub's Android app shows poorly or not at all. One
+  # comment near the top of the conversation gives a one-tap link instead.
+  # Its own job, so the write permission is not granted to the job that runs
+  # npm install and the build. Later deploys edit the same comment, found by
+  # its marker and author, so a PR gets one comment however often it moves.
+  # Only the bot's own comment is matched: the token could edit anyone's.
+  comment-preview-link:
+    runs-on: ubuntu-latest
+    needs: [resolve-preview-pr, deploy-preview]
+    if: github.event_name == 'pull_request' && needs.deploy-preview.outputs.published == 'true'
+    permissions:
+      pull-requests: write # to post or edit this PR's preview-link comment
+    steps:
+      - name: Post or update the preview link comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ needs.resolve-preview-pr.outputs.number }}
+          URL: ${{ needs.resolve-preview-pr.outputs.url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          MARKER: "<!-- pages-preview-link -->"
+        run: |
+          # checkout builds the PR's merge ref, so the preview is the head
+          # merged into the base, not the head alone.
+          BODY=$(
+            printf '%s\n' \
+              "$MARKER" \
+              "**Preview:** $URL" \
+              "" \
+              "Built from head \`${HEAD_SHA:0:7}\` merged into \`$BASE_REF\`, deployed $(date --utc '+%Y-%m-%d %H:%M UTC')."
+          )
+          COMMENT_ID=$(
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments?per_page=100" \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id'
+          )
+          # Not piped through head: under the runner's pipefail, gh killed by
+          # a closed pipe would fail the step.
+          COMMENT_ID=${COMMENT_ID%%$'\n'*}
+          if [ -z "$COMMENT_ID" ]; then
+            gh api --method POST \
+              "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments" \
+              --raw-field body="$BODY" --jq '.html_url'
+          else
+            gh api --method PATCH \
+              "repos/$GITHUB_REPOSITORY/issues/comments/$COMMENT_ID" \
+              --raw-field body="$BODY" --jq '.html_url'
+          fi

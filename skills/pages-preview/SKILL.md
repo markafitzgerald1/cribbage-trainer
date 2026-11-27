@@ -72,6 +72,18 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   in REST/webhook event payloads. Never compare a single literal — the
   preview-eligibility check matched only the latter and silently published
   a preview for a Dependabot PR.
+- **The preview link reaches the PR as a comment, not only as the
+  environment URL.** `deploy-preview` sets the `github-pages-preview`
+  environment URL, but GitHub shows that only as "View deployment" deep in
+  the timeline, and its Android app shows it poorly or not at all. So
+  `comment-preview-link` posts one comment holding the link and the head SHA
+  it was built from, and later deploys edit that comment in place. It finds
+  the comment by a hidden `<!-- pages-preview-link -->` marker **and** the
+  REST author `github-actions[bot]`, because the token's write permission
+  could otherwise edit a human's comment that quoted the marker. It is a job
+  of its own so `pull-requests: write` is never granted to a job that runs
+  `npm clean-install`, and it runs only when `deploy-preview` reports it
+  published (`outputs.published`), so a PR closed mid-run gets no comment.
 - There are deliberately **two** GitHub Pages environments: `github-pages`
   (production) has a branch policy restricting it to `main` — reusing it for
   previews would silently hang every preview job before any step runs.
