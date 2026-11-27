@@ -1,10 +1,12 @@
 import { type DeadlineJudgment, exactAdmission } from "../ui/recordedAdmission";
 import {
+  type DiscardDecisionOutcome,
   type DiscardDecisionRecord,
   type DiscardTallySummary,
   readDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
+  recordDiscardDecisionOutcome,
 } from "../ui/discardTally";
 import { useCallback, useEffect, useRef } from "react";
 import { SIDECAR_SETTLE_TIMEOUT_MS } from "./useUncertainty";
@@ -34,7 +36,7 @@ const settleExactly = (decision: DiscardDecisionRecord): DiscardTallySummary =>
 export type RecordDecision = (
   decision: DiscardDecisionRecord,
   judgeAtDeadline?: DeadlineJudgment | null,
-) => DiscardTallySummary;
+) => DiscardDecisionOutcome;
 
 // The wait belongs to the recorded decision, so leaving its analysis cannot strand it.
 export const useAdmissionRecording = (
@@ -83,7 +85,7 @@ export const useAdmissionRecording = (
       const captured = matching
         ? { ...decision, at: waiting.decision.at }
         : decision;
-      const summary = recordDiscardDecision(captured);
+      const { recorded, summary } = recordDiscardDecisionOutcome(captured);
       if (captured.recordedAdmission === "pending") {
         const stored = readTallyForDisplay().records.find(
           (record) =>
@@ -110,7 +112,10 @@ export const useAdmissionRecording = (
         pending.current.delete(key);
       }
       // A matching report is written under the original event's day, which may be yesterday by now.
-      return matching ? readDiscardTally(Date.now()) : summary;
+      return {
+        recorded: !matching && recorded,
+        summary: matching ? readDiscardTally(Date.now()) : summary,
+      };
     },
     [onWritten],
   );

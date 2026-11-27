@@ -16,7 +16,11 @@ import {
   playToggle,
 } from "./stories.common";
 import { Rank, Suit, createCard } from "../game/Card";
-import { discardTallyKey, readTallyForDisplay } from "../ui/discardTally";
+import {
+  clearDiscardTally,
+  discardTallyKey,
+  readTallyForDisplay,
+} from "../ui/discardTally";
 import { expect, fireEvent, waitFor, within } from "storybook/test";
 import mistakeFixtures, {
   DRILLED_HAND_KEY,
@@ -475,5 +479,39 @@ export const SweepsStrayDrillRowsOnWrite = {
 
     await expect(swept).not.toContain(STRAY_HAND_KEY);
     await expect(swept).toContain(DRILLED_HAND_KEY);
+  },
+};
+
+const REVISED_NOTE = "Your first discard counted. Changes now are practice.";
+
+const clickHandCheckbox = async (canvasElement: HTMLElement, index: number) => {
+  await fireEvent.click(within(canvasElement).getAllByRole("checkbox")[index]!);
+};
+
+const expectRevisedNoteVisibility = async (
+  canvasElement: HTMLElement,
+  visible: boolean,
+) => {
+  await expect(within(canvasElement).queryByText(REVISED_NOTE) !== null).toBe(
+    visible,
+  );
+};
+
+export const ReviseCountedDiscardNote = {
+  beforeEach: () => {
+    clearDiscardTally();
+    return clearDiscardTally;
+  },
+  play: async (context: { canvasElement: HTMLElement }) => {
+    const { canvasElement } = context;
+    await DiscardShowsScoredPossibilities.play(context);
+    await expectRevisedNoteVisibility(canvasElement, false);
+    await clickHandCheckbox(canvasElement, 0);
+    await expectRevisedNoteVisibility(canvasElement, true);
+    await clickHandCheckbox(canvasElement, 2);
+    await expectAnalysisColumnHeaders(canvasElement);
+    await expectRevisedNoteVisibility(canvasElement, true);
+    await fireEvent.click(getButton(canvasElement, "Deal"));
+    await expectRevisedNoteVisibility(canvasElement, false);
   },
 };

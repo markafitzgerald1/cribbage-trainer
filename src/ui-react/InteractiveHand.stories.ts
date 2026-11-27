@@ -78,5 +78,6 @@ export const NotCountedLinkedHand = uncountedStory("linked");
 export const NotCountedSeededHand = uncountedStory("seeded");
 export const NotCountedEnteredHand = uncountedStory("entered");
 export const NotCountedRestoredHand = uncountedStory("restored");
+export const NotCountedRevisedHand = uncountedStory("revised");
 export const NotCountedDecidedHand = uncountedStory("decided");
 export const NotCountedDrillHand = uncountedStory("drill");

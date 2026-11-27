@@ -3,7 +3,6 @@ import type {
   RecordedAdmission,
 } from "../ui/recordedAdmission";
 import {
-  type DiscardDecisionRecord,
   type DiscardTallySummary,
   hasRecordedAuthenticDecision,
   readDiscardTally,
@@ -19,6 +18,7 @@ import {
   type UncountedReason,
   initialUncountedReason,
   replacementReason,
+  useUncountedReason,
 } from "./uncountedReason";
 import {
   invertSuitPermutation,
@@ -317,8 +317,8 @@ export const useDiscardTally = ({
     };
   }, []);
 
-  const [uncountedReason, setUncountedReason] =
-    useState<UncountedReason | null>(() =>
+  const { markDiscardCounted, setHandReason, uncountedReason } =
+    useUncountedReason(boardHandId, boardCaptureKey, () =>
       initialUncountedReason(isSeededSession, isPracticeInitialHand, () =>
         hasRecordedAuthenticDecision(toHandKey(dealtCards, cribRole)),
       ),
@@ -326,9 +326,9 @@ export const useDiscardTally = ({
   const notePractice = useCallback(
     (handKey: string, reason: UncountedReason | null) => {
       practiceByHand.current.set(handKey, reason !== null);
-      setUncountedReason(reason);
+      setHandReason(reason);
     },
-    [],
+    [setHandReason],
   );
 
   const reportHandOrigin: ReportHandOrigin = useCallback(
@@ -447,15 +447,12 @@ export const useDiscardTally = ({
         decidedCards.filter((card) => !card.kept),
       );
       // Only a capture of this exact occurrence and discard describes the decision being scored.
+      const captureKey = `${boardHandId}|${completionKeyFor(dealtCards, scoredRole)}`;
       const capturedSortOrder =
-        capture?.key ===
-        `${boardHandId}|${completionKeyFor(dealtCards, scoredRole)}`
-          ? capture.sortOrder
-          : null;
-      const recordJudged = (decision: DiscardDecisionRecord) =>
-        recordDecision(decision, judgeAtDeadline);
-      setSummary(
-        recordJudged({
+        capture?.key === captureKey ? capture.sortOrder : null;
+      const isPractice = practiceByHand.current.get(boardKey) ?? true;
+      const { recorded, summary: nextSummary } = recordDecision(
+        {
           at: Date.now(),
           cribRole: scoredRole,
           discardKey,
@@ -479,7 +476,7 @@ export const useDiscardTally = ({
            * An unknown hand counts as practice: it can only be one this
            * session never dealt.
            */
-          isPractice: practiceByHand.current.get(boardKey) ?? true,
+          isPractice,
           /*
            * Spread rather than assigned, so an unknown figure leaves the
            * key off the record entirely. Writing it as zero would be
@@ -496,10 +493,15 @@ export const useDiscardTally = ({
             : {}),
           ...(admission === null ? {} : { recordedAdmission: admission }),
           tableIdentity,
-        }),
+        },
+        judgeAtDeadline,
       );
+      if (!isPractice && recorded) {
+        markDiscardCounted(boardHandId, captureKey);
+      }
+      setSummary(nextSummary);
     },
-    [boardHandId, capture, dealtCards, recordDecision],
+    [boardHandId, capture, dealtCards, markDiscardCounted, recordDecision],
   );
 
   return {
