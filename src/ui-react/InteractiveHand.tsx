@@ -22,6 +22,7 @@ const UNCOUNTED_NOTE_TEXT: Readonly<Record<UncountedReason, string>> = {
   entered: "Not counted: you entered these cards.",
   linked: "Not counted: this hand was opened from its web address.",
   restored: "Not counted: this hand was restored from history.",
+  revised: "Your first discard counted. Changes now are practice.",
   seeded: "Not counted: hands from a seeded link are practice.",
 };
 
@@ -64,7 +65,7 @@ interface InteractiveHandProps {
   readonly onDeal: () => void;
   readonly onEnterCards: () => void;
   readonly practiceDrill?: InteractiveHandDrill | null;
-  // Why the tally leaves this hand out; null on a hand that is counted.
+  // Why the board's current selection is not counted; null on a hand that counts while unchanged.
   readonly uncountedReason?: UncountedReason | null;
   // Briefly true after "Exit drill" so the board can say it dealt a fresh hand.
   readonly showFreshHandNotice?: boolean;

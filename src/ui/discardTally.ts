@@ -379,10 +379,15 @@ export const readDiscardTally = (now: number): DiscardTallySummary =>
  * was nothing to record, and skips the write rather than rewriting identical
  * bytes.
  */
+export interface DiscardDecisionOutcome {
+  readonly recorded: boolean;
+  readonly summary: DiscardTallySummary;
+}
+
 const extendStoredTally = (
   at: number,
   extend: (tally: StoredTally) => StoredTally,
-): DiscardTallySummary => {
+): DiscardDecisionOutcome => {
   /*
    * Storage is consulted even when a write failed earlier, because the
    * failure may have been transient and another tab may have written a newer
@@ -397,11 +402,11 @@ const extendStoredTally = (
    * that can read it is the one that should keep writing it.
    */
   if (stored === null) {
-    return summarize(emptyTally, at);
+    return { recorded: false, summary: summarize(emptyTally, at) };
   }
   const extended = extend(stored);
   if (extended === stored) {
-    return summarize(stored, at);
+    return { recorded: false, summary: summarize(stored, at) };
   }
   // Every write advances the revision, which is what lets another tab's write be noticed at all.
   const next: StoredTally = { ...extended, revision: extended.revision + 1 };
@@ -422,12 +427,12 @@ const extendStoredTally = (
     // The first failure's basis is kept through a run of them, so a later success still compares against what storage held before any of this.
     unsavedBase ??= persisted;
   }
-  return summarize(next, at);
+  return { recorded: true, summary: summarize(next, at) };
 };
 
-export const recordDiscardDecision = (
+export const recordDiscardDecisionOutcome = (
   decision: DiscardDecisionRecord,
-): DiscardTallySummary => {
+): DiscardDecisionOutcome => {
   /*
    * Rejects a non-finite or negative `at`/`expectedPointsLoss` before either
    * reaches recency math, the same boundary recordPracticeAttempt already
@@ -444,12 +449,16 @@ export const recordDiscardDecision = (
     !Number.isFinite(decision.expectedPointsLoss) ||
     decision.expectedPointsLoss < 0
   ) {
-    return readDiscardTally(Date.now());
+    return { recorded: false, summary: readDiscardTally(Date.now()) };
   }
   return extendStoredTally(decision.at, (tally) =>
     extendDecisionTally(tally, decision, MAX_RECORDS),
   );
 };
+
+export const recordDiscardDecision = (
+  decision: DiscardDecisionRecord,
+): DiscardTallySummary => recordDiscardDecisionOutcome(decision).summary;
 
 export const recordPracticeAttempt = (
   attempt: PracticeAttempt,
@@ -463,7 +472,7 @@ export const recordPracticeAttempt = (
   }
   return extendStoredTally(attempt.at, (tally) =>
     extendPracticeTally(tally, attempt, MAX_RECORDS),
-  );
+  ).summary;
 };
 
 /*
@@ -480,7 +489,7 @@ export const recordSkippedHand = (at: number): DiscardTallySummary =>
       skippedHands: tally.lifetime.skippedHands + 1,
     },
     skipped: [...tally.skipped, { at }].slice(-MAX_RECORDS),
-  }));
+  })).summary;
 
 /*
  * Whether there is anything to show. Exported so the view and the layout that

@@ -1,7 +1,12 @@
 /* jscpd:ignore-start */
 import "@testing-library/jest-dom";
+import * as cribLoader from "../game/expectedCribPointsTableLoader";
 import { CARD_LABELS, Rank, type Suit, parseHand } from "../game/Card";
 import { type ComparableCard, sortCards } from "../ui/sortCards";
+import {
+  CribRole,
+  type ExpectedCribPointsTable,
+} from "../game/expectedCribPoints";
 import {
   DEALER_RANDOM_VALUE,
   PONE_RANDOM_VALUE,
@@ -9,6 +14,7 @@ import {
   calculationsHeaderName,
   clickDeal,
   clickIndices,
+  completeDiscardsAndWait,
   createRoleRandomValues,
   createSequenceGenerator,
   expectDealerRoleVisible,
@@ -17,6 +23,8 @@ import {
   renderTrainerShowingDealerRole,
   renderTrainerWithGenerator,
   renderTrainerWithInitialProps,
+  setAnalysisTables,
+  startTrainerWithEmptyTally,
 } from "./Trainer.test.common";
 import {
   analyticsConsentKey,
@@ -26,9 +34,9 @@ import {
 import { describe, expect, it, jest } from "@jest/globals";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
-import { CribRole } from "../game/expectedCribPoints";
 import { SortOrder } from "../ui/SortOrder";
 import { getSortOrderName } from "../ui/SortOrderName";
+import { readDiscardTally } from "../ui/discardTally";
 /* jscpd:ignore-end */
 
 const toggleCard = async (checkbox: HTMLElement, user: UserEvent) => {
@@ -91,6 +99,14 @@ const renderTrainerWithInitialHand = () =>
     initialCards: parseHand(SIX_HEARTS_HAND),
     initialCribRole: CribRole.Dealer,
   });
+
+const REVISED_DISCARD_NOTE =
+  "Your first discard counted. Changes now are practice.";
+
+const queryRevisedNote = () => screen.queryByText(REVISED_DISCARD_NOTE);
+
+const notCountedNoteText = () =>
+  screen.queryByText(/^Not counted:/u)?.textContent ?? null;
 
 describe("trainer component", () => {
   it("initially contains a sort in descending order radio input", () => {
@@ -384,5 +400,121 @@ describe("trainer component", () => {
     await toggleCard(firstCheckbox, user);
 
     expect(firstCheckbox).toBeChecked();
+  });
+});
+
+const withPendingCribTable = async <Result,>(
+  run: () => Promise<Result>,
+): Promise<Result> => {
+  const neverResolves = new Promise<ExpectedCribPointsTable>(() => {
+    /* Pending forever. */
+  });
+  const spy = jest
+    .spyOn(cribLoader, "loadTable")
+    .mockReturnValue(neverResolves);
+  try {
+    cribLoader.setTableSync(null);
+    return await run();
+  } finally {
+    spy.mockRestore();
+    setAnalysisTables();
+  }
+};
+
+const startRevisedHand = async (
+  props: Parameters<typeof startTrainerWithEmptyTally>[0] = {},
+) => {
+  const { user, view } = startTrainerWithEmptyTally(props);
+  await completeDiscardsAndWait(view.getAllByRole, user);
+  await toggleCard(view.getAllByRole("checkbox")[0]!, user);
+  return { user, view };
+};
+
+describe("post-count practice note", () => {
+  it.each([
+    ["selecting a different pair", 2],
+    ["re-selecting the original counted pair", 0],
+  ])(
+    "notes that changes are practice after withdrawing a card and %s",
+    async (_, secondIndex) => {
+      const { user, view } = startTrainerWithEmptyTally({});
+      await clickDeal(user);
+      await completeDiscardsAndWait(view.getAllByRole, user);
+
+      expect(queryRevisedNote()).toBeNull();
+
+      await toggleCard(view.getAllByRole("checkbox")[0]!, user);
+
+      expect(queryRevisedNote()).toHaveAttribute("role", "note");
+
+      await toggleCard(view.getAllByRole("checkbox")[secondIndex]!, user);
+      await screen.findByRole("table");
+      await waitFor(() => {
+        expect(
+          new URLSearchParams(window.location.search).get("discard"),
+        ).toContain(",");
+      });
+
+      expect(queryRevisedNote()).toHaveAttribute("role", "note");
+      expect(readDiscardTally(Date.now())).toMatchObject({ decisions: 1 });
+    },
+  );
+
+  it.each([
+    {
+      expectedNote: null,
+      name: "deals a fresh hand",
+      perform: async (user: UserEvent) => clickDeal(user),
+    },
+    {
+      expectedNote: "Not counted: you entered these cards.",
+      name: "submits manually entered cards",
+      perform: async (user: UserEvent) => {
+        await openCardEntry(user);
+        await user.click(screen.getByRole("button", { name: "Use hand" }));
+      },
+    },
+  ])(
+    "clears the post-count note when the user $name",
+    async ({ expectedNote, perform }) => {
+      const { user } = await startRevisedHand();
+
+      expect(queryRevisedNote()).not.toBeNull();
+
+      await perform(user);
+
+      expect(queryRevisedNote()).toBeNull();
+      expect(notCountedNoteText()).toBe(expectedNote);
+    },
+  );
+
+  it("keeps an existing uncounted note when changing selection on a linked hand", async () => {
+    await startRevisedHand({
+      initialCards: parseHand(SIX_HEARTS_HAND),
+      initialCribRole: CribRole.Dealer,
+    });
+
+    expect(queryRevisedNote()).toBeNull();
+    expect(
+      screen.queryByText(
+        "Not counted: this hand was opened from its web address.",
+      ),
+    ).not.toBeNull();
+  });
+
+  it("stays quiet when withdrawing a card before tables load", async () => {
+    const { user, view } = startTrainerWithEmptyTally({
+      initialSortOrder: SortOrder.Descending,
+    });
+    const note = await withPendingCribTable(async () => {
+      await clickIndices(view.getAllByRole, [0, 1], user);
+
+      expect(screen.queryByText("Loading analysis...")).not.toBeNull();
+
+      await user.click(screen.getAllByRole("checkbox")[1]!);
+      return queryRevisedNote();
+    });
+
+    expect(note).toBeNull();
   });
 });

@@ -35,6 +35,7 @@ describe("uncounted hand note", () => {
     ["entered", "Not counted: you entered these cards."],
     ["linked", "Not counted: this hand was opened from its web address."],
     ["restored", "Not counted: this hand was restored from history."],
+    ["revised", "Your first discard counted. Changes now are practice."],
     ["seeded", "Not counted: hands from a seeded link are practice."],
   ] as const)("says %s hands are not counted", (reason, text) => {
     renderNote(reason);

@@ -1,7 +1,7 @@
 import { AT, decisionOf } from "../ui/discardTally.test.common";
 import {
+  type DiscardDecisionOutcome,
   type DiscardDecisionRecord,
-  type DiscardTallySummary,
   clearDiscardTally,
   readDiscardTally,
   readTallyForDisplay,
@@ -168,7 +168,7 @@ describe("decision-owned admission settlement", () => {
           onWritten: jest.fn(),
           owned: true,
         });
-        let reported: DiscardTallySummary | null = null;
+        let reported: DiscardDecisionOutcome | null = null;
         act(() => {
           reported = owner.result.current({
             ...pendingDecision(),
@@ -178,8 +178,11 @@ describe("decision-owned admission settlement", () => {
         });
 
         expect(storedAdmission()).toStrictEqual(admission);
-        expect(reported).toStrictEqual(readDiscardTally(Date.now()));
-        expect(reported).toStrictEqual(
+        expect(reported).toStrictEqual({
+          recorded: false,
+          summary: readDiscardTally(Date.now()),
+        });
+        expect(reported!.summary).toStrictEqual(
           expect.objectContaining({ todayOptimalDecisions: 1 }),
         );
 

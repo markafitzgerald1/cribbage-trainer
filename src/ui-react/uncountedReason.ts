@@ -1,8 +1,15 @@
+import { useCallback, useState } from "react";
 import type { HandReplacementCause } from "./useDiscardTelemetry";
 
-// Which observed cause the tally filed the hand on screen under. The note is set with the tally's practice flag; this chooses its wording for a page load or a replaced hand.
+// Which observed cause keeps the board's current selection out of the tally. The note travels with the tally's practice state or with post-count selection changes on a counted hand.
 export type UncountedReason =
-  "decided" | "drill" | "entered" | "linked" | "restored" | "seeded";
+  | "decided"
+  | "drill"
+  | "entered"
+  | "linked"
+  | "restored"
+  | "revised"
+  | "seeded";
 
 // When the page was opened on a hand that is not the player's own undecided one, a link and a reload look the same, so the wording is only what is true of both; "decided" is keyed on cards and role among this device's stored decisions.
 export const initialUncountedReason = (
@@ -31,4 +38,59 @@ export const replacementReason = (
     return "entered";
   }
   return isSeededSession ? "seeded" : null;
+};
+
+interface CountedSelection {
+  readonly captureKey: string;
+  readonly handId: string;
+  readonly revised: boolean;
+}
+
+const nextCountedSelection = (
+  counted: CountedSelection | null,
+  handId: string,
+  boardCaptureKey: string | null,
+): CountedSelection | null => {
+  if (counted === null || counted.handId !== handId) {
+    return null;
+  }
+  if (!counted.revised && boardCaptureKey !== counted.captureKey) {
+    return { ...counted, revised: true };
+  }
+  return counted;
+};
+
+export const useUncountedReason = (
+  boardHandId: string,
+  boardCaptureKey: string | null,
+  initOriginReason: () => UncountedReason | null,
+) => {
+  const [originReason, setOriginReason] = useState<UncountedReason | null>(
+    initOriginReason,
+  );
+  const [countedSelection, setCountedSelection] =
+    useState<CountedSelection | null>(null);
+  const nextCounted = nextCountedSelection(
+    countedSelection,
+    boardHandId,
+    boardCaptureKey,
+  );
+  if (nextCounted !== countedSelection) {
+    setCountedSelection(nextCounted);
+  }
+  const setHandReason = useCallback((reason: UncountedReason | null) => {
+    setOriginReason(reason);
+    setCountedSelection(null);
+  }, []);
+  const markDiscardCounted = useCallback(
+    (handId: string, captureKey: string) => {
+      setCountedSelection({ captureKey, handId, revised: false });
+    },
+    [],
+  );
+  return {
+    markDiscardCounted,
+    setHandReason,
+    uncountedReason: originReason ?? (nextCounted?.revised ? "revised" : null),
+  };
 };
