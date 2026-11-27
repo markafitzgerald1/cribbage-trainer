@@ -479,7 +479,8 @@ jobs:
       pull-requests: read # to recheck the PR is still open before publishing
 
     outputs:
-      published: ${{ steps.recheck.outputs.open }}
+      deployed-attempt: ${{ steps.deployed.outputs.attempt }}
+      deployed-at: ${{ steps.deployed.outputs.at }}
 
     # A separate, unprotected environment from github-pages: that
     # environment's branch policy permits deployments only from main.
@@ -529,6 +530,15 @@ jobs:
           merge-args: pr ${{ needs.resolve-preview-pr.outputs.number }} dist
           commit-message: Publish pr/${{ needs.resolve-preview-pr.outputs.number }} preview
 
+      - id: deployed
+        name: Record which attempt deployed the preview, and when
+        if: steps.recheck.outputs.open == 'true'
+        run: |
+          {
+            echo "attempt=$GITHUB_RUN_ATTEMPT"
+            echo "at=$(date --utc '+%Y-%m-%d %H:%M UTC')"
+          } >> "$GITHUB_OUTPUT"
+
   # The environment URL above surfaces only as "View deployment" deep in the
   # PR timeline, which GitHub's Android app shows poorly or not at all. One
   # comment near the top of the conversation gives a one-tap link instead.
@@ -536,10 +546,16 @@ jobs:
   # npm install and the build. Later deploys edit the same comment, found by
   # its marker and author, so a PR gets one comment however often it moves.
   # Only the bot's own comment is matched: the token could edit anyone's.
+  #
+  # The comment describes what this run deployed, so it is written only in
+  # the attempt that deployed: a job-only rerun keeps the earlier attempt's
+  # needs outputs and would otherwise relabel whatever a later run deployed.
+  # It does not compare against the PR's live head, because a rerun of an
+  # older run that redeploys does make the preview that older head.
   comment-preview-link:
     runs-on: ubuntu-latest
     needs: [resolve-preview-pr, deploy-preview]
-    if: github.event_name == 'pull_request' && needs.deploy-preview.outputs.published == 'true'
+    if: github.event_name == 'pull_request' && needs.deploy-preview.outputs.deployed-attempt == github.run_attempt
     permissions:
       pull-requests: write # to post or edit this PR's preview-link comment
     steps:
@@ -549,25 +565,17 @@ jobs:
           NUMBER: ${{ needs.resolve-preview-pr.outputs.number }}
           URL: ${{ needs.resolve-preview-pr.outputs.url }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          DEPLOYED_AT: ${{ needs.deploy-preview.outputs.deployed-at }}
           MARKER: "<!-- pages-preview-link -->"
         run: |
-          # A job-only rerun keeps its original event and needs outputs, so a
-          # rerun from an older run would otherwise stamp a stale head on the
-          # comment; and the PR may have closed since deploy-preview checked.
-          CURRENT=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" --jq '.state + " " + .head.sha')
-          if [ "$CURRENT" != "open $HEAD_SHA" ]; then
-            echo "Pull request #$NUMBER is now '$CURRENT', not 'open $HEAD_SHA'; leaving its comment alone."
-            exit 0
-          fi
           # checkout builds the PR's merge ref, so the preview is the head
-          # merged into the base, not the head alone.
+          # merged into its base branch, not the head alone.
           BODY=$(
             printf '%s\n' \
               "$MARKER" \
               "**Preview:** $URL" \
               "" \
-              "Built from head \`${HEAD_SHA:0:7}\` merged into \`$BASE_REF\`, deployed $(date --utc '+%Y-%m-%d %H:%M UTC')."
+              "Built from head \`${HEAD_SHA:0:7}\` merged into its base branch, deployed $DEPLOYED_AT by [run $GITHUB_RUN_ID attempt $GITHUB_RUN_ATTEMPT]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT)."
           )
           COMMENT_ID=$(
             gh api --paginate \
@@ -576,6 +584,13 @@ jobs:
           )
           # Several matches are possible in principle; edit the oldest.
           COMMENT_ID=${COMMENT_ID%%$'\n'*}
+          # Checked last, just before writing, to keep the window in which
+          # the PR can close unnoticed as short as one API call.
+          STATE=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" --jq '.state')
+          if [ "$STATE" != open ]; then
+            echo "Pull request #$NUMBER is $STATE; leaving its comment alone."
+            exit 0
+          fi
           if [ -z "$COMMENT_ID" ]; then
             gh api --method POST \
               "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments" \

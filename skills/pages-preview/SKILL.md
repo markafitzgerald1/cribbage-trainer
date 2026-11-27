@@ -82,13 +82,19 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   REST author `github-actions[bot]`, because the token's write permission
   could otherwise edit a human's comment that quoted the marker. It is a job
   of its own so `pull-requests: write` is never granted to a job that runs
-  `npm clean-install`. It runs only when `deploy-preview` reports it
-  published (`outputs.published`), and then re-reads the PR just before
-  writing and leaves the comment alone unless the PR is still open at the
-  head this run built. A job-only rerun keeps the original event and the
-  upstream outputs, so without that re-read, rerunning an older run's
-  comment job stamped a stale head onto the comment while the newer preview
-  stayed deployed (found by Codex on #996).
+  `npm clean-install`. It describes what its own run deployed, so it writes
+  only in the attempt that deployed: `deploy-preview` outputs
+  `deployed-attempt`, and the job's `if:` compares it with
+  `github.run_attempt`. A job-only rerun keeps the earlier attempt's event
+  and `needs` outputs, so without that guard, rerunning an older run's
+  comment job relabeled a newer deploy as the older head, with a fresh
+  timestamp (found by Codex on #996). It deliberately does not compare
+  against the PR's live head: a rerun of an older run that redeploys really
+  does make the preview that older head, so the comment should say so. It
+  re-reads the PR's state just before writing and skips a closed PR, which
+  narrows the closed-PR window to one API call rather than closing it. The
+  cost of the attempt guard: "Re-run failed jobs" after only the comment job
+  failed reruns it alone, and it then skips. Re-run all jobs, or push.
 - There are deliberately **two** GitHub Pages environments: `github-pages`
   (production) has a branch policy restricting it to `main` — reusing it for
   previews would silently hang every preview job before any step runs.
