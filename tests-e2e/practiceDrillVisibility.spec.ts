@@ -35,6 +35,7 @@ const MIN_FOOTER_GAP_PX = 2;
 const FOOTER_GAP_TOLERANCE_PX = 1;
 // Far enough inside a corner to clear the button's 4px border radius.
 const CORNER_INSET_PX = 2;
+const CENTER_FRACTION = 0.5;
 
 const measurePractice = (panel: Locator) =>
   panel.evaluate((element) => {
@@ -188,29 +189,39 @@ const expectPracticeContents = async (
 
 // Scrolls only the container a user can scroll, so a clipped button stays clipped.
 const expectFooterActionsReachable = async (page: Page) => {
-  await page
+  const grid = await page
     .locator("[class*='dynamic-ui']")
     .first()
     .evaluate((element) => {
+      const overflows = element.scrollHeight > element.clientHeight;
       element.scrollTop = element.scrollHeight;
+      return { overflowY: getComputedStyle(element).overflowY, overflows };
     });
+  if (grid.overflows) expect(["auto", "scroll"]).toContain(grid.overflowY);
   await ["Quality trend", "Mistake queue"].reduce(async (previous, name) => {
     await previous;
     const action = page.getByRole("button", { exact: true, name });
-    const cornersHit = await action.evaluate((element, inset) => {
-      const bounds = element.getBoundingClientRect();
-      const corners = [
-        { across: bounds.left + inset, down: bounds.top + inset },
-        { across: bounds.right - inset, down: bounds.top + inset },
-        { across: bounds.left + inset, down: bounds.bottom - inset },
-        { across: bounds.right - inset, down: bounds.bottom - inset },
-      ];
-      return corners.every(({ across, down }) =>
-        element.contains(document.elementFromPoint(across, down)),
-      );
-    }, CORNER_INSET_PX);
-    expect(cornersHit, name).toBe(true);
-    await action.click({ trial: true });
+    await expect(action).toBeEnabled();
+    const pointsHit = await action.evaluate(
+      (element, { center, inset }) => {
+        const bounds = element.getBoundingClientRect();
+        const points = [
+          { across: bounds.left + inset, down: bounds.top + inset },
+          { across: bounds.right - inset, down: bounds.top + inset },
+          { across: bounds.left + inset, down: bounds.bottom - inset },
+          { across: bounds.right - inset, down: bounds.bottom - inset },
+          {
+            across: bounds.left + bounds.width * center,
+            down: bounds.top + bounds.height * center,
+          },
+        ];
+        return points.every(({ across, down }) =>
+          element.contains(document.elementFromPoint(across, down)),
+        );
+      },
+      { center: CENTER_FRACTION, inset: CORNER_INSET_PX },
+    );
+    expect(pointsHit, name).toBe(true);
   }, Promise.resolve());
 };
 
