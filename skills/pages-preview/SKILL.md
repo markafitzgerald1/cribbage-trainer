@@ -82,8 +82,13 @@ and deploy-rerun rules that any PR can trip live in "CI workflow notes" in
   REST author `github-actions[bot]`, because the token's write permission
   could otherwise edit a human's comment that quoted the marker. It is a job
   of its own so `pull-requests: write` is never granted to a job that runs
-  `npm clean-install`, and it runs only when `deploy-preview` reports it
-  published (`outputs.published`), so a PR closed mid-run gets no comment.
+  `npm clean-install`. It runs only when `deploy-preview` reports it
+  published (`outputs.published`), and then re-reads the PR just before
+  writing and leaves the comment alone unless the PR is still open at the
+  head this run built. A job-only rerun keeps the original event and the
+  upstream outputs, so without that re-read, rerunning an older run's
+  comment job stamped a stale head onto the comment while the newer preview
+  stayed deployed (found by Codex on #996).
 - There are deliberately **two** GitHub Pages environments: `github-pages`
   (production) has a branch policy restricting it to `main` — reusing it for
   previews would silently hang every preview job before any step runs.

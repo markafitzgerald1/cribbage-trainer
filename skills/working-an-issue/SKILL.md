@@ -80,8 +80,9 @@ agreed, the pull request says what actually happened.
   `https://markafitzgerald1.github.io/cribbage-trainer/pr/<n>/`, so a
   reviewer on a phone opens it in one tap. The workflow's
   `comment-preview-link` job also posts that link as a PR comment and edits
-  it on each deploy, but the comment arrives only after the first deploy and
-  never on a fork or Dependabot PR, so link it in the block regardless.
+  it on each deploy, but the comment arrives only after the first deploy, so
+  link it in the block anyway. Fork and Dependabot PRs get no preview at all,
+  so their block has nothing to link.
 - The review guide is what makes a PR reviewable rather than merely correct: a
   suggested file reading order, the design decisions worth challenging rather
   than only the ones that worked, and honest flags for anything a reader would

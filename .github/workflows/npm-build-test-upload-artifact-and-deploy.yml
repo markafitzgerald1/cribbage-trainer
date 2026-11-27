@@ -552,6 +552,14 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           MARKER: "<!-- pages-preview-link -->"
         run: |
+          # A job-only rerun keeps its original event and needs outputs, so a
+          # rerun from an older run would otherwise stamp a stale head on the
+          # comment; and the PR may have closed since deploy-preview checked.
+          CURRENT=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" --jq '.state + " " + .head.sha')
+          if [ "$CURRENT" != "open $HEAD_SHA" ]; then
+            echo "Pull request #$NUMBER is now '$CURRENT', not 'open $HEAD_SHA'; leaving its comment alone."
+            exit 0
+          fi
           # checkout builds the PR's merge ref, so the preview is the head
           # merged into the base, not the head alone.
           BODY=$(
@@ -566,8 +574,7 @@ jobs:
               "repos/$GITHUB_REPOSITORY/issues/$NUMBER/comments?per_page=100" \
               --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith(env.MARKER))) | .id'
           )
-          # Not piped through head: under the runner's pipefail, gh killed by
-          # a closed pipe would fail the step.
+          # Several matches are possible in principle; edit the oldest.
           COMMENT_ID=${COMMENT_ID%%$'\n'*}
           if [ -z "$COMMENT_ID" ]; then
             gh api --method POST \
