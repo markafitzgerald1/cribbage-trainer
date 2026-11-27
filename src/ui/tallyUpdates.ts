@@ -76,11 +76,16 @@ export const sameDecisionJudgment = (
   one.isOptimal === other.isOptimal &&
   matchesIdentity(one, other);
 
+export interface DecisionTallyUpdate {
+  readonly recorded: boolean;
+  readonly tally: StoredTally;
+}
+
 export const extendDecisionTally = (
   tally: StoredTally,
   decision: DiscardDecisionRecord,
   maxRecords: number,
-): StoredTally => {
+): DecisionTallyUpdate => {
   const existing = repeatOf(tally.records, decision);
   const admission = decisionAdmission(decision);
   if (existing) {
@@ -92,15 +97,18 @@ export const extendDecisionTally = (
       existing.at !== decision.at ||
       !sameDecisionJudgment(existing, decision)
     ) {
-      return tally;
+      return { recorded: false, tally };
     }
     return {
-      ...tally,
-      records: tally.records.map((record) =>
-        record === existing
-          ? { ...record, recordedAdmission: admission }
-          : record,
-      ),
+      recorded: false,
+      tally: {
+        ...tally,
+        records: tally.records.map((record) =>
+          record === existing
+            ? { ...record, recordedAdmission: admission }
+            : record,
+        ),
+      },
     };
   }
   const recencyAt = tally.practice.reduce(
@@ -116,9 +124,12 @@ export const extendDecisionTally = (
     tableIdentity: normalizeTableIdentity(decision.tableIdentity),
   };
   return {
-    ...tally,
-    lifetime: addToLifetime(tally.lifetime, recordedDecision),
-    records: [...tally.records, recordedDecision].slice(-maxRecords),
+    recorded: true,
+    tally: {
+      ...tally,
+      lifetime: addToLifetime(tally.lifetime, recordedDecision),
+      records: [...tally.records, recordedDecision].slice(-maxRecords),
+    },
   };
 };
 

@@ -93,7 +93,7 @@ export const useAdmissionRecording = (
             record.at === captured.at &&
             record.recordedAdmission === "pending",
         );
-        if (!waiting && stored) {
+        if (!waiting && stored && recorded) {
           const timer = setTimeout(() => {
             recordDiscardDecision({
               ...stored,
@@ -113,7 +113,7 @@ export const useAdmissionRecording = (
       }
       // A matching report is written under the original event's day, which may be yesterday by now.
       return {
-        recorded: !matching && recorded,
+        recorded,
         summary: matching ? readDiscardTally(Date.now()) : summary,
       };
     },

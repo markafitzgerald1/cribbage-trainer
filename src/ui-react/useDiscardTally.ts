@@ -497,7 +497,7 @@ export const useDiscardTally = ({
         judgeAtDeadline,
       );
       if (!isPractice && recorded) {
-        markDiscardCounted(boardHandId, captureKey);
+        markDiscardCounted(boardHandId, captureKey, handKey);
       }
       setSummary(nextSummary);
     },

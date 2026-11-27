@@ -11,15 +11,25 @@ import {
   type PracticeAttemptEntry,
   normalizeAttemptLog,
 } from "./practiceAttemptLog";
+import {
+  basisFor,
+  clearUnsavedState,
+  dropUnsaved,
+  forgetUnsaved,
+  isUnsavedBatchDropped,
+  recordUnsaved,
+} from "./unsavedTally";
 import { extendDecisionTally, extendPracticeTally } from "./tallyUpdates";
 import { DISCARD_TALLY_KEY_PREFIX } from "./discardTallyKeyPrefix";
 import { encodeTableIdentities } from "./tableIdentityCodec";
 import { forgetSkippedHandKeys } from "./skippedHandKeys";
+import { isFiniteNonNegative } from "./isFiniteNonNegative";
 import { isObject } from "./isObject";
 import { isRecordedWithinNoise } from "./recordedAdmission";
 import { withoutStrayDrillRecords } from "./strayDrillRecords";
 export type { DiscardDecisionRecord } from "./discardDecisionRecord";
 export type { PracticeAttempt, PracticeRecord } from "./practiceLedger";
+export { currentUnsavedBatch } from "./unsavedTally";
 /*
  * Scoped to the deployment that wrote it. A PR preview and production share
  * an origin — both are pages on the same host, differing only by path — and
@@ -312,40 +322,6 @@ const summarize = (
   };
 };
 
-/*
- * In-memory fallback held only when a write fails, so a browser refusing writes
- * accumulates on top of pending session hands rather than resetting to stale storage.
- * If storage moves on independently, the stale branch is dropped to protect other tabs.
- */
-let unsavedTally: StoredTally | null = null;
-let unsavedBase: StoredTally | null = null;
-
-const sameHistory = (one: StoredTally, other: StoredTally) =>
-  one.revision === other.revision;
-
-const forgetUnsaved = () => {
-  unsavedTally = null;
-  unsavedBase = null;
-};
-
-/*
- * The unsaved copy only when storage still holds what it grew from.
- * Otherwise this tab's pending hands are dropped: losing them costs a
- * session's own statistics, where keeping them would cost another tab its
- * entire history.
- */
-const basisFor = (persisted: StoredTally): StoredTally => {
-  if (
-    unsavedTally !== null &&
-    unsavedBase !== null &&
-    sameHistory(persisted, unsavedBase)
-  ) {
-    return unsavedTally;
-  }
-  forgetUnsaved();
-  return persisted;
-};
-
 const readTallyOrNull = (): StoredTally | null => {
   try {
     return readStoredTally();
@@ -356,13 +332,23 @@ const readTallyOrNull = (): StoredTally | null => {
 
 export const readTallyForDisplay = (): StoredTally => {
   const persisted = readTallyOrNull();
-  return persisted === null ? emptyTally : basisFor(persisted);
+  if (persisted === null) {
+    dropUnsaved();
+    return emptyTally;
+  }
+  return basisFor(persisted);
 };
 
 export const hasRecordedAuthenticDecision = (handKey: string): boolean =>
   readTallyForDisplay().records.some(
     (record) => record.handKey === handKey && !record.isPractice,
   );
+
+export const isAuthenticDecisionRetained = (
+  handKey: string,
+  unsavedBatch: number | null,
+): boolean =>
+  hasRecordedAuthenticDecision(handKey) && !isUnsavedBatchDropped(unsavedBatch);
 
 export const readDiscardTally = (now: number): DiscardTallySummary =>
   summarize(readTallyForDisplay(), now);
@@ -387,7 +373,7 @@ export interface DiscardDecisionOutcome {
 const extendStoredTally = (
   at: number,
   extend: (tally: StoredTally) => StoredTally,
-): DiscardDecisionOutcome => {
+): DiscardTallySummary => {
   /*
    * Storage is consulted even when a write failed earlier, because the
    * failure may have been transient and another tab may have written a newer
@@ -402,11 +388,12 @@ const extendStoredTally = (
    * that can read it is the one that should keep writing it.
    */
   if (stored === null) {
-    return { recorded: false, summary: summarize(emptyTally, at) };
+    dropUnsaved();
+    return summarize(emptyTally, at);
   }
   const extended = extend(stored);
   if (extended === stored) {
-    return { recorded: false, summary: summarize(stored, at) };
+    return summarize(stored, at);
   }
   // Every write advances the revision, which is what lets another tab's write be noticed at all.
   const next: StoredTally = { ...extended, revision: extended.revision + 1 };
@@ -423,11 +410,9 @@ const extendStoredTally = (
      * kept so the rest of the session accumulates onto it rather than onto
      * the unchanged stored value.
      */
-    unsavedTally = next;
-    // The first failure's basis is kept through a run of them, so a later success still compares against what storage held before any of this.
-    unsavedBase ??= persisted;
+    recordUnsaved(next, persisted as StoredTally);
   }
-  return { recorded: true, summary: summarize(next, at) };
+  return summarize(next, at);
 };
 
 export const recordDiscardDecisionOutcome = (
@@ -442,18 +427,22 @@ export const recordDiscardDecisionOutcome = (
    * afterward too — not just this one.
    */
   if (
-    typeof decision.at !== "number" ||
-    !Number.isFinite(decision.at) ||
-    decision.at < 0 ||
-    typeof decision.expectedPointsLoss !== "number" ||
-    !Number.isFinite(decision.expectedPointsLoss) ||
-    decision.expectedPointsLoss < 0
+    !isFiniteNonNegative(decision.at) ||
+    !isFiniteNonNegative(decision.expectedPointsLoss)
   ) {
     return { recorded: false, summary: readDiscardTally(Date.now()) };
   }
-  return extendStoredTally(decision.at, (tally) =>
-    extendDecisionTally(tally, decision, MAX_RECORDS),
-  );
+  let recorded = false;
+  const summary = extendStoredTally(decision.at, (tally) => {
+    const { recorded: inserted, tally: updated } = extendDecisionTally(
+      tally,
+      decision,
+      MAX_RECORDS,
+    );
+    recorded = inserted;
+    return updated;
+  });
+  return { recorded, summary };
 };
 
 export const recordDiscardDecision = (
@@ -463,16 +452,12 @@ export const recordDiscardDecision = (
 export const recordPracticeAttempt = (
   attempt: PracticeAttempt,
 ): DiscardTallySummary => {
-  if (
-    typeof attempt?.at !== "number" ||
-    !Number.isFinite(attempt.at) ||
-    attempt.at < 0
-  ) {
+  if (!isFiniteNonNegative(attempt?.at)) {
     return readDiscardTally(Date.now());
   }
   return extendStoredTally(attempt.at, (tally) =>
     extendPracticeTally(tally, attempt, MAX_RECORDS),
-  ).summary;
+  );
 };
 
 /*
@@ -489,7 +474,7 @@ export const recordSkippedHand = (at: number): DiscardTallySummary =>
       skippedHands: tally.lifetime.skippedHands + 1,
     },
     skipped: [...tally.skipped, { at }].slice(-MAX_RECORDS),
-  })).summary;
+  }));
 
 /*
  * Whether there is anything to show. Exported so the view and the layout that
@@ -502,6 +487,6 @@ export const hasTallyToShow = (summary: DiscardTallySummary): boolean =>
 // Exported for the specs and stories that need a browser with no history.
 export const clearDiscardTally = () => {
   forgetSkippedHandKeys();
-  forgetUnsaved();
+  clearUnsavedState();
   localStorage.removeItem(discardTallyKey);
 };

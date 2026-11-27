@@ -9,6 +9,7 @@ import {
   clearDiscardTally,
   readTallyForDisplay,
   recordDiscardDecision,
+  recordDiscardDecisionOutcome,
   recordPracticeAttempt,
 } from "./discardTally";
 import { describe, expect, it } from "@jest/globals";
@@ -58,5 +59,22 @@ describe("a practice attempt whose detail contradicts it", () => {
     recordPracticeAttempt(noiseJudgedSuccess(2, 0.5));
 
     expect(readTallyForDisplay().practice).toStrictEqual([]);
+  });
+});
+
+describe("discard decision outcome on settlement", () => {
+  it("reports recorded: false when settling an existing pending decision", () => {
+    clearDiscardTally();
+    const decision = decisionOf({ recordedAdmission: "pending" });
+    const first = recordDiscardDecisionOutcome(decision);
+    const settled = recordDiscardDecisionOutcome({
+      ...decision,
+      recordedAdmission: noiseAdmission,
+    });
+
+    expect(first.recorded).toBe(true);
+    expect(settled.recorded).toBe(false);
+    expect(settled.summary.decisions).toBe(1);
+    expect(firstStoredAdmission()).toStrictEqual(noiseAdmission);
   });
 });
