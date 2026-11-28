@@ -6,16 +6,40 @@ import {
 import { describe, expect, it } from "@jest/globals";
 import type { Rank } from "./Card";
 
-// The simulate-cribbage-games exporter's tests pin these same bytes.
+const bytesOf =
+  (size: number) =>
+  (...values: number[]): number[] =>
+    values.flatMap((value) =>
+      Array.from(
+        { length: size },
+        (_, index) => Math.floor(value / 256 ** index) % 256,
+      ),
+    );
+
+const uint16s = bytesOf(2);
+const uint32 = bytesOf(4);
+const uint64 = bytesOf(8);
+
+const charCodes = (text: string): number[] =>
+  Array.from(text, (character) => character.charCodeAt(0));
+
+// Each event is rank plus one, oldest in the lowest four bits.
+const ACE_THEN_THREE = 0x31;
+
+// A two-row shard in the documented layout; the simulate-cribbage-games exporter's tests build these same bytes.
 const PINNED = [
-  ...[0x43, 0x50, 0x53, 0x31],
-  ...[2, 0, 0, 0],
-  ...[0, 0, 0, 0, 0, 0, 0, 0],
-  ...[0x31, 0, 0, 0, 0, 0, 0, 0],
+  ...charCodes("CPS1"),
+  ...uint32(2),
+  // History deltas: the opening lead, then after an ace and a three.
+  ...uint64(0, ACE_THEN_THREE),
+  // Four zero-based rank slots per row: a three or a six, then an ace, four or ten.
   ...[2, 5, 0, 0, 0, 3, 9, 0],
+  // How many of each row's slots are filled.
   ...[2, 3],
+  // Only the first row is in the policy's support.
   ...[1, 0],
-  ...[0xe8, 0x03, 0, 0, 0xfa, 0, 0, 0, 0xee, 0x02],
+  // Plays per thousand: always the three, then the ace a quarter and the ten three quarters of the time.
+  ...uint16s(1000, 0, 250, 0, 750),
 ];
 
 const payload = (bytes: number[]): Uint8Array => Uint8Array.from(bytes);
@@ -32,12 +56,6 @@ const SUPPORT_AT = 34;
 const FIRST_DELTA_AT = 8;
 const SECOND_DELTA_AT = 16;
 
-const uint64 = (value: number): number[] =>
-  Array.from(
-    { length: 8 },
-    (_, index) => Math.floor(value / 256 ** index) % 256,
-  );
-
 const withDeltas = (first: number, second: number): Uint8Array => {
   const bytes = [...PINNED];
   bytes.splice(FIRST_DELTA_AT, 8, ...uint64(first));
@@ -45,25 +63,27 @@ const withDeltas = (first: number, second: number): Uint8Array => {
   return payload(bytes);
 };
 
-// Thirteen goes: the longest history a menu holds, well past 32 bits.
+// The largest key a history can spell: thirteen events, every one the go token (14), filling 52 bits.
+// No legal hand says go thirteen times running; the key exists to check values past 32 bits read back exactly.
 const THIRTEEN_GOES = Array.from(
   { length: 13 },
   (_, index) => 14 * 16 ** index,
 ).reduce((sum, value) => sum + value);
 
 const WIDTH_FOUR_ROW = [
-  ...PINNED.slice(0, 4),
-  ...[1, 0, 0, 0],
+  ...charCodes("CPS1"),
+  ...uint32(1),
   ...uint64(0),
-  ...[0, 3, 9, 12, 4, 0],
-  ...[0, 0, 0xfa, 0, 0xee, 0x02, 0, 0],
+  ...[0, 3, 9, 12],
+  ...[4, 0],
+  ...uint16s(0, 250, 750, 0),
 ];
 
 const asRanks = (values: readonly number[]): readonly Rank[] =>
   values as readonly Rank[];
 
 const pinnedRow = (): PolicyRow =>
-  parsePolicyShard(payload(PINNED))?.lookup(0x31) as PolicyRow;
+  parsePolicyShard(payload(PINNED))?.lookup(ACE_THEN_THREE) as PolicyRow;
 
 describe("pegging policy shard", () => {
   it("reads the pinned rows by history", () => {
@@ -77,7 +97,7 @@ describe("pegging policy shard", () => {
       ranks: [2, 5],
       supported: true,
     });
-    expect(shard?.lookup(0x31)).toStrictEqual({
+    expect(shard?.lookup(ACE_THEN_THREE)).toStrictEqual({
       counts: [250, 0, 750],
       ranks: [0, 3, 9],
       supported: false,
@@ -94,7 +114,7 @@ describe("pegging policy shard", () => {
 
     expect(
       parsePolicyShard(new Uint8Array(buffer.buffer, 3, PINNED.length))?.lookup(
-        0x31,
+        ACE_THEN_THREE,
       )?.ranks,
     ).toStrictEqual([0, 3, 9]);
   });
@@ -106,7 +126,7 @@ describe("pegging policy shard", () => {
 
     expect(shard?.lookup(1)?.ranks).toStrictEqual([2, 5]);
     expect(shard?.lookup(0x32)?.ranks).toStrictEqual([0, 3, 9]);
-    expect(shard?.lookup(0x31)).toBeNull();
+    expect(shard?.lookup(ACE_THEN_THREE)).toBeNull();
   });
 
   it("reads the high word of a history delta", () => {
