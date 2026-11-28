@@ -1,4 +1,5 @@
 import { describe, expect, it } from "@jest/globals";
+import { parseHand, serializeHand } from "./Card";
 import { CARDS_PER_DEALT_HAND } from "./facts";
 import { dealHand } from "./dealHand";
 import seedrandom from "seedrandom";
@@ -47,5 +48,13 @@ describe("dealHand", () => {
     const uniqueCards = new Set(hand.map((card) => card.rankLabel + card.suit));
 
     expect(uniqueCards.size).toBe(CARDS_PER_DEALT_HAND);
+  });
+
+  it("deals from a supplied deck without changing it", () => {
+    const cards = "AD,2H,3S,4C,5D,6H,7S";
+    const deck = parseHand(cards);
+
+    expect(serializeHand(dealHand(() => 0, deck))).toBe("AD,2H,3S,4C,5D,6H");
+    expect(serializeHand(deck)).toBe(cards);
   });
 });

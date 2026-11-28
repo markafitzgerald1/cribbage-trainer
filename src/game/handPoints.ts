@@ -78,7 +78,7 @@ const getHandAndCut = (keep: readonly Card[]) => {
   return { cutCard, hand };
 };
 
-const flushesPoints = (keep: readonly Card[]) => {
+const flushesPoints = (keep: readonly Card[], crib: boolean) => {
   if (keep.length < CARDS_PER_HAND || !isUnique(keep)) {
     return 0;
   }
@@ -95,7 +95,7 @@ const flushesPoints = (keep: readonly Card[]) => {
   ) {
     return CARDS_PER_HAND_WITH_CUT * HAND_POINTS.FLUSH_PER_CARD;
   }
-  return CARDS_PER_HAND * HAND_POINTS.FLUSH_PER_CARD;
+  return crib ? 0 : CARDS_PER_HAND * HAND_POINTS.FLUSH_PER_CARD;
 };
 
 const nobsPoints = (keep: readonly Card[]) => {
@@ -118,11 +118,11 @@ export interface HandPoints {
   runs: number;
   total: number;
 }
-export const handPoints = (keep: readonly Card[]): HandPoints => {
+const scoreCards = (keep: readonly Card[], crib: boolean): HandPoints => {
   const pairs = pairsPoints(keep);
   const fifteens = fifteensPoints(keep);
   const runs = runsPoints(keep);
-  const flushes = flushesPoints(keep);
+  const flushes = flushesPoints(keep, crib);
   const nobs = nobsPoints(keep);
   return {
     fifteens,
@@ -133,3 +133,9 @@ export const handPoints = (keep: readonly Card[]): HandPoints => {
     total: pairs + fifteens + runs + flushes + nobs,
   };
 };
+
+export const handPoints = (keep: readonly Card[]): HandPoints =>
+  scoreCards(keep, false);
+
+export const cribPoints = (cribWithStarter: readonly Card[]): HandPoints =>
+  scoreCards(cribWithStarter, true);
