@@ -5,7 +5,6 @@ import {
   type DiscardDecisionPoint,
   type DiscardPeriodBucket,
   type DiscardTrendGranularity,
-  MAX_RECENT_DECISIONS,
   computeDiscardQualityTrend,
 } from "../ui/discardQualityTrend";
 import { DIALOG_ROLE_OPTIONS, DialogFilterGroup } from "./DialogFilterGroup";
@@ -66,8 +65,12 @@ const formatSkipRate = (decisions: number, skipped: number): string => {
     : `${((skipped / handsFaced) * PER_CENT).toFixed(PERCENT_DECIMAL_PLACES)}%`;
 };
 
-const formatSkippedHands = (decisions: number, skipped: number): string =>
-  `${skipped} (${formatSkipRate(decisions, skipped)})`;
+const formatSkippedHands = (
+  decisions: number,
+  skipped: number,
+  showSkippedHands: boolean,
+): string =>
+  showSkippedHands ? `${skipped} (${formatSkipRate(decisions, skipped)})` : "—";
 
 const getLossPillClass = (loss: number | null): string => {
   if (loss === null) {
@@ -85,7 +88,10 @@ const bestChoiceShare = (optimal: number, judged: number): string =>
     ? `${((optimal / judged) * PER_CENT).toFixed(PERCENT_DECIMAL_PLACES)}%`
     : "—";
 
-function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
+function renderBucketRow(
+  bucket: DiscardPeriodBucket,
+  showSkippedHands: boolean,
+): React.JSX.Element {
   const avgLoss =
     bucket.meanExpectedPointsLoss === null
       ? "—"
@@ -113,13 +119,20 @@ function renderBucketRow(bucket: DiscardPeriodBucket): React.JSX.Element {
         </span>
       </td>
       <td>{optimalPct}</td>
-      <td>{formatSkippedHands(bucket.decisions, bucket.skippedHands)}</td>
+      <td>
+        {formatSkippedHands(
+          bucket.decisions,
+          bucket.skippedHands,
+          showSkippedHands,
+        )}
+      </td>
     </tr>
   );
 }
 
 function renderBreakdownTable(
   buckets: readonly DiscardPeriodBucket[],
+  showSkippedHands: boolean,
 ): React.JSX.Element {
   return (
     <div className={classes.tableWrapper}>
@@ -136,7 +149,12 @@ function renderBreakdownTable(
             <th>Skipped (rate)</th>
           </tr>
         </thead>
-        <tbody>{buckets.map(renderBucketRow)}</tbody>
+        <tbody>
+          {buckets
+            .slice()
+            .reverse()
+            .map((bucket) => renderBucketRow(bucket, showSkippedHands))}
+        </tbody>
       </table>
     </div>
   );
@@ -223,6 +241,8 @@ export function DecisionQualityTrendDialog({
   const overallOptimalRate = bestChoiceShare(shares.optimal, shares.judged);
 
   const isRolling = granularity === "rolling20" || granularity === "rolling50";
+  const chartDecisionCount = trend.decisionPoints.length;
+  const showSkippedHands = roleFilter === "all";
 
   return (
     <Modal
@@ -264,22 +284,18 @@ export function DecisionQualityTrendDialog({
           </div>
         ) : null}
 
-        <p className={classes.methodology}>
-          {TREND_HISTORY_HELP} Rolling batches smooth small-sample swings; use
-          each calendar period&apos;s decision count to judge its signal.
-        </p>
-
-        {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (
-          <p className={classes.methodology}>
-            The rolling chart displays the most recent {MAX_RECENT_DECISIONS}{" "}
-            decisions with their trailing moving average.
+        <details className={classes.methodology}>
+          <summary>About these figures</summary>
+          <p>
+            {TREND_HISTORY_HELP} Rolling batches smooth small-sample swings; use
+            each calendar period&apos;s decision count to judge its signal. The
+            rolling chart line shows the trailing average.
           </p>
-        ) : null}
+        </details>
 
-        {roleFilter === "all" ? null : (
+        {showSkippedHands ? null : (
           <p className={classes.methodology}>
-            Skipped hands are not assigned a crib role, so they are excluded
-            from this filtered view.
+            Skipped hands have no crib role and are excluded from this view.
           </p>
         )}
 
@@ -301,6 +317,7 @@ export function DecisionQualityTrendDialog({
               value: formatSkippedHands(
                 totalDecisions,
                 trend.totalSkippedHands,
+                showSkippedHands,
               ),
             },
           ]}
@@ -315,7 +332,14 @@ export function DecisionQualityTrendDialog({
           totalDecisions={totalDecisions}
         />
 
-        {renderBreakdownTable(trend.buckets)}
+        {isRolling && chartDecisionCount < totalDecisions ? (
+          <p className={classes.methodology}>
+            The chart shows the latest {chartDecisionCount} of {totalDecisions}{" "}
+            decisions.
+          </p>
+        ) : null}
+
+        {renderBreakdownTable(trend.buckets, showSkippedHands)}
       </section>
     </Modal>
   );

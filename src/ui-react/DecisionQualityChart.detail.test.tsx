@@ -73,6 +73,9 @@ const openDetailOn = (points: ChartPoints, ordinal: number): RenderChart => {
   return view;
 };
 
+const getDetailClose = (view: RenderChart) =>
+  view.getByRole("button", { name: "Close decision details" });
+
 const cardLabelCount = (view: RenderChart): number =>
   view.container.querySelectorAll(`.${cardClasses.cardLabel}`).length;
 
@@ -163,8 +166,8 @@ describe("decision quality chart point detail", () => {
     },
     {
       close: (view: RenderChart): boolean =>
-        fireEvent.click(view.getByRole("button", { name: "Dismiss" })),
-      name: "Dismiss is pressed",
+        fireEvent.click(getDetailClose(view)),
+      name: "the details close button is pressed",
     },
     {
       close: (view: RenderChart): boolean =>
@@ -352,28 +355,39 @@ describe("decision quality chart point detail", () => {
 });
 
 describe("decision quality chart dismissal focus", () => {
-  it("returns focus to the selected marker after Dismiss", () => {
-    const other = renderPlainChart();
-    const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
-    const marker = markerFor(view, 2);
-    const dismiss = view.getByRole("button", { name: "Dismiss" });
-    dismiss.focus();
+  it.each([
+    {
+      detail: 0,
+      expectedFocus: (marker: Element) => marker,
+      name: "keyboard close",
+    },
+    { detail: 1, expectedFocus: () => document.body, name: "pointer close" },
+  ])(
+    "clears selection after $name and restores focus for keyboard only",
+    ({ detail, expectedFocus }) => {
+      renderPlainChart();
+      const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
+      const marker = markerFor(view, 2);
+      const close = getDetailClose(view);
+      const dot = marker.querySelector("circle");
+      close.focus();
 
-    fireEvent.click(dismiss);
+      expect(dot).toHaveClass(classes.lossDotSelected);
 
-    expectNoPanel(view);
+      fireEvent.click(close, { detail });
 
-    expect(document.activeElement).toBe(marker);
-    expect(other.container.querySelector("[role=button]")).not.toBe(
-      document.activeElement,
-    );
-  });
+      expectNoPanel(view);
+
+      expect(dot).not.toHaveClass(classes.lossDotSelected);
+      expect(document.activeElement).toBe(expectedFocus(marker));
+    },
+  );
 
   it("dismisses a detail after switching to a calendar without decision markers", () => {
     const view = openDetailOn(OPTIMAL_THEN_LOSS, 2);
     rerenderChart(view, OPTIMAL_THEN_LOSS, "day");
 
-    fireEvent.click(view.getByRole("button", { name: "Dismiss" }));
+    fireEvent.click(getDetailClose(view));
 
     expectNoPanel(view);
   });

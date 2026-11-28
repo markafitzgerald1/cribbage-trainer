@@ -151,6 +151,23 @@ describe("decision quality trend dialog", () => {
     expect(getByRole("group", { name: /trend chart/iu })).toBeInTheDocument();
   });
 
+  it("lists rolling batches newest first while chart markers stay chronological", () => {
+    const { getByRole } = renderDialog();
+    const table = getByRole("table", { name: "Recorded decision history" });
+    const chart = getByRole("group", { name: /trend chart/iu });
+
+    expect(
+      within(table)
+        .getAllByRole("cell", { name: /^Decisions /u })
+        .map((cell) => cell.textContent),
+    ).toStrictEqual(["Decisions 6–25", "Decisions 1–5"]);
+
+    const markers = within(chart).getAllByRole("button");
+
+    expect(markers[0]).toHaveAccessibleName(/^Decision #2,/u);
+    expect(markers.at(-1)).toHaveAccessibleName(/^Decision #24,/u);
+  });
+
   it("switches granularity when time frame radio buttons are clicked", () => {
     const rendered = renderDialog();
 
@@ -186,6 +203,33 @@ describe("decision quality trend dialog", () => {
 
     expect(allRadio).toBeChecked();
   });
+
+  it.each(["Dealer", "Pone"])(
+    "shows skipped hands as unavailable when filtering to %s",
+    (role) => {
+      const view = renderDialog();
+      const skipped = view.getByText("Skipped", { selector: "span" });
+      const table = view.getByRole("table", {
+        name: "Recorded decision history",
+      });
+
+      expect(skipped.parentElement).toHaveTextContent("Skipped1 (3.8%)");
+
+      clickRadio(view, role);
+
+      expect(skipped.parentElement).toHaveTextContent("Skipped—");
+      expect(
+        within(table)
+          .getAllByRole("row")
+          .slice(1)
+          .map((row) => within(row).getAllByRole("cell").at(-1)?.textContent),
+      ).toStrictEqual(["—"]);
+
+      clickRadio(view, "All roles");
+
+      expect(skipped.parentElement).toHaveTextContent("Skipped1 (3.8%)");
+    },
+  );
 
   it.each([
     { expectedCalls: 1, key: "Escape" },
@@ -271,17 +315,28 @@ describe("decision quality trend dialog", () => {
     expect(getByText("0.15")).not.toHaveClass(classes.lossPillOptimal);
   });
 
-  it("renders rolling chart horizon disclosure when decisions exceed 100", () => {
-    const { getByText } = renderDialog({
-      initialGranularity: "rolling20",
-      tally: dialogFixtures.dialogTally(120),
-    });
+  it("shows the chart's shorter horizon only when rolling points are capped", () => {
+    const view = renderDialog({ tally: dialogFixtures.dialogTally(120) });
+    const scope = /^The (?:rolling )?chart (?:displays|shows) the /u;
+    const notice = view.getByText(scope);
 
-    expect(
-      getByText(
-        "The rolling chart displays the most recent 100 decisions with their trailing moving average.",
-      ),
-    ).toBeInTheDocument();
+    expect(notice).toBeVisible();
+    expect(notice).toHaveTextContent(
+      "The chart shows the latest 100 of 120 decisions.",
+    );
+
+    clickRadio(view, "Rolling 50");
+
+    expect(view.getByText(scope)).toBeVisible();
+
+    clickRadio(view, "Dealer");
+
+    expect(view.queryByText(scope)).toBeNull();
+
+    clickRadio(view, "All roles");
+    clickRadio(view, "Day");
+
+    expect(view.queryByText(scope)).toBeNull();
   });
 
   it("starts a drill on the hand behind a tapped chart mistake", () => {

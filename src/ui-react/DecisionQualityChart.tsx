@@ -95,7 +95,7 @@ function renderDetailCards({
 }
 
 interface DecisionDetailHandlers {
-  readonly onClose: () => void;
+  readonly onClose: React.MouseEventHandler<HTMLButtonElement>;
   readonly onPractice: (() => void) | null;
   readonly sortOrder: SortOrder;
 }
@@ -136,11 +136,12 @@ function renderDecisionDetail(
           {`Recorded cost: ${formatNetLoss(point.expectedPointsLoss)} points`}
         </span>
         <button
+          aria-label="Close decision details"
           className={classes.detailClose}
           onClick={onClose}
           type="button"
         >
-          Dismiss
+          X
         </button>
       </div>
       <RecordedTableProvenance identity={point.tableIdentity} />
@@ -189,7 +190,7 @@ function useDecisionSelection(
   readonly handleChartActivate: (
     event: React.MouseEvent | React.KeyboardEvent,
   ) => void;
-  readonly handleCloseDetail: () => void;
+  readonly handleCloseDetail: React.MouseEventHandler<HTMLButtonElement>;
   readonly handlePracticeSelected: (() => void) | null;
   readonly selectedPoint: DiscardDecisionPoint | null;
 } {
@@ -197,14 +198,20 @@ function useDecisionSelection(
     null,
   );
 
-  const handleCloseDetail = useCallback(() => {
-    document
-      .querySelector<SVGElement>(
-        `[id="${chartId}"] [role="button"][data-decision-recency="${selectedRecencyAt}"]`,
-      )
-      ?.focus();
-    setSelectedRecencyAt(null);
-  }, [chartId, selectedRecencyAt]);
+  const handleCloseDetail = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      // Keyboard and accessibility activation dispatch a click without a pointer click count.
+      if (event.detail === 0) {
+        document
+          .querySelector<SVGElement>(
+            `[id="${chartId}"] [role="button"][data-decision-recency="${selectedRecencyAt}"]`,
+          )
+          ?.focus();
+      }
+      setSelectedRecencyAt(null);
+    },
+    [chartId, selectedRecencyAt],
+  );
 
   const handleChartActivate = useCallback(
     (event: React.MouseEvent | React.KeyboardEvent) => {

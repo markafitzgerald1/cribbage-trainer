@@ -150,6 +150,20 @@
   margin: 0;
 }
 
+.methodology summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.methodology summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.methodology p {
+  margin: 0.5rem 0 0;
+}
+
 .summary-cards {
   display: grid;
   gap: 0.6rem;
