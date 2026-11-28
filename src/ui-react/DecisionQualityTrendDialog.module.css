@@ -147,7 +147,20 @@
   color: #a8d5af;
   font-size: 0.85rem;
   line-height: 1.35;
-  margin: 0;
+}
+
+.methodology summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.methodology summary:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.methodology p {
+  margin: 0.5rem 0 0;
 }
 
 .summary-cards {

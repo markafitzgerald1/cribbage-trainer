@@ -151,6 +151,23 @@ describe("decision quality trend dialog", () => {
     expect(getByRole("group", { name: /trend chart/iu })).toBeInTheDocument();
   });
 
+  it("lists rolling batches newest first while chart markers stay chronological", () => {
+    const { getByRole } = renderDialog();
+    const table = getByRole("table", { name: "Recorded decision history" });
+    const chart = getByRole("group", { name: /trend chart/iu });
+
+    expect(
+      within(table)
+        .getAllByRole("cell", { name: /^Decisions /u })
+        .map((cell) => cell.textContent),
+    ).toStrictEqual(["Decisions 6–25", "Decisions 1–5"]);
+
+    const markers = within(chart).getAllByRole("button");
+
+    expect(markers[0]).toHaveAccessibleName(/^Decision #2,/u);
+    expect(markers.at(-1)).toHaveAccessibleName(/^Decision #24,/u);
+  });
+
   it("switches granularity when time frame radio buttons are clicked", () => {
     const rendered = renderDialog();
 
@@ -282,6 +299,12 @@ describe("decision quality trend dialog", () => {
         "The rolling chart displays the most recent 100 decisions with their trailing moving average.",
       ),
     ).toBeInTheDocument();
+
+    const help = getByText("About these figures").closest("details");
+
+    expect(help).not.toHaveAttribute("open");
+    expect(help).toHaveTextContent(/history can span table versions/u);
+    expect(help).toHaveTextContent(/most recent 100 decisions/u);
   });
 
   it("starts a drill on the hand behind a tapped chart mistake", () => {

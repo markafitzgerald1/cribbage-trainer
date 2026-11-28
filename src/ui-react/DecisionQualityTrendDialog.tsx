@@ -136,7 +136,7 @@ function renderBreakdownTable(
             <th>Skipped (rate)</th>
           </tr>
         </thead>
-        <tbody>{buckets.map(renderBucketRow)}</tbody>
+        <tbody>{buckets.slice().reverse().map(renderBucketRow)}</tbody>
       </table>
     </div>
   );
@@ -264,24 +264,27 @@ export function DecisionQualityTrendDialog({
           </div>
         ) : null}
 
-        <p className={classes.methodology}>
-          {TREND_HISTORY_HELP} Rolling batches smooth small-sample swings; use
-          each calendar period&apos;s decision count to judge its signal.
-        </p>
-
-        {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (
-          <p className={classes.methodology}>
-            The rolling chart displays the most recent {MAX_RECENT_DECISIONS}{" "}
-            decisions with their trailing moving average.
+        <details className={classes.methodology}>
+          <summary>About these figures</summary>
+          <p>
+            {TREND_HISTORY_HELP} Rolling batches smooth small-sample swings; use
+            each calendar period&apos;s decision count to judge its signal.
           </p>
-        ) : null}
 
-        {roleFilter === "all" ? null : (
-          <p className={classes.methodology}>
-            Skipped hands are not assigned a crib role, so they are excluded
-            from this filtered view.
-          </p>
-        )}
+          {isRolling && totalDecisions > MAX_RECENT_DECISIONS ? (
+            <p>
+              The rolling chart displays the most recent {MAX_RECENT_DECISIONS}{" "}
+              decisions with their trailing moving average.
+            </p>
+          ) : null}
+
+          {roleFilter === "all" ? null : (
+            <p>
+              Skipped hands are not assigned a crib role, so they are excluded
+              from this filtered view.
+            </p>
+          )}
+        </details>
 
         <DialogSummaryCards
           classes={classes}

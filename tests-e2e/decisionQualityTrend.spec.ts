@@ -9,6 +9,7 @@ import { LARGE_ROOT_FONT } from "./practiceDrillSetup";
 import { expectChipsFullyVisible } from "./chipContainment";
 import { renderThenSelectTwoDiscards } from "./renderThenSelectTwoDiscards";
 
+const SHORT_PORTRAIT_HEIGHT = 640;
 const GRANULARITY_CHIP_COUNT = 5;
 const CRIB_ROLE_CHIP_COUNT = 3;
 const YEAR = 2026;
@@ -117,6 +118,48 @@ test.describe("decision quality over time trend dialog", () => {
     await expect(
       page.getByRole("cell", { exact: true, name: "Decisions 6–25" }),
     ).toBeVisible();
+  });
+
+  test("shows the full chart on opening in short portrait and keeps the caveats reachable", async ({
+    page,
+  }) => {
+    await applyViewportSize(page, {
+      ...phonePortraitViewport,
+      height: SHORT_PORTRAIT_HEIGHT,
+    });
+    await page.getByRole("button", { name: "Quality trend" }).click();
+
+    await expect(
+      page.getByRole("group", {
+        name: "Decision quality over time trend chart",
+      }),
+    ).toBeInViewport({ ratio: 1 });
+
+    const dialog = page.getByRole("region", {
+      exact: true,
+      name: "Decision quality over time",
+    });
+    const caveats = dialog.getByText(/history can span table versions/u);
+    await expect(caveats).toBeHidden();
+    await dialog.getByText("About these figures", { exact: true }).click();
+    await expect(caveats).toBeVisible();
+  });
+
+  test("restores marker focus only after keyboard close", async ({ page }) => {
+    await page.getByRole("button", { name: "Quality trend" }).click();
+
+    const marker = page.getByRole("button", { name: /^Decision #2,/u });
+    const close = page.getByRole("button", { name: "Close decision details" });
+    await page.locator("rect[data-decision-ordinal='2']").click();
+    await close.click();
+    await expect(close).toBeHidden();
+    await expect(marker).not.toBeFocused();
+
+    await marker.press("Enter");
+    await close.press("Enter");
+    await expect(close).toBeHidden();
+    await expect(marker).toBeFocused();
+    await expect(marker).toHaveCSS("outline-style", "solid");
   });
 
   test("switches between period views and updates view", async ({ page }) => {
