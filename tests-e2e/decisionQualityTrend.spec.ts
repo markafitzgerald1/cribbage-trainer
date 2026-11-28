@@ -25,27 +25,19 @@ const ROLE_STEP_DIVISOR = 2;
 const LOSS_TIER_STEP = 0.25;
 const MODULO_TIERS = 4;
 const SEED_DECISIONS = 25;
-const SEED_OPTIMAL = 9;
-const SEED_TOTAL_LOSS = 10.0;
-const SEED_SKIPPED = 2;
+const LONG_HISTORY_DECISIONS = 120;
 
-const selectTrendRadio = async (page: Page, name: string) => {
+const selectTrendRadio = async (page: Page, name: string, label = name) => {
   const dialog = page
     .getByRole("heading", { name: "Decision quality over time" })
     .locator("..");
 
-  await dialog.getByText(name, { exact: true }).click();
+  await dialog.getByText(label, { exact: true }).click();
   await expect(dialog.getByRole("radio", { exact: true, name })).toBeChecked();
 };
 
-const SEED_TALLY = {
-  lifetime: {
-    decisions: SEED_DECISIONS,
-    expectedPointsLossTotal: SEED_TOTAL_LOSS,
-    optimalDecisions: SEED_OPTIMAL,
-    skippedHands: SEED_SKIPPED,
-  },
-  records: Array.from({ length: SEED_DECISIONS }, (_, index) => ({
+const trendTallyOf = (decisions: number) => {
+  const records = Array.from({ length: decisions }, (_, index) => ({
     at: new Date(
       YEAR,
       MONTH,
@@ -62,32 +54,48 @@ const SEED_TALLY = {
     handKey: `h-${index}`,
     isOptimal: index % OPTIMAL_STEP_DIVISOR === 0,
     isPractice: false,
-  })),
-  revision: 1,
-  skipped: [
+  }));
+  const skipped = [
     { at: new Date(YEAR, MONTH, SKIP_DAY_ONE, SKIP_HOUR, 0, 0).getTime() },
     { at: new Date(YEAR, MONTH, SKIP_DAY_TWO, SKIP_HOUR, 0, 0).getTime() },
-  ],
-  version: 1,
+  ];
+
+  return {
+    lifetime: {
+      decisions,
+      expectedPointsLossTotal: records.reduce(
+        (total, record) => total + record.expectedPointsLoss,
+        0,
+      ),
+      optimalDecisions: records.filter((record) => record.isOptimal).length,
+      skippedHands: skipped.length,
+    },
+    records,
+    revision: 1,
+    skipped,
+    version: 1,
+  };
+};
+
+const storeTrendTally = ({
+  keyPrefix,
+  tally,
+}: {
+  readonly keyPrefix: string;
+  readonly tally: ReturnType<typeof trendTallyOf>;
+}) => {
+  window.localStorage.setItem(
+    keyPrefix + new URL(document.baseURI).pathname,
+    JSON.stringify(tally),
+  );
 };
 
 test.describe("decision quality over time trend dialog", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(
-      (stored: {
-        readonly keyPrefix: string;
-        readonly tally: typeof SEED_TALLY;
-      }) => {
-        window.localStorage.setItem(
-          stored.keyPrefix + new URL(document.baseURI).pathname,
-          JSON.stringify(stored.tally),
-        );
-      },
-      {
-        keyPrefix: DISCARD_TALLY_KEY_PREFIX,
-        tally: SEED_TALLY,
-      },
-    );
+    await page.addInitScript(storeTrendTally, {
+      keyPrefix: DISCARD_TALLY_KEY_PREFIX,
+      tally: trendTallyOf(SEED_DECISIONS),
+    });
     await renderThenSelectTwoDiscards(page, constantHandQuery, true);
   });
 
@@ -123,6 +131,10 @@ test.describe("decision quality over time trend dialog", () => {
   test("shows the full chart on opening in short portrait and keeps the caveats reachable", async ({
     page,
   }) => {
+    await page.evaluate(storeTrendTally, {
+      keyPrefix: DISCARD_TALLY_KEY_PREFIX,
+      tally: trendTallyOf(LONG_HISTORY_DECISIONS),
+    });
     await applyViewportSize(page, {
       ...phonePortraitViewport,
       height: SHORT_PORTRAIT_HEIGHT,
@@ -141,6 +153,9 @@ test.describe("decision quality over time trend dialog", () => {
     });
     const caveats = dialog.getByText(/history can span table versions/u);
     await expect(caveats).toBeHidden();
+    await expect(
+      dialog.getByText("The chart shows the latest 100 of 120 decisions."),
+    ).toBeInViewport({ ratio: 1 });
     await dialog.getByText("About these figures", { exact: true }).click();
     await expect(caveats).toBeVisible();
   });
@@ -180,16 +195,23 @@ test.describe("decision quality over time trend dialog", () => {
 
   test("filters decisions by crib role", async ({ page }) => {
     await page.getByRole("button", { name: "Quality trend" }).click();
+    const skipNotice = page.getByText(/^Skipped hands .+ crib role/u);
+    await expect(skipNotice).toBeHidden();
 
     await selectTrendRadio(page, "Dealer");
+    await expect(skipNotice).toBeVisible();
     await expect(
       page.getByRole("cell", { exact: true, name: "13" }),
     ).toBeVisible();
 
     await selectTrendRadio(page, "Pone");
+    await expect(skipNotice).toBeVisible();
     await expect(
       page.getByRole("cell", { exact: true, name: "12" }),
     ).toBeVisible();
+
+    await selectTrendRadio(page, "All roles", "All");
+    await expect(skipNotice).toBeHidden();
   });
 
   /*
