@@ -8,9 +8,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import patch
+from urllib.request import Request
 from zipfile import ZipFile
 
-from updatePolicyShards import ASSET, RELEASE_URL, update
+from updatePolicyShards import ASSET, HTTPSRedirectHandler, RELEASE_URL, download, update
 
 PONE = "pone/A_2_3_4.bin.gz"
 DEALER = "dealer/5_6_7_8.bin.gz"
@@ -103,6 +104,32 @@ class PolicyUpdaterTest(unittest.TestCase):
         index, archive = fixture(extra_member=True)
         with self.assertRaisesRegex(ValueError, "ZIP members"):
             self.run_update(release(archive, index), archive)
+
+    def test_rejects_non_https_asset_before_reading_it(self):
+        index, archive = fixture()
+        info = release(archive, index)
+        local_zip = self.output.parent / "policy.zip"
+        local_zip.write_bytes(archive)
+        info["assets"][0]["browser_download_url"] = local_zip.as_uri()
+
+        def fetch(url):
+            return json.dumps(info).encode() if url == RELEASE_URL else download(url)
+
+        with patch("updatePolicyShards.download", side_effect=fetch):
+            with self.assertRaisesRegex(ValueError, "HTTPS"):
+                update(self.output)
+        self.assertEqual(list(self.output.iterdir()), [self.previous])
+
+    def test_redirect_requires_https(self):
+        handler = HTTPSRedirectHandler()
+        request = Request(ZIP_URL)
+        for url in ("http://example.com/asset.zip", "ftp://example.com/asset.zip"):
+            with self.subTest(url=url):
+                with self.assertRaisesRegex(ValueError, "HTTPS"):
+                    handler.redirect_request(request, None, 302, "Found", {}, url)
+        url = "https://example.com/asset.zip"
+        redirected = handler.redirect_request(request, None, 302, "Found", {}, url)
+        self.assertEqual(redirected.full_url, url)
 
     def test_rejects_invalid_release_metadata_before_downloading_zip(self):
         index, archive = fixture()

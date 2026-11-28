@@ -239,6 +239,9 @@ jobs:
       - name: Run vendored expected-points table tests
         run: npm run test:vendored-tables
 
+      - name: Test the policy shard updater with the runner's Python 3
+        run: npm run test:policy-shards
+
   # The required check. It only aggregates, so the context branch protection
   # keys on keeps its name. A required check that is skipped counts as
   # passing, so this job must never be skipped on a pull request: always(),
@@ -367,6 +370,9 @@ jobs:
       # mismatched pair without noticing. Both pairs are checked.
       - name: Run vendored expected-points table tests
         run: npm run test:vendored-tables
+
+      - name: Test the policy shard updater with the runner's Python 3
+        run: npm run test:policy-shards
 
       - name: Cache build outputs (dist directory)
         id: cache-dist

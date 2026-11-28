@@ -8,7 +8,8 @@ from pathlib import Path
 import re
 from shutil import rmtree
 from tempfile import mkdtemp
-from urllib.request import urlopen
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, build_opener
 from zipfile import ZipFile
 
 TAG = "pegging-policy-shards"
@@ -23,8 +24,20 @@ SHARD_PATH = r"(pone|dealer)/[A2-9TJQK](?:_[A2-9TJQK]){3}\.bin\.gz"
 INDEX_NAME = "shards.json"
 
 
+def require_https(url):
+    if urlsplit(url).scheme != "https":
+        raise ValueError("Policy downloads require HTTPS")
+
+
+class HTTPSRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, new_url):
+        require_https(new_url)
+        return super().redirect_request(req, fp, code, msg, headers, new_url)
+
+
 def download(url):
-    with urlopen(url, timeout=60) as response:
+    require_https(url)
+    with build_opener(HTTPSRedirectHandler()).open(url, timeout=60) as response:
         return response.read()
 
 

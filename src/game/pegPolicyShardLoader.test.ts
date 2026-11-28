@@ -1,5 +1,6 @@
 /** @jest-environment node */
 /* jscpd:ignore-start */
+import * as policyShard from "./pegPolicyShard";
 import { DEALER, PONE } from "./pegging";
 import { describe, expect, it, jest } from "@jest/globals";
 import { createPolicyShardLoader } from "./pegPolicyShardLoader";
@@ -166,4 +167,43 @@ describe("policy shard loader", () => {
     await expect(pending).resolves.toBeNull();
     expect(cancel).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    ["before parsing", (switchHands: () => void) => switchHands(), 0],
+    [
+      "before publishing",
+      (switchHands: () => void) => Promise.resolve().then(switchHands),
+      1,
+    ],
+  ] as const)(
+    "drops a fully read shard if the hand switches %s",
+    async (_window, scheduleSwitch, parseCalls) => {
+      expect.hasAssertions();
+
+      const read: { finish?: (payload: ArrayBuffer) => void } = {};
+      const payload = new Promise<ArrayBuffer>((resolve) => {
+        read.finish = resolve;
+      });
+      using reading = jest
+        .spyOn(Response.prototype, "arrayBuffer")
+        .mockReturnValueOnce(payload);
+      using requests = mockShardFetch();
+      using parse = jest.spyOn(policyShard, "parsePolicyShard");
+      const forHand = createPolicyShardLoader();
+      const pending = forHand(PONE_KEEP, DEALER_KEEP)(PONE, PONE_KEEP);
+      await Promise.resolve();
+
+      expect(reading).toHaveBeenCalledTimes(1);
+
+      read.finish?.(Uint8Array.from(OPENING_ROW).buffer);
+      // A deferred switch lets the parser resume before the hand changes.
+      await scheduleSwitch(() => {
+        forHand(NEXT_KEEP, DEALER_KEEP);
+      });
+
+      await expect(Promise.resolve(pending)).resolves.toBeNull();
+      expect(parse).toHaveBeenCalledTimes(parseCalls);
+      expect(requests).toHaveBeenCalledTimes(1);
+    },
+  );
 });

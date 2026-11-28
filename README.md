@@ -119,7 +119,7 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 With Python 3 installed, run `npm run table:update:policy` after the simulator
 publishes the [rolling policy release](https://github.com/markafitzgerald1/simulate-cribbage-games/releases/tag/pegging-policy-shards).
 It verifies the ZIP, index and shard checksums before replacing the policy
-files in `src/public/pegging-policy-shards`. Run `npm run test:vendored-tables`
+files in `src/public/pegging-policy-shards`. Run `npm run test:policy-shards`
 to exercise the updater with synthetic data.
 
 ### Reach the dev server from a phone

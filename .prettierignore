@@ -15,4 +15,6 @@
 /src/game/expectedPlayPointsUncertainty.json
 # Vendored pegging lines companion from simulate-cribbage-games; refresh with scripts/updateExpectedPlayPointsTable.mjs.
 /src/game/expectedPlayPointsLines.json
+# The release pins the SHA-256 of the exact published policy index.
+/src/public/pegging-policy-shards/shards.json
 /.claude/
