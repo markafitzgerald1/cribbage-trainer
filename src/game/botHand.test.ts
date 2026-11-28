@@ -91,7 +91,7 @@ describe("one hand against the bot", () => {
         .mockReturnValue((expected.cutAt + 0.5) / 40);
       using cryptoRandom = jest
         .spyOn(crypto, "getRandomValues")
-        .mockReturnValueOnce(Uint16Array.of(65535))
+        .mockReturnValueOnce(Uint16Array.of(65000))
         .mockReturnValueOnce(Uint16Array.of(64999))
         .mockReturnValueOnce(Uint16Array.of(64000))
         .mockReturnValueOnce(Uint16Array.of(64999));
