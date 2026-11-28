@@ -6,6 +6,7 @@ import {
 } from "../game/botHand.test.common";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { PlayBotHand } from "./PlayBotHand";
+import { createElement } from "react";
 
 const meta = {
   args: {
@@ -20,7 +21,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-async function dealAndCut(canvasElement: HTMLElement) {
+async function chooseDiscards(canvasElement: HTMLElement) {
   const canvas = within(canvasElement);
   const clickButton = async (name: string) => {
     await userEvent.click(await canvas.findByRole("button", { name }));
@@ -28,13 +29,24 @@ async function dealAndCut(canvasElement: HTMLElement) {
   await clickButton("Deal");
   await clickButton("Discard 2 of hearts");
   await clickButton("Discard 3 of hearts");
-  await clickButton("Discard and cut");
   return canvas;
 }
 
 export const WholeHand: Story = {
+  decorators: [
+    (Story) =>
+      createElement("div", { style: { colorScheme: "dark" } }, createElement(Story)),
+  ],
   play: async ({ canvasElement }) => {
-    const canvas = await dealAndCut(canvasElement);
+    const canvas = await chooseDiscards(canvasElement);
+    const selected = canvas.getByRole("button", {
+      name: "Discard 2 of hearts",
+      pressed: true,
+    });
+    const selectedStyle = getComputedStyle(selected);
+    await expect(selectedStyle.backgroundColor).toBe("rgb(222, 248, 226)");
+    await expect(selectedStyle.color).toBe("rgb(16, 56, 27)");
+    await userEvent.click(canvas.getByRole("button", { name: "Discard and cut" }));
     const pegAt = async (count: number, card: string) => {
       await canvas.findByText(
         new RegExp(`^Your play\\. Count ${count}\\.`, "u"),
@@ -57,7 +69,8 @@ export const WholeHand: Story = {
 export const MissingPolicy: Story = {
   args: { lookupShard: fn(() => emptyBotShard) },
   play: async ({ canvasElement }) => {
-    const canvas = await dealAndCut(canvasElement);
+    const canvas = await chooseDiscards(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Discard and cut" }));
 
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       /policy row is missing/u,

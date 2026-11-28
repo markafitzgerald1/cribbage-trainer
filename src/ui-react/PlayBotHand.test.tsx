@@ -1,5 +1,7 @@
 import { type BotHandDeal, dealBotHand } from "../game/botHandDeal";
-import { DEALER, PONE } from "../game/pegging";
+import { DEALER, GO, PONE, RESET, historyKey } from "../game/pegging";
+import { type PolicyShard, POLICY_DENOMINATOR } from "../game/pegPolicyShard";
+import { Rank, parseHand } from "../game/Card";
 import {
   botHandDeal,
   botShard,
@@ -9,8 +11,6 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { type BotShardLookup } from "../game/botHand";
 import { PlayBotHand } from "./PlayBotHand";
-import type { PolicyShard } from "../game/pegPolicyShard";
-import { parseHand } from "../game/Card";
 
 jest.mock("../game/botHandDeal");
 
@@ -114,9 +114,9 @@ describe("play a hand against the bot", () => {
     ).toBeNull();
 
     click("Play 6 of hearts");
-    await screen.findByText(/^Your play\. Count 9\./u);
+    await screen.findByText("Your play. Count 9. Pegging: you 2, bot 0.");
     click("Play K of clubs");
-    await screen.findByText(/^Your play\. Count 0\./u);
+    await screen.findByText("Your play. Count 0. Pegging: you 2, bot 1.");
     click("Play J of hearts");
 
     const result = await screen.findByRole("region", { name: "Hand complete" });
@@ -156,6 +156,125 @@ describe("play a hand against the bot", () => {
         [PONE, "5_5_9_Q"],
       ],
     });
+  });
+
+  it("renders a full pone hand with 15 pegging events", async () => {
+    const deal: BotHandDeal = {
+      ...botHandDeal,
+      botKeep: parseHand("8C,9C,QC,KC"),
+      playerCards: parseHand("2C,3C,4C,10C,2H,3H"),
+      playerSeat: PONE,
+    };
+    const throughReset = [
+      Rank.TEN,
+      Rank.KING,
+      Rank.FOUR,
+      GO,
+      Rank.THREE,
+      GO,
+      Rank.TWO,
+      GO,
+      GO,
+      RESET,
+    ] as const;
+    const policyRows = new Map([
+      [
+        historyKey([Rank.TEN]),
+        {
+          counts: [0, 0, 0, POLICY_DENOMINATOR],
+          ranks: [Rank.EIGHT, Rank.NINE, Rank.QUEEN, Rank.KING],
+          supported: true,
+        },
+      ],
+      [
+        historyKey(throughReset),
+        {
+          counts: [0, 0, POLICY_DENOMINATOR],
+          ranks: [Rank.EIGHT, Rank.NINE, Rank.QUEEN],
+          supported: true,
+        },
+      ],
+      [
+        historyKey([...throughReset, Rank.QUEEN, GO]),
+        {
+          counts: [0, POLICY_DENOMINATOR],
+          ranks: [Rank.EIGHT, Rank.NINE],
+          supported: true,
+        },
+      ],
+    ]);
+    const shard: PolicyShard = {
+      lookup: (key) => policyRows.get(key) ?? null,
+      rowCount: policyRows.size,
+    };
+    mount(
+      () => shard,
+      PONE,
+      () => Promise.resolve(deal),
+    );
+
+    await openDeal();
+    cut();
+    click("Play 10 of clubs");
+    await screen.findByText(/^Your play\. Count 20\./u);
+    click("Play 4 of clubs");
+    await screen.findByText(/^Your play\. Count 24\./u);
+    click("Play 3 of clubs");
+    await screen.findByText(/^Your play\. Count 27\./u);
+    click("Play 2 of clubs");
+
+    const result = await screen.findByRole("region", { name: "Hand complete" });
+    const history = within(
+      screen.getByRole("list", { name: "Pegging history" }),
+    );
+
+    expect(
+      history.getAllByRole("listitem").map((item) => item.textContent),
+    ).toStrictEqual([
+      "You played 10♣",
+      "Bot played K♣",
+      "You played 4♣",
+      "Go",
+      "You played 3♣",
+      "Go",
+      "You played 2♣",
+      "Go",
+      "Go",
+      "Reset",
+      "Bot played Q♣",
+      "Go",
+      "Bot played 9♣",
+      "Go",
+      "Bot played 8♣",
+    ]);
+    expect(
+      within(result)
+        .getAllByRole("listitem")
+        .slice(0, 2)
+        .map((item) => item.textContent?.split(":")[0]),
+    ).toStrictEqual(["You (pone)", "Bot (dealer)"]);
+  });
+
+  it("keeps the active deal and pegging seat when the requested seat changes", async () => {
+    const deal = () => Promise.resolve(botHandDeal);
+    const lookupShard = () => botShard;
+    const { rerender } = mount(lookupShard, DEALER, deal);
+
+    click("Deal");
+    rerender(
+      <PlayBotHand
+        deal={deal}
+        lookupShard={lookupShard}
+        playerSeat={PONE}
+      />,
+    );
+
+    expect(screen.getByText("You are the dealer.")).toBeTruthy();
+    await screen.findByRole("group", { name: "Your deal" });
+    expect(screen.getByText("You are the dealer.")).toBeTruthy();
+    cut();
+    await screen.findByText(/^Your play\. Count 10\./u);
+    expect(screen.getByText("You are the dealer.")).toBeTruthy();
   });
 
   it("locks play while the shard is pending and stops on a missing row", async () => {

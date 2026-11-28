@@ -15,7 +15,6 @@ import {
   PONE,
   RESET,
   type Seat,
-  historyKey,
   legalRanks,
 } from "../game/pegging";
 import { useCallback, useState } from "react";
@@ -28,7 +27,8 @@ interface PlayBotHandProps {
 }
 
 type Screen =
-  | { readonly kind: "ready" | "dealing" }
+  | { readonly kind: "ready" }
+  | { readonly kind: "dealing"; readonly playerSeat: Seat }
   | { readonly kind: "discard"; readonly deal: BotHandDeal }
   | {
       readonly kind: "pegging";
@@ -53,6 +53,20 @@ function seatValue<T>(values: readonly [T, T], seat: Seat): T {
 const seatName = (seat: Seat, player: Seat) =>
   seat === player ? "You" : "Bot";
 
+function screenSeat(screen: Screen, requestedSeat: Seat): Seat {
+  switch (screen.kind) {
+    case "dealing":
+      return screen.playerSeat;
+    case "discard":
+      return screen.deal.playerSeat;
+    case "pegging":
+    case "complete":
+      return screen.hand.playerSeat;
+    default:
+      return requestedSeat;
+  }
+}
+
 function renderHistory({
   pegging,
   plays,
@@ -67,11 +81,9 @@ function renderHistory({
       {pegging.history.map((event, index) => {
         // A rank event and its physical card are appended together by the engine.
         if (event === GO || event === RESET) {
-          return (
-            <li key={historyKey(pegging.history.slice(0, index + 1))}>
-              {event === GO ? "Go" : "Reset"}
-            </li>
-          );
+          // The history only grows, so a marker keeps its original position.
+          const markerKey = `marker-${index}`;
+          return <li key={markerKey}>{event === GO ? "Go" : "Reset"}</li>;
         }
         const { card, seat } = played.next().value as (typeof plays)[number];
         return (
@@ -220,7 +232,7 @@ export function PlayBotHand({
       setScreen({ deal: await deal(playerSeat), kind: "discard" });
     };
 
-    setScreen({ kind: "dealing" });
+    setScreen({ kind: "dealing", playerSeat });
     loadDeal().catch(() => {
       setScreen({ kind: "error", message: "Could not deal the hand." });
     });
@@ -275,7 +287,10 @@ export function PlayBotHand({
       className={classes.screen}
     >
       <h2>Play a hand</h2>
-      <p>You are {playerSeat === DEALER ? "the dealer" : "the pone"}.</p>
+      <p>
+        You are{" "}
+        {screenSeat(screen, playerSeat) === DEALER ? "the dealer" : "the pone"}.
+      </p>
       {screen.kind === "ready" && (
         <button
           onClick={handleDeal}
