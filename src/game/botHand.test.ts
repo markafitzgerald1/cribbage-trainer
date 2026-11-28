@@ -8,14 +8,9 @@ import {
 import { DEALER, GO, PONE, RESET } from "./pegging";
 import { Rank, parseCard, parseHand, serializeHand } from "./Card";
 import { describe, expect, it, jest } from "@jest/globals";
+import { botHandDeal as deal } from "./botHand.test.common";
 import { parsePolicyShard } from "./pegPolicyShard";
 
-const deal = {
-  botDiscard: parseHand("4H,8H"),
-  botKeep: parseHand("5C,5D,9C,QC"),
-  playerCards: parseHand("KC,KH,6H,JH,2H,3H"),
-  playerSeat: DEALER,
-} as const;
 const discards = parseHand("2H,3H");
 const botKey = "5_5_9_Q";
 const HEADER = [67, 80, 83, 49];

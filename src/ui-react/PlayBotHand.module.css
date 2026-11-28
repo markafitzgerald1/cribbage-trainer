@@ -1,0 +1,40 @@
+@import url("./vars.css");
+
+.screen {
+  box-sizing: border-box;
+  max-inline-size: 42rem;
+  margin-inline: auto;
+  padding: 1rem;
+  background: #10381b;
+  color: var(--text-color);
+  font-family: var(--text-font-family);
+}
+
+.screen button {
+  min-block-size: 44px;
+  padding-inline: 0.65em;
+  font: inherit;
+}
+
+.screen button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 1em;
+  margin-block: 0.75em;
+}
+
+.screen .card {
+  min-inline-size: 44px;
+  aspect-ratio: 5 / 7;
+  font-family: var(--card-font-family);
+}
+
+.card[aria-pressed="true"] {
+  background: #def8e2;
+  box-shadow: inset 0 0 0 2px #216637;
+}
