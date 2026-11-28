@@ -45,6 +45,8 @@ export const spellcheckSkipWords = [
   "goto",
   "glyphs",
   "gtag",
+  "gz",
+  "gzip",
   "href",
   "ico",
   "idempotency",
