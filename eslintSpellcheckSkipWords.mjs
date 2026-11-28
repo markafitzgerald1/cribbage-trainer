@@ -101,6 +101,7 @@ export const spellcheckSkipWords = [
   "tooltip",
   "tsconfig",
   "tsx",
+  "uint",
   "ul",
   "unmastered",
   "unmount",

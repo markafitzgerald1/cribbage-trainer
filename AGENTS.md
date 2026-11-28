@@ -559,6 +559,27 @@
   after a dropped connection. `tests-e2e/openingPlays.spec.ts` times the
   request against the toggle's click, so keep the file off every eager path.
 
+## Pegging policy shards (not yet vendored)
+
+- The bot seat and post-hand review of #910 read the CFR pegging policy as
+  one shard per seat and original four-card keep, whose contract is
+  `simulate-cribbage-games` `docs/policy-shards.md`. Until a shard set is
+  published there, nothing may vendor one here (the vendored-table rule
+  above), so `src/game/pegPolicyShard.ts` is tested on synthetic bytes only.
+- **A shard is indexed by the solver's own event history, so
+  `src/game/pegging.ts` must replay its rules exactly** — not merely score
+  cribbage correctly. A seat with no cards left still says go, once per
+  turn; a reset follows only both goes or a 31; a last card making 31 does
+  not reset. A port that scores every hand right but records one event
+  differently finds no row and fails silently. Check a change by enumerating
+  every feasible opponent keep for a few real shards and comparing the
+  decision histories and menus to the shard's rows, as #910 did for six
+  hands (dealer `7_T_J_K` alone has 74,389 rows); unit tests cannot see it.
+- `eslint-plugin-spellcheck` splits identifiers at digits, so `Uint8Array`
+  is checked as `uint` and `array`; the skip word is `uint`. jsdom has no
+  `TextEncoder`, so a module that builds bytes at load time breaks every
+  Jest suite importing it.
+
 ## Interaction design and visual-state debugging
 
 Control naming, native form semantics, hiding a control that must stay
