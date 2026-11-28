@@ -36,5 +36,6 @@
 
 .card[aria-pressed="true"] {
   background: #def8e2;
+  color: #10381b;
   box-shadow: inset 0 0 0 2px #216637;
 }

@@ -1,6 +1,10 @@
 import { type BotHandDeal, dealBotHand } from "../game/botHandDeal";
 import { DEALER, GO, PONE, RESET, historyKey } from "../game/pegging";
-import { type PolicyShard, POLICY_DENOMINATOR } from "../game/pegPolicyShard";
+import {
+  POLICY_DENOMINATOR,
+  type PolicyRow,
+  type PolicyShard,
+} from "../game/pegPolicyShard";
 import { Rank, parseHand } from "../game/Card";
 import {
   botHandDeal,
@@ -23,6 +27,13 @@ const cut = () => {
   click("Discard and cut");
 };
 const cutAtQueen = () => jest.spyOn(Math, "random").mockReturnValue(26.5 / 40);
+
+const policyShardFromRows = (
+  rows: ReadonlyMap<number, PolicyRow>,
+): PolicyShard => ({
+  lookup: (key) => rows.get(key) ?? null,
+  rowCount: rows.size,
+});
 
 const mount = (
   lookupShard: BotShardLookup,
@@ -203,10 +214,7 @@ describe("play a hand against the bot", () => {
         },
       ],
     ]);
-    const shard: PolicyShard = {
-      lookup: (key) => policyRows.get(key) ?? null,
-      rowCount: policyRows.size,
-    };
+    const shard = policyShardFromRows(policyRows);
     mount(
       () => shard,
       PONE,
@@ -270,10 +278,14 @@ describe("play a hand against the bot", () => {
     );
 
     expect(screen.getByText("You are the dealer.")).toBeTruthy();
+
     await screen.findByRole("group", { name: "Your deal" });
+
     expect(screen.getByText("You are the dealer.")).toBeTruthy();
+
     cut();
     await screen.findByText(/^Your play\. Count 10\./u);
+
     expect(screen.getByText("You are the dealer.")).toBeTruthy();
   });
 

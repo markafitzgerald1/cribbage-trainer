@@ -32,10 +32,17 @@ async function chooseDiscards(canvasElement: HTMLElement) {
   return canvas;
 }
 
+const discardAndCut = (canvas: Awaited<ReturnType<typeof chooseDiscards>>) =>
+  userEvent.click(canvas.getByRole("button", { name: "Discard and cut" }));
+
 export const WholeHand: Story = {
   decorators: [
     (Story) =>
-      createElement("div", { style: { colorScheme: "dark" } }, createElement(Story)),
+      createElement(
+        "div",
+        { style: { colorScheme: "dark" } },
+        createElement(Story),
+      ),
   ],
   play: async ({ canvasElement }) => {
     const canvas = await chooseDiscards(canvasElement);
@@ -44,9 +51,11 @@ export const WholeHand: Story = {
       pressed: true,
     });
     const selectedStyle = getComputedStyle(selected);
+
     await expect(selectedStyle.backgroundColor).toBe("rgb(222, 248, 226)");
     await expect(selectedStyle.color).toBe("rgb(16, 56, 27)");
-    await userEvent.click(canvas.getByRole("button", { name: "Discard and cut" }));
+
+    await discardAndCut(canvas);
     const pegAt = async (count: number, card: string) => {
       await canvas.findByText(
         new RegExp(`^Your play\\. Count ${count}\\.`, "u"),
@@ -70,7 +79,7 @@ export const MissingPolicy: Story = {
   args: { lookupShard: fn(() => emptyBotShard) },
   play: async ({ canvasElement }) => {
     const canvas = await chooseDiscards(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: "Discard and cut" }));
+    await discardAndCut(canvas);
 
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       /policy row is missing/u,
