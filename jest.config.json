@@ -4,6 +4,7 @@
     "src/**/*.{ts,tsx}",
     "src/game/cribUncertaintyV2.mjs",
     "!src/**/*.d.ts",
+    "!src/game/botHand.test.common.ts",
     "!src/game/parseCards.common.ts",
     "!src/game/uncertaintySidecar.test.common.ts",
     "!src/game/cribUncertaintyV2.test.common.ts",
