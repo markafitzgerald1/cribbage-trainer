@@ -1,5 +1,10 @@
 import { type Card, CARDS as card, parseCard } from "./Card";
-import { HAND_POINTS, type HandPoints, handPoints } from "./handPoints";
+import {
+  HAND_POINTS,
+  type HandPoints,
+  cribPoints,
+  handPoints,
+} from "./handPoints";
 import { describe, expect, it } from "@jest/globals";
 import { parseCards } from "./parseCards.common";
 
@@ -21,6 +26,20 @@ const expectTypePoints = (
 
 const parsePhysicalCards = (cards: string): readonly Card[] =>
   cards.split(",").map(parseCard);
+
+describe("cribPoints", () => {
+  it.each([
+    { flushes: 0, starter: "6S" },
+    { flushes: 5, starter: "6H" },
+  ])("scores $flushes flush points with $starter", ({ flushes, starter }) => {
+    expect(
+      cribPoints(parsePhysicalCards(`AH,2H,3H,4H,${starter}`)),
+    ).toMatchObject({
+      flushes,
+      total: 6 + flushes,
+    });
+  });
+});
 
 describe("handPoints", () => {
   describe("pairs", () => {
