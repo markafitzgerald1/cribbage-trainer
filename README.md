@@ -114,6 +114,14 @@ on build success via [GitHub Action Workflow](https://github.com/markafitzgerald
 - Serve the dev app server over HTTPS, reachable from other devices on your
   network: `npm run start:https` (see below)
 
+### Refresh pegging policy shards
+
+With Python 3 installed, run `npm run table:update:policy` after the simulator
+publishes the [rolling policy release](https://github.com/markafitzgerald1/simulate-cribbage-games/releases/tag/pegging-policy-shards).
+It verifies the ZIP, index and shard checksums before replacing the policy
+files in `src/public/pegging-policy-shards`. Run `npm run test:vendored-tables`
+to exercise the updater with synthetic data.
+
 ### Reach the dev server from a phone
 
 `npm start` listens on `localhost` only, and serving it over plain `http` to a

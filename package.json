@@ -39,13 +39,14 @@
     "deps:update:minor": "npx npm-check-updates --target minor -u && npm install",
     "table:update": "node scripts/updateExpectedPointsTables.mjs",
     "table:update:crib": "node scripts/updateExpectedCribPointsTable.mjs",
+    "table:update:policy": "python3 scripts/updatePolicyShards.py",
     "table:update:play": "node scripts/updateExpectedPlayPointsTable.mjs",
     "test:lint-audit": "node --test scripts/lintAudit.test.mjs",
     "test:pages-content-merge": "node --test scripts/pagesContentMerge.test.mjs",
     "test:pr-size-gate": "node --test scripts/prSizeGate.test.mjs",
     "test:pwa-manifest": "node --test scripts/pwaManifest.test.mjs",
     "test:skill-paths": "node --test scripts/skillPaths.test.mjs",
-    "test:vendored-tables": "node --test scripts/vendoredTables.test.mjs scripts/vendoredLines.test.mjs scripts/cribUncertaintyV2.test.mjs scripts/expectedTableIdentity.test.mjs scripts/tableIdentityJest.test.mjs",
+    "test:vendored-tables": "node --test scripts/vendoredTables.test.mjs scripts/vendoredLines.test.mjs scripts/cribUncertaintyV2.test.mjs scripts/expectedTableIdentity.test.mjs scripts/tableIdentityJest.test.mjs && python3 -B -m unittest discover -s scripts -p test_policy_shards.py",
     "verify:gap": "node scripts/verifyGap.mjs"
   },
   "devDependencies": {
