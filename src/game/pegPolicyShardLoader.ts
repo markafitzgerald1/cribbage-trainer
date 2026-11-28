@@ -16,7 +16,9 @@ const fetchShard = async (
   if (!response.ok || response.body === null) {
     return null;
   }
-  const stream = response.body.pipeThrough(new DecompressionStream("gzip"));
+  const stream = response.body.pipeThrough(new DecompressionStream("gzip"), {
+    signal,
+  });
   const payload = await new Response(stream).arrayBuffer();
   signal.throwIfAborted();
   return parsePolicyShard(new Uint8Array(payload));

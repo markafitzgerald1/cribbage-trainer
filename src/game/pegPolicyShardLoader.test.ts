@@ -18,9 +18,10 @@ const OPENING_ROW = Buffer.from(
 const compressedBody = (data: Uint8Array = OPENING_ROW) =>
   Uint8Array.from(gzipSync(data));
 const shardResponse = () => new Response(compressedBody());
+const fetchShardResponse = () => Promise.resolve(shardResponse());
 
 const mockShardFetch = () =>
-  jest.spyOn(globalThis, "fetch").mockResolvedValue(shardResponse());
+  jest.spyOn(globalThis, "fetch").mockImplementation(fetchShardResponse);
 
 describe("policy shard loader", () => {
   it("fetches only requested seat and keep pairs and shares their cached results", async () => {
@@ -40,9 +41,12 @@ describe("policy shard loader", () => {
 
     const shard = await first;
     const second = lookup(DEALER, DEALER_KEEP);
-    await second;
+    const dealerShard = await second;
 
-    expect(shard?.lookup(0)?.counts).toStrictEqual([1000, 0]);
+    expect([shard?.lookup(0)?.counts, dealerShard?.rowCount]).toStrictEqual([
+      [1000, 0],
+      1,
+    ]);
     expect(lookup(DEALER, DEALER_KEEP)).toBe(second);
     expect(requests.mock.calls.map(([url]) => url)).toStrictEqual([
       "/pegging-policy-shards/pone/A_2_3_4.bin.gz",
@@ -112,7 +116,7 @@ describe("policy shard loader", () => {
       delivery.resolve = resolve;
     });
     using requests = mockShardFetch()
-      .mockResolvedValueOnce(shardResponse())
+      .mockImplementationOnce(fetchShardResponse)
       .mockReturnValueOnce(delayed);
     const forHand = createPolicyShardLoader("/preview/");
     const earlier = forHand(PONE_KEEP, DEALER_KEEP);
@@ -121,17 +125,45 @@ describe("policy shard loader", () => {
     const current = forHand(PONE_KEEP, NEXT_KEEP);
     const previousRequest = requests.mock.calls.at(1);
 
-    expect(previousRequest?.[1]?.signal?.aborted).toBe(true);
-    expect(earlier(PONE, PONE_KEEP)).toBeNull();
+    expect([
+      previousRequest?.[1]?.signal?.aborted,
+      earlier(PONE, PONE_KEEP),
+    ]).toStrictEqual([true, null]);
 
     delivery.resolve?.(shardResponse());
     const replacement = await current(PONE, PONE_KEEP);
 
     await expect(unfinished).resolves.toBeNull();
+    expect([first?.rowCount, replacement?.rowCount]).toStrictEqual([1, 1]);
     expect(replacement).not.toBe(first);
     expect([
       requests.mock.calls.length,
       requests.mock.lastCall?.[0],
     ]).toStrictEqual([3, "/preview/pone/A_2_3_4.bin.gz"]);
+  });
+
+  it("cancels a response body that stalls during a hand switch", async () => {
+    expect.hasAssertions();
+
+    let notifyRead: (() => void) | null = null;
+    const reading = new Promise<void>((resolve) => {
+      notifyRead = resolve;
+    });
+    const cancel = jest.fn<() => void>();
+    const body = new ReadableStream<Uint8Array>(
+      { cancel, pull: () => notifyRead?.() },
+      { highWaterMark: 0 },
+    );
+    using requests = mockShardFetch().mockResolvedValueOnce(new Response(body));
+    const forHand = createPolicyShardLoader();
+    const lookup = forHand(PONE_KEEP, DEALER_KEEP);
+    const pending = Promise.resolve(lookup(PONE, PONE_KEEP));
+
+    await reading;
+    forHand(NEXT_KEEP, DEALER_KEEP);
+
+    expect(requests).toHaveBeenCalledTimes(1);
+    await expect(pending).resolves.toBeNull();
+    expect(cancel).toHaveBeenCalledTimes(1);
   });
 });

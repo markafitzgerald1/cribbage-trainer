@@ -3,9 +3,11 @@
 import hashlib
 from io import BytesIO
 import json
+from os.path import lexists
 from pathlib import Path
 import re
-from tempfile import TemporaryDirectory
+from shutil import rmtree
+from tempfile import mkdtemp
 from urllib.request import urlopen
 from zipfile import ZipFile
 
@@ -62,22 +64,28 @@ def verified_files(zip_bytes, index_digest):
 
 def install(files, output):
     output.parent.mkdir(parents=True, exist_ok=True)
-    with TemporaryDirectory(dir=output.parent.parent) as temporary:
-        staging = Path(temporary) / "incoming"
-        previous = Path(temporary) / "previous"
+    temporary = Path(mkdtemp(dir=output.parent, prefix=f".{output.name}-"))
+    staging = temporary / "incoming"
+    previous = temporary / "previous"
+    installed = False
+    try:
         for name, data in files.items():
             destination = staging / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(data)
 
-        if output.exists():
+        if lexists(output):
             output.rename(previous)
-        try:
-            staging.rename(output)
-        except OSError:
-            if previous.exists() and not output.exists():
-                previous.rename(output)
-            raise
+        staging.rename(output)
+        installed = True
+    except BaseException:
+        if lexists(previous) and not lexists(output):
+            previous.rename(output)
+        raise
+    finally:
+        # Keep the backup available if the swap and its rollback both fail.
+        if installed or not lexists(previous):
+            rmtree(temporary)
 
 
 def update(output=OUTPUT):
